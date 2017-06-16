@@ -15,6 +15,28 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Resources\Textures\texture.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\frag.spv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\shader.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\shader.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\vert.spv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\compile.bat">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
