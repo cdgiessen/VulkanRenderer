@@ -209,7 +209,7 @@ public:
 	* @return VK_SUCCESS if buffer handle and memory have been created and (optionally passed) data has been copied
 	*/
 	VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VulkanBuffer *buffer, VkDeviceSize size, void *data = nullptr)
-	{
+	{					
 		buffer->device = device;
 
 		// Create the buffer handle
@@ -218,8 +218,9 @@ public:
 
 		// Create the memory backing up the buffer handle
 		VkMemoryRequirements memReqs;
-		VkMemoryAllocateInfo memAlloc = initializers::memoryAllocateInfo();
 		vkGetBufferMemoryRequirements(device, buffer->buffer, &memReqs);
+		
+		VkMemoryAllocateInfo memAlloc = initializers::memoryAllocateInfo();
 		memAlloc.allocationSize = memReqs.size;
 		// Find a memory type index that fits the properties of the buffer
 		memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
@@ -509,6 +510,7 @@ private:
 			throw std::runtime_error("failed to create graphics command pool!");
 		}
 
+		// graphics_queue_command_pool
 		{
 			VkCommandPoolCreateInfo pool_info = initializers::commandPoolCreateInfo();
 			pool_info.queueFamilyIndex = queueFamilyIndices.graphicsFamily;

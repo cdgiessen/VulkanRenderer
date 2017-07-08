@@ -22,6 +22,8 @@
 #include "VulkanInitializers.hpp"
 #include "VulkanSwapChain.hpp"
 #include "VulkanDevice.hpp"
+#include "VulkanModel.hpp"
+#include "VulkanTexture.hpp"
 
 #include "Mesh.h"
 #include "Camera.h"
@@ -45,6 +47,7 @@ public:
 
 	void initWindow();
 	void initVulkan();
+	void prepareScene();
 	void mainLoop();
 	void drawFrame();
 	void handleInputs();
@@ -64,7 +67,6 @@ private:
 	void SetMouseControl(bool value);
 
 	
-	void createImageViews();
 	void createRenderPass();
 	void createDescriptorSetLayout();
 	void createGraphicsPipeline();
@@ -72,12 +74,8 @@ private:
 	void createDepthResources();
 	void createFramebuffers();
 
-	void createTextureImage();
-	void createTextureImageView();
-	void createTextureSampler();
-	void createMeshBuffers(Mesh* mesh);
-	void createVertexBuffer(Mesh* mesh);
-	void createIndexBuffer(Mesh* mesh);
+	void createTextureImage(VkImage image, VkDeviceMemory imageMemory);
+	void createTextureSampler(VkSampler* textureSampler);
 	void createUniformBuffer();
 	//void createUniformBufferCUBE();
 	void createDescriptorPool();
@@ -94,7 +92,6 @@ private:
 	VkFormat findDepthFormat();
 	bool hasStencilComponent(VkFormat format);
 
-	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 	void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
@@ -104,8 +101,10 @@ private:
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-	Mesh* myMesh;
-	Mesh* mySecondMesh;
+	VulkanModel terrain;
+	VulkanModel cube;
+	VulkanTexture2D statueFace;
+
 	Camera* camera;
 
 	VulkanDevice vulkanDevice;
@@ -121,16 +120,6 @@ private:
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
 
-	VkImage textureImage;
-	VkDeviceMemory textureImageMemory;
-	VkImageView textureImageView;
-	VkSampler textureSampler;
-
-	VkBuffer vertexBuffer;
-	VkDeviceMemory vertexBufferMemory;
-	VkBuffer indexBuffer;
-	VkDeviceMemory indexBufferMemory;
-
 	VkBuffer uniformBuffer;
 	VkDeviceMemory uniformBufferMemory;
 
@@ -142,5 +131,7 @@ private:
 
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
+
+
 };
 

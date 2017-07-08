@@ -87,5 +87,8 @@
     <ClInclude Include="VulkanTools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="VulkanTexture.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

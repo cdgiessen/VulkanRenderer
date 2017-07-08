@@ -15,6 +15,9 @@
 
 #include <GLFW/glfw3.h>
 
+//#define VMA_IMPLEMENTATION
+//#include <vk_mem_alloc.h>
+
 struct SwapChainSupportDetails
 {
 	VkSurfaceCapabilitiesKHR capabilities;
@@ -39,6 +42,8 @@ VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> avail
 
 VkExtent2D chooseSwapExtent(GLFWwindow *window, const VkSurfaceCapabilitiesKHR& capabilities);
 
+bool fileExists(const std::string &filename);
+
 static std::vector<char> readFile(const std::string& filename);
 
 VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath);
@@ -46,6 +51,15 @@ VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath);
 QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR windowSurface);
 
 uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
+VkImageView createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+
+void setImageLayout(VkCommandBuffer cmdbuffer, VkImage image, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkImageSubresourceRange subresourceRange, 
+	VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+// Fixed sub resource on first mip level and layer
+void setImageLayout(VkCommandBuffer cmdbuffer, VkImage image, VkImageAspectFlags aspectMask, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, 
+	VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
 /** @brief Returns an error code as a string */
 std::string errorString(VkResult errorCode);

@@ -41,6 +41,7 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="VulkanBuffer.hpp" />
     <ClInclude Include="VulkanDevice.hpp" />
+    <ClInclude Include="VulkanTexture.hpp" />
     <ClInclude Include="VulkanInitializers.hpp" />
     <ClInclude Include="VulkanModel.hpp" />
     <ClInclude Include="VulkanSwapChain.hpp" />
@@ -118,12 +119,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.0.37.0\shaderc\third_party\glslang\SPIRV;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\libnoise\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\stb_image\include;C:\VulkanSDK\1.0.37.0\Include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\VulkanMemoryAllocator\include;C:\VulkanSDK\1.0.51.0\shaderc\third_party\glslang\SPIRV;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\libnoise\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\stb_image\include;C:\VulkanSDK\1.0.51.0\Include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\libnoise\lib;C:\VulkanSDK\1.0.37.0\Bin32;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\libnoise\lib;C:\VulkanSDK\1.0.51.0\Lib32;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;libnoise.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

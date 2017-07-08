@@ -43,7 +43,7 @@ public:
 	*/
 	VkResult map(VkDevice device, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0)
 	{
-		return vkMapMemory(device, bufferMemory, offset, size, 0, 0);
+		return vkMapMemory(device, bufferMemory, offset, size, 0, &mapped);
 	}
 
 	/**

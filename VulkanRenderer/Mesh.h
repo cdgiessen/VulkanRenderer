@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <iostream>
 
 #include <glm\common.hpp>
 #include <vulkan\vulkan.hpp>
@@ -117,18 +118,23 @@ static Mesh* createFlatPlane() {
 	std::vector<Vertex> verts;
 	std::vector<uint16_t> indices;
 	
-	int numCells = 10;
+	int numCells = 100;
 
-	noise::module::Perlin myModule = noise::module::Perlin();
+	noise::module::Perlin myModule;
+	myModule.SetOctaveCount(6);
+	myModule.SetFrequency(0.05);
+	myModule.SetPersistence(0.5);
 
-	verts.resize((numCells + 1) * (numCells + 1));
-	indices.resize(numCells * numCells * 6);
+	verts.resize((numCells) * (numCells));
+	indices.resize((numCells - 1) * (numCells -1)* 6);
 
 	for (int i = 0; i < numCells; i++)
 	{
 		for (int j = 0; j < numCells; j++)
 		{
-			verts[i*numCells + j] = Vertex(glm::vec3(i, myModule.GetValue(i,0,j), j), glm::vec3(0, 1, 0), glm::vec2(i, j));
+			double value = myModule.GetValue((double)i , 0.25, (double)j + 0.25) + 0.5f;
+			verts[i*numCells + j] = Vertex(glm::vec3(i, value * 5, j), glm::vec3(value, value, value), glm::vec2(i, j));
+			//std::cout << value << std::endl;
 		}
 	}
 

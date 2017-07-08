@@ -25,10 +25,12 @@ public:
 		this->device = device;
 
 		createSwapChain(window);
+		createImageViews();
 	}
 
 	void recreateSwapChain(GLFWwindow *window) {
 		createSwapChain(window);
+		createImageViews();
 	}
 
 	
@@ -98,6 +100,15 @@ private:
 
 		swapChainImageFormat = surfaceFormat.format;
 		swapChainExtent = extent;
+	}
+
+	//7
+	void createImageViews() {
+		swapChainImageViews.resize(swapChainImages.size());
+
+		for (uint32_t i = 0; i < swapChainImages.size(); i++) {
+			swapChainImageViews[i] = createImageView(device, swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+		}
 	}
 
 };
