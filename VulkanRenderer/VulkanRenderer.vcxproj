@@ -25,11 +25,20 @@
     <None Include="Shaders\compile.bat" />
     <None Include="Shaders\frag.spv" />
     <None Include="Shaders\shader.frag" />
+    <None Include="Shaders\shader.frag.spv" />
     <None Include="Shaders\shader.vert" />
+    <None Include="Shaders\shader.vert.spv" />
+    <None Include="Shaders\ui.frag" />
+    <None Include="Shaders\ui.frag.spv" />
+    <None Include="Shaders\ui.vert" />
+    <None Include="Shaders\ui.vert.spv" />
     <None Include="Shaders\vert.spv" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="imgui\imgui.cpp" />
+    <ClCompile Include="imgui\imgui_demo.cpp" />
+    <ClCompile Include="imgui\imgui_draw.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="VulkanTools.cpp" />
     <ClCompile Include="Window.cpp" />
@@ -38,6 +47,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="ImGui.hpp" />
+    <ClInclude Include="imgui\imconfig.h" />
+    <ClInclude Include="imgui\imgui.h" />
+    <ClInclude Include="imgui\imgui_internal.h" />
+    <ClInclude Include="imgui\stb_rect_pack.h" />
+    <ClInclude Include="imgui\stb_textedit.h" />
+    <ClInclude Include="imgui\stb_truetype.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="VulkanBuffer.hpp" />
     <ClInclude Include="VulkanDevice.hpp" />

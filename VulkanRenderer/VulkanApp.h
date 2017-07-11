@@ -37,6 +37,7 @@ struct UniformBufferObject {
 	glm::mat4 model;
 	glm::mat4 view;
 	glm::mat4 proj;
+	glm::vec4 lightPos = glm::vec4(25.0f, 20.0f, 5.0f, 1.0f);
 };
 
 class VulkanApp
@@ -49,42 +50,46 @@ public:
 	void initVulkan();
 	void prepareScene();
 	void mainLoop();
+	void HandleInputs();
 	void drawFrame();
-	void handleInputs();
 	void cleanup();
 
 	void cleanupSwapChain();
 	void recreateSwapChain();
+	void reBuildCommandBuffers();
 
 	void MouseMoved(double xpos, double ypos);
 	void MouseClicked(int button, int action, int mods);
+	void KeyboardEvent(int key, int scancode, int action, int mods);
 
 private:
 
 	bool firstMouse;
 	double lastX, lastY;
 	bool mouseControlEnabled;
+	bool keys[512] = {};
 	void SetMouseControl(bool value);
+	bool wireframe = false;
 
-	
 	void createRenderPass();
 	void createDescriptorSetLayout();
-	void createGraphicsPipeline();
+	void createPipelineCache();
+	void createGraphicsPipelines();
 	//void createCommandPool();
 	void createDepthResources();
 	void createFramebuffers();
 
 	void createTextureImage(VkImage image, VkDeviceMemory imageMemory);
 	void createTextureSampler(VkSampler* textureSampler);
-	void createUniformBuffer();
-	//void createUniformBufferCUBE();
+	void createUniformBuffers();
+
 	void createDescriptorPool();
 	void createDescriptorSet(VkDescriptorSet& descriptorSet);
 	void createCommandBuffers();
 	void createSemaphores();
 
-	void updateUniformBuffer();
-	void updateUniformBufferCUBE();
+	void updateUniformBuffers();
+
 
 
 
@@ -101,10 +106,12 @@ private:
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
+	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
+
 	VulkanModel terrain;
 	VulkanModel cube;
 	VulkanTexture2D statueFace;
-
+	VulkanTexture2D grassTexture;
 	Camera* camera;
 
 	VulkanDevice vulkanDevice;
@@ -113,25 +120,30 @@ private:
 
 	VkRenderPass renderPass;
 	VkDescriptorSetLayout descriptorSetLayout;
+	VkPipelineCache pipelineCache;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
+	VkPipeline wireframePipeline;
 
-	VkImage depthImage;
+	VkImage depthImage; 
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
 
-	VkBuffer uniformBuffer;
-	VkDeviceMemory uniformBufferMemory;
+	VulkanBuffer uniformVulkanBufferA;
+	VulkanBuffer uniformVulkanBufferB;
+	VulkanBuffer uniformVulkanBufferC;
 
-	VkDescriptorPool descriptorPool;
-	VkDescriptorSet descriptorSetOne;
-	VkDescriptorSet descriptorSetTwo;
+	VkDescriptorPool descriptorPoolA;
+	VkDescriptorPool descriptorPoolB;
+	VkDescriptorSet descriptorSetA;
+	VkDescriptorSet descriptorSetB;
 
 	std::vector<VkCommandBuffer> commandBuffers;
 
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
 
-
+	// List of shader modules created (stored for cleanup)
+	std::vector<VkShaderModule> shaderModules;
 };
 

@@ -12,8 +12,8 @@
 
 class VulkanBuffer {
 
-public:
 
+public:
 	VkDevice device;
 	VkBuffer buffer = VK_NULL_HANDLE;
 	VkDeviceMemory bufferMemory = VK_NULL_HANDLE;
@@ -29,8 +29,14 @@ public:
 	VkMemoryPropertyFlags memoryPropertyFlags;
 
 	void cleanBuffer() {
-		vkDestroyBuffer(device, buffer, nullptr);
-		vkFreeMemory(device, bufferMemory, nullptr);
+		if (buffer)
+		{
+			vkDestroyBuffer(device, buffer, nullptr);
+		}
+		if (bufferMemory)
+		{
+			vkFreeMemory(device, bufferMemory, nullptr);
+		}
 	}
 
 	/**
