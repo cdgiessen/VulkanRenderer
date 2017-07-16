@@ -9,41 +9,57 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
+    <Filter Include="Shaders">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="imgui">
-      <UniqueIdentifier>{10e4df4b-40f2-44ca-a0b0-7bf64498c7df}</UniqueIdentifier>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{7ad50738-0a7d-463f-b317-22bad91b9701}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Textures">
+      <UniqueIdentifier>{0935a938-0548-424b-94f1-62bad411e9cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Models">
+      <UniqueIdentifier>{82858753-22ce-4116-a0d9-4f3550fceba8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Resources\Textures\texture.jpg">
-      <Filter>Resource Files</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Shaders\frag.spv">
-      <Filter>Resource Files</Filter>
+      <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\shader.frag">
-      <Filter>Resource Files</Filter>
+      <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\shader.vert">
-      <Filter>Resource Files</Filter>
+      <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\vert.spv">
-      <Filter>Resource Files</Filter>
+      <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\compile.bat">
-      <Filter>Resource Files</Filter>
+      <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\ui.frag" />
-    <None Include="Shaders\ui.frag.spv" />
-    <None Include="Shaders\ui.vert" />
-    <None Include="Shaders\ui.vert.spv" />
-    <None Include="Shaders\shader.frag.spv" />
-    <None Include="Shaders\shader.vert.spv" />
+    <None Include="Shaders\shader.frag.spv">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shader.vert.spv">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ui.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ui.frag.spv">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ui.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ui.vert.spv">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Resources\Models\OakTree3.fbx">
+      <Filter>Resources\Models</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -64,14 +80,11 @@
     <ClCompile Include="VulkanTools.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="ImGuiImpl.cpp">
+      <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_demo.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\imgui_draw.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="noiseutils.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -108,26 +121,28 @@
     <ClInclude Include="VulkanTexture.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui.hpp">
+    <ClInclude Include="ImGuiImpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imconfig.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="noiseutils.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imgui.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imgui_internal.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\stb_rect_pack.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\stb_textedit.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\stb_truetype.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\Textures\texture.jpg">
+      <Filter>Resources\Textures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\ColorGradientCube.png">
+      <Filter>Resources\Textures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\grass.jpg">
+      <Filter>Resources\Textures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\lowPolyGrass.png">
+      <Filter>Resources\Textures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\lowPolyScatter.png">
+      <Filter>Resources\Textures</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -2,15 +2,15 @@
 
 #include <vector>
 #include <iostream>
+#include <string>
 
 #include <glm\common.hpp>
 #include <vulkan\vulkan.hpp>
 
-#include "VulkanBuffer.hpp"
-
 #include "VulkanInitializers.hpp"
 
 #include <noise/noise.h>
+#include "noiseutils.h"
 
 struct Vertex {
 	glm::vec3 pos;
@@ -60,24 +60,33 @@ class Mesh
 {
 public:
 	Mesh(std::vector<Vertex> vertices, std::vector<uint16_t> indices);
+	Mesh();
 	~Mesh();
-
-	void createMeshBuffers(VkDevice device, VkPhysicalDevice physicalDevice);
-	void cleanup(VkDevice device);
-
-	void createVertexBuffer();
-	void createIndexBuffer();
+	
+	void importFromFile(const std::string filename);
 
 	std::vector<Vertex> vertices;
 	std::vector<uint16_t> indices;
+	uint32_t indexCount = 0;
+	uint32_t vertexCount = 0;
 
-	VkBuffer vertexBuffer;
-	VkDeviceMemory vertexBufferMemory;
-	VkBuffer indexBuffer;
-	VkDeviceMemory indexBufferMemory;
+	/** @brief Stores vertex and index base and counts for each part of a model */
+	struct ModelPart {
+		uint32_t vertexBase;
+		uint32_t vertexCount;
+		uint32_t indexBase;
+		uint32_t indexCount;
+	};
 
-	VkDevice device;
-	
+	std::vector<ModelPart> parts;
+
+	struct Dimension
+	{
+		glm::vec3 min = glm::vec3(FLT_MAX);
+		glm::vec3 max = glm::vec3(-FLT_MAX);
+		glm::vec3 size;
+	} dimensions;
+
 private:
 };
 
@@ -121,10 +130,7 @@ static Mesh* createDoublePlane() {
 }
 
 static glm::vec3 lerp(glm::vec3 a, glm::vec3 b, float t) {
-	
-
-	
-	return (a) + glm::vec3((b - (a)).x * t, (b - (a)).y * t, (b - (a)).z * t);
+	return a + (b - a)*t;
 }
 
 static glm::vec3 color0 = { 0, 0.1f, 0.8f };
@@ -134,7 +140,7 @@ static glm::vec3 color3 = { 0.5f, 0.5f, 0.5f };
 static glm::vec3 color4 = { 1.0f, 1.0f, 1.0f };
 
 static glm::vec3 CalcColorAtElevation(float elevation) {
-	if (elevation < 0.01f)
+	if (elevation < 0.05f)
 		return lerp(color0, color1, elevation);
 	else if (elevation < 0.35)
 		return lerp(color1, color2, elevation);
@@ -142,51 +148,75 @@ static glm::vec3 CalcColorAtElevation(float elevation) {
 		return lerp(color2, color3, elevation);
 	else if (elevation < 0.8)
 		return lerp(color3, color4, elevation);
-	return glm::vec3(1.0f);
+	return color4;
 }
 
-static Mesh* createFlatPlane() {
+static Mesh* createFlatPlane(int numCells, int xMin, int xMax, int yMin, int yMax) {
 	std::vector<Vertex> verts;
 	std::vector<uint16_t> indices;
-	
-	int numCells = 100;
 
 	noise::module::Perlin myModule;
 	myModule.SetOctaveCount(6);
 	myModule.SetFrequency(0.05);
 	myModule.SetPersistence(0.5);
 
-	verts.resize((numCells) * (numCells));
-	indices.resize((numCells - 1) * (numCells -1)* 6);
+	noise::utils::NoiseMap heightMap;
+	utils::NoiseMapBuilderPlane heightMapBuilder;
+	heightMapBuilder.SetSourceModule(myModule);
+	heightMapBuilder.SetDestNoiseMap(heightMap);
+	heightMapBuilder.SetDestSize(numCells + 1, numCells + 1);
+	heightMapBuilder.SetBounds(xMin, xMax + 1, yMin, yMax + 1);
+	heightMapBuilder.Build();
+	
+	utils::RendererImage renderer;
+	utils::Image image;
+	renderer.ClearGradient();
+	renderer.AddGradientPoint(-1.0000, utils::Color(0, 0, 128, 255)); // deeps
+	renderer.AddGradientPoint(0.000, utils::Color(0, 0, 255, 255)); // shallow
+	renderer.AddGradientPoint(0.1000, utils::Color(0, 128, 255, 255)); // shore
+	renderer.AddGradientPoint(0.0625, utils::Color(240, 240, 64, 255)); // sand
+	renderer.AddGradientPoint(0.1250, utils::Color(32, 160, 0, 255)); // grass
+	renderer.AddGradientPoint(0.3750, utils::Color(224, 224, 0, 255)); // dirt
+	renderer.AddGradientPoint(0.7500, utils::Color(128, 128, 128, 255)); // rock
+	renderer.AddGradientPoint(1.0000, utils::Color(255, 255, 255, 255)); // snow
+	renderer.SetSourceNoiseMap(heightMap);
+	renderer.SetDestImage(image);
+	renderer.Render();
 
-	for (int i = 0; i < numCells; i++)
+
+	verts.resize((numCells + 1) * (numCells + 1));
+	indices.resize((numCells) * (numCells)* 6);
+
+	for (int i = 0; i <= numCells; i++)
 	{
-		for (int j = 0; j < numCells; j++)
+		for (int j = 0; j <= numCells; j++)
 		{
-			float hL = myModule.GetValue((double)i + 1, 0.25, (double)j + 0.25) + 0.5f;
-			float hR = myModule.GetValue((double)i - 1, 0.25, (double)j + 0.25) + 0.5f;
-			float hD = myModule.GetValue((double)i, 0.25, (double)j + 1 + 0.25) + 0.5f;
-			float hU = myModule.GetValue((double)i, 0.25, (double)j - 1 + 0.25) + 0.5f;
+			float hL = (myModule.GetValue((double)(i + 1) *(xMax - xMin) / numCells + (xMin),	0, (double)j *(yMax - yMin) / numCells + yMin	) + 1.0f)/2.0f;
+			float hR = (myModule.GetValue((double)(i - 1) *(xMax - xMin) / numCells + (xMin),	0, (double)j *(yMax - yMin) / numCells + yMin	) + 1.0f)/2.0f;
+			float hD = (myModule.GetValue((double)i *(xMax - xMin) / numCells + (xMin),			0, (double)(j + 1 )*(yMax - yMin) / numCells + yMin) + 1.0f)/2.0f;
+			float hU = (myModule.GetValue((double)i *(xMax - xMin) / numCells + (xMin),			0, (double)(j - 1 )*(yMax - yMin) / numCells + yMin) + 1.0f)/2.0f;
 			glm::vec3 normal(hR - hL, 1, hU - hD);
 
-			double value = (myModule.GetValue((double)i , 0.25, (double)j + 0.25) + 1.0f)/2.0f;
+			double value = (myModule.GetValue((double)i *(xMax - xMin) / numCells + (xMin), 0.0, (double)j *(yMax - yMin) / numCells + (yMin)));
 
-			verts[i*numCells + j] = Vertex(glm::vec3(i, value * 10, j), normal, glm::vec2(i, j), CalcColorAtElevation(value));
+			verts[(i)*(numCells + 1) + j] = Vertex(glm::vec3((double)i *(xMax - xMin)/ numCells + (xMin), glm::clamp(value, 0.0, 1.5) * 5, (double)j * (yMax - yMin) / numCells + (yMin)), normal, 
+				glm::vec2(i, j), 
+				glm::vec3((float)image.GetValue(i,j).red/256, (float)image.GetValue(i, j).green / 256, (float)image.GetValue(i, j).blue / 256));
 			//std::cout << value << std::endl;
 		}
 	}
 
 	int counter = 0;
-	for (int i = 0; i < numCells - 1; i++)
+	for (int i = 0; i < numCells; i++)
 	{
-		for (int j = 0; j < numCells - 1; j++)
+		for (int j = 0; j < numCells; j++)
 		{
-			indices[counter++] = i * numCells + j;
-			indices[counter++] = i * numCells + j + 1;
-			indices[counter++] = (i + 1) * numCells + j;
-			indices[counter++] = i * numCells + j + 1;
-			indices[counter++] = (i + 1) * numCells + j + 1;
-			indices[counter++] = (i + 1) * numCells + j;
+			indices[counter++] = i * (numCells + 1) + j;
+			indices[counter++] = i * (numCells + 1) + j + 1;
+			indices[counter++] = (i + 1) * (numCells + 1) + j;
+			indices[counter++] = i * (numCells + 1) + j + 1;
+			indices[counter++] = (i + 1) * (numCells + 1) + j + 1;
+			indices[counter++] = (i + 1) * (numCells + 1) + j;
 		}
 	}
 

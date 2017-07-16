@@ -5,6 +5,10 @@
 #include "VulkanDevice.hpp"
 #include "VulkanBuffer.hpp"
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 #include "Mesh.h"
 
 class VulkanModel {
@@ -38,7 +42,7 @@ public:
 		indexCount = mesh->indices.size();
 
 		vertexBuffer.resize(vertexCount * 11);
-		for (int i = 0; i < vertexCount; i++)
+		for (int i = 0; i < (int)vertexCount; i++)
 		{
 			vertexBuffer[i * 11]		= mesh->vertices[i].pos[0];
 			vertexBuffer[i * 11 + 1] = mesh->vertices[i].pos[1];
@@ -54,7 +58,7 @@ public:
 		}
 
 		indexBuffer.resize(indexCount);
-		for (int i = 0; i < indexCount; i++)
+		for (int i = 0; i < (int)indexCount; i++)
 		{
 			indexBuffer[i] = mesh->indices[i];
 		}
@@ -143,88 +147,204 @@ public:
 			vertexCount = 4;
 			indexCount = 6;
 
-			vertexBuffer = {  -0.5f, -0.5f, 0.0f , 1.0f, 0.0f, 0.0f , 0.0f, 0.0f ,
-							   0.5f, -0.5f, 0.0f  ,  0.0f, 1.0f, 0.0f  ,  1.0f, 0.0f    ,
-							   0.5f, 0.5f, 0.0f  ,  0.0f, 0.0f, 1.0f  ,  1.0f, 1.0f    ,
-							   -0.5f, 0.5f, 0.0f  ,  1.0f, 1.0f, 1.0f  ,  0.0f, 1.0f   };
+			Assimp::Importer Importer;
+			const aiScene* pScene;
 
-			indexBuffer = { 0, 1, 2, 2, 3, 0 };
+			pScene = Importer.ReadFile(filename.c_str(), aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals);
 
-			/** @todo NEEDS TO LOAD FROM FILE OR SOMEWHERE!!! not make a flat plane */
+			if (pScene)
+			{
+				parts.clear();
+				parts.resize(pScene->mNumMeshes);
 
-			uint32_t vBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(float);
-			uint32_t iBufferSize = static_cast<uint32_t>(indexBuffer.size()) * sizeof(uint32_t);
+				glm::vec3 scale(1.0f);
+				glm::vec2 uvscale(1.0f);
+				glm::vec3 center(0.0f);
 
-			// Use staging buffer to move vertex and index buffer to device local memory
-			// Create staging buffers
-			VulkanBuffer vertexStaging, indexStaging;
+				std::vector<float> vertexBuffer;
+				std::vector<uint32_t> indexBuffer;
 
-			// Vertex buffer
-			VK_CHECK_RESULT(device.createBuffer(
-				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-				&vertexStaging,
-				vBufferSize,
-				vertexBuffer.data()));
+				vertexCount = 0;
+				indexCount = 0;
 
-			// Index buffer
-			VK_CHECK_RESULT(device.createBuffer(
-				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-				&indexStaging,
-				iBufferSize,
-				indexBuffer.data()));
+				// Load meshes
+				for (unsigned int i = 0; i < pScene->mNumMeshes; i++)
+				{
+					const aiMesh* paiMesh = pScene->mMeshes[i];
 
-			// Create device local target buffers
-			// Vertex buffer
-			VK_CHECK_RESULT(device.createBuffer(
-				VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-				&vertices,
-				vBufferSize));
+					parts[i] = {};
+					parts[i].vertexBase = vertexCount;
+					parts[i].indexBase = indexCount;
 
-			// Index buffer
-			VK_CHECK_RESULT(device.createBuffer(
-				VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-				&indices,
-				iBufferSize));
+					vertexCount += pScene->mMeshes[i]->mNumVertices;
 
-			// Copy from staging buffers
-			VkCommandBuffer copyCmd = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+					aiColor3D pColor(0.f, 0.f, 0.f);
+					pScene->mMaterials[paiMesh->mMaterialIndex]->Get(AI_MATKEY_COLOR_DIFFUSE, pColor);
 
-			VkBufferCopy copyRegion{};
+					const aiVector3D Zero3D(0.0f, 0.0f, 0.0f);
 
-			copyRegion.size = vertices.size;
-			vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, vertices.buffer, 1, &copyRegion);
+					for (unsigned int j = 0; j < paiMesh->mNumVertices; j++)
+					{
+						const aiVector3D* pPos = &(paiMesh->mVertices[j]);
+						const aiVector3D* pNormal = &(paiMesh->mNormals[j]);
+						const aiVector3D* pTexCoord = (paiMesh->HasTextureCoords(0)) ? &(paiMesh->mTextureCoords[0][j]) : &Zero3D;
+						const aiVector3D* pTangent = (paiMesh->HasTangentsAndBitangents()) ? &(paiMesh->mTangents[j]) : &Zero3D;
+						const aiVector3D* pBiTangent = (paiMesh->HasTangentsAndBitangents()) ? &(paiMesh->mBitangents[j]) : &Zero3D;
 
-			copyRegion.size = indices.size;
-			vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indices.buffer, 1, &copyRegion);
+						vertexBuffer.push_back(pPos->x * scale.x + center.x);
+						vertexBuffer.push_back(-pPos->y * scale.y + center.y);
+						vertexBuffer.push_back(pPos->z * scale.z + center.z);
 
-			device.flushCommandBuffer(copyCmd, copyQueue);
+						vertexBuffer.push_back(pNormal->x);
+						vertexBuffer.push_back(-pNormal->y);
+						vertexBuffer.push_back(pNormal->z);
 
-			// Destroy staging resources
-			vkDestroyBuffer(device.device, vertexStaging.buffer, nullptr);
-			vkFreeMemory(device.device, vertexStaging.bufferMemory, nullptr);
-			vkDestroyBuffer(device.device, indexStaging.buffer, nullptr);
-			vkFreeMemory(device.device, indexStaging.bufferMemory, nullptr);
+						vertexBuffer.push_back(pTexCoord->x * uvscale.s);
+						vertexBuffer.push_back(pTexCoord->y * uvscale.t);
 
-			return true;
+						vertexBuffer.push_back(pColor.r);
+						vertexBuffer.push_back(pColor.g);
+						vertexBuffer.push_back(pColor.b);
+
+						/*for (auto& component : layout.components)
+						{
+						switch (component) {
+						case VERTEX_COMPONENT_POSITION:
+						vertexBuffer.push_back(pPos->x * scale.x + center.x);
+						vertexBuffer.push_back(-pPos->y * scale.y + center.y);
+						vertexBuffer.push_back(pPos->z * scale.z + center.z);
+						break;
+						case VERTEX_COMPONENT_NORMAL:
+						vertexBuffer.push_back(pNormal->x);
+						vertexBuffer.push_back(-pNormal->y);
+						vertexBuffer.push_back(pNormal->z);
+						break;
+						case VERTEX_COMPONENT_UV:
+						vertexBuffer.push_back(pTexCoord->x * uvscale.s);
+						vertexBuffer.push_back(pTexCoord->y * uvscale.t);
+						break;
+						case VERTEX_COMPONENT_COLOR:
+						vertexBuffer.push_back(pColor.r);
+						vertexBuffer.push_back(pColor.g);
+						vertexBuffer.push_back(pColor.b);
+						break;
+						case VERTEX_COMPONENT_TANGENT:
+						vertexBuffer.push_back(pTangent->x);
+						vertexBuffer.push_back(pTangent->y);
+						vertexBuffer.push_back(pTangent->z);
+						break;
+						case VERTEX_COMPONENT_BITANGENT:
+						vertexBuffer.push_back(pBiTangent->x);
+						vertexBuffer.push_back(pBiTangent->y);
+						vertexBuffer.push_back(pBiTangent->z);
+						break;
+						// Dummy components for padding
+						case VERTEX_COMPONENT_DUMMY_FLOAT:
+						vertexBuffer.push_back(0.0f);
+						break;
+						case VERTEX_COMPONENT_DUMMY_VEC4:
+						vertexBuffer.push_back(0.0f);
+						vertexBuffer.push_back(0.0f);
+						vertexBuffer.push_back(0.0f);
+						vertexBuffer.push_back(0.0f);
+						break;
+						};
+						}*/
+					}
+
+					parts[i].vertexCount = paiMesh->mNumVertices;
+
+					uint32_t indexBase = static_cast<uint32_t>(indexBuffer.size());
+					for (unsigned int j = 0; j < paiMesh->mNumFaces; j++)
+					{
+						const aiFace& Face = paiMesh->mFaces[j];
+						if (Face.mNumIndices != 3)
+							continue;
+						indexBuffer.push_back(indexBase + Face.mIndices[0]);
+						indexBuffer.push_back(indexBase + Face.mIndices[1]);
+						indexBuffer.push_back(indexBase + Face.mIndices[2]);
+						parts[i].indexCount += 3;
+						indexCount += 3;
+					}
+				}
+
+				uint32_t vBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(float);
+				uint32_t iBufferSize = static_cast<uint32_t>(indexBuffer.size()) * sizeof(uint32_t);
+
+				// Use staging buffer to move vertex and index buffer to device local memory
+				// Create staging buffers
+				VulkanBuffer vertexStaging, indexStaging;
+
+				// Vertex buffer
+				VK_CHECK_RESULT(device.createBuffer(
+					VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+					VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+					&vertexStaging,
+					vBufferSize,
+					vertexBuffer.data()));
+
+				// Index buffer
+				VK_CHECK_RESULT(device.createBuffer(
+					VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+					VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+					&indexStaging,
+					iBufferSize,
+					indexBuffer.data()));
+
+				// Create device local target buffers
+				// Vertex buffer
+				VK_CHECK_RESULT(device.createBuffer(
+					VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+					&vertices,
+					vBufferSize));
+
+				// Index buffer
+				VK_CHECK_RESULT(device.createBuffer(
+					VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+					&indices,
+					iBufferSize));
+
+				// Copy from staging buffers
+				VkCommandBuffer copyCmd = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+
+				VkBufferCopy copyRegion{};
+
+				copyRegion.size = vertices.size;
+				vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, vertices.buffer, 1, &copyRegion);
+
+				copyRegion.size = indices.size;
+				vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indices.buffer, 1, &copyRegion);
+
+				device.flushCommandBuffer(copyCmd, copyQueue);
+
+				// Destroy staging resources
+				vkDestroyBuffer(device.device, vertexStaging.buffer, nullptr);
+				vkFreeMemory(device.device, vertexStaging.bufferMemory, nullptr);
+				vkDestroyBuffer(device.device, indexStaging.buffer, nullptr);
+				vkFreeMemory(device.device, indexStaging.bufferMemory, nullptr);
+
+				return true;
+			}
+			else
+			{
+				printf("Error parsing '%s': '\n", filename.c_str());
+				return false;
+			}
+
 		}
-		else
-		{
-			printf("Error parsing '%s': '\n", filename.c_str());
-			return false;
-		}
-
-	}
+	};
 
 	/** @brief Release all Vulkan resources of this model */
 	void destroy()
 	{
 		//assert(device);
-		vkDestroyBuffer(device, vertices.buffer, nullptr);
-		vkFreeMemory(device, vertices.bufferMemory, nullptr);
+		if (vertices.buffer != VK_NULL_HANDLE) 
+		{
+			vkDestroyBuffer(device, vertices.buffer, nullptr);
+			vkFreeMemory(device, vertices.bufferMemory, nullptr);
+		}
 		if (indices.buffer != VK_NULL_HANDLE)
 		{
 			vkDestroyBuffer(device, indices.buffer, nullptr);

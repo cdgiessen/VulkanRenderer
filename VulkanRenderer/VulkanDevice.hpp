@@ -14,13 +14,14 @@
 #include "VulkanBuffer.hpp"
 
 #ifdef NDEBUG
-const bool enableValidationLayers = false;
+const bool enableValidationLayers = true;
 #else
 const bool enableValidationLayers = true;
 #endif
 
 const std::vector<const char*> VALIDATION_LAYERS = {
 	"VK_LAYER_LUNARG_standard_validation"
+	
 };
 
 const std::vector<const char*> DEVICE_EXTENSIONS = {
@@ -49,6 +50,7 @@ public:
 	VkCommandPool graphics_queue_command_pool;
 	VkCommandPool compute_queue_command_pool;
 	VkPhysicalDeviceProperties physical_device_properties;
+	VkPhysicalDeviceFeatures physical_device_features;
 	VkPhysicalDeviceMemoryProperties memoryProperties;
 
 	VulkanDevice()
@@ -98,10 +100,9 @@ public:
 			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.present_modes.empty();
 		}
 
-		VkPhysicalDeviceFeatures supportedFeatures;
-		vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+		vkGetPhysicalDeviceFeatures(device, &physical_device_features);
 
-		return indices.isComplete() && extensionsSupported && supportedFeatures.samplerAnisotropy;
+		return indices.isComplete() && extensionsSupported && physical_device_features.samplerAnisotropy;
 	}
 
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
@@ -470,6 +471,9 @@ private:
 
 		VkPhysicalDeviceFeatures deviceFeatures = {};
 		deviceFeatures.samplerAnisotropy = VK_TRUE;
+		if (physical_device_features.fillModeNonSolid) {
+			deviceFeatures.fillModeNonSolid = VK_TRUE;
+		}
 
 		VkDeviceCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -497,6 +501,8 @@ private:
 		vkGetDeviceQueue(device, indices.graphicsFamily, 0, &graphics_queue);
 		vkGetDeviceQueue(device, indices.presentFamily, 0, &present_queue);
 
+		vkGetPhysicalDeviceFeatures(physical_device, &physical_device_features);
+		vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
 		vkGetPhysicalDeviceMemoryProperties(physical_device, &memoryProperties);
 	}
 

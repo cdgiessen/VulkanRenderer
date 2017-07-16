@@ -25,19 +25,28 @@
 #include "VulkanModel.hpp"
 #include "VulkanTexture.hpp"
 
+//#include "ImGuiImpl.h"
+//#include <imgui.h>
 #include "Mesh.h"
 #include "Camera.h"
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
+const int WIDTH = 1000;
+const int HEIGHT = 800;
 
 const float deltaTime = 0.016f;
-
-struct UniformBufferObject {
-	glm::mat4 model;
+struct CameraBufferObject {
 	glm::mat4 view;
 	glm::mat4 proj;
-	glm::vec4 lightPos = glm::vec4(25.0f, 20.0f, 5.0f, 1.0f);
+};
+
+struct ModelBufferObject {
+	glm::mat4 model;
+	glm::mat4 normal;
+};
+
+struct LightsBufferObject {
+	glm::vec4 lightPos = glm::vec4(50.0f, 25.0f, 50.0f, 1.0f);
+	glm::vec4 color = glm::vec4(1.0, 1.0, 1.0f, 1.0f);
 };
 
 class VulkanApp
@@ -64,6 +73,9 @@ public:
 
 private:
 
+	std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
+	int frameCount = 1;
+	
 	bool firstMouse;
 	double lastX, lastY;
 	bool mouseControlEnabled;
@@ -75,7 +87,6 @@ private:
 	void createDescriptorSetLayout();
 	void createPipelineCache();
 	void createGraphicsPipelines();
-	//void createCommandPool();
 	void createDepthResources();
 	void createFramebuffers();
 
@@ -84,14 +95,15 @@ private:
 	void createUniformBuffers();
 
 	void createDescriptorPool();
-	void createDescriptorSet(VkDescriptorSet& descriptorSet);
+	void createDescriptorSets();
 	void createCommandBuffers();
 	void createSemaphores();
 
 	void updateUniformBuffers();
 
-
-
+	void newGuiFrame();
+	void updateImGui();
+	void prepareImGui();
 
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat findDepthFormat();
@@ -108,11 +120,14 @@ private:
 
 	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
 
-	VulkanModel terrain;
+	int terrainCount = 4;
+	std::vector<VulkanModel> terrain;
 	VulkanModel cube;
 	VulkanTexture2D statueFace;
 	VulkanTexture2D grassTexture;
 	Camera* camera;
+
+	//ImGUI *imGui = nullptr;
 
 	VulkanDevice vulkanDevice;
 
@@ -129,14 +144,16 @@ private:
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
 
-	VulkanBuffer uniformVulkanBufferA;
-	VulkanBuffer uniformVulkanBufferB;
-	VulkanBuffer uniformVulkanBufferC;
+	VulkanBuffer cameraInfoBuffer;
+	VulkanBuffer lightsInfoBuffer;
+	VulkanBuffer cubeUniformBuffer;
+	VulkanBuffer terrainUniformBuffer;
 
-	VkDescriptorPool descriptorPoolA;
-	VkDescriptorPool descriptorPoolB;
+
+	VkDescriptorPool descriptorPool;
 	VkDescriptorSet descriptorSetA;
-	VkDescriptorSet descriptorSetB;
+	VkDescriptorPool descriptorPoolTerrain;
+	std::vector<VkDescriptorSet> descriptorSetTerrain;
 
 	std::vector<VkCommandBuffer> commandBuffers;
 

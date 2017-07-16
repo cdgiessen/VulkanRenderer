@@ -19,6 +19,10 @@ VulkanApp::VulkanApp()
 	initWindow();
 	initVulkan();
 	prepareScene();
+	prepareImGui();
+	createCommandBuffers();
+
+	startTime = std::chrono::high_resolution_clock::now();
 	mainLoop();
 	cleanup();
 }
@@ -83,17 +87,23 @@ void VulkanApp::initVulkan() {
 
 void VulkanApp::prepareScene(){
 	cube.loadFromMesh(createCube(), vulkanDevice, vulkanDevice.graphics_queue);
-	terrain.loadFromMesh(createFlatPlane(), vulkanDevice, vulkanDevice.graphics_queue);
+	terrain.push_back(VulkanModel()); terrain.push_back(VulkanModel());	terrain.push_back(VulkanModel()); terrain.push_back(VulkanModel());
+	terrain[0].loadFromMesh(createFlatPlane(50, 0, 50, 0, 50), vulkanDevice, vulkanDevice.graphics_queue);
+	terrain[1].loadFromMesh(createFlatPlane(50, 50, 100, 0, 50), vulkanDevice, vulkanDevice.graphics_queue);
+	terrain[2].loadFromMesh(createFlatPlane(50, 0, 50, 50, 100), vulkanDevice, vulkanDevice.graphics_queue);
+	terrain[3].loadFromMesh(createFlatPlane(50, 50, 100, 50, 100), vulkanDevice, vulkanDevice.graphics_queue);
 
 	statueFace.loadFromFile("Resources/Textures/ColorGradientCube.png", VK_FORMAT_R8G8B8A8_UNORM, &vulkanDevice, vulkanDevice.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 	grassTexture.loadFromFile("Resources/Textures/lowPolyScatter.png", VK_FORMAT_R8G8B8A8_UNORM, &vulkanDevice, vulkanDevice.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 
+	Mesh* test = new Mesh(); 
+	test->importFromFile("Resources/Models/OakTree3.fbx");
+
 	createUniformBuffers();
 	
 	createDescriptorPool();
-	createDescriptorSet(descriptorSetA);
-	//createDescriptorSet(descriptorSetTwo);
-	createCommandBuffers();
+	createDescriptorSets();
+	//createCommandBuffers();
 	createSemaphores();
 }
 
@@ -103,31 +113,33 @@ void VulkanApp::mainLoop() {
 		HandleInputs();
 		updateUniformBuffers();
 		drawFrame();
+		frameCount++;
+		//std::cout << frameCount << std::endl;
 	}
 
 	vkDeviceWaitIdle(vulkanDevice.device);
 }
 
 void VulkanApp::cleanup() {
+	//delete imGui;
+
 	cube.destroy();
-	terrain.destroy();
+	for each(VulkanModel model in terrain) {
+		model.destroy();
+	}
 	statueFace.destroy();
 
 	cleanupSwapChain();
 
-	vkDestroyDescriptorPool(vulkanDevice.device, descriptorPoolA, nullptr);
-	vkDestroyDescriptorPool(vulkanDevice.device, descriptorPoolB, nullptr);
+	vkDestroyDescriptorPool(vulkanDevice.device, descriptorPool, nullptr);
 	vkDestroyDescriptorSetLayout(vulkanDevice.device, descriptorSetLayout, nullptr);
 
-	uniformVulkanBufferA.cleanBuffer();
-	uniformVulkanBufferB.cleanBuffer();
-	uniformVulkanBufferC.cleanBuffer();
+	vkDestroyDescriptorPool(vulkanDevice.device, descriptorPoolTerrain, nullptr);
 
-	//vkDestroyBuffer(vulkanDevice.device, uniformBuffer, nullptr);
-	//vkFreeMemory(vulkanDevice.device, uniformBufferMemory, nullptr);
-	
-	//vkDestroyBuffer(vulkanDevice.device, uniformBufferCube, nullptr);
-	//vkFreeMemory(vulkanDevice.device, uniformBufferMemoryCube, nullptr);
+	cubeUniformBuffer.cleanBuffer();
+	terrainUniformBuffer.cleanBuffer();
+	cameraInfoBuffer.cleanBuffer();
+	lightsInfoBuffer.cleanBuffer();
 	
 	vkDestroySemaphore(vulkanDevice.device, renderFinishedSemaphore, nullptr);
 	vkDestroySemaphore(vulkanDevice.device, imageAvailableSemaphore, nullptr);
@@ -151,10 +163,10 @@ void VulkanApp::cleanupSwapChain() {
 		vkDestroyFramebuffer(vulkanDevice.device, vulkanSwapChain.swapChainFramebuffers[i], nullptr);
 	}
 
-	vkFreeCommandBuffers(vulkanDevice.device, vulkanDevice.commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
-
 	vkDestroyPipeline(vulkanDevice.device, graphicsPipeline, nullptr);
-	vkDestroyPipeline(vulkanDevice.device, wireframePipeline, nullptr);
+	if (wireframePipeline != VK_NULL_HANDLE) {
+		vkDestroyPipeline(vulkanDevice.device, wireframePipeline, nullptr);
+	}
 	vkDestroyPipelineLayout(vulkanDevice.device, pipelineLayout, nullptr);
 	vkDestroyRenderPass(vulkanDevice.device, renderPass, nullptr);
 
@@ -176,7 +188,7 @@ void VulkanApp::recreateSwapChain() {
 	createGraphicsPipelines();
 	createDepthResources();
 	createFramebuffers();
-	createCommandBuffers();
+	reBuildCommandBuffers();
 }
 
 void VulkanApp::reBuildCommandBuffers() {
@@ -231,8 +243,7 @@ void VulkanApp::createRenderPass() {
 	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
 	std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
-	VkRenderPassCreateInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	VkRenderPassCreateInfo renderPassInfo = initializers::renderPassCreateInfo();
 	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 	renderPassInfo.pAttachments = attachments.data();
 	renderPassInfo.subpassCount = 1;
@@ -242,41 +253,6 @@ void VulkanApp::createRenderPass() {
 
 	if (vkCreateRenderPass(vulkanDevice.device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create render pass!");
-	}
-}
-
-//9 also creates the pipeline layout
-void VulkanApp::createDescriptorSetLayout() {
-	VkDescriptorSetLayoutBinding uboLayoutBinding = {};
-	uboLayoutBinding.binding = 0;
-	uboLayoutBinding.descriptorCount = 1;
-	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	uboLayoutBinding.pImmutableSamplers = nullptr;
-	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-	samplerLayoutBinding.binding = 1;
-	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	samplerLayoutBinding.pImmutableSamplers = nullptr;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
-	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-	layoutInfo.pBindings = bindings.data();
-
-	if (vkCreateDescriptorSetLayout(vulkanDevice.device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create descriptor set layout!");
-	}
-
-
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(1);
-	pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-
-	if (vkCreatePipelineLayout(vulkanDevice.device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create pipeline layout!");
 	}
 }
 
@@ -343,8 +319,13 @@ void VulkanApp::createGraphicsPipelines() {
 	colorBlending.blendConstants[2] = 0.0f;
 	colorBlending.blendConstants[3] = 0.0f;
 
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(&descriptorSetLayout, 1);
+	
+	if (vkCreatePipelineLayout(vulkanDevice.device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create pipeline layout!");
+	}
+
 	VkGraphicsPipelineCreateInfo pipelineInfo = initializers::pipelineCreateInfo(pipelineLayout, renderPass, 0);
-	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineInfo.stageCount = 2;
 	pipelineInfo.pStages = shaderStages;
 	pipelineInfo.pVertexInputState = &vertexInputInfo;
@@ -357,7 +338,7 @@ void VulkanApp::createGraphicsPipelines() {
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-	if (vkCreateGraphicsPipelines(vulkanDevice.device, pipelineCache, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(vulkanDevice.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
 
@@ -365,10 +346,11 @@ void VulkanApp::createGraphicsPipelines() {
 	rasterizer.cullMode = VK_CULL_MODE_NONE;
 	rasterizer.lineWidth = 1.0f;
 
-	if (vkCreateGraphicsPipelines(vulkanDevice.device, pipelineCache, 1, &pipelineInfo, nullptr, &wireframePipeline) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create wireframe pipeline!");
+	if (vulkanDevice.physical_device_features.fillModeNonSolid == true) {
+		if (vkCreateGraphicsPipelines(vulkanDevice.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &wireframePipeline) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create wireframe pipeline!");
+		}
 	}
-
 	//vkDestroyShaderModule(vulkanDevice.device, fragShaderModule, nullptr);
 	//vkDestroyShaderModule(vulkanDevice.device, vertShaderModule, nullptr);
 }
@@ -421,8 +403,7 @@ void VulkanApp::createFramebuffers() {
 			depthImageView
 		};
 
-		VkFramebufferCreateInfo framebufferInfo = {};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		VkFramebufferCreateInfo framebufferInfo = initializers::framebufferCreateInfo();
 		framebufferInfo.renderPass = renderPass;
 		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 		framebufferInfo.pAttachments = attachments.data();
@@ -469,8 +450,7 @@ void VulkanApp::createTextureImage(VkImage image, VkDeviceMemory imageMemory) {
 
 //15
 void VulkanApp::createTextureSampler(VkSampler* textureSampler) {
-	VkSamplerCreateInfo samplerInfo = {};
-	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	VkSamplerCreateInfo samplerInfo = initializers::samplerCreateInfo();
 	samplerInfo.magFilter = VK_FILTER_LINEAR;
 	samplerInfo.minFilter = VK_FILTER_LINEAR;
 	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -566,12 +546,7 @@ void VulkanApp::transitionImageLayout(VkImage image, VkFormat format, VkImageLay
 
 	vkCmdPipelineBarrier(
 		commandBuffer,
-		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-		0,
-		0, nullptr,
-		0, nullptr,
-		1, &barrier
-	);
+		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
 	endSingleTimeCommands(commandBuffer);
 }
@@ -588,11 +563,7 @@ void VulkanApp::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width
 	region.imageSubresource.baseArrayLayer = 0;
 	region.imageSubresource.layerCount = 1;
 	region.imageOffset = { 0, 0, 0 };
-	region.imageExtent = {
-		width,
-		height,
-		1
-	};
+	region.imageExtent = {width, height, 1};
 
 	vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
@@ -601,101 +572,145 @@ void VulkanApp::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width
 
 //17
 void VulkanApp::createUniformBuffers() {
-	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &uniformVulkanBufferA, sizeof(UniformBufferObject));
-	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &uniformVulkanBufferB, sizeof(UniformBufferObject));
-	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &uniformVulkanBufferC, sizeof(UniformBufferObject));
+	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &cameraInfoBuffer, sizeof(CameraBufferObject));
+	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &lightsInfoBuffer, sizeof(LightsBufferObject));
+	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &cubeUniformBuffer, sizeof(ModelBufferObject));
+	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &terrainUniformBuffer, sizeof(ModelBufferObject)*terrainCount);
+	
+	ModelBufferObject ubo = {};
+	ubo.model = glm::mat4();
+	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 
+	terrainUniformBuffer.map(vulkanDevice.device, sizeof(ModelBufferObject), 0);
+	terrainUniformBuffer.copyTo(&ubo, sizeof(ubo));
+	terrainUniformBuffer.unmap();
+
+	//ubo.model = glm::translate(glm::mat4(), glm::vec3(50, 0, 0));
+	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
+
+	terrainUniformBuffer.map(vulkanDevice.device, sizeof(ModelBufferObject), 1* sizeof(ModelBufferObject));
+	terrainUniformBuffer.copyTo(&ubo, sizeof(ubo));
+	terrainUniformBuffer.unmap();
+
+	//ubo.model = glm::translate(glm::mat4(), glm::vec3(0, 0, 50));
+	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
+
+	terrainUniformBuffer.map(vulkanDevice.device, sizeof(ModelBufferObject), 2 * sizeof(ModelBufferObject));
+	terrainUniformBuffer.copyTo(&ubo, sizeof(ubo));
+	terrainUniformBuffer.unmap();
+
+	//ubo.model = glm::translate(glm::mat4(), glm::vec3(50, 0, 50));
+	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
+	
+	terrainUniformBuffer.map(vulkanDevice.device, sizeof(ModelBufferObject), 3 * sizeof(ModelBufferObject));
+	terrainUniformBuffer.copyTo(&ubo, sizeof(ubo));
+	terrainUniformBuffer.unmap();
+}
+
+//9 also creates the pipeline layout
+void VulkanApp::createDescriptorSetLayout() {
+	VkDescriptorSetLayoutBinding cboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1);
+
+	VkDescriptorSetLayoutBinding uboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1, 1);
+
+	VkDescriptorSetLayoutBinding lboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1);
+
+	VkDescriptorSetLayoutBinding samplerLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1);
+
+
+	std::vector<VkDescriptorSetLayoutBinding> bindings = { cboLayoutBinding, uboLayoutBinding, lboLayoutBinding, samplerLayoutBinding };
+	VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
+
+	if (vkCreateDescriptorSetLayout(vulkanDevice.device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create descriptor set layout!");
+	}
 }
 
 //18
 void VulkanApp::createDescriptorPool() {
-	std::array<VkDescriptorPoolSize, 2> poolSizes = {};
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = 1;
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[1].descriptorCount = 1;
+	std::vector<VkDescriptorPoolSize> poolSizes;
+	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2));
+	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2));
+	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2));
+	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2));
 
-	VkDescriptorPoolCreateInfo poolInfo = initializers::descriptorPoolCreateInfo(static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), 1/*max sets*/);
+	VkDescriptorPoolCreateInfo poolInfo = 
+		initializers::descriptorPoolCreateInfo(
+			static_cast<uint32_t>(poolSizes.size()),
+			poolSizes.data(),
+			2);
 
-	if (vkCreateDescriptorPool(vulkanDevice.device, &poolInfo, nullptr, &descriptorPoolA) != VK_SUCCESS) {
+	if (vkCreateDescriptorPool(vulkanDevice.device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool!");
 	}
 
-	std::array<VkDescriptorPoolSize, 2> poolSizesB = {};
-	poolSizesB[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizesB[0].descriptorCount = 1;
-	poolSizesB[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizesB[1].descriptorCount = 1;
+	std::vector<VkDescriptorPoolSize> poolSizesTerrain;
+	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, terrainCount));
+	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, terrainCount));
+	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, terrainCount));
+	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, terrainCount));
 
-	VkDescriptorPoolCreateInfo poolInfoB = initializers::descriptorPoolCreateInfo(static_cast<uint32_t>(poolSizesB.size()), poolSizesB.data(), 1/*max sets*/);
+	VkDescriptorPoolCreateInfo poolInfoTerrain =
+		initializers::descriptorPoolCreateInfo(
+			static_cast<uint32_t>(poolSizes.size()),
+			poolSizes.data(),
+			terrainCount);
 
-	if (vkCreateDescriptorPool(vulkanDevice.device, &poolInfoB, nullptr, &descriptorPoolB) != VK_SUCCESS) {
+	if (vkCreateDescriptorPool(vulkanDevice.device, &poolInfoTerrain, nullptr, &descriptorPoolTerrain) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool!");
 	}
 }
 
 //19
-void VulkanApp::createDescriptorSet(VkDescriptorSet& descriptorSet) {
+void VulkanApp::createDescriptorSets() {
 	//terrain
 	VkDescriptorSetLayout layouts[] = { descriptorSetLayout };
-	VkDescriptorSetAllocateInfo allocInfo = initializers::descriptorSetAllocateInfo(descriptorPoolA, layouts, 1);
+	VkDescriptorSetAllocateInfo allocInfo =	initializers::descriptorSetAllocateInfo(
+			descriptorPool,
+			layouts,
+			1);
 
 	if (vkAllocateDescriptorSets(vulkanDevice.device, &allocInfo, &descriptorSetA) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate descriptor set!");
 	}
 
-	uniformVulkanBufferA.setupDescriptor();
+	cameraInfoBuffer.setupDescriptor();
+	lightsInfoBuffer.setupDescriptor();
+	cubeUniformBuffer.setupDescriptor();
 
-	std::array<VkWriteDescriptorSet, 2> descriptorWritesA = {};
-
-	descriptorWritesA[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWritesA[0].dstSet = descriptorSetA;
-	descriptorWritesA[0].dstBinding = 0;
-	descriptorWritesA[0].dstArrayElement = 0;
-	descriptorWritesA[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorWritesA[0].descriptorCount = 1;
-	descriptorWritesA[0].pBufferInfo = &uniformVulkanBufferA.descriptor;
-					
-	descriptorWritesA[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWritesA[1].dstSet = descriptorSetA;
-	descriptorWritesA[1].dstBinding = 1;
-	descriptorWritesA[1].dstArrayElement = 0;
-	descriptorWritesA[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorWritesA[1].descriptorCount = 1;
-	descriptorWritesA[1].pImageInfo = &grassTexture.descriptor;
+	std::vector<VkWriteDescriptorSet> descriptorWritesA;
+	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &cameraInfoBuffer.descriptor, 1));
+	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &cubeUniformBuffer.descriptor, 1));
+	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lightsInfoBuffer.descriptor, 1));
+	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &statueFace.descriptor, 1));
 
 	vkUpdateDescriptorSets(vulkanDevice.device, static_cast<uint32_t>(descriptorWritesA.size()), descriptorWritesA.data(), 0, nullptr);
 
-	//cube
+	//terrain
 
-	VkDescriptorSetLayout layoutsB[] = { descriptorSetLayout };
-	VkDescriptorSetAllocateInfo allocInfoB = initializers::descriptorSetAllocateInfo(descriptorPoolB, layoutsB, 1);
+	VkDescriptorSetLayout layoutsTerrain[] = { descriptorSetLayout};
+	VkDescriptorSetAllocateInfo allocInfoTerrain = initializers::descriptorSetAllocateInfo(
+		descriptorPoolTerrain,
+		layoutsTerrain,
+		1);
 
-	if (vkAllocateDescriptorSets(vulkanDevice.device, &allocInfoB, &descriptorSetB) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate descriptor set!");
+	descriptorSetTerrain.resize(terrainCount);
+
+	for (int i = 0; i < terrainCount; i++)
+	{
+		if (vkAllocateDescriptorSets(vulkanDevice.device, &allocInfoTerrain, &descriptorSetTerrain[i]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate descriptor set!");
+		}
+		terrainUniformBuffer.setupDescriptor(sizeof(ModelBufferObject), i* sizeof(ModelBufferObject));
+
+		std::vector<VkWriteDescriptorSet> descriptorWritesB;
+		descriptorWritesB.push_back(initializers::writeDescriptorSet(descriptorSetTerrain[i], VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &cameraInfoBuffer.descriptor, 1));
+		descriptorWritesB.push_back(initializers::writeDescriptorSet(descriptorSetTerrain[i], VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &terrainUniformBuffer.descriptor, 1));
+		descriptorWritesB.push_back(initializers::writeDescriptorSet(descriptorSetTerrain[i], VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lightsInfoBuffer.descriptor, 1));
+		descriptorWritesB.push_back(initializers::writeDescriptorSet(descriptorSetTerrain[i], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &grassTexture.descriptor, 1));
+
+		vkUpdateDescriptorSets(vulkanDevice.device, static_cast<uint32_t>(descriptorWritesB.size()), descriptorWritesB.data(), 0, nullptr);
 	}
-
-	uniformVulkanBufferB.setupDescriptor();
-
-	std::array<VkWriteDescriptorSet, 2> descriptorWritesB = {};
-
-	descriptorWritesB[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWritesB[0].dstSet = descriptorSetB;
-	descriptorWritesB[0].dstBinding = 0;
-	descriptorWritesB[0].dstArrayElement = 0;
-	descriptorWritesB[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorWritesB[0].descriptorCount = 1;
-	descriptorWritesB[0].pBufferInfo = &uniformVulkanBufferB.descriptor;
-					
-	descriptorWritesB[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWritesB[1].dstSet = descriptorSetB;
-	descriptorWritesB[1].dstBinding = 1;
-	descriptorWritesB[1].dstArrayElement = 0;
-	descriptorWritesB[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorWritesB[1].descriptorCount = 1;
-	descriptorWritesB[1].pImageInfo = &statueFace.descriptor;
-
-	vkUpdateDescriptorSets(vulkanDevice.device, static_cast<uint32_t>(descriptorWritesB.size()), descriptorWritesB.data(), 0, nullptr);
 }
 
 void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
@@ -789,26 +804,27 @@ void VulkanApp::createCommandBuffers() {
 
 		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSetB, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSetA, 0, nullptr);
 
 		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? wireframePipeline : graphicsPipeline);
 		
-		//first mesh
+		//cube mesh
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &cube.vertices.buffer, offsets);
 		vkCmdBindIndexBuffer(commandBuffers[i], cube.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 		
 		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(cube.indexCount), 1, 0, 0, 0);
 
-		//terrain mesh
+		//terrain meshes
+		for (int j = 0; j < terrain.size(); j++) {
 
-		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSetA, 0, nullptr);
-
-		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &terrain.vertices.buffer, offsets);
-		vkCmdBindIndexBuffer(commandBuffers[i], terrain.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-		
-		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(terrain.indexCount), 1, 0, 0, 0);
-
+			vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSetTerrain[j], 0, nullptr);
+			
+			vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &terrain[j].vertices.buffer, offsets);
+			vkCmdBindIndexBuffer(commandBuffers[i], terrain[j].indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+			
+			vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(terrain[j].indexCount), 1, 0, 0, 0);
+		}
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -843,34 +859,103 @@ VkPipelineShaderStageCreateInfo VulkanApp::loadShader(std::string fileName, VkSh
 	return shaderStage;
 }
 
-void VulkanApp::updateUniformBuffers() {
-	static auto startTime = std::chrono::high_resolution_clock::now();
+void  VulkanApp::prepareImGui()
+{
+	//imGui = new ImGUI();
+	//imGui->init((float)WIDTH, (float)HEIGHT);
+	//imGui->initResources(renderPass, vulkanDevice.graphics_queue);
+}
 
+void VulkanApp::updateImGui() {
+	//ImGuiIO& io = ImGui::GetIO();
+	//
+	//io.DisplaySize = ImVec2((float)WIDTH, (float)HEIGHT);
+	//io.DeltaTime = deltaTime;
+	//
+	//io.MousePos = ImVec2(lastX, lastY);
+	//io.MouseDown[0] = (((glfwGetMouseButton(vulkanDevice.window,GLFW_MOUSE_BUTTON_1)) != 0));
+	//io.MouseDown[1] = (((glfwGetMouseButton(vulkanDevice.window,GLFW_MOUSE_BUTTON_2)) != 0));
+}
+
+void VulkanApp::newGuiFrame() {
+	// Starts a new imGui frame and sets up windows and ui elements
+	
+	
+	//ImGui::NewFrame();
+
+	// Init imGui windows and elements
+
+	//ImVec4 clear_color = ImColor(114, 144, 154);
+	//static float f = 0.0f;
+	//ImGui::Text("window title");
+	//ImGui::Text("graphics card");
+	//
+	//// Update frame time display
+	//if (false) {
+	//	/*std::rotate(uiSettings.frameTimes.begin(), uiSettings.frameTimes.begin() + 1, uiSettings.frameTimes.end());
+	//	float frameTime = 1000.0f / (example->frameTimer * 1000.0f);
+	//	uiSettings.frameTimes.back() = frameTime;
+	//	if (frameTime < uiSettings.frameTimeMin) {
+	//		uiSettings.frameTimeMin = frameTime;
+	//	}
+	//	if (frameTime > uiSettings.frameTimeMax) {
+	//		uiSettings.frameTimeMax = frameTime;
+	//	}*/
+	//}
+	//
+	////ImGui::PlotLines("Frame Times", &uiSettings.frameTimes[0], 50, 0, "", uiSettings.frameTimeMin, uiSettings.frameTimeMax, ImVec2(0, 80));
+	//
+	//ImGui::Text("Camera");
+	//ImGui::InputFloat3("position", &camera->Position.x, 2);
+	//ImGui::InputFloat3("rotation", &camera->Front.x, 2);
+	//
+	//ImGui::SetNextWindowSize(ImVec2(200, 200), ImGuiSetCond_FirstUseEver);
+	//ImGui::Begin("Example settings");
+	////ImGui::Checkbox("Render models", &uiSettings.displayModels);
+	////ImGui::Checkbox("Display logos", &uiSettings.displayLogos);
+	////ImGui::Checkbox("Display background", &uiSettings.displayBackground);
+	////ImGui::Checkbox("Animate light", &uiSettings.animateLight);
+	////ImGui::SliderFloat("Light speed", &uiSettings.lightSpeed, 0.1f, 1.0f);
+	//ImGui::End();
+	//
+	//ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
+	//ImGui::ShowTestWindow();
+	//
+	//// Render to generate draw buffers
+	//ImGui::Render();
+	
+}
+
+void VulkanApp::updateUniformBuffers() {
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
+	//std::cout << "Frame: " << frameCount << " at time = " << time << std::endl;
 
-	UniformBufferObject ubo = {};
+	ModelBufferObject ubo = {};
 	ubo.model = glm::mat4();
-	ubo.view = camera->GetViewMatrix();
-	ubo.proj = glm::perspective(glm::radians(45.0f), vulkanSwapChain.swapChainExtent.width / (float)vulkanSwapChain.swapChainExtent.height, 0.1f, 1000.0f);
-	ubo.proj[1][1] *= -1;
-	
-	ubo.lightPos = glm::vec4(50.0f + glm::sin(time)*20.0f, 25.0f, 50.0f + glm::cos(time)*20.0f, 1.0f);
-
-	uniformVulkanBufferA.map(vulkanDevice.device);
-	uniformVulkanBufferA.copyTo(&ubo, sizeof(ubo));
-	uniformVulkanBufferA.unmap();
-
+	ubo.model = glm::translate(ubo.model, glm::vec3(50, 0, 0));
 	ubo.model = glm::rotate(ubo.model, time/2.0f, glm::vec3(0.5,1,0));
+	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 
-	uniformVulkanBufferB.map(vulkanDevice.device);
-	uniformVulkanBufferB.copyTo(&ubo, sizeof(ubo));
-	uniformVulkanBufferB.unmap();
+	cubeUniformBuffer.map(vulkanDevice.device);
+	cubeUniformBuffer.copyTo(&ubo, sizeof(ubo));
+	cubeUniformBuffer.unmap();
 
-	uniformVulkanBufferC.map(vulkanDevice.device);
-	uniformVulkanBufferC.copyTo(&ubo, sizeof(ubo));
-	uniformVulkanBufferC.unmap();
+	CameraBufferObject cbo = {};
+	cbo.view = camera->GetViewMatrix();
+	cbo.proj = glm::perspective(glm::radians(45.0f), vulkanSwapChain.swapChainExtent.width / (float)vulkanSwapChain.swapChainExtent.height, 0.1f, 1000.0f);
+	cbo.proj[1][1] *= -1;
 
+	cameraInfoBuffer.map(vulkanDevice.device);
+	cameraInfoBuffer.copyTo(&cbo, sizeof(cbo));
+	cameraInfoBuffer.unmap();
+
+	LightsBufferObject lbo = {};
+	lbo.lightPos = glm::vec4(50.0f + glm::sin(time)*20.0f, 25.0f, 50.0f + glm::cos(time)*20.0f, 1.0f);
+
+	lightsInfoBuffer.map(vulkanDevice.device);
+	lightsInfoBuffer.copyTo(&lbo, sizeof(lbo));
+	lightsInfoBuffer.unmap();
 }
 
 void VulkanApp::HandleInputs() {
@@ -902,7 +987,7 @@ void VulkanApp::KeyboardEvent(int key, int scancode, int action, int mods) {
 		camera->ChangeCameraSpeed(UP);
 	if (key == GLFW_KEY_Q )
 		camera->ChangeCameraSpeed(DOWN);
-	std::cout << camera->MovementSpeed << std::endl;
+	//std::cout << camera->MovementSpeed << std::endl;
 	if (key == GLFW_KEY_X  && action == GLFW_PRESS) {
 		wireframe = !wireframe;
 		reBuildCommandBuffers();
