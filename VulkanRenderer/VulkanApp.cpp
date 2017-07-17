@@ -92,7 +92,7 @@ void VulkanApp::prepareScene(){
 		for (int j = 0; j < terrainCount/2; j++)
 		{
 			float width = 50;
-			Terrain newTer = Terrain(250, i*width, j*width, width, width);
+			Terrain newTer = Terrain(50, i*width, j*width, width, width);
 			terrains.push_back(newTer);
 			VulkanModel newModel = VulkanModel();
 			newModel.loadFromMesh(newTer.mesh, vulkanDevice, vulkanDevice.graphics_queue);
@@ -107,6 +107,13 @@ void VulkanApp::prepareScene(){
 
 	cubeTexture.loadFromTexture(cubeTex, VK_FORMAT_R8G8B8A8_UNORM, &vulkanDevice, vulkanDevice.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 	grassTexture.loadFromTexture(grassTex, VK_FORMAT_R8G8B8A8_UNORM, &vulkanDevice, vulkanDevice.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+	pointLights.resize(5);
+	pointLights[0] = PointLight(glm::vec4(0, 10, 0, 1), glm::vec4(1, 1, 1, 1), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	pointLights[1] = PointLight(glm::vec4(10, 10, 50, 1), glm::vec4(0, 1, 0, 1), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	pointLights[2] = PointLight(glm::vec4(50, 10, 10, 1), glm::vec4(0, 0, 1, 1), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	pointLights[3] = PointLight(glm::vec4(50, 10, 50, 1), glm::vec4(1, 0, 0, 1), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(1, 0, 1, 1), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 
 	createUniformBuffers();
 	
@@ -587,10 +594,22 @@ void VulkanApp::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width
 //17
 void VulkanApp::createUniformBuffers() {
 	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &cameraInfoBuffer, sizeof(CameraBufferObject));
-	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &lightsInfoBuffer, sizeof(LightsBufferObject));
+	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &lightsInfoBuffer, sizeof(PointLight) * pointLights.size());
 	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &cubeUniformBuffer, sizeof(ModelBufferObject));
 	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &terrainUniformBuffer, sizeof(ModelBufferObject)*terrainCount);
 	
+	for (int i = 0; i < pointLights.size(); i++)
+	{
+		PointLight lbo;
+		lbo.lightPos = pointLights[i].lightPos;
+		lbo.color = pointLights[i].color;
+		lbo.attenuation = pointLights[i].attenuation;
+
+		lightsInfoBuffer.map(vulkanDevice.device, sizeof(PointLight), i * sizeof(PointLight));
+		lightsInfoBuffer.copyTo(&lbo, sizeof(lbo));
+		lightsInfoBuffer.unmap();
+	}
+
 	for (int i = 0; i < terrainCount; i++)
 	{
 		ModelBufferObject ubo = {};
@@ -945,13 +964,6 @@ void VulkanApp::updateUniformBuffers() {
 	cameraInfoBuffer.map(vulkanDevice.device);
 	cameraInfoBuffer.copyTo(&cbo, sizeof(cbo));
 	cameraInfoBuffer.unmap();
-
-	LightsBufferObject lbo = {};
-	lbo.lightPos = glm::vec4(50.0f + glm::sin(time)*20.0f, 25.0f, 50.0f + glm::cos(time)*20.0f, 1.0f);
-
-	lightsInfoBuffer.map(vulkanDevice.device);
-	lightsInfoBuffer.copyTo(&lbo, sizeof(lbo));
-	lightsInfoBuffer.unmap();
 }
 
 void VulkanApp::HandleInputs() {

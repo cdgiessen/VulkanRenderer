@@ -45,9 +45,13 @@ struct ModelBufferObject {
 	glm::mat4 normal;
 };
 
-struct LightsBufferObject {
+struct PointLight {
 	glm::vec4 lightPos = glm::vec4(50.0f, 25.0f, 50.0f, 1.0f);
 	glm::vec4 color = glm::vec4(1.0, 1.0, 1.0f, 1.0f);
+	glm::vec4 attenuation = glm::vec4(1.0, 0.007f, 0.0002f, 1.0f);
+
+	PointLight() {};
+	PointLight(glm::vec4 pos, glm::vec4 col, glm::vec4 atten) : lightPos(pos), color(col), attenuation(atten) {};
 };
 
 class VulkanApp
@@ -124,6 +128,7 @@ private:
 	int terrainCount = 4;
 	std::vector<Terrain> terrains;
 	std::vector<VulkanModel> terrainModels;
+	std::vector<PointLight> pointLights;
 
 	VulkanModel cube;
 	VulkanTexture2D cubeTexture;

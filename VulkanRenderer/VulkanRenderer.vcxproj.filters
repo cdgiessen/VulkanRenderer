@@ -24,16 +24,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\frag.spv">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\shader.frag">
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\shader.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\vert.spv">
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\compile.bat">
