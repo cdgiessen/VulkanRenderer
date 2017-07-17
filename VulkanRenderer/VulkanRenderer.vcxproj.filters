@@ -150,5 +150,8 @@
     <Image Include="Resources\Textures\lowPolyScatter.png">
       <Filter>Resources\Textures</Filter>
     </Image>
+    <Image Include="Resources\Textures\TileableWaterTexture.jpg">
+      <Filter>Shaders</Filter>
+    </Image>
   </ItemGroup>
 </Project>
