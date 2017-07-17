@@ -131,8 +131,10 @@ private:
 	std::vector<PointLight> pointLights;
 
 	VulkanModel cube;
+	VulkanModel waterPlane;
 	VulkanTexture2D cubeTexture;
 	VulkanTexture2D grassTexture;
+	VulkanTexture2D waterTexture;
 	Camera* camera;
 
 	//ImGUI *imGui = nullptr;
@@ -146,6 +148,7 @@ private:
 	VkPipelineCache pipelineCache;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
+	VkPipeline waterPipeline;
 	VkPipeline wireframePipeline;
 
 	VkImage depthImage; 
@@ -156,12 +159,15 @@ private:
 	VulkanBuffer lightsInfoBuffer;
 	VulkanBuffer cubeUniformBuffer;
 	VulkanBuffer terrainUniformBuffer;
+	VulkanBuffer waterUniformBuffer;
 
 
 	VkDescriptorPool descriptorPool;
 	VkDescriptorSet descriptorSetA;
 	VkDescriptorPool descriptorPoolTerrain;
 	std::vector<VkDescriptorSet> descriptorSetTerrain;
+	VkDescriptorPool descriptorPoolWater;
+	VkDescriptorSet descriptorSetWater;
 
 	std::vector<VkCommandBuffer> commandBuffers;
 

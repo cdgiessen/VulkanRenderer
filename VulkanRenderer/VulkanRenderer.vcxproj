@@ -36,6 +36,8 @@
     <None Include="Shaders\ui.frag.spv" />
     <None Include="Shaders\ui.vert" />
     <None Include="Shaders\ui.vert.spv" />
+    <None Include="Shaders\water.frag" />
+    <None Include="Shaders\water.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />

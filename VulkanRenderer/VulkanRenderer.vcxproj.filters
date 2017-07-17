@@ -54,6 +54,12 @@
     <None Include="Resources\Models\OakTree3.fbx">
       <Filter>Resources\Models</Filter>
     </None>
+    <None Include="Shaders\water.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\water.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

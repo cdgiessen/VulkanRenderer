@@ -15,7 +15,7 @@ layout(binding = 2) uniform PointLightsBuffer {
 } plb;
 
 //texture sampling
-layout(binding = 3) uniform sampler2D texSampler;
+layout(binding = 3) uniform sampler2D waterTex;
 
 layout(location = 0) in vec3 inNormal;
 layout(location = 1) in vec2 inTexCoord;
@@ -25,7 +25,7 @@ layout(location = 3) in vec3 inFragPos;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-	vec4 texColor = texture(texSampler, inTexCoord);
+	vec4 texColor = texture(waterTex, inTexCoord);
 	vec3 viewVec = normalize(-inFragPos);
 
 	vec3 N = normalize(inNormal);
