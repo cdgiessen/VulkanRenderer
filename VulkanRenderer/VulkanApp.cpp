@@ -87,17 +87,26 @@ void VulkanApp::initVulkan() {
 
 void VulkanApp::prepareScene(){
 	cube.loadFromMesh(createCube(), vulkanDevice, vulkanDevice.graphics_queue);
-	terrain.push_back(VulkanModel()); terrain.push_back(VulkanModel());	terrain.push_back(VulkanModel()); terrain.push_back(VulkanModel());
-	terrain[0].loadFromMesh(createFlatPlane(50, 0, 50, 0, 50), vulkanDevice, vulkanDevice.graphics_queue);
-	terrain[1].loadFromMesh(createFlatPlane(50, 50, 100, 0, 50), vulkanDevice, vulkanDevice.graphics_queue);
-	terrain[2].loadFromMesh(createFlatPlane(50, 0, 50, 50, 100), vulkanDevice, vulkanDevice.graphics_queue);
-	terrain[3].loadFromMesh(createFlatPlane(50, 50, 100, 50, 100), vulkanDevice, vulkanDevice.graphics_queue);
+	for (int i = 0; i < terrainCount/2; i++)
+	{
+		for (int j = 0; j < terrainCount/2; j++)
+		{
+			float width = 50;
+			Terrain newTer = Terrain(250, i*width, j*width, width, width);
+			terrains.push_back(newTer);
+			VulkanModel newModel = VulkanModel();
+			newModel.loadFromMesh(newTer.mesh, vulkanDevice, vulkanDevice.graphics_queue);
+			terrainModels.push_back(newModel);
+		}
+	}
 
-	statueFace.loadFromFile("Resources/Textures/ColorGradientCube.png", VK_FORMAT_R8G8B8A8_UNORM, &vulkanDevice, vulkanDevice.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-	grassTexture.loadFromFile("Resources/Textures/lowPolyScatter.png", VK_FORMAT_R8G8B8A8_UNORM, &vulkanDevice, vulkanDevice.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+	Texture* cubeTex = new Texture();
+	cubeTex->loadFromFile("Resources/Textures/ColorGradientCube.png");
+	Texture* grassTex = new Texture();
+	grassTex->loadFromFile("Resources/Textures/lowPolyScatter.png");
 
-	Mesh* test = new Mesh(); 
-	test->importFromFile("Resources/Models/OakTree3.fbx");
+	cubeTexture.loadFromTexture(cubeTex, VK_FORMAT_R8G8B8A8_UNORM, &vulkanDevice, vulkanDevice.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+	grassTexture.loadFromTexture(grassTex, VK_FORMAT_R8G8B8A8_UNORM, &vulkanDevice, vulkanDevice.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 
 	createUniformBuffers();
 	
@@ -124,10 +133,15 @@ void VulkanApp::cleanup() {
 	//delete imGui;
 
 	cube.destroy();
-	for each(VulkanModel model in terrain) {
+	for each(VulkanModel model in terrainModels) {
 		model.destroy();
 	}
-	statueFace.destroy();
+	for each(Terrain ter in terrains) {
+		ter.mesh->~Mesh();
+	}
+
+	cubeTexture.destroy();
+	grassTexture.destroy();
 
 	cleanupSwapChain();
 
@@ -577,34 +591,16 @@ void VulkanApp::createUniformBuffers() {
 	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &cubeUniformBuffer, sizeof(ModelBufferObject));
 	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &terrainUniformBuffer, sizeof(ModelBufferObject)*terrainCount);
 	
-	ModelBufferObject ubo = {};
-	ubo.model = glm::mat4();
-	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
+	for (int i = 0; i < terrainCount; i++)
+	{
+		ModelBufferObject ubo = {};
+		ubo.model = glm::translate(glm::mat4(), terrains[i].pos);
+		ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 
-	terrainUniformBuffer.map(vulkanDevice.device, sizeof(ModelBufferObject), 0);
-	terrainUniformBuffer.copyTo(&ubo, sizeof(ubo));
-	terrainUniformBuffer.unmap();
-
-	//ubo.model = glm::translate(glm::mat4(), glm::vec3(50, 0, 0));
-	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
-
-	terrainUniformBuffer.map(vulkanDevice.device, sizeof(ModelBufferObject), 1* sizeof(ModelBufferObject));
-	terrainUniformBuffer.copyTo(&ubo, sizeof(ubo));
-	terrainUniformBuffer.unmap();
-
-	//ubo.model = glm::translate(glm::mat4(), glm::vec3(0, 0, 50));
-	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
-
-	terrainUniformBuffer.map(vulkanDevice.device, sizeof(ModelBufferObject), 2 * sizeof(ModelBufferObject));
-	terrainUniformBuffer.copyTo(&ubo, sizeof(ubo));
-	terrainUniformBuffer.unmap();
-
-	//ubo.model = glm::translate(glm::mat4(), glm::vec3(50, 0, 50));
-	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
-	
-	terrainUniformBuffer.map(vulkanDevice.device, sizeof(ModelBufferObject), 3 * sizeof(ModelBufferObject));
-	terrainUniformBuffer.copyTo(&ubo, sizeof(ubo));
-	terrainUniformBuffer.unmap();
+		terrainUniformBuffer.map(vulkanDevice.device, sizeof(ModelBufferObject), i * sizeof(ModelBufferObject));
+		terrainUniformBuffer.copyTo(&ubo, sizeof(ubo));
+		terrainUniformBuffer.unmap();
+	}
 }
 
 //9 also creates the pipeline layout
@@ -682,7 +678,7 @@ void VulkanApp::createDescriptorSets() {
 	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &cameraInfoBuffer.descriptor, 1));
 	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &cubeUniformBuffer.descriptor, 1));
 	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lightsInfoBuffer.descriptor, 1));
-	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &statueFace.descriptor, 1));
+	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &cubeTexture.descriptor, 1));
 
 	vkUpdateDescriptorSets(vulkanDevice.device, static_cast<uint32_t>(descriptorWritesA.size()), descriptorWritesA.data(), 0, nullptr);
 
@@ -816,14 +812,14 @@ void VulkanApp::createCommandBuffers() {
 		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(cube.indexCount), 1, 0, 0, 0);
 
 		//terrain meshes
-		for (int j = 0; j < terrain.size(); j++) {
+		for (int j = 0; j < terrainModels.size(); j++) {
 
 			vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSetTerrain[j], 0, nullptr);
 			
-			vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &terrain[j].vertices.buffer, offsets);
-			vkCmdBindIndexBuffer(commandBuffers[i], terrain[j].indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &terrainModels[j].vertices.buffer, offsets);
+			vkCmdBindIndexBuffer(commandBuffers[i], terrainModels[j].indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 			
-			vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(terrain[j].indexCount), 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(terrainModels[j].indexCount), 1, 0, 0, 0);
 		}
 
 		vkCmdEndRenderPass(commandBuffers[i]);
@@ -933,7 +929,7 @@ void VulkanApp::updateUniformBuffers() {
 
 	ModelBufferObject ubo = {};
 	ubo.model = glm::mat4();
-	ubo.model = glm::translate(ubo.model, glm::vec3(50, 0, 0));
+	//ubo.model = glm::translate(ubo.model, glm::vec3(50, 0, 0));
 	ubo.model = glm::rotate(ubo.model, time/2.0f, glm::vec3(0.5,1,0));
 	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 

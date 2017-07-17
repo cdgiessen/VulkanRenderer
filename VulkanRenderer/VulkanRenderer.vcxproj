@@ -54,6 +54,8 @@
     <ClInclude Include="ImGuiImpl.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="noiseutils.h" />
+    <ClInclude Include="Terrain.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="VulkanBuffer.hpp" />
     <ClInclude Include="VulkanDevice.hpp" />
     <ClInclude Include="VulkanTexture.hpp" />

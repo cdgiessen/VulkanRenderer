@@ -44,7 +44,7 @@ public:
 		vertexBuffer.resize(vertexCount * 11);
 		for (int i = 0; i < (int)vertexCount; i++)
 		{
-			vertexBuffer[i * 11]		= mesh->vertices[i].pos[0];
+			vertexBuffer[i * 11]	 = mesh->vertices[i].pos[0];
 			vertexBuffer[i * 11 + 1] = mesh->vertices[i].pos[1];
 			vertexBuffer[i * 11 + 2] = mesh->vertices[i].pos[2];
 			vertexBuffer[i * 11 + 3] = mesh->vertices[i].normal[0];

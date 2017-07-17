@@ -29,6 +29,7 @@
 //#include <imgui.h>
 #include "Mesh.h"
 #include "Camera.h"
+#include "Terrain.h"
 
 const int WIDTH = 1000;
 const int HEIGHT = 800;
@@ -121,9 +122,11 @@ private:
 	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
 
 	int terrainCount = 4;
-	std::vector<VulkanModel> terrain;
+	std::vector<Terrain> terrains;
+	std::vector<VulkanModel> terrainModels;
+
 	VulkanModel cube;
-	VulkanTexture2D statueFace;
+	VulkanTexture2D cubeTexture;
 	VulkanTexture2D grassTexture;
 	Camera* camera;
 

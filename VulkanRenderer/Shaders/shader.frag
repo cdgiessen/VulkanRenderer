@@ -31,8 +31,17 @@ void main() {
 	//vec3 R = reflect(-L, N);
 	vec3 H = normalize(viewVec + lightVec);
 
+	vec3 dirLight = normalize(vec3(0,60,25));
+	vec3 dirReflected = reflect(dirLight, N);
+	vec3 dirDiffuse = max(dot(N, dirLight),0.0f)* vec3(1.0f);
+	vec3 dirSpecular = pow(max(dot(dirReflected, viewVec), 0.0), 16.0f)* vec3(1.0f);
+	vec3 dirContrib = (dirDiffuse + dirSpecular)* vec3(0.75f);
+
 	vec3 diffuse = max(dot(N, L), 0.0) * vec3(1.0f);
 	vec3 specular = pow(max(dot(N, H), 0.0), 16.0) * vec3(1.0f);
-    outColor = texColor * vec4((diffuse + specular) * attenuation * inColor, 1.0f);
+	vec3 pointContrib = (diffuse + specular) * attenuation;
+
+    outColor = texColor * vec4((pointContrib + dirContrib) * inColor, 1.0f);
 	//outColor = texColor * vec4(inColor, 1.0f);
+	
 }
