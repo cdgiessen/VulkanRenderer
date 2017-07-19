@@ -102,7 +102,7 @@ public:
 	void copyTo(void* data, VkDeviceSize size)
 	{
 		assert(mapped);
-		memcpy(mapped, data, size);
+		memcpy(mapped, data, (size_t)size);
 	}
 
 	/**

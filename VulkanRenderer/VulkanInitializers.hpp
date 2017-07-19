@@ -371,6 +371,17 @@ namespace initializers
 		return vInputAttribDescription;
 	}
 
+	inline VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo(
+		VkShaderStageFlagBits shaderStage, 
+		VkShaderModule module
+	) {
+		VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
+		shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shaderStageCreateInfo.stage = shaderStage;
+		shaderStageCreateInfo.module = module;
+		return shaderStageCreateInfo;
+	}
+
 	inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo()
 	{
 		VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};

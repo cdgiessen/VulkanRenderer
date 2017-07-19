@@ -5,6 +5,7 @@
 layout(binding = 0) uniform CameraUniformBuffer {
 	mat4 view;
 	mat4 proj;
+	float time; // in seconds
 } cbo;
 
 //per model information
@@ -22,6 +23,7 @@ layout(location = 0) out vec3 outNormal;
 layout(location = 1) out vec2 outTexCoord;
 layout(location = 2) out vec3 outColor;
 layout(location = 3) out vec3 outFragPos;
+layout(location = 4) out float outTime;
 
 out gl_PerVertex {
     vec4 gl_Position;
@@ -35,5 +37,5 @@ void main() {
 
 	outNormal = (ubo.normal * vec4(inNormal,1.0f)).xyz;
 	outFragPos = (ubo.model * vec4(inPosition, 1.0)).xyz;		
-
+	outTime = cbo.time;
 }

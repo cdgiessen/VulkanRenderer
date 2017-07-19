@@ -60,6 +60,24 @@
     <None Include="Shaders\water.frag">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\water.frag.spv">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\water.vert.spv">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\skybox.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\skybox.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\skybox.frag.spv">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\skybox.vert.spv">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -77,13 +95,25 @@
     <ClCompile Include="VulkanApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VulkanTools.cpp">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="noiseutils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Skybox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanDevice.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ImGuiImpl.cpp">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="noiseutils.cpp">
+    <ClCompile Include="VulkanTools.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanTexture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -98,9 +128,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Window.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VulkanDevice.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VulkanBuffer.hpp">
@@ -133,6 +160,12 @@
     <ClInclude Include="Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Skybox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanDevice.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resources\Textures\texture.jpg">
@@ -151,7 +184,25 @@
       <Filter>Resources\Textures</Filter>
     </Image>
     <Image Include="Resources\Textures\TileableWaterTexture.jpg">
-      <Filter>Shaders</Filter>
+      <Filter>Resources\Textures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\Skybox2Back.png">
+      <Filter>Resources\Textures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\Skybox2Bottom.png">
+      <Filter>Resources\Textures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\Skybox2Front.png">
+      <Filter>Resources\Textures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\Skybox2Left.png">
+      <Filter>Resources\Textures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\Skybox2Right.png">
+      <Filter>Resources\Textures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\Skybox2Top.png">
+      <Filter>Resources\Textures</Filter>
     </Image>
   </ItemGroup>
 </Project>

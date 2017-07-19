@@ -23,6 +23,12 @@
     <Image Include="Resources\Textures\grass.jpg" />
     <Image Include="Resources\Textures\lowPolyGrass.png" />
     <Image Include="Resources\Textures\lowPolyScatter.png" />
+    <Image Include="Resources\Textures\Skybox2Back.png" />
+    <Image Include="Resources\Textures\Skybox2Bottom.png" />
+    <Image Include="Resources\Textures\Skybox2Front.png" />
+    <Image Include="Resources\Textures\Skybox2Left.png" />
+    <Image Include="Resources\Textures\Skybox2Right.png" />
+    <Image Include="Resources\Textures\Skybox2Top.png" />
     <Image Include="Resources\Textures\texture.jpg" />
     <Image Include="Resources\Textures\TileableWaterTexture.jpg" />
   </ItemGroup>
@@ -33,18 +39,28 @@
     <None Include="Shaders\shader.frag.spv" />
     <None Include="Shaders\shader.vert" />
     <None Include="Shaders\shader.vert.spv" />
+    <None Include="Shaders\skybox.frag" />
+    <None Include="Shaders\skybox.frag.spv" />
+    <None Include="Shaders\skybox.vert" />
+    <None Include="Shaders\skybox.vert.spv" />
     <None Include="Shaders\ui.frag" />
     <None Include="Shaders\ui.frag.spv" />
     <None Include="Shaders\ui.vert" />
     <None Include="Shaders\ui.vert.spv" />
     <None Include="Shaders\water.frag" />
+    <None Include="Shaders\water.frag.spv" />
     <None Include="Shaders\water.vert" />
+    <None Include="Shaders\water.vert.spv" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ImGuiImpl.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="noiseutils.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="VulkanTexture.cpp" />
+    <ClCompile Include="VulkanDevice.cpp" />
+    <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="VulkanTools.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="main.cpp" />
@@ -55,6 +71,7 @@
     <ClInclude Include="ImGuiImpl.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="noiseutils.h" />
+    <ClInclude Include="Skybox.h" />
     <ClInclude Include="Terrain.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="VulkanBuffer.hpp" />

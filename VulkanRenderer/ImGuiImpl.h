@@ -1,3 +1,5 @@
+#pragma once
+
 //#include <glm\common.hpp>
 //
 //#include <vulkan\vulkan.h>

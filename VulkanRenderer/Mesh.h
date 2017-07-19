@@ -133,7 +133,7 @@ static glm::vec3 lerp(glm::vec3 a, glm::vec3 b, float t) {
 	return a + (b - a)*t;
 }
 
-static Mesh* generateTerrainMesh(int numCells, int xLoc, int yLoc, int xSize, int ySize) {
+static Mesh* generateTerrainMesh(int numCells, float xLoc, float yLoc, float xSize, float ySize) {
 	std::vector<Vertex> verts;
 	std::vector<uint16_t> indices;
 
@@ -176,10 +176,10 @@ static Mesh* generateTerrainMesh(int numCells, int xLoc, int yLoc, int xSize, in
 	{
 		for (int j = 0; j <= numCells; j++)
 		{
-			float hL = myModule.GetValue((double)(i + 1) *(xSize) / numCells + (xLoc), 0, (double)j *(ySize) / numCells + yLoc);
-			float hR = myModule.GetValue((double)(i - 1) *(xSize) / numCells + (xLoc), 0, (double)j *(ySize) / numCells + yLoc);
-			float hD = myModule.GetValue((double)i *(xSize) / numCells + (xLoc), 0, (double)(j + 1)*(ySize) / numCells + yLoc);
-			float hU = myModule.GetValue((double)i *(xSize) / numCells + (xLoc), 0, (double)(j - 1)*(ySize) / numCells + yLoc);
+			double hL = myModule.GetValue((double)(i + 1) *(xSize) / numCells + (xLoc), 0, (double)j *(ySize) / numCells + yLoc);
+			double hR = myModule.GetValue((double)(i - 1) *(xSize) / numCells + (xLoc), 0, (double)j *(ySize) / numCells + yLoc);
+			double hD = myModule.GetValue((double)i *(xSize) / numCells + (xLoc), 0, (double)(j + 1)*(ySize) / numCells + yLoc);
+			double hU = myModule.GetValue((double)i *(xSize) / numCells + (xLoc), 0, (double)(j - 1)*(ySize) / numCells + yLoc);
 			glm::vec3 normal(hR - hL, 1, hU - hD);
 
 			double value = (myModule.GetValue((double)i *(xSize) / numCells + (xLoc), 0.0, (double)j *(ySize) / numCells + (yLoc)));

@@ -21,11 +21,17 @@ layout(location = 0) in vec3 inNormal;
 layout(location = 1) in vec2 inTexCoord;
 layout(location = 2) in vec3 inColor;
 layout(location = 3) in vec3 inFragPos;
+layout(location = 4) in float inTime;
 
 layout(location = 0) out vec4 outColor;
 
+
 void main() {
-	vec4 texColor = texture(waterTex, inTexCoord);
+	vec4 texColor1 = texture(waterTex, vec2(inTexCoord.x, inTexCoord.y));
+	vec4 texColor2 = texture(waterTex, vec2(inTexCoord.x + 0.1f + sin(inTime/5.0f)/8.0f, inTexCoord.y + 0.1f + sin(inTime/4.0f)/6.0f));
+	vec4 texColor3 = texture(waterTex, vec2(inTexCoord.x , inTexCoord.y + sin(inTime/3.0f)/10.0f));
+	vec4 texColor = vec4(0.35)*(texColor1 + texColor2 + texColor3);
+	
 	vec3 viewVec = normalize(-inFragPos);
 
 	vec3 N = normalize(inNormal);

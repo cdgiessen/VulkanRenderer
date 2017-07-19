@@ -19,7 +19,7 @@
 #include <array>
 #include <set>
 
-#include "VulkanInitializers.hpp"
+
 #include "VulkanSwapChain.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanModel.hpp"
@@ -30,14 +30,16 @@
 #include "Mesh.h"
 #include "Camera.h"
 #include "Terrain.h"
+#include "Skybox.h"
 
 const int WIDTH = 1000;
 const int HEIGHT = 800;
 
 const float deltaTime = 0.016f;
-struct CameraBufferObject {
+struct GlobalVariableUniformBuffer {
 	glm::mat4 view;
 	glm::mat4 proj;
+	float time;
 };
 
 struct ModelBufferObject {
@@ -137,6 +139,8 @@ private:
 	VulkanTexture2D waterTexture;
 	Camera* camera;
 
+	Skybox* skybox;
+
 	//ImGUI *imGui = nullptr;
 
 	VulkanDevice vulkanDevice;
@@ -155,7 +159,7 @@ private:
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
 
-	VulkanBuffer cameraInfoBuffer;
+	VulkanBuffer globalVariableBuffer;
 	VulkanBuffer lightsInfoBuffer;
 	VulkanBuffer cubeUniformBuffer;
 	VulkanBuffer terrainUniformBuffer;

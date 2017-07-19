@@ -4,13 +4,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData) {
-	std::cerr << "validation layer: " << msg << std::endl;
-
-	return VK_FALSE;
-}
-
-
+#include "VulkanInitializers.hpp"
 
 VulkanApp::VulkanApp()
 {
@@ -92,7 +86,7 @@ void VulkanApp::prepareScene(){
 		for (int j = 0; j < terrainCount/2; j++)
 		{
 			float width = 50;
-			Terrain newTer = Terrain(100, i*width, j*width, width, width);
+			Terrain newTer = Terrain(75, (float)i*width, (float)j*width, width, width);
 			terrains.push_back(newTer);
 			VulkanModel newModel = VulkanModel();
 			newModel.loadFromMesh(newTer.mesh, vulkanDevice, vulkanDevice.graphics_queue);
@@ -124,6 +118,10 @@ void VulkanApp::prepareScene(){
 	createDescriptorPool();
 	createDescriptorSets();
 	//createCommandBuffers();
+
+	skybox = new Skybox();
+	skybox->InitSkybox(&vulkanDevice, "Resources/Textures/Skybox2", ".png", renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+
 	createSemaphores();
 }
 
@@ -142,6 +140,8 @@ void VulkanApp::mainLoop() {
 
 void VulkanApp::cleanup() {
 	//delete imGui;
+
+	skybox->CleanUp();
 
 	cube.destroy();
 	for each(VulkanModel model in terrainModels) {
@@ -164,9 +164,9 @@ void VulkanApp::cleanup() {
 	vkDestroyDescriptorPool(vulkanDevice.device, descriptorPoolTerrain, nullptr);
 	vkDestroyDescriptorPool(vulkanDevice.device, descriptorPoolWater, nullptr);
 
+	globalVariableBuffer.cleanBuffer();
 	cubeUniformBuffer.cleanBuffer();
 	terrainUniformBuffer.cleanBuffer();
-	cameraInfoBuffer.cleanBuffer();
 	lightsInfoBuffer.cleanBuffer();
 	waterUniformBuffer.cleanBuffer();
 	
@@ -218,6 +218,8 @@ void VulkanApp::recreateSwapChain() {
 	createGraphicsPipelines();
 	createDepthResources();
 	createFramebuffers();
+	skybox->ReinitSkybox(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+
 	reBuildCommandBuffers();
 }
 
@@ -376,7 +378,7 @@ void VulkanApp::createGraphicsPipelines() {
 	rasterizer.cullMode = VK_CULL_MODE_NONE;
 	rasterizer.lineWidth = 1.0f;
 
-	if (vulkanDevice.physical_device_features.fillModeNonSolid == true) {
+	if (vulkanDevice.physical_device_features.fillModeNonSolid == VK_TRUE) {
 		if (vkCreateGraphicsPipelines(vulkanDevice.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &wireframePipeline) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create wireframe pipeline!");
 		}
@@ -621,7 +623,7 @@ void VulkanApp::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width
 
 //17
 void VulkanApp::createUniformBuffers() {
-	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &cameraInfoBuffer, sizeof(CameraBufferObject));
+	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &globalVariableBuffer, sizeof(GlobalVariableUniformBuffer));
 	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &lightsInfoBuffer, sizeof(PointLight) * pointLights.size());
 	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &cubeUniformBuffer, sizeof(ModelBufferObject));
 	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &terrainUniformBuffer, sizeof(ModelBufferObject)*terrainCount);
@@ -742,12 +744,12 @@ void VulkanApp::createDescriptorSets() {
 		throw std::runtime_error("failed to allocate descriptor set!");
 	}
 
-	cameraInfoBuffer.setupDescriptor();
+	globalVariableBuffer.setupDescriptor();
 	lightsInfoBuffer.setupDescriptor();
 	cubeUniformBuffer.setupDescriptor();
 
 	std::vector<VkWriteDescriptorSet> descriptorWritesA;
-	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &cameraInfoBuffer.descriptor, 1));
+	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &globalVariableBuffer.descriptor, 1));
 	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &cubeUniformBuffer.descriptor, 1));
 	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lightsInfoBuffer.descriptor, 1));
 	descriptorWritesA.push_back(initializers::writeDescriptorSet(descriptorSetA, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &cubeTexture.descriptor, 1));
@@ -772,7 +774,7 @@ void VulkanApp::createDescriptorSets() {
 		terrainUniformBuffer.setupDescriptor(sizeof(ModelBufferObject), i* sizeof(ModelBufferObject));
 
 		std::vector<VkWriteDescriptorSet> descriptorWritesB;
-		descriptorWritesB.push_back(initializers::writeDescriptorSet(descriptorSetTerrain[i], VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &cameraInfoBuffer.descriptor, 1));
+		descriptorWritesB.push_back(initializers::writeDescriptorSet(descriptorSetTerrain[i], VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &globalVariableBuffer.descriptor, 1));
 		descriptorWritesB.push_back(initializers::writeDescriptorSet(descriptorSetTerrain[i], VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &terrainUniformBuffer.descriptor, 1));
 		descriptorWritesB.push_back(initializers::writeDescriptorSet(descriptorSetTerrain[i], VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lightsInfoBuffer.descriptor, 1));
 		descriptorWritesB.push_back(initializers::writeDescriptorSet(descriptorSetTerrain[i], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &grassTexture.descriptor, 1));
@@ -794,7 +796,7 @@ void VulkanApp::createDescriptorSets() {
 	waterUniformBuffer.setupDescriptor();
 
 	std::vector<VkWriteDescriptorSet> descriptorWritesWater;
-	descriptorWritesWater.push_back(initializers::writeDescriptorSet(descriptorSetWater, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &cameraInfoBuffer.descriptor, 1));
+	descriptorWritesWater.push_back(initializers::writeDescriptorSet(descriptorSetWater, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &globalVariableBuffer.descriptor, 1));
 	descriptorWritesWater.push_back(initializers::writeDescriptorSet(descriptorSetWater, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &waterUniformBuffer.descriptor, 1));
 	descriptorWritesWater.push_back(initializers::writeDescriptorSet(descriptorSetWater, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lightsInfoBuffer.descriptor, 1));
 	descriptorWritesWater.push_back(initializers::writeDescriptorSet(descriptorSetWater, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &waterTexture.descriptor, 1));
@@ -893,13 +895,12 @@ void VulkanApp::createCommandBuffers() {
 		renderPassInfo.pClearValues = clearValues.data();
 
 		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		VkDeviceSize offsets[] = { 0 };
 
+		//cube mesh
 		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSetA, 0, nullptr);
-
 		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? wireframePipeline : graphicsPipeline);
 		
-		//cube mesh
-		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &cube.vertices.buffer, offsets);
 		vkCmdBindIndexBuffer(commandBuffers[i], cube.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 		
@@ -924,6 +925,15 @@ void VulkanApp::createCommandBuffers() {
 		vkCmdBindIndexBuffer(commandBuffers[i], waterPlane.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(waterPlane.indexCount), 1, 0, 0, 0);
+
+		//skybox
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->pipelineLayout, 0, 1, &skybox->descriptorSet, 0, nullptr);
+		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->pipeline);
+
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &skybox->model.vertices.buffer, offsets);
+		vkCmdBindIndexBuffer(commandBuffers[i], skybox->model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(skybox->model.indexCount), 1, 0, 0, 0);
+
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -1030,24 +1040,27 @@ void VulkanApp::updateUniformBuffers() {
 	float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 	//std::cout << "Frame: " << frameCount << " at time = " << time << std::endl;
 
+	GlobalVariableUniformBuffer cbo = {};
+	cbo.view = camera->GetViewMatrix();
+	cbo.proj = glm::perspective(glm::radians(45.0f), vulkanSwapChain.swapChainExtent.width / (float)vulkanSwapChain.swapChainExtent.height, 0.1f, 1000.0f);
+	cbo.proj[1][1] *= -1;
+	cbo.time = time;
+
+	globalVariableBuffer.map(vulkanDevice.device);
+	globalVariableBuffer.copyTo(&cbo, sizeof(cbo));
+	globalVariableBuffer.unmap();
+
 	ModelBufferObject ubo = {};
 	ubo.model = glm::mat4();
 	//ubo.model = glm::translate(ubo.model, glm::vec3(50, 0, 0));
-	ubo.model = glm::rotate(ubo.model, time/2.0f, glm::vec3(0.5,1,0));
+	ubo.model = glm::rotate(ubo.model, time / 2.0f, glm::vec3(0.5, 1, 0));
 	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 
 	cubeUniformBuffer.map(vulkanDevice.device);
 	cubeUniformBuffer.copyTo(&ubo, sizeof(ubo));
 	cubeUniformBuffer.unmap();
 
-	CameraBufferObject cbo = {};
-	cbo.view = camera->GetViewMatrix();
-	cbo.proj = glm::perspective(glm::radians(45.0f), vulkanSwapChain.swapChainExtent.width / (float)vulkanSwapChain.swapChainExtent.height, 0.1f, 1000.0f);
-	cbo.proj[1][1] *= -1;
-
-	cameraInfoBuffer.map(vulkanDevice.device);
-	cameraInfoBuffer.copyTo(&cbo, sizeof(cbo));
-	cameraInfoBuffer.unmap();
+	skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
 }
 
 void VulkanApp::HandleInputs() {
