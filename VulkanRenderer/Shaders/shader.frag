@@ -9,6 +9,12 @@ struct PointLight {
 
 #define lightCount 5
 
+layout(binding = 0) uniform CameraUniformBuffer {
+	mat4 view;
+	mat4 proj;
+	float time;
+} cbo;
+
 //Lighting information
 layout(binding = 2) uniform PointLightsBuffer {
 	PointLight lights[lightCount];
@@ -46,13 +52,13 @@ void main() {
 		pointLightContrib += (diffuse + specular);
 	}
 
-	vec3 dirLight = normalize(vec3(0,60,25));
+	vec3 dirLight = normalize(vec3(45.0f,  50.0f, 0));
 	vec3 dirReflected = reflect(dirLight, N);
 	vec3 dirDiffuse = max(dot(N, dirLight),0.0f)* vec3(1.0f);
 	vec3 dirSpecular = pow(max(dot(dirReflected, viewVec), 0.0), 16.0f)* vec3(1.0f);
 	vec3 dirContrib = (dirDiffuse + dirSpecular)* vec3(1.0f);
 
     outColor = texColor * vec4((pointLightContrib + dirContrib) * inColor, 1.0f);
-	//outColor = texColor * vec4(inColor, 1.0f);
+	//outColor = texColor * vec4(dirContrib * inColor, 1.0f);
 	
 }

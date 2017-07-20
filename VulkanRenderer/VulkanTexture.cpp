@@ -361,7 +361,7 @@ void VulkanCubeMap::loadFromTexture(
 			bufferCopyRegions.push_back(bufferCopyRegion);
 
 			// Increase offset into staging buffer for next level / face
-			offset += cubeMap->imageFront.texImageSize;
+			offset += cubeMap->cubeImages.Front.texImageSize;
 		}
 	}
 

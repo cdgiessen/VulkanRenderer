@@ -14,7 +14,7 @@
 #include "Texture.h"
 #include <glm\common.hpp>
 
-class Terrain {
+class Water {
 public:
 	int numCells; //
 	glm::vec3 pos; //position of corner
@@ -31,22 +31,22 @@ public:
 	VkDescriptorPool descriptorPool;
 	VkDescriptorSet descriptorSet;
 
-	Mesh* terrainMesh;
-	VulkanModel terrainModel;
+	Mesh* WaterMesh;
+	VulkanModel WaterModel;
 
-	Texture* terrainTexture;
-	VulkanTexture2D terrainVulkanTexture;
+	Texture* WaterTexture;
+	VulkanTexture2D WaterVulkanTexture;
 
 	ModelBufferObject modelUniformObject;
 	VulkanBuffer modelUniformBuffer;
 
 	std::vector<VkCommandBuffer> commandBuffers;
 
-	Terrain(int numCells, float posX, float posY, int sizeX, int sizeY);
-	~Terrain();
+	Water(int numCells, float posX, float posY, int sizeX, int sizeY);
+	~Water();
 
-	void InitTerrain(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
-	void ReinitTerrain(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
+	void InitWater(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
+	void ReinitWater(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
 	void CleanUp();
 	void UpdateUniformBuffer(float time);
 

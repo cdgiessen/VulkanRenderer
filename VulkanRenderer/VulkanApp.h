@@ -31,30 +31,13 @@
 #include "Camera.h"
 #include "Terrain.h"
 #include "Skybox.h"
+#include "GameObject.h"
+#include "Water.h"
 
 const int WIDTH = 1000;
 const int HEIGHT = 800;
 
 const float deltaTime = 0.016f;
-struct GlobalVariableUniformBuffer {
-	glm::mat4 view;
-	glm::mat4 proj;
-	float time;
-};
-
-struct ModelBufferObject {
-	glm::mat4 model;
-	glm::mat4 normal;
-};
-
-struct PointLight {
-	glm::vec4 lightPos = glm::vec4(50.0f, 25.0f, 50.0f, 1.0f);
-	glm::vec4 color = glm::vec4(1.0, 1.0, 1.0f, 1.0f);
-	glm::vec4 attenuation = glm::vec4(1.0, 0.007f, 0.0002f, 1.0f);
-
-	PointLight() {};
-	PointLight(glm::vec4 pos, glm::vec4 col, glm::vec4 atten) : lightPos(pos), color(col), attenuation(atten) {};
-};
 
 class VulkanApp
 {
@@ -91,9 +74,6 @@ private:
 	bool wireframe = false;
 
 	void createRenderPass();
-	void createDescriptorSetLayout();
-	void createPipelineCache();
-	void createGraphicsPipelines();
 	void createDepthResources();
 	void createFramebuffers();
 
@@ -101,7 +81,6 @@ private:
 	void createTextureSampler(VkSampler* textureSampler);
 	void createUniformBuffers();
 
-	void createDescriptorPool();
 	void createDescriptorSets();
 	void createCommandBuffers();
 	void createSemaphores();
@@ -127,19 +106,17 @@ private:
 
 	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
 
-	int terrainCount = 4;
-	std::vector<Terrain> terrains;
-	std::vector<VulkanModel> terrainModels;
+	VulkanBuffer globalVariableBuffer;
+	VulkanBuffer lightsInfoBuffer;
 	std::vector<PointLight> pointLights;
 
-	VulkanModel cube;
-	VulkanModel waterPlane;
-	VulkanTexture2D cubeTexture;
-	VulkanTexture2D grassTexture;
-	VulkanTexture2D waterTexture;
 	Camera* camera;
 
+	//stuff to render
 	Skybox* skybox;
+	GameObject* cubeObject;
+	Terrain* terrain;
+	Water* water;
 
 	//ImGUI *imGui = nullptr;
 
@@ -148,30 +125,11 @@ private:
 	VulkanSwapChain vulkanSwapChain;
 
 	VkRenderPass renderPass;
-	VkDescriptorSetLayout descriptorSetLayout;
-	VkPipelineCache pipelineCache;
-	VkPipelineLayout pipelineLayout;
-	VkPipeline graphicsPipeline;
-	VkPipeline waterPipeline;
-	VkPipeline wireframePipeline;
 
 	VkImage depthImage; 
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
 
-	VulkanBuffer globalVariableBuffer;
-	VulkanBuffer lightsInfoBuffer;
-	VulkanBuffer cubeUniformBuffer;
-	VulkanBuffer terrainUniformBuffer;
-	VulkanBuffer waterUniformBuffer;
-
-
-	VkDescriptorPool descriptorPool;
-	VkDescriptorSet descriptorSetA;
-	VkDescriptorPool descriptorPoolTerrain;
-	std::vector<VkDescriptorSet> descriptorSetTerrain;
-	VkDescriptorPool descriptorPoolWater;
-	VkDescriptorSet descriptorSetWater;
 
 	std::vector<VkCommandBuffer> commandBuffers;
 

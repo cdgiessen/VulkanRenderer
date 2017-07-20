@@ -30,32 +30,37 @@ CubeMap::~CubeMap() {
 }
 
 void CubeMap::loadFromFile(std::string filename, std::string fileExt) {
-	imageFront.loadFromFile(filename + "Front" + fileExt);
-	imageBack.loadFromFile(filename + "Back" + fileExt);
-	imageLeft.loadFromFile(filename + "Left" + fileExt);
-	imageRight.loadFromFile(filename + "Right" + fileExt);
-	imageTop.loadFromFile(filename + "Top" + fileExt);
-	imageBottom.loadFromFile(filename + "Bottom" + fileExt);
+	cubeImages.Front.loadFromFile(filename + "Front" + fileExt);
+	cubeImages.Back.loadFromFile(filename + "Back" + fileExt);
+	cubeImages.Left.loadFromFile(filename + "Left" + fileExt);
+	cubeImages.Right.loadFromFile(filename + "Right" + fileExt);
+	cubeImages.Top.loadFromFile(filename + "Top" + fileExt);
+	cubeImages.Bottom.loadFromFile(filename + "Bottom" + fileExt);
 
-	this->width = static_cast<uint32_t>(imageFront.width);
-	this->height = static_cast<uint32_t>(imageFront.height);
-	this->mipLevels = static_cast<uint32_t>(imageFront.mipLevels);
+	this->width = static_cast<uint32_t>(cubeImages.Front.width);
+	this->height = static_cast<uint32_t>(cubeImages.Front.height);
+	this->mipLevels = static_cast<uint32_t>(cubeImages.Front.mipLevels);
 
-	this->texImageSize = (imageFront.texImageSize + imageBack.texImageSize + imageTop.texImageSize + imageBottom.texImageSize + imageRight.texImageSize + imageLeft.texImageSize);
+	this->texImageSize = (cubeImages.Front.texImageSize + cubeImages.Back.texImageSize + cubeImages.Top.texImageSize + cubeImages.Bottom.texImageSize + cubeImages.Right.texImageSize + cubeImages.Left.texImageSize);
 
 	stbi_uc* pix = (stbi_uc*)malloc(texImageSize);
-	int offset = 0;
-	memcpy(pix + offset, imageFront.pixels, imageFront.texImageSize);
-	offset += imageFront.texImageSize;
-	memcpy(pix + offset , imageBack.pixels, imageBack.texImageSize);
-	offset += imageBack.texImageSize;
-	memcpy(pix + offset, imageTop.pixels, imageTop.texImageSize);
-	offset += imageTop.texImageSize;
-	memcpy(pix + offset, imageBottom.pixels, imageBottom.texImageSize);
-	offset += imageBottom.texImageSize;
-	memcpy(pix + offset, imageLeft.pixels, imageLeft.texImageSize);
-	offset += imageLeft.texImageSize;
-	memcpy(pix + offset, imageRight.pixels, imageRight.texImageSize);
+	stbi_uc* offset = pix;
+	std::memcpy(offset, cubeImages.Front.pixels, cubeImages.Front.texImageSize);
+
+	offset += cubeImages.Front.texImageSize;
+	std::memcpy(offset, cubeImages.Back.pixels, cubeImages.Back.texImageSize);
+
+	offset += cubeImages.Back.texImageSize;
+	std::memcpy(offset, cubeImages.Top.pixels, cubeImages.Top.texImageSize);
+
+	offset += cubeImages.Top.texImageSize;
+	std::memcpy(offset, cubeImages.Bottom.pixels, cubeImages.Bottom.texImageSize);
+
+	offset += cubeImages.Bottom.texImageSize;
+	std::memcpy(offset, cubeImages.Left.pixels, cubeImages.Left.texImageSize);
+
+	offset += cubeImages.Left.texImageSize;
+	std::memcpy(offset, cubeImages.Right.pixels, cubeImages.Right.texImageSize);
 
 	this->pixels = pix;
 };

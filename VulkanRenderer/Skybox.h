@@ -41,10 +41,11 @@ public:
 	SkyboxUniformBuffer skyboxUniform;
 	VulkanBuffer skyboxUniformBuffer;
 
-	void CleanUp();
 
 	void InitSkybox(VulkanDevice* device, std::string filename, std::string fileExt, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight);
 	void ReinitSkybox(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight); //rebuilds stuff when screen size changes
+	
+	void CleanUp();
 
 	void UpdateUniform(glm::mat4 proj, glm::mat4 view);
 

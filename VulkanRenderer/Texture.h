@@ -29,12 +29,14 @@ public:
 
 class CubeMap {
 public:
-	Texture imageFront;
-	Texture imageBack;
-	Texture imageLeft;
-	Texture imageRight;
-	Texture imageTop;
-	Texture imageBottom;
+	struct images{
+		Texture Front;
+		Texture Back;
+		Texture Left;
+		Texture Right;
+		Texture Top;
+		Texture Bottom;
+	} cubeImages;
 
 	uint32_t width, height;
 	uint32_t layerCount = 1;

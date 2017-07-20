@@ -54,20 +54,24 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="ImGuiImpl.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="noiseutils.cpp" />
+    <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="VulkanTexture.cpp" />
     <ClCompile Include="VulkanDevice.cpp" />
     <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="VulkanTools.cpp" />
+    <ClCompile Include="Water.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="VulkanApp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="GameObject.h" />
     <ClInclude Include="ImGuiImpl.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="noiseutils.h" />
@@ -81,6 +85,7 @@
     <ClInclude Include="VulkanModel.hpp" />
     <ClInclude Include="VulkanSwapChain.hpp" />
     <ClInclude Include="VulkanTools.h" />
+    <ClInclude Include="Water.h" />
     <ClInclude Include="Window.hpp" />
     <ClInclude Include="VulkanApp.h" />
   </ItemGroup>
