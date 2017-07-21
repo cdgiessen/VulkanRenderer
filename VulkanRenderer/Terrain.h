@@ -34,8 +34,11 @@ public:
 	Mesh* terrainMesh;
 	VulkanModel terrainModel;
 
-	Texture* terrainTexture;
-	VulkanTexture2D terrainVulkanTexture;
+	Texture* terrainSplatMap;
+	VulkanTexture2D terrainVulkanSplatMap;
+
+	std::vector<Texture> terrainTextureArray;
+	VulkanTexture2DArray terrainVulkanTextureArray;
 
 	ModelBufferObject modelUniformObject;
 	VulkanBuffer modelUniformBuffer;

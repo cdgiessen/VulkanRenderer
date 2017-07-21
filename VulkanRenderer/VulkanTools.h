@@ -43,6 +43,7 @@ struct QueueFamilyIndices {
 struct GlobalVariableUniformBuffer {
 	glm::mat4 view;
 	glm::mat4 proj;
+	glm::vec3 cameraDir;
 	float time;
 };
 

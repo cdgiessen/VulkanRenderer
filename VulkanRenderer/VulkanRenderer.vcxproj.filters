@@ -22,33 +22,18 @@
     <Filter Include="Resources\Models">
       <UniqueIdentifier>{82858753-22ce-4116-a0d9-4f3550fceba8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\spv files">
+      <UniqueIdentifier>{f9e08f1a-04a1-4f34-a089-3389f8205353}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\shader.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\shader.vert">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\compile.bat">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\shader.frag.spv">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\shader.vert.spv">
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\ui.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\ui.frag.spv">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\ui.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\ui.vert.spv">
       <Filter>Shaders</Filter>
     </None>
     <None Include="Resources\Models\OakTree3.fbx">
@@ -60,23 +45,53 @@
     <None Include="Shaders\water.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\water.frag.spv">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\water.vert.spv">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\skybox.vert">
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\skybox.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\skybox.frag.spv">
+    <None Include="Shaders\terrain.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\skybox.vert.spv">
+    <None Include="Shaders\terrain.vert">
       <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\water.vert.spv">
+      <Filter>Shaders\spv files</Filter>
+    </None>
+    <None Include="Shaders\water.frag.spv">
+      <Filter>Shaders\spv files</Filter>
+    </None>
+    <None Include="Shaders\ui.frag.spv">
+      <Filter>Shaders\spv files</Filter>
+    </None>
+    <None Include="Shaders\skybox.vert.spv">
+      <Filter>Shaders\spv files</Filter>
+    </None>
+    <None Include="Shaders\skybox.frag.spv">
+      <Filter>Shaders\spv files</Filter>
+    </None>
+    <None Include="Shaders\terrain.vert.spv">
+      <Filter>Shaders\spv files</Filter>
+    </None>
+    <None Include="Shaders\terrain.frag.spv">
+      <Filter>Shaders\spv files</Filter>
+    </None>
+    <None Include="Shaders\ui.vert.spv">
+      <Filter>Shaders\spv files</Filter>
+    </None>
+    <None Include="Shaders\gameObject_shader.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\gameObject_shader.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\gameObject_shader.frag.spv">
+      <Filter>Shaders\spv files</Filter>
+    </None>
+    <None Include="Shaders\gameObject_shader.vert.spv">
+      <Filter>Shaders\spv files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

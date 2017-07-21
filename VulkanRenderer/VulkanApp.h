@@ -65,6 +65,7 @@ private:
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
 	int frameCount = 1;
+	float framesOverTime;
 	
 	bool firstMouse;
 	double lastX, lastY;

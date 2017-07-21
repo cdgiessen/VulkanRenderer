@@ -9,7 +9,7 @@ Terrain::Terrain(int numCells, float posX, float posY, int sizeX, int sizeY) : n
 
 Terrain::~Terrain() {
 	terrainMesh->~Mesh();
-	terrainTexture->~Texture();
+	terrainSplatMap->~Texture();
 }
 
 
@@ -42,7 +42,7 @@ void Terrain::ReinitTerrain(VulkanDevice* device, VkRenderPass renderPass, float
 void Terrain::CleanUp() 
 {
 	terrainModel.destroy();
-	terrainVulkanTexture.destroy();
+	terrainVulkanSplatMap.destroy();
 
 	modelUniformBuffer.cleanBuffer();
 
@@ -55,8 +55,8 @@ void Terrain::CleanUp()
 }
 
 void Terrain::LoadTexture(std::string filename) {
-	terrainTexture = new Texture();
-	terrainTexture->loadFromFile(filename);
+	terrainSplatMap = new Texture();
+	terrainSplatMap->loadFromFile(filename);
 }
 
 void Terrain::SetupUniformBuffer()
@@ -74,7 +74,7 @@ void Terrain::SetupUniformBuffer()
 
 void Terrain::SetupImage() 
 {
-	terrainVulkanTexture.loadFromTexture(terrainTexture, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+	terrainVulkanSplatMap.loadFromTexture(terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 }
 
 void Terrain::SetupModel() 
@@ -88,9 +88,11 @@ void Terrain::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting)
 	VkDescriptorSetLayoutBinding cboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1);
 	VkDescriptorSetLayoutBinding uboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1, 1);
 	VkDescriptorSetLayoutBinding lboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1);
-	VkDescriptorSetLayoutBinding samplerLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1);
+	VkDescriptorSetLayoutBinding splatMapLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1);
+	//VkDescriptorSetLayoutBinding texArratLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4, 1);
 
-	std::vector<VkDescriptorSetLayoutBinding> bindings = { cboLayoutBinding, uboLayoutBinding, lboLayoutBinding, samplerLayoutBinding };
+	std::vector<VkDescriptorSetLayoutBinding> bindings = { cboLayoutBinding, uboLayoutBinding, lboLayoutBinding, splatMapLayoutBinding };//, texArratLayoutBinding
+
 	VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
 
 	if (vkCreateDescriptorSetLayout(device->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
@@ -103,6 +105,7 @@ void Terrain::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting)
 	poolSizesTerrain.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
 	poolSizesTerrain.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
 	poolSizesTerrain.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	//poolSizesTerrain.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 
 	VkDescriptorPoolCreateInfo poolInfoTerrain =
 		initializers::descriptorPoolCreateInfo(
@@ -127,15 +130,16 @@ void Terrain::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting)
 	descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &global.descriptor, 1));
 	descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &modelUniformBuffer.descriptor, 1));
 	descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lighting.descriptor, 1));
-	descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &terrainVulkanTexture.descriptor, 1));
+	descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &terrainVulkanSplatMap.descriptor, 1));
+	//descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, &terrainVulkanSplatMap.descriptor, 1));
 
 	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
 void Terrain::SetupPipeline(VkRenderPass renderPass, float viewPortWidth, float viewPortHeight) 
 {
-	VkShaderModule vertShaderModule = loadShaderModule(device->device,"shaders/shader.vert.spv");
-	VkShaderModule fragShaderModule = loadShaderModule(device->device,"shaders/shader.frag.spv");
+	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/terrain.vert.spv");
+	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/terrain.frag.spv");
 
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule);
 	vertShaderStageInfo.pName = "main";

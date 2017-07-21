@@ -98,7 +98,7 @@ void VulkanApp::prepareScene(){
 	cubeObject->InitGameObject(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 
 	int terWidth = 100;
-	terrain = new Terrain(75, 0, 0, terWidth, terWidth);
+	terrain = new Terrain(200, 0, 0, terWidth, terWidth);
 	terrain->LoadTexture("Resources/Textures/lowPolyScatter.png");
 	terrain->InitTerrain(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 
@@ -725,12 +725,14 @@ void VulkanApp::newGuiFrame() {
 void VulkanApp::updateUniformBuffers() {
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
-	//std::cout << "Frame: " << frameCount << " at time = " << time << std::endl;
+	framesOverTime = (float)frameCount / time;
+	//std::cout << "Frames over time: " << (float)frameCount/time << " at time = " << time << std::endl;
 
 	GlobalVariableUniformBuffer cbo = {};
 	cbo.view = camera->GetViewMatrix();
 	cbo.proj = glm::perspective(glm::radians(45.0f), vulkanSwapChain.swapChainExtent.width / (float)vulkanSwapChain.swapChainExtent.height, 0.1f, 1000.0f);
 	cbo.proj[1][1] *= -1;
+	cbo.cameraDir = camera->Front;
 	cbo.time = time;
 
 	globalVariableBuffer.map(vulkanDevice.device);
@@ -740,6 +742,7 @@ void VulkanApp::updateUniformBuffers() {
 	cubeObject->UpdateUniformBuffer(time);
 
 	skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
+	water->UpdateUniformBuffer(time, camera->GetViewMatrix());
 }
 
 void VulkanApp::HandleInputs() {

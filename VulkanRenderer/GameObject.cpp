@@ -125,8 +125,8 @@ void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting) {
 }
 
 void GameObject::SetupPipeline(VkRenderPass renderPass, float viewPortWidth, float viewPortHeight) {
-	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/shader.vert.spv");
-	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/shader.frag.spv");
+	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/gameObject_shader.vert.spv");
+	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/gameObject_shader.frag.spv");
 
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule);
 	vertShaderStageInfo.pName = "main";

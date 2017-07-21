@@ -48,7 +48,7 @@ public:
 	void InitWater(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
 	void ReinitWater(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
 	void CleanUp();
-	void UpdateUniformBuffer(float time);
+	void UpdateUniformBuffer(float time, glm::mat4 view);
 
 	void LoadTexture(std::string filename);
 

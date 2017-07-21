@@ -10,7 +10,8 @@
 #include "VulkanInitializers.hpp"
 
 #include <noise/noise.h>
-#include "noiseutils.h"
+#include <noiseutils.h>
+
 
 struct Vertex {
 	glm::vec3 pos;

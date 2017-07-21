@@ -5,6 +5,7 @@
 layout(binding = 0) uniform CameraUniformBuffer {
 	mat4 view;
 	mat4 proj;
+	vec3 cameraPos;
 	float time;
 } cbo;
 

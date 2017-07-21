@@ -65,7 +65,7 @@ void Water::SetupUniformBuffer()
 
 	ModelBufferObject ubo = {};
 	ubo.model = glm::translate(glm::mat4(), pos);
-	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
+	ubo.normal = glm::transpose(glm::inverse(ubo.model));
 
 	modelUniformBuffer.map(device->device);
 	modelUniformBuffer.copyTo(&ubo, sizeof(ubo));
@@ -168,7 +168,7 @@ void Water::SetupPipeline(VkRenderPass renderPass, float viewPortWidth, float vi
 	viewportState.pScissors = &scissor;
 
 	VkPipelineRasterizationStateCreateInfo rasterizer = initializers::pipelineRasterizationStateCreateInfo(
-		VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+		VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.lineWidth = 1.0f;
@@ -289,7 +289,13 @@ void Water::RebuildCommandBuffer(VulkanSwapChain* swapChain, VkRenderPass* rende
 	BuildCommandBuffer(swapChain, renderPass);
 }
 
-void Water::UpdateUniformBuffer(float time)
+void Water::UpdateUniformBuffer(float time, glm::mat4 view)
 {
+	ModelBufferObject ubo = {};
+	ubo.model = glm::translate(glm::mat4(), pos);
+	ubo.normal = glm::transpose(glm::inverse(glm::mat3(glm::mat4())));
 
+	modelUniformBuffer.map(device->device);
+	modelUniformBuffer.copyTo(&ubo, sizeof(ubo));
+	modelUniformBuffer.unmap();
 }
