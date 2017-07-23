@@ -27,16 +27,16 @@ layout(binding = 3) uniform sampler2D waterTex;
 layout(location = 0) in vec3 inFragPos;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
-layout(location = 3) in vec3 inColor;
+layout(location = 3) in vec4 inColor;
 layout(location = 4) in float inTime;
 
 layout(location = 0) out vec4 outColor;
 
 
 void main() {
-	vec4 texColor1 = texture(waterTex, vec2(inTexCoord.x, inTexCoord.y));
-	vec4 texColor2 = texture(waterTex, vec2(inTexCoord.x + 0.1f + sin(inTime/5.0f)/8.0f, inTexCoord.y + 0.1f + sin(inTime/4.0f)/6.0f));
-	vec4 texColor3 = texture(waterTex, vec2(inTexCoord.x , inTexCoord.y + sin(inTime/3.0f)/10.0f));
+	vec4 texColor1 = texture(waterTex, vec2(inTexCoord.x + cos(inTime/5.0f + 2.0f)/7.0f, inTexCoord.y + cos(inTime/6.0f)/7.5f+ 1.0f));
+	vec4 texColor2 = texture(waterTex, vec2(inTexCoord.x + 0.1f + sin(inTime/5.0f+ 0.5f)/8.0f, inTexCoord.y + 0.1f + sin(inTime/4.0f+ 1.5f)/6.0f));
+	vec4 texColor3 = texture(waterTex, vec2(inTexCoord.x , inTexCoord.y + sin(inTime/4.5f)/10.0f));
 	vec4 texColor = vec4(0.35)*(texColor1 + texColor2 + texColor3);
 	
 	vec3 viewVec = normalize(-cbo.cameraDir);
@@ -61,10 +61,10 @@ void main() {
 		vec3 dirHalfway = normalize(dirLight + viewVec);
 	vec3 dirReflect = reflect(-dirLight, normalVec);
 	vec3 dirDiffuse = max(dot(normalVec, dirLight), 0.0f)* vec3(1.0f);
-	vec3 dirSpecular = pow(max(dot(viewVec, dirReflect), 0.0), 16.0f)* vec3(1.0f);
+	vec3 dirSpecular = pow(max(dot(viewVec, dirReflect), 0.0), 16.0f)* vec3(0.5f);
 	vec3 dirContrib = (dirDiffuse + dirSpecular)* vec3(1.0f);
 
-    outColor = texColor * vec4((pointLightContrib + dirContrib) * inColor, 1.0f);
+    outColor = texColor * vec4((pointLightContrib + dirContrib), 1.0f) * inColor;
 	//outColor = texColor * vec4(pointLightContrib * inColor, 1.0f);
 	
 }

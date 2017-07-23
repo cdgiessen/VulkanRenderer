@@ -26,7 +26,7 @@ layout(binding = 3) uniform sampler2D texSampler;
 
 layout(location = 0) in vec3 inNormal;
 layout(location = 1) in vec2 inTexCoord;
-layout(location = 2) in vec3 inColor;
+layout(location = 2) in vec4 inColor;
 layout(location = 3) in vec3 inFragPos;
 layout(location = 4) in float inTime;
 
@@ -60,7 +60,7 @@ void main() {
 	vec3 dirSpecular = pow(max(dot(viewVec, dirReflect), 0.0), 16.0f)* vec3(0.75f);
 	vec3 dirContrib = (dirDiffuse + dirSpecular)* vec3(1.0f);
 
-    outColor = texColor * vec4((pointLightContrib + dirContrib) * inColor, 1.0f);
+    outColor = texColor * vec4((pointLightContrib + dirContrib), 1.0f) * inColor;
 	//outColor = texColor * vec4(pointLightContrib * inColor, 1.0f);
 	
 	

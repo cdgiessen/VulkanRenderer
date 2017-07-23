@@ -23,7 +23,7 @@ void Skybox::CleanUp() {
 	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
 }
 
-void Skybox::InitSkybox(VulkanDevice* device, std::string filename, std::string fileExt, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight) {
+void Skybox::InitSkybox(VulkanDevice* device, std::string filename, std::string fileExt, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
 	this->device = device;
 
 	LoadSkyboxData(filename, fileExt);
@@ -36,7 +36,7 @@ void Skybox::InitSkybox(VulkanDevice* device, std::string filename, std::string 
 
 }
 
-void Skybox::ReinitSkybox(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight){
+void Skybox::ReinitSkybox(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight){
 	vkDestroyDescriptorSetLayout(device->device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device->device, descriptorPool, nullptr);
 	
@@ -100,7 +100,7 @@ void Skybox::SetupDescriptor() {
 	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
-void Skybox::SetupPipeline(VkRenderPass renderPass, float viewPortWidth, float viewPortHeight) {
+void Skybox::SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
 
 	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/skybox.vert.spv");
 	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/skybox.frag.spv");
@@ -125,7 +125,7 @@ void Skybox::SetupPipeline(VkRenderPass renderPass, float viewPortWidth, float v
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 
-	VkViewport viewport = initializers::viewport(viewPortWidth, viewPortHeight, 0.0f, 1.0f);
+	VkViewport viewport = initializers::viewport((float)viewPortWidth, (float)viewPortHeight, 0, 1);
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
 

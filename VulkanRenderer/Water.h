@@ -45,8 +45,8 @@ public:
 	Water(int numCells, float posX, float posY, int sizeX, int sizeY);
 	~Water();
 
-	void InitWater(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
-	void ReinitWater(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
+	void InitWater(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
+	void ReinitWater(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
 	void CleanUp();
 	void UpdateUniformBuffer(float time, glm::mat4 view);
 
@@ -57,7 +57,7 @@ public:
 	void SetupModel();
 
 	void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
-	void SetupPipeline(VkRenderPass renderPass, float viewPortWidth, float viewPortHeight);
+	void SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 
 	void BuildCommandBuffer(VulkanSwapChain* swapChain, VkRenderPass* renderPass);
 	void RebuildCommandBuffer(VulkanSwapChain* swapChain, VkRenderPass* renderPass);

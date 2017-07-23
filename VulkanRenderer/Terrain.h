@@ -1,5 +1,9 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
+#include <glm\common.hpp>
 #include <vulkan\vulkan.h>
 #include "VulkanDevice.hpp"
 #include "VulkanSwapChain.hpp"
@@ -12,7 +16,6 @@
 
 #include "Mesh.h"
 #include "Texture.h"
-#include <glm\common.hpp>
 
 class Terrain {
 public:
@@ -37,7 +40,7 @@ public:
 	Texture* terrainSplatMap;
 	VulkanTexture2D terrainVulkanSplatMap;
 
-	std::vector<Texture> terrainTextureArray;
+	TextureArray* terrainTextureArray;
 	VulkanTexture2DArray terrainVulkanTextureArray;
 
 	ModelBufferObject modelUniformObject;
@@ -48,20 +51,35 @@ public:
 	Terrain(int numCells, float posX, float posY, int sizeX, int sizeY);
 	~Terrain();
 
-	void InitTerrain(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
-	void ReinitTerrain(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
+	void InitTerrain(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
+	void ReinitTerrain(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
 	void CleanUp();
 	void UpdateUniformBuffer(float time);
 
 	void LoadTexture(std::string filename);
+	void LoadTextureArray();
 
 	void SetupUniformBuffer();
 	void SetupImage();
 	void SetupModel();
 
 	void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
-	void SetupPipeline(VkRenderPass renderPass, float viewPortWidth, float viewPortHeight);
+	void SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 
 	void BuildCommandBuffer(VulkanSwapChain* swapChain, VkRenderPass* renderPass);
 	void RebuildCommandBuffer(VulkanSwapChain* swapChain, VkRenderPass* renderPass);
+
+	std::vector<std::string> texFileNames = {
+		"dirt.jpg",
+		"grass.jpg",
+		"rockSmall.jpg",
+		"Snow.jpg",
+	};
+	// Extra splatmap images, starting with just 4 for now
+	//	"OakTreeLeaf.png",
+	//	"Sand.png",
+	//	"DeadOakTreeTrunk.png",
+	//	"OakTreeTrunk.png",
+	//	"SpruceTreeTrunk.png"};
+	//
 };

@@ -20,7 +20,7 @@ public:
 
 	VkDescriptorImageInfo descriptor;
 
-	float mipLevels;
+	int mipLevels;
 
 	void updateDescriptor();
 
@@ -55,12 +55,14 @@ public:
 		VkQueue copyQueue,
 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		bool forceLinear = false);
+		bool forceLinear = false,
+		bool genMipMaps = false,
+		int mipMapLevelsToGen = 1);
 };
 
 class VulkanTexture2DArray : public VulkanTexture {
 public:
-	std::vector<Texture> textures;
+	TextureArray* textures;
 
 	/**
 	* Load a 2D texture array including all mip levels
@@ -74,12 +76,14 @@ public:
 	*
 	*/
 	void loadTextureArray(
-		std::vector<Texture> textures,
+		TextureArray* textures,
 		VkFormat format,
 		VulkanDevice *device,
 		VkQueue copyQueue,
 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
-		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		bool genMipMaps = false,
+		int mipMapLevelsToGen = 1);
 };
 
 class VulkanCubeMap : public VulkanTexture {
@@ -103,5 +107,7 @@ public:
 		VulkanDevice *device,
 		VkQueue copyQueue,
 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
-		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		bool genMipMaps = false,
+		int mipMapLevelsToGen = 1);
 };

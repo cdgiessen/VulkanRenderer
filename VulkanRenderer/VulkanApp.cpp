@@ -90,7 +90,7 @@ void VulkanApp::prepareScene(){
 	createDescriptorSets();
 
 	skybox = new Skybox();
-	skybox->InitSkybox(&vulkanDevice, "Resources/Textures/Skybox2", ".png", renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+	skybox->InitSkybox(&vulkanDevice, "Resources/Textures/Skybox/Skybox2", ".png", renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 	
 	cubeObject = new GameObject();
 	cubeObject->LoadModel(createCube());
@@ -98,14 +98,15 @@ void VulkanApp::prepareScene(){
 	cubeObject->InitGameObject(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 
 	int terWidth = 100;
-	terrain = new Terrain(200, 0, 0, terWidth, terWidth);
+	terrain = new Terrain(100, 0, 0, terWidth, terWidth);
 	terrain->LoadTexture("Resources/Textures/lowPolyScatter.png");
+	terrain->LoadTextureArray();
 	terrain->InitTerrain(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 
 	water = new Water(terWidth, 0, 0, terWidth, terWidth);
 	water->LoadTexture("Resources/Textures/TileableWaterTexture.jpg");
 	water->InitWater(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
-
+	 
 	createSemaphores();
 }
 

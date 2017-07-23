@@ -37,8 +37,8 @@ public:
 	ModelBufferObject modelUniformObject;
 	VulkanBuffer modelUniformBuffer;
 
-	void InitGameObject(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
-	void ReinitGameObject(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
+	void InitGameObject(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
+	void ReinitGameObject(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
 	void CleanUp();
 	void UpdateUniformBuffer(float time);
 
@@ -51,6 +51,6 @@ public:
 	void SetupModel();
 
 	void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
-	void SetupPipeline(VkRenderPass renderPass, float viewPortWidth, float viewPortHeight);
+	void SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 };
 

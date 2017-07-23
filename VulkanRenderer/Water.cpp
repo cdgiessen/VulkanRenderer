@@ -13,7 +13,7 @@ Water::~Water() {
 }
 
 
-void Water::InitWater(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
+void Water::InitWater(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
 {
 	this->device = device;
 
@@ -24,7 +24,7 @@ void Water::InitWater(VulkanDevice* device, VkRenderPass renderPass, float viewP
 	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
 }
 
-void Water::ReinitWater(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
+void Water::ReinitWater(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
 {
 	this->device = device;
 
@@ -74,7 +74,7 @@ void Water::SetupUniformBuffer()
 
 void Water::SetupImage()
 {
-	WaterVulkanTexture.loadFromTexture(WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+	WaterVulkanTexture.loadFromTexture(WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4);
 }
 
 void Water::SetupModel()
@@ -132,7 +132,7 @@ void Water::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting)
 	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
-void Water::SetupPipeline(VkRenderPass renderPass, float viewPortWidth, float viewPortHeight)
+void Water::SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
 {
 	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/water.vert.spv");
 	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/water.frag.spv");
@@ -157,7 +157,7 @@ void Water::SetupPipeline(VkRenderPass renderPass, float viewPortWidth, float vi
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 
-	VkViewport viewport = initializers::viewport(viewPortWidth, viewPortHeight, 0.0f, 1.0f);
+	VkViewport viewport = initializers::viewport((float)viewPortWidth, (float)viewPortHeight, 0.0f, 1.0f);
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
 

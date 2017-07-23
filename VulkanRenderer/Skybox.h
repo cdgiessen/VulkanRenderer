@@ -42,8 +42,8 @@ public:
 	VulkanBuffer skyboxUniformBuffer;
 
 
-	void InitSkybox(VulkanDevice* device, std::string filename, std::string fileExt, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight);
-	void ReinitSkybox(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight); //rebuilds stuff when screen size changes
+	void InitSkybox(VulkanDevice* device, std::string filename, std::string fileExt, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void ReinitSkybox(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight); //rebuilds stuff when screen size changes
 	
 	void CleanUp();
 
@@ -55,7 +55,7 @@ public:
 	void SetupCubeMapImage();
 	void SetupDescriptor();
 
-	void SetupPipeline(VkRenderPass renderPass, float viewPortWidth, float viewPortHeight);
+	void SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 
 private:
 	Texture skyboxImageFront;

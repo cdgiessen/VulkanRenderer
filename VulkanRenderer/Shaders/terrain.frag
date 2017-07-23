@@ -27,15 +27,24 @@ layout(binding = 4) uniform sampler2DArray texArray;
 
 layout(location = 0) in vec3 inNormal;
 layout(location = 1) in vec2 inTexCoord;
-layout(location = 2) in vec3 inColor;
+layout(location = 2) in vec4 inColor;
 layout(location = 3) in vec3 inFragPos;
 layout(location = 4) in float inTime;
 
 layout(location = 0) out vec4 outColor;
 
 void main() {
-	vec4 texColor = texture(texSplatMap, inTexCoord);
-	
+	vec4 texColor = inColor; //splatmap not in yet, so just use vertex colors until then
+	//vec4 texColor = texture(texSplatMap, inTexCoord);
+
+	vec4 layerFirst = texture(texArray, vec3(inTexCoord.x, inTexCoord.y, 0));
+	vec4 layerSecond = texture(texArray, vec3(inTexCoord.x, inTexCoord.y, 1));
+	vec4 layerThird = texture(texArray, vec3(inTexCoord.x, inTexCoord.y, 2));
+	vec4 layerFourth = texture(texArray, vec3(inTexCoord.x, inTexCoord.y, 3));
+	//vec4 layerFifth = texture(texArray, vec3(inTexCoord.x, inTexCoord.y, 4));
+
+	vec4 terrainSplatter = (layerFirst * texColor.x + layerSecond*texColor.y + layerThird * texColor.z + layerFourth * (1 - texColor.r - texColor.g - texColor.b));
+
 	vec3 viewVec = normalize(-cbo.cameraDir);
 
 	vec3 normalVec = normalize(inNormal);
@@ -49,7 +58,7 @@ void main() {
 		float distance = length(plb.lights[i].lightPos.xyz - inFragPos);
 		float attenuation = 1.0f/(plb.lights[i].attenuation.x + plb.lights[i].attenuation.y*distance + plb.lights[i].attenuation.z*distance*distance);
 
-		vec3 diffuse = max(dot(normalVec, lightVec), 0.0) * vec3(1.0f) * attenuation * plb.lights[i].color.xyz;
+		vec3 diffuse = max(dot(normalVec, lightVec), 0.0) * vec3(0.8f) * attenuation * plb.lights[i].color.xyz;
 		vec3 specular = pow(max(dot(viewVec, reflectVec), 0.0), 16.0) * vec3(0.75f)* attenuation * plb.lights[i].color.xyz;
 		pointLightContrib += (diffuse + specular);
 	}
@@ -58,11 +67,13 @@ void main() {
 		vec3 dirHalfway = normalize(dirLight + viewVec);
 	vec3 dirReflect = reflect(-dirLight, normalVec);
 	vec3 dirDiffuse = max(dot(normalVec, dirLight), 0.0f)* vec3(1.0f);
-	vec3 dirSpecular = pow(max(dot(viewVec, dirReflect), 0.0), 16.0f)* vec3(0.75f);
+	vec3 dirSpecular = pow(max(dot(viewVec, dirReflect), 0.0), 16.0f)* vec3(0.5f);
 	vec3 dirContrib = (dirDiffuse + dirSpecular)* vec3(1.0f);
 
-    outColor = texColor * vec4((pointLightContrib + dirContrib) * inColor, 1.0f);
-	//outColor = texColor * vec4(pointLightContrib * inColor, 1.0f);
+	//float belowWaterLevelDarkening = clamp(inFragPos.y, -1, 0);
+
+    outColor = terrainSplatter * vec4((pointLightContrib + dirContrib), 1.0f);
+	//outColor = vec4(pointLightContrib * inColor, 1.0f);
 	
 	
 }

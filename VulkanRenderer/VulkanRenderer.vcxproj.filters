@@ -25,6 +25,15 @@
     <Filter Include="Shaders\spv files">
       <UniqueIdentifier>{f9e08f1a-04a1-4f34-a089-3389f8205353}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\Textures\Skybox">
+      <UniqueIdentifier>{80e135f9-130b-4689-bbbb-aa23ae0dc389}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Textures\LowPolyTerrainTextures">
+      <UniqueIdentifier>{30f86005-b5bd-436f-91db-34e06ece7af2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Textures\TerrainTextures">
+      <UniqueIdentifier>{2f5a66ee-30eb-4036-802e-defcdc3efe83}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\compile.bat">
@@ -216,23 +225,83 @@
     <Image Include="Resources\Textures\TileableWaterTexture.jpg">
       <Filter>Resources\Textures</Filter>
     </Image>
-    <Image Include="Resources\Textures\Skybox2Back.png">
-      <Filter>Resources\Textures</Filter>
+    <Image Include="Resources\Textures\Skybox\Skybox2Top.png">
+      <Filter>Resources\Textures\Skybox</Filter>
     </Image>
-    <Image Include="Resources\Textures\Skybox2Bottom.png">
-      <Filter>Resources\Textures</Filter>
+    <Image Include="Resources\Textures\Skybox\Skybox2Back.png">
+      <Filter>Resources\Textures\Skybox</Filter>
     </Image>
-    <Image Include="Resources\Textures\Skybox2Front.png">
-      <Filter>Resources\Textures</Filter>
+    <Image Include="Resources\Textures\Skybox\Skybox2Bottom.png">
+      <Filter>Resources\Textures\Skybox</Filter>
     </Image>
-    <Image Include="Resources\Textures\Skybox2Left.png">
-      <Filter>Resources\Textures</Filter>
+    <Image Include="Resources\Textures\Skybox\Skybox2Front.png">
+      <Filter>Resources\Textures\Skybox</Filter>
     </Image>
-    <Image Include="Resources\Textures\Skybox2Right.png">
-      <Filter>Resources\Textures</Filter>
+    <Image Include="Resources\Textures\Skybox\Skybox2Left.png">
+      <Filter>Resources\Textures\Skybox</Filter>
     </Image>
-    <Image Include="Resources\Textures\Skybox2Top.png">
-      <Filter>Resources\Textures</Filter>
+    <Image Include="Resources\Textures\Skybox\Skybox2Right.png">
+      <Filter>Resources\Textures\Skybox</Filter>
+    </Image>
+    <Image Include="Resources\Textures\Skybox\smallSkyboxBack.png">
+      <Filter>Resources\Textures\Skybox</Filter>
+    </Image>
+    <Image Include="Resources\Textures\Skybox\smallSkyboxBottom.png">
+      <Filter>Resources\Textures\Skybox</Filter>
+    </Image>
+    <Image Include="Resources\Textures\Skybox\smallSkyboxFront.png">
+      <Filter>Resources\Textures\Skybox</Filter>
+    </Image>
+    <Image Include="Resources\Textures\Skybox\smallSkyboxLeft.png">
+      <Filter>Resources\Textures\Skybox</Filter>
+    </Image>
+    <Image Include="Resources\Textures\Skybox\smallSkyboxRight.png">
+      <Filter>Resources\Textures\Skybox</Filter>
+    </Image>
+    <Image Include="Resources\Textures\Skybox\smallSkyboxTop.png">
+      <Filter>Resources\Textures\Skybox</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainLowPolyTextures\DeadOakTreeTrunk.png">
+      <Filter>Resources\Textures\LowPolyTerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainLowPolyTextures\DeadSpruceTreeTrunk.png">
+      <Filter>Resources\Textures\LowPolyTerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainLowPolyTextures\OakTreeLeaf.png">
+      <Filter>Resources\Textures\LowPolyTerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainLowPolyTextures\OakTreeTrunk.png">
+      <Filter>Resources\Textures\LowPolyTerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainLowPolyTextures\Rock.png">
+      <Filter>Resources\Textures\LowPolyTerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainLowPolyTextures\Sand.png">
+      <Filter>Resources\Textures\LowPolyTerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainLowPolyTextures\Snow.png">
+      <Filter>Resources\Textures\LowPolyTerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainLowPolyTextures\SpruceTreeLeaf.png">
+      <Filter>Resources\Textures\LowPolyTerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainLowPolyTextures\SpruceTreeTrunk.png">
+      <Filter>Resources\Textures\LowPolyTerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainTextures\dirt.jpg">
+      <Filter>Resources\Textures\TerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainTextures\grass.jpg">
+      <Filter>Resources\Textures\TerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainTextures\rockSmall.jpg">
+      <Filter>Resources\Textures\TerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainTextures\Sand.png">
+      <Filter>Resources\Textures\TerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\TerrainTextures\Snow.jpg">
+      <Filter>Resources\Textures\TerrainTextures</Filter>
     </Image>
   </ItemGroup>
 </Project>

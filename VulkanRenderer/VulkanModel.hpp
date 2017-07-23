@@ -38,23 +38,24 @@ public:
 		std::vector<float> vertexBuffer;
 		std::vector<uint32_t> indexBuffer;
 
-		vertexCount = mesh->vertices.size();
-		indexCount = mesh->indices.size();
+		vertexCount = static_cast<uint32_t>(mesh->vertices.size());
+		indexCount = static_cast<uint32_t>(mesh->indices.size());
 
-		vertexBuffer.resize(vertexCount * 11);
+		vertexBuffer.resize(vertexCount * 12);
 		for (int i = 0; i < (int)vertexCount; i++)
 		{
-			vertexBuffer[i * 11]	 = mesh->vertices[i].pos[0];
-			vertexBuffer[i * 11 + 1] = mesh->vertices[i].pos[1];
-			vertexBuffer[i * 11 + 2] = mesh->vertices[i].pos[2];
-			vertexBuffer[i * 11 + 3] = mesh->vertices[i].normal[0];
-			vertexBuffer[i * 11 + 4] = mesh->vertices[i].normal[1];
-			vertexBuffer[i * 11 + 5] = mesh->vertices[i].normal[2];
-			vertexBuffer[i * 11 + 6] = mesh->vertices[i].texCoord[0];
-			vertexBuffer[i * 11 + 7] = mesh->vertices[i].texCoord[1];
-			vertexBuffer[i * 11 + 8] = mesh->vertices[i].color[0];
-			vertexBuffer[i * 11 + 9] = mesh->vertices[i].color[1];
-			vertexBuffer[i * 11 + 10] = mesh->vertices[i].color[2];
+			vertexBuffer[i * 12]	 = mesh->vertices[i].pos[0];
+			vertexBuffer[i * 12 + 1] = mesh->vertices[i].pos[1];
+			vertexBuffer[i * 12 + 2] = mesh->vertices[i].pos[2];
+			vertexBuffer[i * 12 + 3] = mesh->vertices[i].normal[0];
+			vertexBuffer[i * 12 + 4] = mesh->vertices[i].normal[1];
+			vertexBuffer[i * 12 + 5] = mesh->vertices[i].normal[2];
+			vertexBuffer[i * 12 + 6] = mesh->vertices[i].texCoord[0];
+			vertexBuffer[i * 12 + 7] = mesh->vertices[i].texCoord[1];
+			vertexBuffer[i * 12 + 8] = mesh->vertices[i].color[0];
+			vertexBuffer[i * 12 + 9] = mesh->vertices[i].color[1];
+			vertexBuffer[i * 12 + 10] = mesh->vertices[i].color[2];
+			vertexBuffer[i * 12 + 11] = mesh->vertices[i].color[3];
 		}
 
 		indexBuffer.resize(indexCount);
@@ -205,6 +206,7 @@ public:
 						vertexBuffer.push_back(pColor.r);
 						vertexBuffer.push_back(pColor.g);
 						vertexBuffer.push_back(pColor.b);
+						vertexBuffer.push_back(1.0f);
 
 						/*for (auto& component : layout.components)
 						{

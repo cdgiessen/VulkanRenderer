@@ -1,6 +1,8 @@
 #include "VulkanTexture.hpp"
 #include "VulkanTools.h"
 #include "VulkanInitializers.hpp"
+#include <algorithm>
+
 
 void VulkanTexture::updateDescriptor()
 {
@@ -21,7 +23,7 @@ void VulkanTexture::destroy() {
 }
 
 void VulkanTexture::createImageSampler(VkFilter mag, VkFilter min, VkSamplerMipmapMode mipMapMode,
-	VkSamplerAddressMode textureWrapMode, float mipMapLodBias, bool useStaging, bool anisotropy , float maxAnisotropy ,
+	VkSamplerAddressMode textureWrapMode, float mipMapLodBias, bool useMipMaps, bool anisotropy , float maxAnisotropy ,
 	VkBorderColor borderColor ) {
 
 	// Create a defaultsampler
@@ -35,10 +37,10 @@ void VulkanTexture::createImageSampler(VkFilter mag, VkFilter min, VkSamplerMipm
 	samplerCreateInfo.mipLodBias = 0.0f;
 	samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
 	samplerCreateInfo.minLod = 0.0f;
-	samplerCreateInfo.maxLod = (useStaging) ? mipLevels : 0.0f;// Max level-of-detail should match mip level count
+	samplerCreateInfo.maxLod = (useMipMaps) ? mipLevels : 0.0f;// Max level-of-detail should match mip level count
 
 	// Enable anisotropic filtering
-	samplerCreateInfo.maxAnisotropy = maxAnisotropy;
+	samplerCreateInfo.maxAnisotropy = (anisotropy) ? device->physical_device_properties.limits.maxSamplerAnisotropy : 1;
 	samplerCreateInfo.anisotropyEnable = anisotropy;
 	samplerCreateInfo.borderColor = borderColor;
 	VK_CHECK_RESULT(vkCreateSampler(device->device, &samplerCreateInfo, nullptr, &textureSampler));
@@ -52,15 +54,22 @@ void VulkanTexture2D::loadFromTexture(
 	VkQueue copyQueue,
 	VkImageUsageFlags imageUsageFlags ,
 	VkImageLayout imageLayout,
-	bool forceLinear )
+	bool forceLinear,
+	bool genMipMaps,
+	int mipMapLevelsToGen)
 {
 	this->texture = texture;
 	this->device = device;
-	mipLevels = texture->mipLevels;
+	int maxMipMapLevelsPossible = floor(log2(std::max(texture->width, texture->height))) + 1;
+	mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
 
 	// Get device properites for the requested texture format
 	VkFormatProperties formatProperties;
 	vkGetPhysicalDeviceFormatProperties(device->physical_device, format, &formatProperties);
+
+	// Mip-chain generation requires support for blit source and destination
+	assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT);
+	assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT);
 
 	// Only use linear tiling if requested (and supported by the device)
 	// Support for linear tiling is mostly limited, so prefer to use
@@ -105,60 +114,32 @@ void VulkanTexture2D::loadFromTexture(
 		memcpy(data, texture->pixels, texture->texImageSize);
 		vkUnmapMemory(device->device, stagingMemory);
 
-		stbi_image_free(texture->pixels);
-
-		// Setup buffer copy regions for each mip level
-		std::vector<VkBufferImageCopy> bufferCopyRegions;
-		uint32_t offset = 0;
-
-		for (uint32_t i = 0; i < texture->mipLevels; i++)
-		{
-			VkBufferImageCopy bufferCopyRegion = {};
-			bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			bufferCopyRegion.imageSubresource.mipLevel = i;
-			bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
-			bufferCopyRegion.imageSubresource.layerCount = 1;
-			bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(texture->width / (i + 1));
-			bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(texture->height / (i + 1));
-			bufferCopyRegion.imageExtent.depth = 1;
-			bufferCopyRegion.bufferOffset = offset;
-
-			bufferCopyRegions.push_back(bufferCopyRegion);
-
-			offset += static_cast<uint32_t>(texture->texImageSize / ((i + 1)));
-		}
-
 		// Create optimal tiled target image
 		VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo();
 		imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 		imageCreateInfo.format = format;
-		imageCreateInfo.mipLevels = texture->mipLevels;
+		imageCreateInfo.mipLevels = mipLevels;
 		imageCreateInfo.arrayLayers = 1;
 		imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 		imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 		imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		imageCreateInfo.extent = { texture->width, texture->height, 1 };
-		imageCreateInfo.usage = imageUsageFlags;
-		// Ensure that the TRANSFER_DST bit is set for staging
-		if (!(imageCreateInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT))
-		{
-			imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-		}
+		imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		
 		VK_CHECK_RESULT(vkCreateImage(device->device, &imageCreateInfo, nullptr, &textureImage));
-
 		vkGetImageMemoryRequirements(device->device, textureImage, &memReqs);
-
 		memAllocInfo.allocationSize = memReqs.size;
-
 		memAllocInfo.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		
 		VK_CHECK_RESULT(vkAllocateMemory(device->device, &memAllocInfo, nullptr, &textureImageMemory));
 		VK_CHECK_RESULT(vkBindImageMemory(device->device, textureImage, textureImageMemory, 0));
 
 		VkImageSubresourceRange subresourceRange = {};
 		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		subresourceRange.baseMipLevel = 0;
-		subresourceRange.levelCount = texture->mipLevels;
+		subresourceRange.levelCount = mipLevels;
 		subresourceRange.layerCount = 1;
 
 		// Image barrier for optimal image (target)
@@ -170,14 +151,24 @@ void VulkanTexture2D::loadFromTexture(
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			subresourceRange);
 
+		//Copy first mip of the chain
+		VkBufferImageCopy bufferCopyRegion = {};
+		bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		bufferCopyRegion.imageSubresource.mipLevel = 0;
+		bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
+		bufferCopyRegion.imageSubresource.layerCount = 1;
+		bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(texture->width);
+		bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(texture->height);
+		bufferCopyRegion.imageExtent.depth = 1;
+		
 		// Copy mip levels from staging buffer
 		vkCmdCopyBufferToImage(
 			copyCmd,
 			stagingBuffer,
 			textureImage,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			static_cast<uint32_t>(bufferCopyRegions.size()),
-			bufferCopyRegions.data()
+			1,
+			&bufferCopyRegion
 		);
 
 		// Change texture image layout to shader read after all mip levels have been copied
@@ -186,7 +177,7 @@ void VulkanTexture2D::loadFromTexture(
 			copyCmd,
 			textureImage,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			imageLayout,
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 			subresourceRange);
 
 		device->flushCommandBuffer(copyCmd, copyQueue);
@@ -194,6 +185,96 @@ void VulkanTexture2D::loadFromTexture(
 		// Clean up staging resources
 		vkFreeMemory(device->device, stagingMemory, nullptr);
 		vkDestroyBuffer(device->device, stagingBuffer, nullptr);
+
+
+		// Generate the mip chain
+		// ---------------------------------------------------------------
+		// We copy down the whole mip chain doing a blit from mip-1 to mip
+		// An alternative way would be to always blit from the first mip level and sample that one down
+		VkCommandBuffer blitCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+
+		// Copy down mips from n-1 to n
+		for (int32_t i = 1; i < mipLevels; i++)
+		{
+			VkImageBlit imageBlit{};
+
+			// Source
+			imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			imageBlit.srcSubresource.layerCount = 1;
+			imageBlit.srcSubresource.mipLevel = i - 1;
+			imageBlit.srcOffsets[1].x = int32_t(texture->width >> (i - 1));
+			imageBlit.srcOffsets[1].y = int32_t(texture->height >> (i - 1));
+			imageBlit.srcOffsets[1].z = 1;
+
+			// Destination
+			imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			imageBlit.dstSubresource.layerCount = 1;
+			imageBlit.dstSubresource.mipLevel = i;
+			imageBlit.dstOffsets[1].x = int32_t(texture->width >> i);
+			imageBlit.dstOffsets[1].y = int32_t(texture->height >> i);
+			imageBlit.dstOffsets[1].z = 1;
+
+			VkImageSubresourceRange mipSubRange = {};
+			mipSubRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			mipSubRange.baseMipLevel = i;
+			mipSubRange.levelCount = 1;
+			mipSubRange.layerCount = 1;
+
+			// Transiton current mip level to transfer dest
+			setImageLayout(
+				blitCmd,
+				textureImage,
+				VK_IMAGE_LAYOUT_UNDEFINED,
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				mipSubRange,
+				VK_PIPELINE_STAGE_TRANSFER_BIT,
+				VK_PIPELINE_STAGE_HOST_BIT);
+
+			// Blit from previous level
+			vkCmdBlitImage(
+				blitCmd,
+				textureImage,
+				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+				textureImage,
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				1,
+				&imageBlit,
+				VK_FILTER_LINEAR);
+
+			// Transiton current mip level to transfer source for read in next iteration
+			setImageLayout(
+				blitCmd,
+				textureImage,
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+				mipSubRange,
+				VK_PIPELINE_STAGE_HOST_BIT,
+				VK_PIPELINE_STAGE_TRANSFER_BIT);
+		}
+
+		// After the loop, all mip layers are in TRANSFER_SRC layout, so transition all to SHADER_READ
+		subresourceRange.levelCount = mipLevels;
+		setImageLayout(
+			blitCmd,
+			textureImage,
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			textureImageLayout,
+			subresourceRange);
+
+		device->flushCommandBuffer(copyCmd, copyQueue);
+		// ---------------------------------------------------------------
+
+		// With mip mapping and anisotropic filtering
+		if (device->physical_device_features.samplerAnisotropy)
+		{
+			// Create a defaultsampler
+			createImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+		}
+		else {
+			// Create a defaultsampler
+			createImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, false, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+		}
+
 	}
 	else
 	{
@@ -211,7 +292,7 @@ void VulkanTexture2D::loadFromTexture(
 		imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 		imageCreateInfo.format = format;
 		imageCreateInfo.extent = { texture->width, texture->height, 1 };
-		imageCreateInfo.mipLevels = 1;
+		imageCreateInfo.mipLevels = mipLevels;
 		imageCreateInfo.arrayLayers = 1;
 		imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 		imageCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
@@ -264,16 +345,17 @@ void VulkanTexture2D::loadFromTexture(
 		// and can be directly used as textures
 		textureImage = mappableImage;
 		textureImageMemory = mappableMemory;
-		imageLayout = imageLayout;
+		textureImageLayout = imageLayout;
 
 		// Setup image memory barrier
 		setImageLayout(copyCmd, textureImage, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, imageLayout);
 
 		device->flushCommandBuffer(copyCmd, copyQueue);
+		
+		// Create a defaultsampler
+		createImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 	}
 
-	// Create a defaultsampler
-	createImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
 	// Create image view
 	// Textures are not directly accessed by the shaders and
@@ -287,7 +369,7 @@ void VulkanTexture2D::loadFromTexture(
 	viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 	// Linear tiling usually won't support mip maps
 	// Only set mip map count if optimal tiling is used
-	viewCreateInfo.subresourceRange.levelCount = (useStaging) ? texture->mipLevels : 1;
+	viewCreateInfo.subresourceRange.levelCount = (useStaging) ? mipLevels : 1;
 	viewCreateInfo.image = textureImage;
 	VK_CHECK_RESULT(vkCreateImageView(device->device, &viewCreateInfo, nullptr, &textureImageView));
 
@@ -296,16 +378,19 @@ void VulkanTexture2D::loadFromTexture(
 }
 
 void VulkanTexture2DArray::loadTextureArray(
-	std::vector<Texture> textures,
+	TextureArray* textures,
 	VkFormat format,
 	VulkanDevice *device,
 	VkQueue copyQueue,
 	VkImageUsageFlags imageUsageFlags,
-	VkImageLayout imageLayout)
+	VkImageLayout imageLayout,
+	bool genMipMaps,
+	int mipMapLevelsToGen)
 {
 
 	this->device = device;
 	this->textures = textures;
+	this->mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
 
 	VkMemoryAllocateInfo memAllocInfo = initializers::memoryAllocateInfo();
 	VkMemoryRequirements memReqs;
@@ -315,7 +400,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	VkDeviceMemory stagingMemory;
 
 	VkBufferCreateInfo bufferCreateInfo = initializers::bufferCreateInfo();
-	bufferCreateInfo.size = textures.size() * textures[0].texImageSize;
+	bufferCreateInfo.size = textures->texImageSize;
 	// This buffer is used as a transfer source for the buffer copy
 	bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 	bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -335,32 +420,29 @@ void VulkanTexture2DArray::loadTextureArray(
 	// Copy texture data into staging buffer
 	uint8_t *data;
 	VK_CHECK_RESULT(vkMapMemory(device->device, stagingMemory, 0, memReqs.size, 0, (void **)&data));
-	memcpy(data, textures.data(), static_cast<size_t>(textures.size() * textures[0].texImageSize));
+	memcpy(data, textures->pixels, static_cast<size_t>(textures->texImageSize));
 	vkUnmapMemory(device->device, stagingMemory);
 
 	// Setup buffer copy regions for each layer including all of it's miplevels
 	std::vector<VkBufferImageCopy> bufferCopyRegions;
 	size_t offset = 0;
 
-	for (uint32_t layer = 0; layer < textures.size(); layer++)
+	for (uint32_t layer = 0; layer < textures->layerCount; layer++)
 	{
-		for (uint32_t level = 0; level < mipLevels; level++)
-		{
-			VkBufferImageCopy bufferCopyRegion = {};
-			bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			bufferCopyRegion.imageSubresource.mipLevel = level;
-			bufferCopyRegion.imageSubresource.baseArrayLayer = layer;
-			bufferCopyRegion.imageSubresource.layerCount = 1;
-			bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(textures[0].width);
-			bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(textures[0].height);
-			bufferCopyRegion.imageExtent.depth = 1;
-			bufferCopyRegion.bufferOffset = offset;
+		VkBufferImageCopy bufferCopyRegion = {};
+		bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		bufferCopyRegion.imageSubresource.mipLevel = 0;
+		bufferCopyRegion.imageSubresource.baseArrayLayer = layer;
+		bufferCopyRegion.imageSubresource.layerCount = 1;
+		bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(textures->textures[layer]->width);
+		bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(textures->textures[layer]->height);
+		bufferCopyRegion.imageExtent.depth = 1;
+		bufferCopyRegion.bufferOffset = offset;
 
-			bufferCopyRegions.push_back(bufferCopyRegion);
+		bufferCopyRegions.push_back(bufferCopyRegion);
 
-			// Increase offset into staging buffer for next level / face
-			offset += textures[0].texImageSize;
-		}
+		// Increase offset into staging buffer for next level / face
+		offset += textures->textures[layer]->texImageSize;
 	}
 
 	// Create optimal tiled target image
@@ -371,14 +453,14 @@ void VulkanTexture2DArray::loadTextureArray(
 	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	imageCreateInfo.extent = { textures[0].width, textures[0].height, 1 };
+	imageCreateInfo.extent = { textures->width, textures->height, 1 };
 	imageCreateInfo.usage = imageUsageFlags;
 	// Ensure that the TRANSFER_DST bit is set for staging
 	if (!(imageCreateInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT))
 	{
 		imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	}
-	imageCreateInfo.arrayLayers = textures.size();
+	imageCreateInfo.arrayLayers = textures->layerCount;
 	imageCreateInfo.mipLevels = mipLevels;
 
 	VK_CHECK_RESULT(vkCreateImage(device->device, &imageCreateInfo, nullptr, &textureImage));
@@ -400,7 +482,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	subresourceRange.baseMipLevel = 0;
 	subresourceRange.levelCount = mipLevels;
-	subresourceRange.layerCount = textures.size();
+	subresourceRange.layerCount = textures->layerCount;
 
 	setImageLayout(
 		copyCmd,
@@ -424,13 +506,95 @@ void VulkanTexture2DArray::loadTextureArray(
 		copyCmd,
 		textureImage,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		imageLayout,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		subresourceRange);
 
 	device->flushCommandBuffer(copyCmd, copyQueue);
 
+	// Clean up staging resources
+	vkFreeMemory(device->device, stagingMemory, nullptr);
+	vkDestroyBuffer(device->device, stagingBuffer, nullptr);
+
+	// Generate the mip chain
+	// ---------------------------------------------------------------
+	// We copy down the whole mip chain doing a blit from mip-1 to mip
+	// An alternative way would be to always blit from the first mip level and sample that one down
+	VkCommandBuffer blitCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+
+	// Copy down mips from n-1 to n
+	for (int32_t i = 1; i < mipLevels; i++)
+	{
+		VkImageBlit imageBlit{};
+
+		// Source
+		imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageBlit.srcSubresource.layerCount = textures->layerCount;
+		imageBlit.srcSubresource.mipLevel = i - 1;
+		imageBlit.srcOffsets[1].x = int32_t(textures->width >> (i - 1));
+		imageBlit.srcOffsets[1].y = int32_t(textures->height >> (i - 1));
+		imageBlit.srcOffsets[1].z = 1;
+
+		// Destination
+		imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageBlit.dstSubresource.layerCount = textures->layerCount;
+		imageBlit.dstSubresource.mipLevel = i;
+		imageBlit.dstOffsets[1].x = int32_t(textures->width >> i);
+		imageBlit.dstOffsets[1].y = int32_t(textures->height >> i);
+		imageBlit.dstOffsets[1].z = 1;
+
+		VkImageSubresourceRange mipSubRange = {};
+		mipSubRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		mipSubRange.baseMipLevel = i;
+		mipSubRange.levelCount = 1;
+		mipSubRange.layerCount = textures->layerCount;
+
+		// Transiton current mip level to transfer dest
+		setImageLayout(
+			blitCmd,
+			textureImage,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			mipSubRange,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VK_PIPELINE_STAGE_HOST_BIT);
+
+		// Blit from previous level
+		vkCmdBlitImage(
+			blitCmd,
+			textureImage,
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			textureImage,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1,
+			&imageBlit,
+			VK_FILTER_LINEAR);
+
+		// Transiton current mip level to transfer source for read in next iteration
+		setImageLayout(
+			blitCmd,
+			textureImage,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			mipSubRange,
+			VK_PIPELINE_STAGE_HOST_BIT,
+			VK_PIPELINE_STAGE_TRANSFER_BIT);
+	}
+
+	// After the loop, all mip layers are in TRANSFER_SRC layout, so transition all to SHADER_READ
+	subresourceRange.levelCount = mipLevels;
+	setImageLayout(
+		blitCmd,
+		textureImage,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		textureImageLayout,
+		subresourceRange);
+
+	device->flushCommandBuffer(copyCmd, copyQueue);
+	// ---------------------------------------------------------------
+
+
 	// Create sampler
-	createImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f, true, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+	createImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
 	// Create image view
 	VkImageViewCreateInfo viewCreateInfo = initializers::imageViewCreateInfo();
@@ -438,14 +602,10 @@ void VulkanTexture2DArray::loadTextureArray(
 	viewCreateInfo.format = format;
 	viewCreateInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
 	viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-	viewCreateInfo.subresourceRange.layerCount = textures.size();
+	viewCreateInfo.subresourceRange.layerCount = textures->layerCount;
 	viewCreateInfo.subresourceRange.levelCount = mipLevels;
 	viewCreateInfo.image = textureImage;
 	VK_CHECK_RESULT(vkCreateImageView(device->device, &viewCreateInfo, nullptr, &textureImageView));
-
-	// Clean up staging resources
-	vkFreeMemory(device->device, stagingMemory, nullptr);
-	vkDestroyBuffer(device->device, stagingBuffer, nullptr);
 
 	// Update descriptor image info member that can be used for setting up descriptor sets
 	updateDescriptor();
@@ -458,11 +618,13 @@ void VulkanCubeMap::loadFromTexture(
 	VulkanDevice *device,
 	VkQueue copyQueue,
 	VkImageUsageFlags imageUsageFlags,
-	VkImageLayout imageLayout)
+	VkImageLayout imageLayout,
+	bool genMipMaps,
+	int mipMapLevelsToGen)
 {
 	this->cubeMap = cubeMap;
 	this->device = device;
-	mipLevels = cubeMap->mipLevels;
+	mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
 
 	VkMemoryAllocateInfo memAllocInfo = initializers::memoryAllocateInfo();
 	VkMemoryRequirements memReqs;
@@ -501,7 +663,7 @@ void VulkanCubeMap::loadFromTexture(
 
 	for (uint32_t face = 0; face < 6; face++)
 	{
-		for (uint32_t level = 0; level < 1; level++)
+		for (uint32_t level = 0; level < mipLevels; level++)
 		{
 			VkBufferImageCopy bufferCopyRegion = {};
 			bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -524,7 +686,7 @@ void VulkanCubeMap::loadFromTexture(
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo();
 	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 	imageCreateInfo.format = format;
-	imageCreateInfo.mipLevels = cubeMap->mipLevels;
+	imageCreateInfo.mipLevels = mipLevels;
 	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;

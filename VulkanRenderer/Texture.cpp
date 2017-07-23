@@ -22,11 +22,52 @@ void Texture::loadFromFile(std::string filename) {
 
 	this->width = static_cast<uint32_t>(texWidth);
 	this->height = static_cast<uint32_t>(texHeight);
-	this->mipLevels = static_cast<uint32_t>(1);
 };
 
-CubeMap::~CubeMap() {
+TextureArray::TextureArray() {
 
+}
+
+TextureArray::~TextureArray() {
+	for each (Texture* tex in textures) {
+		tex->~Texture();
+	}
+}
+
+void TextureArray::loadFromFile(std::string path, std::vector<std::string> filenames){
+	for each (std::string name in filenames) {
+		Texture* tex = new Texture();
+		tex->loadFromFile(path + name);
+		textures.push_back(tex);
+	}
+
+	this->width = static_cast<uint32_t>(textures.at(0)->width);
+	this->height = static_cast<uint32_t>(textures.at(0)->height);
+
+	this->texImageSize = textures.size() * textures.at(0)->texImageSize;
+	this->layerCount = textures.size();
+
+	stbi_uc* pix = (stbi_uc*)malloc(texImageSize);
+	stbi_uc* offset = pix;
+
+	for (int i = 0; i < layerCount; i++)
+	{
+		std::memcpy(offset, textures.at(i)->pixels, textures.at(i)->texImageSize);
+		offset += textures.at(i)->texImageSize;
+	}
+
+	this->pixels = pix;
+}
+
+CubeMap::~CubeMap() {
+	cubeImages.Front.~Texture();
+	cubeImages.Back.~Texture();
+	cubeImages.Left.~Texture();
+	cubeImages.Right.~Texture();
+	cubeImages.Top.~Texture();
+	cubeImages.Bottom.~Texture();
+
+	free(pixels);
 }
 
 void CubeMap::loadFromFile(std::string filename, std::string fileExt) {
@@ -39,7 +80,6 @@ void CubeMap::loadFromFile(std::string filename, std::string fileExt) {
 
 	this->width = static_cast<uint32_t>(cubeImages.Front.width);
 	this->height = static_cast<uint32_t>(cubeImages.Front.height);
-	this->mipLevels = static_cast<uint32_t>(cubeImages.Front.mipLevels);
 
 	this->texImageSize = (cubeImages.Front.texImageSize + cubeImages.Back.texImageSize + cubeImages.Top.texImageSize + cubeImages.Bottom.texImageSize + cubeImages.Right.texImageSize + cubeImages.Left.texImageSize);
 

@@ -5,6 +5,8 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <string>
+#include <vector>
 
 #include <glm\common.hpp>
 
@@ -14,7 +16,6 @@ class Texture {
 public:
 	uint32_t width, height;
 	uint32_t layerCount = 1;
-	uint32_t mipLevels;
 	VkDeviceSize texImageSize;
 
 	stbi_uc* pixels;
@@ -23,6 +24,23 @@ public:
 	~Texture();
 
 	void loadFromFile(std::string filename);
+
+
+};
+
+class TextureArray {
+public:
+	uint32_t width, height;
+	uint32_t layerCount = 1;
+	VkDeviceSize texImageSize;
+
+	std::vector<Texture *> textures;
+	stbi_uc* pixels;
+
+	TextureArray();
+	~TextureArray();
+
+	void loadFromFile(std::string path, std::vector<std::string> filenames);
 
 
 };
@@ -40,7 +58,6 @@ public:
 
 	uint32_t width, height;
 	uint32_t layerCount = 1;
-	uint32_t mipLevels;
 	VkDeviceSize texImageSize;
 
 	~CubeMap();

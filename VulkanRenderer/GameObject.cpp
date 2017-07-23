@@ -11,7 +11,7 @@ GameObject::~GameObject()
 	gameObjectTexture->~Texture();
 }
 
-void GameObject::InitGameObject(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
+void GameObject::InitGameObject(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
 {
 	this->device = device;
 
@@ -22,7 +22,7 @@ void GameObject::InitGameObject(VulkanDevice* device, VkRenderPass renderPass, f
 	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
 }
 
-void GameObject::ReinitGameObject(VulkanDevice* device, VkRenderPass renderPass, float viewPortWidth, float viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
+void GameObject::ReinitGameObject(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
 {
 	this->device = device;
 
@@ -71,7 +71,7 @@ void GameObject::SetupUniformBuffer() {
 }
 
 void GameObject::SetupImage() {
-	gameObjectVulkanTexture.loadFromTexture(gameObjectTexture, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+	gameObjectVulkanTexture.loadFromTexture(gameObjectTexture, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
 }
 
 void GameObject::SetupModel() {
@@ -124,7 +124,7 @@ void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting) {
 	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
-void GameObject::SetupPipeline(VkRenderPass renderPass, float viewPortWidth, float viewPortHeight) {
+void GameObject::SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
 	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/gameObject_shader.vert.spv");
 	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/gameObject_shader.frag.spv");
 
@@ -148,7 +148,7 @@ void GameObject::SetupPipeline(VkRenderPass renderPass, float viewPortWidth, flo
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 
-	VkViewport viewport = initializers::viewport(viewPortWidth, viewPortHeight, 0.0f, 1.0f);
+	VkViewport viewport = initializers::viewport((float)viewPortWidth, (float)viewPortHeight, 0.0f, 1.0f);
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
 

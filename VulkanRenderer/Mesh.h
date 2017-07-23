@@ -17,7 +17,7 @@ struct Vertex {
 	glm::vec3 pos;
 	glm::vec3 normal;
 	glm::vec2 texCoord;
-	glm::vec3 color;
+	glm::vec4 color;
 
 	static VkVertexInputBindingDescription getBindingDescription() {
 		return initializers::vertexInputBindingDescription(0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX);
@@ -43,7 +43,7 @@ struct Vertex {
 
 		attributeDescriptions[3].binding = 0;
 		attributeDescriptions[3].location = 3;
-		attributeDescriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 		attributeDescriptions[3].offset = offsetof(Vertex, color);
 
 		return attributeDescriptions;
@@ -52,7 +52,7 @@ struct Vertex {
 		
 	}
 
-	Vertex(glm::vec3 pos, glm::vec3 normal, glm::vec2 texCoord, glm::vec3 color) : pos(pos), normal(normal), texCoord(texCoord), color(color) {
+	Vertex(glm::vec3 pos, glm::vec3 normal, glm::vec2 texCoord, glm::vec4 color) : pos(pos), normal(normal), texCoord(texCoord), color(color) {
 
 	}
 };
@@ -95,10 +95,10 @@ static Mesh* createSinglePlane() {
 	return new Mesh(
 		//vertices
 	{
-		{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f } },
-		{ { 0.5f, -0.5f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f } },
-		{ { 0.5f, 0.5f, 0.0f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 1.0f, 1.0f } },
-		{ { -0.5f, 0.5f, 0.0f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f },{ 0.0f, 0.0f, 1.0f } }
+		{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
+		{ { 0.5f, -0.5f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
+		{ { 0.5f, 0.5f, 0.0f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 1.0f, 1.0f, 1.0f } },
+		{ { -0.5f, 0.5f, 0.0f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
 
 		
 	},
@@ -113,15 +113,15 @@ static Mesh* createDoublePlane() {
 	return new Mesh(
 		//vertices
 	{
-		{ { -0.5f, -0.5f, 1.0f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f },{ 0.0f, 0.0f, 1.0f } },
-		{ { 0.5f, -0.5f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f } },
-		{ { 0.5f, 0.5f, 1.0f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f } },
-		{ { -0.5f, 0.5f, 1.0f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f },{ 0.0f, 0.0f, 1.0f } },
+		{ { -0.5f, -0.5f, 1.0f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
+		{ { 0.5f, -0.5f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
+		{ { 0.5f, 0.5f, 1.0f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
+		{ { -0.5f, 0.5f, 1.0f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
 
-		{ { -0.5f, -0.5f, -1.5f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f },{ 0.0f, 0.0f, 1.0f } },
-		{ { 0.5f, -0.5f, -1.5f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f } },
-		{ { 0.5f, 0.5f, -1.5f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f } },
-		{ { -0.5f, 0.5f, -1.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f },{ 0.0f, 0.0f, 1.0f } }
+		{ { -0.5f, -0.5f, -1.5f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
+		{ { 0.5f, -0.5f, -1.5f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
+		{ { 0.5f, 0.5f, -1.5f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
+		{ { -0.5f, 0.5f, -1.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
 	},
 		//indices
 	{
@@ -154,17 +154,35 @@ static Mesh* generateTerrainMesh(int numCells, float xLoc, float yLoc, float xSi
 	utils::RendererImage renderer;
 	utils::Image image;
 	renderer.ClearGradient();
-	//renderer.AddGradientPoint(-1.0000, utils::Color(0, 0, 128, 255)); // deeps
-	//renderer.AddGradientPoint(0.000, utils::Color(0, 0, 255, 255)); // shallow
-	//renderer.AddGradientPoint(0.1000, utils::Color(0, 128, 255, 255)); // shore
-	renderer.AddGradientPoint(-1.0000, utils::Color(76, 36, 16, 255)); // Ocean bottom
-	renderer.AddGradientPoint(-0.1000, utils::Color(107, 71, 53, 255)); // shallow ocean
-	renderer.AddGradientPoint(0.1000, utils::Color(228, 163, 55, 255)); // shore
-	renderer.AddGradientPoint(0.1625, utils::Color(240, 240, 64, 255)); // sand
-	renderer.AddGradientPoint(0.2250, utils::Color(32, 160, 0, 255)); // grass
-	renderer.AddGradientPoint(0.4750, utils::Color(127, 91, 48, 255)); // dirt
-	renderer.AddGradientPoint(0.7500, utils::Color(128, 128, 128, 255)); // rock
-	renderer.AddGradientPoint(1.0000, utils::Color(255, 255, 255, 255)); // snow
+	//old gradient for vertex colors, new one for tex splat map
+	////renderer.AddGradientPoint(-1.0000, utils::Color(0, 0, 128, 255)); // deeps
+	////renderer.AddGradientPoint(0.000, utils::Color(0, 0, 255, 255)); // shallow
+	////renderer.AddGradientPoint(0.1000, utils::Color(0, 128, 255, 255)); // shore
+	//renderer.AddGradientPoint(-1.0000, utils::Color(76, 36, 16, 255)); // Ocean bottom
+	//renderer.AddGradientPoint(-0.1000, utils::Color(107, 71, 53, 255)); // shallow ocean
+	//renderer.AddGradientPoint(0.1000, utils::Color(228, 163, 55, 255)); // shore
+	//renderer.AddGradientPoint(0.1625, utils::Color(240, 240, 64, 255)); // sand
+	//renderer.AddGradientPoint(0.2250, utils::Color(32, 160, 0, 255)); // grass
+	//renderer.AddGradientPoint(0.4750, utils::Color(127, 91, 48, 255)); // dirt
+	//renderer.AddGradientPoint(0.7500, utils::Color(128, 128, 128, 255)); // rock
+	//renderer.AddGradientPoint(1.0000, utils::Color(255, 255, 255, 255)); // snow
+
+	/*
+	"DeadSpruceTreeTrunk.png",
+	"Sand.png",
+	"SpruceTreeLeaf.png",
+	"Rock.png",
+	"Snow.png",
+	*/
+
+	renderer.AddGradientPoint(-1.000, utils::Color(255, 0, 0, 32)); 
+	renderer.AddGradientPoint(0.0000, utils::Color(255, 0, 0, 255));
+	renderer.AddGradientPoint(0.1000, utils::Color(0, 255, 0, 255));
+	renderer.AddGradientPoint(0.4000, utils::Color(0, 255, 0, 255));
+	renderer.AddGradientPoint(0.5000, utils::Color(0, 0, 255, 255));
+	renderer.AddGradientPoint(0.8000, utils::Color(0, 0, 255, 255));
+	renderer.AddGradientPoint(1.0000, utils::Color(0, 0, 0, 255));
+
 	renderer.SetSourceNoiseMap(heightMap);
 	renderer.SetDestImage(image);
 	renderer.Render();
@@ -187,7 +205,7 @@ static Mesh* generateTerrainMesh(int numCells, float xLoc, float yLoc, float xSi
 
 			verts[(i)*(numCells + 1) + j] = Vertex(glm::vec3((double)i *(xSize) / numCells, value * 5, (double)j * (ySize) / numCells), normal,
 				glm::vec2(i, j),
-				glm::vec3((float)image.GetValue(i, j).red / 256, (float)image.GetValue(i, j).green / 256, (float)image.GetValue(i, j).blue / 256));
+				glm::vec4((float)image.GetValue(i, j).red / 256, (float)image.GetValue(i, j).green / 256, (float)image.GetValue(i, j).blue / 256, (float)image.GetValue(i,j).alpha/256));
 			//std::cout << value << std::endl;
 		}
 	}
@@ -220,7 +238,7 @@ static Mesh* createFlatPlane(int numCells) {
 	{
 		for (int j = 0; j <= numCells; j++)
 		{
-			verts[(i)*(numCells + 1) + j] = Vertex(glm::vec3(i,0,j), glm::vec3(0,1,0), glm::vec2(i, j), glm::vec3(1,1,1));
+			verts[(i)*(numCells + 1) + j] = Vertex(glm::vec3(i,0,j), glm::vec3(0,1,0), glm::vec2(i, j), glm::vec4(1));
 		}
 	}
 
@@ -245,52 +263,52 @@ static Mesh* createCube() {
 	return new Mesh(
 	{
 		//Left face
-		{{ 0.5f, -0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.333f, 1.0f	}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, -0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.667f, 1.0f	}, {1.0f,1.0f,1.0f}},
-		{{ 0.5f, 0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.333f, 0.5f	}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, 0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.667f, 0.5f	}, {1.0f,1.0f,1.0f}},
-		{{ 0.5f, 0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.333f, 0.5f	}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, -0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.667f, 1.0f	}, {1.0f,1.0f,1.0f}},
+		{{ 0.5f, -0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.333f, 1.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, -0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.667f, 1.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ 0.5f, 0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.333f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, 0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.667f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ 0.5f, 0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.333f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, -0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.667f, 1.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
 		
 		//Right face			
-		{{ 0.5f, 0.5f, 0.5f		},{0.0f, 0.0f, 1.0f},{ 0.667f, 0.0f	}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, -0.5f, 0.5f	},{0.0f, 0.0f, 1.0f},{ 0.333f, 0.5f	}, {1.0f,1.0f,1.0f}},
-		{{ 0.5f, -0.5f, 0.5f	},{0.0f, 0.0f, 1.0f},{ 0.667f, 0.5f	}, {1.0f,1.0f,1.0f}},
-		{{ 0.5f, 0.5f, 0.5f		},{0.0f, 0.0f, 1.0f},{ 0.667f, 0.0f	}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, 0.5f, 0.5f	},{0.0f, 0.0f, 1.0f},{ 0.333f, 0.0f	}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, -0.5f, 0.5f	},{0.0f, 0.0f, 1.0f},{ 0.333f, 0.5f	}, {1.0f,1.0f,1.0f}},
+		{{ 0.5f, 0.5f, 0.5f		},{0.0f, 0.0f, 1.0f},{ 0.667f, 0.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, -0.5f, 0.5f	},{0.0f, 0.0f, 1.0f},{ 0.333f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ 0.5f, -0.5f, 0.5f	},{0.0f, 0.0f, 1.0f},{ 0.667f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ 0.5f, 0.5f, 0.5f		},{0.0f, 0.0f, 1.0f},{ 0.667f, 0.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, 0.5f, 0.5f	},{0.0f, 0.0f, 1.0f},{ 0.333f, 0.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, -0.5f, 0.5f	},{0.0f, 0.0f, 1.0f},{ 0.333f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}},
 		
 		//Back face			
-		{{ -0.5f, -0.5f, -0.5f	},{-1.0f, 0.0f, 0.0f},{ 0.0f, 1.0f	}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, -0.5f, 0.5f	},{-1.0f, 0.0f, 0.0f},{ 0.333f, 1.0f}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, 0.5f, 0.5f	},{-1.0f, 0.0f, 0.0f},{ 0.333f, 0.5f}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, 0.5f, 0.5f	},{-1.0f, 0.0f, 0.0f},{ 0.333f, 0.5f}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, 0.5f, -0.5f	},{-1.0f, 0.0f, 0.0f},{ 0.0f, 0.5f  }, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, -0.5f, -0.5f	},{-1.0f, 0.0f, 0.0f},{ 0.0f, 1.0f  }, {1.0f,1.0f,1.0f}},
-		
-		 //Front face			
-		{{ 0.5f, 0.5f, -0.5f	},{1.0f, 0.0f, 0.0f},{ 0.334f, 0.0f	}, {1.0f,1.0f,1.0f}},
-		{{ 0.5f, 0.5f, 0.5f		},{1.0f, 0.0f, 0.0f},{ 0.0f, 0.0f	}, {1.0f,1.0f,1.0f}},
-		{{ 0.5f, -0.5f, -0.5f	},{1.0f, 0.0f, 0.0f},{ 0.334f, 0.5f	}, {1.0f,1.0f,1.0f}},
-		{{ 0.5f, -0.5f, 0.5f	},{1.0f, 0.0f, 0.0f},{ 0.0f, 0.5f	}, {1.0f,1.0f,1.0f}},
-		{{ 0.5f, -0.5f, -0.5f	},{1.0f, 0.0f, 0.0f},{ 0.334f, 0.5f	}, {1.0f,1.0f,1.0f}},
-		{{ 0.5f, 0.5f, 0.5f		},{1.0f, 0.0f, 0.0f},{ 0.0f, 0.0f	}, {1.0f,1.0f,1.0f}},
+		{{ -0.5f, -0.5f, -0.5f	},{-1.0f, 0.0f, 0.0f},{ 0.0f, 1.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, -0.5f, 0.5f	},{-1.0f, 0.0f, 0.0f},{ 0.333f, 1.0f}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, 0.5f, 0.5f	},{-1.0f, 0.0f, 0.0f},{ 0.333f, 0.5f}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, 0.5f, 0.5f	},{-1.0f, 0.0f, 0.0f},{ 0.333f, 0.5f}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, 0.5f, -0.5f	},{-1.0f, 0.0f, 0.0f},{ 0.0f, 0.5f  }, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, -0.5f, -0.5f	},{-1.0f, 0.0f, 0.0f},{ 0.0f, 1.0f  }, {1.0f,1.0f,1.0f, 1.0f}},
+																					  
+		 //Front face																  
+		{{ 0.5f, 0.5f, -0.5f	},{1.0f, 0.0f, 0.0f},{ 0.334f, 0.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ 0.5f, 0.5f, 0.5f		},{1.0f, 0.0f, 0.0f},{ 0.0f, 0.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ 0.5f, -0.5f, -0.5f	},{1.0f, 0.0f, 0.0f},{ 0.334f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ 0.5f, -0.5f, 0.5f	},{1.0f, 0.0f, 0.0f},{ 0.0f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ 0.5f, -0.5f, -0.5f	},{1.0f, 0.0f, 0.0f},{ 0.334f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ 0.5f, 0.5f, 0.5f		},{1.0f, 0.0f, 0.0f},{ 0.0f, 0.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
 		
 		 //Bottom face		
-		{{ 0.5f, -0.5f, 0.5f	},{0.0f, -1.0f, 0.0f},{ 0.667f, 0.5f	}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, -0.5f, -0.5f	},{0.0f, -1.0f, 0.0f},{ 1.0f, 1.0f		}, {1.0f,1.0f,1.0f}},
-		{{ 0.5f, -0.5f, -0.5f	},{0.0f, -1.0f, 0.0f},{ 0.667f, 1.0f	}, {1.0f,1.0f,1.0f}},
-		{{ 0.5f, -0.5f, 0.5f	},{0.0f, -1.0f, 0.0f},{ 0.667f, 0.5f	}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, -0.5f, 0.5f	},{0.0f, -1.0f, 0.0f},{ 1.0f, 0.5f		}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, -0.5f, -0.5f	},{0.0f, -1.0f, 0.0f},{ 1.0f, 1.0f		}, {1.0f,1.0f,1.0f}},
+		{{ 0.5f, -0.5f, 0.5f	},{0.0f, -1.0f, 0.0f},{ 0.667f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, -0.5f, -0.5f	},{0.0f, -1.0f, 0.0f},{ 1.0f, 1.0f		}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ 0.5f, -0.5f, -0.5f	},{0.0f, -1.0f, 0.0f},{ 0.667f, 1.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ 0.5f, -0.5f, 0.5f	},{0.0f, -1.0f, 0.0f},{ 0.667f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, -0.5f, 0.5f	},{0.0f, -1.0f, 0.0f},{ 1.0f, 0.5f		}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, -0.5f, -0.5f	},{0.0f, -1.0f, 0.0f},{ 1.0f, 1.0f		}, {1.0f,1.0f,1.0f, 1.0f}},
 		
 		 //Top face			
-		{{ 0.5f, 0.5f, -0.5f	},{0.0f, 1.0f, 0.0f},{ 1.0f, 0.5f	}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, 0.5f, -0.5f	},{0.0f, 1.0f, 0.0f},{ 0.667f, 0.5f	}, {1.0f,1.0f,1.0f}},
-		{{ 0.5f, 0.5f, 0.5f		},{0.0f, 1.0f, 0.0f},{ 1.0f, 0.0f	}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, 0.5f, 0.5f	},{0.0f, 1.0f, 0.0f},{ 0.667f, 0.0f	}, {1.0f,1.0f,1.0f}},
-		{{ 0.5f, 0.5f, 0.5f		},{0.0f, 1.0f, 0.0f},{ 1.0f, 0.0f	}, {1.0f,1.0f,1.0f}},
-		{{ -0.5f, 0.5f, -0.5f	},{0.0f, 1.0f, 0.0f},{ 0.667f, 0.5f	}, {1.0f,1.0f,1.0f}}
+		{{ 0.5f, 0.5f, -0.5f	},{0.0f, 1.0f, 0.0f},{ 1.0f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, 0.5f, -0.5f	},{0.0f, 1.0f, 0.0f},{ 0.667f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ 0.5f, 0.5f, 0.5f		},{0.0f, 1.0f, 0.0f},{ 1.0f, 0.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, 0.5f, 0.5f	},{0.0f, 1.0f, 0.0f},{ 0.667f, 0.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ 0.5f, 0.5f, 0.5f		},{0.0f, 1.0f, 0.0f},{ 1.0f, 0.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
+		{{ -0.5f, 0.5f, -0.5f	},{0.0f, 1.0f, 0.0f},{ 0.667f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}}
 	},
 
 	//indices
