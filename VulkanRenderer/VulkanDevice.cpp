@@ -25,9 +25,10 @@ void VulkanDevice::initVulkanDevice(VkSurfaceKHR &surface)
 }
 
 void VulkanDevice::cleanup(VkSurfaceKHR &surface) {
-	vkDestroyCommandPool(device, commandPool, nullptr);
 	vkDestroyCommandPool(device, graphics_queue_command_pool, nullptr);
 	vkDestroyCommandPool(device, compute_queue_command_pool, nullptr);
+	vkDestroyCommandPool(device, transfer_queue_command_pool, nullptr);
+
 
 	vkDestroyDevice(device, nullptr);
 	DestroyDebugReportCallbackEXT(instance, callback, nullptr);
@@ -249,7 +250,7 @@ uint32_t VulkanDevice::getMemoryType(uint32_t typeBits, VkMemoryPropertyFlags pr
 *
 * @return A handle to the allocated command buffer
 */
-VkCommandBuffer VulkanDevice::createCommandBuffer(VkCommandBufferLevel level, bool begin)
+VkCommandBuffer VulkanDevice::createCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel level, bool begin)
 {
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo = initializers::commandBufferAllocateInfo(commandPool, level, 1);
 
@@ -303,7 +304,7 @@ void VulkanDevice::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue que
 
 	if (free)
 	{
-		vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+		vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &commandBuffer);
 	}
 }
 
@@ -458,13 +459,6 @@ void VulkanDevice::createLogicalDevice(VkSurfaceKHR &surface) {
 void VulkanDevice::createCommandPool(VkSurfaceKHR &surface) {
 	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physical_device, surface);
 
-	VkCommandPoolCreateInfo poolInfo = initializers::commandPoolCreateInfo();
-	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily;
-
-	if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create graphics command pool!");
-	}
-
 	// graphics_queue_command_pool
 	{
 		VkCommandPoolCreateInfo pool_info = initializers::commandPoolCreateInfo();
@@ -484,6 +478,17 @@ void VulkanDevice::createCommandPool(VkSurfaceKHR &surface) {
 		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 		if (vkCreateCommandPool(device, &cmd_pool_info, nullptr, &compute_queue_command_pool) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create graphics command pool!");
+		}
+	}
+
+	// transfer_queue_command_pool
+	{
+		VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
+		cmd_pool_info.queueFamilyIndex = queueFamilyIndices.transferFamily;
+		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+		if (vkCreateCommandPool(device, &cmd_pool_info, nullptr, &transfer_queue_command_pool) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create graphics command pool!");
 		}
 	}

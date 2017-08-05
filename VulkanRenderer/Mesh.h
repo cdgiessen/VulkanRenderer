@@ -141,7 +141,7 @@ static Mesh* generateTerrainMesh(int numCells, float xLoc, float yLoc, float xSi
 	noise::module::Perlin myModule;
 	myModule.SetOctaveCount(6);
 	myModule.SetFrequency(0.05);
-	myModule.SetPersistence(0.5);
+	myModule.SetPersistence(0.6);
 
 	noise::utils::NoiseMap heightMap;
 	utils::NoiseMapBuilderPlane heightMapBuilder;
@@ -179,7 +179,8 @@ static Mesh* generateTerrainMesh(int numCells, float xLoc, float yLoc, float xSi
 	renderer.AddGradientPoint(0.0000, utils::Color(255, 0, 0, 255));
 	renderer.AddGradientPoint(0.1000, utils::Color(0, 255, 0, 255));
 	renderer.AddGradientPoint(0.4000, utils::Color(0, 255, 0, 255));
-	renderer.AddGradientPoint(0.5000, utils::Color(0, 0, 255, 255));
+	renderer.AddGradientPoint(0.5000, utils::Color(255, 0, 0, 255));
+	renderer.AddGradientPoint(0.6000, utils::Color(0, 0, 255, 255));
 	renderer.AddGradientPoint(0.8000, utils::Color(0, 0, 255, 255));
 	renderer.AddGradientPoint(1.0000, utils::Color(0, 0, 0, 255));
 

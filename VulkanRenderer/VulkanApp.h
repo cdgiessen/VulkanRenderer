@@ -83,6 +83,8 @@ private:
 	void createUniformBuffers();
 
 	void createDescriptorSets();
+
+	//void DrawTerrainSubDivisions(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], Terrain* terrain);
 	void createCommandBuffers();
 	void createSemaphores();
 

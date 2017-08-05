@@ -79,7 +79,7 @@ void Water::SetupImage()
 
 void Water::SetupModel()
 {
-	WaterModel.loadFromMesh(WaterMesh, *device, device->graphics_queue);
+	WaterModel.loadFromMesh(WaterMesh, device, device->graphics_queue);
 }
 
 void Water::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting)
@@ -237,7 +237,7 @@ void Water::BuildCommandBuffer(VulkanSwapChain* swapChain, VkRenderPass* renderP
 {
 	commandBuffers.resize(swapChain->swapChainFramebuffers.size());
 
-	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(device->commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
+	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
 
 	if (vkAllocateCommandBuffers(device->device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
@@ -284,7 +284,7 @@ void Water::BuildCommandBuffer(VulkanSwapChain* swapChain, VkRenderPass* renderP
 
 void Water::RebuildCommandBuffer(VulkanSwapChain* swapChain, VkRenderPass* renderPass)
 {
-	vkFreeCommandBuffers(device->device, device->commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+	vkFreeCommandBuffers(device->device, device->graphics_queue_command_pool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
 
 	BuildCommandBuffer(swapChain, renderPass);
 }

@@ -82,7 +82,7 @@ void VulkanTexture2D::loadFromTexture(
 	VkMemoryRequirements memReqs;
 
 	// Use a separate command buffer for texture loading
-	VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	VkCommandBuffer copyCmd = device->createCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
 	if (useStaging)
 	{
@@ -191,7 +191,7 @@ void VulkanTexture2D::loadFromTexture(
 		// ---------------------------------------------------------------
 		// We copy down the whole mip chain doing a blit from mip-1 to mip
 		// An alternative way would be to always blit from the first mip level and sample that one down
-		VkCommandBuffer blitCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+		VkCommandBuffer blitCmd = device->createCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
 		// Copy down mips from n-1 to n
 		for (int32_t i = 1; i < mipLevels; i++)
@@ -474,7 +474,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	VK_CHECK_RESULT(vkBindImageMemory(device->device, textureImage, textureImageMemory, 0));
 
 	// Use a separate command buffer for texture loading
-	VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	VkCommandBuffer copyCmd = device->createCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
 	// Image barrier for optimal image (target)
 	// Set initial layout for all array layers (faces) of the optimal (target) tiled texture
@@ -519,7 +519,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	// ---------------------------------------------------------------
 	// We copy down the whole mip chain doing a blit from mip-1 to mip
 	// An alternative way would be to always blit from the first mip level and sample that one down
-	VkCommandBuffer blitCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	VkCommandBuffer blitCmd = device->createCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
 	// Copy down mips from n-1 to n
 	for (int32_t i = 1; i < mipLevels; i++)
@@ -715,7 +715,7 @@ void VulkanCubeMap::loadFromTexture(
 	VK_CHECK_RESULT(vkBindImageMemory(device->device, textureImage, textureImageMemory, 0));
 
 	// Use a separate command buffer for texture loading
-	VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	VkCommandBuffer copyCmd = device->createCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
 	// Image barrier for optimal image (target)
 	// Set initial layout for all array layers (faces) of the optimal (target) tiled texture

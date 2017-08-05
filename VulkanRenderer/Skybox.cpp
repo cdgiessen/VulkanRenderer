@@ -49,7 +49,7 @@ void Skybox::ReinitSkybox(VulkanDevice* device, VkRenderPass renderPass, uint32_
 
 
 void Skybox::LoadSkyboxData(std::string skyboxImageFile, std::string fileExt) {
-	model.loadFromFile("Resources/Models/cube.obj", *device, device->graphics_queue);
+	model.loadFromFile("Resources/Models/cube.obj", device, device->graphics_queue);
 
 	skyboxCubeMap.loadFromFile(skyboxImageFile, fileExt);
 }

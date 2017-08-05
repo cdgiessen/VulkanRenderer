@@ -82,6 +82,7 @@
     <ClCompile Include="ImGuiImpl.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="noiseutils.cpp" />
+    <ClCompile Include="MemoryPool.cpp" />
     <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="VulkanTexture.cpp" />
@@ -99,6 +100,7 @@
     <ClInclude Include="ImGuiImpl.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="noiseutils.h" />
+    <ClInclude Include="MemoryPool.h" />
     <ClInclude Include="Skybox.h" />
     <ClInclude Include="Terrain.h" />
     <ClInclude Include="Texture.h" />

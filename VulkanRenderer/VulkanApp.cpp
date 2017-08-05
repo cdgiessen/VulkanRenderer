@@ -98,10 +98,12 @@ void VulkanApp::prepareScene(){
 	cubeObject->InitGameObject(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 
 	int terWidth = 100;
-	terrain = new Terrain(100, 0, 0, terWidth, terWidth);
+	terrain = new Terrain(100, 2, 0, 0, terWidth, terWidth);
 	terrain->LoadTexture("Resources/Textures/lowPolyScatter.png");
 	terrain->LoadTextureArray();
-	terrain->InitTerrain(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
+	terrain->InitTerrain(&vulkanDevice, renderPass, vulkanDevice.graphics_queue, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
+	
+	terrain->UpdateTerrain(terrain->rootQuad, camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
 
 	water = new Water(terWidth, 0, 0, terWidth, terWidth);
 	water->LoadTexture("Resources/Textures/TileableWaterTexture.jpg");
@@ -115,6 +117,7 @@ void VulkanApp::mainLoop() {
 		glfwPollEvents();
 		HandleInputs();
 		updateUniformBuffers();
+		reBuildCommandBuffers();
 		drawFrame();
 		frameCount++;
 		//std::cout << frameCount << std::endl;
@@ -187,10 +190,10 @@ void VulkanApp::recreateSwapChain() {
 }
 
 void VulkanApp::reBuildCommandBuffers() {
-	vkFreeCommandBuffers(vulkanDevice.device, vulkanDevice.commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+	vkFreeCommandBuffers(vulkanDevice.device, vulkanDevice.graphics_queue_command_pool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
 
 	createCommandBuffers();
-	terrain->RebuildCommandBuffer(&vulkanSwapChain, &renderPass);
+	
 }
 
 
@@ -514,7 +517,7 @@ void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 }
 
 VkCommandBuffer VulkanApp::beginSingleTimeCommands() {
-	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(vulkanDevice.commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(vulkanDevice.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
 	VkCommandBuffer commandBuffer;
 	vkAllocateCommandBuffers(vulkanDevice.device, &allocInfo, &commandBuffer);
@@ -538,7 +541,7 @@ void VulkanApp::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
 	vkQueueSubmit(vulkanDevice.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(vulkanDevice.graphics_queue);
 
-	vkFreeCommandBuffers(vulkanDevice.device, vulkanDevice.commandPool, 1, &commandBuffer);
+	vkFreeCommandBuffers(vulkanDevice.device, vulkanDevice.graphics_queue_command_pool, 1, &commandBuffer);
 }
 
 void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
@@ -551,14 +554,13 @@ void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize 
 	endSingleTimeCommands(commandBuffer);
 }
 
+
 //20
 void VulkanApp::createCommandBuffers() {
-	terrain->BuildCommandBuffer(&vulkanSwapChain, &renderPass);
-
-
+	
 	commandBuffers.resize(vulkanSwapChain.swapChainFramebuffers.size());
 
-	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(vulkanDevice.commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
+	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(vulkanDevice.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
 
 	if (vkAllocateCommandBuffers(vulkanDevice.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
@@ -588,21 +590,26 @@ void VulkanApp::createCommandBuffers() {
 
 		//terrain mesh
 		
-		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? terrain->wireframe : terrain->pipeline);
-		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, terrain->pipelineLayout, 0, 1, &terrain->descriptorSet, 0, nullptr);
+		//vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? terrain->wireframe : terrain->pipeline);
+		//vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, terrain->pipelineLayout, 0, 1, &terrain->descriptorSet, 0, nullptr);
+		//
+		//vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &terrain->terrainModel.vertices.buffer, offsets);
+		//vkCmdBindIndexBuffer(commandBuffers[i], terrain->terrainModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+		//
+		//vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(terrain->terrainModel.indexCount), 1, 0, 0, 0);
 		
-		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &terrain->terrainModel.vertices.buffer, offsets);
-		vkCmdBindIndexBuffer(commandBuffers[i], terrain->terrainModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-		
-		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(terrain->terrainModel.indexCount), 1, 0, 0, 0);
-		
+		terrain->DrawTerrain(commandBuffers, i, offsets, terrain);
+
+
+
+
 		//water
 		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, water->pipelineLayout, 0, 1, &water->descriptorSet, 0, nullptr);
 		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? water->wireframe : water->pipeline);
 		
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &water->WaterModel.vertices.buffer, offsets);
 		vkCmdBindIndexBuffer(commandBuffers[i], water->WaterModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-
+		
 		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(water->WaterModel.indexCount), 1, 0, 0, 0);
 
 		//cubeObject
@@ -744,6 +751,8 @@ void VulkanApp::updateUniformBuffers() {
 
 	skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
 	water->UpdateUniformBuffer(time, camera->GetViewMatrix());
+
+	terrain->UpdateTerrain(terrain->rootQuad, camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
 }
 
 void VulkanApp::HandleInputs() {

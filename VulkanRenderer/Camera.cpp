@@ -63,20 +63,26 @@ void Camera::ProcessMouseMovement(float xoffset, float yoffset, bool constrainPi
 // Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
 void Camera::ProcessMouseScroll(float yoffset)
 {
-	if (Zoom >= 1.0f && Zoom <= 45.0f)
-		Zoom -= yoffset;
-	if (Zoom <= 1.0f)
-		Zoom = 1.0f;
-	if (Zoom >= 45.0f)
-		Zoom = 45.0f;
+	//if (Zoom >= 1.0f && Zoom <= 45.0f)
+	//	Zoom -= yoffset;
+	//if (Zoom <= 1.0f)
+	//	Zoom = 1.0f;
+	//if (Zoom >= 45.0f)
+	//	Zoom = 45.0f;
+
+	MovementSpeed += yoffset;
+	
+	if (MovementSpeed <= 0.1f)
+		MovementSpeed = 0.1f;
+
 }
 
 void Camera::ChangeCameraSpeed(Camera_Movement direction) {
 	if (direction == UP)
-		MovementSpeed += 0.25f;
+		MovementSpeed += 1.0f;
 	if (direction == DOWN)
 		MovementSpeed -= 0.25f;
 	if (MovementSpeed <= 0) {
-		MovementSpeed = 0.15f;
+		MovementSpeed = 0.05f;
 	}
 }

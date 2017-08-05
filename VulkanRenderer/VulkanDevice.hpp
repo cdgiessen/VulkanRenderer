@@ -44,10 +44,12 @@ public:
 	VkQueue graphics_queue;
 	VkQueue present_queue;
 	VkQueue compute_queue;
+	VkQueue transfer_queue;
 
-	VkCommandPool commandPool;
 	VkCommandPool graphics_queue_command_pool;
 	VkCommandPool compute_queue_command_pool;
+	VkCommandPool transfer_queue_command_pool;
+
 	VkPhysicalDeviceProperties physical_device_properties;
 	VkPhysicalDeviceFeatures physical_device_features;
 	VkPhysicalDeviceMemoryProperties memoryProperties;
@@ -115,7 +117,7 @@ public:
 	*
 	* @return A handle to the allocated command buffer
 	*/
-	VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin = false);
+	VkCommandBuffer createCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel level, bool begin = false);
 
 	/**
 	* Finish command buffer recording and submit it to a queue

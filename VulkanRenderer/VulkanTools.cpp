@@ -142,6 +142,10 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR windo
 			indices.presentFamily = i;
 		}
 
+		if (queueFamily.queueCount > 0 && presentSupport) {
+			indices.transferFamily = i;
+		}
+
 		if (indices.isComplete()) {
 			break;
 		}

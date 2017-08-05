@@ -75,7 +75,7 @@ void GameObject::SetupImage() {
 }
 
 void GameObject::SetupModel() {
-	gameObjectModel.loadFromMesh(gameObjectMesh, *device, device->graphics_queue);
+	gameObjectModel.loadFromMesh(gameObjectMesh, device, device->graphics_queue);
 }
 
 void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting) {
