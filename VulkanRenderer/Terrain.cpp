@@ -8,75 +8,55 @@ TerrainQuad::TerrainQuad() {
 	size = glm::vec3(0);
 	level = 0;
 	isSubdivided = false;
-	vertsPtr = nullptr;
-	indicesPtr = nullptr;
-
 }
 
 TerrainQuad::~TerrainQuad() {}
 
-void TerrainQuad::init(float posX, float posY, int sizeX, int sizeY, int level, uint32_t offset, TerrainMeshVertices* vertsPtr, TerrainMeshIndices* indicesPtr, VkDescriptorSet set) {
+void TerrainQuad::init(float posX, float posY, float sizeX, float sizeY, int level) {
 	pos = glm::vec3(posX, 0, posY);
 	size = glm::vec3(sizeX, 0, sizeY);
 	this->level = level;
 	isSubdivided = false;
-	modelOffset = offset;
-	uniformOffset = offset;
 	modelUniformObject.model = glm::translate(glm::mat4(), pos);
 	modelUniformObject.normal = glm::mat4();// glm::transpose(glm::inverse(glm::mat3(modelUniformObject.model))));
-	this->descriptorSet = set;
 
-	this->vertsPtr = vertsPtr;
-	this->indicesPtr = indicesPtr;
-
-	CreateTerrainMesh(vertsPtr, indicesPtr);
 }
 
 void TerrainQuad::CleanUp() {
 	
 }
 
-void TerrainQuad::UpdateTerrainQuad() {
-
-}
-
-void TerrainQuad::UpdateModelUniformBuffer(VulkanDevice* device, VulkanBuffer buff) {
-
-	buff.map(device->device, sizeof(modelUniformObject), uniformOffset * sizeof(ModelBufferObject));
-	buff.copyTo(&modelUniformObject, sizeof(modelUniformObject));
-	buff.unmap();
-}
-
 void TerrainQuad::CreateTerrainMesh(TerrainMeshVertices* verts, TerrainMeshIndices* indices) {
 
-	//uint32_t vertexCount = static_cast<uint32_t>(vertices.size());
-	//uint32_t indexCount = static_cast<uint32_t>(indices.size());
+	uint32_t vertexCount = verts->size();
+	uint32_t indexCount = indices->size();
 
-	Mesh* mesh = generateTerrainMesh(NumCells, pos.x , pos.y, size.x, size.z);
-	//memccpy(verts->data.data, mesh->vertices.data, vertCount, sizeof(Vertex));
+	Mesh mesh = *genTerrain(NumCells, pos.x , pos.z, size.x, size.z);
+	//memcpy(verts->data(), mesh.vertices.data(), vertexCount * sizeof(Vertex));
 	///*
-	for (int i = 0; i < (int)vertCount; i++)
+	for (int i = 0; i < (int)vertexCount/(sizeof(Vertex)/4); i++)
 	{
-		verts->data[i*vertElementCount] =	mesh->vertices[i].pos[0];
-		verts->data[i*vertElementCount + 1] = mesh->vertices[i].pos[1];
-		verts->data[i*vertElementCount + 2] = mesh->vertices[i].pos[2];
-		verts->data[i*vertElementCount + 3] = mesh->vertices[i].normal[0];
-		verts->data[i*vertElementCount + 4] = mesh->vertices[i].normal[1];
-		verts->data[i*vertElementCount + 5] = mesh->vertices[i].normal[2];
-		verts->data[i*vertElementCount + 6] = mesh->vertices[i].texCoord[0];
-		verts->data[i*vertElementCount + 7] = mesh->vertices[i].texCoord[1];
-		verts->data[i*vertElementCount + 8] = mesh->vertices[i].color[0];
-		verts->data[i*vertElementCount + 9] = mesh->vertices[i].color[1];
-		verts->data[i*vertElementCount + 10] = mesh->vertices[i].color[2];
-		verts->data[i*vertElementCount + 11] = mesh->vertices[i].color[3];
+		
+		verts->at(i * vertElementCount + 0) =	mesh.vertices[i].pos[0];
+		verts->at(i * vertElementCount + 1) =	mesh.vertices[i].pos[1];
+		verts->at(i * vertElementCount + 2) =	mesh.vertices[i].pos[2];
+		verts->at(i * vertElementCount + 3) =	mesh.vertices[i].normal[0];
+		verts->at(i * vertElementCount + 4) =	mesh.vertices[i].normal[1];
+		verts->at(i * vertElementCount + 5) =	mesh.vertices[i].normal[2];
+		verts->at(i * vertElementCount + 6) =	mesh.vertices[i].texCoord[0];
+		verts->at(i * vertElementCount + 7) =	mesh.vertices[i].texCoord[1];
+		verts->at(i * vertElementCount + 8) =	mesh.vertices[i].color[0];
+		verts->at(i * vertElementCount + 9) =	mesh.vertices[i].color[1];
+		verts->at(i * vertElementCount + 10) =	mesh.vertices[i].color[2];
+		verts->at(i * vertElementCount + 11) =	mesh.vertices[i].color[3];
 	}
 	//*/
 
-	//memcpy(indices->data.data, mesh->indices.data, indexCount * sizeof(float));
+	//memcpy(indices->data(), mesh.indices.data(), indexCount * sizeof(float));
 	///*
-	for (int i = 0; i < (int)indCount; i++)
+	for (int i = 0; i < (int)indexCount; i++)
 	{
-		indices->data[i] = mesh->indices[i];
+		indices->at(i) = mesh.indices[i];
 	}
 	//*/
 
@@ -94,19 +74,18 @@ void TerrainQuad::CreateTerrainMesh(TerrainMeshVertices* verts, TerrainMeshIndic
 
 
 
-Terrain::Terrain(int numCells, int maxLevels, float posX, float posY, int sizeX, int sizeY) : maxLevels(maxLevels)
+Terrain::Terrain(int numCells, int maxLevels, float posX, float posY, float sizeX, float sizeY) : maxLevels(maxLevels)
 {
+	//simple calculation right now, does the absolute max number of quads possible with given max level
+	//in future should calculate the actual number of max quads, based on distance calculation
 	if (maxLevels < 0) {
 		maxNumQuads = 1;
 	}
 	else {
-		maxNumQuads = (1 - glm::pow(4, maxLevels + 1)) / (-3);
+		maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0));
 	}
-	terrainQuadPool = new MemoryPool<TerrainQuad>(maxNumQuads);
-	meshVertexPool = new MemoryPool<TerrainMeshVertices>(maxNumQuads);
-	meshIndexPool = new MemoryPool<TerrainMeshIndices>(maxNumQuads);
-
-	descriptorSets.resize(maxNumQuads);
+	terrainQuads = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
+	quadHandles.reserve(maxNumQuads);
 
 	position = glm::vec3(posX, 0, posY);
 	size = glm::vec3(sizeX, 0, sizeY);
@@ -120,9 +99,8 @@ Terrain::~Terrain() {
 	terrainSplatMap->~Texture();
 	terrainTextureArray->~TextureArray();
 
-	terrainQuadPool->~MemoryPool();
-	meshVertexPool->~MemoryPool();
-	meshIndexPool->~MemoryPool();
+	terrainQuads->~MemoryPool();
+	
 }
 
 
@@ -133,56 +111,70 @@ void Terrain::InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue
 	SetupUniformBuffer();
 	SetupImage();
 	SetupModel();
-	SetupDescriptorSets();
+	SetupDescriptorLayoutAndPool();
 	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
-	UploadMeshBuffer(copyQueue);
 
-	rootQuad = terrainQuadPool->allocate();
-	rootQuad->init(position.x, position.z, size.x, size.z, 0, 0, meshVertexPool->allocate(), meshIndexPool->allocate(), descriptorSets[0]);
-	rootQuad->UpdateModelUniformBuffer(device, modelUniformBuffer);
-	SetupQuadDescriptor(rootQuad, global, lighting);
+	rootQuad = InitTerrainQuad(glm::vec3(0), glm::vec3(size), 0, global, lighting);
 
-
+	UpdateModelBuffer(copyQueue);
+	UpdateMeshBuffer(copyQueue);
 }
 
 void Terrain::ReinitTerrain(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
 {
 	this->device = device;
 
-	vkDestroyDescriptorSetLayout(device->device, descriptorSetLayout, nullptr);
-	vkDestroyDescriptorPool(device->device, descriptorPool, nullptr);
-
 	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
 	vkDestroyPipeline(device->device, pipeline, nullptr);
 	vkDestroyPipeline(device->device, wireframe, nullptr);
 
-	SetupDescriptorSets();
 	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
 }
 
-void Terrain::UpdateTerrain(TerrainQuad* quad, glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo) {
+void Terrain::UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo) {
 
-	glm::vec3 center = glm::vec3(quad->pos.x + quad->size.x / 2.0f, 0, quad->pos.z + quad->size.z / 2.0f);
+	std::vector<std::vector<TerrainQuadData>::iterator> toDelete;
+
+	bool shouldUpdateBuffers = UpdateTerrainQuad(rootQuad, viewerPos, copyQueue, gbo, lbo);
+	
+	if (shouldUpdateBuffers) {
+		UpdateModelBuffer(copyQueue);
+		UpdateMeshBuffer(copyQueue);
+	}
+}
+
+bool Terrain::UpdateTerrainQuad(TerrainQuadData* quad, glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo) {
+	
+	glm::vec3 center = glm::vec3(quad->terrainQuad.pos.x + quad->terrainQuad.size.x / 2.0f, 0, quad->terrainQuad.pos.z + quad->terrainQuad.size.z / 2.0f);
 	float distanceToViewer = glm::distance(viewerPos, center);
+	bool shouldUpdateBuffers = false;;
 
-	if (!quad->isSubdivided) {
-		if (distanceToViewer < quad->size.x * 2.0f && quad->level < maxLevels) {
+
+	if (!quad->terrainQuad.isSubdivided) {
+		if (distanceToViewer < quad->terrainQuad.size.x * 2.0f && quad->terrainQuad.level < maxLevels) {
 			SubdivideTerrain(quad, gbo, lbo);
-		}
+			shouldUpdateBuffers = true;
+		} 
 	}
-	else if (distanceToViewer > quad->size.x * 2.0f) {
+	else if (distanceToViewer > quad->terrainQuad.size.x * 2.0f) {
+		//toDelete.push_back(it);
 		UnSubdivide(quad);
-
-	}
-	else if (quad->isSubdivided) {
-		UpdateTerrain(quad->node.LowerRight, viewerPos, copyQueue, gbo, lbo);
-		UpdateTerrain(quad->node.UpperLeft, viewerPos, copyQueue, gbo, lbo);
-		UpdateTerrain(quad->node.LowerLeft, viewerPos, copyQueue, gbo, lbo);
-		UpdateTerrain(quad->node.UpperRight, viewerPos, copyQueue, gbo, lbo);
-
+		shouldUpdateBuffers = true;
 	}
 
-	UpdateMeshBuffer(copyQueue);
+	else if (quad->terrainQuad.isSubdivided) {
+		bool uL = false, uR = false, dL = false, dR = false;
+		
+		uL = UpdateTerrainQuad(quad->subQuads.UpLeft, viewerPos, copyQueue, gbo, lbo);
+		uR = UpdateTerrainQuad(quad->subQuads.UpRight, viewerPos, copyQueue, gbo, lbo);
+		dL = UpdateTerrainQuad(quad->subQuads.DownLeft, viewerPos, copyQueue, gbo, lbo);
+		dR = UpdateTerrainQuad(quad->subQuads.DownRight, viewerPos, copyQueue, gbo, lbo);
+		
+		if (uL || uR || dL || dR)
+			shouldUpdateBuffers = true;
+	}
+	
+	return shouldUpdateBuffers;
 }
 
 void Terrain::CleanUp() 
@@ -224,7 +216,7 @@ void Terrain::LoadTextureArray() {
 
 void Terrain::SetupUniformBuffer()
 {
-	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &modelUniformBuffer, sizeof(ModelBufferObject) * maxNumQuads );
+	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &modelUniformBuffer, sizeof(ModelBufferObject) * maxNumQuads);
 }
 
 void Terrain::SetupImage() 
@@ -248,8 +240,10 @@ void Terrain::SetupModel()
 
 }
 
-void Terrain::SetupDescriptorSets()
+void Terrain::SetupDescriptorLayoutAndPool()
 {
+	
+
 	//layout
 	VkDescriptorSetLayoutBinding cboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1);
 	VkDescriptorSetLayoutBinding uboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1, 1);
@@ -279,38 +273,11 @@ void Terrain::SetupDescriptorSets()
 			poolSizesTerrain.data(),
 			maxNumQuads);
 
+	poolInfoTerrain.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
 	if (vkCreateDescriptorPool(device->device, &poolInfoTerrain, nullptr, &descriptorPool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool!");
 	}
-
-	//Descriptor set
-	std::vector<VkDescriptorSetLayout> layouts;
-	layouts.resize(maxNumQuads);
-	std::fill(layouts.begin(), layouts.end(), descriptorSetLayout);
-
-	VkDescriptorSetAllocateInfo allocInfoTerrain = initializers::descriptorSetAllocateInfo(descriptorPool, layouts.data(), maxNumQuads);
-
-	if (vkAllocateDescriptorSets(device->device, &allocInfoTerrain, descriptorSets.data()) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate descriptor set!");
-	}
-	
-
-	modelUniformBuffer.setupDescriptor();
-}
-
-void Terrain::SetupQuadDescriptor(TerrainQuad* quad, VulkanBuffer &gbo, VulkanBuffer &lbo){
-
-	modelUniformBuffer.setupDescriptor(sizeof(ModelBufferObject), quad->uniformOffset * sizeof(ModelBufferObject));
-	quad->UpdateModelUniformBuffer(device, modelUniformBuffer);
-
-	std::vector<VkWriteDescriptorSet> descriptorWrites;
-	descriptorWrites.push_back(initializers::writeDescriptorSet(quad->descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &gbo.descriptor, 1));
-	descriptorWrites.push_back(initializers::writeDescriptorSet(quad->descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &modelUniformBuffer.descriptor, 1));
-	descriptorWrites.push_back(initializers::writeDescriptorSet(quad->descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lbo.descriptor, 1));
-	descriptorWrites.push_back(initializers::writeDescriptorSet(quad->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &terrainVulkanSplatMap.descriptor, 1));
-	descriptorWrites.push_back(initializers::writeDescriptorSet(quad->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, &terrainVulkanTextureArray.descriptor, 1));
-
-	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
 void Terrain::SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
@@ -410,15 +377,134 @@ void Terrain::SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uin
 	vkDestroyShaderModule(device->device, fragShaderModule, nullptr);
 }
 
+void Terrain::UpdateModelBuffer(VkQueue copyQueue) {
+
+	std::vector<ModelBufferObject> modelObjects;
+	modelObjects.reserve(quadHandles.size());
+
+	for (auto it = quadHandles.begin(); it != quadHandles.end(); it++) {
+		modelObjects.push_back((*it)->terrainQuad.modelUniformObject);
+	}
+
+	modelUniformBuffer.map(device->device, modelObjects.size() * sizeof(ModelBufferObject));
+	modelUniformBuffer.copyTo(modelObjects.data(), modelObjects.size() * sizeof(ModelBufferObject));
+	modelUniformBuffer.unmap();
+}
+
 void Terrain::UploadMeshBuffer(VkQueue copyQueue) {
 
-	vertexCount = meshVertexPool->MaxChunks() * sizeof(TerrainMeshVertices)/4;
-	indexCount = meshIndexPool->MaxChunks() * sizeof(TerrainMeshIndices)/4;
+	//vertexCount = terrainQuads->size() * sizeof(TerrainMeshVertices) / 4;
+	//indexCount = meshIndexPool->MaxChunks() * sizeof(TerrainMeshIndices) / 4;
+
+
+	uint32_t vBufferSize = static_cast<uint32_t>(quadHandles.size()) * sizeof(TerrainMeshVertices);
+	uint32_t iBufferSize = static_cast<uint32_t>(quadHandles.size()) * sizeof(TerrainMeshIndices);
 	
+	std::vector<TerrainMeshVertices> verts;
+	verts.reserve(quadHandles.size());
+	
+	for (auto it = quadHandles.begin(); it != quadHandles.end(); it++) {
+		verts.push_back((*it)->vertices);
+		//memcpy(&verts.at(it - terrainQuads->begin()), &terrainQuads->at(it - terrainQuads->begin()).vertices, sizeof(TerrainMeshVertices));
+	}
 
-	uint32_t vBufferSize = static_cast<uint32_t>(meshVertexPool->MaxChunks()) * sizeof(TerrainMeshVertices);
-	uint32_t iBufferSize = static_cast<uint32_t>(meshIndexPool->MaxChunks()) * sizeof(TerrainMeshIndices);
+	std::vector<TerrainMeshIndices> inds;
+	inds.reserve(quadHandles.size());
+	
+	for (auto it = quadHandles.begin(); it != quadHandles.end(); it++) {
+		inds.push_back((*it)->indices);
+		//memcpy(&inds.at(it - terrainQuads->begin()), &terrainQuads->at(it - terrainQuads->begin()).indices, sizeof(TerrainMeshIndices));
+	}
 
+	// Use staging buffer to move vertex and index buffer to device local memory
+	// Create staging buffers
+	VulkanBuffer vertexStaging, indexStaging;
+	
+	// Vertex buffer
+	VK_CHECK_RESULT(device->createBuffer(
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		&vertexStaging,
+		vBufferSize,
+		verts.data()));
+	
+	// Index buffer
+	VK_CHECK_RESULT(device->createBuffer(
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		&indexStaging,
+		iBufferSize,
+		inds.data()));
+	
+	// Create device local target buffers
+	// Vertex buffer
+	VK_CHECK_RESULT(device->createBuffer(
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		&vertexBuffer,
+		vBufferSize));
+	
+	// Index buffer
+	VK_CHECK_RESULT(device->createBuffer(
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		&indexBuffer,
+		iBufferSize));
+	
+	// Copy from staging buffers
+	VkCommandBuffer copyCmd = device->createCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	
+	VkBufferCopy copyRegion{};
+	
+	copyRegion.size = vertexBuffer.size;
+	vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, vertexBuffer.buffer, 1, &copyRegion);
+	
+	copyRegion.size = indexBuffer.size;
+	vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indexBuffer.buffer, 1, &copyRegion);
+	
+	device->flushCommandBuffer(copyCmd, copyQueue);
+	
+	// Destroy staging resources
+	vkDestroyBuffer(device->device, vertexStaging.buffer, nullptr);
+	vkFreeMemory(device->device, vertexStaging.bufferMemory, nullptr);
+	vkDestroyBuffer(device->device, indexStaging.buffer, nullptr);
+	vkFreeMemory(device->device, indexStaging.bufferMemory, nullptr);
+	
+}
+
+void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
+//	vertexBuffer.map(device->device, meshVertexPool->MaxChunks() * sizeof(TerrainMeshVertices), 0);
+//	vertexBuffer.copyTo(&meshVertexPool, meshVertexPool->ChunksUsed() * sizeof(TerrainMeshVertices));
+//	vertexBuffer.unmap();
+//
+//	indexBuffer.map(device->device, meshIndexPool->MaxChunks() * sizeof(TerrainMeshIndices), 0);
+//	indexBuffer.copyTo(&meshIndexPool, meshIndexPool->ChunksUsed() * sizeof(TerrainMeshIndices));
+//	indexBuffer.unmap();
+//
+
+	vkDestroyBuffer(device->device, vertexBuffer.buffer, nullptr);
+	vkFreeMemory(device->device, vertexBuffer.bufferMemory, nullptr);
+	vkDestroyBuffer(device->device, indexBuffer.buffer, nullptr);
+	vkFreeMemory(device->device, indexBuffer.bufferMemory, nullptr);
+
+	uint32_t vBufferSize = static_cast<uint32_t>(quadHandles.size()) * sizeof(TerrainMeshVertices);
+	uint32_t iBufferSize = static_cast<uint32_t>(quadHandles.size()) * sizeof(TerrainMeshIndices);
+
+	std::vector<TerrainMeshVertices> verts;
+	verts.reserve(quadHandles.size());
+
+	for (auto it = quadHandles.begin(); it != quadHandles.end(); it++) {
+		verts.push_back((*it)->vertices);
+		//memcpy(&verts.at(it - quadHandles.begin()), &(*it)->vertices, sizeof(TerrainMeshVertices));
+	}
+
+	std::vector<TerrainMeshIndices> inds;
+	inds.reserve(quadHandles.size());
+
+	for (auto it = quadHandles.begin(); it != quadHandles.end(); it++) {
+		inds.push_back((*it)->indices);
+		//memcpy(&inds.at(it - quadHandles.begin()), &(*it)->indices, sizeof(TerrainMeshIndices));
+	}
 
 	// Use staging buffer to move vertex and index buffer to device local memory
 	// Create staging buffers
@@ -430,7 +516,7 @@ void Terrain::UploadMeshBuffer(VkQueue copyQueue) {
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 		&vertexStaging,
 		vBufferSize,
-		meshVertexPool->GetDataPtr()->data.data()));
+		verts.data()));
 
 	// Index buffer
 	VK_CHECK_RESULT(device->createBuffer(
@@ -438,7 +524,7 @@ void Terrain::UploadMeshBuffer(VkQueue copyQueue) {
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 		&indexStaging,
 		iBufferSize,
-		meshIndexPool->GetDataPtr()->data.data()));
+		inds.data()));
 
 	// Create device local target buffers
 	// Vertex buffer
@@ -476,119 +562,89 @@ void Terrain::UploadMeshBuffer(VkQueue copyQueue) {
 
 }
 
-void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
-//	vertexBuffer.map(device->device);
-//	vertexBuffer.copyTo(&meshVertexPool, meshVertexPool->ChunksUsed() * sizeof(TerrainMeshVertices));
-//	vertexBuffer.unmap();
-//
-//	indexBuffer.map(device->device);
-//	indexBuffer.copyTo(&meshIndexPool, meshIndexPool->ChunksUsed() * sizeof(TerrainMeshIndices));
-//	indexBuffer.unmap();
+TerrainQuadData* Terrain::InitTerrainQuad(glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo) {
+	TerrainQuadData* q = terrainQuads->allocate();
+	quadHandles.push_back(q);
 
-	vertexCount = meshVertexPool->MaxChunks() * sizeof(TerrainMeshVertices) / 4;
-	indexCount = meshIndexPool->MaxChunks() * sizeof(TerrainMeshIndices) / 4;
+	q->terrainQuad.init(position.x, position.z, size.x, size.z, level);
+	q->terrainQuad.CreateTerrainMesh(&q->vertices, &q->indices);
 
+	//std::vector<VkDescriptorSetLayout> layouts;
+	//layouts.resize(maxNumQuads);
+	//std::fill(layouts.begin(), layouts.end(), descriptorSetLayout);
 
-	uint32_t vBufferSize = static_cast<uint32_t>(meshVertexPool->MaxChunks()) * sizeof(TerrainMeshVertices);
-	uint32_t iBufferSize = static_cast<uint32_t>(meshIndexPool->MaxChunks()) * sizeof(TerrainMeshIndices);
+	VkDescriptorSetAllocateInfo allocInfoTerrain = initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
+	
+	if (vkAllocateDescriptorSets(device->device, &allocInfoTerrain, &q->descriptorSet) != VK_SUCCESS) {
+		throw std::runtime_error("failed to allocate descriptor set!");
+	}
+	
+	modelUniformBuffer.setupDescriptor(sizeof(ModelBufferObject), (quadHandles.size() - 1) * sizeof(ModelBufferObject));
 
+	std::vector<VkWriteDescriptorSet> descriptorWrites;
+	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &gbo.descriptor, 1));
+	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &modelUniformBuffer.descriptor, 1));
+	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lbo.descriptor, 1));
+	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &terrainVulkanSplatMap.descriptor, 1));
+	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, &terrainVulkanTextureArray.descriptor, 1));
 
-	// Use staging buffer to move vertex and index buffer to device local memory
-	// Create staging buffers
-	VulkanBuffer vertexStaging, indexStaging;
+	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 
-	// Vertex buffer
-	VK_CHECK_RESULT(device->createBuffer(
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-		&vertexStaging,
-		vBufferSize,
-		meshVertexPool->GetDataPtr()->data.data()));
-
-	// Index buffer
-	VK_CHECK_RESULT(device->createBuffer(
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-		&indexStaging,
-		iBufferSize,
-		meshIndexPool->GetDataPtr()->data.data()));
-
-
-	// Copy from staging buffers
-	VkCommandBuffer copyCmd = device->createCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-
-	VkBufferCopy copyRegion{};
-
-	copyRegion.size = vertexBuffer.size;
-	vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, vertexBuffer.buffer, 1, &copyRegion);
-
-	copyRegion.size = indexBuffer.size;
-	vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indexBuffer.buffer, 1, &copyRegion);
-
-	device->flushCommandBuffer(copyCmd, copyQueue);
-
-	// Destroy staging resources
-	vkDestroyBuffer(device->device, vertexStaging.buffer, nullptr);
-	vkFreeMemory(device->device, vertexStaging.bufferMemory, nullptr);
-	vkDestroyBuffer(device->device, indexStaging.buffer, nullptr);
-	vkFreeMemory(device->device, indexStaging.bufferMemory, nullptr);
+	return q;
 }
 
-void Terrain::SubdivideTerrain(TerrainQuad* quad, VulkanBuffer &gbo, VulkanBuffer &lbo) {
-	quad->isSubdivided = true;
+void Terrain::SubdivideTerrain(TerrainQuadData* quad, VulkanBuffer &gbo, VulkanBuffer &lbo) {
+	quad->terrainQuad.isSubdivided = true;
 
-	glm::vec3 new_pos = glm::vec3(quad->pos.x, 0, quad->pos.z);
-	glm::vec3 new_size = glm::vec3(quad->size.x/2, 0, quad->size.z/2);
+	glm::vec3 new_pos = glm::vec3(quad->terrainQuad.pos.x, 0, quad->terrainQuad.pos.z);
+	glm::vec3 new_size = glm::vec3(quad->terrainQuad.size.x/2.0, 0, quad->terrainQuad.size.z/2.0);
 
-	quad->node.LowerLeft = terrainQuadPool->allocate();
-	quad->node.LowerLeft->init(new_pos.x, new_pos.z, new_size.x, new_size.z, quad->level + 1, 1, meshVertexPool->allocate(), meshIndexPool->allocate(), descriptorSets[1]);
-	SetupQuadDescriptor(quad->node.LowerLeft, gbo, lbo);
+	quad->subQuads.UpRight = InitTerrainQuad(glm::vec3(new_pos.x, 0, new_pos.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
 
-	quad->node.LowerRight = terrainQuadPool->allocate();
-	quad->node.LowerRight->init(new_pos.x, new_pos.z + new_size.z, new_size.x , new_size.z, quad->level + 1, 2, meshVertexPool->allocate(), meshIndexPool->allocate(), descriptorSets[2]);
-	SetupQuadDescriptor(quad->node.LowerRight, gbo, lbo);
+	quad->subQuads.UpLeft = InitTerrainQuad(glm::vec3(new_pos.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
+	
+	quad->subQuads.DownRight = InitTerrainQuad(glm::vec3(new_pos.x + new_size.x, 0, new_pos.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
+	
+	quad->subQuads.DownLeft = InitTerrainQuad(glm::vec3(new_pos.x + new_size.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
 
-	quad->node.UpperLeft = terrainQuadPool->allocate();
-	quad->node.UpperLeft->init(new_pos.x + new_size.x, new_pos.z, new_size.x, new_size.z, quad->level + 1, 3, meshVertexPool->allocate(), meshIndexPool->allocate(), descriptorSets[3]);
-	SetupQuadDescriptor(quad->node.UpperLeft, gbo, lbo);
-
-	quad->node.UpperRight = terrainQuadPool->allocate();
-	quad->node.UpperRight->init(new_pos.x + new_size.x, new_pos.z + new_size.z, new_size.x, new_size.z, quad->level + 1, 4, meshVertexPool->allocate(), meshIndexPool->allocate(), descriptorSets[4]);
-	SetupQuadDescriptor(quad->node.UpperRight, gbo, lbo);
-
-	//subdivisionTree.LowerRight->InitTerrain(device, renderPass, viewPortWidth, viewPortHeight, global, lighting);
-
-	//remove current level resources
-
-	std::cout << "Terrain subdivided: Level " << quad->level << std::endl;
+	std::cout << "Terrain subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " <<quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << std::endl;
 
 	
 }
 
-void Terrain::UnSubdivide(TerrainQuad* quad) {
-	if (quad->isSubdivided) {
-		meshVertexPool->deallocate(quad->node.LowerRight->vertsPtr);
-		meshVertexPool->deallocate(quad->node.UpperLeft->vertsPtr);
-		meshVertexPool->deallocate(quad->node.LowerLeft->vertsPtr);
-		meshVertexPool->deallocate(quad->node.UpperRight->vertsPtr);
+void Terrain::UnSubdivide(TerrainQuadData* quad) {
+	if (quad->terrainQuad.isSubdivided) {
+		auto delUR = std::find(quadHandles.begin(), quadHandles.end(), quad->subQuads.UpRight);
+		if(delUR != quadHandles.end())
+			quadHandles.erase(delUR);
+		vkFreeDescriptorSets(device->device, descriptorPool, 1, &quad->subQuads.UpRight->descriptorSet);
+		terrainQuads->deallocate(quad->subQuads.UpRight);
 
-		meshIndexPool->deallocate(quad->node.LowerRight->indicesPtr);
-		meshIndexPool->deallocate(quad->node.UpperLeft->indicesPtr);
-		meshIndexPool->deallocate(quad->node.LowerLeft->indicesPtr);
-		meshIndexPool->deallocate(quad->node.UpperRight->indicesPtr);
-		
-		quad->node.LowerRight->CleanUp();
-		quad->node.UpperLeft->CleanUp();
-		quad->node.LowerLeft->CleanUp();
-		quad->node.UpperRight->CleanUp();
 
-		terrainQuadPool->deallocate(quad->node.LowerLeft);
-		terrainQuadPool->deallocate(quad->node.LowerRight);
-		terrainQuadPool->deallocate(quad->node.UpperLeft);
-		terrainQuadPool->deallocate(quad->node.UpperRight);
+		auto delDR = std::find(quadHandles.begin(), quadHandles.end(), quad->subQuads.DownRight);
+		if (delDR != quadHandles.end())
+			quadHandles.erase(delDR);
+		vkFreeDescriptorSets(device->device, descriptorPool, 1, &quad->subQuads.DownRight->descriptorSet);
+		terrainQuads->deallocate(quad->subQuads.DownRight);
+
+
+		auto delUL = std::find(quadHandles.begin(), quadHandles.end(), quad->subQuads.UpLeft);
+		if (delUL != quadHandles.end())
+			quadHandles.erase(delUL);
+		vkFreeDescriptorSets(device->device, descriptorPool, 1, &quad->subQuads.UpLeft->descriptorSet);
+		terrainQuads->deallocate(quad->subQuads.UpLeft);
+
+
+		auto delDL = std::find(quadHandles.begin(), quadHandles.end(), quad->subQuads.DownLeft);
+		if (delDL != quadHandles.end())
+			quadHandles.erase(delDL);
+		vkFreeDescriptorSets(device->device, descriptorPool, 1, &quad->subQuads.DownLeft->descriptorSet);
+		terrainQuads->deallocate(quad->subQuads.DownLeft);
+
+		quad->terrainQuad.isSubdivided = false;
 	}
-	quad->isSubdivided = false;
-	std::cout << "Terrain un-subdivided: Level " << quad->level << std::endl;
+	//quad->isSubdivided = false;
+	std::cout << "Terrain un-subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " << quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << std::endl;
 }
 
 void Terrain::UpdateUniformBuffer(float time)
@@ -608,51 +664,27 @@ void Terrain::DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex
 	
 	std::vector<VkDeviceSize> vertexOffsettings;
 	
-	for (int i = 0; i < meshVertexPool->ChunksUsed(); i++) {
+	for (int i = 0; i < quadHandles.size(); i++) {
 		vertexOffsettings.push_back(i * sizeof(TerrainMeshVertices));
 	}
 
 	std::vector<VkDeviceSize> indexOffsettings;
-	for (int i = 0; i < meshVertexPool->ChunksUsed(); i++) {
+	for (int i = 0; i < quadHandles.size(); i++) {
 		indexOffsettings.push_back(i * sizeof(TerrainMeshIndices));
 	}
 
 	
-	auto* quadPtr = terrainQuadPool->GetDataPtr();
-	for (int i = 0; i < terrainQuadPool->ChunksUsed(); i++) {
-		vkCmdBindVertexBuffers(cmdBuff[cmdBuffIndex], 0, 1, &vertexBuffer.buffer, vertexOffsettings.data());
-		vkCmdBindIndexBuffer(cmdBuff[cmdBuffIndex], indexBuffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
+	for (auto it = quadHandles.begin(); it < quadHandles.end(); it++) {
+		if (!(*it)->terrainQuad.isSubdivided) {
+			vkCmdBindVertexBuffers(cmdBuff[cmdBuffIndex], 0, 1, &vertexBuffer.buffer, &vertexOffsettings[it - quadHandles.begin()]);
+			vkCmdBindIndexBuffer(cmdBuff[cmdBuffIndex], indexBuffer.buffer, indexOffsettings[it - quadHandles.begin()], VK_INDEX_TYPE_UINT32);
 
-		vkCmdBindDescriptorSets(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &quadPtr->descriptorSet, 0, nullptr);
-		
-		
-		vkCmdDrawIndexed(cmdBuff[cmdBuffIndex], static_cast<uint32_t>(indCount), 1, 0, 0, 0);
+			vkCmdBindDescriptorSets(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &(*it)->descriptorSet, 0, nullptr);
 
-		quadPtr++;
+			vkCmdDrawIndexed(cmdBuff[cmdBuffIndex], static_cast<uint32_t>(indCount), 1, 0, 0, 0);
+		}
 	}
 	
 	
 
-}
-
-void Terrain::DrawTerrainQuad(TerrainQuad* quad, std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1]) {
-	
-
-
-	if (quad->isSubdivided) {
-		DrawTerrainQuad(quad->node.LowerLeft, cmdBuff, cmdBuffIndex, offsets);
-		DrawTerrainQuad(quad->node.LowerRight, cmdBuff, cmdBuffIndex, offsets);
-		DrawTerrainQuad(quad->node.UpperLeft, cmdBuff, cmdBuffIndex, offsets);
-		DrawTerrainQuad(quad->node.UpperRight, cmdBuff, cmdBuffIndex, offsets);
-	}
-	else {
-
-	vkCmdBindDescriptorSets(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &quad->descriptorSet, 0, nullptr);
-	VkDeviceSize mOffset = (quad->modelOffset);
-	vkCmdBindVertexBuffers(cmdBuff[cmdBuffIndex], 0, 1, &vertexBuffer.buffer, offsets);
-	vkCmdBindIndexBuffer(cmdBuff[cmdBuffIndex], indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-	vkCmdDrawIndexed(cmdBuff[cmdBuffIndex], static_cast<uint32_t>(indCount * meshIndexPool->ChunksUsed()), 1, 0, 0, 0);
-	
-	}
 }

@@ -26,14 +26,10 @@ void GameObject::ReinitGameObject(VulkanDevice* device, VkRenderPass renderPass,
 {
 	this->device = device;
 
-	vkDestroyDescriptorSetLayout(device->device, descriptorSetLayout, nullptr);
-	vkDestroyDescriptorPool(device->device, descriptorPool, nullptr);
-
 	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
 	vkDestroyPipeline(device->device, pipeline, nullptr);
 	vkDestroyPipeline(device->device, wireframe, nullptr);
 
-	SetupDescriptor(global, lighting);
 	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
 }
 

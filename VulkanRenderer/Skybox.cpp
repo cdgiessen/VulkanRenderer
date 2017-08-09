@@ -37,13 +37,9 @@ void Skybox::InitSkybox(VulkanDevice* device, std::string filename, std::string 
 }
 
 void Skybox::ReinitSkybox(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight){
-	vkDestroyDescriptorSetLayout(device->device, descriptorSetLayout, nullptr);
-	vkDestroyDescriptorPool(device->device, descriptorPool, nullptr);
-	
 	vkDestroyPipeline(device->device, pipeline, nullptr);
 	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
 
-	SetupDescriptor();
 	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
 }
 

@@ -98,12 +98,12 @@ void VulkanApp::prepareScene(){
 	cubeObject->InitGameObject(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 
 	int terWidth = 100;
-	terrain = new Terrain(100, 2, 0, 0, terWidth, terWidth);
+	terrain = new Terrain(100, 4, 0, 0, terWidth, terWidth);
 	terrain->LoadTexture("Resources/Textures/lowPolyScatter.png");
 	terrain->LoadTextureArray();
 	terrain->InitTerrain(&vulkanDevice, renderPass, vulkanDevice.graphics_queue, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 	
-	terrain->UpdateTerrain(terrain->rootQuad, camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
+	terrain->UpdateTerrain(camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
 
 	water = new Water(terWidth, 0, 0, terWidth, terWidth);
 	water->LoadTexture("Resources/Textures/TileableWaterTexture.jpg");
@@ -752,7 +752,7 @@ void VulkanApp::updateUniformBuffers() {
 	skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
 	water->UpdateUniformBuffer(time, camera->GetViewMatrix());
 
-	terrain->UpdateTerrain(terrain->rootQuad, camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
+	terrain->UpdateTerrain(camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
 }
 
 void VulkanApp::HandleInputs() {

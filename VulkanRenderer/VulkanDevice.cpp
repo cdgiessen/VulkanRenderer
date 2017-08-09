@@ -155,7 +155,7 @@ VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPrope
 * @param usageFlags Usage flag bitmask for the buffer (i.e. index, vertex, uniform buffer)
 * @param memoryPropertyFlags Memory properties for this buffer (i.e. device local, host visible, coherent)
 * @param buffer Pointer to a vk::Vulkan buffer object
-* @param size Size of the buffer in byes
+* @param size Size of the buffer in bytes
 * @param data Pointer to the data that should be copied to the buffer after creation (optional, if not set, no data is copied over)
 *
 * @return VK_SUCCESS if buffer handle and memory have been created and (optionally passed) data has been copied

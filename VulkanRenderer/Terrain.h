@@ -24,28 +24,8 @@ const int vertCount = (NumCells + 1) * (NumCells + 1);
 const int indCount = NumCells * NumCells * 6;
 const int vertElementCount = 12;
 
-struct TerrainMeshVertices {
-	std::array<float, vertCount * vertElementCount> data;
-};
-
-struct TerrainMeshIndices {
-	std::array<uint32_t, indCount> data;
-};
-
-class TerrainQuad;
-
-struct TerrainQuadNode {
-	TerrainQuadNode* parent;
-
-	TerrainQuad* UpperLeft = nullptr;
-	TerrainQuad* LowerLeft = nullptr;
-	TerrainQuad* UpperRight = nullptr;
-	TerrainQuad* LowerRight = nullptr;
-
-	TerrainQuadNode() {};
-
-	TerrainQuadNode(TerrainQuadNode* parent) : parent(parent) {};
-};
+typedef std::array<float, vertCount * vertElementCount> TerrainMeshVertices;
+typedef std::array<uint32_t, indCount> TerrainMeshIndices;
 
 class TerrainQuad {
 public:
@@ -55,48 +35,44 @@ public:
 
 	bool isSubdivided;
 
-	TerrainQuadNode node;
-
 	ModelBufferObject modelUniformObject;
-	uint32_t uniformOffset;
-	uint32_t modelOffset;
-
-	uint32_t terrainQuadDataHandle;
-
-	TerrainMeshVertices* vertsPtr;
-	TerrainMeshIndices* indicesPtr;
-
-	VkDescriptorSet descriptorSet = nullptr;
 
 	TerrainQuad();
 	~TerrainQuad();
 
-	void init(float posX, float posY, int sizeX, int sizeY, int level, uint32_t offset, TerrainMeshVertices* vertsPtr, TerrainMeshIndices* indicesPtr, VkDescriptorSet set);
+	void init(float posX, float posY, float sizeX, float sizeY, int level);
 
 	void CleanUp();
 
-	void UpdateTerrainQuad();
-
-	void UpdateModelUniformBuffer(VulkanDevice* device, VulkanBuffer buff);
-
-private:
 	void CreateTerrainMesh(TerrainMeshVertices* verts, TerrainMeshIndices* indices);
 
 };
 
+struct TerrainQuadData {
+	TerrainQuad terrainQuad;
+	VkDescriptorSet descriptorSet;
+	TerrainMeshVertices vertices;
+	TerrainMeshIndices indices;
+
+	struct SubQuads {
+		TerrainQuadData* UpLeft;
+		TerrainQuadData* DownLeft;
+		TerrainQuadData* UpRight;
+		TerrainQuadData* DownRight;
+	} subQuads;
+};
+
 class Terrain {
 public:
+	MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* terrainQuads;
+	std::vector<TerrainQuadData*> quadHandles;
 
-	MemoryPool<TerrainQuad>* terrainQuadPool;
-	TerrainQuad* rootQuad;
+	TerrainQuadData* rootQuad;
 	int maxLevels;
 	int maxNumQuads;
 
 	glm::vec3 position;
 	glm::vec3 size;
-
-	MemoryPool<TerrainMeshVertices>* meshVertexPool;
-	MemoryPool<TerrainMeshIndices>* meshIndexPool;
 
 	VulkanDevice *device;
 
@@ -107,12 +83,8 @@ public:
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorPool descriptorPool;
 
-	std::vector<VkDescriptorSet> descriptorSets;
-
 	VulkanBuffer vertexBuffer;
 	VulkanBuffer indexBuffer;
-	uint32_t vertexCount = 0;
-	uint32_t indexCount = 0;
 
 	Texture* terrainSplatMap;
 	VulkanTexture2D terrainVulkanSplatMap;
@@ -122,12 +94,12 @@ public:
 
 	VulkanBuffer modelUniformBuffer;
 
-	Terrain(int numCells, int maxLevels, float posX, float posY, int sizeX, int sizeY);
+	Terrain(int numCells, int maxLevels, float posX, float posY, float sizeX, float sizeY);
 	~Terrain();
 
 	void InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue copyQueue, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
 	void ReinitTerrain(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
-	void UpdateTerrain(TerrainQuad* quad, glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	void UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
 	void DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], Terrain* curTerrain);
 	void CleanUp();
 
@@ -135,22 +107,25 @@ public:
 	void LoadTextureArray();
 private:
 
+	TerrainQuadData* InitTerrainQuad(glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo);
+
+	bool UpdateTerrainQuad(TerrainQuadData* quad, glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
+
 	void SetupUniformBuffer();
 	void SetupImage();
 	void SetupModel();
 	void SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 
-	void SetupDescriptorSets();
-	void SetupQuadDescriptor(TerrainQuad* quad, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	void SetupDescriptorLayoutAndPool();
+
+	void UpdateModelBuffer(VkQueue copyQueue);
 
 	void UploadMeshBuffer(VkQueue copyQueue);
 	void UpdateMeshBuffer(VkQueue copyQueue);
 
 	void UpdateUniformBuffer(float time);
-	void SubdivideTerrain(TerrainQuad* quad, VulkanBuffer &gbo, VulkanBuffer &lbo);
-	void UnSubdivide(TerrainQuad* quad);
-
-	void DrawTerrainQuad(TerrainQuad* quad, std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1]);
+	void SubdivideTerrain(TerrainQuadData* quad, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	void UnSubdivide(TerrainQuadData* quad);
 
 	std::vector<std::string> texFileNames = {
 		"dirt.jpg",
@@ -181,7 +156,7 @@ static Mesh* genTerrain(int numCells, float xLoc, float zLoc, float xSize, float
 	heightMapBuilder.SetSourceModule(myModule);
 	heightMapBuilder.SetDestNoiseMap(heightMap);
 	heightMapBuilder.SetDestSize(numCells + 1, numCells + 1);
-	heightMapBuilder.SetBounds(xLoc, xLoc + xSize + (double)xSize / numCells, zLoc, zLoc + zSize + (double)zSize / numCells);
+	heightMapBuilder.SetBounds(xLoc, xLoc + xSize + xSize / (float)numCells, zLoc, zLoc + zSize + zSize / (float)numCells);
 	heightMapBuilder.Build();
 
 	utils::RendererImage renderer;
@@ -229,15 +204,15 @@ static Mesh* genTerrain(int numCells, float xLoc, float zLoc, float xSize, float
 	{
 		for (int j = 0; j <= numCells; j++)
 		{
-			double hL = myModule.GetValue((double)(i + 1) *(xSize) / numCells + (xLoc), 0, (double)j *(zSize) / numCells + zLoc);
-			double hR = myModule.GetValue((double)(i - 1) *(xSize) / numCells + (xLoc), 0, (double)j *(zSize) / numCells + zLoc);
-			double hD = myModule.GetValue((double)i *(xSize) / numCells + (xLoc), 0, (double)(j + 1)*(zSize) / numCells + zLoc);
-			double hU = myModule.GetValue((double)i *(xSize) / numCells + (xLoc), 0, (double)(j - 1)*(zSize) / numCells + zLoc);
+			double hL = myModule.GetValue((double)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc);
+			double hR = myModule.GetValue((double)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc);
+			double hD = myModule.GetValue((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j + 1)*(zSize) / (float)numCells + zLoc);
+			double hU = myModule.GetValue((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j - 1)*(zSize) / (float)numCells + zLoc);
 			glm::vec3 normal(hR - hL, 1, hU - hD);
 
-			double value = (myModule.GetValue((double)i *(xSize) / numCells + (xLoc), 0.0, (double)j *(zSize) / numCells + (zLoc)));
+			double value = (myModule.GetValue((double)i *(xSize) / (float)numCells + (xLoc), 0.0, (double)j *(zSize) / (float)numCells + (zLoc)));
 
-			verts[(i)*(numCells + 1) + j] = Vertex(glm::vec3((double)i *(xSize) / numCells + (xLoc), value * 5, (double)j * (zSize) / numCells + (zLoc)), normal,
+			verts[(i)*(numCells + 1) + j] = Vertex(glm::vec3((double)i *(xSize) / (float)numCells, value * 5, (double)j * (zSize) / (float)numCells), normal,
 				glm::vec2(i, j),
 				glm::vec4((float)image.GetValue(i, j).red / 256, (float)image.GetValue(i, j).green / 256, (float)image.GetValue(i, j).blue / 256, (float)image.GetValue(i, j).alpha / 256));
 			//std::cout << value << std::endl;
