@@ -64,8 +64,10 @@ public:
 private:
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
-	int frameCount = 1;
-	float framesOverTime;
+	std::chrono::time_point<std::chrono::high_resolution_clock> prevFrameTime;
+
+	double timeSinceStart = 0.0f; //in seconds
+	double deltaTime = 0.016f; //in seconds
 	
 	bool firstMouse;
 	double lastX, lastY;
@@ -84,7 +86,6 @@ private:
 
 	void createDescriptorSets();
 
-	//void DrawTerrainSubDivisions(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], Terrain* terrain);
 	void createCommandBuffers();
 	void createSemaphores();
 
@@ -93,6 +94,8 @@ private:
 	void newGuiFrame();
 	void updateImGui();
 	void prepareImGui();
+
+	void CreatePrimaryCommandBuffer();
 
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat findDepthFormat();
@@ -118,8 +121,8 @@ private:
 	//stuff to render
 	Skybox* skybox;
 	GameObject* cubeObject;
-	Terrain* terrain;
-	Water* water;
+	std::vector<Terrain*> terrains;
+	std::vector<Water*> waters;
 
 	//ImGUI *imGui = nullptr;
 
@@ -135,6 +138,7 @@ private:
 
 
 	std::vector<VkCommandBuffer> commandBuffers;
+	
 
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;

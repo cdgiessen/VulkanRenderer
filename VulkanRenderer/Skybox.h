@@ -57,6 +57,9 @@ public:
 
 	void SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 
+	//Builds a secondary command buffer for the skybox and returns the buffer
+	VkCommandBuffer BuildSecondaryCommandBuffer(VkCommandBuffer secondaryCommandBuffer, VkCommandBufferInheritanceInfo inheritanceInfo);
+
 private:
 	Texture skyboxImageFront;
 	Texture skyboxImageBack;

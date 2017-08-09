@@ -114,7 +114,7 @@ void Terrain::InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue
 	SetupDescriptorLayoutAndPool();
 	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
 
-	rootQuad = InitTerrainQuad(glm::vec3(0), glm::vec3(size), 0, global, lighting);
+	rootQuad = InitTerrainQuad(position, size, 0, global, lighting);
 
 	UpdateModelBuffer(copyQueue, global, lighting);
 	UpdateMeshBuffer(copyQueue);
@@ -630,7 +630,7 @@ void Terrain::SubdivideTerrain(TerrainQuadData* quad, VulkanBuffer &gbo, VulkanB
 	
 	quad->subQuads.DownLeft = InitTerrainQuad(glm::vec3(new_pos.x + new_size.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
 
-	std::cout << "Terrain subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " <<quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << std::endl;
+	//std::cout << "Terrain subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " <<quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << std::endl;
 
 	
 }
@@ -667,7 +667,7 @@ void Terrain::UnSubdivide(TerrainQuadData* quad) {
 		quad->terrainQuad.isSubdivided = false;
 	}
 	//quad->isSubdivided = false;
-	std::cout << "Terrain un-subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " << quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << std::endl;
+	//std::cout << "Terrain un-subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " << quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << std::endl;
 }
 
 void Terrain::UpdateUniformBuffer(float time)
@@ -675,7 +675,7 @@ void Terrain::UpdateUniformBuffer(float time)
 
 }
 
-void Terrain::DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], Terrain* curTerrain) {
+void Terrain::DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], Terrain* curTerrain, bool ifWireframe) {
 
 	//vkCmdBindPipeline(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, 0 ? wireframe : pipeline);
 	//DrawTerrainQuad(curTerrain->rootQuad, cmdBuff, cmdBuffIndex, offsets);
@@ -683,7 +683,7 @@ void Terrain::DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex
 
 	
 
-	vkCmdBindPipeline(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, 0 ? wireframe : pipeline);
+	vkCmdBindPipeline(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? wireframe : pipeline);
 	
 	std::vector<VkDeviceSize> vertexOffsettings;
 	
@@ -711,3 +711,35 @@ void Terrain::DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex
 	
 
 }
+
+/*
+void Terrain::BuildCommandBuffer(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], Terrain* curTerrain, bool ifWireframe) {
+	vkCmdBindPipeline(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? wireframe : pipeline);
+
+	std::vector<VkDeviceSize> vertexOffsettings;
+
+	for (int i = 0; i < quadHandles.size(); i++) {
+		vertexOffsettings.push_back(i * sizeof(TerrainMeshVertices));
+	}
+
+	std::vector<VkDeviceSize> indexOffsettings;
+	for (int i = 0; i < quadHandles.size(); i++) {
+		indexOffsettings.push_back(i * sizeof(TerrainMeshIndices));
+	}
+
+
+	for (auto it = quadHandles.begin(); it < quadHandles.end(); it++) {
+		if (!(*it)->terrainQuad.isSubdivided) {
+			vkCmdBindVertexBuffers(cmdBuff[cmdBuffIndex], 0, 1, &vertexBuffer.buffer, &vertexOffsettings[it - quadHandles.begin()]);
+			vkCmdBindIndexBuffer(cmdBuff[cmdBuffIndex], indexBuffer.buffer, indexOffsettings[it - quadHandles.begin()], VK_INDEX_TYPE_UINT32);
+
+			vkCmdBindDescriptorSets(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &(*it)->descriptorSet, 0, nullptr);
+
+			vkCmdDrawIndexed(cmdBuff[cmdBuffIndex], static_cast<uint32_t>(indCount), 1, 0, 0, 0);
+		}
+	}
+
+
+
+}
+*/
