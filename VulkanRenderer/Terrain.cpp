@@ -22,49 +22,15 @@ void TerrainQuad::init(float posX, float posY, float sizeX, float sizeY, int lev
 
 }
 
-void TerrainQuad::CleanUp() {
-	
-}
-
 void TerrainQuad::CreateTerrainMesh(TerrainMeshVertices* verts, TerrainMeshIndices* indices) {
-
-	uint32_t vertexCount = verts->size();
-	uint32_t indexCount = indices->size();
-
-	Mesh mesh = *genTerrain(NumCells, pos.x , pos.z, size.x, size.z);
-	//memcpy(verts->data(), mesh.vertices.data(), vertexCount * sizeof(Vertex));
-	///*
-	for (int i = 0; i < (int)vertexCount/(sizeof(Vertex)/4); i++)
-	{
-		
-		verts->at(i * vertElementCount + 0) =	mesh.vertices[i].pos[0];
-		verts->at(i * vertElementCount + 1) =	mesh.vertices[i].pos[1];
-		verts->at(i * vertElementCount + 2) =	mesh.vertices[i].pos[2];
-		verts->at(i * vertElementCount + 3) =	mesh.vertices[i].normal[0];
-		verts->at(i * vertElementCount + 4) =	mesh.vertices[i].normal[1];
-		verts->at(i * vertElementCount + 5) =	mesh.vertices[i].normal[2];
-		verts->at(i * vertElementCount + 6) =	mesh.vertices[i].texCoord[0];
-		verts->at(i * vertElementCount + 7) =	mesh.vertices[i].texCoord[1];
-		verts->at(i * vertElementCount + 8) =	mesh.vertices[i].color[0];
-		verts->at(i * vertElementCount + 9) =	mesh.vertices[i].color[1];
-		verts->at(i * vertElementCount + 10) =	mesh.vertices[i].color[2];
-		verts->at(i * vertElementCount + 11) =	mesh.vertices[i].color[3];
-	}
-	//*/
-
-	//memcpy(indices->data(), mesh.indices.data(), indexCount * sizeof(float));
-	///*
-	for (int i = 0; i < (int)indexCount; i++)
-	{
-		indices->at(i) = mesh.indices[i];
-	}
-	//*/
-
-
-
+	genTerrain(verts, indices, NumCells, pos.x , pos.z, size.x, size.z);
 	
 }
 
+void TerrainQuad::CreateTerrainMeshFromParent(TerrainMeshVertices* parentVerts, TerrainMeshIndices* parentIndices, TerrainMeshVertices* verts, TerrainMeshIndices* indices, Corner_Enum corner) {
+	genTerrainFromExisting(parentVerts, parentIndices, verts, indices, corner, NumCells, pos.x, pos.z, size.x, size.z);
+
+}
 
 
 
@@ -114,7 +80,9 @@ void Terrain::InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue
 	SetupDescriptorLayoutAndPool();
 	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
 
-	rootQuad = InitTerrainQuad(position, size, 0, global, lighting);
+	TerrainQuadData* q = terrainQuads->allocate();
+	quadHandles.push_back(q);
+	rootQuad = InitTerrainQuad(q, position, size, 0, global, lighting);
 
 	UpdateModelBuffer(copyQueue, global, lighting);
 	UpdateMeshBuffer(copyQueue);
@@ -585,10 +553,7 @@ void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
 
 }
 
-TerrainQuadData* Terrain::InitTerrainQuad(glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo) {
-	TerrainQuadData* q = terrainQuads->allocate();
-	quadHandles.push_back(q);
-
+TerrainQuadData* Terrain::InitTerrainQuad(TerrainQuadData* q, glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo) {
 	q->terrainQuad.init(position.x, position.z, size.x, size.z, level);
 	q->terrainQuad.CreateTerrainMesh(&q->vertices, &q->indices);
 
@@ -616,19 +581,53 @@ TerrainQuadData* Terrain::InitTerrainQuad(glm::vec3 position, glm::vec3 size, in
 	return q;
 }
 
+TerrainQuadData* Terrain::InitTerrainQuadFromParent(TerrainQuadData* parent, TerrainQuadData* q, Corner_Enum corner, glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo) {
+	q->terrainQuad.init(position.x, position.z, size.x, size.z, level);
+	q->terrainQuad.CreateTerrainMeshFromParent(&parent->vertices, &parent->indices, &q->vertices, &q->indices, corner);
+
+	//std::vector<VkDescriptorSetLayout> layouts;
+	//layouts.resize(maxNumQuads);
+	//std::fill(layouts.begin(), layouts.end(), descriptorSetLayout);
+
+	VkDescriptorSetAllocateInfo allocInfoTerrain = initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
+
+	if (vkAllocateDescriptorSets(device->device, &allocInfoTerrain, &q->descriptorSet) != VK_SUCCESS) {
+		throw std::runtime_error("failed to allocate descriptor set!");
+	}
+
+	modelUniformBuffer.setupDescriptor(sizeof(ModelBufferObject), (quadHandles.size() - 1) * sizeof(ModelBufferObject));
+
+	std::vector<VkWriteDescriptorSet> descriptorWrites;
+	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &gbo.descriptor, 1));
+	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &modelUniformBuffer.descriptor, 1));
+	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lbo.descriptor, 1));
+	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &terrainVulkanSplatMap.descriptor, 1));
+	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, &terrainVulkanTextureArray.descriptor, 1));
+
+	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+
+	return q;
+}
+
 void Terrain::SubdivideTerrain(TerrainQuadData* quad, VulkanBuffer &gbo, VulkanBuffer &lbo) {
 	quad->terrainQuad.isSubdivided = true;
 
 	glm::vec3 new_pos = glm::vec3(quad->terrainQuad.pos.x, 0, quad->terrainQuad.pos.z);
 	glm::vec3 new_size = glm::vec3(quad->terrainQuad.size.x/2.0, 0, quad->terrainQuad.size.z/2.0);
 
-	quad->subQuads.UpRight = InitTerrainQuad(glm::vec3(new_pos.x, 0, new_pos.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
+	TerrainQuadData* qUR = terrainQuads->allocate();
+	TerrainQuadData* qUL = terrainQuads->allocate();
+	TerrainQuadData* qDR = terrainQuads->allocate();
+	TerrainQuadData* qDL = terrainQuads->allocate();
+	quadHandles.push_back(qUR);
+	quadHandles.push_back(qUL);
+	quadHandles.push_back(qDR);
+	quadHandles.push_back(qDL);
 
-	quad->subQuads.UpLeft = InitTerrainQuad(glm::vec3(new_pos.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
-	
-	quad->subQuads.DownRight = InitTerrainQuad(glm::vec3(new_pos.x + new_size.x, 0, new_pos.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
-	
-	quad->subQuads.DownLeft = InitTerrainQuad(glm::vec3(new_pos.x + new_size.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
+	quad->subQuads.UpRight = InitTerrainQuadFromParent(quad, qUR, Corner_Enum::uR,glm::vec3(new_pos.x, 0, new_pos.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
+	quad->subQuads.UpLeft = InitTerrainQuadFromParent(quad, qUL, Corner_Enum::uL, glm::vec3(new_pos.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
+	quad->subQuads.DownRight = InitTerrainQuadFromParent(quad, qDR, Corner_Enum::dR, glm::vec3(new_pos.x + new_size.x, 0, new_pos.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
+	quad->subQuads.DownLeft = InitTerrainQuadFromParent(quad, qDL, Corner_Enum::dL, glm::vec3(new_pos.x + new_size.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
 
 	//std::cout << "Terrain subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " <<quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << std::endl;
 

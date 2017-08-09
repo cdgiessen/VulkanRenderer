@@ -228,7 +228,7 @@ static Mesh* generateTerrainMesh(int numCells, float xLoc, float yLoc, float xSi
 	return new Mesh(verts, indices);
 }
 
-static Mesh* createFlatPlane(int numCells) {
+static Mesh* createFlatPlane(int numCells, glm::vec3 size) {
 	std::vector<Vertex> verts;
 	std::vector<uint16_t> indices;
 
@@ -239,7 +239,7 @@ static Mesh* createFlatPlane(int numCells) {
 	{
 		for (int j = 0; j <= numCells; j++)
 		{
-			verts[(i)*(numCells + 1) + j] = Vertex(glm::vec3(i,0,j), glm::vec3(0,1,0), glm::vec2(i, j), glm::vec4(1));
+			verts[(i)*(numCells + 1) + j] = Vertex(glm::vec3((double)i *(size.x) / (float)numCells, 0, (double)j *(size.z) / (float)numCells), glm::vec3(0,1,0), glm::vec2(i, j), glm::vec4(1));
 		}
 	}
 

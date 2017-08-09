@@ -2,9 +2,9 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-Water::Water(int numCells, float posX, float posY, int sizeX, int sizeY) : numCells(numCells), pos(glm::vec3(posX, 0, posY)), size(glm::vec3(sizeX, 0, sizeY))
+Water::Water(int numCells, float posX, float posY, float sizeX, float sizeY) : numCells(numCells), pos(glm::vec3(posX, 0, posY)), size(glm::vec3(sizeX, 0, sizeY))
 {
-	WaterMesh = createFlatPlane(numCells);
+	WaterMesh = createFlatPlane(numCells, size);
 }
 
 Water::~Water() {

@@ -97,14 +97,14 @@ void VulkanApp::prepareScene(){
 	cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
 	cubeObject->InitGameObject(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 
-	int terWidth = 100;
-	int maxLevels = 3;
+	int terWidth = 250;
+	int maxLevels = 4;
 	
 	terrains.push_back(new Terrain(100, maxLevels, 0, 0,		terWidth, terWidth));
-	terrains.push_back(new Terrain(100, maxLevels, terWidth, 0,	 terWidth, terWidth));
-	terrains.push_back(new Terrain(100, maxLevels, 0, terWidth,	 terWidth, terWidth));
-	terrains.push_back(new Terrain(100, maxLevels, -terWidth, 0, terWidth, terWidth));
-	terrains.push_back(new Terrain(100, maxLevels, 0, -terWidth, terWidth, terWidth));
+	//terrains.push_back(new Terrain(100, maxLevels, terWidth, 0,	 terWidth, terWidth));
+	//terrains.push_back(new Terrain(100, maxLevels, 0, terWidth,	 terWidth, terWidth));
+	//terrains.push_back(new Terrain(100, maxLevels, -terWidth, 0, terWidth, terWidth));
+	//terrains.push_back(new Terrain(100, maxLevels, 0, -terWidth, terWidth, terWidth));
 	
 	for (Terrain* ter : terrains) {
 		ter->LoadTexture("Resources/Textures/lowPolyScatter.png");
@@ -113,11 +113,11 @@ void VulkanApp::prepareScene(){
 		ter->UpdateTerrain(camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
 	}
 
-	waters.push_back(new Water(terWidth, 0, 0, terWidth, terWidth));
-	waters.push_back(new Water(terWidth, terWidth, 0, terWidth, terWidth));
-	waters.push_back(new Water(terWidth, 0, terWidth, terWidth, terWidth));
-	waters.push_back(new Water(terWidth, -terWidth, 0, terWidth, terWidth));
-	waters.push_back(new Water(terWidth, 0, -terWidth, terWidth, terWidth));
+	waters.push_back(new Water(100, 0, 0, terWidth, terWidth));
+	//waters.push_back(new Water(terWidth, terWidth, 0, terWidth, terWidth));
+	//waters.push_back(new Water(terWidth, 0, terWidth, terWidth, terWidth));
+	//waters.push_back(new Water(terWidth, -terWidth, 0, terWidth, terWidth));
+	//waters.push_back(new Water(terWidth, 0, -terWidth, terWidth, terWidth));
 
 	for (Water* water : waters) {
 		water->LoadTexture("Resources/Textures/TileableWaterTexture.jpg");
@@ -804,7 +804,7 @@ void VulkanApp::newGuiFrame() {
 void VulkanApp::updateUniformBuffers() {
 	GlobalVariableUniformBuffer cbo = {};
 	cbo.view = camera->GetViewMatrix();
-	cbo.proj = glm::perspective(glm::radians(45.0f), vulkanSwapChain.swapChainExtent.width / (float)vulkanSwapChain.swapChainExtent.height, 0.1f, 1000.0f);
+	cbo.proj = glm::perspective(glm::radians(45.0f), vulkanSwapChain.swapChainExtent.width / (float)vulkanSwapChain.swapChainExtent.height, 0.1f, 10000.0f);
 	cbo.proj[1][1] *= -1;
 	cbo.cameraDir = camera->Front;
 	cbo.time = timeSinceStart;

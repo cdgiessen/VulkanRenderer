@@ -42,7 +42,7 @@ public:
 
 	std::vector<VkCommandBuffer> commandBuffers;
 
-	Water(int numCells, float posX, float posY, int sizeX, int sizeY);
+	Water(int numCells, float posX, float posY, float sizeX, float sizeY);
 	~Water();
 
 	void InitWater(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
