@@ -118,7 +118,7 @@ private:
 
 	void SetupDescriptorLayoutAndPool();
 
-	void UpdateModelBuffer(VkQueue copyQueue);
+	void UpdateModelBuffer(VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
 
 	void UploadMeshBuffer(VkQueue copyQueue);
 	void UpdateMeshBuffer(VkQueue copyQueue);

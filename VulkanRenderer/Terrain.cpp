@@ -116,7 +116,7 @@ void Terrain::InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue
 
 	rootQuad = InitTerrainQuad(glm::vec3(0), glm::vec3(size), 0, global, lighting);
 
-	UpdateModelBuffer(copyQueue);
+	UpdateModelBuffer(copyQueue, global, lighting);
 	UpdateMeshBuffer(copyQueue);
 }
 
@@ -138,7 +138,7 @@ void Terrain::UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer
 	bool shouldUpdateBuffers = UpdateTerrainQuad(rootQuad, viewerPos, copyQueue, gbo, lbo);
 	
 	if (shouldUpdateBuffers) {
-		UpdateModelBuffer(copyQueue);
+		UpdateModelBuffer(copyQueue, gbo, lbo);
 		UpdateMeshBuffer(copyQueue);
 	}
 }
@@ -377,7 +377,30 @@ void Terrain::SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uin
 	vkDestroyShaderModule(device->device, fragShaderModule, nullptr);
 }
 
-void Terrain::UpdateModelBuffer(VkQueue copyQueue) {
+void Terrain::UpdateModelBuffer(VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo) {
+	VkDescriptorSetAllocateInfo allocInfoTerrain = initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
+	
+	for (auto it = quadHandles.begin(); it != quadHandles.end(); it++) {
+		
+		vkFreeDescriptorSets(device->device, descriptorPool, 1, &(*it)->descriptorSet);
+		
+
+		if (vkAllocateDescriptorSets(device->device, &allocInfoTerrain, &(*it)->descriptorSet) != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate descriptor set!");
+		}
+
+		modelUniformBuffer.setupDescriptor(sizeof(ModelBufferObject), (it - quadHandles.begin()) * sizeof(ModelBufferObject));
+
+		std::vector<VkWriteDescriptorSet> descriptorWrites;
+		descriptorWrites.push_back(initializers::writeDescriptorSet((*it)->descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &gbo.descriptor, 1));
+		descriptorWrites.push_back(initializers::writeDescriptorSet((*it)->descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &modelUniformBuffer.descriptor, 1));
+		descriptorWrites.push_back(initializers::writeDescriptorSet((*it)->descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lbo.descriptor, 1));
+		descriptorWrites.push_back(initializers::writeDescriptorSet((*it)->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &terrainVulkanSplatMap.descriptor, 1));
+		descriptorWrites.push_back(initializers::writeDescriptorSet((*it)->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, &terrainVulkanTextureArray.descriptor, 1));
+
+		vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+
+	}
 
 	std::vector<ModelBufferObject> modelObjects;
 	modelObjects.reserve(quadHandles.size());
