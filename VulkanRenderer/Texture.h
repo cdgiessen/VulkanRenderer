@@ -11,6 +11,7 @@
 #include <glm\common.hpp>
 
 #include <stb_image.h>
+#include "noiseutils.h"
 
 class Texture {
 public:
@@ -24,6 +25,7 @@ public:
 	~Texture();
 
 	void loadFromFile(std::string filename);
+	void loadFromNoiseUtilImage(utils::Image* image);
 
 
 };

@@ -97,27 +97,33 @@ void VulkanApp::prepareScene(){
 	cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
 	cubeObject->InitGameObject(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 
-	int terWidth = 250;
+	float terWidth = 500;
 	int maxLevels = 4;
 	
-	terrains.push_back(new Terrain(100, maxLevels, 0, 0,		terWidth, terWidth));
-	//terrains.push_back(new Terrain(100, maxLevels, terWidth, 0,	 terWidth, terWidth));
-	//terrains.push_back(new Terrain(100, maxLevels, 0, terWidth,	 terWidth, terWidth));
-	//terrains.push_back(new Terrain(100, maxLevels, -terWidth, 0, terWidth, terWidth));
-	//terrains.push_back(new Terrain(100, maxLevels, 0, -terWidth, terWidth, terWidth));
-	
+	terrains.push_back(new Terrain(100, maxLevels, 0.0, 0.0,		terWidth, terWidth));
+	terrains.push_back(new Terrain(100, maxLevels, terWidth, 0.0,	 terWidth, terWidth));
+	terrains.push_back(new Terrain(100, maxLevels, 0.0, terWidth,	 terWidth, terWidth));
+	terrains.push_back(new Terrain(100, maxLevels, -terWidth, 0.0, terWidth, terWidth));
+	terrains.push_back(new Terrain(100, maxLevels, 0.0, -terWidth, terWidth, terWidth));
+	terrains.push_back(new Terrain(100, maxLevels, terWidth, terWidth, terWidth, terWidth));
+	terrains.push_back(new Terrain(100, maxLevels, terWidth, -terWidth, terWidth, terWidth));
+	terrains.push_back(new Terrain(100, maxLevels, -terWidth, terWidth, terWidth, terWidth));
+	terrains.push_back(new Terrain(100, maxLevels, -terWidth, -terWidth, terWidth, terWidth));
+
 	for (Terrain* ter : terrains) {
-		ter->LoadTexture("Resources/Textures/lowPolyScatter.png");
-		ter->LoadTextureArray();
 		ter->InitTerrain(&vulkanDevice, renderPass, vulkanDevice.graphics_queue, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 		ter->UpdateTerrain(camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
 	}
 
-	waters.push_back(new Water(100, 0, 0, terWidth, terWidth));
-	//waters.push_back(new Water(terWidth, terWidth, 0, terWidth, terWidth));
-	//waters.push_back(new Water(terWidth, 0, terWidth, terWidth, terWidth));
-	//waters.push_back(new Water(terWidth, -terWidth, 0, terWidth, terWidth));
-	//waters.push_back(new Water(terWidth, 0, -terWidth, terWidth, terWidth));
+	waters.push_back(new Water(100, 0.0, 0.0, terWidth, terWidth));
+	waters.push_back(new Water(100, terWidth, 0.0, terWidth, terWidth));
+	waters.push_back(new Water(100, 0.0, terWidth, terWidth, terWidth));
+	waters.push_back(new Water(100, -terWidth, 0.0, terWidth, terWidth));
+	waters.push_back(new Water(100, 0.0, -terWidth, terWidth, terWidth));
+	waters.push_back(new Water(100, terWidth, terWidth, terWidth, terWidth));
+	waters.push_back(new Water(100, terWidth, -terWidth, terWidth, terWidth));
+	waters.push_back(new Water(100, -terWidth, terWidth, terWidth, terWidth));
+	waters.push_back(new Water(100, -terWidth, -terWidth, terWidth, terWidth));
 
 	for (Water* water : waters) {
 		water->LoadTexture("Resources/Textures/TileableWaterTexture.jpg");
@@ -616,7 +622,7 @@ void VulkanApp::createCommandBuffers() {
 
 		//terrain mesh
 		for (Terrain* ter : terrains) {
-			ter->DrawTerrain(commandBuffers, i, offsets, ter, wireframe);
+			ter->DrawTerrain(commandBuffers, (int)i, offsets, ter, wireframe);
 		}
 
 
@@ -819,8 +825,18 @@ void VulkanApp::updateUniformBuffers() {
 	for (Water* water : waters) {
 		water->UpdateUniformBuffer(timeSinceStart, camera->GetViewMatrix());
 	}
+
+
+
 	for (Terrain* ter : terrains) {
+		//timing stuff. woo
+		//std::chrono::time_point<std::chrono::steady_clock> myEndTime;
+		//
+		//auto myStartTime = std::chrono::high_resolution_clock::now();
 		ter->UpdateTerrain(camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
+		//myEndTime = std::chrono::high_resolution_clock::now();
+		//
+		//std::cout << "Time to update one terrain " << std::chrono::duration_cast<std::chrono::microseconds>(myEndTime - myStartTime).count() << std::endl;
 	}
 }
 

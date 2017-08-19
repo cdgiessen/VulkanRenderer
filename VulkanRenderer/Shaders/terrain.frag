@@ -34,14 +34,16 @@ layout(location = 4) in float inTime;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-	vec4 texColor = inColor; //splatmap not in yet, so just use vertex colors until then
-	//vec4 texColor = texture(texSplatMap, inTexCoord);
+	//vec4 texColor = inColor; //splatmap not in yet, so just use vertex colors until then
+	vec4 texColor = texture(texSplatMap, inTexCoord);
 
-	vec4 layerFirst = texture(texArray, vec3(inTexCoord.x, inTexCoord.y, 0));
-	vec4 layerSecond = texture(texArray, vec3(inTexCoord.x, inTexCoord.y, 1));
-	vec4 layerThird = texture(texArray, vec3(inTexCoord.x, inTexCoord.y, 2));
-	vec4 layerFourth = texture(texArray, vec3(inTexCoord.x, inTexCoord.y, 3));
-	//vec4 layerFifth = texture(texArray, vec3(inTexCoord.x, inTexCoord.y, 4));
+	float texSampleDensity = 50.0f;
+
+	vec4 layerFirst = texture(texArray, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 0));
+	vec4 layerSecond = texture(texArray, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 1));
+	vec4 layerThird = texture(texArray, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 2));
+	vec4 layerFourth = texture(texArray, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 3));
+	//vec4 layerFifth = texture(texArray, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 4));
 
 	vec4 terrainSplatter = (layerFirst * texColor.x + layerSecond*texColor.y + layerThird * texColor.z + layerFourth * (1 - texColor.r - texColor.g - texColor.b));
 
@@ -66,8 +68,8 @@ void main() {
 	vec3 dirLight = normalize(vec3(0, 60, 25));
 		vec3 dirHalfway = normalize(dirLight + viewVec);
 	vec3 dirReflect = reflect(-dirLight, normalVec);
-	vec3 dirDiffuse = max(dot(normalVec, dirLight), 0.0f)* vec3(1.0f);
-	vec3 dirSpecular = pow(max(dot(viewVec, dirReflect), 0.0), 1.0f)* vec3(0.5f);
+	vec3 dirDiffuse = max(dot(normalVec, dirLight), 0.0f)* vec3(0.9f);
+	vec3 dirSpecular = pow(max(dot(viewVec, dirReflect), 0.0), 1.0f)* vec3(0.2f);
 	vec3 dirContrib = (dirDiffuse + dirSpecular)* vec3(1.0f);
 
 	//float belowWaterLevelDarkening = clamp(inFragPos.y, -1, 0);

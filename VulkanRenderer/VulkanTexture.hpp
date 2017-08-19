@@ -57,7 +57,8 @@ public:
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		bool forceLinear = false,
 		bool genMipMaps = false,
-		int mipMapLevelsToGen = 1);
+		int mipMapLevelsToGen = 1,
+		bool wrapBorder = true);
 };
 
 class VulkanTexture2DArray : public VulkanTexture {

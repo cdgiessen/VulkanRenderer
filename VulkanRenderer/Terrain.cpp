@@ -12,29 +12,17 @@ TerrainQuad::TerrainQuad() {
 
 TerrainQuad::~TerrainQuad() {}
 
-void TerrainQuad::init(float posX, float posY, float sizeX, float sizeY, int level) {
+void TerrainQuad::init(float posX, float posY, float sizeX, float sizeY, int level, int subDivPosX, int subDivPosZ) {
 	pos = glm::vec3(posX, 0, posY);
 	size = glm::vec3(sizeX, 0, sizeY);
 	this->level = level;
 	isSubdivided = false;
+	this->subDivPosX = subDivPosX;
+	this->subDivPosZ = subDivPosZ;
 	modelUniformObject.model = glm::translate(glm::mat4(), pos);
 	modelUniformObject.normal = glm::mat4();// glm::transpose(glm::inverse(glm::mat3(modelUniformObject.model))));
 
 }
-
-void TerrainQuad::CreateTerrainMesh(TerrainMeshVertices* verts, TerrainMeshIndices* indices) {
-	genTerrain(verts, indices, NumCells, pos.x , pos.z, size.x, size.z);
-	
-}
-
-void TerrainQuad::CreateTerrainMeshFromParent(TerrainMeshVertices* parentVerts, TerrainMeshIndices* parentIndices, TerrainMeshVertices* verts, TerrainMeshIndices* indices, Corner_Enum corner) {
-	genTerrainFromExisting(parentVerts, parentIndices, verts, indices, corner, NumCells, pos.x, pos.z, size.x, size.z);
-
-}
-
-
-
-
 
 
 
@@ -55,6 +43,10 @@ Terrain::Terrain(int numCells, int maxLevels, float posX, float posY, float size
 
 	position = glm::vec3(posX, 0, posY);
 	size = glm::vec3(sizeX, 0, sizeY);
+
+	terrainGenerator = new TerrainGenerator(numCells, SplatMapSize, position, size);
+	LoadSplatMapFromGenerator();
+	LoadTextureArray();
 
 	//TerrainQuad* test = terrainQuadPool->allocate();
 	//test->init(posX, posY, sizeX, sizeY, 0, meshVertexPool->allocate(), meshIndexPool->allocate());
@@ -172,9 +164,10 @@ void Terrain::CleanUp()
 	vkDestroyPipeline(device->device, wireframe, nullptr);
 }
 
-void Terrain::LoadTexture(std::string filename) {
+void Terrain::LoadSplatMapFromGenerator() {
 	terrainSplatMap = new Texture();
-	terrainSplatMap->loadFromFile(filename);
+	terrainSplatMap->loadFromNoiseUtilImage(terrainGenerator->getImagePtr());
+	
 }
 
 void Terrain::LoadTextureArray() {
@@ -190,10 +183,12 @@ void Terrain::SetupUniformBuffer()
 void Terrain::SetupImage() 
 {
 	if (terrainSplatMap != nullptr) {
-		terrainVulkanSplatMap.loadFromTexture(terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 1);
+		terrainVulkanSplatMap.loadFromTexture(terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
+	
 	}
 	else {
 		throw std::runtime_error("failed to load terrain splat map!");
+
 	}if (terrainTextureArray != nullptr) {
 		terrainVulkanTextureArray.loadTextureArray(terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
 	}
@@ -554,8 +549,9 @@ void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
 }
 
 TerrainQuadData* Terrain::InitTerrainQuad(TerrainQuadData* q, glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo) {
-	q->terrainQuad.init(position.x, position.z, size.x, size.z, level);
-	q->terrainQuad.CreateTerrainMesh(&q->vertices, &q->indices);
+	q->terrainQuad.init(position.x, position.z, size.x, size.z, level, 0, 0);
+	//q->terrainQuad.CreateTerrainMesh(&q->vertices, &q->indices);
+	GenerateNewTerrain(&q->vertices, &q->indices, q->terrainQuad);
 
 	//std::vector<VkDescriptorSetLayout> layouts;
 	//layouts.resize(maxNumQuads);
@@ -581,10 +577,10 @@ TerrainQuadData* Terrain::InitTerrainQuad(TerrainQuadData* q, glm::vec3 position
 	return q;
 }
 
-TerrainQuadData* Terrain::InitTerrainQuadFromParent(TerrainQuadData* parent, TerrainQuadData* q, Corner_Enum corner, glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo) {
-	q->terrainQuad.init(position.x, position.z, size.x, size.z, level);
-	q->terrainQuad.CreateTerrainMeshFromParent(&parent->vertices, &parent->indices, &q->vertices, &q->indices, corner);
-
+TerrainQuadData* Terrain::InitTerrainQuadFromParent(TerrainQuadData* parent, TerrainQuadData* q, Corner_Enum corner, glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo, int subDivPosX, int subDivPosZ) {
+	q->terrainQuad.init(position.x, position.z, size.x, size.z, level, subDivPosX, subDivPosZ);
+	//q->terrainQuad.CreateTerrainMeshFromParent(&parent->vertices, &parent->indices, &q->vertices, &q->indices, corner);
+	GenerateTerrainFromExisting(&parent->vertices, &parent->indices, &q->vertices, &q->indices, corner, q->terrainQuad);
 	//std::vector<VkDescriptorSetLayout> layouts;
 	//layouts.resize(maxNumQuads);
 	//std::fill(layouts.begin(), layouts.end(), descriptorSetLayout);
@@ -624,10 +620,10 @@ void Terrain::SubdivideTerrain(TerrainQuadData* quad, VulkanBuffer &gbo, VulkanB
 	quadHandles.push_back(qDR);
 	quadHandles.push_back(qDL);
 
-	quad->subQuads.UpRight = InitTerrainQuadFromParent(quad, qUR, Corner_Enum::uR,glm::vec3(new_pos.x, 0, new_pos.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
-	quad->subQuads.UpLeft = InitTerrainQuadFromParent(quad, qUL, Corner_Enum::uL, glm::vec3(new_pos.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
-	quad->subQuads.DownRight = InitTerrainQuadFromParent(quad, qDR, Corner_Enum::dR, glm::vec3(new_pos.x + new_size.x, 0, new_pos.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
-	quad->subQuads.DownLeft = InitTerrainQuadFromParent(quad, qDL, Corner_Enum::dL, glm::vec3(new_pos.x + new_size.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo);
+	quad->subQuads.UpRight = InitTerrainQuadFromParent(quad, qUR, Corner_Enum::uR,glm::vec3(new_pos.x, 0, new_pos.z), new_size, quad->terrainQuad.level + 1, gbo, lbo, quad->terrainQuad.subDivPosX * 2, quad->terrainQuad.subDivPosZ * 2);
+	quad->subQuads.UpLeft = InitTerrainQuadFromParent(quad, qUL, Corner_Enum::uL, glm::vec3(new_pos.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo, quad->terrainQuad.subDivPosX * 2, quad->terrainQuad.subDivPosZ * 2 + 1);
+	quad->subQuads.DownRight = InitTerrainQuadFromParent(quad, qDR, Corner_Enum::dR, glm::vec3(new_pos.x + new_size.x, 0, new_pos.z), new_size, quad->terrainQuad.level + 1, gbo, lbo, quad->terrainQuad.subDivPosX * 2 + 1, quad->terrainQuad.subDivPosZ * 2);
+	quad->subQuads.DownLeft = InitTerrainQuadFromParent(quad, qDL, Corner_Enum::dL, glm::vec3(new_pos.x + new_size.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo, quad->terrainQuad.subDivPosX * 2 + 1, quad->terrainQuad.subDivPosZ * 2 + 1);
 
 	//std::cout << "Terrain subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " <<quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << std::endl;
 
@@ -742,3 +738,386 @@ void Terrain::BuildCommandBuffer(std::vector<VkCommandBuffer> cmdBuff, int cmdBu
 
 }
 */
+
+
+void Terrain::GenerateNewTerrain(TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad) {
+	int numCells = NumCells;
+	float xLoc = terrainQuad.pos.x, zLoc = terrainQuad.pos.z, xSize = terrainQuad.size.x, zSize = terrainQuad.size.z;
+
+	float heightScale = 50;
+
+	for (int i = 0; i <= numCells; i++)
+	{
+		for (int j = 0; j <= numCells; j++)
+		{
+			double value = (terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0.0, (double)j *(zSize) / (float)numCells + (zLoc)));
+
+			double hL = terrainGenerator->SampleHeight((double)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc)*heightScale;
+			double hR = terrainGenerator->SampleHeight((double)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc)*heightScale;
+			double hD = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j + 1)*(zSize) / (float)numCells + zLoc)*heightScale;
+			double hU = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j - 1)*(zSize) / (float)numCells + zLoc)*heightScale;
+			glm::vec3 normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
+
+
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 0] = (float)i *(xSize) / (float)numCells;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 1] = (float)value * heightScale;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 2] = (float)j * (zSize) / (float)numCells;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 3] = normal.x;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 4] = normal.y;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 5] = normal.z;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 6] = i/(float)numCells;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 7] = j/(float)numCells;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 8] = 0;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 9] = 0;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 10] = 0;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 11] = 0;
+			//std::cout << value << std::endl;
+		}
+	}
+
+	int counter = 0;
+	for (int i = 0; i < numCells; i++)
+	{
+		for (int j = 0; j < numCells; j++)
+		{
+			(*indices)[counter++] = i * (numCells + 1) + j;
+			(*indices)[counter++] = i * (numCells + 1) + j + 1;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+			(*indices)[counter++] = i * (numCells + 1) + j + 1;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+		}
+	}
+
+
+}
+
+
+//Needs to account for which corner the new terrain is in
+void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, TerrainMeshIndices* parentIndices, TerrainMeshVertices* verts, TerrainMeshIndices* indices, Corner_Enum corner, TerrainQuad terrainQuad) {
+
+	int numCells = NumCells;
+	float xLoc = terrainQuad.pos.x, zLoc = terrainQuad.pos.z, xSize = terrainQuad.size.x, zSize = terrainQuad.size.z;
+
+	int parentIOffset = (corner == 2 || corner == 3) ? (numCells + 1) / 2 : 0;
+	int parentJOffset = (corner == 1 || corner == 3) ? (numCells + 1) / 2 : 0;
+
+	float heightScale = 50;
+
+	//uses the parent terrain for 1/4 of the grid
+	for (int i = 0; i <= numCells; i += 2)
+	{
+		for (int j = 0; j <= numCells; j += 2)
+		{
+			int vLoc = (i*(numCells + 1) + j)* vertElementCount;
+
+			//existing terrain is every other vertex in the grid
+			int parentVLoc = ((i / 2 + parentIOffset)*(numCells + 1) + (j / 2 + parentJOffset))* vertElementCount;
+
+			(*verts)[vLoc + 0] = (float)i *(xSize) / (float)numCells;
+			(*verts)[vLoc + 1] = (*parentVerts)[parentVLoc + 1];
+			(*verts)[vLoc + 2] = (float)j * (zSize) / (float)numCells;
+			(*verts)[vLoc + 6] = (float)i / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (glm::pow(2.0, terrainQuad.level));
+			(*verts)[vLoc + 7] = (float)j / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (glm::pow(2.0, terrainQuad.level));
+			(*verts)[vLoc + 8] = 0;
+			(*verts)[vLoc + 9] = 0;
+			(*verts)[vLoc + 10] = 0;
+			(*verts)[vLoc + 11] = 0;
+
+		}
+	}
+	/* //seams are hard to fix... (cause its a runtime dependent thing, not a create time
+	//edges use data from parent to prevent seaming issues
+	{
+	int i = 0, j = 0;
+	double hL, hR, hD, hU;
+	glm::vec3 normal;
+	int vLoc;
+
+	// i = 0, j[1,numCells - 1]
+	for (int j = 1; j < numCells; j += 2) {
+	int vLoc = (i*(numCells + 1) + j)* vertElementCount;
+
+	//Use the left/right or up/down to find the appropriate height
+	int neighborVLocA = (i*(numCells + 1) + j + 1)* vertElementCount;
+	int neighborVLocB = (i*(numCells + 1) + j - 1)* vertElementCount;
+
+	(*verts)[vLoc + 0] = (double)i *(xSize) / (float)numCells;
+	(*verts)[vLoc + 1] = ((*verts)[neighborVLocA + 1] + (*verts)[neighborVLocB + 1])/2.0;
+	(*verts)[vLoc + 2] = (double)j * (zSize) / (float)numCells;
+	(*verts)[vLoc + 6] = i;
+	(*verts)[vLoc + 7] = j;
+	(*verts)[vLoc + 8] = ((*verts)[neighborVLocA + 8] + (*verts)[neighborVLocB + 8]) / 2.0;
+	(*verts)[vLoc + 9] = ((*verts)[neighborVLocA + 9] + (*verts)[neighborVLocB + 9]) / 2.0;
+	(*verts)[vLoc + 10] = ((*verts)[neighborVLocA + 10] + (*verts)[neighborVLocB + 10]) / 2.0;
+	(*verts)[vLoc + 11] = ((*verts)[neighborVLocA + 11] + (*verts)[neighborVLocB + 11]) / 2.0;
+	}
+
+	// i = numCells, j[1,numCells - 1]
+	i = numCells;
+	for (int j = 1; j < numCells; j += 2) {
+	int vLoc = (i*(numCells + 1) + j)* vertElementCount;
+
+	//Use the left/right or up/down to find the appropriate height
+	int neighborVLocA = (i*(numCells + 1) + j + 1)* vertElementCount;
+	int neighborVLocB = (i*(numCells + 1) + j - 1)* vertElementCount;
+
+	(*verts)[vLoc + 0] = (double)i *(xSize) / (float)numCells;
+	(*verts)[vLoc + 1] = ((*verts)[neighborVLocA + 1] + (*verts)[neighborVLocB + 1]) / 2.0;
+	(*verts)[vLoc + 2] = (double)j * (zSize) / (float)numCells;
+	(*verts)[vLoc + 6] = i;
+	(*verts)[vLoc + 7] = j;
+	(*verts)[vLoc + 8] = ((*verts)[neighborVLocA + 8] + (*verts)[neighborVLocB + 8]) / 2.0;
+	(*verts)[vLoc + 9] = ((*verts)[neighborVLocA + 9] + (*verts)[neighborVLocB + 9]) / 2.0;
+	(*verts)[vLoc + 10] = ((*verts)[neighborVLocA + 10] + (*verts)[neighborVLocB + 10]) / 2.0;
+	(*verts)[vLoc + 11] = ((*verts)[neighborVLocA + 11] + (*verts)[neighborVLocB + 11]) / 2.0;
+	}
+
+	// j = 0, i[1, numCells - 1]
+	j = 0;
+	for (int i = 1; i < numCells; i += 2) {
+	int vLoc = (i*(numCells + 1) + j)* vertElementCount;
+
+	//Use the left/right or up/down to find the appropriate height
+	int neighborVLocA = ((i + 1)*(numCells + 1) + j)* vertElementCount;
+	int neighborVLocB = ((i - 1)*(numCells + 1) + j)* vertElementCount;
+
+	(*verts)[vLoc + 0] = (double)i *(xSize) / (float)numCells;
+	(*verts)[vLoc + 1] = ((*verts)[neighborVLocA + 1] + (*verts)[neighborVLocB + 1]) / 2.0;
+	(*verts)[vLoc + 2] = (double)j * (zSize) / (float)numCells;
+	(*verts)[vLoc + 6] = i;
+	(*verts)[vLoc + 7] = j;
+	(*verts)[vLoc + 8] = ((*verts)[neighborVLocA + 8] + (*verts)[neighborVLocB + 8]) / 2.0;
+	(*verts)[vLoc + 9] = ((*verts)[neighborVLocA + 9] + (*verts)[neighborVLocB + 9]) / 2.0;
+	(*verts)[vLoc + 10] = ((*verts)[neighborVLocA + 10] + (*verts)[neighborVLocB + 10]) / 2.0;
+	(*verts)[vLoc + 11] = ((*verts)[neighborVLocA + 11] + (*verts)[neighborVLocB + 11]) / 2.0;
+	}
+
+	// j = numCells, i[1, numCells - 1]
+	j = numCells;
+	for (int i = 1; i < numCells; i +=2) {
+	int vLoc = (i*(numCells + 1) + j)* vertElementCount;
+
+	//Use the left/right or up/down to find the appropriate height
+	int neighborVLocA = ((i + 1)*(numCells + 1) + j)* vertElementCount;
+	int neighborVLocB = ((i - 1)*(numCells + 1) + j)* vertElementCount;
+
+	(*verts)[vLoc + 0] = (double)i *(xSize) / (float)numCells;
+	(*verts)[vLoc + 1] = ((*verts)[neighborVLocA + 1] + (*verts)[neighborVLocB + 1]) / 2.0;
+	(*verts)[vLoc + 2] = (double)j * (zSize) / (float)numCells;
+	(*verts)[vLoc + 6] = i;
+	(*verts)[vLoc + 7] = j;
+	(*verts)[vLoc + 8] = ((*verts)[neighborVLocA + 8] + (*verts)[neighborVLocB + 8]) / 2.0;
+	(*verts)[vLoc + 9] = ((*verts)[neighborVLocA + 9] + (*verts)[neighborVLocB + 9]) / 2.0;
+	(*verts)[vLoc + 10] = ((*verts)[neighborVLocA + 10] + (*verts)[neighborVLocB + 10]) / 2.0;
+	(*verts)[vLoc + 11] = ((*verts)[neighborVLocA + 11] + (*verts)[neighborVLocB + 11]) / 2.0;
+	}
+	}
+	*/
+
+	//Fills in lines starting at i = 1 and skips a line, filling in all the j's (half of the terrain)
+	for (int i = 1; i < numCells; i += 2)
+	{
+		for (int j = 0; j <= numCells; j++)
+		{
+			double value = (terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0.0, (double)j *(zSize) / (float)numCells + (zLoc)));
+
+			int vLoc = (i*(numCells + 1) + j)* vertElementCount;
+
+			(*verts)[vLoc + 0] = (float)i *(xSize) / (float)numCells;
+			(*verts)[vLoc + 1] = (float)value * heightScale;
+			(*verts)[vLoc + 2] = (float)j * (zSize) / (float)numCells;
+			(*verts)[vLoc + 6] = (float)i / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (glm::pow(2.0, terrainQuad.level));
+			(*verts)[vLoc + 7] = (float)j / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (glm::pow(2.0, terrainQuad.level));
+			(*verts)[vLoc + 8] = 0;
+			(*verts)[vLoc + 9] = 0;
+			(*verts)[vLoc + 10] = 0;
+			(*verts)[vLoc + 11] = 0;
+		}
+	}
+
+	//fills the last 1/4 of cells, starting at i= 0 and jumping. Like the first double for loop but offset by one
+	for (int i = 0; i <= numCells; i += 2)
+	{
+		for (int j = 1; j <= numCells; j += 2)
+		{
+			double value = (terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0.0, (double)j *(zSize) / (float)numCells + (zLoc)));
+
+			int vLoc = (i*(numCells + 1) + j)* vertElementCount;
+
+			(*verts)[vLoc + 0] = (float)i *(xSize) / (float)numCells;
+			(*verts)[vLoc + 1] = (float)value * heightScale;
+			(*verts)[vLoc + 2] = (float)j * (zSize) / (float)numCells;
+			(*verts)[vLoc + 6] = (float)i / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (glm::pow(2.0, terrainQuad.level));
+			(*verts)[vLoc + 7] = (float)j / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (glm::pow(2.0, terrainQuad.level));
+			(*verts)[vLoc + 8] = 0;
+			(*verts)[vLoc + 9] = 0;
+			(*verts)[vLoc + 10] = 0;
+			(*verts)[vLoc + 11] = 0;
+		}
+	}
+
+	//normals -- Look I know its verbose and proabably prone to being a waste of time, but since its something as banal as normal calculation and the optomizer doesn't know about how most of the center doesn't need to recalculate the heights, it feels like a useful thing to do
+	{
+
+		//center normals
+		{
+			for (int i = 1; i < numCells; i++)
+			{
+				for (int j = 1; j < numCells; j++)
+				{
+					//gets height values of its neighbors, rather than recalculating them from scratch
+					double hL = (*verts)[((i + 1)*(numCells + 1) + j)* vertElementCount + 1]; // i + 1
+					double hR = (*verts)[((i - 1)*(numCells + 1) + j)* vertElementCount + 1]; // i - 1
+					double hD = (*verts)[(i*(numCells + 1) + j + 1)* vertElementCount + 1]; // j + 1
+					double hU = (*verts)[(i*(numCells + 1) + j - 1)* vertElementCount + 1]; // j -1
+					glm::vec3 normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
+
+					int vLoc = (i*(numCells + 1) + j)* vertElementCount;
+					(*verts)[vLoc + 3] = normal.x;
+					(*verts)[vLoc + 4] = normal.y;
+					(*verts)[vLoc + 5] = normal.z;
+				}
+			}
+		}
+
+		//edge normals
+		{
+			int i = 0, j = 0;
+			double hL, hR, hD, hU;
+			glm::vec3 normal;
+			int vLoc;
+
+			// i = 0, j[1,numCells - 1]
+			for (int j = 1; j < numCells; j++) {
+				hL = (*verts)[((i + 1)*(numCells + 1) + j)* vertElementCount + 1]; // i + 1
+				hR = terrainGenerator->SampleHeight((double)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc) * heightScale;
+				hD = (*verts)[(i*(numCells + 1) + j + 1)* vertElementCount + 1]; // j + 1
+				hU = (*verts)[(i*(numCells + 1) + j - 1)* vertElementCount + 1]; // j -1
+				normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
+
+				vLoc = (i*(numCells + 1) + j)* vertElementCount;
+				(*verts)[vLoc + 3] = normal.x;
+				(*verts)[vLoc + 4] = normal.y;
+				(*verts)[vLoc + 5] = normal.z;
+			}
+
+			// i = numCells, j[1,numCells - 1]
+			i = numCells;
+			for (int j = 1; j < numCells; j++) {
+				hL = terrainGenerator->SampleHeight((double)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc) * heightScale;
+				hR = (*verts)[((i - 1)*(numCells + 1) + j)* vertElementCount + 1]; // i - 1
+				hD = (*verts)[(i*(numCells + 1) + j + 1)* vertElementCount + 1]; // j + 1
+				hU = (*verts)[(i*(numCells + 1) + j - 1)* vertElementCount + 1]; // j -1
+				normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
+
+				vLoc = (i*(numCells + 1) + j)* vertElementCount;
+				(*verts)[vLoc + 3] = normal.x;
+				(*verts)[vLoc + 4] = normal.y;
+				(*verts)[vLoc + 5] = normal.z;
+			}
+
+			// j = 0, i[1, numCells - 1]
+			j = 0;
+			for (int i = 1; i < numCells; i++) {
+				hL = (*verts)[((i + 1)*(numCells + 1) + j)* vertElementCount + 1]; // i + 1
+				hR = (*verts)[((i - 1)*(numCells + 1) + j)* vertElementCount + 1]; // i - 1
+				hD = (*verts)[(i*(numCells + 1) + j + 1)* vertElementCount + 1]; // j + 1
+				hU = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j - 1)*(zSize) / (float)numCells + zLoc) * heightScale;//
+				normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
+
+				vLoc = (i*(numCells + 1) + j)* vertElementCount;
+				(*verts)[vLoc + 3] = normal.x;
+				(*verts)[vLoc + 4] = normal.y;
+				(*verts)[vLoc + 5] = normal.z;
+			}
+
+			// j = numCells, i[1, numCells - 1]
+			j = numCells;
+			for (int i = 1; i < numCells; i++) {
+				hL = (*verts)[((i + 1)*(numCells + 1) + j)* vertElementCount + 1]; // i + 1
+				hR = (*verts)[((i - 1)*(numCells + 1) + j)* vertElementCount + 1]; // i - 1
+				hD = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j + 1)*(zSize) / (float)numCells + zLoc) * heightScale;
+				hU = (*verts)[(i*(numCells + 1) + j - 1)* vertElementCount + 1]; // j -1
+				normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
+
+				vLoc = (i*(numCells + 1) + j)* vertElementCount;
+				(*verts)[vLoc + 3] = normal.x;
+				(*verts)[vLoc + 4] = normal.y;
+				(*verts)[vLoc + 5] = normal.z;
+			}
+		}
+
+		//corner normals
+		{
+			double hL, hR, hD, hU;
+			glm::vec3 normal;
+			int vLoc;
+
+			int i = 0, j = 0;
+			hL = (*verts)[((i + 1)*(numCells + 1) + j)* vertElementCount + 1]; // i + 1
+			hR = terrainGenerator->SampleHeight((double)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc) * heightScale; // i - 1
+			hD = (*verts)[(i*(numCells + 1) + j + 1)* vertElementCount + 1]; // j + 1
+			hU = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j - 1)*(zSize) / (float)numCells + zLoc) * heightScale; // j -1
+			normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
+
+			vLoc = (i*(numCells + 1) + j)* vertElementCount;
+			(*verts)[vLoc + 3] = normal.x;
+			(*verts)[vLoc + 4] = normal.y;
+			(*verts)[vLoc + 5] = normal.z;
+
+
+			i = 0, j = numCells;
+			hL = (*verts)[((i + 1)*(numCells + 1) + j)* vertElementCount + 1]; // i + 1
+			hR = terrainGenerator->SampleHeight((double)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc) * heightScale; // i - 1
+			hD = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j + 1)*(zSize) / (float)numCells + zLoc) * heightScale; // j + 1
+			hU = (*verts)[(i*(numCells + 1) + j - 1)* vertElementCount + 1]; // j -1
+			normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
+
+			vLoc = (i*(numCells + 1) + j)* vertElementCount;
+			(*verts)[vLoc + 3] = normal.x;
+			(*verts)[vLoc + 4] = normal.y;
+			(*verts)[vLoc + 5] = normal.z;
+
+			i = numCells, j = 0;
+			hL = terrainGenerator->SampleHeight((double)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc) * heightScale; // i + 1
+			hR = (*verts)[((i - 1)*(numCells + 1) + j)* vertElementCount + 1]; // i - 1
+			hD = (*verts)[(i*(numCells + 1) + j + 1)* vertElementCount + 1]; // j + 1
+			hU = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j - 1)*(zSize) / (float)numCells + zLoc) * heightScale; // j -1
+			normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
+
+			vLoc = (i*(numCells + 1) + j)* vertElementCount;
+			(*verts)[vLoc + 3] = normal.x;
+			(*verts)[vLoc + 4] = normal.y;
+			(*verts)[vLoc + 5] = normal.z;
+
+			i = numCells, j = numCells;
+			hL = terrainGenerator->SampleHeight((double)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc) * heightScale; // i + 1
+			hR = (*verts)[((i - 1)*(numCells + 1) + j)* vertElementCount + 1]; // i - 1
+			hD = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j + 1)*(zSize) / (float)numCells + zLoc) * heightScale; // j + 1
+			hU = (*verts)[(i*(numCells + 1) + j - 1)* vertElementCount + 1]; // j -1
+			normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
+
+			vLoc = (i*(numCells + 1) + j)* vertElementCount;
+			(*verts)[vLoc + 3] = normal.x;
+			(*verts)[vLoc + 4] = normal.y;
+			(*verts)[vLoc + 5] = normal.z;
+		}
+	}
+
+	int counter = 0;
+	for (int i = 0; i < numCells; i++)
+	{
+		for (int j = 0; j < numCells; j++)
+		{
+			(*indices)[counter++] = i * (numCells + 1) + j;
+			(*indices)[counter++] = i * (numCells + 1) + j + 1;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+			(*indices)[counter++] = i * (numCells + 1) + j + 1;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+		}
+	}
+
+
+}
