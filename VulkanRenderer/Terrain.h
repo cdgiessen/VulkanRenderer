@@ -78,9 +78,11 @@ public:
 	TerrainQuadData* rootQuad;
 	int maxLevels;
 	int maxNumQuads;
+	int numQuads = 0;
 
 	glm::vec3 position;
 	glm::vec3 size;
+	float heightScale = 100;
 
 	VulkanDevice *device;
 

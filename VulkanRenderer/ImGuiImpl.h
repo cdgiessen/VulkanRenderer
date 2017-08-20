@@ -1,5 +1,5 @@
-#pragma once
-
+//#pragma once
+//
 //#include <glm\common.hpp>
 //
 //#include <vulkan\vulkan.h>
@@ -7,8 +7,6 @@
 //#include "VulkanTools.h"
 //#include "VulkanBuffer.hpp"
 //#include "VulkanDevice.hpp"
-//
-//#include <imgui.h>
 //
 //// ----------------------------------------------------------------------------
 //// ImGUI class

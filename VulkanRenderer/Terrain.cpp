@@ -36,7 +36,8 @@ Terrain::Terrain(int numCells, int maxLevels, float posX, float posY, float size
 		maxNumQuads = 1;
 	}
 	else {
-		maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0));
+		maxNumQuads = 16 + 12 * maxLevels * 3;
+		//maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads
 	}
 	terrainQuads = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
 	quadHandles.reserve(maxNumQuads);
@@ -549,6 +550,8 @@ void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
 }
 
 TerrainQuadData* Terrain::InitTerrainQuad(TerrainQuadData* q, glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo) {
+	numQuads++;
+	
 	q->terrainQuad.init(position.x, position.z, size.x, size.z, level, 0, 0);
 	//q->terrainQuad.CreateTerrainMesh(&q->vertices, &q->indices);
 	GenerateNewTerrain(&q->vertices, &q->indices, q->terrainQuad);
@@ -607,6 +610,7 @@ TerrainQuadData* Terrain::InitTerrainQuadFromParent(TerrainQuadData* parent, Ter
 
 void Terrain::SubdivideTerrain(TerrainQuadData* quad, VulkanBuffer &gbo, VulkanBuffer &lbo) {
 	quad->terrainQuad.isSubdivided = true;
+	numQuads += 4;
 
 	glm::vec3 new_pos = glm::vec3(quad->terrainQuad.pos.x, 0, quad->terrainQuad.pos.z);
 	glm::vec3 new_size = glm::vec3(quad->terrainQuad.size.x/2.0, 0, quad->terrainQuad.size.z/2.0);
@@ -632,6 +636,8 @@ void Terrain::SubdivideTerrain(TerrainQuadData* quad, VulkanBuffer &gbo, VulkanB
 
 void Terrain::UnSubdivide(TerrainQuadData* quad) {
 	if (quad->terrainQuad.isSubdivided) {
+		numQuads -= 4;
+
 		auto delUR = std::find(quadHandles.begin(), quadHandles.end(), quad->subQuads.UpRight);
 		if(delUR != quadHandles.end())
 			quadHandles.erase(delUR);
@@ -744,8 +750,6 @@ void Terrain::GenerateNewTerrain(TerrainMeshVertices* verts, TerrainMeshIndices*
 	int numCells = NumCells;
 	float xLoc = terrainQuad.pos.x, zLoc = terrainQuad.pos.z, xSize = terrainQuad.size.x, zSize = terrainQuad.size.z;
 
-	float heightScale = 50;
-
 	for (int i = 0; i <= numCells; i++)
 	{
 		for (int j = 0; j <= numCells; j++)
@@ -801,9 +805,7 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 
 	int parentIOffset = (corner == 2 || corner == 3) ? (numCells + 1) / 2 : 0;
 	int parentJOffset = (corner == 1 || corner == 3) ? (numCells + 1) / 2 : 0;
-
-	float heightScale = 50;
-
+	
 	//uses the parent terrain for 1/4 of the grid
 	for (int i = 0; i <= numCells; i += 2)
 	{

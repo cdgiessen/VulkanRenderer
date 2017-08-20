@@ -1,5 +1,7 @@
 //#include "ImGuiImpl.h"
 //
+//#include <imgui.h>
+//
 //ImGUI::ImGUI()
 //{
 //
@@ -97,7 +99,7 @@
 //	stagingBuffer.unmap();
 //
 //	// Copy buffer data to font image
-//	VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+//	VkCommandBuffer copyCmd = device->createCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 //
 //	// Prepare for transfer
 //	setImageLayout(

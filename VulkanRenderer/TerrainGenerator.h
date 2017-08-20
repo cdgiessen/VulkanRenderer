@@ -22,7 +22,10 @@ private:
 
 	module::Perlin terrainType;
 
-	noise::module::Select finalTerrain;
+	noise::module::Select terrainSelector;
+
+	noise::module::Turbulence finalTerrain;
+
 	noise::utils::NoiseMap heightMap;
 	utils::NoiseMapBuilderPlane heightMapBuilder;
 	utils::RendererImage renderer;

@@ -80,11 +80,11 @@ void VulkanApp::initVulkan() {
 void VulkanApp::prepareScene(){
 
 	pointLights.resize(5);
-	pointLights[0] = PointLight(glm::vec4(0, 10, 0, 1),	  glm::vec4(1, 1, 1, 1), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	pointLights[1] = PointLight(glm::vec4(10, 10, 50, 1), glm::vec4(1, 1, 1, 1), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	pointLights[2] = PointLight(glm::vec4(50, 10, 10, 1), glm::vec4(1, 1, 1, 1), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	pointLights[3] = PointLight(glm::vec4(50, 10, 50, 1), glm::vec4(1, 1, 1, 1), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(1, 1, 1, 1), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	pointLights[0] = PointLight(glm::vec4(0, 10, 0, 1),	  glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	pointLights[1] = PointLight(glm::vec4(10, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	pointLights[2] = PointLight(glm::vec4(50, 10, 10, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	pointLights[3] = PointLight(glm::vec4(50, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 
 	createUniformBuffers();
 	createDescriptorSets();
@@ -97,33 +97,29 @@ void VulkanApp::prepareScene(){
 	cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
 	cubeObject->InitGameObject(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 
-	float terWidth = 500;
-	int maxLevels = 4;
-	
-	terrains.push_back(new Terrain(100, maxLevels, 0.0, 0.0,		terWidth, terWidth));
-	terrains.push_back(new Terrain(100, maxLevels, terWidth, 0.0,	 terWidth, terWidth));
-	terrains.push_back(new Terrain(100, maxLevels, 0.0, terWidth,	 terWidth, terWidth));
-	terrains.push_back(new Terrain(100, maxLevels, -terWidth, 0.0, terWidth, terWidth));
-	terrains.push_back(new Terrain(100, maxLevels, 0.0, -terWidth, terWidth, terWidth));
-	terrains.push_back(new Terrain(100, maxLevels, terWidth, terWidth, terWidth, terWidth));
-	terrains.push_back(new Terrain(100, maxLevels, terWidth, -terWidth, terWidth, terWidth));
-	terrains.push_back(new Terrain(100, maxLevels, -terWidth, terWidth, terWidth, terWidth));
-	terrains.push_back(new Terrain(100, maxLevels, -terWidth, -terWidth, terWidth, terWidth));
+	float terWidth = 10000;
+	int maxLevels = 6;
+	int numTerrainsWide = 1;
+	for (int i = 0; i < numTerrainsWide; i++)
+	{
+		for (int j = 0; j < numTerrainsWide; j++)
+		{
+			terrains.push_back(new Terrain(100, maxLevels, (i - numTerrainsWide / 2) * terWidth - terWidth / 2, (j - numTerrainsWide / 2) * terWidth - terWidth/2, terWidth, terWidth));
+		}
+	}
 
 	for (Terrain* ter : terrains) {
 		ter->InitTerrain(&vulkanDevice, renderPass, vulkanDevice.graphics_queue, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 		ter->UpdateTerrain(camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
 	}
 
-	waters.push_back(new Water(100, 0.0, 0.0, terWidth, terWidth));
-	waters.push_back(new Water(100, terWidth, 0.0, terWidth, terWidth));
-	waters.push_back(new Water(100, 0.0, terWidth, terWidth, terWidth));
-	waters.push_back(new Water(100, -terWidth, 0.0, terWidth, terWidth));
-	waters.push_back(new Water(100, 0.0, -terWidth, terWidth, terWidth));
-	waters.push_back(new Water(100, terWidth, terWidth, terWidth, terWidth));
-	waters.push_back(new Water(100, terWidth, -terWidth, terWidth, terWidth));
-	waters.push_back(new Water(100, -terWidth, terWidth, terWidth, terWidth));
-	waters.push_back(new Water(100, -terWidth, -terWidth, terWidth, terWidth));
+	for (int i = 0; i < numTerrainsWide; i++)
+	{
+		for (int j = 0; j < numTerrainsWide; j++)
+		{
+			waters.push_back(new Water(100, (i - numTerrainsWide / 2) * terWidth - terWidth / 2, (j - numTerrainsWide / 2) * terWidth - terWidth / 2, terWidth, terWidth));
+		}
+	}
 
 	for (Water* water : waters) {
 		water->LoadTexture("Resources/Textures/TileableWaterTexture.jpg");
@@ -808,6 +804,11 @@ void VulkanApp::newGuiFrame() {
 }
 
 void VulkanApp::updateUniformBuffers() {
+	if (walkOnGround) {
+		//std::cout << camera->Position.y << std::endl;
+		camera->Position.y = terrains.at(0)->terrainGenerator->SampleHeight(camera->Position.x, 0, camera->Position.z) * terrains.at(0)->heightScale + 2;
+	}
+
 	GlobalVariableUniformBuffer cbo = {};
 	cbo.view = camera->GetViewMatrix();
 	cbo.proj = glm::perspective(glm::radians(45.0f), vulkanSwapChain.swapChainExtent.width / (float)vulkanSwapChain.swapChainExtent.height, 0.1f, 10000.0f);
@@ -836,7 +837,9 @@ void VulkanApp::updateUniformBuffers() {
 		ter->UpdateTerrain(camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
 		//myEndTime = std::chrono::high_resolution_clock::now();
 		//
-		//std::cout << "Time to update one terrain " << std::chrono::duration_cast<std::chrono::microseconds>(myEndTime - myStartTime).count() << std::endl;
+		//std::cout << "Time to update one terrain " << std::chrono::duration_cast<std::chrono::microseconds>(myEndTime - myStartTime).count() << std::endl;\
+
+		//std::cout << "Number of terrains = " << ter->numQuads << std::endl;
 	}
 }
 
@@ -874,6 +877,11 @@ void VulkanApp::KeyboardEvent(int key, int scancode, int action, int mods) {
 		wireframe = !wireframe;
 		reBuildCommandBuffers();
 		std::cout << "wireframe toggled" << std::endl;
+	}
+
+	if (key == GLFW_KEY_F  && action == GLFW_PRESS) {
+		walkOnGround = !walkOnGround;
+		std::cout << "flight mode toggled " << std::endl;
 	}
 
 	if (action == GLFW_PRESS)

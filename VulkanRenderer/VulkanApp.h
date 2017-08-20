@@ -117,6 +117,7 @@ private:
 	std::vector<PointLight> pointLights;
 
 	Camera* camera;
+	bool walkOnGround = false;
 
 	//stuff to render
 	Skybox* skybox;

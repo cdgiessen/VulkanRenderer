@@ -5,10 +5,10 @@
 TerrainGenerator::TerrainGenerator(int splatMapSize, int numCells, glm::vec3 pos, glm::vec3 size)
 {
 	//module::RidgedMulti mountainTerrain;
-	mountainTerrain.SetFrequency(0.002);
+	mountainTerrain.SetFrequency(0.001);
 
 	//module::Billow baseFlatTerrain;
-	baseFlatTerrain.SetFrequency(0.002);
+	baseFlatTerrain.SetFrequency(0.001);
 
 	//module::ScaleBias flatTerrain;
 	flatTerrain.SetSourceModule(0, baseFlatTerrain);
@@ -19,11 +19,18 @@ TerrainGenerator::TerrainGenerator(int splatMapSize, int numCells, glm::vec3 pos
 	terrainType.SetFrequency(0.001);
 	terrainType.SetPersistence(0.5);
 
-	finalTerrain.SetSourceModule(0, flatTerrain);
-	finalTerrain.SetSourceModule(1, mountainTerrain);
-	finalTerrain.SetControlModule(terrainType);
-	finalTerrain.SetBounds(0.0, 1000);
-	finalTerrain.SetEdgeFalloff(0.125);
+
+	//terrain selector
+	terrainSelector.SetSourceModule(0, flatTerrain);
+	terrainSelector.SetSourceModule(1, mountainTerrain);
+	terrainSelector.SetControlModule(terrainType);
+	terrainSelector.SetBounds(0.0, 1000);
+	terrainSelector.SetEdgeFalloff(0.125);
+
+	//turbulence
+	finalTerrain.SetSourceModule(0, terrainSelector);
+	finalTerrain.SetFrequency(4.0);
+	finalTerrain.SetPower(0.125);
 
 	heightMapBuilder.SetSourceModule(finalTerrain);
 	heightMapBuilder.SetDestNoiseMap(heightMap);
