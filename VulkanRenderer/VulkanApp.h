@@ -25,8 +25,9 @@
 #include "VulkanModel.hpp"
 #include "VulkanTexture.hpp"
 
-//#include "ImGuiImpl.h"
-//#include <imgui.h>
+#include "ImGui\imgui.h"
+#include "ImGuiImpl.h"
+
 #include "Mesh.h"
 #include "Camera.h"
 #include "Terrain.h"
@@ -36,8 +37,6 @@
 
 const int WIDTH = 1000;
 const int HEIGHT = 800;
-
-const float deltaTime = 0.016f;
 
 class VulkanApp
 {
@@ -57,24 +56,12 @@ public:
 	void recreateSwapChain();
 	void reBuildCommandBuffers();
 
+	//Callbacks
 	void MouseMoved(double xpos, double ypos);
 	void MouseClicked(int button, int action, int mods);
 	void KeyboardEvent(int key, int scancode, int action, int mods);
 
 private:
-
-	std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
-	std::chrono::time_point<std::chrono::high_resolution_clock> prevFrameTime;
-
-	double timeSinceStart = 0.0f; //in seconds
-	double deltaTime = 0.016f; //in seconds
-	
-	bool firstMouse;
-	double lastX, lastY;
-	bool mouseControlEnabled;
-	bool keys[512] = {};
-	void SetMouseControl(bool value);
-	bool wireframe = false;
 
 	void createRenderPass();
 	void createDepthResources();
@@ -91,9 +78,13 @@ private:
 
 	void updateUniformBuffers();
 
+	//ImGUI functions
+	void CreateImguiDescriptorPool();
+	void prepareImGui();
 	void newGuiFrame();
 	void updateImGui();
-	void prepareImGui();
+	void renderImgui(VkCommandBuffer commandBuffer);
+	void CleanUpImgui();
 
 	void CreatePrimaryCommandBuffer();
 
@@ -112,34 +103,48 @@ private:
 
 	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
 
+	std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
+	std::chrono::time_point<std::chrono::high_resolution_clock> prevFrameTime;
+
+	double timeSinceStart = 0.0f; //in seconds
+	double deltaTime = 0.016f; //in seconds
+
+	//Input stuff
+	Camera* camera;
+	bool firstMouse;
+	double lastX, lastY;
+	bool mouseControlEnabled;
+	bool keys[512] = {};
+	bool wireframe = false;
+	bool walkOnGround = false;
+	void SetMouseControl(bool value);
+
+	//global uniform and lighting
 	VulkanBuffer globalVariableBuffer;
 	VulkanBuffer lightsInfoBuffer;
 	std::vector<PointLight> pointLights;
-
-	Camera* camera;
-	bool walkOnGround = false;
-
-	//stuff to render
+	
+	//Scene objects to render
 	Skybox* skybox;
 	GameObject* cubeObject;
 	std::vector<Terrain*> terrains;
 	std::vector<Water*> waters;
 
-	//ImGUI *imGui = nullptr;
+	//ImGui resources
+	VkDescriptorPool imgui_descriptor_pool;
+	
 
+	//Vulkan specific members
 	VulkanDevice vulkanDevice;
-
 	VulkanSwapChain vulkanSwapChain;
-
 	VkRenderPass renderPass;
+	uint32_t frameIndex; //which of the swapchain images the app is rendering to
 
 	VkImage depthImage; 
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
 
-
 	std::vector<VkCommandBuffer> commandBuffers;
-	
 
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;

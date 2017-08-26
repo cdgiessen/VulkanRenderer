@@ -168,7 +168,7 @@ void Water::SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint3
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.lineWidth = 1.0f;
-	rasterizer.depthBiasEnable = VK_FALSE;
+	rasterizer.depthBiasEnable = VK_TRUE;
 
 	VkPipelineMultisampleStateCreateInfo multisampling = initializers::pipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT);
 	multisampling.sampleShadingEnable = VK_FALSE;

@@ -109,7 +109,7 @@ public:
 	Terrain(int numCells, int maxLevels, float posX, float posY, float sizeX, float sizeY);
 	~Terrain();
 
-	void InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue copyQueue, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
+	void InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue copyQueue, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos);
 	void ReinitTerrain(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
 	void UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
 	void DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], Terrain* curTerrain, bool wireframe);
@@ -138,7 +138,7 @@ private:
 	void UpdateMeshBuffer(VkQueue copyQueue);
 
 	void UpdateUniformBuffer(float time);
-	void SubdivideTerrain(TerrainQuadData* quad, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	void SubdivideTerrain(TerrainQuadData* quad, VkQueue copyQueue, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo);
 	void UnSubdivide(TerrainQuadData* quad);
 
 	void GenerateNewTerrain(TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad);

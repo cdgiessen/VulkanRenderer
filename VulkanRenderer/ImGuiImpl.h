@@ -1,57 +1,42 @@
-//#pragma once
-//
-//#include <glm\common.hpp>
-//
-//#include <vulkan\vulkan.h>
-//#include "VulkanInitializers.hpp"
-//#include "VulkanTools.h"
-//#include "VulkanBuffer.hpp"
-//#include "VulkanDevice.hpp"
-//
-//// ----------------------------------------------------------------------------
-//// ImGUI class
-//// ----------------------------------------------------------------------------
-//class ImGUI {
-//private:
-//	// Vulkan resources for rendering the UI
-//	VkSampler sampler;
-//	VulkanBuffer vertexBuffer;
-//	VulkanBuffer indexBuffer;
-//	int32_t vertexCount = 0;
-//	int32_t indexCount = 0;
-//	VkDeviceMemory fontMemory = VK_NULL_HANDLE;
-//	VkImage fontImage = VK_NULL_HANDLE;
-//	VkImageView fontView = VK_NULL_HANDLE;
-//	VkPipelineCache pipelineCache;
-//	VkPipelineLayout pipelineLayout;
-//	VkPipeline pipeline;
-//	VkDescriptorPool descriptorPool;
-//	VkDescriptorSetLayout descriptorSetLayout;
-//	VkDescriptorSet descriptorSet;
-//	VkShaderModule vertexShaderModule;
-//	VkShaderModule fragmentShaderModule;
-//	VulkanDevice *device;
-//
-//public:
-//	// UI params are set via push constants
-//	struct ImGuiPushConstBlock {
-//		glm::vec2 scale;
-//		glm::vec2 translate;
-//	} pushConstBlock;
-//
-//	ImGUI();
-//	~ImGUI();
-//
-//	// Initialize styles, keys, etc.
-//	void init(float width, float height);
-//
-//	// Initialize all Vulkan resources used by the ui
-//	void initResources(VkRenderPass renderPass, VkQueue copyQueue);
-//
-//	// Update vertex and index buffer containing the imGui elements when required
-//	void updateBuffers();
-//
-//	// Draw current imGui frame into a command buffer
-//	void drawFrame(VkCommandBuffer commandBuffer);
-//
-//};
+// ImGui GLFW binding with Vulkan + shaders
+// FIXME: Changes of ImTextureID aren't supported by this binding! Please, someone add it!
+
+// You can copy and use unmodified imgui_impl_* files in your project. See main.cpp for an example of using this.
+// If you use this binding you'll need to call 5 functions: ImGui_ImplXXXX_Init(), ImGui_ImplXXX_CreateFontsTexture(), ImGui_ImplXXXX_NewFrame(), ImGui_ImplXXXX_Render() and ImGui_ImplXXXX_Shutdown().
+// If you are new to ImGui, see examples/README.txt and documentation at the top of imgui.cpp.
+// https://github.com/ocornut/imgui
+
+struct GLFWwindow;
+
+#define IMGUI_VK_QUEUED_FRAMES 2
+
+struct ImGui_ImplGlfwVulkan_Init_Data
+{
+	VkAllocationCallbacks* allocator;
+	VkPhysicalDevice       gpu;
+	VkDevice               device;
+	VkRenderPass           render_pass;
+	VkPipelineCache        pipeline_cache;
+	VkDescriptorPool       descriptor_pool;
+	void(*check_vk_result)(VkResult err);
+};
+
+IMGUI_API bool        ImGui_ImplGlfwVulkan_Init(GLFWwindow* window, bool install_callbacks, ImGui_ImplGlfwVulkan_Init_Data *init_data);
+IMGUI_API void        ImGui_ImplGlfwVulkan_Shutdown();
+IMGUI_API void        ImGui_ImplGlfwVulkan_NewFrame();
+IMGUI_API void        ImGui_ImplGlfwVulkan_Render(VkCommandBuffer command_buffer);
+
+// Use if you want to reset your rendering device without losing ImGui state.
+IMGUI_API void        ImGui_ImplGlfwVulkan_InvalidateFontUploadObjects();
+IMGUI_API void        ImGui_ImplGlfwVulkan_InvalidateDeviceObjects();
+IMGUI_API bool        ImGui_ImplGlfwVulkan_CreateFontsTexture(VkCommandBuffer command_buffer);
+IMGUI_API bool        ImGui_ImplGlfwVulkan_CreateDeviceObjects();
+
+// GLFW callbacks (installed by default if you enable 'install_callbacks' during initialization)
+// Provided here if you want to chain callbacks.
+// You can also handle inputs yourself and use those as a reference.
+IMGUI_API void        ImGui_ImplGlfwVulkan_MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+IMGUI_API void        ImGui_ImplGlfwVulkan_ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+IMGUI_API void        ImGui_ImplGlfwVulkan_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+IMGUI_API void        ImGui_ImplGlfwVulkan_CharCallback(GLFWwindow* window, unsigned int c);
+

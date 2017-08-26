@@ -9,17 +9,18 @@ layout (push_constant) uniform PushConstants {
 	vec2 translate;
 } pushConstants;
 
-layout (location = 0) out vec2 outUV;
-layout (location = 1) out vec4 outColor;
+layout(location = 0) out struct{
+    vec4 Color;
+    vec2 UV;
+} Out;
 
-out gl_PerVertex 
-{
+out gl_PerVertex {
 	vec4 gl_Position;   
 };
 
 void main() 
 {
-	outUV = inUV;
-	outColor = inColor;
+	Out.Color = inColor;
+    Out.UV = inUV;
 	gl_Position = vec4(inPos * pushConstants.scale + pushConstants.translate, 0.0, 1.0);
 }

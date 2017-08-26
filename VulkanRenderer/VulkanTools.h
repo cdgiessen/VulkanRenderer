@@ -65,6 +65,15 @@ struct PointLight {
 	PointLight(glm::vec4 pos, glm::vec4 col, glm::vec4 atten) : lightPos(pos), color(col), attenuation(atten) {};
 };
 
+//struct DirectionalLight {
+//	glm::vec4 lightDir = glm::vec4(50.0f, -65.0f, 50.0f, 1.0f);
+//	glm::vec4 color = glm::vec4(1.0, 1.0, 1.0f, 1.0f);
+//	glm::vec4 attenuation = glm::vec4(1.0, 0.007f, 0.0002f, 1.0f);
+//
+//	DirectionalLight() {};
+//	DirectionalLight(glm::vec4 dir, glm::vec4 col, glm::vec4 atten) : lightDir(dir), color(col), attenuation(atten) {};
+//};
+
 SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);

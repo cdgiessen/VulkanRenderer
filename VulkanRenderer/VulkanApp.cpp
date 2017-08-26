@@ -18,7 +18,7 @@ VulkanApp::VulkanApp()
 
 	startTime = std::chrono::high_resolution_clock::now();
 	mainLoop();
-	cleanup();
+	cleanup(); //all resources
 }
 
 
@@ -42,11 +42,13 @@ void onMouseMoved(GLFWwindow* window, double xpos, double ypos)
 void onMouseClicked(GLFWwindow* window, int button, int action, int mods) {
 	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
 	app->MouseClicked(button, action, mods);
+	ImGui_ImplGlfwVulkan_MouseButtonCallback(window, button, action, mods);
 }
 
 void onKeyboardEvent(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
 	app->KeyboardEvent(key, scancode, action, mods);
+	ImGui_ImplGlfwVulkan_KeyCallback(window, key, scancode, action, mods);
 }
 
 void VulkanApp::initWindow() {
@@ -98,9 +100,9 @@ void VulkanApp::prepareScene(){
 	cubeObject->InitGameObject(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 
 	float terWidth = 10000;
-	int maxLevels = 6;
+	int maxLevels = 5;
 	int numTerrainsWide = 1;
-	for (int i = 0; i < numTerrainsWide; i++)
+	for (int i = 0; i < numTerrainsWide; i++) //creates a grid of terrains centered around 0,0,0
 	{
 		for (int j = 0; j < numTerrainsWide; j++)
 		{
@@ -109,15 +111,14 @@ void VulkanApp::prepareScene(){
 	}
 
 	for (Terrain* ter : terrains) {
-		ter->InitTerrain(&vulkanDevice, renderPass, vulkanDevice.graphics_queue, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
-		ter->UpdateTerrain(camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
+		ter->InitTerrain(&vulkanDevice, renderPass, vulkanDevice.graphics_queue, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer, camera->Position);
 	}
 
 	for (int i = 0; i < numTerrainsWide; i++)
 	{
 		for (int j = 0; j < numTerrainsWide; j++)
 		{
-			waters.push_back(new Water(100, (i - numTerrainsWide / 2) * terWidth - terWidth / 2, (j - numTerrainsWide / 2) * terWidth - terWidth / 2, terWidth, terWidth));
+			waters.push_back(new Water(200, (i - numTerrainsWide / 2) * terWidth - terWidth / 2, (j - numTerrainsWide / 2) * terWidth - terWidth / 2, terWidth, terWidth));
 		}
 	}
 
@@ -133,7 +134,10 @@ void VulkanApp::mainLoop() {
 
 		glfwPollEvents();
 		HandleInputs();
+		updateImGui();
+
 		updateUniformBuffers();
+
 		reBuildCommandBuffers();
 		drawFrame();
 		
@@ -148,7 +152,7 @@ void VulkanApp::mainLoop() {
 }
 
 void VulkanApp::cleanup() {
-	//delete imGui;
+	CleanUpImgui();
 
 	skybox->CleanUp();
 	cubeObject->CleanUp();
@@ -652,6 +656,9 @@ void VulkanApp::createCommandBuffers() {
 		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(skybox->model.indexCount), 1, 0, 0, 0);
 
 
+		//Imgui rendering
+		renderImgui(commandBuffers[i]);
+
 		vkCmdEndRenderPass(commandBuffers[i]);
 
 		if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
@@ -736,40 +743,78 @@ VkPipelineShaderStageCreateInfo VulkanApp::loadShader(std::string fileName, VkSh
 	return shaderStage;
 }
 
-void  VulkanApp::prepareImGui()
+static void imgui_check_vk_result(VkResult err)
 {
-	//imGui = new ImGUI();
-	//imGui->init((float)WIDTH, (float)HEIGHT);
-	//imGui->initResources(renderPass, vulkanDevice.graphics_queue);
+	if (err == 0) return;
+	printf("VkResult %d\n", err);
+	if (err < 0)
+		abort();
 }
 
+void VulkanApp::CreateImguiDescriptorPool() // Create Descriptor Pool
+{
+	VkDescriptorPoolSize pool_size[11] =
+	{
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+	};
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	pool_info.maxSets = 1000 * 11;
+	pool_info.poolSizeCount = 11;
+	pool_info.pPoolSizes = pool_size;
+	VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanDevice.device, &pool_info, VK_NULL_HANDLE, &imgui_descriptor_pool));
+	
+}
+
+void  VulkanApp::prepareImGui()
+{
+	CreateImguiDescriptorPool();
+
+	ImGui_ImplGlfwVulkan_Init_Data init_data = {};
+	init_data.allocator = VK_NULL_HANDLE;
+	init_data.gpu = vulkanDevice.physical_device;
+	init_data.device = vulkanDevice.device;
+	init_data.render_pass = renderPass;
+	init_data.pipeline_cache = VK_NULL_HANDLE;
+	init_data.descriptor_pool = imgui_descriptor_pool;
+	init_data.check_vk_result = imgui_check_vk_result;
+	
+	ImGui_ImplGlfwVulkan_Init(vulkanDevice.window, false, &init_data);
+
+	VkCommandBuffer fontUploader = vulkanDevice.createCommandBuffer(vulkanDevice.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	ImGui_ImplGlfwVulkan_CreateFontsTexture(fontUploader);
+	vulkanDevice.flushCommandBuffer(fontUploader, vulkanDevice.graphics_queue, true);
+}
+
+//Provides imgui with application data (window size, deltaTime, mouse position)
 void VulkanApp::updateImGui() {
-	//ImGuiIO& io = ImGui::GetIO();
-	//
-	//io.DisplaySize = ImVec2((float)WIDTH, (float)HEIGHT);
-	//io.DeltaTime = deltaTime;
-	//
-	//io.MousePos = ImVec2(lastX, lastY);
-	//io.MouseDown[0] = (((glfwGetMouseButton(vulkanDevice.window,GLFW_MOUSE_BUTTON_1)) != 0));
-	//io.MouseDown[1] = (((glfwGetMouseButton(vulkanDevice.window,GLFW_MOUSE_BUTTON_2)) != 0));
+	ImGuiIO& io = ImGui::GetIO();
+	
+	io.DisplaySize = ImVec2((float)WIDTH, (float)HEIGHT);
+	io.DeltaTime = deltaTime;
+	
+	io.MousePos = ImVec2(lastX, lastY);
+	io.MouseDown[0] = (((glfwGetMouseButton(vulkanDevice.window,GLFW_MOUSE_BUTTON_1)) != 0));
+	io.MouseDown[1] = (((glfwGetMouseButton(vulkanDevice.window,GLFW_MOUSE_BUTTON_2)) != 0));
 }
 
 void VulkanApp::newGuiFrame() {
 	// Starts a new imGui frame and sets up windows and ui elements
 	
-	
-	//ImGui::NewFrame();
-
-	// Init imGui windows and elements
-
-	//ImVec4 clear_color = ImColor(114, 144, 154);
-	//static float f = 0.0f;
-	//ImGui::Text("window title");
-	//ImGui::Text("graphics card");
-	//
-	//// Update frame time display
+	// Update frame time display
 	//if (false) {
-	//	/*std::rotate(uiSettings.frameTimes.begin(), uiSettings.frameTimes.begin() + 1, uiSettings.frameTimes.end());
+	//	std::rotate(uiSettings.frameTimes.begin(), uiSettings.frameTimes.begin() + 1, uiSettings.frameTimes.end());
 	//	float frameTime = 1000.0f / (example->frameTimer * 1000.0f);
 	//	uiSettings.frameTimes.back() = frameTime;
 	//	if (frameTime < uiSettings.frameTimeMin) {
@@ -777,7 +822,7 @@ void VulkanApp::newGuiFrame() {
 	//	}
 	//	if (frameTime > uiSettings.frameTimeMax) {
 	//		uiSettings.frameTimeMax = frameTime;
-	//	}*/
+	//	}
 	//}
 	//
 	////ImGui::PlotLines("Frame Times", &uiSettings.frameTimes[0], 50, 0, "", uiSettings.frameTimeMin, uiSettings.frameTimeMax, ImVec2(0, 80));
@@ -801,12 +846,41 @@ void VulkanApp::newGuiFrame() {
 	//// Render to generate draw buffers
 	//ImGui::Render();
 	
+
+}
+
+void VulkanApp::renderImgui(VkCommandBuffer commandBuffer) {
+	ImGui_ImplGlfwVulkan_NewFrame();
+
+	// Init imGui windows and elements
+
+	ImVec4 clear_color = ImColor(114, 144, 154);
+	static float f = 0.0f;
+	ImGui::Text("window title");
+
+	{
+		static float f = 0.0f;
+		ImGui::Text("Camera Movement Speed");
+		ImGui::SliderFloat("float", &camera->MovementSpeed, 0.1f, 100.0f);
+		//ImGui::ColorEdit3("clear color", (float*)&clear_color);
+		//if (ImGui::Button("Test Window")) show_test_window ^= 1;
+		//if (ImGui::Button("Another Window")) show_another_window ^= 1;
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	}
+
+	ImGui_ImplGlfwVulkan_Render(commandBuffer);
+}
+
+void VulkanApp::CleanUpImgui() {
+	ImGui_ImplGlfwVulkan_Shutdown();
 }
 
 void VulkanApp::updateUniformBuffers() {
 	if (walkOnGround) {
-		//std::cout << camera->Position.y << std::endl;
-		camera->Position.y = terrains.at(0)->terrainGenerator->SampleHeight(camera->Position.x, 0, camera->Position.z) * terrains.at(0)->heightScale + 2;
+		//very choppy movement for right now, but since its just a quick 'n dirty way to put the camera at walking height, its just fine
+		camera->Position.y = terrains.at(0)->terrainGenerator->SampleHeight(camera->Position.x, 0, camera->Position.z) * terrains.at(0)->heightScale + 2.0;
+		if (camera->Position.y < 2)
+			camera->Position.y = 2;
 	}
 
 	GlobalVariableUniformBuffer cbo = {};
@@ -832,12 +906,12 @@ void VulkanApp::updateUniformBuffers() {
 	for (Terrain* ter : terrains) {
 		//timing stuff. woo
 		//std::chrono::time_point<std::chrono::steady_clock> myEndTime;
-		//
+		
 		//auto myStartTime = std::chrono::high_resolution_clock::now();
 		ter->UpdateTerrain(camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
 		//myEndTime = std::chrono::high_resolution_clock::now();
-		//
-		//std::cout << "Time to update one terrain " << std::chrono::duration_cast<std::chrono::microseconds>(myEndTime - myStartTime).count() << std::endl;\
+		
+		//std::cout << "Time to update one terrain " << std::chrono::duration_cast<std::chrono::microseconds>(myEndTime - myStartTime).count() << std::endl;
 
 		//std::cout << "Number of terrains = " << ter->numQuads << std::endl;
 	}
@@ -909,9 +983,11 @@ void VulkanApp::MouseMoved(double xpos, double ypos) {
 }
 
 void VulkanApp::MouseClicked(int button, int action, int mods) {
-	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-		SetMouseControl(true);
-	
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+		if (!ImGui::IsMouseHoveringAnyWindow()) {
+			SetMouseControl(true);
+		}
+	}
 }
 
 void VulkanApp::SetMouseControl(bool value) {
@@ -923,8 +999,7 @@ void VulkanApp::SetMouseControl(bool value) {
 }
 
 void VulkanApp::drawFrame() {
-	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(vulkanDevice.device, vulkanSwapChain.swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(vulkanDevice.device, vulkanSwapChain.swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &frameIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		recreateSwapChain();
@@ -943,7 +1018,7 @@ void VulkanApp::drawFrame() {
 	submitInfo.pWaitDstStageMask = waitStages;
 
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
+	submitInfo.pCommandBuffers = &commandBuffers[frameIndex];
 
 	VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
 	submitInfo.signalSemaphoreCount = 1;
@@ -963,7 +1038,7 @@ void VulkanApp::drawFrame() {
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 
-	presentInfo.pImageIndices = &imageIndex;
+	presentInfo.pImageIndices = &frameIndex;
 
 	result = vkQueuePresentKHR(vulkanDevice.present_queue, &presentInfo);
 

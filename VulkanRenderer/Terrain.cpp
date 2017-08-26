@@ -63,7 +63,7 @@ Terrain::~Terrain() {
 }
 
 
-void Terrain::InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue copyQueue, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
+void Terrain::InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue copyQueue, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos)
 {
 	this->device = device;
 
@@ -76,6 +76,8 @@ void Terrain::InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue
 	TerrainQuadData* q = terrainQuads->allocate();
 	quadHandles.push_back(q);
 	rootQuad = InitTerrainQuad(q, position, size, 0, global, lighting);
+
+	UpdateTerrainQuad(rootQuad, cameraPos, copyQueue, global, lighting);
 
 	UpdateModelBuffer(copyQueue, global, lighting);
 	UpdateMeshBuffer(copyQueue);
@@ -94,8 +96,6 @@ void Terrain::ReinitTerrain(VulkanDevice* device, VkRenderPass renderPass, uint3
 
 void Terrain::UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo) {
 
-	std::vector<std::vector<TerrainQuadData>::iterator> toDelete;
-
 	bool shouldUpdateBuffers = UpdateTerrainQuad(rootQuad, viewerPos, copyQueue, gbo, lbo);
 	
 	if (shouldUpdateBuffers) {
@@ -108,17 +108,15 @@ bool Terrain::UpdateTerrainQuad(TerrainQuadData* quad, glm::vec3 viewerPos, VkQu
 	
 	glm::vec3 center = glm::vec3(quad->terrainQuad.pos.x + quad->terrainQuad.size.x / 2.0f, 0, quad->terrainQuad.pos.z + quad->terrainQuad.size.z / 2.0f);
 	float distanceToViewer = glm::distance(viewerPos, center);
-	bool shouldUpdateBuffers = false;;
+	bool shouldUpdateBuffers = false;
 
-
-	if (!quad->terrainQuad.isSubdivided) {
-		if (distanceToViewer < quad->terrainQuad.size.x * 2.0f && quad->terrainQuad.level < maxLevels) {
-			SubdivideTerrain(quad, gbo, lbo);
+	if (!quad->terrainQuad.isSubdivided) { //can only subdivide if this quad isn't already subdivided
+		if (distanceToViewer < quad->terrainQuad.size.x * 2.0f && quad->terrainQuad.level < maxLevels) { //must be 
+			SubdivideTerrain(quad, copyQueue, viewerPos, gbo, lbo);
 			shouldUpdateBuffers = true;
 		} 
 	}
 	else if (distanceToViewer > quad->terrainQuad.size.x * 2.0f) {
-		//toDelete.push_back(it);
 		UnSubdivide(quad);
 		shouldUpdateBuffers = true;
 	}
@@ -390,10 +388,12 @@ void Terrain::UploadMeshBuffer(VkQueue copyQueue) {
 	std::vector<TerrainMeshVertices> verts;
 	verts.reserve(quadHandles.size());
 	
+
 	for (auto it = quadHandles.begin(); it != quadHandles.end(); it++) {
 		verts.push_back((*it)->vertices);
 		//memcpy(&verts.at(it - terrainQuads->begin()), &terrainQuads->at(it - terrainQuads->begin()).vertices, sizeof(TerrainMeshVertices));
 	}
+
 
 	std::vector<TerrainMeshIndices> inds;
 	inds.reserve(quadHandles.size());
@@ -608,7 +608,7 @@ TerrainQuadData* Terrain::InitTerrainQuadFromParent(TerrainQuadData* parent, Ter
 	return q;
 }
 
-void Terrain::SubdivideTerrain(TerrainQuadData* quad, VulkanBuffer &gbo, VulkanBuffer &lbo) {
+void Terrain::SubdivideTerrain(TerrainQuadData* quad, VkQueue copyQueue, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo) {
 	quad->terrainQuad.isSubdivided = true;
 	numQuads += 4;
 
@@ -628,6 +628,11 @@ void Terrain::SubdivideTerrain(TerrainQuadData* quad, VulkanBuffer &gbo, VulkanB
 	quad->subQuads.UpLeft = InitTerrainQuadFromParent(quad, qUL, Corner_Enum::uL, glm::vec3(new_pos.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo, quad->terrainQuad.subDivPosX * 2, quad->terrainQuad.subDivPosZ * 2 + 1);
 	quad->subQuads.DownRight = InitTerrainQuadFromParent(quad, qDR, Corner_Enum::dR, glm::vec3(new_pos.x + new_size.x, 0, new_pos.z), new_size, quad->terrainQuad.level + 1, gbo, lbo, quad->terrainQuad.subDivPosX * 2 + 1, quad->terrainQuad.subDivPosZ * 2);
 	quad->subQuads.DownLeft = InitTerrainQuadFromParent(quad, qDL, Corner_Enum::dL, glm::vec3(new_pos.x + new_size.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo, quad->terrainQuad.subDivPosX * 2 + 1, quad->terrainQuad.subDivPosZ * 2 + 1);
+
+	UpdateTerrainQuad(quad->subQuads.UpRight, viewerPos, copyQueue, gbo, lbo);
+	UpdateTerrainQuad(quad->subQuads.UpLeft, viewerPos, copyQueue, gbo, lbo);
+	UpdateTerrainQuad(quad->subQuads.DownRight, viewerPos, copyQueue, gbo, lbo);
+	UpdateTerrainQuad(quad->subQuads.DownLeft, viewerPos, copyQueue, gbo, lbo);
 
 	//std::cout << "Terrain subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " <<quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << std::endl;
 
@@ -687,21 +692,19 @@ void Terrain::DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex
 	vkCmdBindPipeline(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? wireframe : pipeline);
 	
 	std::vector<VkDeviceSize> vertexOffsettings;
+	std::vector<VkDeviceSize> indexOffsettings;
 	
 	for (int i = 0; i < quadHandles.size(); i++) {
 		vertexOffsettings.push_back(i * sizeof(TerrainMeshVertices));
-	}
-
-	std::vector<VkDeviceSize> indexOffsettings;
-	for (int i = 0; i < quadHandles.size(); i++) {
 		indexOffsettings.push_back(i * sizeof(TerrainMeshIndices));
 	}
-
 	
+
 	for (auto it = quadHandles.begin(); it < quadHandles.end(); it++) {
 		if (!(*it)->terrainQuad.isSubdivided) {
-			vkCmdBindVertexBuffers(cmdBuff[cmdBuffIndex], 0, 1, &vertexBuffer.buffer, &vertexOffsettings[it - quadHandles.begin()]);
-			vkCmdBindIndexBuffer(cmdBuff[cmdBuffIndex], indexBuffer.buffer, indexOffsettings[it - quadHandles.begin()], VK_INDEX_TYPE_UINT32);
+			auto place = it - quadHandles.begin();
+			vkCmdBindVertexBuffers(cmdBuff[cmdBuffIndex], 0, 1, &vertexBuffer.buffer, &vertexOffsettings[place]);
+			vkCmdBindIndexBuffer(cmdBuff[cmdBuffIndex], indexBuffer.buffer, indexOffsettings[place], VK_INDEX_TYPE_UINT32);
 
 			vkCmdBindDescriptorSets(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &(*it)->descriptorSet, 0, nullptr);
 

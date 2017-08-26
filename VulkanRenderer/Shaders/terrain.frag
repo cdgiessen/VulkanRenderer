@@ -37,7 +37,7 @@ void main() {
 	//vec4 texColor = inColor; //splatmap not in yet, so just use vertex colors until then
 	vec4 texColor = texture(texSplatMap, inTexCoord);
 
-	float texSampleDensity = 50.0f;
+	float texSampleDensity = 2000.0f;
 
 	vec4 layerFirst = texture(texArray, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 0));
 	vec4 layerSecond = texture(texArray, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 1));

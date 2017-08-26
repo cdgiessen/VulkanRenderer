@@ -80,6 +80,9 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="ImGuiImpl.cpp" />
+    <ClCompile Include="ImGui\imgui.cpp" />
+    <ClCompile Include="ImGui\imgui_demo.cpp" />
+    <ClCompile Include="ImGui\imgui_draw.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="noiseutils.cpp" />
     <ClCompile Include="MemoryPool.cpp" />
@@ -99,6 +102,12 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="ImGuiImpl.h" />
+    <ClInclude Include="ImGui\imconfig.h" />
+    <ClInclude Include="ImGui\imgui.h" />
+    <ClInclude Include="ImGui\imgui_internal.h" />
+    <ClInclude Include="ImGui\stb_rect_pack.h" />
+    <ClInclude Include="ImGui\stb_textedit.h" />
+    <ClInclude Include="ImGui\stb_truetype.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="noiseutils.h" />
     <ClInclude Include="MemoryPool.h" />
@@ -241,7 +250,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\stb_image\include;C:\VulkanSDK\1.0.51.0\Include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glm;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\libnoise\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\imgui;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\Assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\stb_image\include;C:\VulkanSDK\1.0.51.0\Include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glm;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\libnoise\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\Assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

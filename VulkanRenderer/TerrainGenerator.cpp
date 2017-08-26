@@ -1,15 +1,17 @@
 #include "TerrainGenerator.h"
 
-
+#include <iostream>
 
 TerrainGenerator::TerrainGenerator(int splatMapSize, int numCells, glm::vec3 pos, glm::vec3 size)
 {
 	//module::RidgedMulti mountainTerrain;
 	mountainTerrain.SetFrequency(0.001);
-
+	mountainTerrain.SetOctaveCount(6);
+	
 	//module::Billow baseFlatTerrain;
 	baseFlatTerrain.SetFrequency(0.001);
-
+	baseFlatTerrain.SetOctaveCount(6);
+	
 	//module::ScaleBias flatTerrain;
 	flatTerrain.SetSourceModule(0, baseFlatTerrain);
 	flatTerrain.SetScale(0.5);
