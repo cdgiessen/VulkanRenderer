@@ -31,7 +31,7 @@ TerrainGenerator::TerrainGenerator(int splatMapSize, int numCells, glm::vec3 pos
 
 	//turbulence
 	finalTerrain.SetSourceModule(0, terrainSelector);
-	finalTerrain.SetFrequency(4.0);
+	finalTerrain.SetFrequency(8.0);
 	finalTerrain.SetPower(0.125);
 
 	heightMapBuilder.SetSourceModule(finalTerrain);

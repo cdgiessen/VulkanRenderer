@@ -81,8 +81,8 @@ void Camera::ChangeCameraSpeed(Camera_Movement direction) {
 	if (direction == UP)
 		MovementSpeed += 1.0f;
 	if (direction == DOWN)
-		MovementSpeed -= 0.25f;
+		MovementSpeed -= 1.0f;
 	if (MovementSpeed <= 0) {
-		MovementSpeed = 0.05f;
+		MovementSpeed = 0.25f;
 	}
 }

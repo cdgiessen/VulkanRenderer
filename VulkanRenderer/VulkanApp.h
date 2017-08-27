@@ -70,20 +70,18 @@ private:
 	void createTextureImage(VkImage image, VkDeviceMemory imageMemory);
 	void createTextureSampler(VkSampler* textureSampler);
 	void createUniformBuffers();
+	void buildCommandBuffer(uint32_t index);
 
 	void createDescriptorSets();
 
 	void createCommandBuffers();
 	void createSemaphores();
 
-	void updateUniformBuffers();
+	void updateScene();
 
 	//ImGUI functions
-	void CreateImguiDescriptorPool();
-	void prepareImGui();
-	void newGuiFrame();
-	void updateImGui();
-	void renderImgui(VkCommandBuffer commandBuffer);
+	void PrepareImGui();
+	void RenderImgui(VkCommandBuffer commandBuffer);
 	void CleanUpImgui();
 
 	void CreatePrimaryCommandBuffer();
@@ -108,6 +106,8 @@ private:
 
 	double timeSinceStart = 0.0f; //in seconds
 	double deltaTime = 0.016f; //in seconds
+	std::array<float, 50> frameTimes{};
+	float frameTimeMin = 9999.0f, frameTimeMax = 0.0f;
 
 	//Input stuff
 	Camera* camera;
@@ -135,10 +135,10 @@ private:
 	
 
 	//Vulkan specific members
+	uint32_t frameIndex = 1; // which frame of the swapchain it is on
 	VulkanDevice vulkanDevice;
 	VulkanSwapChain vulkanSwapChain;
 	VkRenderPass renderPass;
-	uint32_t frameIndex; //which of the swapchain images the app is rendering to
 
 	VkImage depthImage; 
 	VkDeviceMemory depthImageMemory;

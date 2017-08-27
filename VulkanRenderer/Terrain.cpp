@@ -691,26 +691,32 @@ void Terrain::DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex
 
 	vkCmdBindPipeline(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? wireframe : pipeline);
 	
-	std::vector<VkDeviceSize> vertexOffsettings;
-	std::vector<VkDeviceSize> indexOffsettings;
+	std::vector<VkDeviceSize> vertexOffsettings(quadHandles.size());
+	std::vector<VkDeviceSize> indexOffsettings(quadHandles.size());
 	
 	for (int i = 0; i < quadHandles.size(); i++) {
-		vertexOffsettings.push_back(i * sizeof(TerrainMeshVertices));
-		indexOffsettings.push_back(i * sizeof(TerrainMeshIndices));
+		vertexOffsettings[i] = (i * sizeof(TerrainMeshVertices));
+		indexOffsettings[i] = (i * sizeof(TerrainMeshIndices));
 	}
 	
 
-	for (auto it = quadHandles.begin(); it < quadHandles.end(); it++) {
-		if (!(*it)->terrainQuad.isSubdivided) {
-			auto place = it - quadHandles.begin();
-			vkCmdBindVertexBuffers(cmdBuff[cmdBuffIndex], 0, 1, &vertexBuffer.buffer, &vertexOffsettings[place]);
-			vkCmdBindIndexBuffer(cmdBuff[cmdBuffIndex], indexBuffer.buffer, indexOffsettings[place], VK_INDEX_TYPE_UINT32);
+	//std::chrono::time_point<std::chrono::steady_clock> myEndTime;
+	//auto myStartTime = std::chrono::high_resolution_clock::now();
 
-			vkCmdBindDescriptorSets(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &(*it)->descriptorSet, 0, nullptr);
+	for (int i = 0; i < quadHandles.size(); i++) {
+		if (!quadHandles[i]->terrainQuad.isSubdivided) {
+			
+			vkCmdBindVertexBuffers(cmdBuff[cmdBuffIndex], 0, 1, &vertexBuffer.buffer, &vertexOffsettings[i]);
+			vkCmdBindIndexBuffer(cmdBuff[cmdBuffIndex], indexBuffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
+
+			vkCmdBindDescriptorSets(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &quadHandles[i]->descriptorSet, 0, nullptr);
 
 			vkCmdDrawIndexed(cmdBuff[cmdBuffIndex], static_cast<uint32_t>(indCount), 1, 0, 0, 0);
 		}
 	}
+	
+	//myEndTime = std::chrono::high_resolution_clock::now();
+	//std::cout << "Time to render one terrain " << std::chrono::duration_cast<std::chrono::microseconds>(myEndTime - myStartTime).count() << std::endl;
 	
 	
 

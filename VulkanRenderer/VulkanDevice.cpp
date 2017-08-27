@@ -463,7 +463,7 @@ void VulkanDevice::createCommandPool(VkSurfaceKHR &surface) {
 	{
 		VkCommandPoolCreateInfo pool_info = initializers::commandPoolCreateInfo();
 		pool_info.queueFamilyIndex = queueFamilyIndices.graphicsFamily;
-		pool_info.flags = 0; // Optional
+		pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
 							 // hint the command pool will rerecord buffers by VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
 							 // allow buffers to be rerecorded individually by VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
 		if (vkCreateCommandPool(device, &pool_info, nullptr, &graphics_queue_command_pool) != VK_SUCCESS) {

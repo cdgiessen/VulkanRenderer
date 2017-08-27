@@ -13,8 +13,7 @@ VulkanApp::VulkanApp()
 	initWindow();
 	initVulkan();
 	prepareScene();
-	prepareImGui();
-	createCommandBuffers();
+	PrepareImGui();
 
 	startTime = std::chrono::high_resolution_clock::now();
 	mainLoop();
@@ -77,6 +76,7 @@ void VulkanApp::initVulkan() {
 	createDepthResources();
 	createFramebuffers();
 
+	createCommandBuffers();
 }
 
 void VulkanApp::prepareScene(){
@@ -99,8 +99,8 @@ void VulkanApp::prepareScene(){
 	cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
 	cubeObject->InitGameObject(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 
-	float terWidth = 10000;
-	int maxLevels = 5;
+	float terWidth = 1000;
+	int maxLevels = 3;
 	int numTerrainsWide = 1;
 	for (int i = 0; i < numTerrainsWide; i++) //creates a grid of terrains centered around 0,0,0
 	{
@@ -134,11 +134,10 @@ void VulkanApp::mainLoop() {
 
 		glfwPollEvents();
 		HandleInputs();
-		updateImGui();
 
-		updateUniformBuffers();
+		updateScene();
 
-		reBuildCommandBuffers();
+		buildCommandBuffer(frameIndex);
 		drawFrame();
 		
 		auto curTime = std::chrono::high_resolution_clock::now();
@@ -146,6 +145,18 @@ void VulkanApp::mainLoop() {
 		prevFrameTime = curTime;
 		timeSinceStart = std::chrono::duration_cast<std::chrono::microseconds>(curTime - startTime).count() / 1000000.0f;
 
+		// Update frame time display
+		{
+			std::rotate(frameTimes.begin(), frameTimes.begin() + 1, frameTimes.end());
+			double frameTime = 1000.0f / (deltaTime * 1000.0f);
+			frameTimes.back() = frameTime;
+			if (frameTime < frameTimeMin) {
+				frameTimeMin = frameTime;
+			}
+			if (frameTime > frameTimeMax) {
+				frameTimeMax = frameTime;
+			}
+		}
 	}
 
 	vkDeviceWaitIdle(vulkanDevice.device);
@@ -218,14 +229,16 @@ void VulkanApp::recreateSwapChain() {
 	for (Water* water : waters) {
 		water->ReinitWater(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 	}
+
 	reBuildCommandBuffers();
 }
 
 void VulkanApp::reBuildCommandBuffers() {
 	vkFreeCommandBuffers(vulkanDevice.device, vulkanDevice.graphics_queue_command_pool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+	vkResetCommandPool(vulkanDevice.device, vulkanDevice.graphics_queue_command_pool, 0);
 
 	createCommandBuffers();
-	
+	buildCommandBuffer(frameIndex);
 }
 
 
@@ -589,7 +602,7 @@ void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize 
 
 //20
 void VulkanApp::createCommandBuffers() {
-	
+
 	commandBuffers.resize(vulkanSwapChain.swapChainFramebuffers.size());
 
 	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(vulkanDevice.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
@@ -598,73 +611,80 @@ void VulkanApp::createCommandBuffers() {
 		throw std::runtime_error("failed to allocate command buffers!");
 	}
 
-	for (size_t i = 0; i < commandBuffers.size(); i++) {
-		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+}
 
-		vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
+void VulkanApp::buildCommandBuffer(uint32_t index){
+	//std::cout << frameIndex << std::endl;
 
-		VkRenderPassBeginInfo renderPassInfo = initializers::renderPassBeginInfo();
-		renderPassInfo.renderPass = renderPass;
-		renderPassInfo.framebuffer = vulkanSwapChain.swapChainFramebuffers[i];
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = vulkanSwapChain.swapChainExtent;
-
-		std::array<VkClearValue, 2> clearValues = {};
-		clearValues[0].color = { 0.2f, 0.3f, 0.3f, 1.0f };
-		clearValues[1].depthStencil = { 1.0f, 0 };
-
-		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-		renderPassInfo.pClearValues = clearValues.data();
-
-		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		VkDeviceSize offsets[] = { 0 };
-
-		//terrain mesh
-		for (Terrain* ter : terrains) {
-			ter->DrawTerrain(commandBuffers, (int)i, offsets, ter, wireframe);
-		}
-
-
-
-		//water
-		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->wireframe : waters.at(0)->pipeline);
-		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &waters.at(0)->WaterModel.vertices.buffer, offsets);
-		vkCmdBindIndexBuffer(commandBuffers[i], waters.at(0)->WaterModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+	//for (size_t i = 0; i < commandBuffers.size(); i++) {
 		
-		for (Water* water : waters) {
-			vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, water->pipelineLayout, 0, 1, &water->descriptorSet, 0, nullptr);
+	int i = (index + 1) % 2;
+	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-			vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(water->WaterModel.indexCount), 1, 0, 0, 0);
-		}
+	vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
 
-		//cubeObject
-		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, cubeObject->pipelineLayout, 0, 1, &cubeObject->descriptorSet, 0, nullptr);
-		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? cubeObject->wireframe : cubeObject->pipeline);
+	VkRenderPassBeginInfo renderPassInfo = initializers::renderPassBeginInfo();
+	renderPassInfo.renderPass = renderPass;
+	renderPassInfo.framebuffer = vulkanSwapChain.swapChainFramebuffers[i];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = vulkanSwapChain.swapChainExtent;
 
-		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &cubeObject->gameObjectModel.vertices.buffer, offsets);
-		vkCmdBindIndexBuffer(commandBuffers[i], cubeObject->gameObjectModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(cubeObject->gameObjectModel.indexCount), 1, 0, 0, 0);
+	std::array<VkClearValue, 2> clearValues = {};
+	clearValues[0].color = { 0.2f, 0.3f, 0.3f, 1.0f };
+	clearValues[1].depthStencil = { 1.0f, 0 };
 
+	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+	renderPassInfo.pClearValues = clearValues.data();
 
-		//skybox
-		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->pipelineLayout, 0, 1, &skybox->descriptorSet, 0, nullptr);
-		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->pipeline);
+	vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	VkDeviceSize offsets[] = { 0 };
 
-		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &skybox->model.vertices.buffer, offsets);
-		vkCmdBindIndexBuffer(commandBuffers[i], skybox->model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(skybox->model.indexCount), 1, 0, 0, 0);
-
-
-		//Imgui rendering
-		renderImgui(commandBuffers[i]);
-
-		vkCmdEndRenderPass(commandBuffers[i]);
-
-		if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to record command buffer!");
-		}
+	//terrain mesh
+	for (Terrain* ter : terrains) {
+		ter->DrawTerrain(commandBuffers, (int)i, offsets, ter, wireframe);
 	}
+
+
+
+	//water
+	vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->wireframe : waters.at(0)->pipeline);
+	vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &waters.at(0)->WaterModel.vertices.buffer, offsets);
+	vkCmdBindIndexBuffer(commandBuffers[i], waters.at(0)->WaterModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+	
+	for (Water* water : waters) {
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, water->pipelineLayout, 0, 1, &water->descriptorSet, 0, nullptr);
+
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(water->WaterModel.indexCount), 1, 0, 0, 0);
+	}
+
+	//cubeObject
+	vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, cubeObject->pipelineLayout, 0, 1, &cubeObject->descriptorSet, 0, nullptr);
+	vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? cubeObject->wireframe : cubeObject->pipeline);
+
+	vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &cubeObject->gameObjectModel.vertices.buffer, offsets);
+	vkCmdBindIndexBuffer(commandBuffers[i], cubeObject->gameObjectModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(cubeObject->gameObjectModel.indexCount), 1, 0, 0, 0);
+
+
+	//skybox
+	vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->pipelineLayout, 0, 1, &skybox->descriptorSet, 0, nullptr);
+	vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->pipeline);
+
+	vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &skybox->model.vertices.buffer, offsets);
+	vkCmdBindIndexBuffer(commandBuffers[i], skybox->model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(skybox->model.indexCount), 1, 0, 0, 0);
+
+
+	//Imgui rendering
+	RenderImgui(commandBuffers[i]);
+
+	vkCmdEndRenderPass(commandBuffers[i]);
+
+	if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
+		throw std::runtime_error("failed to record command buffer!");
+	}
+	
 }
 
 void VulkanApp::CreatePrimaryCommandBuffer() {
@@ -751,35 +771,31 @@ static void imgui_check_vk_result(VkResult err)
 		abort();
 }
 
-void VulkanApp::CreateImguiDescriptorPool() // Create Descriptor Pool
+void  VulkanApp::PrepareImGui()
 {
-	VkDescriptorPoolSize pool_size[11] =
-	{
-		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-	};
-	VkDescriptorPoolCreateInfo pool_info = {};
-	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-	pool_info.maxSets = 1000 * 11;
-	pool_info.poolSizeCount = 11;
-	pool_info.pPoolSizes = pool_size;
-	VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanDevice.device, &pool_info, VK_NULL_HANDLE, &imgui_descriptor_pool));
-	
-}
-
-void  VulkanApp::prepareImGui()
-{
-	CreateImguiDescriptorPool();
+	//Creates a descriptor pool for imgui
+	{	VkDescriptorPoolSize pool_size[11] =
+		{
+			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+		};
+		VkDescriptorPoolCreateInfo pool_info = {};
+		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		pool_info.maxSets = 1000 * 11;
+		pool_info.poolSizeCount = 11;
+		pool_info.pPoolSizes = pool_size;
+		VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanDevice.device, &pool_info, VK_NULL_HANDLE, &imgui_descriptor_pool));
+	}
 
 	ImGui_ImplGlfwVulkan_Init_Data init_data = {};
 	init_data.allocator = VK_NULL_HANDLE;
@@ -797,62 +813,12 @@ void  VulkanApp::prepareImGui()
 	vulkanDevice.flushCommandBuffer(fontUploader, vulkanDevice.graphics_queue, true);
 }
 
-//Provides imgui with application data (window size, deltaTime, mouse position)
-void VulkanApp::updateImGui() {
-	ImGuiIO& io = ImGui::GetIO();
-	
-	io.DisplaySize = ImVec2((float)WIDTH, (float)HEIGHT);
-	io.DeltaTime = deltaTime;
-	
-	io.MousePos = ImVec2(lastX, lastY);
-	io.MouseDown[0] = (((glfwGetMouseButton(vulkanDevice.window,GLFW_MOUSE_BUTTON_1)) != 0));
-	io.MouseDown[1] = (((glfwGetMouseButton(vulkanDevice.window,GLFW_MOUSE_BUTTON_2)) != 0));
-}
-
-void VulkanApp::newGuiFrame() {
-	// Starts a new imGui frame and sets up windows and ui elements
-	
-	// Update frame time display
-	//if (false) {
-	//	std::rotate(uiSettings.frameTimes.begin(), uiSettings.frameTimes.begin() + 1, uiSettings.frameTimes.end());
-	//	float frameTime = 1000.0f / (example->frameTimer * 1000.0f);
-	//	uiSettings.frameTimes.back() = frameTime;
-	//	if (frameTime < uiSettings.frameTimeMin) {
-	//		uiSettings.frameTimeMin = frameTime;
-	//	}
-	//	if (frameTime > uiSettings.frameTimeMax) {
-	//		uiSettings.frameTimeMax = frameTime;
-	//	}
-	//}
-	//
-	////ImGui::PlotLines("Frame Times", &uiSettings.frameTimes[0], 50, 0, "", uiSettings.frameTimeMin, uiSettings.frameTimeMax, ImVec2(0, 80));
-	//
-	//ImGui::Text("Camera");
-	//ImGui::InputFloat3("position", &camera->Position.x, 2);
-	//ImGui::InputFloat3("rotation", &camera->Front.x, 2);
-	//
-	//ImGui::SetNextWindowSize(ImVec2(200, 200), ImGuiSetCond_FirstUseEver);
-	//ImGui::Begin("Example settings");
-	////ImGui::Checkbox("Render models", &uiSettings.displayModels);
-	////ImGui::Checkbox("Display logos", &uiSettings.displayLogos);
-	////ImGui::Checkbox("Display background", &uiSettings.displayBackground);
-	////ImGui::Checkbox("Animate light", &uiSettings.animateLight);
-	////ImGui::SliderFloat("Light speed", &uiSettings.lightSpeed, 0.1f, 1.0f);
-	//ImGui::End();
-	//
-	//ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
-	//ImGui::ShowTestWindow();
-	//
-	//// Render to generate draw buffers
-	//ImGui::Render();
-	
-
-}
-
-void VulkanApp::renderImgui(VkCommandBuffer commandBuffer) {
+void VulkanApp::RenderImgui(VkCommandBuffer commandBuffer) {
 	ImGui_ImplGlfwVulkan_NewFrame();
 
 	// Init imGui windows and elements
+
+	bool show_test_window = true;
 
 	ImVec4 clear_color = ImColor(114, 144, 154);
 	static float f = 0.0f;
@@ -860,12 +826,28 @@ void VulkanApp::renderImgui(VkCommandBuffer commandBuffer) {
 
 	{
 		static float f = 0.0f;
+		ImGui::Text("Camera");
+		ImGui::InputFloat3("position", &camera->Position.x, 2);
+		ImGui::InputFloat3("rotation", &camera->Front.x, 2);
 		ImGui::Text("Camera Movement Speed");
 		ImGui::SliderFloat("float", &camera->MovementSpeed, 0.1f, 100.0f);
 		//ImGui::ColorEdit3("clear color", (float*)&clear_color);
 		//if (ImGui::Button("Test Window")) show_test_window ^= 1;
 		//if (ImGui::Button("Another Window")) show_another_window ^= 1;
+		ImGui::PlotLines("Frame Times", &frameTimes[0], 50, 0, "", frameTimeMin, frameTimeMax, ImVec2(0, 80));
+		ImGui::Text("Frame index (of swap chain) : %u", (frameIndex));
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	}
+
+	//Terrain info window
+	{
+		ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
+		ImGui::Begin("Terrain Debug Info", &show_test_window);
+		for(Terrain* ter : terrains)
+		{
+			ImGui::Text("Terrain Quad Count %d", ter->numQuads);
+		}
+		ImGui::End(); 
 	}
 
 	ImGui_ImplGlfwVulkan_Render(commandBuffer);
@@ -873,13 +855,14 @@ void VulkanApp::renderImgui(VkCommandBuffer commandBuffer) {
 
 void VulkanApp::CleanUpImgui() {
 	ImGui_ImplGlfwVulkan_Shutdown();
+	vkDestroyDescriptorPool(vulkanDevice.device, imgui_descriptor_pool, VK_NULL_HANDLE);
 }
 
-void VulkanApp::updateUniformBuffers() {
+void VulkanApp::updateScene() {
 	if (walkOnGround) {
 		//very choppy movement for right now, but since its just a quick 'n dirty way to put the camera at walking height, its just fine
 		camera->Position.y = terrains.at(0)->terrainGenerator->SampleHeight(camera->Position.x, 0, camera->Position.z) * terrains.at(0)->heightScale + 2.0;
-		if (camera->Position.y < 2)
+		if (camera->Position.y < 2) //for over water
 			camera->Position.y = 2;
 	}
 
@@ -897,6 +880,7 @@ void VulkanApp::updateUniformBuffers() {
 	cubeObject->UpdateUniformBuffer(timeSinceStart);
 
 	skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
+
 	for (Water* water : waters) {
 		water->UpdateUniformBuffer(timeSinceStart, camera->GetViewMatrix());
 	}
@@ -912,8 +896,6 @@ void VulkanApp::updateUniformBuffers() {
 		//myEndTime = std::chrono::high_resolution_clock::now();
 		
 		//std::cout << "Time to update one terrain " << std::chrono::duration_cast<std::chrono::microseconds>(myEndTime - myStartTime).count() << std::endl;
-
-		//std::cout << "Number of terrains = " << ter->numQuads << std::endl;
 	}
 }
 
@@ -999,6 +981,7 @@ void VulkanApp::SetMouseControl(bool value) {
 }
 
 void VulkanApp::drawFrame() {
+	//uint32_t frameIndex; //which of the swapchain images the app is rendering to
 	VkResult result = vkAcquireNextImageKHR(vulkanDevice.device, vulkanSwapChain.swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &frameIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
