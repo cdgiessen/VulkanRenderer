@@ -106,6 +106,8 @@ public:
 
 	TerrainGenerator* terrainGenerator;
 
+	SimpleTimer drawTimer;
+
 	Terrain(int numCells, int maxLevels, float posX, float posY, float sizeX, float sizeY);
 	~Terrain();
 

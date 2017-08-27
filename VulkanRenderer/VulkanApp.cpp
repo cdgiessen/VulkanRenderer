@@ -843,8 +843,10 @@ void VulkanApp::RenderImgui(VkCommandBuffer commandBuffer) {
 	{
 		ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
 		ImGui::Begin("Terrain Debug Info", &show_test_window);
+		ImGui::Text("Terrains update Time (uS): %u", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
 		for(Terrain* ter : terrains)
 		{
+			ImGui::Text("Terrain Draw Time (uS): %u", ter->drawTimer.GetElapsedTimeMicroSeconds());
 			ImGui::Text("Terrain Quad Count %d", ter->numQuads);
 		}
 		ImGui::End(); 
@@ -888,14 +890,11 @@ void VulkanApp::updateScene() {
 
 
 	for (Terrain* ter : terrains) {
-		//timing stuff. woo
-		//std::chrono::time_point<std::chrono::steady_clock> myEndTime;
-		
-		//auto myStartTime = std::chrono::high_resolution_clock::now();
+
+		terrainUpdateTimer.StartTimer();
 		ter->UpdateTerrain(camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
-		//myEndTime = std::chrono::high_resolution_clock::now();
+		terrainUpdateTimer.EndTimer();
 		
-		//std::cout << "Time to update one terrain " << std::chrono::duration_cast<std::chrono::microseconds>(myEndTime - myStartTime).count() << std::endl;
 	}
 }
 

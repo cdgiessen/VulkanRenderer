@@ -118,3 +118,40 @@ std::string errorString(VkResult errorCode);
 #define VK_FLAGS_NONE 0
 // Default fence timeout in nanoseconds
 #define DEFAULT_FENCE_TIMEOUT 100000000000
+
+
+class SimpleTimer {
+private:
+	std::chrono::time_point<std::chrono::high_resolution_clock> endTime;
+	std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
+
+	std::chrono::nanoseconds elapsedTime;
+public:
+
+	//Begin timer by creating object
+	void StartTimer() {
+		startTime = std::chrono::high_resolution_clock::now();
+	}
+	
+	void EndTimer() {
+		endTime = std::chrono::high_resolution_clock::now();
+		elapsedTime = endTime - startTime;
+	}
+
+	uint64_t GetElapsedTimeSeconds() {
+		return std::chrono::duration_cast<std::chrono::seconds>(elapsedTime).count();
+	}
+
+	uint64_t GetElapsedTimeMilliSecondsSeconds() {
+		return std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count();
+	}
+
+	uint64_t GetElapsedTimeMicroSeconds() {
+		return std::chrono::duration_cast<std::chrono::microseconds>(elapsedTime).count();
+	}
+
+	uint64_t GetElapsedTimeNanoSeconds() {
+		return std::chrono::duration_cast<std::chrono::nanoseconds>(elapsedTime).count();
+	}
+
+};

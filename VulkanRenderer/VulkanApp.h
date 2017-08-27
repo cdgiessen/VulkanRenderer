@@ -130,6 +130,8 @@ private:
 	std::vector<Terrain*> terrains;
 	std::vector<Water*> waters;
 
+	SimpleTimer terrainUpdateTimer;
+
 	//ImGui resources
 	VkDescriptorPool imgui_descriptor_pool;
 	

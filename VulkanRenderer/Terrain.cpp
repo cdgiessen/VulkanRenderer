@@ -700,9 +700,7 @@ void Terrain::DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex
 	}
 	
 
-	//std::chrono::time_point<std::chrono::steady_clock> myEndTime;
-	//auto myStartTime = std::chrono::high_resolution_clock::now();
-
+	drawTimer.StartTimer();
 	for (int i = 0; i < quadHandles.size(); i++) {
 		if (!quadHandles[i]->terrainQuad.isSubdivided) {
 			
@@ -714,10 +712,8 @@ void Terrain::DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex
 			vkCmdDrawIndexed(cmdBuff[cmdBuffIndex], static_cast<uint32_t>(indCount), 1, 0, 0, 0);
 		}
 	}
-	
-	//myEndTime = std::chrono::high_resolution_clock::now();
-	//std::cout << "Time to render one terrain " << std::chrono::duration_cast<std::chrono::microseconds>(myEndTime - myStartTime).count() << std::endl;
-	
+	drawTimer.EndTimer();
+
 	
 
 }
