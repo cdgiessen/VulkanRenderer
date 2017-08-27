@@ -78,10 +78,11 @@ private:
 	void createSemaphores();
 
 	void updateScene();
+	void RecreateTerrain();
 
 	//ImGUI functions
 	void PrepareImGui();
-	void RenderImgui(VkCommandBuffer commandBuffer);
+	void BuildImgui();
 	void CleanUpImgui();
 
 	void CreatePrimaryCommandBuffer();
@@ -102,7 +103,7 @@ private:
 	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
-	std::chrono::time_point<std::chrono::high_resolution_clock> prevFrameTime;
+	SimpleTimer frameTimer;
 
 	double timeSinceStart = 0.0f; //in seconds
 	double deltaTime = 0.016f; //in seconds
@@ -130,6 +131,10 @@ private:
 	std::vector<Terrain*> terrains;
 	std::vector<Water*> waters;
 
+	bool recreateTerrain = false;
+	float terrainWidth = 1000;
+	int terrainMaxLevels = 3;
+	int terrainGridDimentions = 1;
 	SimpleTimer terrainUpdateTimer;
 
 	//ImGui resources

@@ -66,7 +66,7 @@ void main() {
 	}
 
 	vec3 dirLight = normalize(vec3(0, 60, 25));
-		vec3 dirHalfway = normalize(dirLight + viewVec);
+	vec3 dirHalfway = normalize(dirLight + viewVec);
 	vec3 dirReflect = reflect(-dirLight, normalVec);
 	vec3 dirDiffuse = max(dot(normalVec, dirLight), 0.0f)* vec3(0.9f);
 	vec3 dirSpecular = pow(max(dot(viewVec, dirReflect), 0.0), 1.0f)* vec3(0.2f);

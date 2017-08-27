@@ -138,6 +138,14 @@ public:
 		elapsedTime = endTime - startTime;
 	}
 
+	std::chrono::time_point<std::chrono::high_resolution_clock> GetStartTime() {
+		return startTime;
+	}
+	
+	std::chrono::time_point<std::chrono::high_resolution_clock> GetEndTime() {
+		return endTime;
+	}
+
 	uint64_t GetElapsedTimeSeconds() {
 		return std::chrono::duration_cast<std::chrono::seconds>(elapsedTime).count();
 	}

@@ -166,6 +166,7 @@ void ImGui_ImplGlfwVulkan_RenderDrawLists(ImDrawData* draw_data)
 		if (g_VertexBufferMemory[g_FrameIndex])
 			vkFreeMemory(g_Device, g_VertexBufferMemory[g_FrameIndex], g_Allocator);
 		size_t vertex_buffer_size = ((vertex_size - 1) / g_BufferMemoryAlignment + 1) * g_BufferMemoryAlignment;
+
 		VkBufferCreateInfo buffer_info = {};
 		buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		buffer_info.size = vertex_buffer_size;
@@ -173,9 +174,11 @@ void ImGui_ImplGlfwVulkan_RenderDrawLists(ImDrawData* draw_data)
 		buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		err = vkCreateBuffer(g_Device, &buffer_info, g_Allocator, &g_VertexBuffer[g_FrameIndex]);
 		ImGui_ImplGlfwVulkan_VkResult(err);
+
 		VkMemoryRequirements req;
 		vkGetBufferMemoryRequirements(g_Device, g_VertexBuffer[g_FrameIndex], &req);
 		g_BufferMemoryAlignment = (g_BufferMemoryAlignment > req.alignment) ? g_BufferMemoryAlignment : req.alignment;
+
 		VkMemoryAllocateInfo alloc_info = {};
 		alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		alloc_info.allocationSize = req.size;
@@ -196,6 +199,7 @@ void ImGui_ImplGlfwVulkan_RenderDrawLists(ImDrawData* draw_data)
 		if (g_IndexBufferMemory[g_FrameIndex])
 			vkFreeMemory(g_Device, g_IndexBufferMemory[g_FrameIndex], g_Allocator);
 		size_t index_buffer_size = ((index_size - 1) / g_BufferMemoryAlignment + 1) * g_BufferMemoryAlignment;
+
 		VkBufferCreateInfo buffer_info = {};
 		buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		buffer_info.size = index_buffer_size;
@@ -203,9 +207,11 @@ void ImGui_ImplGlfwVulkan_RenderDrawLists(ImDrawData* draw_data)
 		buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		err = vkCreateBuffer(g_Device, &buffer_info, g_Allocator, &g_IndexBuffer[g_FrameIndex]);
 		ImGui_ImplGlfwVulkan_VkResult(err);
+
 		VkMemoryRequirements req;
 		vkGetBufferMemoryRequirements(g_Device, g_IndexBuffer[g_FrameIndex], &req);
 		g_BufferMemoryAlignment = (g_BufferMemoryAlignment > req.alignment) ? g_BufferMemoryAlignment : req.alignment;
+
 		VkMemoryAllocateInfo alloc_info = {};
 		alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		alloc_info.allocationSize = req.size;
@@ -233,6 +239,7 @@ void ImGui_ImplGlfwVulkan_RenderDrawLists(ImDrawData* draw_data)
 			vtx_dst += cmd_list->VtxBuffer.Size;
 			idx_dst += cmd_list->IdxBuffer.Size;
 		}
+
 		VkMappedMemoryRange range[2] = {};
 		range[0].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 		range[0].memory = g_VertexBufferMemory[g_FrameIndex];
@@ -242,6 +249,7 @@ void ImGui_ImplGlfwVulkan_RenderDrawLists(ImDrawData* draw_data)
 		range[1].size = VK_WHOLE_SIZE;
 		err = vkFlushMappedMemoryRanges(g_Device, 2, range);
 		ImGui_ImplGlfwVulkan_VkResult(err);
+
 		vkUnmapMemory(g_Device, g_VertexBufferMemory[g_FrameIndex]);
 		vkUnmapMemory(g_Device, g_IndexBufferMemory[g_FrameIndex]);
 	}
@@ -386,8 +394,10 @@ bool ImGui_ImplGlfwVulkan_CreateFontsTexture(VkCommandBuffer command_buffer)
 		info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		err = vkCreateImage(g_Device, &info, g_Allocator, &g_FontImage);
 		ImGui_ImplGlfwVulkan_VkResult(err);
+
 		VkMemoryRequirements req;
 		vkGetImageMemoryRequirements(g_Device, g_FontImage, &req);
+
 		VkMemoryAllocateInfo alloc_info = {};
 		alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		alloc_info.allocationSize = req.size;
@@ -436,9 +446,11 @@ bool ImGui_ImplGlfwVulkan_CreateFontsTexture(VkCommandBuffer command_buffer)
 		buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		err = vkCreateBuffer(g_Device, &buffer_info, g_Allocator, &g_UploadBuffer);
 		ImGui_ImplGlfwVulkan_VkResult(err);
+
 		VkMemoryRequirements req;
 		vkGetBufferMemoryRequirements(g_Device, g_UploadBuffer, &req);
 		g_BufferMemoryAlignment = (g_BufferMemoryAlignment > req.alignment) ? g_BufferMemoryAlignment : req.alignment;
+
 		VkMemoryAllocateInfo alloc_info = {};
 		alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		alloc_info.allocationSize = req.size;
@@ -455,6 +467,7 @@ bool ImGui_ImplGlfwVulkan_CreateFontsTexture(VkCommandBuffer command_buffer)
 		err = vkMapMemory(g_Device, g_UploadBufferMemory, 0, upload_size, 0, (void**)(&map));
 		ImGui_ImplGlfwVulkan_VkResult(err);
 		memcpy(map, pixels, upload_size);
+
 		VkMappedMemoryRange range[1] = {};
 		range[0].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 		range[0].memory = g_UploadBufferMemory;
@@ -521,6 +534,7 @@ bool ImGui_ImplGlfwVulkan_CreateDeviceObjects()
 		vert_info.pCode = (uint32_t*)__glsl_shader_vert_spv;
 		err = vkCreateShaderModule(g_Device, &vert_info, g_Allocator, &vert_module);
 		ImGui_ImplGlfwVulkan_VkResult(err);
+
 		VkShaderModuleCreateInfo frag_info = {};
 		frag_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 		frag_info.codeSize = sizeof(__glsl_shader_frag_spv);
@@ -554,6 +568,7 @@ bool ImGui_ImplGlfwVulkan_CreateDeviceObjects()
 		binding[0].descriptorCount = 1;
 		binding[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		binding[0].pImmutableSamplers = sampler;
+
 		VkDescriptorSetLayoutCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		info.bindingCount = 1;
@@ -579,6 +594,7 @@ bool ImGui_ImplGlfwVulkan_CreateDeviceObjects()
 		push_constants[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		push_constants[0].offset = sizeof(float) * 0;
 		push_constants[0].size = sizeof(float) * 4;
+
 		VkDescriptorSetLayout set_layout[1] = { g_DescriptorSetLayout };
 		VkPipelineLayoutCreateInfo layout_info = {};
 		layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

@@ -99,14 +99,24 @@ void VulkanApp::prepareScene(){
 	cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
 	cubeObject->InitGameObject(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 
-	float terWidth = 1000;
-	int maxLevels = 3;
-	int numTerrainsWide = 1;
-	for (int i = 0; i < numTerrainsWide; i++) //creates a grid of terrains centered around 0,0,0
-	{
-		for (int j = 0; j < numTerrainsWide; j++)
-		{
-			terrains.push_back(new Terrain(100, maxLevels, (i - numTerrainsWide / 2) * terWidth - terWidth / 2, (j - numTerrainsWide / 2) * terWidth - terWidth/2, terWidth, terWidth));
+	RecreateTerrain();
+	createSemaphores();
+}
+
+void VulkanApp::RecreateTerrain() {
+	//free resources then delete all created terrains/waters
+	for (Terrain* ter : terrains) {
+		ter->CleanUp();
+	}
+	terrains.clear();
+	for (Water* water : waters) {
+		water->CleanUp();
+	}
+	waters.clear();
+
+	for (int i = 0; i < terrainGridDimentions; i++){ //creates a grid of terrains centered around 0,0,0
+		for (int j = 0; j < terrainGridDimentions; j++)	{
+			terrains.push_back(new Terrain(100, terrainMaxLevels, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
 		}
 	}
 
@@ -114,11 +124,9 @@ void VulkanApp::prepareScene(){
 		ter->InitTerrain(&vulkanDevice, renderPass, vulkanDevice.graphics_queue, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer, camera->Position);
 	}
 
-	for (int i = 0; i < numTerrainsWide; i++)
-	{
-		for (int j = 0; j < numTerrainsWide; j++)
-		{
-			waters.push_back(new Water(200, (i - numTerrainsWide / 2) * terWidth - terWidth / 2, (j - numTerrainsWide / 2) * terWidth - terWidth / 2, terWidth, terWidth));
+	for (int i = 0; i < terrainGridDimentions; i++) {
+		for (int j = 0; j < terrainGridDimentions; j++)	{
+			waters.push_back(new Water(200, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
 		}
 	}
 
@@ -126,26 +134,30 @@ void VulkanApp::prepareScene(){
 		water->LoadTexture("Resources/Textures/TileableWaterTexture.jpg");
 		water->InitWater(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 	}
-	createSemaphores();
+
+	recreateTerrain = false;
 }
 
 void VulkanApp::mainLoop() {
 	while (!glfwWindowShouldClose(vulkanDevice.window)) {
+		frameTimer.StartTimer();
+
 
 		glfwPollEvents();
 		HandleInputs();
 
 		updateScene();
+		BuildImgui();
 
 		buildCommandBuffer(frameIndex);
 		drawFrame();
 		
-		auto curTime = std::chrono::high_resolution_clock::now();
-		deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(curTime - prevFrameTime).count()/ 1000000.0f;
-		prevFrameTime = curTime;
-		timeSinceStart = std::chrono::duration_cast<std::chrono::microseconds>(curTime - startTime).count() / 1000000.0f;
+		frameTimer.EndTimer();
+		
+		deltaTime = frameTimer.GetElapsedTimeNanoSeconds() / 1.0e9;
+		timeSinceStart = std::chrono::duration_cast<std::chrono::microseconds>(frameTimer.GetEndTime() - startTime).count() / 1.0e6;
 
-		// Update frame time display
+		// Update frame timings display
 		{
 			std::rotate(frameTimes.begin(), frameTimes.begin() + 1, frameTimes.end());
 			double frameTime = 1000.0f / (deltaTime * 1000.0f);
@@ -230,6 +242,7 @@ void VulkanApp::recreateSwapChain() {
 		water->ReinitWater(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 	}
 
+	frameIndex = 1; //cause it needs it to be synced back to zero (yes I know it says one, thats intended, build command buffers uses the "next" frame index since it has to sync with the swapchain so it starts at one....)
 	reBuildCommandBuffers();
 }
 
@@ -677,7 +690,7 @@ void VulkanApp::buildCommandBuffer(uint32_t index){
 
 
 	//Imgui rendering
-	RenderImgui(commandBuffers[i]);
+	ImGui_ImplGlfwVulkan_Render(commandBuffers[i]);
 
 	vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -813,19 +826,20 @@ void  VulkanApp::PrepareImGui()
 	vulkanDevice.flushCommandBuffer(fontUploader, vulkanDevice.graphics_queue, true);
 }
 
-void VulkanApp::RenderImgui(VkCommandBuffer commandBuffer) {
+// Build imGui windows and elements
+void VulkanApp::BuildImgui() {
 	ImGui_ImplGlfwVulkan_NewFrame();
-
-	// Init imGui windows and elements
-
+	
 	bool show_test_window = true;
 
-	ImVec4 clear_color = ImColor(114, 144, 154);
-	static float f = 0.0f;
-	ImGui::Text("window title");
-
+	//Application Debuf info
 	{
+		ImGui::Begin("Application Debug Information", &show_test_window);
 		static float f = 0.0f;
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::Text("Delta Time: %f(s)", deltaTime);
+		ImGui::Text("Start Time: %f(s)", timeSinceStart);
+		ImGui::PlotLines("Frame Times", &frameTimes[0], 50, 0, "", frameTimeMin, frameTimeMax, ImVec2(0, 80));
 		ImGui::Text("Camera");
 		ImGui::InputFloat3("position", &camera->Position.x, 2);
 		ImGui::InputFloat3("rotation", &camera->Front.x, 2);
@@ -834,27 +848,33 @@ void VulkanApp::RenderImgui(VkCommandBuffer commandBuffer) {
 		//ImGui::ColorEdit3("clear color", (float*)&clear_color);
 		//if (ImGui::Button("Test Window")) show_test_window ^= 1;
 		//if (ImGui::Button("Another Window")) show_another_window ^= 1;
-		ImGui::PlotLines("Frame Times", &frameTimes[0], 50, 0, "", frameTimeMin, frameTimeMax, ImVec2(0, 80));
 		ImGui::Text("Frame index (of swap chain) : %u", (frameIndex));
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::End();
 	}
 
 	//Terrain info window
 	{
 		ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
 		ImGui::Begin("Terrain Debug Info", &show_test_window);
-		ImGui::Text("Terrains update Time (uS): %u", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
+		ImGui::SliderFloat("Terrain Width", &terrainWidth, 1, 10000);
+		ImGui::SliderInt("Terrain Max Subdivision", &terrainMaxLevels, 0, 10);
+		ImGui::SliderInt("Terrain Grid Width", &terrainGridDimentions, 1, 10);
+
+		if (ImGui::Button("Recreate Terrain", ImVec2(130, 20))) {
+			recreateTerrain = true;
+		}
+		
+		ImGui::Text("All terrains update Time: %u(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
 		for(Terrain* ter : terrains)
 		{
-			ImGui::Text("Terrain Draw Time (uS): %u", ter->drawTimer.GetElapsedTimeMicroSeconds());
+			ImGui::Text("Terrain Draw Time: %u(uS)", ter->drawTimer.GetElapsedTimeMicroSeconds());
 			ImGui::Text("Terrain Quad Count %d", ter->numQuads);
 		}
 		ImGui::End(); 
 	}
-
-	ImGui_ImplGlfwVulkan_Render(commandBuffer);
 }
 
+//Release associated resources and shutdown imgui
 void VulkanApp::CleanUpImgui() {
 	ImGui_ImplGlfwVulkan_Shutdown();
 	vkDestroyDescriptorPool(vulkanDevice.device, imgui_descriptor_pool, VK_NULL_HANDLE);
@@ -866,6 +886,10 @@ void VulkanApp::updateScene() {
 		camera->Position.y = terrains.at(0)->terrainGenerator->SampleHeight(camera->Position.x, 0, camera->Position.z) * terrains.at(0)->heightScale + 2.0;
 		if (camera->Position.y < 2) //for over water
 			camera->Position.y = 2;
+	}
+
+	if (recreateTerrain) {
+		RecreateTerrain();
 	}
 
 	GlobalVariableUniformBuffer cbo = {};
@@ -887,15 +911,12 @@ void VulkanApp::updateScene() {
 		water->UpdateUniformBuffer(timeSinceStart, camera->GetViewMatrix());
 	}
 
-
-
 	for (Terrain* ter : terrains) {
-
 		terrainUpdateTimer.StartTimer();
 		ter->UpdateTerrain(camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
 		terrainUpdateTimer.EndTimer();
-		
 	}
+
 }
 
 void VulkanApp::HandleInputs() {
