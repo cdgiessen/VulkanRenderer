@@ -22,7 +22,7 @@ void GameObject::InitGameObject(VulkanDevice* device, VkRenderPass renderPass, u
 	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
 }
 
-void GameObject::ReinitGameObject(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
+void GameObject::ReinitGameObject(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
 {
 	this->device = device;
 

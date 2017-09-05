@@ -8,14 +8,17 @@
 
 VulkanApp::VulkanApp()
 {
-	camera = new Camera(glm::vec3(-2,2,0), glm::vec3(0,1,0), 0, -45);
+	//camera = new Camera(glm::vec3(-2,2,0), glm::vec3(0,1,0), 0, -45);
+	timeManager = new TimeManager();
 
 	initWindow();
 	initVulkan();
-	prepareScene();
-	PrepareImGui();
 
-	startTime = std::chrono::high_resolution_clock::now();
+	scene = new Scene(vulkanDevice);
+	scene->PrepareScene(renderPass, vulkanSwapChain);
+	PrepareImGui();
+	createSemaphores();
+
 	mainLoop();
 	cleanup(); //all resources
 }
@@ -79,96 +82,21 @@ void VulkanApp::initVulkan() {
 	createCommandBuffers();
 }
 
-void VulkanApp::prepareScene(){
-
-	pointLights.resize(5);
-	pointLights[0] = PointLight(glm::vec4(0, 10, 0, 1),	  glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	pointLights[1] = PointLight(glm::vec4(10, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	pointLights[2] = PointLight(glm::vec4(50, 10, 10, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	pointLights[3] = PointLight(glm::vec4(50, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-
-	createUniformBuffers();
-	createDescriptorSets();
-
-	skybox = new Skybox();
-	skybox->InitSkybox(&vulkanDevice, "Resources/Textures/Skybox/Skybox2", ".png", renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
-	
-	cubeObject = new GameObject();
-	cubeObject->LoadModel(createCube());
-	cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
-	cubeObject->InitGameObject(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
-
-	RecreateTerrain();
-	createSemaphores();
-}
-
-void VulkanApp::RecreateTerrain() {
-	//free resources then delete all created terrains/waters
-	for (Terrain* ter : terrains) {
-		ter->CleanUp();
-	}
-	terrains.clear();
-	for (Water* water : waters) {
-		water->CleanUp();
-	}
-	waters.clear();
-
-	for (int i = 0; i < terrainGridDimentions; i++){ //creates a grid of terrains centered around 0,0,0
-		for (int j = 0; j < terrainGridDimentions; j++)	{
-			terrains.push_back(new Terrain(100, terrainMaxLevels, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
-		}
-	}
-
-	for (Terrain* ter : terrains) {
-		ter->InitTerrain(&vulkanDevice, renderPass, vulkanDevice.graphics_queue, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer, camera->Position);
-	}
-
-	for (int i = 0; i < terrainGridDimentions; i++) {
-		for (int j = 0; j < terrainGridDimentions; j++)	{
-			waters.push_back(new Water(200, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
-		}
-	}
-
-	for (Water* water : waters) {
-		water->LoadTexture("Resources/Textures/TileableWaterTexture.jpg");
-		water->InitWater(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
-	}
-
-	recreateTerrain = false;
-}
-
 void VulkanApp::mainLoop() {
 	while (!glfwWindowShouldClose(vulkanDevice.window)) {
-		frameTimer.StartTimer();
-
+		timeManager->StartFrameTimer();
 
 		glfwPollEvents();
 		HandleInputs();
 
-		updateScene();
+		//updateScene();
+		scene->UpdateScene(renderPass, vulkanSwapChain, timeManager);
 		BuildImgui();
 
-		buildCommandBuffer(frameIndex);
+		buildCommandBuffers();
 		drawFrame();
 		
-		frameTimer.EndTimer();
-		
-		deltaTime = frameTimer.GetElapsedTimeNanoSeconds() / 1.0e9;
-		timeSinceStart = std::chrono::duration_cast<std::chrono::microseconds>(frameTimer.GetEndTime() - startTime).count() / 1.0e6;
-
-		// Update frame timings display
-		{
-			std::rotate(frameTimes.begin(), frameTimes.begin() + 1, frameTimes.end());
-			double frameTime = 1000.0f / (deltaTime * 1000.0f);
-			frameTimes.back() = frameTime;
-			if (frameTime < frameTimeMin) {
-				frameTimeMin = frameTime;
-			}
-			if (frameTime > frameTimeMax) {
-				frameTimeMax = frameTime;
-			}
-		}
+		timeManager->EndFrameTimer();
 	}
 
 	vkDeviceWaitIdle(vulkanDevice.device);
@@ -177,19 +105,10 @@ void VulkanApp::mainLoop() {
 void VulkanApp::cleanup() {
 	CleanUpImgui();
 
-	skybox->CleanUp();
-	cubeObject->CleanUp();
-	for (Terrain* ter : terrains) {
-		ter->CleanUp();
-	}
-	for (Water* water : waters) {
-		water->CleanUp();
-	}
+	scene->CleanUpScene();
+
 	cleanupSwapChain();
 
-	globalVariableBuffer.cleanBuffer();
-	lightsInfoBuffer.cleanBuffer();
-	
 	vkDestroySemaphore(vulkanDevice.device, renderFinishedSemaphore, nullptr);
 	vkDestroySemaphore(vulkanDevice.device, imageAvailableSemaphore, nullptr);
 
@@ -232,17 +151,9 @@ void VulkanApp::recreateSwapChain() {
 	createDepthResources();
 	createFramebuffers();
 	
-	skybox->ReinitSkybox(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
-	cubeObject->ReinitGameObject(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
-	
-	for (Terrain* ter : terrains) {
-		ter->ReinitTerrain(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
-	}
-	for (Water* water : waters) {
-		water->ReinitWater(&vulkanDevice, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
-	}
+	scene->ReInitScene(renderPass, vulkanSwapChain);
 
-	frameIndex = 1; //cause it needs it to be synced back to zero (yes I know it says one, thats intended, build command buffers uses the "next" frame index since it has to sync with the swapchain so it starts at one....)
+	//frameIndex = 1; //cause it needs it to be synced back to zero (yes I know it says one, thats intended, build command buffers uses the "next" frame index since it has to sync with the swapchain so it starts at one....)
 	reBuildCommandBuffers();
 }
 
@@ -251,7 +162,7 @@ void VulkanApp::reBuildCommandBuffers() {
 	vkResetCommandPool(vulkanDevice.device, vulkanDevice.graphics_queue_command_pool, 0);
 
 	createCommandBuffers();
-	buildCommandBuffer(frameIndex);
+	buildCommandBuffers();
 }
 
 
@@ -528,30 +439,6 @@ void VulkanApp::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width
 	endSingleTimeCommands(commandBuffer);
 }
 
-//17
-void VulkanApp::createUniformBuffers() {
-	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &globalVariableBuffer, sizeof(GlobalVariableUniformBuffer));
-	vulkanDevice.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &lightsInfoBuffer, sizeof(PointLight) * pointLights.size());
-
-	for (int i = 0; i < pointLights.size(); i++)
-	{
-		PointLight lbo;
-		lbo.lightPos = pointLights[i].lightPos;
-		lbo.color = pointLights[i].color;
-		lbo.attenuation = pointLights[i].attenuation;
-
-		lightsInfoBuffer.map(vulkanDevice.device, sizeof(PointLight), i * sizeof(PointLight));
-		lightsInfoBuffer.copyTo(&lbo, sizeof(lbo));
-		lightsInfoBuffer.unmap();
-	}
-}
-
-//19
-void VulkanApp::createDescriptorSets() {
-	globalVariableBuffer.setupDescriptor();
-	lightsInfoBuffer.setupDescriptor();
-}
-
 void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
 	VkBufferCreateInfo bufferInfo = initializers::bufferCreateInfo(usage,size);
 	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -626,78 +513,44 @@ void VulkanApp::createCommandBuffers() {
 
 }
 
-void VulkanApp::buildCommandBuffer(uint32_t index){
+void VulkanApp::buildCommandBuffers(){
 	//std::cout << frameIndex << std::endl;
 
-	//for (size_t i = 0; i < commandBuffers.size(); i++) {
-		
-	int i = (index + 1) % 2;
-	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+	for (size_t i = 0; i < commandBuffers.size(); i++) {
 
-	vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
+		//int i = (index + 1) % 2;
+		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-	VkRenderPassBeginInfo renderPassInfo = initializers::renderPassBeginInfo();
-	renderPassInfo.renderPass = renderPass;
-	renderPassInfo.framebuffer = vulkanSwapChain.swapChainFramebuffers[i];
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = vulkanSwapChain.swapChainExtent;
+		vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
 
-	std::array<VkClearValue, 2> clearValues = {};
-	clearValues[0].color = { 0.2f, 0.3f, 0.3f, 1.0f };
-	clearValues[1].depthStencil = { 1.0f, 0 };
+		VkRenderPassBeginInfo renderPassInfo = initializers::renderPassBeginInfo();
+		renderPassInfo.renderPass = renderPass;
+		renderPassInfo.framebuffer = vulkanSwapChain.swapChainFramebuffers[i];
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = vulkanSwapChain.swapChainExtent;
 
-	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-	renderPassInfo.pClearValues = clearValues.data();
+		std::array<VkClearValue, 2> clearValues = {};
+		clearValues[0].color = { 0.2f, 0.3f, 0.3f, 1.0f };
+		clearValues[1].depthStencil = { 1.0f, 0 };
 
-	vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	VkDeviceSize offsets[] = { 0 };
+		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+		renderPassInfo.pClearValues = clearValues.data();
 
-	//terrain mesh
-	for (Terrain* ter : terrains) {
-		ter->DrawTerrain(commandBuffers, (int)i, offsets, ter, wireframe);
+		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		VkDeviceSize offsets[] = { 0 };
+
+		scene->RenderScene(commandBuffers[i], wireframe);
+
+		//Imgui rendering
+		ImGui_ImplGlfwVulkan_Render(commandBuffers[i]);
+
+		vkCmdEndRenderPass(commandBuffers[i]);
+
+		if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to record command buffer!");
+		}
 	}
-
-
-
-	//water
-	vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->wireframe : waters.at(0)->pipeline);
-	vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &waters.at(0)->WaterModel.vertices.buffer, offsets);
-	vkCmdBindIndexBuffer(commandBuffers[i], waters.at(0)->WaterModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-	
-	for (Water* water : waters) {
-		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, water->pipelineLayout, 0, 1, &water->descriptorSet, 0, nullptr);
-
-		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(water->WaterModel.indexCount), 1, 0, 0, 0);
-	}
-
-	//cubeObject
-	vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, cubeObject->pipelineLayout, 0, 1, &cubeObject->descriptorSet, 0, nullptr);
-	vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? cubeObject->wireframe : cubeObject->pipeline);
-
-	vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &cubeObject->gameObjectModel.vertices.buffer, offsets);
-	vkCmdBindIndexBuffer(commandBuffers[i], cubeObject->gameObjectModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(cubeObject->gameObjectModel.indexCount), 1, 0, 0, 0);
-
-
-	//skybox
-	vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->pipelineLayout, 0, 1, &skybox->descriptorSet, 0, nullptr);
-	vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->pipeline);
-
-	vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &skybox->model.vertices.buffer, offsets);
-	vkCmdBindIndexBuffer(commandBuffers[i], skybox->model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(skybox->model.indexCount), 1, 0, 0, 0);
-
-
-	//Imgui rendering
-	ImGui_ImplGlfwVulkan_Render(commandBuffers[i]);
-
-	vkCmdEndRenderPass(commandBuffers[i]);
-
-	if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-		throw std::runtime_error("failed to record command buffer!");
-	}
-	
 }
 
 void VulkanApp::CreatePrimaryCommandBuffer() {
@@ -828,50 +681,43 @@ void  VulkanApp::PrepareImGui()
 
 // Build imGui windows and elements
 void VulkanApp::BuildImgui() {
+	imGuiTimer.StartTimer();
+
 	ImGui_ImplGlfwVulkan_NewFrame();
 	
 	bool show_test_window = true;
+	bool show_log_window = true;
 
 	//Application Debuf info
 	{
 		ImGui::Begin("Application Debug Information", &show_test_window);
 		static float f = 0.0f;
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::Text("Delta Time: %f(s)", deltaTime);
-		ImGui::Text("Start Time: %f(s)", timeSinceStart);
-		ImGui::PlotLines("Frame Times", &frameTimes[0], 50, 0, "", frameTimeMin, frameTimeMax, ImVec2(0, 80));
+		ImGui::Text("Delta Time: %f(s)", timeManager->GetDeltaTime());
+		ImGui::Text("Start Time: %f(s)", timeManager->GetRunningTime());
+		ImGui::PlotLines("Frame Times", &timeManager->GetFrameTimeHistory()[0], 50, 0, "", timeManager->GetFrameTimeMin(), timeManager->GetFrameTimeMax(), ImVec2(0, 80));
 		ImGui::Text("Camera");
-		ImGui::InputFloat3("position", &camera->Position.x, 2);
-		ImGui::InputFloat3("rotation", &camera->Front.x, 2);
+		ImGui::InputFloat3("position", &scene->GetCamera()->Position.x, 2);
+		ImGui::InputFloat3("rotation", &scene->GetCamera()->Front.x, 2);
 		ImGui::Text("Camera Movement Speed");
-		ImGui::SliderFloat("float", &camera->MovementSpeed, 0.1f, 100.0f);
+		ImGui::SliderFloat("float", &scene->GetCamera()->MovementSpeed, 0.1f, 100.0f);
 		//ImGui::ColorEdit3("clear color", (float*)&clear_color);
 		//if (ImGui::Button("Test Window")) show_test_window ^= 1;
 		//if (ImGui::Button("Another Window")) show_another_window ^= 1;
-		ImGui::Text("Frame index (of swap chain) : %u", (frameIndex));
+		//ImGui::Text("Frame index (of swap chain) : %u", (frameIndex));
 		ImGui::End();
 	}
 
-	//Terrain info window
-	{
-		ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
-		ImGui::Begin("Terrain Debug Info", &show_test_window);
-		ImGui::SliderFloat("Terrain Width", &terrainWidth, 1, 10000);
-		ImGui::SliderInt("Terrain Max Subdivision", &terrainMaxLevels, 0, 10);
-		ImGui::SliderInt("Terrain Grid Width", &terrainGridDimentions, 1, 10);
-
-		if (ImGui::Button("Recreate Terrain", ImVec2(130, 20))) {
-			recreateTerrain = true;
-		}
-		
-		ImGui::Text("All terrains update Time: %u(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
-		for(Terrain* ter : terrains)
-		{
-			ImGui::Text("Terrain Draw Time: %u(uS)", ter->drawTimer.GetElapsedTimeMicroSeconds());
-			ImGui::Text("Terrain Quad Count %d", ter->numQuads);
-		}
-		ImGui::End(); 
+	scene->UpdateSceneGUI();
+	
+	{ //simple app log - taken from imgui exampels
+		appLog.Draw("Example: Log", &show_log_window);
 	}
+
+	nodeGraph_terrain.DrawGraph();
+
+	imGuiTimer.EndTimer();
+	//std::cout << imGuiTimer.GetElapsedTimeNanoSeconds() << std::endl;
 }
 
 //Release associated resources and shutdown imgui
@@ -880,74 +726,38 @@ void VulkanApp::CleanUpImgui() {
 	vkDestroyDescriptorPool(vulkanDevice.device, imgui_descriptor_pool, VK_NULL_HANDLE);
 }
 
-void VulkanApp::updateScene() {
-	if (walkOnGround) {
-		//very choppy movement for right now, but since its just a quick 'n dirty way to put the camera at walking height, its just fine
-		camera->Position.y = terrains.at(0)->terrainGenerator->SampleHeight(camera->Position.x, 0, camera->Position.z) * terrains.at(0)->heightScale + 2.0;
-		if (camera->Position.y < 2) //for over water
-			camera->Position.y = 2;
-	}
-
-	if (recreateTerrain) {
-		RecreateTerrain();
-	}
-
-	GlobalVariableUniformBuffer cbo = {};
-	cbo.view = camera->GetViewMatrix();
-	cbo.proj = glm::perspective(glm::radians(45.0f), vulkanSwapChain.swapChainExtent.width / (float)vulkanSwapChain.swapChainExtent.height, 0.1f, 10000.0f);
-	cbo.proj[1][1] *= -1;
-	cbo.cameraDir = camera->Front;
-	cbo.time = timeSinceStart;
-
-	globalVariableBuffer.map(vulkanDevice.device);
-	globalVariableBuffer.copyTo(&cbo, sizeof(cbo));
-	globalVariableBuffer.unmap();
-
-	cubeObject->UpdateUniformBuffer(timeSinceStart);
-
-	skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
-
-	for (Water* water : waters) {
-		water->UpdateUniformBuffer(timeSinceStart, camera->GetViewMatrix());
-	}
-
-	for (Terrain* ter : terrains) {
-		terrainUpdateTimer.StartTimer();
-		ter->UpdateTerrain(camera->Position, vulkanDevice.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
-		terrainUpdateTimer.EndTimer();
-	}
-
-}
-
 void VulkanApp::HandleInputs() {
 	//std::cout << camera->Position.x << " " << camera->Position.y << " " << camera->Position.z << std::endl;
 
 	if (keys[GLFW_KEY_W])
-		camera->ProcessKeyboard(FORWARD, deltaTime);
+		scene->GetCamera()->ProcessKeyboard(FORWARD, timeManager->GetDeltaTime());
 	if (keys[GLFW_KEY_S])
-		camera->ProcessKeyboard(BACKWARD, deltaTime);
+		scene->GetCamera()->ProcessKeyboard(BACKWARD, timeManager->GetDeltaTime());
 	if (keys[GLFW_KEY_A])
-		camera->ProcessKeyboard(LEFT, deltaTime);
+		scene->GetCamera()->ProcessKeyboard(LEFT, timeManager->GetDeltaTime());
 	if (keys[GLFW_KEY_D])
-		camera->ProcessKeyboard(RIGHT, deltaTime);
+		scene->GetCamera()->ProcessKeyboard(RIGHT, timeManager->GetDeltaTime());
 	if (keys[GLFW_KEY_SPACE])
-		camera->ProcessKeyboard(UP, deltaTime);
+		scene->GetCamera()->ProcessKeyboard(UP, timeManager->GetDeltaTime());
 	if (keys[GLFW_KEY_LEFT_SHIFT])
-		camera->ProcessKeyboard(DOWN, deltaTime);
+		scene->GetCamera()->ProcessKeyboard(DOWN, timeManager->GetDeltaTime());
 
 }
 
 void VulkanApp::KeyboardEvent(int key, int scancode, int action, int mods) {
 	
+	if (key == GLFW_KEY_0   && action == GLFW_PRESS)
+		appLog.AddLog("ZERO WAS HIT REPEAT ZERO WAS HIT\n");
+
 	if (key == GLFW_KEY_ESCAPE  && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(vulkanDevice.window, true);
 	if (key == GLFW_KEY_ENTER  && action == GLFW_PRESS)
 		SetMouseControl(!mouseControlEnabled);
 
 	if (key == GLFW_KEY_E)
-		camera->ChangeCameraSpeed(UP);
+		scene->GetCamera()->ChangeCameraSpeed(UP);
 	if (key == GLFW_KEY_Q )
-		camera->ChangeCameraSpeed(DOWN);
+		scene->GetCamera()->ChangeCameraSpeed(DOWN);
 	//std::cout << camera->MovementSpeed << std::endl;
 	if (key == GLFW_KEY_X  && action == GLFW_PRESS) {
 		wireframe = !wireframe;
@@ -981,7 +791,7 @@ void VulkanApp::MouseMoved(double xpos, double ypos) {
 	lastX = xpos;
 	lastY = ypos;
 	if(mouseControlEnabled)
-		camera->ProcessMouseMovement(xoffset, yoffset);
+		scene->GetCamera()->ProcessMouseMovement(xoffset, yoffset);
 }
 
 void VulkanApp::MouseClicked(int button, int action, int mods) {
@@ -1001,7 +811,7 @@ void VulkanApp::SetMouseControl(bool value) {
 }
 
 void VulkanApp::drawFrame() {
-	//uint32_t frameIndex; //which of the swapchain images the app is rendering to
+	uint32_t frameIndex; //which of the swapchain images the app is rendering to
 	VkResult result = vkAcquireNextImageKHR(vulkanDevice.device, vulkanSwapChain.swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &frameIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {

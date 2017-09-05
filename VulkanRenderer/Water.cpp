@@ -24,7 +24,7 @@ void Water::InitWater(VulkanDevice* device, VkRenderPass renderPass, uint32_t vi
 	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
 }
 
-void Water::ReinitWater(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
+void Water::ReinitWater(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
 {
 	this->device = device;
 

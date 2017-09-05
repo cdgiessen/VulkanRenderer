@@ -83,7 +83,7 @@ void Terrain::InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue
 	UpdateMeshBuffer(copyQueue);
 }
 
-void Terrain::ReinitTerrain(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
+void Terrain::ReinitTerrain(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
 {
 	this->device = device;
 
@@ -681,15 +681,15 @@ void Terrain::UpdateUniformBuffer(float time)
 
 }
 
-void Terrain::DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], Terrain* curTerrain, bool ifWireframe) {
+void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], Terrain* curTerrain, bool ifWireframe) {
 
-	//vkCmdBindPipeline(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, 0 ? wireframe : pipeline);
+	//vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, 0 ? wireframe : pipeline);
 	//DrawTerrainQuad(curTerrain->rootQuad, cmdBuff, cmdBuffIndex, offsets);
 	//return;
 
 	
 
-	vkCmdBindPipeline(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? wireframe : pipeline);
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? wireframe : pipeline);
 	
 	std::vector<VkDeviceSize> vertexOffsettings(quadHandles.size());
 	std::vector<VkDeviceSize> indexOffsettings(quadHandles.size());
@@ -704,12 +704,12 @@ void Terrain::DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex
 	for (int i = 0; i < quadHandles.size(); i++) {
 		if (!quadHandles[i]->terrainQuad.isSubdivided) {
 			
-			vkCmdBindVertexBuffers(cmdBuff[cmdBuffIndex], 0, 1, &vertexBuffer.buffer, &vertexOffsettings[i]);
-			vkCmdBindIndexBuffer(cmdBuff[cmdBuffIndex], indexBuffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
+			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vertexBuffer.buffer, &vertexOffsettings[i]);
+			vkCmdBindIndexBuffer(cmdBuff, indexBuffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
 
-			vkCmdBindDescriptorSets(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &quadHandles[i]->descriptorSet, 0, nullptr);
+			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &quadHandles[i]->descriptorSet, 0, nullptr);
 
-			vkCmdDrawIndexed(cmdBuff[cmdBuffIndex], static_cast<uint32_t>(indCount), 1, 0, 0, 0);
+			vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
 		}
 	}
 	drawTimer.EndTimer();
@@ -720,7 +720,7 @@ void Terrain::DrawTerrain(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex
 
 /*
 void Terrain::BuildCommandBuffer(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], Terrain* curTerrain, bool ifWireframe) {
-	vkCmdBindPipeline(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? wireframe : pipeline);
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? wireframe : pipeline);
 
 	std::vector<VkDeviceSize> vertexOffsettings;
 
@@ -736,12 +736,12 @@ void Terrain::BuildCommandBuffer(std::vector<VkCommandBuffer> cmdBuff, int cmdBu
 
 	for (auto it = quadHandles.begin(); it < quadHandles.end(); it++) {
 		if (!(*it)->terrainQuad.isSubdivided) {
-			vkCmdBindVertexBuffers(cmdBuff[cmdBuffIndex], 0, 1, &vertexBuffer.buffer, &vertexOffsettings[it - quadHandles.begin()]);
-			vkCmdBindIndexBuffer(cmdBuff[cmdBuffIndex], indexBuffer.buffer, indexOffsettings[it - quadHandles.begin()], VK_INDEX_TYPE_UINT32);
+			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vertexBuffer.buffer, &vertexOffsettings[it - quadHandles.begin()]);
+			vkCmdBindIndexBuffer(cmdBuff, indexBuffer.buffer, indexOffsettings[it - quadHandles.begin()], VK_INDEX_TYPE_UINT32);
 
-			vkCmdBindDescriptorSets(cmdBuff[cmdBuffIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &(*it)->descriptorSet, 0, nullptr);
+			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &(*it)->descriptorSet, 0, nullptr);
 
-			vkCmdDrawIndexed(cmdBuff[cmdBuffIndex], static_cast<uint32_t>(indCount), 1, 0, 0, 0);
+			vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
 		}
 	}
 

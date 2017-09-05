@@ -28,6 +28,9 @@
 #include "ImGui\imgui.h"
 #include "ImGuiImpl.h"
 
+#include "TimeManager.h"
+#include "Scene.h"
+
 #include "Mesh.h"
 #include "Camera.h"
 #include "Terrain.h"
@@ -35,8 +38,11 @@
 #include "GameObject.h"
 #include "Water.h"
 
-const int WIDTH = 1000;
-const int HEIGHT = 800;
+#include "NodeGraph.h"
+#include "Logger.h"
+
+const int WIDTH = 1600;
+const int HEIGHT = 900;
 
 class VulkanApp
 {
@@ -56,7 +62,7 @@ public:
 	void recreateSwapChain();
 	void reBuildCommandBuffers();
 
-	//Callbacks
+	//GLFW Callbacks
 	void MouseMoved(double xpos, double ypos);
 	void MouseClicked(int button, int action, int mods);
 	void KeyboardEvent(int key, int scancode, int action, int mods);
@@ -70,7 +76,7 @@ private:
 	void createTextureImage(VkImage image, VkDeviceMemory imageMemory);
 	void createTextureSampler(VkSampler* textureSampler);
 	void createUniformBuffers();
-	void buildCommandBuffer(uint32_t index);
+	void buildCommandBuffers();
 
 	void createDescriptorSets();
 
@@ -102,16 +108,12 @@ private:
 
 	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
 
-	std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
-	SimpleTimer frameTimer;
+	TimeManager* timeManager;
 
-	double timeSinceStart = 0.0f; //in seconds
-	double deltaTime = 0.016f; //in seconds
-	std::array<float, 50> frameTimes{};
-	float frameTimeMin = 9999.0f, frameTimeMax = 0.0f;
+	Scene* scene;
 
 	//Input stuff
-	Camera* camera;
+	//Camera* camera;
 	bool firstMouse;
 	double lastX, lastY;
 	bool mouseControlEnabled;
@@ -121,36 +123,42 @@ private:
 	void SetMouseControl(bool value);
 
 	//global uniform and lighting
-	VulkanBuffer globalVariableBuffer;
-	VulkanBuffer lightsInfoBuffer;
-	std::vector<PointLight> pointLights;
+	//VulkanBuffer globalVariableBuffer;
+	//VulkanBuffer lightsInfoBuffer;
+	//std::vector<PointLight> pointLights;
 	
 	//Scene objects to render
-	Skybox* skybox;
-	GameObject* cubeObject;
-	std::vector<Terrain*> terrains;
-	std::vector<Water*> waters;
+	//Skybox* skybox;
+	//GameObject* cubeObject;
+	//std::vector<Terrain*> terrains;
+	//std::vector<Water*> waters;
 
-	bool recreateTerrain = false;
-	float terrainWidth = 1000;
-	int terrainMaxLevels = 3;
-	int terrainGridDimentions = 1;
-	SimpleTimer terrainUpdateTimer;
+	//terrain creation settings -- should have a terrain manager (that also deals with infinite terrains
+	//bool recreateTerrain = false;
+	//float terrainWidth = 1000;
+	//int terrainMaxLevels = 1;
+	//int terrainGridDimentions = 1;
+	//SimpleTimer terrainUpdateTimer;
 
 	//ImGui resources
 	VkDescriptorPool imgui_descriptor_pool;
+	NodeGraph nodeGraph_terrain;
+	SimpleTimer imGuiTimer;
+	Logger appLog;
 	
 
 	//Vulkan specific members
-	uint32_t frameIndex = 1; // which frame of the swapchain it is on
+	//uint32_t frameIndex = 1; // which frame of the swapchain it is on
 	VulkanDevice vulkanDevice;
 	VulkanSwapChain vulkanSwapChain;
 	VkRenderPass renderPass;
 
+	//Depth buffer
 	VkImage depthImage; 
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
 
+	//Command buffer per frame
 	std::vector<VkCommandBuffer> commandBuffers;
 
 	VkSemaphore imageAvailableSemaphore;
