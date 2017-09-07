@@ -1,6 +1,5 @@
 #include "VulkanApp.h"
 
-
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -14,8 +13,10 @@ VulkanApp::VulkanApp()
 	initWindow();
 	initVulkan();
 
-	scene = new Scene(vulkanDevice);
-	scene->PrepareScene(renderPass, vulkanSwapChain);
+	pipelineManager = new VulkanPipeline(&vulkanDevice);
+
+	scene = new Scene(&vulkanDevice);
+	scene->PrepareScene(*pipelineManager, renderPass, vulkanSwapChain);
 	PrepareImGui();
 	createSemaphores();
 
@@ -90,7 +91,7 @@ void VulkanApp::mainLoop() {
 		HandleInputs();
 
 		//updateScene();
-		scene->UpdateScene(renderPass, vulkanSwapChain, timeManager);
+		scene->UpdateScene(*pipelineManager, renderPass, vulkanSwapChain, timeManager);
 		BuildImgui();
 
 		buildCommandBuffers();
@@ -151,7 +152,7 @@ void VulkanApp::recreateSwapChain() {
 	createDepthResources();
 	createFramebuffers();
 	
-	scene->ReInitScene(renderPass, vulkanSwapChain);
+	scene->ReInitScene(*pipelineManager, renderPass, vulkanSwapChain);
 
 	//frameIndex = 1; //cause it needs it to be synced back to zero (yes I know it says one, thats intended, build command buffers uses the "next" frame index since it has to sync with the swapchain so it starts at one....)
 	reBuildCommandBuffers();
@@ -286,57 +287,6 @@ void VulkanApp::createFramebuffers() {
 	}
 }
 
-//13
-void VulkanApp::createTextureImage(VkImage image, VkDeviceMemory imageMemory) {
-	int texWidth, texHeight, texChannels;
-	stbi_uc* pixels = stbi_load("Resources/Textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-	VkDeviceSize imageSize = texWidth * texHeight * 4;
-
-	if (!pixels) {
-		throw std::runtime_error("failed to load texture image!");
-	}
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-	void* data;
-	vkMapMemory(vulkanDevice.device, stagingBufferMemory, 0, imageSize, 0, &data);
-	memcpy(data, pixels, static_cast<size_t>(imageSize));
-	vkUnmapMemory(vulkanDevice.device, stagingBufferMemory);
-
-	stbi_image_free(pixels);
-
-	createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
-
-	transitionImageLayout(image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	copyBufferToImage(stagingBuffer, image, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-	transitionImageLayout(image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-	vkDestroyBuffer(vulkanDevice.device, stagingBuffer, nullptr);
-	vkFreeMemory(vulkanDevice.device, stagingBufferMemory, nullptr);
-}
-
-//15
-void VulkanApp::createTextureSampler(VkSampler* textureSampler) {
-	VkSamplerCreateInfo samplerInfo = initializers::samplerCreateInfo();
-	samplerInfo.magFilter = VK_FILTER_LINEAR;
-	samplerInfo.minFilter = VK_FILTER_LINEAR;
-	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.anisotropyEnable = VK_TRUE;
-	samplerInfo.maxAnisotropy = 16;
-	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-	samplerInfo.unnormalizedCoordinates = VK_FALSE;
-	samplerInfo.compareEnable = VK_FALSE;
-	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-
-	if (vkCreateSampler(vulkanDevice.device, &samplerInfo, nullptr, textureSampler) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create texture sampler!");
-	}
-}
 
 void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
 	VkImageCreateInfo imageInfo = initializers::imageCreateInfo();
@@ -420,47 +370,6 @@ void VulkanApp::transitionImageLayout(VkImage image, VkFormat format, VkImageLay
 	endSingleTimeCommands(commandBuffer);
 }
 
-void VulkanApp::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-
-	VkBufferImageCopy region = {};
-	region.bufferOffset = 0;
-	region.bufferRowLength = 0;
-	region.bufferImageHeight = 0;
-	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	region.imageSubresource.mipLevel = 0;
-	region.imageSubresource.baseArrayLayer = 0;
-	region.imageSubresource.layerCount = 1;
-	region.imageOffset = { 0, 0, 0 };
-	region.imageExtent = {width, height, 1};
-
-	vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-	endSingleTimeCommands(commandBuffer);
-}
-
-void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
-	VkBufferCreateInfo bufferInfo = initializers::bufferCreateInfo(usage,size);
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	if (vkCreateBuffer(vulkanDevice.device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create buffer!");
-	}
-
-	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(vulkanDevice.device, buffer, &memRequirements);
-
-	VkMemoryAllocateInfo allocInfo = initializers::memoryAllocateInfo();
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findMemoryType(vulkanDevice.physical_device, memRequirements.memoryTypeBits, properties);
-
-	if (vkAllocateMemory(vulkanDevice.device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate buffer memory!");
-	}
-
-	vkBindBufferMemory(vulkanDevice.device, buffer, bufferMemory, 0);
-}
-
 VkCommandBuffer VulkanApp::beginSingleTimeCommands() {
 	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(vulkanDevice.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
@@ -514,11 +423,9 @@ void VulkanApp::createCommandBuffers() {
 }
 
 void VulkanApp::buildCommandBuffers(){
-	//std::cout << frameIndex << std::endl;
-
+	
 	for (size_t i = 0; i < commandBuffers.size(); i++) {
 
-		//int i = (index + 1) % 2;
 		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
@@ -553,6 +460,7 @@ void VulkanApp::buildCommandBuffers(){
 	}
 }
 
+//Meant to be used in conjunction with secondary command buffers
 void VulkanApp::CreatePrimaryCommandBuffer() {
 	commandBuffers.resize(vulkanSwapChain.swapChainFramebuffers.size());
 
@@ -766,8 +674,8 @@ void VulkanApp::KeyboardEvent(int key, int scancode, int action, int mods) {
 	}
 
 	if (key == GLFW_KEY_F  && action == GLFW_PRESS) {
-		walkOnGround = !walkOnGround;
-		std::cout << "flight mode toggled " << std::endl;
+		//walkOnGround = !walkOnGround;
+		//std::cout << "flight mode toggled " << std::endl;
 	}
 
 	if (action == GLFW_PRESS)

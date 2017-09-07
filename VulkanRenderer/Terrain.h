@@ -11,7 +11,7 @@
 #include "VulkanModel.hpp"
 #include "VulkanTexture.hpp"
 #include "VulkanBuffer.hpp"
-
+#include "VulkanPipeline.h"
 #include "VulkanInitializers.hpp"
 #include "VulkanTools.h"
 
@@ -111,8 +111,8 @@ public:
 	Terrain(int numCells, int maxLevels, float posX, float posY, float sizeX, float sizeY);
 	~Terrain();
 
-	void InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue copyQueue, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos);
-	void ReinitTerrain(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void InitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, VkQueue copyQueue, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos);
+	void ReinitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 	void UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
 	void DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], Terrain* curTerrain, bool wireframe);
 	void BuildCommandBuffer(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], Terrain* curTerrain, bool ifWireframe);
@@ -130,7 +130,7 @@ private:
 	void SetupUniformBuffer();
 	void SetupImage();
 	void SetupModel();
-	void SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void SetupPipeline(VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 
 	void SetupDescriptorLayoutAndPool();
 

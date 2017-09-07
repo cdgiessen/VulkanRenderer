@@ -9,6 +9,7 @@
 #include "VulkanInitializers.hpp"
 #include "VulkanTexture.hpp"
 #include "VulkanModel.hpp"
+#include "VulkanPipeline.h"
 #include "Mesh.h"
 #include "Texture.h"
 
@@ -37,8 +38,8 @@ public:
 	ModelBufferObject modelUniformObject;
 	VulkanBuffer modelUniformBuffer;
 
-	void InitGameObject(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
-	void ReinitGameObject(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void InitGameObject(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
+	void ReinitGameObject(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 	void CleanUp();
 	void UpdateUniformBuffer(float time);
 
@@ -51,6 +52,6 @@ public:
 	void SetupModel();
 
 	void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
-	void SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void SetupPipeline(VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 };
 

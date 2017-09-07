@@ -2,7 +2,7 @@
 
 
 
-Scene::Scene(VulkanDevice device) : device(device)
+Scene::Scene(VulkanDevice* device) : device(device)
 {
 }
 
@@ -10,7 +10,7 @@ Scene::~Scene()
 {
 }
 
-void Scene::PrepareScene(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain) {
+void Scene::PrepareScene(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain) {
 
 	camera = new Camera(glm::vec3(-2, 2, 0), glm::vec3(0, 1, 0), 0, -45);
 
@@ -28,21 +28,21 @@ void Scene::PrepareScene(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChai
 	lightsInfoBuffer.setupDescriptor();
 
 	skybox = new Skybox();
-	skybox->InitSkybox(&device, "Resources/Textures/Skybox/Skybox2", ".png", renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+	skybox->InitSkybox(device, "Resources/Textures/Skybox/Skybox2", ".png", pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 
 	GameObject* cubeObject = new GameObject();
 	cubeObject->LoadModel(createCube());
 	cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
-	cubeObject->InitGameObject(&device, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
+	cubeObject->InitGameObject(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 	gameObjects.push_back(cubeObject);
 	
 	terrainManager = new TerrainManager(device);
-	terrainManager->GenerateTerrain(renderPass, vulkanSwapChain, globalVariableBuffer, lightsInfoBuffer, camera);
+	terrainManager->GenerateTerrain(pipelineManager, renderPass, vulkanSwapChain, globalVariableBuffer, lightsInfoBuffer, camera);
 }
 
 void Scene::CreateUniformBuffers() {
-	device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &globalVariableBuffer, sizeof(GlobalVariableUniformBuffer));
-	device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &lightsInfoBuffer, sizeof(PointLight) * pointLights.size());
+	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &globalVariableBuffer, sizeof(GlobalVariableUniformBuffer));
+	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &lightsInfoBuffer, sizeof(PointLight) * pointLights.size());
 
 	for (int i = 0; i < pointLights.size(); i++)
 	{
@@ -51,22 +51,22 @@ void Scene::CreateUniformBuffers() {
 		lbo.color = pointLights[i].color;
 		lbo.attenuation = pointLights[i].attenuation;
 
-		lightsInfoBuffer.map(device.device, sizeof(PointLight), i * sizeof(PointLight));
+		lightsInfoBuffer.map(device->device, sizeof(PointLight), i * sizeof(PointLight));
 		lightsInfoBuffer.copyTo(&lbo, sizeof(lbo));
 		lightsInfoBuffer.unmap();
 	}
 }
 
-void Scene::ReInitScene(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain) {
-	skybox->ReinitSkybox(&device, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+void Scene::ReInitScene(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain) {
+	skybox->ReinitSkybox(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 	for (GameObject* obj : gameObjects) {
-		obj->ReinitGameObject(&device, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+		obj->ReinitGameObject(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 	}
 
-	terrainManager->ReInitTerrain(renderPass, vulkanSwapChain);
+	terrainManager->ReInitTerrain(pipelineManager, renderPass, vulkanSwapChain);
 }
 
-void Scene::UpdateScene(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, TimeManager* timeManager) {
+void Scene::UpdateScene(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, TimeManager* timeManager) {
 	//if (walkOnGround) {
 	//	//very choppy movement for right now, but since its just a quick 'n dirty way to put the camera at walking height, its just fine
 	//	camera->Position.y = terrains.at(0)->terrainGenerator->SampleHeight(camera->Position.x, 0, camera->Position.z) * terrains.at(0)->heightScale + 2.0;
@@ -81,7 +81,7 @@ void Scene::UpdateScene(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain
 	cbo.cameraDir = camera->Front;
 	cbo.time = timeManager->GetRunningTime();
 
-	globalVariableBuffer.map(device.device);
+	globalVariableBuffer.map(device->device);
 	globalVariableBuffer.copyTo(&cbo, sizeof(cbo));
 	globalVariableBuffer.unmap();
 	
@@ -91,7 +91,7 @@ void Scene::UpdateScene(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain
 
 	skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
 
-	terrainManager->UpdateTerrains(renderPass, vulkanSwapChain, globalVariableBuffer, lightsInfoBuffer, camera, timeManager);
+	terrainManager->UpdateTerrains(pipelineManager, renderPass, vulkanSwapChain, globalVariableBuffer, lightsInfoBuffer, camera, timeManager);
 }
 
 void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {

@@ -94,6 +94,7 @@
     <ClCompile Include="TerrainManager.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TimeManager.cpp" />
+    <ClCompile Include="VulkanPipeline.cpp" />
     <ClCompile Include="VulkanTexture.cpp" />
     <ClCompile Include="VulkanDevice.cpp" />
     <ClCompile Include="Skybox.cpp" />
@@ -127,6 +128,7 @@
     <ClInclude Include="TimeManager.h" />
     <ClInclude Include="VulkanBuffer.hpp" />
     <ClInclude Include="VulkanDevice.hpp" />
+    <ClInclude Include="VulkanPipeline.h" />
     <ClInclude Include="VulkanTexture.hpp" />
     <ClInclude Include="VulkanInitializers.hpp" />
     <ClInclude Include="VulkanModel.hpp" />

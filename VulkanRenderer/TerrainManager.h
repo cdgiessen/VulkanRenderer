@@ -4,24 +4,25 @@
 #include "Terrain.h"
 #include "Water.h"
 #include "VulkanTools.h"
+#include "VulkanPipeline.h"
 #include "TimeManager.h"
 
 class TerrainManager
 {
 public:
-	TerrainManager(VulkanDevice device);
+	TerrainManager(VulkanDevice* device);
 	~TerrainManager();
 
-	void GenerateTerrain(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera);
-	void ReInitTerrain(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain);
-	void UpdateTerrains(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera, TimeManager* timeManager);
+	void GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera);
+	void ReInitTerrain(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain);
+	void UpdateTerrains(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera, TimeManager* timeManager);
 	void RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe);
 	void UpdateTerrainGUI();
 
 	void CleanUpTerrain();
 
 private:
-	VulkanDevice device;
+	VulkanDevice* device;
 
 	std::vector<Terrain*> terrains;
 	std::vector<Water*> waters;

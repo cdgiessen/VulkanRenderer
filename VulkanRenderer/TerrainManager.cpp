@@ -2,7 +2,7 @@
 
 #include "ImGui\imgui.h"
 
-TerrainManager::TerrainManager(VulkanDevice device) : device(device)
+TerrainManager::TerrainManager(VulkanDevice* device) : device(device)
 {
 }
 
@@ -11,7 +11,7 @@ TerrainManager::~TerrainManager()
 {
 }
 
-void TerrainManager::GenerateTerrain(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera) {
+void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera) {
 	//free resources then delete all created terrains/waters
 	for (Terrain* ter : terrains) {
 		ter->CleanUp();
@@ -29,7 +29,7 @@ void TerrainManager::GenerateTerrain(VkRenderPass renderPass, VulkanSwapChain vu
 	}
 
 	for (Terrain* ter : terrains) {
-		ter->InitTerrain(&device, renderPass, device.graphics_queue, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer, camera->Position);
+		ter->InitTerrain(device, pipelineManager, renderPass, device->graphics_queue, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer, camera->Position);
 	}
 
 	for (int i = 0; i < terrainGridDimentions; i++) {
@@ -40,24 +40,24 @@ void TerrainManager::GenerateTerrain(VkRenderPass renderPass, VulkanSwapChain vu
 
 	for (Water* water : waters) {
 		water->LoadTexture("Resources/Textures/TileableWaterTexture.jpg");
-		water->InitWater(&device, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
+		water->InitWater(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 	}
 
 	recreateTerrain = false;
 }
 
-void TerrainManager::ReInitTerrain(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain) {
+void TerrainManager::ReInitTerrain(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain) {
 	for (Terrain* ter : terrains) {
-		ter->ReinitTerrain(&device, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+		ter->ReinitTerrain(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 	}
 	for (Water* water : waters) {
-		water->ReinitWater(&device, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+		water->ReinitWater(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 	}
 }
 
-void TerrainManager::UpdateTerrains(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera, TimeManager* timeManager) {
+void TerrainManager::UpdateTerrains(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera, TimeManager* timeManager) {
 	if (recreateTerrain) {
-		GenerateTerrain(renderPass, vulkanSwapChain, globalVariableBuffer, lightsInfoBuffer, camera);
+		GenerateTerrain(pipelineManager, renderPass, vulkanSwapChain, globalVariableBuffer, lightsInfoBuffer, camera);
 	}
 
 	for (Water* water : waters) {
@@ -66,7 +66,7 @@ void TerrainManager::UpdateTerrains(VkRenderPass renderPass, VulkanSwapChain vul
 
 	for (Terrain* ter : terrains) {
 		terrainUpdateTimer.StartTimer();
-		ter->UpdateTerrain(camera->Position, device.graphics_queue, globalVariableBuffer, lightsInfoBuffer);
+		ter->UpdateTerrain(camera->Position, device->graphics_queue, globalVariableBuffer, lightsInfoBuffer);
 		terrainUpdateTimer.EndTimer();
 	}
 

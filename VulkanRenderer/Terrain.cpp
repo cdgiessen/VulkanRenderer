@@ -63,7 +63,7 @@ Terrain::~Terrain() {
 }
 
 
-void Terrain::InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue copyQueue, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos)
+void Terrain::InitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, VkQueue copyQueue, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos)
 {
 	this->device = device;
 
@@ -71,7 +71,7 @@ void Terrain::InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue
 	SetupImage();
 	SetupModel();
 	SetupDescriptorLayoutAndPool();
-	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
+	SetupPipeline(pipelineManager, renderPass, viewPortWidth, viewPortHeight);
 
 	TerrainQuadData* q = terrainQuads->allocate();
 	quadHandles.push_back(q);
@@ -83,7 +83,7 @@ void Terrain::InitTerrain(VulkanDevice* device, VkRenderPass renderPass, VkQueue
 	UpdateMeshBuffer(copyQueue);
 }
 
-void Terrain::ReinitTerrain(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
+void Terrain::ReinitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
 {
 	this->device = device;
 
@@ -91,7 +91,7 @@ void Terrain::ReinitTerrain(VulkanDevice* device, VkRenderPass renderPass, uint3
 	vkDestroyPipeline(device->device, pipeline, nullptr);
 	vkDestroyPipeline(device->device, wireframe, nullptr);
 
-	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
+	SetupPipeline(pipelineManager, renderPass, viewPortWidth, viewPortHeight);
 }
 
 void Terrain::UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo) {
@@ -242,8 +242,35 @@ void Terrain::SetupDescriptorLayoutAndPool()
 	}
 }
 
-void Terrain::SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
+void Terrain::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
 {
+	PipelineCreationObject* myPipe = PipelineManager.CreatePipelineOutline();
+
+	PipelineManager.SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/terrain.vert.spv"));
+	PipelineManager.SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/terrain.frag.spv"));
+	PipelineManager.SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
+	PipelineManager.SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+	PipelineManager.SetViewport(myPipe, viewPortWidth, viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
+	PipelineManager.SetScissor(myPipe, viewPortWidth, viewPortHeight, 0.0f, 0.0f);
+	PipelineManager.SetViewportState(myPipe, 1, 1, 0);
+	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	PipelineManager.SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
+	PipelineManager.SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_FALSE, VK_FALSE);
+	PipelineManager.SetColorBlendingAttachment(myPipe, VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
+		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
+	PipelineManager.SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
+	PipelineManager.SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
+
+	pipelineLayout = PipelineManager.BuildPipelineLayout(myPipe);
+	pipeline = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
+
+	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	wireframe = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
+
+	PipelineManager.CleanShaderResources(myPipe);
+
+	/*
 	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/terrain.vert.spv");
 	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/terrain.frag.spv");
 
@@ -337,6 +364,7 @@ void Terrain::SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uin
 
 	vkDestroyShaderModule(device->device, vertShaderModule, nullptr);
 	vkDestroyShaderModule(device->device, fragShaderModule, nullptr);
+	*/
 }
 
 void Terrain::UpdateModelBuffer(VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo) {

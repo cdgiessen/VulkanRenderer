@@ -23,7 +23,7 @@ void Skybox::CleanUp() {
 	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
 }
 
-void Skybox::InitSkybox(VulkanDevice* device, std::string filename, std::string fileExt, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
+void Skybox::InitSkybox(VulkanDevice* device, std::string filename, std::string fileExt, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
 	this->device = device;
 
 	LoadSkyboxData(filename, fileExt);
@@ -32,15 +32,15 @@ void Skybox::InitSkybox(VulkanDevice* device, std::string filename, std::string 
 	SetupUniformBuffer();
 	SetupCubeMapImage();
 	SetupDescriptor();
-	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
+	SetupPipeline(pipelineManager, renderPass, viewPortWidth, viewPortHeight);
 
 }
 
-void Skybox::ReinitSkybox(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight){
+void Skybox::ReinitSkybox(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight){
 	vkDestroyPipeline(device->device, pipeline, nullptr);
 	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
 
-	SetupPipeline(renderPass, viewPortWidth, viewPortHeight);
+	SetupPipeline(pipelineManager, renderPass, viewPortWidth, viewPortHeight);
 }
 
 
@@ -96,8 +96,31 @@ void Skybox::SetupDescriptor() {
 	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
-void Skybox::SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
+void Skybox::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
 
+	PipelineCreationObject* myPipe = PipelineManager.CreatePipelineOutline();
+
+	PipelineManager.SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/skybox.vert.spv"));
+	PipelineManager.SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/skybox.frag.spv"));
+	PipelineManager.SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
+	PipelineManager.SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+	PipelineManager.SetViewport(myPipe, viewPortWidth, viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
+	PipelineManager.SetScissor(myPipe, viewPortWidth, viewPortHeight, 0.0f, 0.0f);
+	PipelineManager.SetViewportState(myPipe, 1, 1, 0);
+	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	PipelineManager.SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
+	PipelineManager.SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL, VK_FALSE, VK_FALSE);
+	PipelineManager.SetColorBlendingAttachment(myPipe, VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
+		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
+	PipelineManager.SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
+	PipelineManager.SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
+
+	pipelineLayout = PipelineManager.BuildPipelineLayout(myPipe);
+	pipeline = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
+
+	PipelineManager.CleanShaderResources(myPipe);
+	/*
 	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/skybox.vert.spv");
 	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/skybox.frag.spv");
 
@@ -181,6 +204,7 @@ void Skybox::SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint
 
 	vkDestroyShaderModule(device->device, vertShaderModule, nullptr);
 	vkDestroyShaderModule(device->device, fragShaderModule, nullptr);
+	*/
 }
 
 void Skybox::UpdateUniform(glm::mat4 proj, glm::mat4 view) {

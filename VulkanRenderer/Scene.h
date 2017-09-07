@@ -4,6 +4,7 @@
 #include "VulkanSwapChain.hpp"
 #include "VulkanModel.hpp"
 #include "VulkanTexture.hpp"
+#include "VulkanPipeline.h"
 
 #include "Mesh.h"
 #include "Camera.h"
@@ -17,12 +18,12 @@
 class Scene
 {
 public:
-	Scene(VulkanDevice device);
+	Scene(VulkanDevice* device);
 	~Scene();
 
-	void PrepareScene(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain);
-	void ReInitScene(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain);
-	void UpdateScene(VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, TimeManager* timeManager);
+	void PrepareScene(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain);
+	void ReInitScene(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain);
+	void UpdateScene(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, TimeManager* timeManager);
 	void RenderScene(VkCommandBuffer commandBuffer, bool wireframe);
 	void UpdateSceneGUI();
 	void CleanUpScene();
@@ -32,7 +33,7 @@ public:
 	Camera* GetCamera();
 private:
 
-	VulkanDevice device;
+	VulkanDevice* device;
 
 	VulkanBuffer globalVariableBuffer;
 	VulkanBuffer lightsInfoBuffer;

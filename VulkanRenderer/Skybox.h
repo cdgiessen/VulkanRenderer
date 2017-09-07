@@ -12,6 +12,7 @@
 #include "VulkanTexture.hpp"
 #include "VulkanModel.hpp"
 #include "VulkanDevice.hpp"
+#include "VulkanPipeline.h"
 
 
 struct SkyboxUniformBuffer {
@@ -42,8 +43,8 @@ public:
 	VulkanBuffer skyboxUniformBuffer;
 
 
-	void InitSkybox(VulkanDevice* device, std::string filename, std::string fileExt, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
-	void ReinitSkybox(VulkanDevice* device, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight); //rebuilds stuff when screen size changes
+	void InitSkybox(VulkanDevice* device, std::string filename, std::string fileExt, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void ReinitSkybox(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight); //rebuilds stuff when screen size changes
 	
 	void CleanUp();
 
@@ -55,7 +56,7 @@ public:
 	void SetupCubeMapImage();
 	void SetupDescriptor();
 
-	void SetupPipeline(VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void SetupPipeline(VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 
 	//Builds a secondary command buffer for the skybox and returns the buffer
 	VkCommandBuffer BuildSecondaryCommandBuffer(VkCommandBuffer secondaryCommandBuffer, VkCommandBufferInheritanceInfo inheritanceInfo);

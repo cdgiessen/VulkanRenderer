@@ -24,19 +24,13 @@
 #include "VulkanDevice.hpp"
 #include "VulkanModel.hpp"
 #include "VulkanTexture.hpp"
+#include "VulkanPipeline.h"
 
 #include "ImGui\imgui.h"
 #include "ImGuiImpl.h"
 
 #include "TimeManager.h"
 #include "Scene.h"
-
-#include "Mesh.h"
-#include "Camera.h"
-#include "Terrain.h"
-#include "Skybox.h"
-#include "GameObject.h"
-#include "Water.h"
 
 #include "NodeGraph.h"
 #include "Logger.h"
@@ -52,7 +46,6 @@ public:
 
 	void initWindow();
 	void initVulkan();
-	void prepareScene();
 	void mainLoop();
 	void HandleInputs();
 	void drawFrame();
@@ -75,16 +68,10 @@ private:
 
 	void createTextureImage(VkImage image, VkDeviceMemory imageMemory);
 	void createTextureSampler(VkSampler* textureSampler);
-	void createUniformBuffers();
 	void buildCommandBuffers();
-
-	void createDescriptorSets();
 
 	void createCommandBuffers();
 	void createSemaphores();
-
-	void updateScene();
-	void RecreateTerrain();
 
 	//ImGUI functions
 	void PrepareImGui();
@@ -113,32 +100,12 @@ private:
 	Scene* scene;
 
 	//Input stuff
-	//Camera* camera;
 	bool firstMouse;
 	double lastX, lastY;
 	bool mouseControlEnabled;
 	bool keys[512] = {};
 	bool wireframe = false;
-	bool walkOnGround = false;
 	void SetMouseControl(bool value);
-
-	//global uniform and lighting
-	//VulkanBuffer globalVariableBuffer;
-	//VulkanBuffer lightsInfoBuffer;
-	//std::vector<PointLight> pointLights;
-	
-	//Scene objects to render
-	//Skybox* skybox;
-	//GameObject* cubeObject;
-	//std::vector<Terrain*> terrains;
-	//std::vector<Water*> waters;
-
-	//terrain creation settings -- should have a terrain manager (that also deals with infinite terrains
-	//bool recreateTerrain = false;
-	//float terrainWidth = 1000;
-	//int terrainMaxLevels = 1;
-	//int terrainGridDimentions = 1;
-	//SimpleTimer terrainUpdateTimer;
 
 	//ImGui resources
 	VkDescriptorPool imgui_descriptor_pool;
@@ -152,6 +119,8 @@ private:
 	VulkanDevice vulkanDevice;
 	VulkanSwapChain vulkanSwapChain;
 	VkRenderPass renderPass;
+
+	VulkanPipeline* pipelineManager;
 
 	//Depth buffer
 	VkImage depthImage; 

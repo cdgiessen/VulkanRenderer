@@ -182,6 +182,9 @@
     <ClCompile Include="TerrainManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="VulkanPipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VulkanApp.h">
@@ -275,6 +278,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TerrainManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
