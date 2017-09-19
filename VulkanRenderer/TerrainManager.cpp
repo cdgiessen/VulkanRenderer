@@ -4,6 +4,15 @@
 
 TerrainManager::TerrainManager(VulkanDevice* device) : device(device)
 {
+	if (terrainMaxLevels < 0) {
+		maxNumQuads = 1;
+	}
+	else {
+		maxNumQuads = 1 + 16 + 50 * terrainMaxLevels; //with current quad density this is the average upper bound
+											   //maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads
+	}
+
+	//terrainQuadPool = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
 }
 
 
@@ -24,7 +33,7 @@ void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPas
 
 	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < terrainGridDimentions; j++) {
-			terrains.push_back(new Terrain(100, terrainMaxLevels, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
+			terrains.push_back(new Terrain(&terrainQuadPool, 100, terrainMaxLevels, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
 		}
 	}
 
@@ -61,7 +70,7 @@ void TerrainManager::UpdateTerrains(VulkanPipeline pipelineManager, VkRenderPass
 	}
 
 	for (Water* water : waters) {
-		water->UpdateUniformBuffer(timeManager->GetRunningTime(), camera->GetViewMatrix());
+		water->UpdateUniformBuffer((float)timeManager->GetRunningTime(), camera->GetViewMatrix());
 	}
 
 	for (Terrain* ter : terrains) {

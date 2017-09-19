@@ -3,8 +3,20 @@
 #include <vector>
 #include <tuple>
 
-
 #include "ImGui\imgui.h"
+
+enum LinkType{
+Float = 0,
+Int = 1,
+Bool = 2,
+Double = 3,
+Vector2 = 4,
+Vector3 = 5,
+Vector4 = 6,
+Color3 = 7,
+Color4 = 8,
+String = 9
+};
 
 //Holds position and size of a rectangle and how to draw itself relative to the canvas and a parent if present
 struct Rectangle {
@@ -16,8 +28,32 @@ struct Rectangle {
 	Rectangle(ImVec2 pos, ImVec2 size) : pos(pos), size(size) {}
 
 	void draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 parent_pos = ImVec2(0,0)) {
-		draw_list->AddRect(ImVec2(canvas_pos.x + parent_pos.x + pos.x, canvas_pos.y + parent_pos.y + pos.y), ImVec2(canvas_pos.x + parent_pos.x + pos.x + size.x, canvas_pos.y + parent_pos.y + pos.y + size.y), ImColor(255, 255, 255));
+		draw_list->AddRect(canvas_pos + parent_pos + pos, canvas_pos + parent_pos + pos + size, ImColor(255, 255, 255));
 	}
+};
+
+
+class Node;
+struct Connector {
+	Node* startNode;
+	Node* endNode;
+	Connector(ImVec2 start, ImVec2 end, ImColor color = ImColor(255,255,255,255)) : start(start), end(end), startPivot(ImVec2(start.x + 10, start.y)), endPivot(ImVec2(end.x - 10, end.y)), color(color) {}
+
+	void Draw(ImDrawList* draw_list, ImVec2 canvas_pos);
+
+	//Sets connection from output
+	void SetStart(Node* node);
+
+	//Sets connection to input
+	void SetEnd(Node* node, Rectangle inputRect);
+
+private:
+	ImVec2 start;
+	ImVec2 startPivot;
+	ImVec2 end;
+	ImVec2 endPivot;
+
+	ImColor color;
 };
 
 class Node {
@@ -25,108 +61,104 @@ public:
 	std::string name;
 	std::string description;
 	
+	LinkType outputType = LinkType::Float;
+	std::vector<LinkType> inputTypes;
 	std::vector<Node *> inputs;
 
-	Rectangle rect;
+	Rectangle bodyRect;
+	Rectangle outputRect;
+	std::vector<Rectangle> inputRects;
 
+	std::vector<Connector*> inputConnections;
+	std::vector<Connector*> outputConnections;
+	
 	Node() {};
 	Node(std::string name, std::string description);
+
+	void AddInputConnector(Connector* connector);
+	void AddOutputConnector(Connector* connector);
+	void RemoveInputConnector(Connector* connector);
+	void RemoveOutputConnector(Connector* connector);
 
 	virtual void SetInputNode(int index, Node* n);
 
 	virtual double GetValue(double x, double y, double z);
 
-	virtual void draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas);
+	virtual void Update(ImVec2 mouse_pos_in_canvas, bool isDraggingWidget);
+
+	virtual void Draw(ImDrawList* draw_list, ImVec2 canvas_pos);
+protected:
+	ImVec4 clip_rect = ImVec4(0,0,0,0);
 };
 
 class OutputNode : public Node {
 public:
 
-	OutputNode() : Node("Output", "End point for entire graph") {}
+	OutputNode();
 
 	void SetInputNode(int index, Node* n);
 
 	double GetValue(double x, double y, double z);
 
-	void draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas);
-
-	Rectangle rectA = Rectangle(ImVec2(-10, 0), ImVec2(10, 10));
+	void Draw(ImDrawList* draw_list, ImVec2 canvas_pos);
 };
 
 class ConstantNode : public Node {
 public:
 
-	ConstantNode() : Node("Constant", "Holds a value") {}
+	ConstantNode();
 
 	double GetValue(double x, double y, double z);
 
-	void draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas);
-
-	Rectangle rectO = Rectangle(ImVec2(rect.size.x, 0), ImVec2(10, 10));
+	void Draw(ImDrawList* draw_list, ImVec2 canvas_pos);
 };
 
 class AdditionNode : public Node {
 public:
 
-	AdditionNode() : Node("Addition", "Adds two numbers together") {}
+	AdditionNode();
 
 	void SetInputNode(int index, Node* n);
 
 	double GetValue(double x, double y, double z);
 
-	void draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas);
-
-	Rectangle rectO = Rectangle(ImVec2(rect.size.x, 0), ImVec2(10, 10));
-	Rectangle rectA = Rectangle(ImVec2(-10, 0), ImVec2(10, 10));
-	Rectangle rectB = Rectangle(ImVec2(-10, 20), ImVec2(10, 10));
+	void Draw(ImDrawList* draw_list, ImVec2 canvas_pos);
 };
 
 class SubtractionNode : public Node {
 public:
 
-	SubtractionNode() : Node("Subtraction", "Adds two numbers together") {}
+	SubtractionNode();
 
 	void SetInputNode(int index, Node* n);
 
 	double GetValue(double x, double y, double z);
 
-	void draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas);
-
-	Rectangle rectO = Rectangle(ImVec2(rect.size.x, 0), ImVec2(10, 10));
-	Rectangle rectA = Rectangle(ImVec2(-10, 0), ImVec2(10, 10));
-	Rectangle rectB = Rectangle(ImVec2(-10, 20), ImVec2(10, 10));
+	void Draw(ImDrawList* draw_list, ImVec2 canvas_pos);
 };
 
 class MultiplicationNode : public Node {
 public:
 
-	MultiplicationNode() : Node("Multiplication", "Adds two numbers together") {}
+	MultiplicationNode();
 
 	void SetInputNode(int index, Node* n);
 
 	double GetValue(double x, double y, double z);
 
-	void draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas);
-
-	Rectangle rectO = Rectangle(ImVec2(rect.size.x, 0), ImVec2(10, 10));
-	Rectangle rectA = Rectangle(ImVec2(-10, 0), ImVec2(10, 10));
-	Rectangle rectB = Rectangle(ImVec2(-10, 20), ImVec2(10, 10));
+	void Draw(ImDrawList* draw_list, ImVec2 canvas_pos);
 };
 
 class DivisionNode : public Node {
 public:
 
-	DivisionNode() : Node("Division", "Adds two numbers together") {}
+	DivisionNode();
 
 	void SetInputNode(int index, Node* n);
 
 	double GetValue(double x, double y, double z);
 
-	void draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas);
-
-	Rectangle rectO = Rectangle(ImVec2(rect.size.x, 0), ImVec2(10, 10));
-	Rectangle rectA = Rectangle(ImVec2(-10, 0), ImVec2(10, 10));
-	Rectangle rectB = Rectangle(ImVec2(-10, 20), ImVec2(10, 10));
+	void Draw(ImDrawList* draw_list, ImVec2 canvas_pos);
 };
 
 
@@ -146,7 +178,8 @@ public:
 
 private:
 	//static bool show_node_graph_window = true;
-	std::vector<Node*> nodes;
+	std::vector<Node* > nodes;
+	std::vector<Connector* > connectors;
 
 	//nodeTypeList nodeTypes;
 };

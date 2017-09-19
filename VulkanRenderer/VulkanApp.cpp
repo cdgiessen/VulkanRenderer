@@ -638,17 +638,17 @@ void VulkanApp::HandleInputs() {
 	//std::cout << camera->Position.x << " " << camera->Position.y << " " << camera->Position.z << std::endl;
 
 	if (keys[GLFW_KEY_W])
-		scene->GetCamera()->ProcessKeyboard(FORWARD, timeManager->GetDeltaTime());
+		scene->GetCamera()->ProcessKeyboard(FORWARD, (float)timeManager->GetDeltaTime());
 	if (keys[GLFW_KEY_S])
-		scene->GetCamera()->ProcessKeyboard(BACKWARD, timeManager->GetDeltaTime());
+		scene->GetCamera()->ProcessKeyboard(BACKWARD, (float)timeManager->GetDeltaTime());
 	if (keys[GLFW_KEY_A])
-		scene->GetCamera()->ProcessKeyboard(LEFT, timeManager->GetDeltaTime());
+		scene->GetCamera()->ProcessKeyboard(LEFT, (float)timeManager->GetDeltaTime());
 	if (keys[GLFW_KEY_D])
-		scene->GetCamera()->ProcessKeyboard(RIGHT, timeManager->GetDeltaTime());
+		scene->GetCamera()->ProcessKeyboard(RIGHT, (float)timeManager->GetDeltaTime());
 	if (keys[GLFW_KEY_SPACE])
-		scene->GetCamera()->ProcessKeyboard(UP, timeManager->GetDeltaTime());
+		scene->GetCamera()->ProcessKeyboard(UP, (float)timeManager->GetDeltaTime());
 	if (keys[GLFW_KEY_LEFT_SHIFT])
-		scene->GetCamera()->ProcessKeyboard(DOWN, timeManager->GetDeltaTime());
+		scene->GetCamera()->ProcessKeyboard(DOWN, (float)timeManager->GetDeltaTime());
 
 }
 
@@ -666,7 +666,9 @@ void VulkanApp::KeyboardEvent(int key, int scancode, int action, int mods) {
 		scene->GetCamera()->ChangeCameraSpeed(UP);
 	if (key == GLFW_KEY_Q )
 		scene->GetCamera()->ChangeCameraSpeed(DOWN);
-	//std::cout << camera->MovementSpeed << std::endl;
+
+	if (key == GLFW_KEY_N && action == GLFW_PRESS)
+		scene->drawNormals = !scene->drawNormals;
 	if (key == GLFW_KEY_X  && action == GLFW_PRESS) {
 		wireframe = !wireframe;
 		reBuildCommandBuffers();

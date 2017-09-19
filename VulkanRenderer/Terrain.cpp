@@ -12,13 +12,14 @@ TerrainQuad::TerrainQuad() {
 
 TerrainQuad::~TerrainQuad() {}
 
-void TerrainQuad::init(float posX, float posY, float sizeX, float sizeY, int level, int subDivPosX, int subDivPosZ) {
+void TerrainQuad::init(float posX, float posY, float sizeX, float sizeY, int level, int subDivPosX, int subDivPosZ, float centerHeightValue) {
 	pos = glm::vec3(posX, 0, posY);
 	size = glm::vec3(sizeX, 0, sizeY);
 	this->level = level;
 	isSubdivided = false;
 	this->subDivPosX = subDivPosX;
 	this->subDivPosZ = subDivPosZ;
+	heightValAtCenter = centerHeightValue;
 	modelUniformObject.model = glm::translate(glm::mat4(), pos);
 	modelUniformObject.normal = glm::mat4();// glm::transpose(glm::inverse(glm::mat3(modelUniformObject.model))));
 
@@ -28,7 +29,7 @@ void TerrainQuad::init(float posX, float posY, float sizeX, float sizeY, int lev
 
 
 
-Terrain::Terrain(int numCells, int maxLevels, float posX, float posY, float sizeX, float sizeY) : maxLevels(maxLevels)
+Terrain::Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool,int numCells, int maxLevels, float posX, float posY, float sizeX, float sizeY) : maxLevels(maxLevels)
 {
 	//simple calculation right now, does the absolute max number of quads possible with given max level
 	//in future should calculate the actual number of max quads, based on distance calculation
@@ -36,10 +37,11 @@ Terrain::Terrain(int numCells, int maxLevels, float posX, float posY, float size
 		maxNumQuads = 1;
 	}
 	else {
-		maxNumQuads = 16 + 12 * maxLevels * 3;
+		maxNumQuads = 1 + 16 + 50 * maxLevels; //with current quad density this is the average upper bound (kidna a guess but its probably more than enough for now
 		//maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads
 	}
-	terrainQuads = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
+	//terrainQuads = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
+	terrainQuads = pool;
 	quadHandles.reserve(maxNumQuads);
 
 	position = glm::vec3(posX, 0, posY);
@@ -58,7 +60,7 @@ Terrain::~Terrain() {
 	terrainSplatMap->~Texture();
 	terrainTextureArray->~TextureArray();
 
-	terrainQuads->~MemoryPool();
+	//terrainQuads->~MemoryPool();
 	
 }
 
@@ -90,6 +92,7 @@ void Terrain::ReinitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager
 	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
 	vkDestroyPipeline(device->device, pipeline, nullptr);
 	vkDestroyPipeline(device->device, wireframe, nullptr);
+	vkDestroyPipeline(device->device, debugNormals, nullptr);
 
 	SetupPipeline(pipelineManager, renderPass, viewPortWidth, viewPortHeight);
 }
@@ -106,7 +109,7 @@ void Terrain::UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer
 
 bool Terrain::UpdateTerrainQuad(TerrainQuadData* quad, glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo) {
 	
-	glm::vec3 center = glm::vec3(quad->terrainQuad.pos.x + quad->terrainQuad.size.x / 2.0f, 0, quad->terrainQuad.pos.z + quad->terrainQuad.size.z / 2.0f);
+	glm::vec3 center = glm::vec3(quad->terrainQuad.pos.x + quad->terrainQuad.size.x / 2.0f, quad->terrainQuad.heightValAtCenter, quad->terrainQuad.pos.z + quad->terrainQuad.size.z / 2.0f);
 	float distanceToViewer = glm::distance(viewerPos, center);
 	bool shouldUpdateBuffers = false;
 
@@ -161,6 +164,7 @@ void Terrain::CleanUp()
 	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
 	vkDestroyPipeline(device->device, pipeline, nullptr);
 	vkDestroyPipeline(device->device, wireframe, nullptr);
+	vkDestroyPipeline(device->device, debugNormals, nullptr);
 }
 
 void Terrain::LoadSplatMapFromGenerator() {
@@ -250,8 +254,8 @@ void Terrain::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderP
 	PipelineManager.SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/terrain.frag.spv"));
 	PipelineManager.SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
 	PipelineManager.SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-	PipelineManager.SetViewport(myPipe, viewPortWidth, viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
-	PipelineManager.SetScissor(myPipe, viewPortWidth, viewPortHeight, 0.0f, 0.0f);
+	PipelineManager.SetViewport(myPipe, (float)viewPortWidth, (float)viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
+	PipelineManager.SetScissor(myPipe, viewPortWidth, viewPortHeight, 0, 0);
 	PipelineManager.SetViewportState(myPipe, 1, 1, 0);
 	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 	PipelineManager.SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
@@ -268,6 +272,12 @@ void Terrain::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderP
 	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 	wireframe = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
 
+	PipelineManager.CleanShaderResources(myPipe);
+	PipelineManager.SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.vert.spv"));
+	PipelineManager.SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.frag.spv"));
+	PipelineManager.SetGeometryShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.geom.spv"));
+
+	debugNormals = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
 	PipelineManager.CleanShaderResources(myPipe);
 
 	/*
@@ -580,7 +590,7 @@ void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
 TerrainQuadData* Terrain::InitTerrainQuad(TerrainQuadData* q, glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo) {
 	numQuads++;
 	
-	q->terrainQuad.init(position.x, position.z, size.x, size.z, level, 0, 0);
+	q->terrainQuad.init(position.x, position.z, size.x, size.z, level, 0, 0, heightScale * terrainGenerator->SampleHeight(position.x + size.x/2, position.y, position.z + size.z/2));
 	//q->terrainQuad.CreateTerrainMesh(&q->vertices, &q->indices);
 	GenerateNewTerrain(&q->vertices, &q->indices, q->terrainQuad);
 
@@ -609,7 +619,8 @@ TerrainQuadData* Terrain::InitTerrainQuad(TerrainQuadData* q, glm::vec3 position
 }
 
 TerrainQuadData* Terrain::InitTerrainQuadFromParent(TerrainQuadData* parent, TerrainQuadData* q, Corner_Enum corner, glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo, int subDivPosX, int subDivPosZ) {
-	q->terrainQuad.init(position.x, position.z, size.x, size.z, level, subDivPosX, subDivPosZ);
+	
+	q->terrainQuad.init(position.x, position.z, size.x, size.z, level, subDivPosX, subDivPosZ, heightScale * terrainGenerator->SampleHeight(position.x + size.x/2, position.y, position.z + size.z/2));
 	//q->terrainQuad.CreateTerrainMeshFromParent(&parent->vertices, &parent->indices, &q->vertices, &q->indices, corner);
 	GenerateTerrainFromExisting(&parent->vertices, &parent->indices, &q->vertices, &q->indices, corner, q->terrainQuad);
 	//std::vector<VkDescriptorSetLayout> layouts;
@@ -731,13 +742,16 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], Terr
 	drawTimer.StartTimer();
 	for (int i = 0; i < quadHandles.size(); i++) {
 		if (!quadHandles[i]->terrainQuad.isSubdivided) {
-			
+			vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? wireframe : pipeline);
 			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vertexBuffer.buffer, &vertexOffsettings[i]);
 			vkCmdBindIndexBuffer(cmdBuff, indexBuffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
 
 			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &quadHandles[i]->descriptorSet, 0, nullptr);
 
 			vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
+
+			//vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugNormals);
+			//vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
 		}
 	}
 	drawTimer.EndTimer();
@@ -787,12 +801,12 @@ void Terrain::GenerateNewTerrain(TerrainMeshVertices* verts, TerrainMeshIndices*
 	{
 		for (int j = 0; j <= numCells; j++)
 		{
-			double value = (terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0.0, (double)j *(zSize) / (float)numCells + (zLoc)));
-
-			double hL = terrainGenerator->SampleHeight((double)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc)*heightScale;
-			double hR = terrainGenerator->SampleHeight((double)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc)*heightScale;
-			double hD = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j + 1)*(zSize) / (float)numCells + zLoc)*heightScale;
-			double hU = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j - 1)*(zSize) / (float)numCells + zLoc)*heightScale;
+			float value = (terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0.0, (float)j *(zSize) / (float)numCells + (zLoc)));
+			
+			float hL = terrainGenerator->SampleHeight((float)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc)*heightScale;
+			float hR = terrainGenerator->SampleHeight((float)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc)*heightScale;
+			float hD = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j + 1)*(zSize) / (float)numCells + zLoc)*heightScale;
+			float hU = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j - 1)*(zSize) / (float)numCells + zLoc)*heightScale;
 			glm::vec3 normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
 
 
@@ -852,8 +866,8 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 			(*verts)[vLoc + 0] = (float)i *(xSize) / (float)numCells;
 			(*verts)[vLoc + 1] = (*parentVerts)[parentVLoc + 1];
 			(*verts)[vLoc + 2] = (float)j * (zSize) / (float)numCells;
-			(*verts)[vLoc + 6] = (float)i / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (glm::pow(2.0, terrainQuad.level));
-			(*verts)[vLoc + 7] = (float)j / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (glm::pow(2.0, terrainQuad.level));
+			(*verts)[vLoc + 6] = (float)i / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (float)(glm::pow(2.0, terrainQuad.level));
+			(*verts)[vLoc + 7] = (float)j / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (float)(glm::pow(2.0, terrainQuad.level));
 			(*verts)[vLoc + 8] = 0;
 			(*verts)[vLoc + 9] = 0;
 			(*verts)[vLoc + 10] = 0;
@@ -955,15 +969,15 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 	{
 		for (int j = 0; j <= numCells; j++)
 		{
-			double value = (terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0.0, (double)j *(zSize) / (float)numCells + (zLoc)));
+			float value = (terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0.0, (float)j *(zSize) / (float)numCells + (zLoc)));
 
 			int vLoc = (i*(numCells + 1) + j)* vertElementCount;
 
 			(*verts)[vLoc + 0] = (float)i *(xSize) / (float)numCells;
 			(*verts)[vLoc + 1] = (float)value * heightScale;
 			(*verts)[vLoc + 2] = (float)j * (zSize) / (float)numCells;
-			(*verts)[vLoc + 6] = (float)i / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (glm::pow(2.0, terrainQuad.level));
-			(*verts)[vLoc + 7] = (float)j / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (glm::pow(2.0, terrainQuad.level));
+			(*verts)[vLoc + 6] = (float)i / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (float)(glm::pow(2.0, terrainQuad.level));
+			(*verts)[vLoc + 7] = (float)j / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (float)(glm::pow(2.0, terrainQuad.level));
 			(*verts)[vLoc + 8] = 0;
 			(*verts)[vLoc + 9] = 0;
 			(*verts)[vLoc + 10] = 0;
@@ -976,15 +990,15 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 	{
 		for (int j = 1; j <= numCells; j += 2)
 		{
-			double value = (terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0.0, (double)j *(zSize) / (float)numCells + (zLoc)));
+			float value = (terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0.0, (float)j *(zSize) / (float)numCells + (zLoc)));
 
 			int vLoc = (i*(numCells + 1) + j)* vertElementCount;
 
 			(*verts)[vLoc + 0] = (float)i *(xSize) / (float)numCells;
 			(*verts)[vLoc + 1] = (float)value * heightScale;
 			(*verts)[vLoc + 2] = (float)j * (zSize) / (float)numCells;
-			(*verts)[vLoc + 6] = (float)i / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (glm::pow(2.0, terrainQuad.level));
-			(*verts)[vLoc + 7] = (float)j / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (glm::pow(2.0, terrainQuad.level));
+			(*verts)[vLoc + 6] = (float)i / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (float)(glm::pow(2.0, terrainQuad.level));
+			(*verts)[vLoc + 7] = (float)j / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (float)(glm::pow(2.0, terrainQuad.level));
 			(*verts)[vLoc + 8] = 0;
 			(*verts)[vLoc + 9] = 0;
 			(*verts)[vLoc + 10] = 0;
@@ -1026,7 +1040,7 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 			// i = 0, j[1,numCells - 1]
 			for (int j = 1; j < numCells; j++) {
 				hL = (*verts)[((i + 1)*(numCells + 1) + j)* vertElementCount + 1]; // i + 1
-				hR = terrainGenerator->SampleHeight((double)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc) * heightScale;
+				hR = terrainGenerator->SampleHeight((float)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc) * heightScale;
 				hD = (*verts)[(i*(numCells + 1) + j + 1)* vertElementCount + 1]; // j + 1
 				hU = (*verts)[(i*(numCells + 1) + j - 1)* vertElementCount + 1]; // j -1
 				normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
@@ -1040,7 +1054,7 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 			// i = numCells, j[1,numCells - 1]
 			i = numCells;
 			for (int j = 1; j < numCells; j++) {
-				hL = terrainGenerator->SampleHeight((double)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc) * heightScale;
+				hL = terrainGenerator->SampleHeight((float)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc) * heightScale;
 				hR = (*verts)[((i - 1)*(numCells + 1) + j)* vertElementCount + 1]; // i - 1
 				hD = (*verts)[(i*(numCells + 1) + j + 1)* vertElementCount + 1]; // j + 1
 				hU = (*verts)[(i*(numCells + 1) + j - 1)* vertElementCount + 1]; // j -1
@@ -1058,7 +1072,7 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 				hL = (*verts)[((i + 1)*(numCells + 1) + j)* vertElementCount + 1]; // i + 1
 				hR = (*verts)[((i - 1)*(numCells + 1) + j)* vertElementCount + 1]; // i - 1
 				hD = (*verts)[(i*(numCells + 1) + j + 1)* vertElementCount + 1]; // j + 1
-				hU = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j - 1)*(zSize) / (float)numCells + zLoc) * heightScale;//
+				hU = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j - 1)*(zSize) / (float)numCells + zLoc) * heightScale;//
 				normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
 
 				vLoc = (i*(numCells + 1) + j)* vertElementCount;
@@ -1072,7 +1086,7 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 			for (int i = 1; i < numCells; i++) {
 				hL = (*verts)[((i + 1)*(numCells + 1) + j)* vertElementCount + 1]; // i + 1
 				hR = (*verts)[((i - 1)*(numCells + 1) + j)* vertElementCount + 1]; // i - 1
-				hD = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j + 1)*(zSize) / (float)numCells + zLoc) * heightScale;
+				hD = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j + 1)*(zSize) / (float)numCells + zLoc) * heightScale;
 				hU = (*verts)[(i*(numCells + 1) + j - 1)* vertElementCount + 1]; // j -1
 				normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
 
@@ -1091,9 +1105,9 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 
 			int i = 0, j = 0;
 			hL = (*verts)[((i + 1)*(numCells + 1) + j)* vertElementCount + 1]; // i + 1
-			hR = terrainGenerator->SampleHeight((double)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc) * heightScale; // i - 1
+			hR = terrainGenerator->SampleHeight((float)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc) * heightScale; // i - 1
 			hD = (*verts)[(i*(numCells + 1) + j + 1)* vertElementCount + 1]; // j + 1
-			hU = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j - 1)*(zSize) / (float)numCells + zLoc) * heightScale; // j -1
+			hU = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j - 1)*(zSize) / (float)numCells + zLoc) * heightScale; // j -1
 			normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
 
 			vLoc = (i*(numCells + 1) + j)* vertElementCount;
@@ -1104,8 +1118,8 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 
 			i = 0, j = numCells;
 			hL = (*verts)[((i + 1)*(numCells + 1) + j)* vertElementCount + 1]; // i + 1
-			hR = terrainGenerator->SampleHeight((double)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc) * heightScale; // i - 1
-			hD = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j + 1)*(zSize) / (float)numCells + zLoc) * heightScale; // j + 1
+			hR = terrainGenerator->SampleHeight((float)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc) * heightScale; // i - 1
+			hD = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j + 1)*(zSize) / (float)numCells + zLoc) * heightScale; // j + 1
 			hU = (*verts)[(i*(numCells + 1) + j - 1)* vertElementCount + 1]; // j -1
 			normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
 
@@ -1115,10 +1129,10 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 			(*verts)[vLoc + 5] = normal.z;
 
 			i = numCells, j = 0;
-			hL = terrainGenerator->SampleHeight((double)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc) * heightScale; // i + 1
+			hL = terrainGenerator->SampleHeight((float)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc) * heightScale; // i + 1
 			hR = (*verts)[((i - 1)*(numCells + 1) + j)* vertElementCount + 1]; // i - 1
 			hD = (*verts)[(i*(numCells + 1) + j + 1)* vertElementCount + 1]; // j + 1
-			hU = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j - 1)*(zSize) / (float)numCells + zLoc) * heightScale; // j -1
+			hU = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j - 1)*(zSize) / (float)numCells + zLoc) * heightScale; // j -1
 			normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
 
 			vLoc = (i*(numCells + 1) + j)* vertElementCount;
@@ -1127,9 +1141,9 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 			(*verts)[vLoc + 5] = normal.z;
 
 			i = numCells, j = numCells;
-			hL = terrainGenerator->SampleHeight((double)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (double)j *(zSize) / (float)numCells + zLoc) * heightScale; // i + 1
+			hL = terrainGenerator->SampleHeight((float)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc) * heightScale; // i + 1
 			hR = (*verts)[((i - 1)*(numCells + 1) + j)* vertElementCount + 1]; // i - 1
-			hD = terrainGenerator->SampleHeight((double)i *(xSize) / (float)numCells + (xLoc), 0, (double)(j + 1)*(zSize) / (float)numCells + zLoc) * heightScale; // j + 1
+			hD = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j + 1)*(zSize) / (float)numCells + zLoc) * heightScale; // j + 1
 			hU = (*verts)[(i*(numCells + 1) + j - 1)* vertElementCount + 1]; // j -1
 			normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
 

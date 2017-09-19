@@ -1,6 +1,6 @@
 #include "VulkanPipeline.h"
 
-
+#include "Mesh.h"
 
 VulkanPipeline::VulkanPipeline(VulkanDevice* device) : device(device)
 {
@@ -101,14 +101,18 @@ void VulkanPipeline::CleanShaderResources(PipelineCreationObject *pco) {
 	vkDestroyShaderModule(device->device, pco->tessShaderModule, nullptr);
 }
 
-void VulkanPipeline::SetVertexInput(PipelineCreationObject *pco, VkVertexInputBindingDescription bindingDescription, std::array<VkVertexInputAttributeDescription, 4Ui64> attributeDescriptions)
+void VulkanPipeline::SetVertexInput(PipelineCreationObject *pco, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescriptions)
 {
 	pco->vertexInputInfo = initializers::pipelineVertexInputStateCreateInfo();
+	
+	pco->vertexInputBindingDescription = bindingDescription;
+	pco->vertexInputAttributeDescriptions = attributeDescriptions;
 
-	pco->vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(1);
-	pco->vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-	pco->vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-	pco->vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+	pco->vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(pco->vertexInputBindingDescription.size());
+	pco->vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(pco->vertexInputAttributeDescriptions.size());
+	pco->vertexInputInfo.pVertexBindingDescriptions = pco->vertexInputBindingDescription.data();
+	pco->vertexInputInfo.pVertexAttributeDescriptions = pco->vertexInputAttributeDescriptions.data();
+ 
 }
 
 void VulkanPipeline::SetInputAssembly(PipelineCreationObject *pco, VkPrimitiveTopology topology, VkPipelineInputAssemblyStateCreateFlags flag, VkBool32 primitiveRestart)
@@ -126,12 +130,12 @@ void VulkanPipeline::SetDynamicState(PipelineCreationObject *pco, uint32_t dynam
 
 void VulkanPipeline::SetViewport(PipelineCreationObject *pco, float width, float height, float minDepth, float maxDepth, float x, float y)
 {
-	pco->viewport = initializers::viewport(width, height, 0.0f, 1.0f);
+	pco->viewport = initializers::viewport(width, height, minDepth, maxDepth);
 	pco->viewport.x = 0.0f;
 	pco->viewport.y = 0.0f;
 }
 
-void VulkanPipeline::SetScissor(PipelineCreationObject *pco, float width, float height, float offsetX, float offsetY)
+void VulkanPipeline::SetScissor(PipelineCreationObject *pco, uint32_t width, uint32_t height, uint32_t offsetX, uint32_t offsetY)
 {
 	pco->scissor = initializers::rect2D(width, height, offsetX, offsetY);
 }
@@ -144,7 +148,8 @@ void VulkanPipeline::SetViewportState(PipelineCreationObject *pco, uint32_t view
 	pco->viewportState.pScissors = &pco->scissor;
 }
 
-void VulkanPipeline::SetRasterizer(PipelineCreationObject *pco, VkPolygonMode polygonMode, VkCullModeFlagBits cullModeFlagBits, VkFrontFace frontFace, VkBool32 depthClampEnable, VkBool32 rasterizerDiscardEnable, uint32_t lineWidth, VkBool32 depthBiasEnable)
+void VulkanPipeline::SetRasterizer(PipelineCreationObject *pco, VkPolygonMode polygonMode, VkCullModeFlagBits cullModeFlagBits, VkFrontFace frontFace, 
+		VkBool32 depthClampEnable, VkBool32 rasterizerDiscardEnable, float lineWidth, VkBool32 depthBiasEnable)
 {
 	pco->rasterizer = initializers::pipelineRasterizationStateCreateInfo( polygonMode, cullModeFlagBits, frontFace);
 	pco->rasterizer.depthClampEnable = depthClampEnable;

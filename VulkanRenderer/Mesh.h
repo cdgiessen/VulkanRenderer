@@ -19,12 +19,15 @@ struct Vertex {
 	glm::vec2 texCoord;
 	glm::vec4 color;
 
-	static VkVertexInputBindingDescription getBindingDescription() {
-		return initializers::vertexInputBindingDescription(0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX);
+	static std::vector<VkVertexInputBindingDescription> getBindingDescription() {
+		std::vector<VkVertexInputBindingDescription> bindingDescription;
+		bindingDescription.push_back(initializers::vertexInputBindingDescription(0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX));
+		return bindingDescription;
 	}
 
-	static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
-		std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions = {};
+	static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {};
+		attributeDescriptions.resize(4);
 
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;

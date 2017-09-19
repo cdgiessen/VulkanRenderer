@@ -7,8 +7,27 @@ bool AABBCheck(ImVec2 pos, ImVec2 size, ImVec2 point) {
 	return point.x >= pos.x && point.y >= pos.y && point.x <= pos.x + size.x && point.y <= pos.y + size.y;
 }
 
+void Connector::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
+	draw_list->AddBezierCurve(startNode->bodyRect.pos + start + canvas_pos, startNode->bodyRect.pos + startPivot + canvas_pos, endNode->bodyRect.pos + endPivot + canvas_pos, endNode->bodyRect.pos + end + canvas_pos, color, 1);
+}
+
+//Sets connection from output
+void Connector::SetStart(Node* node) {
+	startNode = node;
+	
+	start = node->outputRect.pos + ImVec2(5, 5);
+	startPivot = start + ImVec2(15, 0);
+}
+
+//Sets connection to input
+void Connector::SetEnd(Node* node, Rectangle inputRect) {
+	endNode = node;
+	end = inputRect.pos + ImVec2(5, 5);
+	endPivot = end + ImVec2(-15, 0);
+}
+
 Node::Node(std::string name, std::string description) : name(name), description(description) {
-	rect = Rectangle(ImVec2(10, 10), ImVec2(50, 50));
+	bodyRect = Rectangle(ImVec2(10, 10), ImVec2(50, 50));
 }
 
 void Node::SetInputNode(int index, Node* n) {
@@ -19,8 +38,50 @@ double Node::GetValue(double x, double y, double z) {
 	return 0.0;
 }
 
-void Node::draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas) {
+void Node::AddInputConnector(Connector* connector) {
+	inputConnections.push_back(connector);
+}
 
+void Node::AddOutputConnector(Connector *connector) {
+	inputConnections.push_back(connector);
+}
+
+void Node::RemoveInputConnector(Connector* connector) {
+	auto con = std::find(inputConnections.begin(), inputConnections.end(), connector);
+	if(con != inputConnections.end())
+		inputConnections.erase(con);
+}
+
+void Node::RemoveOutputConnector(Connector* connector) {
+	auto con = std::find(inputConnections.begin(), inputConnections.end(), connector);
+	if (con != inputConnections.end())
+		inputConnections.erase(con);
+}
+
+void Node::Update(ImVec2 mouse_pos_in_canvas, bool isDraggingWidget) {
+	
+	if (AABBCheck(bodyRect.pos, bodyRect.size, mouse_pos_in_canvas)) {
+		if (ImGui::IsMouseDragging(0) && !isDraggingWidget) {
+			bodyRect.pos = ImVec2(mouse_pos_in_canvas.x - bodyRect.size.x / 2, mouse_pos_in_canvas.y - bodyRect.size.y / 2);
+			isDraggingWidget = true;
+		}
+	}
+}
+
+void Node::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
+	clip_rect = ImVec4(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y, canvas_pos.x + bodyRect.pos.x + bodyRect.size.x, canvas_pos.y + bodyRect.pos.y + bodyRect.size.y);
+
+	bodyRect.draw(draw_list, canvas_pos);
+	outputRect.draw(draw_list, canvas_pos, bodyRect.pos);
+	for (Rectangle rect : inputRects) {
+		rect.draw(draw_list, canvas_pos, bodyRect.pos);
+	}
+}
+
+OutputNode::OutputNode() : Node("Output", "End point for entire graph") {
+
+	outputRect = Rectangle(ImVec2(bodyRect.size.x, 0), ImVec2(10, 10));
+	inputRects.push_back(Rectangle(ImVec2(-10, 0), ImVec2(10, 10)));
 }
 
 void OutputNode::SetInputNode(int index, Node* n) {
@@ -31,42 +92,32 @@ double OutputNode::GetValue(double x, double y, double z) {
 	return inputs.at(0)->GetValue(x, y, z);
 }
 
-void OutputNode::draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas) {
-	ImVec4 clip_rect(canvas_pos.x + rect.pos.x, canvas_pos.y + rect.pos.y, canvas_pos.x + rect.pos.x + rect.size.x, canvas_pos.y + rect.pos.y + rect.size.y);
+void OutputNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
+	Node::Draw(draw_list, canvas_pos);
 
-	if (AABBCheck(rect.pos, rect.size, mouse_pos_in_canvas)) {
-		if (ImGui::IsMouseDragging(0)) {
-			rect.pos = ImVec2(mouse_pos_in_canvas.x - rect.size.x / 2, mouse_pos_in_canvas.y - rect.size.y / 2);
-		}
-	}
-
-	rect.draw(draw_list, canvas_pos);
-	rectA.draw(draw_list, canvas_pos, rect.pos);
-
-	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + rect.pos.x, canvas_pos.y + rect.pos.y), ImColor(255, 255, 255, 255), " Out", NULL, 0.0f, &clip_rect);
+	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y), ImColor(255, 255, 255, 255), " Out", NULL, 0.0f, &clip_rect);
 }
 
+ConstantNode::ConstantNode() : Node("Constant", "Holds a value") {
+	outputRect = Rectangle(ImVec2(bodyRect.size.x, 0), ImVec2(10, 10));
+}
 
 double ConstantNode::GetValue(double x, double y, double z) {
 	return inputs.at(0)->GetValue(x, y, z);
 }
 
-void ConstantNode::draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas) {
-	ImVec4 clip_rect(canvas_pos.x + rect.pos.x, canvas_pos.y + rect.pos.y, canvas_pos.x + rect.pos.x + rect.size.x, canvas_pos.y + rect.pos.y + rect.size.y);
+void ConstantNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
+	Node::Draw(draw_list, canvas_pos);
 
-	if (AABBCheck(rect.pos, rect.size, mouse_pos_in_canvas)) {
-		if (ImGui::IsMouseDragging(0)) {
-			rect.pos = ImVec2(mouse_pos_in_canvas.x - rect.size.x / 2, mouse_pos_in_canvas.y - rect.size.y / 2);
-		}
-	}
-
-	rect.draw(draw_list, canvas_pos);
-	rectO.draw(draw_list, canvas_pos, rect.pos);
-
-	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + rect.pos.x, canvas_pos.y + rect.pos.y), ImColor(255, 255, 255, 255), " Val", NULL, 0.0f, &clip_rect);
+	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y), ImColor(255, 255, 255, 255), " Val", NULL, 0.0f, &clip_rect);
 
 }
 
+AdditionNode::AdditionNode() : Node("Addition", "Adds two numbers together") {
+	outputRect = Rectangle(ImVec2(bodyRect.size.x, 0), ImVec2(10, 10));
+	inputRects.push_back(Rectangle(ImVec2(-10, 0), ImVec2(10, 10)));
+	inputRects.push_back(Rectangle(ImVec2(-10, 20), ImVec2(10, 10)));
+}
 
 void AdditionNode::SetInputNode(int index, Node* n) {
 	inputs.at(index) = n;
@@ -76,21 +127,16 @@ double AdditionNode::GetValue(double x, double y, double z) {
 	return inputs.at(0)->GetValue(x,y,z) + inputs.at(1)->GetValue(x,y,z);
 }
 
-void AdditionNode::draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas) {
-	ImVec4 clip_rect(canvas_pos.x + rect.pos.x, canvas_pos.y + rect.pos.y, canvas_pos.x + rect.pos.x + rect.size.x, canvas_pos.y + rect.pos.y + rect.size.y);
+void AdditionNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
+	Node::Draw(draw_list, canvas_pos);
 
-	if (AABBCheck(rect.pos, rect.size, mouse_pos_in_canvas)) {
-		if (ImGui::IsMouseDragging(0)) {
-			rect.pos = ImVec2(mouse_pos_in_canvas.x - rect.size.x/2, mouse_pos_in_canvas.y - rect.size.y/2);
-		}
-	}
+	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y), ImColor(255, 255, 255, 255), " Add", NULL, 0.0f, &clip_rect);
+}
 
-	rect.draw(draw_list, canvas_pos);
-	rectO.draw(draw_list, canvas_pos, rect.pos);
-	rectA.draw(draw_list, canvas_pos, rect.pos);
-	rectB.draw(draw_list, canvas_pos, rect.pos);
-
-	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + rect.pos.x, canvas_pos.y + rect.pos.y), ImColor(255, 255, 255, 255), " Add", NULL, 0.0f, &clip_rect);
+SubtractionNode::SubtractionNode() : Node("Subtraction", "Adds two numbers together") {
+	outputRect = Rectangle(ImVec2(bodyRect.size.x, 0), ImVec2(10, 10));
+	inputRects.push_back(Rectangle(ImVec2(-10, 0), ImVec2(10, 10)));
+	inputRects.push_back(Rectangle(ImVec2(-10, 20), ImVec2(10, 10)));
 }
 
 void SubtractionNode::SetInputNode(int index, Node* n) {
@@ -101,21 +147,16 @@ double SubtractionNode::GetValue(double x, double y, double z) {
 	return inputs.at(0)->GetValue(x, y, z) - inputs.at(1)->GetValue(x, y, z);
 }
 
-void SubtractionNode::draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas) {
-	ImVec4 clip_rect(canvas_pos.x + rect.pos.x, canvas_pos.y + rect.pos.y, canvas_pos.x + rect.pos.x + rect.size.x, canvas_pos.y + rect.pos.y + rect.size.y);
+void SubtractionNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
+	Node::Draw(draw_list, canvas_pos);
 
-	if (AABBCheck(rect.pos, rect.size, mouse_pos_in_canvas)) {
-		if (ImGui::IsMouseDragging(0)) {
-			rect.pos = ImVec2(mouse_pos_in_canvas.x - rect.size.x / 2, mouse_pos_in_canvas.y - rect.size.y / 2);
-		}
-	}
+	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y), ImColor(255, 255, 255, 255), " Sub", NULL, 0.0f, &clip_rect);
+}
 
-	rect.draw(draw_list, canvas_pos);
-	rectO.draw(draw_list, canvas_pos, rect.pos);
-	rectA.draw(draw_list, canvas_pos, rect.pos);
-	rectB.draw(draw_list, canvas_pos, rect.pos);
-
-	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + rect.pos.x, canvas_pos.y + rect.pos.y), ImColor(255, 255, 255, 255), " Sub", NULL, 0.0f, &clip_rect);
+MultiplicationNode::MultiplicationNode() : Node("Multiplication", "Adds two numbers together") {
+	outputRect = Rectangle(ImVec2(bodyRect.size.x, 0), ImVec2(10, 10));
+	inputRects.push_back(Rectangle(ImVec2(-10, 0), ImVec2(10, 10)));
+	inputRects.push_back(Rectangle(ImVec2(-10, 20), ImVec2(10, 10)));
 }
 
 void MultiplicationNode::SetInputNode(int index, Node* n) {
@@ -126,21 +167,15 @@ double MultiplicationNode::GetValue(double x, double y, double z) {
 	return inputs.at(0)->GetValue(x, y, z) * inputs.at(1)->GetValue(x, y, z);
 }
 
-void MultiplicationNode::draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas) {
-	ImVec4 clip_rect(canvas_pos.x + rect.pos.x, canvas_pos.y + rect.pos.y, canvas_pos.x + rect.pos.x + rect.size.x, canvas_pos.y + rect.pos.y + rect.size.y);
+void MultiplicationNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
+	Node::Draw(draw_list, canvas_pos);
+	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y), ImColor(255, 255, 255, 255), " Mul", NULL, 0.0f, &clip_rect);
+}
 
-	if (AABBCheck(rect.pos, rect.size, mouse_pos_in_canvas)) {
-		if (ImGui::IsMouseDragging(0)) {
-			rect.pos = ImVec2(mouse_pos_in_canvas.x - rect.size.x / 2, mouse_pos_in_canvas.y - rect.size.y / 2);
-		}
-	}
-
-	rect.draw(draw_list, canvas_pos);
-	rectO.draw(draw_list, canvas_pos, rect.pos);
-	rectA.draw(draw_list, canvas_pos, rect.pos);
-	rectB.draw(draw_list, canvas_pos, rect.pos);
-
-	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + rect.pos.x, canvas_pos.y + rect.pos.y), ImColor(255, 255, 255, 255), " Mul", NULL, 0.0f, &clip_rect);
+DivisionNode::DivisionNode() : Node("Division", "Adds two numbers together") {
+	outputRect = Rectangle(ImVec2(bodyRect.size.x, 0), ImVec2(10, 10));
+	inputRects.push_back(Rectangle(ImVec2(-10, 0), ImVec2(10, 10)));
+	inputRects.push_back(Rectangle(ImVec2(-10, 20), ImVec2(10, 10)));
 }
 
 void DivisionNode::SetInputNode(int index, Node* n) {
@@ -151,22 +186,12 @@ double DivisionNode::GetValue(double x, double y, double z) {
 	return inputs.at(0)->GetValue(x, y, z) / inputs.at(1)->GetValue(x, y, z);
 }
 
-void DivisionNode::draw(ImDrawList* draw_list, ImVec2 canvas_pos, ImVec2 mouse_pos_in_canvas) {
-	ImVec4 clip_rect(canvas_pos.x + rect.pos.x, canvas_pos.y + rect.pos.y, canvas_pos.x + rect.pos.x + rect.size.x, canvas_pos.y + rect.pos.y + rect.size.y);
-
-	if (AABBCheck(rect.pos, rect.size, mouse_pos_in_canvas)) {
-		if (ImGui::IsMouseDragging(0)) {
-			rect.pos = ImVec2(mouse_pos_in_canvas.x - rect.size.x / 2, mouse_pos_in_canvas.y - rect.size.y / 2);
-		}
-	}
-
-	rect.draw(draw_list, canvas_pos);
-	rectO.draw(draw_list, canvas_pos, rect.pos);
-	rectA.draw(draw_list, canvas_pos, rect.pos);
-	rectB.draw(draw_list, canvas_pos, rect.pos);
-
-	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + rect.pos.x, canvas_pos.y + rect.pos.y), ImColor(255, 255, 255, 255), " Div", NULL, 0.0f, &clip_rect);
+void DivisionNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
+	Node::Draw(draw_list, canvas_pos);
+	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y), ImColor(255, 255, 255, 255), " Div", NULL, 0.0f, &clip_rect);
 }
+
+
 
 NodeGraph::NodeGraph()
 {
@@ -282,6 +307,7 @@ void NodeGraph::DrawGraph() {
 			if (ImGui::Button("Clear")) {
 				points.clear();
 				nodes.clear();
+				connectors.clear();
 			}
 			if (points.Size >= 2) { 
 				ImGui::SameLine(); 
@@ -310,42 +336,139 @@ void NodeGraph::DrawGraph() {
 			draw_list->AddRect(canvas_pos, ImVec2(canvas_pos.x + canvas_size.x, canvas_pos.y + canvas_size.y), ImColor(255, 255, 255));
 
 			ImVec2 mouse_pos_in_canvas = ImVec2(ImGui::GetIO().MousePos.x - canvas_pos.x, ImGui::GetIO().MousePos.y - canvas_pos.y);
-			
+
+			static bool adding_connection = false;
+			static bool FirstConnectionIsOutput; //whether the beginning of the connector is an output or an input
+			static Connector adding_connector = Connector(ImVec2(0, 0), ImVec2(0, 0));
+			static bool isDraggingWidget = false;
+			Node* nodeToDelete;
+			static bool deleteNode;
+
 			for (Node* node : nodes) {
-				node->draw(draw_list, canvas_pos, mouse_pos_in_canvas);
+				if (adding_connection) { //user is looking for the endpoint
+					if (!FirstConnectionIsOutput) { //make sure the connected node is of the opposite type
+						if (AABBCheck(node->outputRect.pos + node->bodyRect.pos, node->outputRect.size, mouse_pos_in_canvas)) {
+							if (ImGui::IsMouseClicked(0)) {
+								if (adding_connector.endNode != node) { //not the same node
+									adding_connection = false;
+									adding_connector.SetStart(node);
+									connectors.insert(connectors.begin(), new Connector(adding_connector));
+									node->AddOutputConnector(connectors.at(0));
+									connectors.at(0)->startNode->AddInputConnector(connectors.at(0));
+									std::cout << "connected to output " << std::endl;
+								}
+							}
+						}
+					}
+					else if (FirstConnectionIsOutput) {
+						for (Rectangle inputRect : node->inputRects) {
+							if (AABBCheck(inputRect.pos + node->bodyRect.pos, inputRect.size, mouse_pos_in_canvas)) {
+								if (ImGui::IsMouseClicked(0)) { 
+									if (adding_connector.startNode != node) { //not the same node
+										adding_connection = false;
+										adding_connector.SetEnd(node, inputRect);
+										connectors.insert(connectors.begin(), new Connector(adding_connector));
+										node->AddInputConnector(connectors.at(0));
+										connectors.at(0)->endNode->AddOutputConnector(connectors.at(0));
+										std::cout << "connected to input " << std::endl;
+									}
+								}
+							}
+						}
+					}
+				}
+				else { //user hasn't clicked on any node
+					if (AABBCheck(node->outputRect.pos + node->bodyRect.pos, node->outputRect.size, mouse_pos_in_canvas)) {
+						if (ImGui::IsMouseClicked(0)) {
+							std::cout << "Clicked on outputnode " << std::endl;
+							adding_connection = true;
+							adding_connector.SetStart(node); 
+							FirstConnectionIsOutput = true;
+						}
+					}
+					for (Rectangle inputRect : node->inputRects) {
+						if (AABBCheck(inputRect.pos + node->bodyRect.pos, inputRect.size, mouse_pos_in_canvas)) {
+							if (ImGui::IsMouseClicked(0)) {
+								std::cout << "Clicked on inputNode" << std::endl;
+								adding_connection = true;
+								adding_connector.SetEnd(node, inputRect);
+								FirstConnectionIsOutput = false;
+							}
+						}
+					}
+				}
+				//Delete node if right clicking and over the node
+				if (AABBCheck(node->bodyRect.pos, node->bodyRect.size, mouse_pos_in_canvas) && ImGui::IsMouseClicked(1)) {
+					std::cout << "Removed Node" << std::endl;
+					
+					//Remove the connector's nodes reference to connected nodes
+					for (Connector* c : node->inputConnections) {
+						c->startNode->RemoveInputConnector(c);
+					}
+					for (Connector* c : node->outputConnections) {
+						c->endNode->RemoveOutputConnector(c);
+					}
+
+					//Remove the connections
+					for (Connector* c : node->inputConnections) {
+						auto con = std::find(connectors.begin(), connectors.end(), c);
+						if (con != connectors.end())
+							connectors.erase(con);
+					}
+					for (Connector* c : node->outputConnections) {
+						auto con = std::find(connectors.begin(), connectors.end(), c);
+						if (con != connectors.end())
+							connectors.erase(con);
+					}
+					deleteNode = true;
+					nodeToDelete = node;
+
+				}
+				else {
+					node->Update(mouse_pos_in_canvas, isDraggingWidget);
+					node->Draw(draw_list, canvas_pos);
+				}
+			}
+			if (deleteNode) {
+				RemoveNode(nodeToDelete);
+				deleteNode = false;
+			}
+
+			for (Connector* connect : connectors) {
+				connect->Draw(draw_list, canvas_pos);
 			}
 
 
-			bool adding_preview = false;
 			ImGui::InvisibleButton("canvas", canvas_size);
-			if (adding_line)
-			{
-				adding_preview = true;
-				points.push_back(mouse_pos_in_canvas);
-				if (!ImGui::GetIO().MouseDown[0])
-					adding_line = adding_preview = false;
-			}
-			if (ImGui::IsItemHovered())
-			{
-				if (!adding_line && ImGui::IsMouseClicked(0))
-				{
-					points.push_back(mouse_pos_in_canvas);
-					adding_line = true;
-				}
-				if (ImGui::IsMouseClicked(1) && !points.empty())
-				{
-					adding_line = adding_preview = false;
-					points.pop_back();
-					points.pop_back();
-				}
-			}
-			draw_list->PushClipRect(canvas_pos, ImVec2(canvas_pos.x + canvas_size.x, canvas_pos.y + canvas_size.y));      // clip lines within the canvas (if we resize it, etc.)
-			for (int i = 0; i < points.Size - 1; i += 2) {
-				draw_list->AddLine(ImVec2(canvas_pos.x + points[i].x, canvas_pos.y + points[i].y), ImVec2(canvas_pos.x + points[i + 1].x, canvas_pos.y + points[i + 1].y), IM_COL32(255, 255, 0, 255), 2.0f);
-			}
-			draw_list->PopClipRect();
-			if (adding_preview)
-				points.pop_back();
+			//bool adding_preview = false;
+			//if (adding_line)
+			//{
+			//	adding_preview = true;
+			//	points.push_back(mouse_pos_in_canvas);
+			//	if (!ImGui::GetIO().MouseDown[0])
+			//		adding_line = adding_preview = false;
+			//}
+			//if (ImGui::IsItemHovered())
+			//{
+			//	if (!adding_line && ImGui::IsMouseClicked(0))
+			//	{
+			//		points.push_back(mouse_pos_in_canvas);
+			//		adding_line = true;
+			//	}
+			//	if (ImGui::IsMouseClicked(1) && !points.empty())
+			//	{
+			//		adding_line = adding_preview = false;
+			//		points.pop_back();
+			//		points.pop_back();
+			//	}
+			//}
+			//draw_list->PushClipRect(canvas_pos, ImVec2(canvas_pos.x + canvas_size.x, canvas_pos.y + canvas_size.y));      // clip lines within the canvas (if we resize it, etc.)
+			//for (int i = 0; i < points.Size - 1; i += 2) {
+			//	draw_list->AddLine(ImVec2(canvas_pos.x + points[i].x, canvas_pos.y + points[i].y), ImVec2(canvas_pos.x + points[i + 1].x, canvas_pos.y + points[i + 1].y), IM_COL32(255, 255, 0, 255), 2.0f);
+			//}
+			//draw_list->PopClipRect();
+			//if (adding_preview)
+			//	points.pop_back();
 
 		}
 
@@ -374,6 +497,8 @@ void NodeGraph::AddNode(Node* node) {
 	nodes.push_back(node);
 }
 void NodeGraph::RemoveNode(Node* node) {
-	auto index = std::find(nodes.begin(), nodes.end(), node);
-	nodes.erase(index);
+	auto it = std::find(nodes.begin(), nodes.end(), node);
+	if (it != nodes.end())
+		nodes.erase(it);
+
 }

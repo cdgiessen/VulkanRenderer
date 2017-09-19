@@ -147,9 +147,9 @@ public:
 	typedef const T&        const_reference;
 	typedef size_t          size_type;
 	typedef ptrdiff_t       difference_type;
-	typedef std::false_type propagate_on_container_copy_assignment;
-	typedef std::true_type  propagate_on_container_move_assignment;
-	typedef std::true_type  propagate_on_container_swap;
+	//typedef std::false_type propagate_on_container_copy_assignment;
+	//typedef std::true_type  propagate_on_container_move_assignment;
+	//typedef std::true_type  propagate_on_container_swap;
 
 	template <typename U> struct rebind {
 		typedef MemoryPool<U> other;

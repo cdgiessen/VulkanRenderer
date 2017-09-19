@@ -424,6 +424,12 @@ void VulkanDevice::createLogicalDevice(VkSurfaceKHR &surface) {
 	if (physical_device_features.fillModeNonSolid) {
 		deviceFeatures.fillModeNonSolid = VK_TRUE;
 	}
+	if (physical_device_features.geometryShader) {
+		deviceFeatures.geometryShader = VK_TRUE;
+	}
+	if (physical_device_features.tessellationShader) {
+		deviceFeatures.tessellationShader = VK_TRUE;
+	}
 
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

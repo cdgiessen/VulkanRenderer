@@ -59,6 +59,16 @@
     <None Include="Shaders\gameObject_shader.frag.spv" />
     <None Include="Shaders\gameObject_shader.vert" />
     <None Include="Shaders\gameObject_shader.vert.spv" />
+    <None Include="Shaders\instancedSceneObject.frag" />
+    <None Include="Shaders\instancedSceneObject.frag.spv" />
+    <None Include="Shaders\instancedSceneObject.vert" />
+    <None Include="Shaders\instancedSceneObject.vert.spv" />
+    <None Include="Shaders\normalVecDebug.frag" />
+    <None Include="Shaders\normalVecDebug.frag.spv" />
+    <None Include="Shaders\normalVecDebug.geom" />
+    <None Include="Shaders\normalVecDebug.geom.spv" />
+    <None Include="Shaders\normalVecDebug.vert" />
+    <None Include="Shaders\normalVecDebug.vert.spv" />
     <None Include="Shaders\terrain.frag" />
     <None Include="Shaders\terrain.frag.spv" />
     <None Include="Shaders\terrain.vert" />
@@ -78,11 +88,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD.cpp" />
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_avx2.cpp" />
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_avx512.cpp" />
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_internal.cpp" />
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_neon.cpp" />
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_sse2.cpp" />
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_sse41.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="ImGuiImpl.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
     <ClCompile Include="ImGui\imgui_draw.cpp" />
+    <ClCompile Include="InstancedSceneObject.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="NodeGraph.cpp" />
@@ -106,6 +124,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="FastNoiseSIMD\FastNoiseSIMD.h" />
+    <ClInclude Include="FastNoiseSIMD\FastNoiseSIMD_internal.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="ImGuiImpl.h" />
     <ClInclude Include="ImGui\imconfig.h" />
@@ -114,6 +134,7 @@
     <ClInclude Include="ImGui\stb_rect_pack.h" />
     <ClInclude Include="ImGui\stb_textedit.h" />
     <ClInclude Include="ImGui\stb_truetype.h" />
+    <ClInclude Include="InstancedSceneObject.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="NodeGraph.h" />

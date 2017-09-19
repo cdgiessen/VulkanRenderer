@@ -76,3 +76,19 @@ utils::Image* TerrainGenerator::getImagePtr() {
 float TerrainGenerator::SampleHeight(float x, float y, float z) {
 	return finalTerrain.GetValue(x, y, z);
 }
+
+
+
+
+
+FastTerrainGenerator::FastTerrainGenerator(int splatMapSize, int numCells, glm::vec3 pos, glm::vec3 size)
+{
+	noiseSet = myNoise->GetSimplexFractalSet(pos.x, pos.y, pos.z, size.x, size.y, size.z);
+}
+
+
+FastTerrainGenerator::~FastTerrainGenerator()
+{
+	FastNoiseSIMD::FreeNoiseSet(noiseSet);
+}
+

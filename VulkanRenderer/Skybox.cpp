@@ -105,7 +105,7 @@ void Skybox::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderPa
 	PipelineManager.SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
 	PipelineManager.SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 	PipelineManager.SetViewport(myPipe, viewPortWidth, viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
-	PipelineManager.SetScissor(myPipe, viewPortWidth, viewPortHeight, 0.0f, 0.0f);
+	PipelineManager.SetScissor(myPipe, viewPortWidth, viewPortHeight, 0, 0);
 	PipelineManager.SetViewportState(myPipe, 1, 1, 0);
 	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 	PipelineManager.SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
@@ -118,6 +118,7 @@ void Skybox::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderPa
 
 	pipelineLayout = PipelineManager.BuildPipelineLayout(myPipe);
 	pipeline = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
+
 
 	PipelineManager.CleanShaderResources(myPipe);
 	/*

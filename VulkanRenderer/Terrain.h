@@ -43,7 +43,7 @@ public:
 	glm::vec3 size; //width and length
 	int level; //how deep the quad is
 	int subDivPosX, subDivPosZ; //where in the subdivision grid it is (for splatmap)
-
+	float heightValAtCenter = 0;
 	bool isSubdivided;
 
 	ModelBufferObject modelUniformObject;
@@ -52,7 +52,7 @@ public:
 	~TerrainQuad();
 
 	//puts the position, size, and level into the class
-	void init(float posX, float posY, float sizeX, float sizeY, int level, int subDivPosX, int subDivPosZ);
+	void init(float posX, float posY, float sizeX, float sizeY, int level, int subDivPosX, int subDivPosZ, float centerHeightValue);
 
 };
 
@@ -89,6 +89,7 @@ public:
 	VkPipelineLayout pipelineLayout;
 	VkPipeline pipeline;
 	VkPipeline wireframe;
+	VkPipeline debugNormals;
 
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorPool descriptorPool;
@@ -108,7 +109,7 @@ public:
 
 	SimpleTimer drawTimer;
 
-	Terrain(int numCells, int maxLevels, float posX, float posY, float sizeX, float sizeY);
+	Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool, int numCells, int maxLevels, float posX, float posY, float sizeX, float sizeY);
 	~Terrain();
 
 	void InitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, VkQueue copyQueue, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos);

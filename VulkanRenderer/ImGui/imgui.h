@@ -92,6 +92,7 @@ struct ImVec2
 #ifdef IM_VEC2_CLASS_EXTRA          // Define constructor and implicit cast operators in imconfig.h to convert back<>forth from your math types and ImVec2.
     IM_VEC2_CLASS_EXTRA
 #endif
+		ImVec2 operator+(const ImVec2 other) { return ImVec2(other.x + x, other.y + y); }
 };
 
 struct ImVec4

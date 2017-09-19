@@ -23,6 +23,7 @@ public:
 
 	VkPipeline pipeline;
 	VkPipeline wireframe;
+	VkPipeline debugNormals;
 	VkPipelineLayout pipelineLayout;
 
 	VkDescriptorSetLayout descriptorSetLayout;

@@ -37,6 +37,9 @@
     <Filter Include="ImGui">
       <UniqueIdentifier>{641385be-4019-4f2a-90e8-aca5e7660023}</UniqueIdentifier>
     </Filter>
+    <Filter Include="FastNoiseSIMD">
+      <UniqueIdentifier>{e63cb4f6-d07a-4f0e-9b8f-66c10258c00e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\compile.bat">
@@ -105,6 +108,16 @@
     <None Include="Shaders\gameObject_shader.vert.spv">
       <Filter>Shaders\spv files</Filter>
     </None>
+    <None Include="Shaders\normalVecDebug.vert" />
+    <None Include="Shaders\normalVecDebug.frag" />
+    <None Include="Shaders\normalVecDebug.geom" />
+    <None Include="Shaders\normalVecDebug.frag.spv" />
+    <None Include="Shaders\normalVecDebug.geom.spv" />
+    <None Include="Shaders\normalVecDebug.vert.spv" />
+    <None Include="Shaders\instancedSceneObject.vert" />
+    <None Include="Shaders\instancedSceneObject.frag" />
+    <None Include="Shaders\instancedSceneObject.frag.spv" />
+    <None Include="Shaders\instancedSceneObject.vert.spv" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -183,6 +196,30 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VulkanPipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_avx2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_avx512.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_internal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_neon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_sse2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_sse41.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InstancedSceneObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -281,6 +318,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VulkanPipeline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FastNoiseSIMD\FastNoiseSIMD.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FastNoiseSIMD\FastNoiseSIMD_internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InstancedSceneObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

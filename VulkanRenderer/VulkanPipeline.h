@@ -4,6 +4,7 @@
 #include <vulkan\vulkan.h>
 #include "VulkanInitializers.hpp"
 #include "VulkanTools.h"
+#include <vector>
 
 struct PipelineCreationObject {
 	bool geomShader;
@@ -18,6 +19,9 @@ struct PipelineCreationObject {
 	VkPipelineShaderStageCreateInfo tessShaderStageInfo;
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo;
+	std::vector<VkVertexInputBindingDescription> vertexInputBindingDescription;
+	std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
+
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly;
 	VkViewport viewport;
 	VkRect2D scissor;
@@ -52,16 +56,16 @@ public:
 	void SetTesselationShader(PipelineCreationObject *pco, VkShaderModule tess);
 	void CleanShaderResources(PipelineCreationObject *pco); //destroys the shader modules after pipeline creation is finished
 
-	void SetVertexInput(PipelineCreationObject *pco, VkVertexInputBindingDescription bindingDescription, std::array<VkVertexInputAttributeDescription, 4Ui64> attributeDescriptions);
+	void SetVertexInput(PipelineCreationObject *pco, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescriptions);
 
 	void SetInputAssembly(PipelineCreationObject *pco, VkPrimitiveTopology topology, VkPipelineInputAssemblyStateCreateFlags flag, VkBool32 primitiveRestart);
 
 	void SetViewport(PipelineCreationObject *pco, float width, float height, float minDepth, float maxDepth, float x, float y);
-	void SetScissor(PipelineCreationObject *pco, float width, float height, float offsetX, float offsetY);
+	void SetScissor(PipelineCreationObject *pco, uint32_t width, uint32_t height, uint32_t offsetX, uint32_t offsetY);
 
 	void SetViewportState(PipelineCreationObject *pco, uint32_t viewportCount, uint32_t scissorCount, VkPipelineViewportStateCreateFlags flags);
 
-	void SetRasterizer(PipelineCreationObject *pco, VkPolygonMode polygonMode, VkCullModeFlagBits cullModeFlagBits, VkFrontFace frontFace, VkBool32 depthClampEnable, VkBool32 rasterizerDiscardEnable, uint32_t lineWidth, VkBool32 depthBiasEnable);
+	void SetRasterizer(PipelineCreationObject *pco, VkPolygonMode polygonMode, VkCullModeFlagBits cullModeFlagBits, VkFrontFace frontFace, VkBool32 depthClampEnable, VkBool32 rasterizerDiscardEnable, float lineWidth, VkBool32 depthBiasEnable);
 
 	void SetMultisampling(PipelineCreationObject *pco, VkSampleCountFlagBits sampleCountFlags);
 

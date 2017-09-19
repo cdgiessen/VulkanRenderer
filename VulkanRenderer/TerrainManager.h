@@ -1,5 +1,7 @@
 #pragma once
 
+#include "MemoryPool.h"
+
 #include "Camera.h"
 #include "Terrain.h"
 #include "Water.h"
@@ -25,6 +27,8 @@ private:
 	VulkanDevice* device;
 
 	std::vector<Terrain*> terrains;
+	MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)> terrainQuadPool;
+
 	std::vector<Water*> waters;
 
 	bool show_terrain_manager_window = true;
@@ -33,5 +37,7 @@ private:
 	int terrainMaxLevels = 1;
 	int terrainGridDimentions = 1;
 	SimpleTimer terrainUpdateTimer;
+
+	int maxNumQuads = 1; //maximum quads managed by this
 };
 

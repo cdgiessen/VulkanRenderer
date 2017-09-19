@@ -14,6 +14,7 @@
 #include "Water.h"
 #include "TerrainManager.h"
 #include "TimeManager.h"
+#include "InstancedSceneObject.h"
 
 class Scene
 {
@@ -31,6 +32,8 @@ public:
 	void CreateUniformBuffers();
 
 	Camera* GetCamera();
+
+	bool drawNormals = false;
 private:
 
 	VulkanDevice* device;
@@ -41,9 +44,13 @@ private:
 
 	std::vector<GameObject*> gameObjects;
 	TerrainManager* terrainManager;
+	InstancedSceneObject* treesInstanced;
+	InstancedSceneObject* rocksInstanced;
 
 	Skybox* skybox;
 
 	Camera* camera;
+
+	//glm::mat4 reverseDepth = glm::mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1); //reverses the clip plane to be from [1,0] instead of [0,1], to help with z fighting isseus
 };
 

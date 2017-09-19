@@ -1,6 +1,7 @@
 #include "Scene.h"
 
-
+#define VERTEX_BUFFER_BIND_ID 0
+#define INSTANCE_BUFFER_BIND_ID 1
 
 Scene::Scene(VulkanDevice* device) : device(device)
 {
@@ -38,6 +39,14 @@ void Scene::PrepareScene(VulkanPipeline pipelineManager, VkRenderPass renderPass
 	
 	terrainManager = new TerrainManager(device);
 	terrainManager->GenerateTerrain(pipelineManager, renderPass, vulkanSwapChain, globalVariableBuffer, lightsInfoBuffer, camera);
+
+	treesInstanced = new InstancedSceneObject();
+	treesInstanced->LoadModel(createCube());
+	treesInstanced->LoadTexture("Resources/Textures/grass.jpg");
+	treesInstanced->InitInstancedSceneObject(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
+	treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(10,0,30), glm::vec3(10,0,40) });
+
+	rocksInstanced = new InstancedSceneObject();
 }
 
 void Scene::CreateUniformBuffers() {
@@ -63,6 +72,7 @@ void Scene::ReInitScene(VulkanPipeline pipelineManager, VkRenderPass renderPass,
 		obj->ReinitGameObject(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 	}
 
+	treesInstanced->ReinitInstancedSceneObject(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 	terrainManager->ReInitTerrain(pipelineManager, renderPass, vulkanSwapChain);
 }
 
@@ -76,17 +86,17 @@ void Scene::UpdateScene(VulkanPipeline pipelineManager, VkRenderPass renderPass,
 
 	GlobalVariableUniformBuffer cbo = {};
 	cbo.view = camera->GetViewMatrix();
-	cbo.proj = glm::perspective(glm::radians(45.0f), vulkanSwapChain.swapChainExtent.width / (float)vulkanSwapChain.swapChainExtent.height, 1.0f, 100000.0f);
+	cbo.proj = glm::perspective(glm::radians(45.0f), vulkanSwapChain.swapChainExtent.width / (float)vulkanSwapChain.swapChainExtent.height, 0.05f, 100000.0f);
 	cbo.proj[1][1] *= -1;
 	cbo.cameraDir = camera->Front;
-	cbo.time = timeManager->GetRunningTime();
+	cbo.time = (float)timeManager->GetRunningTime();
 
 	globalVariableBuffer.map(device->device);
 	globalVariableBuffer.copyTo(&cbo, sizeof(cbo));
 	globalVariableBuffer.unmap();
 	
 	for (GameObject* obj : gameObjects) {
-		obj->UpdateUniformBuffer(timeManager->GetRunningTime());
+		obj->UpdateUniformBuffer((float)timeManager->GetRunningTime());
 	}
 
 	skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
@@ -98,7 +108,7 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	VkDeviceSize offsets[] = { 0 };
 
 	terrainManager->RenderTerrain(commandBuffer, wireframe);
-
+	
 	for (GameObject* obj : gameObjects) {
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->pipelineLayout, 0, 1, &obj->descriptorSet, 0, nullptr);
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? obj->wireframe : obj->pipeline);
@@ -106,7 +116,15 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &obj->gameObjectModel.vertices.buffer, offsets);
 		vkCmdBindIndexBuffer(commandBuffer, obj->gameObjectModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->gameObjectModel.indexCount), 1, 0, 0, 0);
+
+		if (drawNormals) {
+			bool drawNormals = false;
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->debugNormals);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->gameObjectModel.indexCount), 1, 0, 0, 0);
+		}
 	}
+	
+	treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
 
 	//skybox
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->pipelineLayout, 0, 1, &skybox->descriptorSet, 0, nullptr);
@@ -115,7 +133,6 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &skybox->model.vertices.buffer, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, skybox->model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(skybox->model.indexCount), 1, 0, 0, 0);
-
 
 }
 
@@ -131,6 +148,7 @@ void Scene::CleanUpScene() {
 	}
 
 	terrainManager->CleanUpTerrain();
+	treesInstanced->CleanUp();
 
 	globalVariableBuffer.cleanBuffer();
 	lightsInfoBuffer.cleanBuffer();
