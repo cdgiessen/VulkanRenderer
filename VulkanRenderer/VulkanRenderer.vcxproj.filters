@@ -222,6 +222,9 @@
     <ClCompile Include="InstancedSceneObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TerGenNodeGraph.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VulkanApp.h">
@@ -327,6 +330,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="InstancedSceneObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TerGenNodeGraph.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

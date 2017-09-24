@@ -5,8 +5,11 @@
 
 #include "VulkanInitializers.hpp"
 
+#include "TerGenNodeGraph.h"
+
 VulkanApp::VulkanApp()
 {
+
 	//camera = new Camera(glm::vec3(-2,2,0), glm::vec3(0,1,0), 0, -45);
 	timeManager = new TimeManager();
 

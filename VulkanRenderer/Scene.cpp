@@ -44,7 +44,7 @@ void Scene::PrepareScene(VulkanPipeline pipelineManager, VkRenderPass renderPass
 	treesInstanced->LoadModel(createCube());
 	treesInstanced->LoadTexture("Resources/Textures/grass.jpg");
 	treesInstanced->InitInstancedSceneObject(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
-	treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(10,0,30), glm::vec3(10,0,40) });
+	treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(20,0,10), glm::vec3(10,0,40), glm::vec3(10,0,-40), glm::vec3(100,0,40) });
 
 	rocksInstanced = new InstancedSceneObject();
 }

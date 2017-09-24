@@ -22,7 +22,6 @@ void InstancedSceneObject::InitInstancedSceneObject(VulkanDevice* device, Vulkan
 	SetupModel();
 	SetupDescriptor(global, lighting);
 	SetupPipeline(pipelineManager, renderPass, viewPortWidth, viewPortHeight);
-	prepareInstanceData();
 }
 
 void InstancedSceneObject::ReinitInstancedSceneObject(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
@@ -302,32 +301,27 @@ void InstancedSceneObject::SetupPipeline(VulkanPipeline PipelineManager, VkRende
 }
 
 void InstancedSceneObject::AddInstances(std::vector<glm::vec3> positions) {
-	for (auto it = positions.begin(); it != positions.end(); it++) {
-		ModelBufferObject ubo = {};
-		ubo.model = glm::translate(ubo.model, *it);
-		ubo.normal = glm::mat4();
-		modelUniforms.push_back(ubo);
-	}
+	//for (auto it = positions.begin(); it != positions.end(); it++) {
+	//	ModelBufferObject ubo = {};
+	//	ubo.model = glm::translate(ubo.model, *it);
+	//	ubo.normal = glm::mat4();
+	//	modelUniforms.push_back(ubo);
+	//}
 
 	//modelUniformsBuffer.map(device->device);
 	//modelUniformsBuffer.copyTo(&modelUniforms, modelUniforms.size() * sizeof(ModelBufferObject));
 	//modelUniformsBuffer.unmap();
-}
 
-#define INSTANCE_COUNT 16
-void InstancedSceneObject::prepareInstanceData()
-{
-	std::vector<InstanceData> instanceData;
-	instanceData.resize(INSTANCE_COUNT);
-
-	for (int i = 0; i < INSTANCE_COUNT; i++)
+	for (int i = 0; i < positions.size(); i++)
 	{
-		instanceData[i].pos = glm::vec3(i * 10,0,i*10);
-		instanceData[i].rot = glm::vec3(0,0,0);
-		instanceData[i].scale = 1.0f;
+		InstanceData id;
+		id.pos = positions[i];
+		id.rot = glm::vec3(0,0,0);
+		id.scale = 1.0f;
+		instancesData.push_back(id);
 	}
 
-	instanceBuffer.size = instanceData.size() * sizeof(InstanceData);
+	instanceBuffer.size = instancesData.size() * sizeof(InstanceData);
 
 	// Staging
 	// Instanced data is static, copy to device local memory 
@@ -344,7 +338,7 @@ void InstancedSceneObject::prepareInstanceData()
 		instanceBuffer.size,
 		&stagingBuffer.buffer,
 		&stagingBuffer.memory,
-		instanceData.data()));
+		instancesData.data()));
 
 	VK_CHECK_RESULT(device->createBuffer(
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,

@@ -58,8 +58,6 @@ public:
 	void InstancedSceneObject::AddInstances(std::vector<glm::vec3> positions);
 	//void InstancedSceneObject::RemoveInstance(std::vector<glm::vec3> positions);
 
-	void prepareInstanceData();
-
 	void WriteToCommandBuffer(VkCommandBuffer commandBuffer, bool wireframe);
 
 	VulkanDevice *device;
@@ -79,8 +77,10 @@ public:
 	Texture* texture;
 	VulkanTexture2D vulkanTexture;
 
+	std::vector<InstanceData> instancesData;
 	std::vector<glm::vec3> modelPositions;
 	std::vector<ModelBufferObject> modelUniforms;
 	VulkanBuffer uniformBuffer;
+	int instanceCount;
 };
 

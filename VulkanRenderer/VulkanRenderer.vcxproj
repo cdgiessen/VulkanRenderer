@@ -107,6 +107,7 @@
     <ClCompile Include="noiseutils.cpp" />
     <ClCompile Include="MemoryPool.cpp" />
     <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="TerGenNodeGraph.cpp" />
     <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="TerrainGenerator.cpp" />
     <ClCompile Include="TerrainManager.cpp" />
@@ -142,6 +143,7 @@
     <ClInclude Include="MemoryPool.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Skybox.h" />
+    <ClInclude Include="TerGenNodeGraph.h" />
     <ClInclude Include="Terrain.h" />
     <ClInclude Include="TerrainGenerator.h" />
     <ClInclude Include="TerrainManager.h" />

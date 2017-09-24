@@ -5,6 +5,9 @@
 
 #include "ImGui\imgui.h"
 
+#include <noise\basictypes.h>
+#include <noiseutils.h>
+
 enum LinkType{
 Float = 0,
 Int = 1,
@@ -15,7 +18,8 @@ Vector3 = 5,
 Vector4 = 6,
 Color3 = 7,
 Color4 = 8,
-String = 9
+String = 9,
+None = 10,
 };
 
 //Holds position and size of a rectangle and how to draw itself relative to the canvas and a parent if present
@@ -105,7 +109,7 @@ public:
 
 class ConstantNode : public Node {
 public:
-
+	float value;
 	ConstantNode();
 
 	double GetValue(double x, double y, double z);
@@ -161,6 +165,18 @@ public:
 	void Draw(ImDrawList* draw_list, ImVec2 canvas_pos);
 };
 
+class NoiseSourceNode : public Node {
+public:
+	module::Perlin noiseInputSource;
+
+	NoiseSourceNode();
+
+	void SetInputNode(int index, Node* n);
+
+	double GetValue(double x, double y, double z);
+
+	void Draw(ImDrawList* draw_list, ImVec2 canvas_pos);
+};
 
 class NodeGraph
 {
@@ -177,9 +193,12 @@ public:
 	void RemoveNode(Node* node);
 
 private:
+	float testVec[3];
 	//static bool show_node_graph_window = true;
 	std::vector<Node* > nodes;
 	std::vector<Connector* > connectors;
+
+	OutputNode* outputNode;
 
 	//nodeTypeList nodeTypes;
 };

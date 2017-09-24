@@ -4,13 +4,13 @@
 #include <glm\common.hpp>
 
 #include "FastNoiseSIMD\FastNoiseSIMD.h"
-
+#include "TerGenNodeGraph.h"
 
 #pragma once
 class TerrainGenerator
 {
 public:
-	TerrainGenerator(int splatMapSize, int numCells, glm::vec3 pos, glm::vec3 size);
+	TerrainGenerator(int numCells, int splatMapSize, glm::vec3 pos, glm::vec3 size);
 	~TerrainGenerator();
 
 	float SampleHeight(float x, float y, float z);
@@ -33,6 +33,8 @@ private:
 	utils::NoiseMapBuilderPlane heightMapBuilder;
 	utils::RendererImage renderer;
 	utils::Image image;
+
+	NewNodeGraph::TerGenNodeGraph* nodeGraph;
 };
 
 class FastTerrainGenerator
@@ -40,8 +42,6 @@ class FastTerrainGenerator
 public:
 	FastTerrainGenerator(int splatMapSize, int numCells, glm::vec3 pos, glm::vec3 size);
 	~FastTerrainGenerator();
-
-	//float* SampleHeight(float x, float y, float z);
 
 private:
 	FastNoiseSIMD* myNoise = FastNoiseSIMD::NewFastNoiseSIMD();

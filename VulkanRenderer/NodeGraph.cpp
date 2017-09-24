@@ -1,6 +1,7 @@
 #include "NodeGraph.h"
 
 #include <iostream>
+#include <string>
 
 //Does a rect bound check with the pos and size of the box
 bool AABBCheck(ImVec2 pos, ImVec2 size, ImVec2 point) {
@@ -79,7 +80,8 @@ void Node::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
 }
 
 OutputNode::OutputNode() : Node("Output", "End point for entire graph") {
-
+	outputType = LinkType::Float;
+	inputTypes = { LinkType::Float };
 	outputRect = Rectangle(ImVec2(bodyRect.size.x, 0), ImVec2(10, 10));
 	inputRects.push_back(Rectangle(ImVec2(-10, 0), ImVec2(10, 10)));
 }
@@ -89,13 +91,17 @@ void OutputNode::SetInputNode(int index, Node* n) {
 }
 
 double OutputNode::GetValue(double x, double y, double z) {
-	return inputs.at(0)->GetValue(x, y, z);
+	if (inputs.size() <= 0)
+		return 0;
+	else
+		return inputs.at(0)->GetValue(x, y, z);
 }
 
 void OutputNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
 	Node::Draw(draw_list, canvas_pos);
 
 	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y), ImColor(255, 255, 255, 255), " Out", NULL, 0.0f, &clip_rect);
+
 }
 
 ConstantNode::ConstantNode() : Node("Constant", "Holds a value") {
@@ -103,17 +109,19 @@ ConstantNode::ConstantNode() : Node("Constant", "Holds a value") {
 }
 
 double ConstantNode::GetValue(double x, double y, double z) {
-	return inputs.at(0)->GetValue(x, y, z);
+	return value;
 }
 
 void ConstantNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
 	Node::Draw(draw_list, canvas_pos);
 
-	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y), ImColor(255, 255, 255, 255), " Val", NULL, 0.0f, &clip_rect);
-
+	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), canvas_pos + bodyRect.pos, ImColor(255, 255, 255, 255), " Val", NULL, 0.0f, &clip_rect);
+	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), canvas_pos + bodyRect.pos + ImVec2(0, 10), ImColor(255, 255, 255, 255), std::to_string(value).c_str(), NULL, 0.0f, &clip_rect);
 }
 
 AdditionNode::AdditionNode() : Node("Addition", "Adds two numbers together") {
+	outputType = LinkType::Float;
+	inputTypes = { LinkType::Float,  LinkType::Float };
 	outputRect = Rectangle(ImVec2(bodyRect.size.x, 0), ImVec2(10, 10));
 	inputRects.push_back(Rectangle(ImVec2(-10, 0), ImVec2(10, 10)));
 	inputRects.push_back(Rectangle(ImVec2(-10, 20), ImVec2(10, 10)));
@@ -133,7 +141,9 @@ void AdditionNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
 	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y), ImColor(255, 255, 255, 255), " Add", NULL, 0.0f, &clip_rect);
 }
 
-SubtractionNode::SubtractionNode() : Node("Subtraction", "Adds two numbers together") {
+SubtractionNode::SubtractionNode() : Node("Subtraction", "Subtracts two numbers together") {
+	outputType = LinkType::Float;
+	inputTypes = { LinkType::Float,  LinkType::Float };
 	outputRect = Rectangle(ImVec2(bodyRect.size.x, 0), ImVec2(10, 10));
 	inputRects.push_back(Rectangle(ImVec2(-10, 0), ImVec2(10, 10)));
 	inputRects.push_back(Rectangle(ImVec2(-10, 20), ImVec2(10, 10)));
@@ -153,7 +163,9 @@ void SubtractionNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
 	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y), ImColor(255, 255, 255, 255), " Sub", NULL, 0.0f, &clip_rect);
 }
 
-MultiplicationNode::MultiplicationNode() : Node("Multiplication", "Adds two numbers together") {
+MultiplicationNode::MultiplicationNode() : Node("Multiplication", "Multiplies two numbers together") {
+	outputType = LinkType::Float;
+	inputTypes = { LinkType::Float,  LinkType::Float };
 	outputRect = Rectangle(ImVec2(bodyRect.size.x, 0), ImVec2(10, 10));
 	inputRects.push_back(Rectangle(ImVec2(-10, 0), ImVec2(10, 10)));
 	inputRects.push_back(Rectangle(ImVec2(-10, 20), ImVec2(10, 10)));
@@ -172,7 +184,9 @@ void MultiplicationNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
 	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y), ImColor(255, 255, 255, 255), " Mul", NULL, 0.0f, &clip_rect);
 }
 
-DivisionNode::DivisionNode() : Node("Division", "Adds two numbers together") {
+DivisionNode::DivisionNode() : Node("Division", "Divides two numbers together") {
+	outputType = LinkType::Float;
+	inputTypes = { LinkType::Float,  LinkType::Float };
 	outputRect = Rectangle(ImVec2(bodyRect.size.x, 0), ImVec2(10, 10));
 	inputRects.push_back(Rectangle(ImVec2(-10, 0), ImVec2(10, 10)));
 	inputRects.push_back(Rectangle(ImVec2(-10, 20), ImVec2(10, 10)));
@@ -191,11 +205,37 @@ void DivisionNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
 	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y), ImColor(255, 255, 255, 255), " Div", NULL, 0.0f, &clip_rect);
 }
 
+NoiseSourceNode::NoiseSourceNode() : Node("Noise Source", "function on inputs") {
+	outputType = LinkType::Float;
+	inputTypes = { LinkType::Float,  LinkType::Float, LinkType::Int};
+	outputRect = Rectangle(ImVec2(bodyRect.size.x, 0), ImVec2(10, 10));
+	inputRects.push_back(Rectangle(ImVec2(-10, 0), ImVec2(10, 10)));
+	inputRects.push_back(Rectangle(ImVec2(-10, 20), ImVec2(10, 10)));
+	inputRects.push_back(Rectangle(ImVec2(-10, 40), ImVec2(10, 10)));
+}
 
+void NoiseSourceNode::SetInputNode(int index, Node* n) {
+	inputs.at(index) = n;
+}
+
+double NoiseSourceNode::GetValue(double x, double y, double z) {
+	noiseInputSource.SetFrequency(inputs.at(0)->GetValue(x,y,z));
+	noiseInputSource.SetPersistence(inputs.at(1)->GetValue(x, y, z));
+	noiseInputSource.SetOctaveCount(inputs.at(2)->GetValue(x, y, z));
+
+	return noiseInputSource.GetValue(x,y,z);
+}
+
+void NoiseSourceNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
+	Node::Draw(draw_list, canvas_pos);
+	draw_list->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvas_pos.x + bodyRect.pos.x, canvas_pos.y + bodyRect.pos.y), ImColor(255, 255, 255, 255), " Noise", NULL, 0.0f, &clip_rect);
+}
 
 NodeGraph::NodeGraph()
 {
+	outputNode = new OutputNode(); //means every graph has an output, otherwise whats the point of one
 
+	AddNode(outputNode);
 }
 
 
@@ -212,6 +252,10 @@ void NodeGraph::DrawGraph() {
 
 	if (ImGui::Begin("Node Graph", 0, ImGuiWindowFlags_MenuBar)) {
 		ImGui::Text("Test");
+		ImGui::InputFloat3("Test Inputs", &testVec[0], -10, 10);
+		if (ImGui::Button("Calc on test inputs")) {
+			std::cout << outputNode->GetValue(testVec[0], testVec[1], testVec[2]) << std::endl;
+		}
 
 		{ //menu bar - implement functions
 			if (ImGui::BeginMenuBar())
@@ -266,11 +310,6 @@ void NodeGraph::DrawGraph() {
 			ImGui::BeginChild("scrolling", ImVec2(0, ImGui::GetItemsLineHeightWithSpacing() + 30), true, ImGuiWindowFlags_HorizontalScrollbar);
 			//ImGui::BeginGroup();
 
-			if (ImGui::Button("Output", ImVec2(60, 20))) {
-				AddNode(new OutputNode());
-			}
-			ImGui::SameLine();
-
 			if (ImGui::Button("Constant", ImVec2(60, 20))) {
 				AddNode(new ConstantNode());
 			}
@@ -293,6 +332,9 @@ void NodeGraph::DrawGraph() {
 				AddNode(new DivisionNode());
 			}
 			ImGui::SameLine();
+			if (ImGui::Button("Noise Source", ImVec2(60, 20))) {
+				AddNode(new NoiseSourceNode());
+			}
 
 			//ImGui::EndGroup();
 			ImGui::EndChild();

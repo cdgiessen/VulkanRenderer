@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-TerrainGenerator::TerrainGenerator(int splatMapSize, int numCells, glm::vec3 pos, glm::vec3 size)
+TerrainGenerator::TerrainGenerator(int numCells, int splatMapSize, glm::vec3 pos, glm::vec3 size)
 {
 	//module::RidgedMulti mountainTerrain;
 	mountainTerrain.SetFrequency(0.001);
@@ -62,6 +62,11 @@ TerrainGenerator::TerrainGenerator(int splatMapSize, int numCells, glm::vec3 pos
 	renderer.AddGradientPoint(1.0000, utils::Color(0, 0, 0, 255));
 
 	renderer.Render();
+
+	nodeGraph = new NewNodeGraph::TerGenNodeGraph(1337, 100, glm::vec3(0,0,0), 1.0f);
+
+	nodeGraph->BuildNoiseGraph();
+
 }
 
 
@@ -74,7 +79,8 @@ utils::Image* TerrainGenerator::getImagePtr() {
 }
 
 float TerrainGenerator::SampleHeight(float x, float y, float z) {
-	return finalTerrain.GetValue(x, y, z);
+	return nodeGraph->SampleHeight(x, y, z);
+	//return finalTerrain.GetValue(x, y, z);
 }
 
 
