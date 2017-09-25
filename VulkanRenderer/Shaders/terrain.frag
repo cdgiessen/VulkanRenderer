@@ -73,8 +73,8 @@ void main() {
 	vec3 dirContrib = (dirDiffuse + dirSpecular)* vec3(1.0f);
 
 	//float belowWaterLevelDarkening = clamp(inFragPos.y, -1, 0);
-
-    outColor = terrainSplatter * vec4((pointLightContrib + dirContrib), 1.0f);
+	outColor = inColor * vec4((pointLightContrib + dirContrib), 1.0f);
+	//outColor = terrainSplatter * vec4((pointLightContrib + dirContrib), 1.0f);
 	//outColor = vec4(pointLightContrib * inColor, 1.0f);
 	
 	

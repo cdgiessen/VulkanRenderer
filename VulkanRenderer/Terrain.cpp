@@ -818,9 +818,9 @@ void Terrain::GenerateNewTerrain(TerrainMeshVertices* verts, TerrainMeshIndices*
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 5] = normal.z;
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 6] = i/(float)numCells;
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 7] = j/(float)numCells;
-			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 8] = 0;
-			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 9] = 0;
-			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 10] = 0;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 8] = terrainGenerator->SampleColor(0,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 9] = terrainGenerator->SampleColor(1,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 10] = terrainGenerator->SampleColor(2,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 11] = 0;
 			//std::cout << value << std::endl;
 		}
@@ -868,9 +868,9 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 			(*verts)[vLoc + 2] = (float)j * (zSize) / (float)numCells;
 			(*verts)[vLoc + 6] = (float)i / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (float)(glm::pow(2.0, terrainQuad.level));
 			(*verts)[vLoc + 7] = (float)j / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (float)(glm::pow(2.0, terrainQuad.level));
-			(*verts)[vLoc + 8] = 0;
-			(*verts)[vLoc + 9] = 0;
-			(*verts)[vLoc + 10] = 0;
+			(*verts)[vLoc + 8] = terrainGenerator->SampleColor(0,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
+			(*verts)[vLoc + 9] = terrainGenerator->SampleColor(1,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
+			(*verts)[vLoc + 10] = terrainGenerator->SampleColor(2,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
 			(*verts)[vLoc + 11] = 0;
 
 		}
@@ -978,9 +978,9 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 			(*verts)[vLoc + 2] = (float)j * (zSize) / (float)numCells;
 			(*verts)[vLoc + 6] = (float)i / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (float)(glm::pow(2.0, terrainQuad.level));
 			(*verts)[vLoc + 7] = (float)j / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (float)(glm::pow(2.0, terrainQuad.level));
-			(*verts)[vLoc + 8] = 0;
-			(*verts)[vLoc + 9] = 0;
-			(*verts)[vLoc + 10] = 0;
+			(*verts)[vLoc + 8] = terrainGenerator->SampleColor(0,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells  + (zLoc));
+			(*verts)[vLoc + 9] = terrainGenerator->SampleColor(1,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells  + (zLoc));
+			(*verts)[vLoc + 10] = terrainGenerator->SampleColor(2,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
 			(*verts)[vLoc + 11] = 0;
 		}
 	}
@@ -999,9 +999,9 @@ void Terrain::GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, Terr
 			(*verts)[vLoc + 2] = (float)j * (zSize) / (float)numCells;
 			(*verts)[vLoc + 6] = (float)i / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (float)(glm::pow(2.0, terrainQuad.level));
 			(*verts)[vLoc + 7] = (float)j / ((float)glm::pow(2.0, terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (float)(glm::pow(2.0, terrainQuad.level));
-			(*verts)[vLoc + 8] = 0;
-			(*verts)[vLoc + 9] = 0;
-			(*verts)[vLoc + 10] = 0;
+			(*verts)[vLoc + 8] = terrainGenerator->SampleColor(0,(float)i *(xSize) / (float)numCells  + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
+			(*verts)[vLoc + 9] = terrainGenerator->SampleColor(1,(float)i *(xSize) / (float)numCells  + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
+			(*verts)[vLoc + 10] = terrainGenerator->SampleColor(2,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
 			(*verts)[vLoc + 11] = 0;
 		}
 	}

@@ -4,6 +4,25 @@
 
 TerrainGenerator::TerrainGenerator(int numCells, int splatMapSize, glm::vec3 pos, glm::vec3 size)
 {
+	double freq = 0.001;
+	double pers = 0.4;
+	int octaves = 5;
+	
+	rainFallMap.SetFrequency(freq);
+	rainFallMap.SetPersistence(pers);
+	rainFallMap.SetOctaveCount(octaves);
+
+	temperatureMap.SetFrequency(freq);
+	//temperatureMap.SetPersistence(pers);
+	//temperatureMap.SetOctaveCount(octaves);
+
+	elevationMap.SetFrequency(freq);
+	elevationMap.SetPersistence(pers);
+	elevationMap.SetOctaveCount(octaves);
+
+	biomeSelector;
+
+
 	//module::RidgedMulti mountainTerrain;
 	mountainTerrain.SetFrequency(0.001);
 	mountainTerrain.SetOctaveCount(6);
@@ -63,9 +82,9 @@ TerrainGenerator::TerrainGenerator(int numCells, int splatMapSize, glm::vec3 pos
 
 	renderer.Render();
 
-	nodeGraph = new NewNodeGraph::TerGenNodeGraph(1337, 100, glm::vec3(0,0,0), 1.0f);
-
-	nodeGraph->BuildNoiseGraph();
+	//nodeGraph = new NewNodeGraph::TerGenNodeGraph(1337, 100, glm::vec3(0,0,0), 1.0f);
+	//
+	//nodeGraph->BuildNoiseGraph();
 
 }
 
@@ -79,8 +98,24 @@ utils::Image* TerrainGenerator::getImagePtr() {
 }
 
 float TerrainGenerator::SampleHeight(float x, float y, float z) {
-	return nodeGraph->SampleHeight(x, y, z);
-	//return finalTerrain.GetValue(x, y, z);
+	//return nodeGraph->SampleHeight(x, y, z);
+	return finalTerrain.GetValue(x, y, z);
+}
+
+float TerrainGenerator::GetBiomeColor(int channel, float rainVal, float tempVal, float elevation) {
+	int moisture = (int)(rainVal * 6);
+	int temperature = (int)(tempVal * 4);
+
+	if (channel == 0)
+		return temp_rain_chart[temperature][moisture].r;
+	if (channel == 1)
+		return temp_rain_chart[temperature][moisture].g;
+	return temp_rain_chart[temperature][moisture].b;
+}
+
+float TerrainGenerator::SampleColor(int channel, float x, float y, float z) {
+
+	return GetBiomeColor(channel, (rainFallMap.GetValue(x, y, z) + 1.0) / 2.0, (temperatureMap.GetValue(x, y, z) + 1.0) / 2.0, (elevationMap.GetValue(x, y, z) + 1.0) / 2.0);
 }
 
 
@@ -89,7 +124,9 @@ float TerrainGenerator::SampleHeight(float x, float y, float z) {
 
 FastTerrainGenerator::FastTerrainGenerator(int splatMapSize, int numCells, glm::vec3 pos, glm::vec3 size)
 {
-	noiseSet = myNoise->GetSimplexFractalSet(pos.x, pos.y, pos.z, size.x, size.y, size.z);
+	nodeGraph = new NewNodeGraph::TerGenNodeGraph(1337, 100, glm::vec3(0, 0, 0), 1.0f);
+
+	nodeGraph->BuildNoiseGraph();
 }
 
 

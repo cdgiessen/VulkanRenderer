@@ -5,8 +5,6 @@
 
 #include "VulkanInitializers.hpp"
 
-#include "TerGenNodeGraph.h"
-
 VulkanApp::VulkanApp()
 {
 
