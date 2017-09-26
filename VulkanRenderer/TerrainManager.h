@@ -23,6 +23,9 @@ public:
 
 	void CleanUpTerrain();
 
+	VkCommandBuffer CreateTerrainMeshUpdateCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel level);
+	void FlushTerrainMeshUpdateCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free);
+
 private:
 	VulkanDevice* device;
 

@@ -32,7 +32,7 @@ struct QueueFamilyIndices {
 	int graphicsFamily = -1;
 	int presentFamily = -1;
 	int transferFamily = -1;
-	int computerFamily = -1;
+	int computeFamily = -1;
 
 	bool isComplete() {
 		return graphicsFamily >= 0 && presentFamily >= 0;
@@ -128,11 +128,12 @@ private:
 	std::chrono::nanoseconds elapsedTime;
 public:
 
-	//Begin timer by creating object
+	//Begin timer
 	void StartTimer() {
 		startTime = std::chrono::high_resolution_clock::now();
 	}
 	
+	//End timer
 	void EndTimer() {
 		endTime = std::chrono::high_resolution_clock::now();
 		elapsedTime = endTime - startTime;

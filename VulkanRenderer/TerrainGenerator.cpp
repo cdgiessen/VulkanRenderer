@@ -9,47 +9,67 @@ TerrainGenerator::TerrainGenerator(int numCells, int splatMapSize, glm::vec3 pos
 	int octaves = 5;
 	
 	rainFallMap.SetFrequency(freq);
-	rainFallMap.SetPersistence(pers);
-	rainFallMap.SetOctaveCount(octaves);
+	//rainFallMap.SetPersistence(pers);
+	//rainFallMap.SetOctaveCount(1);
 
-	temperatureMap.SetFrequency(freq);
+	temperatureMap.SetFrequency(freq*0.5);
 	//temperatureMap.SetPersistence(pers);
 	//temperatureMap.SetOctaveCount(octaves);
 
-	elevationMap.SetFrequency(freq);
-	elevationMap.SetPersistence(pers);
-	elevationMap.SetOctaveCount(octaves);
+	//elevationMap.SetFrequency(freq);
+	//elevationMap.SetPersistence(pers);
+	//elevationMap.SetOctaveCount(octaves);
 
 	biomeSelector;
 
 
 	//module::RidgedMulti mountainTerrain;
-	mountainTerrain.SetFrequency(0.001);
-	mountainTerrain.SetOctaveCount(6);
+	mountainTerrain.SetFrequency(freq * 0.25);
+	mountainTerrain.SetOctaveCount(octaves);
 	
+	//module::Perlin hillTerrain
+	hillTerrain.SetFrequency(freq * 1.15);
+	hillTerrain.SetOctaveCount(octaves);
+
 	//module::Billow baseFlatTerrain;
-	baseFlatTerrain.SetFrequency(0.001);
-	baseFlatTerrain.SetOctaveCount(6);
+	baseFlatTerrain.SetFrequency(freq * 0.8);
+	baseFlatTerrain.SetOctaveCount(octaves);
 	
 	//module::ScaleBias flatTerrain;
-	flatTerrain.SetSourceModule(0, baseFlatTerrain);
-	flatTerrain.SetScale(0.5);
-	flatTerrain.SetBias(1.1);
+	flatTerrainScaleBias.SetSourceModule(0, baseFlatTerrain);
+	flatTerrainScaleBias.SetScale(0.1);
+	flatTerrainScaleBias.SetBias(0.1);
+
+	//module::ScaleBias hillTerrainScaleBias;
+	hillTerrainScaleBias.SetSourceModule(0, hillTerrain);
+	hillTerrainScaleBias.SetScale(0.2);
+	hillTerrainScaleBias.SetBias(0);
 
 	//module::Perlin terrainType;
-	terrainType.SetFrequency(0.001);
-	terrainType.SetPersistence(0.5);
+	hillMountainType.SetFrequency(freq * 0.1);
+	hillMountainType.SetPersistence(pers);
+	hillMountainType.SetOctaveCount(octaves);
 
+	//module::Perlin flatHillMountainType
+	flatHillMountainType.SetFrequency(freq * 0.2);
+	flatHillMountainType.SetPersistence(pers);
+	flatHillMountainType.SetOctaveCount(octaves);
 
 	//terrain selector
-	terrainSelector.SetSourceModule(0, flatTerrain);
-	terrainSelector.SetSourceModule(1, mountainTerrain);
-	terrainSelector.SetControlModule(terrainType);
-	terrainSelector.SetBounds(0.0, 1000);
-	terrainSelector.SetEdgeFalloff(0.125);
+	mountainHillSelector.SetSourceModule(0, hillTerrainScaleBias);
+	mountainHillSelector.SetSourceModule(1, mountainTerrain);
+	mountainHillSelector.SetControlModule(hillMountainType);
+	mountainHillSelector.SetBounds(0, 1000);
+	mountainHillSelector.SetEdgeFalloff(0.125);
+
+	hillMountainFlatSelector.SetSourceModule(0, mountainHillSelector);
+	hillMountainFlatSelector.SetSourceModule(1, flatTerrainScaleBias);
+	hillMountainFlatSelector.SetControlModule(flatHillMountainType);
+	hillMountainFlatSelector.SetBounds(-0.05, 1000);
+	hillMountainFlatSelector.SetEdgeFalloff(0.125);
 
 	//turbulence
-	finalTerrain.SetSourceModule(0, terrainSelector);
+	finalTerrain.SetSourceModule(0, hillMountainFlatSelector);
 	finalTerrain.SetFrequency(8.0);
 	finalTerrain.SetPower(0.125);
 
@@ -106,16 +126,19 @@ float TerrainGenerator::GetBiomeColor(int channel, float rainVal, float tempVal,
 	int moisture = (int)(rainVal * 6);
 	int temperature = (int)(tempVal * 4);
 
-	if (channel == 0)
-		return temp_rain_chart[temperature][moisture].r;
-	if (channel == 1)
-		return temp_rain_chart[temperature][moisture].g;
-	return temp_rain_chart[temperature][moisture].b;
+	if (elevation < 0.01) {
+		return seaFloot.GetColorChannel(channel);
+	}
+	else if (elevation > 0.95) {
+		snowCap.GetColorChannel(channel);
+	}
+
+	return temp_rain_chart[temperature][moisture].GetColorChannel(channel);
 }
 
 float TerrainGenerator::SampleColor(int channel, float x, float y, float z) {
 
-	return GetBiomeColor(channel, (rainFallMap.GetValue(x, y, z) + 1.0) / 2.0, (temperatureMap.GetValue(x, y, z) + 1.0) / 2.0, (elevationMap.GetValue(x, y, z) + 1.0) / 2.0);
+	return GetBiomeColor(channel, (rainFallMap.GetValue(x, y, z) + 1.0) / 2.0, (temperatureMap.GetValue(x, y, z) + 1.0) / 2.0, SampleHeight(x,y,z));
 }
 
 

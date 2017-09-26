@@ -14,6 +14,13 @@ struct BiomeColor {
 	BiomeColor() : r(1.0), g(0.0), b(1.0) {};
 	BiomeColor(float r, float g, float b) :r(r), g(g), b(b) {};
 
+	inline float GetColorChannel(int channel) {
+		if (channel == 0)
+			return r;
+		if (channel == 1)
+			return g;
+		return b;
+	}
 };
 
 #pragma once
@@ -32,13 +39,16 @@ public:
 private:
 	module::RidgedMulti mountainTerrain;
 	module::Billow baseFlatTerrain;
-	module::ScaleBias flatTerrain;
+	module::ScaleBias flatTerrainScaleBias;
+	module::Perlin hillTerrain;
+	module::ScaleBias hillTerrainScaleBias;
 
+	module::Perlin hillMountainType;
+	module::Perlin flatHillMountainType;
 
-	module::Perlin terrainType;
-
-	noise::module::Select terrainSelector;
-
+	noise::module::Select mountainHillSelector;
+	noise::module::Select hillMountainFlatSelector;
+	
 	noise::module::Turbulence finalTerrain;
 
 	noise::utils::NoiseMap heightMap;
@@ -47,7 +57,7 @@ private:
 	utils::Image image;
 
 	noise::module::Select biomeSelector;
-	noise::module::Billow rainFallMap;
+	noise::module::Voronoi rainFallMap;
 	noise::module::Voronoi temperatureMap;
 	noise::module::Perlin elevationMap;
 
@@ -66,6 +76,7 @@ private:
 	struct BiomeColors {
 		const BiomeColor Tundra = BiomeColor(1.0f, 1.0f, 1.0f);
 		const BiomeColor Bare = BiomeColor(0.8f, 0.8f, 0.8f);
+		const BiomeColor SeaFloor = BiomeColor(0.71f, 0.5f, 0.3f);
 		const BiomeColor Desert = BiomeColor(0.95f, 0.88f, 0.46f);
 		const BiomeColor GrassLand = BiomeColor(0.47f, 0.69f, 0.3f);
 		const BiomeColor Savannah = BiomeColor(0.88f, 0.69f, 0.24f);
@@ -75,10 +86,14 @@ private:
 		const BiomeColor Taiga = BiomeColor(0.29f, 0.43f, 0.31f);
 	} bColors;
 
-	BiomeColor temp_rain_chart[4][6] = { { bColors.Bare, bColors.Bare, bColors.Tundra, bColors.Tundra, bColors.Snow, bColors.Snow, },
-	{ bColors.Taiga, bColors.Taiga, bColors.GrassLand, bColors.GrassLand, bColors.Savannah, bColors.Savannah,  },
-	{ bColors.Desert, bColors.Savannah, bColors.Savannah, bColors.Bare, bColors.Savannah, bColors.Tropical,  },
-	{ bColors.Desert, bColors.Desert, bColors.Desert, bColors.Tropical, bColors.Tropical, bColors.Tropical,  } };
+	BiomeColor seaFloot = bColors.SeaFloor;
+	BiomeColor snowCap = bColors.Snow;
+
+	BiomeColor temp_rain_chart[4][6] = { 
+		{ bColors.Bare, bColors.Bare, bColors.Tundra, bColors.Tundra, bColors.Snow, bColors.Snow, },
+		{ bColors.Taiga, bColors.Taiga, bColors.GrassLand, bColors.GrassLand, bColors.Savannah, bColors.Savannah,  },
+		{ bColors.Desert, bColors.Savannah, bColors.Savannah, bColors.Bare, bColors.Savannah, bColors.Tropical,  },
+		{ bColors.Desert, bColors.Desert, bColors.Desert, bColors.Tropical, bColors.Tropical, bColors.Tropical,  } };
 };
 
 class FastTerrainGenerator

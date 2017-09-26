@@ -74,6 +74,9 @@ class Terrain {
 public:
 	MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* terrainQuads;
 	std::vector<TerrainQuadData*> quadHandles;
+	std::vector<TerrainQuadData*> PrevQuadHandles;
+	std::vector<TerrainMeshVertices> verts;
+	std::vector<TerrainMeshIndices> inds;
 
 	TerrainQuadData* rootQuad;
 	int maxLevels;
@@ -82,7 +85,7 @@ public:
 
 	glm::vec3 position;
 	glm::vec3 size;
-	float heightScale = 100;
+	float heightScale = 1000;
 
 	VulkanDevice *device;
 
@@ -128,6 +131,7 @@ private:
 
 	bool UpdateTerrainQuad(TerrainQuadData* quad, glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
 
+	void SetupMeshbuffers();
 	void SetupUniformBuffer();
 	void SetupImage();
 	void SetupModel();

@@ -284,6 +284,7 @@ void VulkanDevice::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue que
 		return;
 	}
 
+
 	VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
 
 	VkSubmitInfo submitInfo = initializers::submitInfo();
@@ -308,6 +309,37 @@ void VulkanDevice::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue que
 	}
 }
 
+void VulkanDevice::flushCommandBuffer(VkCommandPool commandPool, VkCommandBuffer commandBuffer, VkQueue queue, bool free)
+{
+	if (commandBuffer == VK_NULL_HANDLE)
+	{
+		return;
+	}
+
+
+	VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
+
+	VkSubmitInfo submitInfo = initializers::submitInfo();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	// Create fence to ensure that the command buffer has finished executing
+	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+	VkFence fence;
+	VK_CHECK_RESULT(vkCreateFence(device, &fenceInfo, nullptr, &fence));
+
+	// Submit to the queue
+	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
+	// Wait for the fence to signal that command buffer has finished executing
+	VK_CHECK_RESULT(vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
+
+	vkDestroyFence(device, fence, nullptr);
+
+	if (free)
+	{
+		vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+	}
+}
 
 void VulkanDevice::createInstance(std::string appName) {
 	if (enableValidationLayers && !checkValidationLayerSupport()) {
@@ -407,7 +439,7 @@ void VulkanDevice::createLogicalDevice(VkSurfaceKHR &surface) {
 	QueueFamilyIndices indices = findQueueFamilies(physical_device, surface);
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<int> uniqueQueueFamilies = { indices.graphicsFamily, indices.presentFamily };
+	std::set<int> uniqueQueueFamilies = { indices.graphicsFamily, indices.presentFamily, indices.computeFamily, indices.transferFamily };
 
 	float queuePriority = 1.0f;
 	for (int queueFamily : uniqueQueueFamilies) {
@@ -456,6 +488,8 @@ void VulkanDevice::createLogicalDevice(VkSurfaceKHR &surface) {
 
 	vkGetDeviceQueue(device, indices.graphicsFamily, 0, &graphics_queue);
 	vkGetDeviceQueue(device, indices.presentFamily, 0, &present_queue);
+	vkGetDeviceQueue(device, indices.computeFamily, 0, &compute_queue);
+	vkGetDeviceQueue(device, indices.transferFamily, 0, &transfer_queue);
 
 	vkGetPhysicalDeviceFeatures(physical_device, &physical_device_features);
 	vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
@@ -480,7 +514,7 @@ void VulkanDevice::createCommandPool(VkSurfaceKHR &surface) {
 	// compute_queue_command_pool
 	{
 		VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
-		cmd_pool_info.queueFamilyIndex = queueFamilyIndices.graphicsFamily;
+		cmd_pool_info.queueFamilyIndex = queueFamilyIndices.computeFamily;
 		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 		if (vkCreateCommandPool(device, &cmd_pool_info, nullptr, &compute_queue_command_pool) != VK_SUCCESS) {

@@ -8,13 +8,18 @@ layout(location = 0) in VS_OUT {
     vec3 normal;
 } gs_in[];
 
-const float MAGNITUDE = 0.4;
+layout(location = 0) out vec4 v_color;
+
+const float MAGNITUDE = 1.0;
 
 void GenerateLine(int index)
 {
     gl_Position = gl_in[index].gl_Position;
+	v_color = vec4(1.0, 1.0, 0.0, 1.0);
     EmitVertex();
-    gl_Position = gl_in[index].gl_Position + vec4(gs_in[index].normal, 0.0) * MAGNITUDE;
+   
+	gl_Position = gl_in[index].gl_Position + vec4(gs_in[index].normal, 0.0) * MAGNITUDE;
+	v_color = vec4(1.0, 0.0, 1.0, 1.0);
     EmitVertex();
     EndPrimitive();
 }

@@ -130,6 +130,7 @@ public:
 	* @note Uses a fence to ensure command buffer has finished executing
 	*/
 	void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
+	void flushCommandBuffer(VkCommandPool pool, VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
 
 private:
 

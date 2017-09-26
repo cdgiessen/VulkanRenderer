@@ -37,10 +37,12 @@ void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPas
 		}
 	}
 
+	//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	for (Terrain* ter : terrains) {
-		ter->InitTerrain(device, pipelineManager, renderPass, device->graphics_queue, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer, camera->Position);
+		ter->InitTerrain(device, pipelineManager, renderPass, device->transfer_queue, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer, camera->Position);
 	}
-
+	//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
+	
 	for (int i = 0; i < terrainGridDimentions; i++) {
 		for (int j = 0; j < terrainGridDimentions; j++) {
 			waters.push_back(new Water(200, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
@@ -75,8 +77,15 @@ void TerrainManager::UpdateTerrains(VulkanPipeline pipelineManager, VkRenderPass
 
 	for (Terrain* ter : terrains) {
 		terrainUpdateTimer.StartTimer();
-		ter->UpdateTerrain(camera->Position, device->graphics_queue, globalVariableBuffer, lightsInfoBuffer);
+		//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+		ter->UpdateTerrain(camera->Position, device->transfer_queue, globalVariableBuffer, lightsInfoBuffer);
+
+		//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
 		terrainUpdateTimer.EndTimer();
+		//if (terrainUpdateTimer.GetElapsedTimeMicroSeconds() > 1000) {
+		//	std::cout << terrainUpdateTimer.GetElapsedTimeMicroSeconds() << std::endl;
+		//}
 	}
 
 }
@@ -129,5 +138,69 @@ void TerrainManager::CleanUpTerrain() {
 	}
 	for (Water* water : waters) {
 		water->CleanUp();
+	}
+}
+
+/**
+* Allocate a command buffer from the command pool
+*
+* @param level Level of the new command buffer (primary or secondary)
+* @param (Optional) begin If true, recording on the new command buffer will be started (vkBeginCommandBuffer) (Defaults to false)
+*
+* @return A handle to the allocated command buffer
+*/
+VkCommandBuffer TerrainManager::CreateTerrainMeshUpdateCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel level)
+{
+	VkCommandBufferAllocateInfo cmdBufAllocateInfo = initializers::commandBufferAllocateInfo(commandPool, level, terrains.size());
+
+	VkCommandBuffer cmdBuffer;
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(device->device, &cmdBufAllocateInfo, &cmdBuffer));
+
+	
+	VkCommandBufferBeginInfo cmdBufInfo = initializers::commandBufferBeginInfo();
+	VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
+
+	return cmdBuffer;
+}
+
+/**
+* Finish command buffer recording and submit it to a queue
+*
+* @param commandBuffer Command buffer to flush
+* @param queue Queue to submit the command buffer to
+* @param free (Optional) Free the command buffer once it has been submitted (Defaults to true)
+*
+* @note The queue that the command buffer is submitted to must be from the same family index as the pool it was allocated from
+* @note Uses a fence to ensure command buffer has finished executing
+*/
+void TerrainManager::FlushTerrainMeshUpdateCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
+{
+	if (commandBuffer == VK_NULL_HANDLE)
+	{
+		return;
+	}
+
+
+	VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
+
+	VkSubmitInfo submitInfo = initializers::submitInfo();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	// Create fence to ensure that the command buffer has finished executing
+	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+	VkFence fence;
+	VK_CHECK_RESULT(vkCreateFence(device->device, &fenceInfo, nullptr, &fence));
+
+	// Submit to the queue
+	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
+	// Wait for the fence to signal that command buffer has finished executing
+	VK_CHECK_RESULT(vkWaitForFences(device->device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
+
+	vkDestroyFence(device->device, fence, nullptr);
+
+	if (free)
+	{
+		vkFreeCommandBuffers(device->device, device->graphics_queue_command_pool, 1, &commandBuffer);
 	}
 }
