@@ -129,13 +129,19 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR windo
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
+	//finds a transfer only queue
 	int i = 0;
 	for (const auto& queueFamily : queueFamilies) {
-		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT && !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT && 
+			((queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && 
+			((queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) == 0)) {
+			
 			indices.transferFamily = i;
-			i++;
 		}
+		i++;
 	}
+
+	//finds graphics, present, and optionally a compute queue
 	i = 0;
 	for (const auto& queueFamily : queueFamilies) {
 		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
@@ -159,6 +165,15 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR windo
 
 		i++;
 	}
+
+	//make sure that they are set since they might get used
+	if (indices.transferFamily == -1) {
+		indices.transferFamily = 0;
+	}
+	if (indices.computeFamily == -1) {
+		indices.computeFamily = 0;
+	}
+
 
 	return indices;
 }

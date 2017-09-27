@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <thread>
 
 #include <glm\common.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -59,6 +60,8 @@ public:
 struct TerrainQuadData {
 	TerrainQuad terrainQuad;
 	VkDescriptorSet descriptorSet;
+	VkDeviceMemory vertexOffset;
+	VkDeviceMemory indexOffset;
 	TerrainMeshVertices vertices;
 	TerrainMeshIndices indices;
 
@@ -112,6 +115,8 @@ public:
 
 	SimpleTimer drawTimer;
 
+	std::vector<std::thread *> terrainGenerationWorkers;
+
 	Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool, int numCells, int maxLevels, float posX, float posY, float sizeX, float sizeY);
 	~Terrain();
 
@@ -148,9 +153,6 @@ private:
 	void SubdivideTerrain(TerrainQuadData* quad, VkQueue copyQueue, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo);
 	void UnSubdivide(TerrainQuadData* quad);
 
-	void GenerateNewTerrain(TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad);
-	void GenerateTerrainFromExisting(TerrainMeshVertices* parentVerts, TerrainMeshIndices* parentIndices, TerrainMeshVertices* verts, TerrainMeshIndices* indices, Corner_Enum corner, TerrainQuad terrainQuad);
-
 	std::vector<std::string> texFileNames = {
 		"dirt.jpg",
 		"grass.jpg",
@@ -165,3 +167,13 @@ private:
 	//	"SpruceTreeTrunk.png"};
 	//
 };
+
+//mesh generation functions. Looks at all those parameters. 
+void GenerateNewTerrain(TerrainGenerator *terrainGenerator, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, float heightScale);
+
+//Like GenerateNewTerrain but has corrected texture coordinates for subdivisions. Best to leave that function alone.
+void GenerateNewTerrainSubdivision(TerrainGenerator *terrainGenerator, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, Corner_Enum corner, float heightScale);
+
+//not used as it depends on previous terrains, which is great for runtime but not for first generation (since it has dependence on its parents mesh being ready)
+void GenerateTerrainFromExisting(TerrainGenerator &terrainGenerator, TerrainMeshVertices &parentVerts, TerrainMeshIndices &parentIndices,
+	TerrainMeshVertices* verts, TerrainMeshIndices* indices, Corner_Enum corner, TerrainQuad terrainQuad, float heightScale);

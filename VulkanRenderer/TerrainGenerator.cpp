@@ -119,6 +119,7 @@ utils::Image* TerrainGenerator::getImagePtr() {
 
 float TerrainGenerator::SampleHeight(float x, float y, float z) {
 	//return nodeGraph->SampleHeight(x, y, z);
+	//return hillTerrain.GetValue(x, y, z);
 	return finalTerrain.GetValue(x, y, z);
 }
 
@@ -137,7 +138,7 @@ float TerrainGenerator::GetBiomeColor(int channel, float rainVal, float tempVal,
 }
 
 float TerrainGenerator::SampleColor(int channel, float x, float y, float z) {
-
+	return 1.0f;
 	return GetBiomeColor(channel, (rainFallMap.GetValue(x, y, z) + 1.0) / 2.0, (temperatureMap.GetValue(x, y, z) + 1.0) / 2.0, SampleHeight(x,y,z));
 }
 
