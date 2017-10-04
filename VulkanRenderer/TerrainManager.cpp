@@ -33,7 +33,7 @@ void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPas
 
 	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < terrainGridDimentions; j++) {
-			terrains.push_back(new Terrain(&terrainQuadPool, 100, terrainMaxLevels, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
+			terrains.push_back(new Terrain(&terrainQuadPool, 100, terrainMaxLevels, i*NumCells, j*NumCells, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
 		}
 	}
 

@@ -99,9 +99,11 @@ void VulkanApp::mainLoop() {
 		drawFrame();
 		
 		timeManager->EndFrameTimer();
+		//std::cout << "main loop breaker. Break me if you want to stop after every frame!" << std::endl;
 	}
 
 	vkDeviceWaitIdle(vulkanDevice.device);
+
 }
 
 void VulkanApp::cleanup() {
@@ -604,6 +606,7 @@ void VulkanApp::BuildImgui() {
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::Text("Delta Time: %f(s)", timeManager->GetDeltaTime());
 		ImGui::Text("Start Time: %f(s)", timeManager->GetRunningTime());
+		ImGui::Text("Time for last frame %f(s)", timeManager->GetPreviousFrameTime());
 		ImGui::PlotLines("Frame Times", &timeManager->GetFrameTimeHistory()[0], 50, 0, "", timeManager->GetFrameTimeMin(), timeManager->GetFrameTimeMax(), ImVec2(0, 80));
 		ImGui::Text("Camera");
 		ImGui::InputFloat3("position", &scene->GetCamera()->Position.x, 2);

@@ -21,6 +21,7 @@
 #include "MemoryPool.h"
 
 #include "TerrainGenerator.h"
+#include "TerGenNodeGraph.h"
 
 const int SplatMapSize = 1024;
 const int NumCells = 50;
@@ -88,6 +89,7 @@ public:
 
 	glm::vec3 position;
 	glm::vec3 size;
+	glm::i32vec2 noisePosition;
 	float heightScale = 1000;
 
 	VulkanDevice *device;
@@ -112,12 +114,13 @@ public:
 	VulkanBuffer modelUniformBuffer;
 
 	TerrainGenerator* terrainGenerator;
+	NewNodeGraph::TerGenNodeGraph* fastTerrainGraph;
 
 	SimpleTimer drawTimer;
 
 	std::vector<std::thread *> terrainGenerationWorkers;
 
-	Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool, int numCells, int maxLevels, float posX, float posY, float sizeX, float sizeY);
+	Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool, int numCells, int maxLevels, int logicalPos_x, int logicalPos_y, float posX, float posY, float sizeX, float sizeY);
 	~Terrain();
 
 	void InitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, VkQueue copyQueue, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos);
@@ -169,11 +172,11 @@ private:
 };
 
 //mesh generation functions. Looks at all those parameters. 
-void GenerateNewTerrain(TerrainGenerator *terrainGenerator, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, float heightScale);
+void GenerateNewTerrain(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, float heightScale);
 
 //Like GenerateNewTerrain but has corrected texture coordinates for subdivisions. Best to leave that function alone.
-void GenerateNewTerrainSubdivision(TerrainGenerator *terrainGenerator, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, Corner_Enum corner, float heightScale);
+void GenerateNewTerrainSubdivision(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, Corner_Enum corner, float heightScale);
 
 //not used as it depends on previous terrains, which is great for runtime but not for first generation (since it has dependence on its parents mesh being ready)
-void GenerateTerrainFromExisting(TerrainGenerator &terrainGenerator, TerrainMeshVertices &parentVerts, TerrainMeshIndices &parentIndices,
+void GenerateTerrainFromExisting(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices *parentVerts, TerrainMeshIndices *parentIndices,
 	TerrainMeshVertices* verts, TerrainMeshIndices* indices, Corner_Enum corner, TerrainQuad terrainQuad, float heightScale);

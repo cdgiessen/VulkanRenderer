@@ -114,13 +114,24 @@ namespace NewNodeGraph {
 
 	};
 
+	class SelectorNode : Node<float> {
+	public:
+		float GetValue(const double x, const double y, const double z);
+	private:
+		Link<float> input_cutoff;
+		Link<float> input_blendAmount; //not done currently.
+		Link<float> input_a;
+		Link<float> input_b;
+
+	};
+
 	class NoiseSourceNode : public Node<float> {
 	public:
 		NoiseSourceNode();
 
-		float GetValue(const double x, const double y, const  double z, float dummy);
+		float GetValue(const int x, const int y, const  int z, int dummy);
 
-		virtual bool GenerateNoiseSet(int seed, int numCells, glm::vec3 pos, float scaleModifier);
+		virtual bool GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier);
 
 		bool CleanNoiseSet();
 
@@ -137,38 +148,31 @@ namespace NewNodeGraph {
 	};
 
 
-	class SelectorNode : Node<float> {
-	public:
-		float GetValue(const double x, const double y, const double z);
-	private:
-		Link<float> input_cutoff;
-		Link<float> input_blendAmount; //not done currently.
-		Link<float> input_a;
-		Link<float> input_b;
-
-	};
-
-
-
 
 	class TerGenNodeGraph
 	{
 	public:
-		TerGenNodeGraph(int seed, int numCells, glm::vec3 pos, float scaleModifier);
+		TerGenNodeGraph(const TerGenNodeGraph&) = default;
+		TerGenNodeGraph(int seed, int numCells, glm::i32vec2 pos, float scale);
 		~TerGenNodeGraph();
 
 		bool AddNode(std::shared_ptr<INode> node);
 		bool AddNoiseSourceNode(std::shared_ptr<NoiseSourceNode> node);
 
 		void BuildNoiseGraph();
+		void BuildOutputImage();
+
+		void SetLocation(glm::i32vec2 pos, float scale);
 
 		float SampleHeight(const double x, const double y, const double z);
 
 	private:
 		int seed;
-		glm::vec3 pos;
+		glm::i32vec2 pos;
 		float scale;
 		int cellsWide;
+
+		std::vector<float> outputImage;
 
 		std::vector<std::shared_ptr<INode>> nodes;
 		std::shared_ptr<OutputNode> outputNode;

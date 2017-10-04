@@ -105,24 +105,34 @@ namespace NewNodeGraph {
 	}
 	bool ConstantIntNode::SetInputLink(int index, std::shared_ptr<INode> node) { return false; }
 
+	float SelectorNode::GetValue(const double x, const double y, const double z) {
+		//alpha * black + (1 - alpha) * red
+		float alpha = input_cutoff.GetValue(x, y, z);
+		float a = input_a.GetValue(x, y, z);
+		float b = input_b.GetValue(x, y, z);
+
+		return alpha * a + (1 - alpha) + b;
+	}
+
+
 	NoiseSourceNode::NoiseSourceNode() : Node<float>(LinkType::Float), input_frequency(LinkType::Float), input_persistance(LinkType::Float), input_octaveCount(LinkType::Int) {	};
 
-	float NoiseSourceNode::GetValue(const double x, const double y, const  double z, float dummy) {
+	float NoiseSourceNode::GetValue(const int x, const int y, const  int z, int dummy) {
 
-		if (x >= 0 && x < noiseDimention && y >= 0 && y < noiseDimention && z >= 0 && z < noiseDimention) {
+		//if (x >= 0 && x < noiseDimention && y >= 0 && y < noiseDimention && z >= 0 && z < noiseDimention) {
 			float val = noiseSet[(int)(x * noiseDimention * noiseDimention + y * noiseDimention + z)];
 			return val;
-		}
+		//}
 		return -1; //not in bounds. shouldn't happen but who knows (fortunately -1 is a very valid value, but its easy to tell if things went awry if everythign is -1
 	}
 
-	bool NoiseSourceNode::GenerateNoiseSet(int seed, int numCells, glm::vec3 pos, float scaleModifier) {
+	bool NoiseSourceNode::GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) {
 		myNoise->SetSeed(seed);
 		myNoise->SetFrequency(input_frequency.GetValue());
 		myNoise->SetFractalOctaves(input_octaveCount.GetValue());
 		noiseDimention = numCells;
 		
-		noiseSet = myNoise->GetNoiseSet(pos.x, pos.y, pos.z, numCells, numCells, numCells, scaleModifier);
+		noiseSet = myNoise->GetNoiseSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier);
 		return true;
 	}
 
@@ -157,17 +167,7 @@ namespace NewNodeGraph {
 		}
 	}
 
-	float SelectorNode::GetValue(const double x, const double y, const double z) {
-		//alpha * black + (1 - alpha) * red
-		float alpha = input_cutoff.GetValue(x, y, z);
-		float a = input_a.GetValue(x, y, z);
-		float b = input_b.GetValue(x, y, z);
-
-		return alpha * a + (1 - alpha) + b;
-	}
-
-
-	TerGenNodeGraph::TerGenNodeGraph(int seed, int numCells, glm::vec3 pos, float scaleModifier) : seed(seed), cellsWide(numCells), pos(pos), scale(scaleModifier)
+	TerGenNodeGraph::TerGenNodeGraph(int seed, int numCells, glm::i32vec2 pos, float scaleModifier) : seed(seed), cellsWide(numCells), pos(pos), scale(scaleModifier)
 	{
 		outputNode = std::shared_ptr<OutputNode>(new OutputNode());
 		AddNode(outputNode);
@@ -192,7 +192,7 @@ namespace NewNodeGraph {
 	}
 
 	float TerGenNodeGraph::SampleHeight(const double x, const double y, const double z) {
-		if (x >= pos.x && x < pos.x + cellsWide && y >= pos.y && y < pos.y + cellsWide && z >= pos.z && z < pos.z + cellsWide)
+		//if (x >= pos.x && x < pos.x + cellsWide && y >= pos.y && y < pos.y + cellsWide && z >= pos.z && z < pos.z + cellsWide)
 			return outputNode->GetValue(x, y, z, 1.0f);
 		return -0.1;
 	}
@@ -219,7 +219,7 @@ namespace NewNodeGraph {
 
 		outputNode->SetInputLink(0, noiseSource);
 
-		noiseSource->GenerateNoiseSet(seed, cellsWide, pos, scale);
+		//noiseSource->GenerateNoiseSet(seed, cellsWide);
 
 		//Test the noise
 		//for (int i = 0; i < 10; i++)
@@ -233,6 +233,27 @@ namespace NewNodeGraph {
 		//}
 
 
+	}
+
+	void TerGenNodeGraph::BuildOutputImage() {
+		for (auto item : noiseSources)
+		{
+			item->GenerateNoiseSet(seed, cellsWide, pos, scale);
+		}
+
+		outputImage.resize(cellsWide * cellsWide);
+		for (int i = 0; i < cellsWide; i++)
+		{
+			for (int j = 0; j < cellsWide; j++)
+			{
+				outputImage[i * cellsWide + j] = outputNode->GetValue(pos.x + i, 0, pos.y + j, 0.0f);
+			}
+		}
+	}
+
+	void TerGenNodeGraph::SetLocation(glm::i32vec2 pos, float scale) {
+		this->pos = pos;
+		this->scale = scale;
 	}
 
 }

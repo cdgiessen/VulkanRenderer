@@ -19,6 +19,7 @@ void TimeManager::StartFrameTimer() {
 void TimeManager::EndFrameTimer() {
 	frameTimer.EndTimer();
 
+	prevFrameTime = frameTimer.GetElapsedTimeMicroSeconds() / 1.0e6;
 	deltaTime = frameTimer.GetElapsedTimeNanoSeconds() / 1.0e9;
 	timeSinceStart = std::chrono::duration_cast<std::chrono::microseconds>(frameTimer.GetEndTime() - startTime).count() / 1.0e6;
 
@@ -47,6 +48,10 @@ double TimeManager::GetRunningTime() {
 
 TimingsHistory TimeManager::GetFrameTimeHistory() {
 	return frameTimes;
+}
+
+double TimeManager::GetPreviousFrameTime() {
+	return prevFrameTime;
 }
 
 float TimeManager::GetFrameTimeMax(){ return frameTimeMax;}

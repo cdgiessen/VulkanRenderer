@@ -181,6 +181,19 @@ namespace initializers
 		return rect2D;
 	}
 
+	inline VkBufferCopy bufferCopyCreate(
+		VkDeviceSize size,
+		VkDeviceSize srcOffset,
+		VkDeviceSize dstOffset
+	)
+	{
+		VkBufferCopy bufferRegion;
+		bufferRegion.size = size;
+		bufferRegion.srcOffset = srcOffset;
+		bufferRegion.dstOffset = dstOffset;
+		return bufferRegion;
+	}
+
 	inline VkBufferCreateInfo bufferCreateInfo()
 	{
 		VkBufferCreateInfo bufCreateInfo{};
