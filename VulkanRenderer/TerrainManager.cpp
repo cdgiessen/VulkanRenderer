@@ -30,10 +30,15 @@ void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPas
 		water->CleanUp();
 	}
 	waters.clear();
-
+	int numCells = 64;
+	int logicalWidth = numCells * glm::pow(2, terrainMaxLevels);
 	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < terrainGridDimentions; j++) {
-			terrains.push_back(new Terrain(&terrainQuadPool, 100, terrainMaxLevels, i*NumCells, j*NumCells, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
+			terrains.push_back(new Terrain(&terrainQuadPool, numCells, terrainMaxLevels,
+				glm::vec2((i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2), //position
+				glm::vec2(terrainWidth, terrainWidth), //size
+				glm::i32vec2(i * logicalWidth, j * logicalWidth), //noise position
+				glm::i32vec2(logicalWidth, logicalWidth))); //noiseSize 
 		}
 	}
 
@@ -45,7 +50,7 @@ void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPas
 	
 	for (int i = 0; i < terrainGridDimentions; i++) {
 		for (int j = 0; j < terrainGridDimentions; j++) {
-			waters.push_back(new Water(200, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
+			waters.push_back(new Water(64, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
 		}
 	}
 

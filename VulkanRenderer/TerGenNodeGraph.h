@@ -30,9 +30,9 @@ namespace NewNodeGraph {
 	class INode {
 	public:
 		virtual LinkType GetNodeType() =0;
-		virtual float GetValue(const double x, const double y, const  double z, float dummy) =0;
-		virtual int GetValue(const double x, const double y, const  double z, int dummy) =0;
-		virtual double GetValue(const double x, const double y, const  double z, double dummy) =0;
+		virtual float GetValue(const int x, const int y, const int z, float dummy) =0;
+		virtual float GetValue(const int x, const int y, const int z, int dummy) =0;
+		virtual double GetValue(const int x, const int y, const int z, double dummy) =0;
 	};
 
 	template<typename T>
@@ -41,7 +41,7 @@ namespace NewNodeGraph {
 
 		Link(LinkType type);
 
-		T GetValue(double x, double y, double z);
+		T GetValue(const int x, const int y, const int z);
 
 		T GetValue();
 
@@ -64,9 +64,10 @@ namespace NewNodeGraph {
 		LinkType GetNodeType();
 
 		//virtual T GetValue(const double x, const double y, const  double z);
-		virtual float GetValue(const double x, const double y, const  double z, float dummy);
-		virtual int GetValue(const double x, const double y, const  double z, int dummy);
-		virtual double GetValue(const double x, const double y, const  double z, double dummy);
+		virtual float GetValue(const int x, const int y, const int z, float dummy);
+		virtual float GetValue(const int x, const int y, const int z, int dummy);
+		virtual double GetValue(const int x, const int y, const int z, double dummy);
+	
 		virtual bool SetInputLink(int index, std::shared_ptr<INode> node) = 0;
 
 	private:
@@ -78,7 +79,7 @@ namespace NewNodeGraph {
 	public:
 		OutputNode();
 
-		float GetValue(const double x, const double y, const  double z, float dummy);
+		float GetValue(const int x, const int y, const int z, float dummy);
 
 		bool SetInputLink(int index, std::shared_ptr<INode> node);
 
@@ -90,7 +91,7 @@ namespace NewNodeGraph {
 	public:
 		ConstantFloatNode();
 
-		float GetValue(const double x, const double y, const  double z, float dummy);
+		float GetValue(const int x, const int y, const int z, float dummy);
 		void SetValue(const float value);
 
 		bool SetInputLink(int index, std::shared_ptr<INode> node);
@@ -100,23 +101,9 @@ namespace NewNodeGraph {
 
 	};
 
-	class ConstantIntNode : public Node<int> {
-	public:
-		ConstantIntNode();
-
-		int GetValue(const double x, const double y, const  double z, int dummy);
-		void SetValue(const int value);
-
-		bool SetInputLink(int index, std::shared_ptr<INode> node);
-
-	private:
-		int constantValue;
-
-	};
-
 	class SelectorNode : Node<float> {
 	public:
-		float GetValue(const double x, const double y, const double z);
+		float GetValue(const int x, const int y, const int z);
 	private:
 		Link<float> input_cutoff;
 		Link<float> input_blendAmount; //not done currently.
@@ -129,7 +116,7 @@ namespace NewNodeGraph {
 	public:
 		NoiseSourceNode();
 
-		float GetValue(const int x, const int y, const  int z, int dummy);
+		float GetValue(const int x, const int y, const int z, float dummy);
 
 		virtual bool GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier);
 
@@ -160,11 +147,9 @@ namespace NewNodeGraph {
 		bool AddNoiseSourceNode(std::shared_ptr<NoiseSourceNode> node);
 
 		void BuildNoiseGraph();
-		void BuildOutputImage();
+		void BuildOutputImage(glm::i32vec2 pos, float scale);
 
-		void SetLocation(glm::i32vec2 pos, float scale);
-
-		float SampleHeight(const double x, const double y, const double z);
+		float SampleHeight(const int x, const int y, const int z);
 
 	private:
 		int seed;

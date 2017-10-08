@@ -51,10 +51,34 @@ void Texture::loadFromNoiseUtilImage(utils::Image* image) {
 			pixels[(i * imgHeight + j)*4 + 3] = image->GetValue(j, i).alpha;
 		}
 	}
+}
+
+void Texture::loadFromGreyscalePixelData(int width, int height, float* in_pixels) {
+	if (in_pixels == nullptr) {
+		std::cout << "Noise Utils Image Null, Cannot load null image" << std::endl;
+		return;
+	}
+
+	int imgWidth = width;
+	int imgHeight = height;
+
 	this->width = static_cast<uint32_t>(imgWidth);
 	this->height = static_cast<uint32_t>(imgHeight);
 
 	this->texImageSize = imgWidth * imgHeight * 4;
+
+	pixels = (stbi_uc*)malloc(texImageSize);
+
+	for (int i = 0; i < width; i++)
+	{
+		for (int j = 0; j < height; j++)
+		{
+			pixels[(i * imgHeight + j) * 4 + 0] = (stbi_uc)(in_pixels[i * imgHeight + j] * 128 + 128);
+			pixels[(i * imgHeight + j) * 4 + 1] = (stbi_uc)(in_pixels[i * imgHeight + j] * 128 + 128);
+			pixels[(i * imgHeight + j) * 4 + 2] = (stbi_uc)(in_pixels[i * imgHeight + j] * 128 + 128);
+			pixels[(i * imgHeight + j) * 4 + 3] = 1;
+		}
+	}
 }
 
 TextureArray::TextureArray() {

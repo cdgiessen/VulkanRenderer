@@ -79,9 +79,9 @@ void Camera::ProcessMouseScroll(float yoffset)
 
 void Camera::ChangeCameraSpeed(Camera_Movement direction) {
 	if (direction == UP)
-		MovementSpeed += 1.0f;
+		MovementSpeed += 4.0f;
 	if (direction == DOWN)
-		MovementSpeed -= 1.0f;
+		MovementSpeed -= 4.0f;
 	if (MovementSpeed <= 0) {
 		MovementSpeed = 0.25f;
 	}

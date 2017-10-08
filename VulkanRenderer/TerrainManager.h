@@ -36,8 +36,8 @@ private:
 
 	bool show_terrain_manager_window = true;
 	bool recreateTerrain = false;
-	float terrainWidth = 5000;
-	int terrainMaxLevels = 3;
+	float terrainWidth = 1000;
+	int terrainMaxLevels = 2;
 	int terrainGridDimentions = 1;
 	SimpleTimer terrainUpdateTimer;
 

@@ -1,6 +1,7 @@
 #include "VulkanApp.h"
 
 int main() {
+
 	VulkanApp* vkApp;
 	try {
 		vkApp = new VulkanApp();

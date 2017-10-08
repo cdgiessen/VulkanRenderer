@@ -4,28 +4,31 @@
 
 
 TerrainQuad::TerrainQuad() {
-	pos = glm::vec3(0);
-	size = glm::vec3(0);
+	pos = glm::vec2(0);
+	size = glm::vec2(0);
 	level = 0;
 	isSubdivided = false;
 }
 
 TerrainQuad::~TerrainQuad() {}
 
-void TerrainQuad::init(float posX, float posY, float sizeX, float sizeY, int level, int subDivPosX, int subDivPosZ, float centerHeightValue) {
-	pos = glm::vec3(posX, 0, posY);
-	size = glm::vec3(sizeX, 0, sizeY);
+void TerrainQuad::init(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, glm::i32vec2 subDivPos, float centerHeightValue) {
+	this->pos = pos;
+	this->size = size;
+	this->logicalPos = logicalPos;
+	this->logicalSize = logicalSize;
+	this->subDivPos = subDivPos;
 	this->level = level;
 	isSubdivided = false;
-	this->subDivPosX = subDivPosX;
-	this->subDivPosZ = subDivPosZ;
 	heightValAtCenter = centerHeightValue;
-	modelUniformObject.model = glm::translate(glm::mat4(), pos);
+	modelUniformObject.model = glm::translate(glm::mat4(), glm::vec3(pos.x, 0, pos.y));
 	modelUniformObject.normal = glm::mat4();// glm::transpose(glm::inverse(glm::mat3(modelUniformObject.model))));
 
 }
 
-Terrain::Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool, int numCells, int maxLevels, int logicalPos_x, int logicalPos_y, float posX, float posY, float sizeX, float sizeY) : maxLevels(maxLevels)
+Terrain::Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool, int numCells, int maxLevels, 
+	glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize) 
+	: maxLevels(maxLevels) , position(pos), size(size), noisePosition(noisePosition), noiseSize(noiseSize)
 {
 	//simple calculation right now, does the absolute max number of quads possible with given max level
 	//in future should calculate the actual number of max quads, based on distance calculation
@@ -33,20 +36,19 @@ Terrain::Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool,
 		maxNumQuads = 1;
 	}
 	else {
-		maxNumQuads = 1 + 16 + + 25 + 50 * maxLevels; //with current quad density this is the average upper bound (kidna a guess but its probably more than enough for now (had to add 25 cause it wasn't enough lol!)
-		//maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads
+		//with current quad density this is the average upper bound (kidna a guess but its probably more than enough for now (had to add 25 cause it wasn't enough lol!)
+		maxNumQuads = 1 + 16 + + 25 + 50 * maxLevels; 
+		//maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads (like if everything was subdivided)
 	}
 	//terrainQuads = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
 	terrainQuads = pool;
 	quadHandles.reserve(maxNumQuads);
 	//terrainGenerationWorkers = std::vector < std::thread>(maxNumQuads);
 
-	position = glm::vec3(posX, 0, posY);
-	size = glm::vec3(sizeX, 0, sizeY);
-	noisePosition = glm::i32vec2(logicalPos_x, logicalPos_y);
+	terrainGenerator = new TerrainGenerator(numCells, SplatMapSize, glm::vec3(position.x, 0, position.y) , glm::vec3(size.x, 0, size.y));
+	fastTerrainGraph = new NewNodeGraph::TerGenNodeGraph(1337, numCells + 1 , noisePosition, 1.0f);
+	fastTerrainGraph->BuildNoiseGraph();
 
-	terrainGenerator = new TerrainGenerator(numCells, SplatMapSize, position, size);
-	fastTerrainGraph = new NewNodeGraph::TerGenNodeGraph(1337, numCells, glm::i32vec2(0, 0), 1.0f);
 	LoadSplatMapFromGenerator();
 	LoadTextureArray();
 
@@ -64,7 +66,8 @@ Terrain::~Terrain() {
 }
 
 
-void Terrain::InitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, VkQueue copyQueue, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos)
+void Terrain::InitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, VkQueue copyQueue, 
+	uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos)
 {
 	this->device = device;
 
@@ -77,7 +80,7 @@ void Terrain::InitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, 
 
 	TerrainQuadData* q = terrainQuads->allocate();
 	quadHandles.push_back(q);
-	rootQuad = InitTerrainQuad(q, position, size, 0, global, lighting);
+	rootQuad = InitTerrainQuad(q, position, size, noisePosition, noiseSize, 0, global, lighting);
 
 	UpdateTerrainQuad(rootQuad, cameraPos, copyQueue, global, lighting);
 
@@ -118,9 +121,10 @@ void Terrain::UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer
 
 bool Terrain::UpdateTerrainQuad(TerrainQuadData* quad, glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo) {
 	
-	glm::vec3 center = glm::vec3(quad->terrainQuad.pos.x + quad->terrainQuad.size.x / 2.0f, quad->terrainQuad.heightValAtCenter, quad->terrainQuad.pos.z + quad->terrainQuad.size.z / 2.0f);
+	glm::vec3 center = glm::vec3(quad->terrainQuad.pos.x + quad->terrainQuad.size.x / 2.0f, quad->terrainQuad.heightValAtCenter, quad->terrainQuad.pos.y + quad->terrainQuad.size.y / 2.0f);
 	float distanceToViewer = glm::distance(viewerPos, center);
 	bool shouldUpdateBuffers = false;
+
 
 	if (!quad->terrainQuad.isSubdivided) { //can only subdivide if this quad isn't already subdivided
 		if (distanceToViewer < quad->terrainQuad.size.x * 2.0f && quad->terrainQuad.level < maxLevels) { //must be 
@@ -179,7 +183,6 @@ void Terrain::CleanUp()
 void Terrain::LoadSplatMapFromGenerator() {
 	terrainSplatMap = new Texture();
 	terrainSplatMap->loadFromNoiseUtilImage(terrainGenerator->getImagePtr());
-	
 }
 
 void Terrain::LoadTextureArray() {
@@ -226,6 +229,29 @@ void Terrain::SetupImage()
 	}
 	else
 		throw std::runtime_error("failed to load terrain texture array!");
+
+	//FastNoiseSIMD* testNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	//float * testData1 = testNoise->GetPerlinFractalSet(0, 0, 0, 128, 1, 128, 1);
+	//float * testData2 = testNoise->GetPerlinFractalSet(0, 0, 0, 128, 1, 128, 2);
+	//float * testData3 = testNoise->GetPerlinFractalSet(0, 0, 0, 128, 1, 128, 0.5);
+	//float * testData4 = testNoise->GetPerlinFractalSet(-10, 0, -10, 128, 1, 128, 1);
+	//float * testData5 = testNoise->GetPerlinFractalSet(128, 0, 0, 128, 1, 128, 1);
+	//float * testData6 = testNoise->GetPerlinFractalSet(64, 0, 64, 128, 1, 128, 1);
+	//
+	//Texture* testImage0 = new Texture(); testImage0->loadFromGreyscalePixelData(128, 128, testData1);
+	//Texture* testImage1 = new Texture(); testImage1->loadFromGreyscalePixelData(128, 128, testData2);
+	//Texture* testImage2 = new Texture(); testImage2->loadFromGreyscalePixelData(128, 128, testData3);
+	//Texture* testImage3 = new Texture(); testImage3->loadFromGreyscalePixelData(128, 128, testData4);
+	//Texture* testImage4 = new Texture(); testImage4->loadFromGreyscalePixelData(128, 128, testData5);
+	//Texture* testImage5 = new Texture(); testImage5->loadFromGreyscalePixelData(128, 128, testData6);
+	//
+	//VulkanTexture2D testVulkanImage1; testVulkanImage1.loadFromTexture(testImage0, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
+	//VulkanTexture2D testVulkanImage2; testVulkanImage2.loadFromTexture(testImage1, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
+	//VulkanTexture2D testVulkanImage3; testVulkanImage3.loadFromTexture(testImage2, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
+	//VulkanTexture2D testVulkanImage4; testVulkanImage4.loadFromTexture(testImage3, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
+	//VulkanTexture2D testVulkanImage5; testVulkanImage5.loadFromTexture(testImage4, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
+	//VulkanTexture2D testVulkanImage6; testVulkanImage6.loadFromTexture(testImage5, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
+
 }
 
 void Terrain::SetupModel() 
@@ -458,7 +484,7 @@ void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
 	//vkDestroyBuffer(device->device, indexBuffer.buffer, nullptr);
 	//vkFreeMemory(device->device, indexBuffer.bufferMemory, nullptr);
 
-	while(terrainGenerationWorkers.size() > 0){
+	while (terrainGenerationWorkers.size() > 0) {
 		terrainGenerationWorkers.front()->join();
 		terrainGenerationWorkers.front() = std::move(terrainGenerationWorkers.back());
 		terrainGenerationWorkers.pop_back();
@@ -466,7 +492,7 @@ void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
 
 	SimpleTimer cpuDataTime, gpuTransferTime;
 	cpuDataTime.StartTimer();
-	
+
 	std::vector<VkBufferCopy> vertexCopyRegions;
 	std::vector<VkBufferCopy> indexCopyRegions;
 
@@ -482,7 +508,7 @@ void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
 			if (quadHandles[i] != PrevQuadHandles[i]) {
 				verts[i] = quadHandles[i]->vertices;
 				inds[i] = quadHandles[i]->indices;
-				
+
 				VkBufferCopy vBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices));
 				vertexCopyRegions.push_back(vBufferRegion);
 
@@ -494,10 +520,10 @@ void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
 			verts[i] = quadHandles[i]->vertices;
 			inds[i] = quadHandles[i]->indices;
 
-			VkBufferCopy vBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices));;
+			VkBufferCopy vBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices));
 			vertexCopyRegions.push_back(vBufferRegion);
 
-			VkBufferCopy iBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices));;
+			VkBufferCopy iBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices));
 			indexCopyRegions.push_back(iBufferRegion);
 		}
 	}
@@ -507,74 +533,78 @@ void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
 				verts[i] = quadHandles[i]->vertices;
 				inds[i] = quadHandles[i]->indices;
 
-				VkBufferCopy vBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices));;
+				VkBufferCopy vBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices));
 				vertexCopyRegions.push_back(vBufferRegion);
 
-				VkBufferCopy iBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices));;
+				VkBufferCopy iBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices));
 				indexCopyRegions.push_back(iBufferRegion);
 			}
 		}
 	}
 	cpuDataTime.EndTimer();
 	gpuTransferTime.StartTimer();
-	// Use staging buffer to move vertex and index buffer to device local memory
-	// Create staging buffers
-	VulkanBuffer vertexStaging, indexStaging;
 
-	// Vertex buffer
-	VK_CHECK_RESULT(device->createBuffer(
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-		&vertexStaging,
-		vBufferSize,
-		verts.data()));
+	if (vertexCopyRegions.size() > 0 || indexCopyRegions.size() > 0)
+	{
+		// Use staging buffer to move vertex and index buffer to device local memory
+		// Create staging buffers
+		VulkanBuffer vertexStaging, indexStaging;
 
-	// Index buffer
-	VK_CHECK_RESULT(device->createBuffer(
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-		&indexStaging,
-		iBufferSize,
-		inds.data()));
+		// Vertex buffer
+		VK_CHECK_RESULT(device->createBuffer(
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+			&vertexStaging,
+			vBufferSize,
+			verts.data()));
 
-	// Copy from staging buffers
-	VkCommandBuffer copyCmd = device->createCommandBuffer(device->transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+		// Index buffer
+		VK_CHECK_RESULT(device->createBuffer(
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+			&indexStaging,
+			iBufferSize,
+			inds.data()));
 
-	//VkBufferCopy copyRegion{};
+		// Copy from staging buffers
+		VkCommandBuffer copyCmd = device->createCommandBuffer(device->transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
-	//copyRegion.size = vertexBuffer.size;
-	vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, vertexBuffer.buffer, vertexCopyRegions.size(), vertexCopyRegions.data());
+		//VkBufferCopy copyRegion{};
 
-	//copyRegion.size = indexBuffer.size;
-	vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indexBuffer.buffer, indexCopyRegions.size(), indexCopyRegions.data());
+		//copyRegion.size = vertexBuffer.size;
+		vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, vertexBuffer.buffer, vertexCopyRegions.size(), vertexCopyRegions.data());
 
-	device->flushCommandBuffer(device->transfer_queue_command_pool, copyCmd, copyQueue);
+		//copyRegion.size = indexBuffer.size;
+		vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indexBuffer.buffer, indexCopyRegions.size(), indexCopyRegions.data());
 
-	// Destroy staging resources
-	vkDestroyBuffer(device->device, vertexStaging.buffer, nullptr);
-	vkFreeMemory(device->device, vertexStaging.bufferMemory, nullptr);
-	vkDestroyBuffer(device->device, indexStaging.buffer, nullptr);
-	vkFreeMemory(device->device, indexStaging.bufferMemory, nullptr);
+		device->flushCommandBuffer(device->transfer_queue_command_pool, copyCmd, copyQueue);
 
+		// Destroy staging resources
+		vkDestroyBuffer(device->device, vertexStaging.buffer, nullptr);
+		vkFreeMemory(device->device, vertexStaging.bufferMemory, nullptr);
+		vkDestroyBuffer(device->device, indexStaging.buffer, nullptr);
+		vkFreeMemory(device->device, indexStaging.bufferMemory, nullptr);
+	}
 	gpuTransferTime.EndTimer();
 
-	std::cout << "CPU " << cpuDataTime.GetElapsedTimeMicroSeconds() << std::endl;
-	std::cout << "GPU " << gpuTransferTime.GetElapsedTimeMicroSeconds() << std::endl;
+	std::cout << "Create copy command: " << cpuDataTime.GetElapsedTimeMicroSeconds() << std::endl;
+	std::cout << "Execute buffer copies: " << gpuTransferTime.GetElapsedTimeMicroSeconds() << std::endl;
 }
 
 
-
-TerrainQuadData* Terrain::InitTerrainQuad(TerrainQuadData* q, glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo) {
+//mainly used for root quad
+TerrainQuadData* Terrain::InitTerrainQuad(TerrainQuadData* q, glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, VulkanBuffer &gbo, VulkanBuffer &lbo) {
 	numQuads++;
 	
-	q->terrainQuad.init(position.x, position.z, size.x, size.z, level, 0, 0, heightScale * terrainGenerator->SampleHeight(position.x + size.x/2, position.y, position.z + size.z/2));
+	q->terrainQuad.init(position, size, logicalPos, logicalSize, level, glm::i32vec2(0,0), heightScale * terrainGenerator->SampleHeight(position.x + size.x / 2, position.y, position.y + size.y / 2));
 	//q->terrainQuad.CreateTerrainMesh(&q->vertices, &q->indices);
 
 	//SimpleTimer terrainQuadCreateTime;
 	//terrainQuadCreateTime.StartTimer();
-	//GenerateNewTerrain( terrainGenerator, fastTerrainGraph, &q->vertices, &q->indices, q->terrainQuad, heightScale);
-	std::thread* worker = new std::thread(GenerateNewTerrain, terrainGenerator, fastTerrainGraph, &q->vertices, &q->indices, q->terrainQuad, heightScale);
-	terrainGenerationWorkers.push_back(worker);
+	GenerateNewTerrain( terrainGenerator, fastTerrainGraph, &q->vertices, &q->indices, q->terrainQuad, heightScale, maxLevels);
+	
+	//std::thread* worker = new std::thread(GenerateNewTerrain, terrainGenerator, fastTerrainGraph, &q->vertices, &q->indices, q->terrainQuad, heightScale, maxLevels);
+	//terrainGenerationWorkers.push_back(worker);
 	
 	//terrainQuadCreateTime.EndTimer();
 	//std::cout << "Original " << terrainQuadCreateTime.GetElapsedTimeMicroSeconds() << std::endl;
@@ -603,19 +633,20 @@ TerrainQuadData* Terrain::InitTerrainQuad(TerrainQuadData* q, glm::vec3 position
 	return q;
 }
 
-TerrainQuadData* Terrain::InitTerrainQuadFromParent(TerrainQuadData* parent, TerrainQuadData* q, Corner_Enum corner, glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo, int subDivPosX, int subDivPosZ) {
+TerrainQuadData* Terrain::InitTerrainQuadFromParent(TerrainQuadData* parent, TerrainQuadData* q, Corner_Enum corner, glm::vec2 position, glm::vec2 size, 
+	glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, VulkanBuffer &gbo, VulkanBuffer &lbo, glm::i32vec2 subDivPos) {
 	
-	q->terrainQuad.init(position.x, position.z, size.x, size.z, level, subDivPosX, subDivPosZ, heightScale * terrainGenerator->SampleHeight(position.x + size.x/2, position.y, position.z + size.z/2));
+	q->terrainQuad.init(position, size, logicalPos, logicalSize, level, subDivPos, heightScale * terrainGenerator->SampleHeight(position.x + size.x/2, position.y, position.y + size.y/2));
 	//q->terrainQuad.CreateTerrainMeshFromParent(&parent->vertices, &parent->indices, &q->vertices, &q->indices, corner);
 
 	//SimpleTimer terrainQuadCreateTime;
 	//terrainQuadCreateTime.StartTimer();
 
-	std::thread *worker = new std::thread(GenerateNewTerrainSubdivision, terrainGenerator, fastTerrainGraph, &q->vertices, &q->indices, q->terrainQuad, corner, heightScale);
-	terrainGenerationWorkers.push_back(worker);
-	//GenerateTerrainFromExisting( terrainGenerator, &parent->vertices, &parent->indices, &q->vertices, &q->indices, corner, q->terrainQuad, heightScale);
-	//GenerateNewTerrainSubdivision( terrainGenerator, &q->vertices, &q->indices, q->terrainQuad, corner, heightScale);
-
+	//std::thread *worker = new std::thread(GenerateNewTerrainSubdivision, terrainGenerator, fastTerrainGraph, &q->vertices, &q->indices, q->terrainQuad, corner, heightScale, maxLevels);
+	//terrainGenerationWorkers.push_back(worker);
+	//GenerateTerrainFromExisting( terrainGenerator, &parent->vertices, &parent->indices, &q->vertices, &q->indices, corner, q->terrainQuad, heightScale, maxLevels);
+	GenerateNewTerrainSubdivision(terrainGenerator, fastTerrainGraph, &q->vertices, &q->indices, q->terrainQuad, corner, heightScale, maxLevels);
+	
 	//terrainQuadCreateTime.EndTimer();
 	//std::cout << "From Parent " << terrainQuadCreateTime.GetElapsedTimeMicroSeconds() << std::endl;
 	//std::vector<VkDescriptorSetLayout> layouts;
@@ -646,8 +677,11 @@ void Terrain::SubdivideTerrain(TerrainQuadData* quad, VkQueue copyQueue, glm::ve
 	quad->terrainQuad.isSubdivided = true;
 	numQuads += 4;
 
-	glm::vec3 new_pos = glm::vec3(quad->terrainQuad.pos.x, 0, quad->terrainQuad.pos.z);
-	glm::vec3 new_size = glm::vec3(quad->terrainQuad.size.x/2.0, 0, quad->terrainQuad.size.z/2.0);
+	glm::vec2 new_pos = glm::vec2(quad->terrainQuad.pos.x, quad->terrainQuad.pos.y);
+	glm::vec2 new_size = glm::vec2(quad->terrainQuad.size.x/2.0, quad->terrainQuad.size.y/2.0);
+	
+	glm::i32vec2 new_lpos = glm::i32vec2(quad->terrainQuad.logicalPos.x, quad->terrainQuad.logicalPos.y);
+	glm::i32vec2 new_lsize = glm::i32vec2(quad->terrainQuad.logicalSize.x / 2.0, quad->terrainQuad.logicalSize.y / 2.0);
 
 	TerrainQuadData* qUR = terrainQuads->allocate();
 	TerrainQuadData* qUL = terrainQuads->allocate();
@@ -658,10 +692,17 @@ void Terrain::SubdivideTerrain(TerrainQuadData* quad, VkQueue copyQueue, glm::ve
 	quadHandles.push_back(qDR);
 	quadHandles.push_back(qDL);
 
-	quad->subQuads.UpRight = InitTerrainQuadFromParent(quad, qUR, Corner_Enum::uR,glm::vec3(new_pos.x, 0, new_pos.z), new_size, quad->terrainQuad.level + 1, gbo, lbo, quad->terrainQuad.subDivPosX * 2, quad->terrainQuad.subDivPosZ * 2);
-	quad->subQuads.UpLeft = InitTerrainQuadFromParent(quad, qUL, Corner_Enum::uL, glm::vec3(new_pos.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo, quad->terrainQuad.subDivPosX * 2, quad->terrainQuad.subDivPosZ * 2 + 1);
-	quad->subQuads.DownRight = InitTerrainQuadFromParent(quad, qDR, Corner_Enum::dR, glm::vec3(new_pos.x + new_size.x, 0, new_pos.z), new_size, quad->terrainQuad.level + 1, gbo, lbo, quad->terrainQuad.subDivPosX * 2 + 1, quad->terrainQuad.subDivPosZ * 2);
-	quad->subQuads.DownLeft = InitTerrainQuadFromParent(quad, qDL, Corner_Enum::dL, glm::vec3(new_pos.x + new_size.x, 0, new_pos.z + new_size.z), new_size, quad->terrainQuad.level + 1, gbo, lbo, quad->terrainQuad.subDivPosX * 2 + 1, quad->terrainQuad.subDivPosZ * 2 + 1);
+	quad->subQuads.UpRight = InitTerrainQuadFromParent(quad, qUR, Corner_Enum::uR, glm::vec2(new_pos.x, new_pos.y), new_size, 
+		glm::i32vec2(new_lpos.x, new_lpos.y), new_lsize, quad->terrainQuad.level + 1, gbo, lbo, glm::i32vec2(quad->terrainQuad.subDivPos.x * 2, quad->terrainQuad.subDivPos.y * 2));
+
+	quad->subQuads.UpLeft = InitTerrainQuadFromParent(quad, qUL, Corner_Enum::uL, glm::vec2(new_pos.x, new_pos.y + new_size.y), new_size, 
+		glm::i32vec2(new_lpos.x, new_lpos.y + new_lsize.y), new_lsize, quad->terrainQuad.level + 1, gbo, lbo, glm::i32vec2(quad->terrainQuad.subDivPos.x * 2, quad->terrainQuad.subDivPos.y * 2 + 1));
+
+	quad->subQuads.DownRight = InitTerrainQuadFromParent(quad, qDR, Corner_Enum::dR, glm::vec2(new_pos.x + new_size.x, new_pos.y), new_size, 
+		glm::i32vec2(new_lpos.x + new_lsize.x, new_lpos.y), new_lsize, quad->terrainQuad.level + 1, gbo, lbo, glm::i32vec2(quad->terrainQuad.subDivPos.x * 2 + 1, quad->terrainQuad.subDivPos.y * 2));
+
+	quad->subQuads.DownLeft = InitTerrainQuadFromParent(quad, qDL, Corner_Enum::dL, glm::vec2(new_pos.x + new_size.x, new_pos.y + new_size.y), new_size, 
+		glm::i32vec2(new_lpos.x + new_lsize.x, new_lpos.y + new_lsize.y), new_lsize, quad->terrainQuad.level + 1, gbo, lbo, glm::i32vec2(quad->terrainQuad.subDivPos.x * 2 + 1, quad->terrainQuad.subDivPos.y * 2 + 1));
 
 	UpdateTerrainQuad(quad->subQuads.UpRight, viewerPos, copyQueue, gbo, lbo);
 	UpdateTerrainQuad(quad->subQuads.UpLeft, viewerPos, copyQueue, gbo, lbo);
@@ -753,7 +794,7 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], Terr
 			//Vertex normals (yay geometry shaders!)
 			//vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugNormals);
 			//vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
-		}
+		}	
 	}
 	drawTimer.EndTimer();
 
@@ -800,29 +841,29 @@ glm::vec3 CalcNormal(double L, double R, double U, double D, double UL, double D
 
 
 
-void GenerateNewTerrain(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, float heightScale) {
+void GenerateNewTerrain(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels) {
 	int numCells = NumCells;
 	
 	NewNodeGraph::TerGenNodeGraph myGraph = NewNodeGraph::TerGenNodeGraph(*fastGraph);
-	myGraph.SetLocation(glm::i32vec2(terrainQuad.pos.x, terrainQuad.pos.z), 1.0f);
+	myGraph.BuildOutputImage(terrainQuad.logicalPos, 1.0/glm::pow(2.0, terrainQuad.level));
 
-	float xLoc = terrainQuad.pos.x, zLoc = terrainQuad.pos.z, xSize = terrainQuad.size.x, zSize = terrainQuad.size.z;
+	float xLoc = terrainQuad.pos.x, zLoc = terrainQuad.pos.y, xSize = terrainQuad.size.x, zSize = terrainQuad.size.y;
 
 	for (int i = 0; i <= numCells; i++)
 	{
 		for (int j = 0; j <= numCells; j++)
 		{
-			float value = (terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0.0, (float)j *(zSize) / (float)numCells + (zLoc)));
-			
-			float hL = terrainGenerator->SampleHeight((float)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc)*heightScale;
-			float hR = terrainGenerator->SampleHeight((float)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc)*heightScale;
-			float hD = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j + 1)*(zSize) / (float)numCells + zLoc)*heightScale;
-			float hU = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j - 1)*(zSize) / (float)numCells + zLoc)*heightScale;
-			glm::vec3 normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
+			//float value = (terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0.0, (float)j *(zSize) / (float)numCells + (zLoc)));
+			//
+			//float hL = terrainGenerator->SampleHeight((float)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc)*heightScale;
+			//float hR = terrainGenerator->SampleHeight((float)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc)*heightScale;
+			//float hD = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j + 1)*(zSize) / (float)numCells + zLoc)*heightScale;
+			//float hU = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j - 1)*(zSize) / (float)numCells + zLoc)*heightScale;
+			glm::vec3 normal = glm::vec3(0, 1, 0); // glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
 
 
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 0] = (float)i *(xSize) / (float)numCells;
-			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 1] = (float)value * heightScale;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 1] = (float)myGraph.SampleHeight(i, 0 , j) * heightScale;
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 2] = (float)j * (zSize) / (float)numCells;
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 3] = normal.x;
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 4] = normal.y;
@@ -850,36 +891,59 @@ void GenerateNewTerrain(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGen
 			(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
 		}
 	}
+
+	for (int i = 0; i < indCount / 3; i++) {
+		glm::vec3 p1 = glm::vec3((*verts)[(*indices)[i * 3 + 0] * vertElementCount + 0], (*verts)[(*indices)[i * 3 + 0] * vertElementCount + 1], (*verts)[(*indices)[i * 3 + 0] * vertElementCount + 2]);
+		glm::vec3 p2 = glm::vec3((*verts)[(*indices)[i * 3 + 1] * vertElementCount + 0], (*verts)[(*indices)[i * 3 + 1] * vertElementCount + 1], (*verts)[(*indices)[i * 3 + 1] * vertElementCount + 2]);
+		glm::vec3 p3 = glm::vec3((*verts)[(*indices)[i * 3 + 2] * vertElementCount + 0], (*verts)[(*indices)[i * 3 + 2] * vertElementCount + 1], (*verts)[(*indices)[i * 3 + 2] * vertElementCount + 2]);
+
+		glm::vec3 t1 = p2 - p1;
+		glm::vec3 t2 = p3 - p1;
+
+		glm::vec3 normal(glm::cross(t1, t2));
+
+		(*verts)[(*indices)[i * 3 + 0] * vertElementCount + 3] += normal.x; (*verts)[(*indices)[i * 3 + 0] * vertElementCount + 4] += normal.y; (*verts)[(*indices)[i * 3 + 0] * vertElementCount + 5] += normal.z;
+		(*verts)[(*indices)[i * 3 + 1] * vertElementCount + 3] += normal.x; (*verts)[(*indices)[i * 3 + 1] * vertElementCount + 4] += normal.y; (*verts)[(*indices)[i * 3 + 1] * vertElementCount + 5] += normal.z;
+		(*verts)[(*indices)[i * 3 + 2] * vertElementCount + 3] += normal.x; (*verts)[(*indices)[i * 3 + 2] * vertElementCount + 4] += normal.y; (*verts)[(*indices)[i * 3 + 2] * vertElementCount + 5] += normal.z;
+	}
+
+	for (int i = 0; i < (numCells + 1) * (numCells + 1); i++) {
+		glm::vec3 normal = glm::normalize(glm::vec3((*verts)[i * vertElementCount + 3], (*verts)[i * vertElementCount + 4], (*verts)[i * vertElementCount + 5]));
+		(*verts)[i * vertElementCount + 3] = normal.x;
+		(*verts)[i * vertElementCount + 4] = normal.y;
+		(*verts)[i * vertElementCount + 5] = normal.z;
+	}
 }
 
-void GenerateNewTerrainSubdivision(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, Corner_Enum corner, float heightScale) {
+void GenerateNewTerrainSubdivision(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels) {
 	int numCells = NumCells;
-	float xLoc = terrainQuad.pos.x, zLoc = terrainQuad.pos.z, xSize = terrainQuad.size.x, zSize = terrainQuad.size.z;
+	float xLoc = terrainQuad.pos.x, zLoc = terrainQuad.pos.y, xSize = terrainQuad.size.x, zSize = terrainQuad.size.y;
 
 	NewNodeGraph::TerGenNodeGraph myGraph = NewNodeGraph::TerGenNodeGraph(*fastGraph);
-	myGraph.SetLocation(glm::i32vec2(terrainQuad.pos.x, terrainQuad.pos.z), 1.0f);
+	myGraph.BuildOutputImage(terrainQuad.logicalPos, 1.0/glm::pow(2.0,terrainQuad.level));
+	
 
 	for (int i = 0; i <= numCells; i++)
 	{
 		for (int j = 0; j <= numCells; j++)
 		{
-			float value = (terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0.0, (float)j *(zSize) / (float)numCells + (zLoc)));
-
-			float hL = terrainGenerator->SampleHeight((float)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc)*heightScale;
-			float hR = terrainGenerator->SampleHeight((float)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc)*heightScale;
-			float hD = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j + 1)*(zSize) / (float)numCells + zLoc)*heightScale;
-			float hU = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j - 1)*(zSize) / (float)numCells + zLoc)*heightScale;
-			glm::vec3 normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
-
+			//float value = (terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0.0, (float)j *(zSize) / (float)numCells + (zLoc)));
+			//
+			//float hL = terrainGenerator->SampleHeight((float)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc)*heightScale;
+			//float hR = terrainGenerator->SampleHeight((float)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc)*heightScale;
+			//float hD = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j + 1)*(zSize) / (float)numCells + zLoc)*heightScale;
+			//float hU = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j - 1)*(zSize) / (float)numCells + zLoc)*heightScale;
+			//glm::vec3 normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
+			glm::vec3 normal = glm::vec3(0, 1, 0);
 
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 0] = (float)i *(xSize) / (float)numCells;
-			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 1] = (float)value * heightScale;
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 1] = (float)myGraph.SampleHeight(i, 0, j) * heightScale;
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 2] = (float)j * (zSize) / (float)numCells;
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 3] = normal.x;
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 4] = normal.y;
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 5] = normal.z;
-			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 6] = (float)i / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (float)(1 << terrainQuad.level);
-			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 7] = (float)j / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (float)(1 << terrainQuad.level);		
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 6] = (float)i / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPos.x / (float)(1 << terrainQuad.level);
+			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 7] = (float)j / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPos.y / (float)(1 << terrainQuad.level);		
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 8] = terrainGenerator->SampleColor(0, (float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 9] = terrainGenerator->SampleColor(1, (float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
 			(*verts)[((i)*(numCells + 1) + j)* vertElementCount + 10] = terrainGenerator->SampleColor(2, (float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
@@ -901,17 +965,40 @@ void GenerateNewTerrainSubdivision(TerrainGenerator *terrainGenerator, NewNodeGr
 			(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
 		}
 	}
+
+	int index = 0;
+	for (int i = 0; i < indCount / 3 ; i++) {
+		glm::vec3 p1 = glm::vec3((*verts)[(*indices)[i * 3 + 0] * vertElementCount + 0], (*verts)[(*indices)[i * 3 + 0] * vertElementCount + 1], (*verts)[(*indices)[i * 3 + 0] * vertElementCount + 2]);
+		glm::vec3 p2 = glm::vec3((*verts)[(*indices)[i * 3 + 1] * vertElementCount + 0], (*verts)[(*indices)[i * 3 + 1] * vertElementCount + 1], (*verts)[(*indices)[i * 3 + 1] * vertElementCount + 2]);
+		glm::vec3 p3 = glm::vec3((*verts)[(*indices)[i * 3 + 2] * vertElementCount + 0], (*verts)[(*indices)[i * 3 + 2] * vertElementCount + 1], (*verts)[(*indices)[i * 3 + 2] * vertElementCount + 2]);
+
+		glm::vec3 t1 = p2 - p1;
+		glm::vec3 t2 = p3 - p1;
+
+		glm::vec3 normal(glm::cross(t1, t2));
+
+		(*verts)[(*indices)[i * 3 + 0] * vertElementCount + 3] += normal.x; (*verts)[(*indices)[i * 3 + 0] * vertElementCount + 4] += normal.y; (*verts)[(*indices)[i * 3 + 0] * vertElementCount + 5] += normal.z;
+		(*verts)[(*indices)[i * 3 + 1] * vertElementCount + 3] += normal.x; (*verts)[(*indices)[i * 3 + 1] * vertElementCount + 4] += normal.y; (*verts)[(*indices)[i * 3 + 1] * vertElementCount + 5] += normal.z;
+		(*verts)[(*indices)[i * 3 + 2] * vertElementCount + 3] += normal.x; (*verts)[(*indices)[i * 3 + 2] * vertElementCount + 4] += normal.y; (*verts)[(*indices)[i * 3 + 2] * vertElementCount + 5] += normal.z;
+	}
+
+	for (int i = 0; i < (numCells + 1) * (numCells + 1); i++) {
+		glm::vec3 normal = glm::normalize(glm::vec3((*verts)[i * vertElementCount + 3], (*verts)[i * vertElementCount + 4], (*verts)[i * vertElementCount + 5]));
+		(*verts)[i * vertElementCount + 3] = normal.x;
+		(*verts)[i * vertElementCount + 4] = normal.y;
+		(*verts)[i * vertElementCount + 5] = normal.z;
+	}
 }
 
 //Needs to account for which corner the new terrain is in
 void GenerateTerrainFromExisting(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices *parentVerts, TerrainMeshIndices *parentIndices,
-	TerrainMeshVertices* verts, TerrainMeshIndices* indices, Corner_Enum corner, TerrainQuad terrainQuad, float heightScale) {
+	TerrainMeshVertices* verts, TerrainMeshIndices* indices, Corner_Enum corner, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels) {
 
 	int numCells = NumCells;
-	float xLoc = terrainQuad.pos.x, zLoc = terrainQuad.pos.z, xSize = terrainQuad.size.x, zSize = terrainQuad.size.z;
+	float xLoc = terrainQuad.pos.x, zLoc = terrainQuad.pos.y, xSize = terrainQuad.size.x, zSize = terrainQuad.size.y;
 
 	NewNodeGraph::TerGenNodeGraph myGraph = NewNodeGraph::TerGenNodeGraph(*fastGraph);
-	myGraph.SetLocation(glm::i32vec2(terrainQuad.pos.x, terrainQuad.pos.z), 1.0f);
+	myGraph.BuildOutputImage(terrainQuad.logicalPos, 1.0 / glm::pow(2.0, terrainQuad.level));
 
 	int parentIOffset = (corner == 2 || corner == 3) ? (numCells + 1) / 2 : 0;
 	int parentJOffset = (corner == 1 || corner == 3) ? (numCells + 1) / 2 : 0;
@@ -929,8 +1016,8 @@ void GenerateTerrainFromExisting(TerrainGenerator *terrainGenerator, NewNodeGrap
 			(*verts)[vLoc + 0] = (float)i *(xSize) / (float)numCells;
 			(*verts)[vLoc + 1] = (*parentVerts)[parentVLoc + 1];
 			(*verts)[vLoc + 2] = (float)j * (zSize) / (float)numCells;
-			(*verts)[vLoc + 6] = (float)i / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (float)(1 << terrainQuad.level);
-			(*verts)[vLoc + 7] = (float)j / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (float)(1 << terrainQuad.level);
+			(*verts)[vLoc + 6] = (float)i / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPos.x / (float)(1 << terrainQuad.level);
+			(*verts)[vLoc + 7] = (float)j / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPos.y / (float)(1 << terrainQuad.level);
 			(*verts)[vLoc + 8] = (*parentVerts)[parentVLoc + 8];
 			(*verts)[vLoc + 9] = (*parentVerts)[parentVLoc + 9];
 			(*verts)[vLoc + 10] = (*parentVerts)[parentVLoc + 10];
@@ -1039,8 +1126,8 @@ void GenerateTerrainFromExisting(TerrainGenerator *terrainGenerator, NewNodeGrap
 			(*verts)[vLoc + 0] = (float)i *(xSize) / (float)numCells;
 			(*verts)[vLoc + 1] = (float)value * heightScale;
 			(*verts)[vLoc + 2] = (float)j * (zSize) / (float)numCells;
-			(*verts)[vLoc + 6] = (float)i / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (float)(1 << terrainQuad.level);
-			(*verts)[vLoc + 7] = (float)j / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (float)(1 << terrainQuad.level);
+			(*verts)[vLoc + 6] = (float)i / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPos.x / (float)(1 << terrainQuad.level);
+			(*verts)[vLoc + 7] = (float)j / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPos.y / (float)(1 << terrainQuad.level);
 			(*verts)[vLoc + 8] = terrainGenerator->SampleColor(0,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells  + (zLoc));
 			(*verts)[vLoc + 9] = terrainGenerator->SampleColor(1,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells  + (zLoc));
 			(*verts)[vLoc + 10] = terrainGenerator->SampleColor(2,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
@@ -1060,8 +1147,8 @@ void GenerateTerrainFromExisting(TerrainGenerator *terrainGenerator, NewNodeGrap
 			(*verts)[vLoc + 0] = (float)i *(xSize) / (float)numCells;
 			(*verts)[vLoc + 1] = (float)value * heightScale;
 			(*verts)[vLoc + 2] = (float)j * (zSize) / (float)numCells;
-			(*verts)[vLoc + 6] = (float)i / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosX / (1 << terrainQuad.level);
-			(*verts)[vLoc + 7] = (float)j / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPosZ / (1 << terrainQuad.level);
+			(*verts)[vLoc + 6] = (float)i / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPos.x / (1 << terrainQuad.level);
+			(*verts)[vLoc + 7] = (float)j / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPos.y / (1 << terrainQuad.level);
 			(*verts)[vLoc + 8] = terrainGenerator->SampleColor(0,(float)i *(xSize) / (float)numCells  + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
 			(*verts)[vLoc + 9] = terrainGenerator->SampleColor(1,(float)i *(xSize) / (float)numCells  + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));
 			(*verts)[vLoc + 10] = terrainGenerator->SampleColor(2,(float)i *(xSize) / (float)numCells + (xLoc), 0, j * (zSize) / (float)numCells + (zLoc));

@@ -26,7 +26,7 @@ public:
 
 	void loadFromFile(std::string filename);
 	void loadFromNoiseUtilImage(utils::Image* image);
-
+	void loadFromGreyscalePixelData(int width, int height, float* pixels);
 
 };
 

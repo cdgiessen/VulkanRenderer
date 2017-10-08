@@ -24,7 +24,7 @@
 #include "TerGenNodeGraph.h"
 
 const int SplatMapSize = 1024;
-const int NumCells = 50;
+const int NumCells = 64;
 const int vertCount = (NumCells + 1) * (NumCells + 1);
 const int indCount = NumCells * NumCells * 6;
 const int vertElementCount = 12;
@@ -41,20 +41,22 @@ enum Corner_Enum {
 
 class TerrainQuad {
 public:
-	glm::vec3 pos; //position of corner
-	glm::vec3 size; //width and length
+	glm::vec2 pos; //position of corner
+	glm::vec2 size; //width and length
+	glm::i32vec2 logicalPos; //where in the proc-gen space it is (for noise images)
+	glm::i32vec2 logicalSize; //how wide the area is.
+	glm::i32vec2 subDivPos; //where in the subdivision grid it is (for splatmap)
 	int level; //how deep the quad is
-	int subDivPosX, subDivPosZ; //where in the subdivision grid it is (for splatmap)
 	float heightValAtCenter = 0;
 	bool isSubdivided;
-
+	
 	ModelBufferObject modelUniformObject;
 
 	TerrainQuad();
 	~TerrainQuad();
 
 	//puts the position, size, and level into the class
-	void init(float posX, float posY, float sizeX, float sizeY, int level, int subDivPosX, int subDivPosZ, float centerHeightValue);
+	void init(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, glm::i32vec2 subDivPos, float centerHeightValue);
 
 };
 
@@ -87,10 +89,11 @@ public:
 	int maxNumQuads;
 	int numQuads = 0;
 
-	glm::vec3 position;
-	glm::vec3 size;
+	glm::vec2 position;
+	glm::vec2 size;
 	glm::i32vec2 noisePosition;
-	float heightScale = 1000;
+	glm::i32vec2 noiseSize;
+	float heightScale = 100;
 
 	VulkanDevice *device;
 
@@ -120,10 +123,11 @@ public:
 
 	std::vector<std::thread *> terrainGenerationWorkers;
 
-	Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool, int numCells, int maxLevels, int logicalPos_x, int logicalPos_y, float posX, float posY, float sizeX, float sizeY);
+	Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool, int numCells, int maxLevels, glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
 	~Terrain();
 
-	void InitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, VkQueue copyQueue, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos);
+	void InitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, VkQueue copyQueue, 
+		uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos);
 	void ReinitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 	void UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
 	void DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], Terrain* curTerrain, bool wireframe);
@@ -134,8 +138,9 @@ public:
 	void LoadTextureArray();
 private:
 
-	TerrainQuadData* InitTerrainQuad(TerrainQuadData* q, glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo);
-	TerrainQuadData* InitTerrainQuadFromParent(TerrainQuadData* parent, TerrainQuadData* q, Corner_Enum corner, glm::vec3 position, glm::vec3 size, int level, VulkanBuffer &gbo, VulkanBuffer &lbo, int subDivPosX, int subDivPosZ);
+	TerrainQuadData* InitTerrainQuad(TerrainQuadData* q, glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	TerrainQuadData* InitTerrainQuadFromParent(TerrainQuadData* parent, TerrainQuadData* q, Corner_Enum corner, 
+		glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, VulkanBuffer &gbo, VulkanBuffer &lbo, glm::i32vec2 subDivPos);
 
 	bool UpdateTerrainQuad(TerrainQuadData* quad, glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
 
@@ -172,11 +177,11 @@ private:
 };
 
 //mesh generation functions. Looks at all those parameters. 
-void GenerateNewTerrain(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, float heightScale);
+void GenerateNewTerrain(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels);
 
 //Like GenerateNewTerrain but has corrected texture coordinates for subdivisions. Best to leave that function alone.
-void GenerateNewTerrainSubdivision(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, Corner_Enum corner, float heightScale);
+void GenerateNewTerrainSubdivision(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);
 
 //not used as it depends on previous terrains, which is great for runtime but not for first generation (since it has dependence on its parents mesh being ready)
 void GenerateTerrainFromExisting(TerrainGenerator *terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices *parentVerts, TerrainMeshIndices *parentIndices,
-	TerrainMeshVertices* verts, TerrainMeshIndices* indices, Corner_Enum corner, TerrainQuad terrainQuad, float heightScale);
+	TerrainMeshVertices* verts, TerrainMeshIndices* indices, Corner_Enum corner, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels);
