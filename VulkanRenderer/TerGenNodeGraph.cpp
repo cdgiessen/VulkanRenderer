@@ -22,6 +22,11 @@ namespace NewNodeGraph {
 	}
 
 	template<typename T>
+	void Link<T>::SetValue(T val) {
+		data = val;
+	}
+
+	template<typename T>
 	LinkType Link<T>::GetLinkType() {
 		return linkType;
 	}
@@ -32,9 +37,7 @@ namespace NewNodeGraph {
 			input = node;
 			return true;
 		}
-		else {
-			return false;
-		}
+		return false;
 	}
 
 
@@ -51,19 +54,18 @@ namespace NewNodeGraph {
 
 	template<typename T>
 	float Node<T>::GetValue(const int x, const int y, const int z, float dummy) {
-		return -1.2;
+		return -1.1;
 	}
 
 	template<typename T>
-	float Node<T>::GetValue(const int x, const int y, const int z, int dummy) {
+	int Node<T>::GetValue(const int x, const int y, const int z, int dummy) {
 		return -2;
 	}
 
 	template<typename T>
 	double Node<T>::GetValue(const int x, const int y, const int z, double dummy) {
-		return -3;
+		return -3.1;
 	}
-
 
 	OutputNode::OutputNode() : Node<float>(LinkType::Float), input_output(LinkType::Float) { };
 
@@ -81,19 +83,37 @@ namespace NewNodeGraph {
 		return false;
 	}
 
-	ConstantFloatNode::ConstantFloatNode() : Node<float>(LinkType::Float) {};
+	ConstantFloatNode::ConstantFloatNode() : Node<float>(LinkType::Float), value(LinkType::Float) {};
 
 	float ConstantFloatNode::GetValue(const int x, const int y, const int z, float dummy)
 	{
-		return constantValue;
+		return value.GetValue(x,y,z);
 	}
 	void ConstantFloatNode::SetValue(const float value) 
 	{
-		constantValue = value;
+		this->value.SetValue(value);
 	}
-	bool ConstantFloatNode::SetInputLink(int index, std::shared_ptr<INode> node) { return false; }
 
-	float SelectorNode::GetValue(const int x, const int y, const int z) {
+	bool ConstantFloatNode::SetInputLink(int index, std::shared_ptr<INode> node) {
+		return value.SetInputNode(node);
+	}
+
+	ConstantIntNode::ConstantIntNode() : Node<float>(LinkType::Float), value(LinkType::Int) {};
+
+	int ConstantIntNode::GetValue(const int x, const int y, const int z, int dummy)
+	{
+		return value.GetValue(x, y, z);
+	}
+	void ConstantIntNode::SetValue(const int value)
+	{
+		this->SetValue(value);
+	}
+
+	bool ConstantIntNode::SetInputLink(int index, std::shared_ptr<INode> node) {
+		return value.SetInputNode(node);
+	}
+	
+	float SelectorNode::GetValue(const int x, const int y, const int z, float dummy) {
 		//alpha * black + (1 - alpha) * red
 		float alpha = input_cutoff.GetValue(x, y, z);
 		float a = input_a.GetValue(x, y, z);

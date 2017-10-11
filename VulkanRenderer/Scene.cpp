@@ -84,9 +84,11 @@ void Scene::UpdateScene(VulkanPipeline pipelineManager, VkRenderPass renderPass,
 	//		camera->Position.y = 2;
 	//}
 
+	glm::mat4 deptheReverser = glm::mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1);
+
 	GlobalVariableUniformBuffer cbo = {};
 	cbo.view = camera->GetViewMatrix();
-	cbo.proj = glm::perspective(glm::radians(45.0f), vulkanSwapChain.swapChainExtent.width / (float)vulkanSwapChain.swapChainExtent.height, 0.05f, 100000.0f);
+	cbo.proj = deptheReverser * glm::perspective(glm::radians(45.0f), vulkanSwapChain.swapChainExtent.width / (float)vulkanSwapChain.swapChainExtent.height, 0.05f, 100000.0f);
 	cbo.proj[1][1] *= -1;
 	cbo.cameraDir = camera->Front;
 	cbo.time = (float)timeManager->GetRunningTime();

@@ -31,7 +31,7 @@ namespace NewNodeGraph {
 	public:
 		virtual LinkType GetNodeType() =0;
 		virtual float GetValue(const int x, const int y, const int z, float dummy) =0;
-		virtual float GetValue(const int x, const int y, const int z, int dummy) =0;
+		virtual int GetValue(const int x, const int y, const int z, int dummy) =0;
 		virtual double GetValue(const int x, const int y, const int z, double dummy) =0;
 	};
 
@@ -44,6 +44,7 @@ namespace NewNodeGraph {
 		T GetValue(const int x, const int y, const int z);
 
 		T GetValue();
+		void SetValue(T);
 
 		LinkType GetLinkType();
 
@@ -65,7 +66,7 @@ namespace NewNodeGraph {
 
 		//virtual T GetValue(const double x, const double y, const  double z);
 		virtual float GetValue(const int x, const int y, const int z, float dummy);
-		virtual float GetValue(const int x, const int y, const int z, int dummy);
+		virtual int GetValue(const int x, const int y, const int z, int dummy);
 		virtual double GetValue(const int x, const int y, const int z, double dummy);
 	
 		virtual bool SetInputLink(int index, std::shared_ptr<INode> node) = 0;
@@ -97,13 +98,24 @@ namespace NewNodeGraph {
 		bool SetInputLink(int index, std::shared_ptr<INode> node);
 
 	private:
-		float constantValue;
+		Link<float> value;
+	};
 
+	class ConstantIntNode : public Node<float> {
+	public:
+		ConstantIntNode();
+
+		int GetValue(const int x, const int y, const int z, int dummy);
+		void SetValue(const int value);
+
+		bool SetInputLink(int index, std::shared_ptr<INode> node);
+	private:
+		Link<int> value;
 	};
 
 	class SelectorNode : Node<float> {
 	public:
-		float GetValue(const int x, const int y, const int z);
+		float GetValue(const int x, const int y, const int z, float dummy);
 	private:
 		Link<float> input_cutoff;
 		Link<float> input_blendAmount; //not done currently.

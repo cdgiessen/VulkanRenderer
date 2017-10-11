@@ -183,7 +183,7 @@ void VulkanApp::createRenderPass() {
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 	VkAttachmentDescription depthAttachment = {};
-	depthAttachment.format = findDepthFormat();
+	depthAttachment.format = VK_FORMAT_D32_SFLOAT_S8_UINT; //findDepthFormat();
 	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -231,6 +231,7 @@ void VulkanApp::createRenderPass() {
 //11
 void VulkanApp::createDepthResources() {
 	VkFormat depthFormat = findDepthFormat();
+	depthFormat = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
 
 	createImage(vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
 	depthImageView = createImageView(vulkanDevice.device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -442,7 +443,7 @@ void VulkanApp::buildCommandBuffers(){
 
 		std::array<VkClearValue, 2> clearValues = {};
 		clearValues[0].color = { 0.2f, 0.3f, 0.3f, 1.0f };
-		clearValues[1].depthStencil = { 1.0f, 0 };
+		clearValues[1].depthStencil = { 0.0f, 0 };
 
 		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 		renderPassInfo.pClearValues = clearValues.data();
@@ -479,7 +480,7 @@ void VulkanApp::CreatePrimaryCommandBuffer() {
 
 		std::array<VkClearValue, 2> clearValues = {};
 		clearValues[0].color = { 0.2f, 0.3f, 0.3f, 1.0f };
-		clearValues[1].depthStencil = { 1.0f, 0 };
+		clearValues[1].depthStencil = { 0.0f, 0 };
 
 		VkRenderPassBeginInfo renderPassInfo = initializers::renderPassBeginInfo();
 		renderPassInfo.renderPass = renderPass;
