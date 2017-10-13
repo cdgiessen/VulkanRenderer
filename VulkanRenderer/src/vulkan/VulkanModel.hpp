@@ -9,7 +9,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include "Mesh.h"
+#include "..\core\Mesh.h"
 
 class VulkanModel {
 public:

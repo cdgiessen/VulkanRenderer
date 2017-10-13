@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ImGui\imgui.h"
+#include "..\ImGui\imgui.h"
 // Usage:
 //  static ExampleAppLog my_log;
 //  my_log.AddLog("Hello %d world\n", 123);

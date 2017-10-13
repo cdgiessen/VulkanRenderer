@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Skybox.h"
-#include "Texture.h"
-#include "VulkanTexture.hpp"
-#include "VulkanModel.hpp"
-#include "VulkanDevice.hpp"
+#include "..\core\Texture.h"
+#include "..\vulkan\VulkanTexture.hpp"
+#include "..\vulkan\VulkanModel.hpp"
+#include "..\vulkan\VulkanDevice.hpp"
 
 
 Skybox::Skybox() {};

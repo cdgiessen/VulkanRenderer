@@ -26,9 +26,9 @@ void TerrainQuad::init(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos, g
 
 }
 
-Terrain::Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool, int numCells, int maxLevels, 
+Terrain::Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool, int numCells, int maxLevels, float heightScale, 
 	glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize) 
-	: maxLevels(maxLevels) , position(pos), size(size), noisePosition(noisePosition), noiseSize(noiseSize)
+	: maxLevels(maxLevels), heightScale(heightScale), position(pos), size(size), noisePosition(noisePosition), noiseSize(noiseSize)
 {
 	//simple calculation right now, does the absolute max number of quads possible with given max level
 	//in future should calculate the actual number of max quads, based on distance calculation
@@ -639,7 +639,7 @@ TerrainQuadData* Terrain::InitTerrainQuadFromParent(TerrainQuadData* parent, Ter
 	q->terrainQuad.init(position, size, logicalPos, logicalSize, level, subDivPos, heightScale * terrainGenerator->SampleHeight(position.x + size.x/2, position.y, position.y + size.y/2));
 	//q->terrainQuad.CreateTerrainMeshFromParent(&parent->vertices, &parent->indices, &q->vertices, &q->indices, corner);
 
-	//SimpleTimer terrainQuadCreateTime;
+	//SimpleTimer terrainQuadCreateTime;+
 	//terrainQuadCreateTime.StartTimer();
 
 	//std::thread *worker = new std::thread(GenerateNewTerrainSubdivision, terrainGenerator, fastTerrainGraph, &q->vertices, &q->indices, q->terrainQuad, corner, heightScale, maxLevels);

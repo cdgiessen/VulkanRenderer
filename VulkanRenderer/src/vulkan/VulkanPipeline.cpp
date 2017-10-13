@@ -1,6 +1,6 @@
-#include "VulkanPipeline.h"
+#include "VulkanPipeline.hpp"
 
-#include "Mesh.h"
+#include "..\core\Mesh.h"
 
 VulkanPipeline::VulkanPipeline(VulkanDevice* device) : device(device)
 {

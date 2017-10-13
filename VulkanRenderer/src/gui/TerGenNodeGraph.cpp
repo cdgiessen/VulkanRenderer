@@ -140,7 +140,7 @@ namespace NewNodeGraph {
 		myNoise->SetFractalOctaves(input_octaveCount.GetValue());
 		noiseDimention = numCells; 
 		
-		noiseSet = myNoise->GetPerlinSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier);
+		noiseSet = myNoise->GetValueSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier);
 		return true;
 	}
 
@@ -220,7 +220,7 @@ namespace NewNodeGraph {
 
 		auto freq = std::shared_ptr<ConstantFloatNode>(new ConstantFloatNode());
 		AddNode(freq);
-		freq->SetValue(0.05);
+		freq->SetValue(0.1);
 
 		auto persistance = std::shared_ptr<ConstantFloatNode>(new ConstantFloatNode());
 		AddNode(persistance);

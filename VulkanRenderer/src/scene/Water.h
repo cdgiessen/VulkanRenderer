@@ -1,17 +1,15 @@
 #pragma once
 
-#include <vulkan\vulkan.h>
-#include "VulkanDevice.hpp"
-#include "VulkanSwapChain.hpp"
-#include "VulkanModel.hpp"
-#include "VulkanTexture.hpp"
-#include "VulkanBuffer.hpp"
-#include "VulkanPipeline.h"
-#include "VulkanInitializers.hpp"
-#include "VulkanTools.h"
 
-#include "Mesh.h"
-#include "Texture.h"
+#include "..\vulkan\VulkanDevice.hpp"
+#include "..\vulkan\VulkanModel.hpp"
+#include "..\vulkan\VulkanPipeline.hpp"
+#include "..\vulkan\VulkanTexture.hpp"
+#include "..\vulkan\VulkanSwapChain.hpp"
+#include "..\vulkan\VulkanInitializers.hpp"
+
+#include "..\core\Mesh.h"
+#include "..\core\Texture.h"
 #include <glm\common.hpp>
 
 class Water {

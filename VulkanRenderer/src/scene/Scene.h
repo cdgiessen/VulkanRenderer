@@ -1,20 +1,17 @@
 #pragma once
 
-#include "VulkanDevice.hpp"
-#include "VulkanSwapChain.hpp"
-#include "VulkanModel.hpp"
-#include "VulkanTexture.hpp"
-#include "VulkanPipeline.h"
+#include "..\vulkan\VulkanDevice.hpp"
 
-#include "Mesh.h"
+#include "..\core\Mesh.h"
 #include "Camera.h"
 #include "Terrain.h"
 #include "Skybox.h"
 #include "GameObject.h"
 #include "Water.h"
 #include "TerrainManager.h"
-#include "TimeManager.h"
 #include "InstancedSceneObject.h"
+
+#include "..\core\TimeManager.h"
 
 class Scene
 {

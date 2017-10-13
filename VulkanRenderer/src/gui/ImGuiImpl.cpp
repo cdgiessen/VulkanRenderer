@@ -6,7 +6,7 @@
 // If you are new to ImGui, see examples/README.txt and documentation at the top of imgui.cpp.
 // https://github.com/ocornut/imgui
 
-#include "ImGui\imgui.h"
+#include "..\ImGui\imgui.h"
 
 // GLFW
 #define GLFW_INCLUDE_NONE

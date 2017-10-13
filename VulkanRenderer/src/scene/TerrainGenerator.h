@@ -3,8 +3,8 @@
 
 #include <glm\common.hpp>
 
-#include "FastNoiseSIMD\FastNoiseSIMD.h"
-#include "TerGenNodeGraph.h"
+#include "..\FastNoiseSIMD\FastNoiseSIMD.h"
+#include "..\gui\TerGenNodeGraph.h"
 
 struct BiomeColor {
 	float r;

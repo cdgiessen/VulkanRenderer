@@ -1,7 +1,7 @@
 #pragma once
 #include <chrono>
 #include <array>
-#include "VulkanTools.h"
+#include "..\vulkan\VulkanTools.h"
 
 typedef std::array<float, 50> TimingsHistory;
 

@@ -7,7 +7,7 @@
 #include <glm\common.hpp>
 #include <vulkan\vulkan.hpp>
 
-#include "VulkanInitializers.hpp"
+#include "..\vulkan\VulkanInitializers.hpp"
 
 #include <noise/noise.h>
 #include <noiseutils.h>

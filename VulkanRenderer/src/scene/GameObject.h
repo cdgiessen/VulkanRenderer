@@ -4,14 +4,13 @@
 #include <glm\common.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "VulkanDevice.hpp"
-#include "VulkanTools.h"
-#include "VulkanInitializers.hpp"
-#include "VulkanTexture.hpp"
-#include "VulkanModel.hpp"
-#include "VulkanPipeline.h"
-#include "Mesh.h"
-#include "Texture.h"
+#include "..\vulkan\VulkanDevice.hpp"
+#include "..\vulkan\VulkanModel.hpp"
+#include "..\vulkan\VulkanPipeline.hpp"
+#include "..\vulkan\VulkanTexture.hpp"
+#include "..\vulkan\VulkanInitializers.hpp"
+#include "..\core\Mesh.h"
+#include "..\core\Texture.h"
 
 class GameObject
 {

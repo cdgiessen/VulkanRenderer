@@ -7,21 +7,19 @@
 #include <glm\common.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vulkan\vulkan.h>
-#include "VulkanDevice.hpp"
-#include "VulkanSwapChain.hpp"
-#include "VulkanModel.hpp"
-#include "VulkanTexture.hpp"
-#include "VulkanBuffer.hpp"
-#include "VulkanPipeline.h"
-#include "VulkanInitializers.hpp"
-#include "VulkanTools.h"
 
-#include "Texture.h"
+#include "..\vulkan\VulkanDevice.hpp"
+#include "..\vulkan\VulkanModel.hpp"
+#include "..\vulkan\VulkanPipeline.hpp"
+#include "..\vulkan\VulkanTexture.hpp"
+#include "..\vulkan\VulkanInitializers.hpp"
 
-#include "MemoryPool.h"
+#include "..\core\Texture.h"
+
+#include "..\core\MemoryPool.h"
 
 #include "TerrainGenerator.h"
-#include "TerGenNodeGraph.h"
+#include "..\gui\TerGenNodeGraph.h"
 
 const int SplatMapSize = 1024;
 const int NumCells = 64;
@@ -123,7 +121,7 @@ public:
 
 	std::vector<std::thread *> terrainGenerationWorkers;
 
-	Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool, int numCells, int maxLevels, glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
+	Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool, int numCells, int maxLevels, float heightScale, glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
 	~Terrain();
 
 	void InitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, VkQueue copyQueue, 

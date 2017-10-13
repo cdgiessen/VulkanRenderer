@@ -4,7 +4,7 @@
 #include <vulkan\vulkan.h>
 #include "VulkanDevice.hpp"
 
-#include "Texture.h"
+#include "..\core\Texture.h"
 
 #include <stb_image.h>
 

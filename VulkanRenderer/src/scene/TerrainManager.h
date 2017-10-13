@@ -1,13 +1,15 @@
 #pragma once
 
-#include "MemoryPool.h"
+#include "..\core\TimeManager.h"
+#include "..\core\MemoryPool.h"
+
+#include "..\vulkan\VulkanSwapChain.hpp"
+#include "..\vulkan\VulkanPipeline.hpp"
+#include "..\vulkan\VulkanTools.h"
 
 #include "Camera.h"
 #include "Terrain.h"
 #include "Water.h"
-#include "VulkanTools.h"
-#include "VulkanPipeline.h"
-#include "TimeManager.h"
 
 class TerrainManager
 {
@@ -37,7 +39,8 @@ private:
 	bool show_terrain_manager_window = true;
 	bool recreateTerrain = false;
 	float terrainWidth = 1000;
-	int terrainMaxLevels = 2;
+	float terrainHeightScale = 100.0f;
+	int terrainMaxLevels = 3;
 	int terrainGridDimentions = 1;
 	SimpleTimer terrainUpdateTimer;
 

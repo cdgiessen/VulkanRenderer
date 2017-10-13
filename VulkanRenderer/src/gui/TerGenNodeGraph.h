@@ -7,9 +7,9 @@
 
 #include <glm\common.hpp>
 
-#include "ImGui\imgui.h"
+#include "..\ImGui\imgui.h"
 
-#include "FastNoiseSIMD\FastNoiseSIMD.h"
+#include "..\FastNoiseSIMD\FastNoiseSIMD.h"
 
 namespace NewNodeGraph {
 

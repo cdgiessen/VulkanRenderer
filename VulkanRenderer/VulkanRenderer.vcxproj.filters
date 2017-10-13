@@ -34,11 +34,35 @@
     <Filter Include="Resources\Textures\TerrainTextures">
       <UniqueIdentifier>{2f5a66ee-30eb-4036-802e-defcdc3efe83}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ImGui">
-      <UniqueIdentifier>{641385be-4019-4f2a-90e8-aca5e7660023}</UniqueIdentifier>
-    </Filter>
     <Filter Include="FastNoiseSIMD">
       <UniqueIdentifier>{e63cb4f6-d07a-4f0e-9b8f-66c10258c00e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core">
+      <UniqueIdentifier>{9b1c6537-afcf-42c0-802c-5c083ef4cd73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\vulkan">
+      <UniqueIdentifier>{87cefc68-7968-406e-9a29-7a6a55de94fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core">
+      <UniqueIdentifier>{a18769c4-95d0-4395-834c-00556823fd97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\vulkan">
+      <UniqueIdentifier>{f3bca87f-66dd-4abe-be87-013c24410358}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\scene">
+      <UniqueIdentifier>{49339c00-61e3-4b20-bd61-a8fedcc45bfc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\gui">
+      <UniqueIdentifier>{1c5eb8d9-96f5-412c-9888-4e311768ebeb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ImGui">
+      <UniqueIdentifier>{641385be-4019-4f2a-90e8-aca5e7660023}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scene">
+      <UniqueIdentifier>{8f76adf0-54cd-49a3-81b3-ba07dca9ef80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\gui">
+      <UniqueIdentifier>{fbc7c9d2-3d67-4096-bc46-e15077e673f6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -108,232 +132,252 @@
     <None Include="Shaders\gameObject_shader.vert.spv">
       <Filter>Shaders\spv files</Filter>
     </None>
-    <None Include="Shaders\normalVecDebug.vert" />
-    <None Include="Shaders\normalVecDebug.frag" />
-    <None Include="Shaders\normalVecDebug.geom" />
-    <None Include="Shaders\normalVecDebug.frag.spv" />
-    <None Include="Shaders\normalVecDebug.geom.spv" />
-    <None Include="Shaders\normalVecDebug.vert.spv" />
-    <None Include="Shaders\instancedSceneObject.vert" />
-    <None Include="Shaders\instancedSceneObject.frag" />
-    <None Include="Shaders\instancedSceneObject.frag.spv" />
-    <None Include="Shaders\instancedSceneObject.vert.spv" />
+    <None Include="Shaders\instancedSceneObject.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\instancedSceneObject.frag.spv">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\instancedSceneObject.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\instancedSceneObject.vert.spv">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\normalVecDebug.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\normalVecDebug.frag.spv">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\normalVecDebug.geom">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\normalVecDebug.geom.spv">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\normalVecDebug.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\normalVecDebug.vert.spv">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\vulkan\VulkanDevice.cpp">
+      <Filter>Source Files\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="Window.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\vulkan\VulkanPipeline.cpp">
+      <Filter>Source Files\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="Mesh.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\vulkan\VulkanTexture.cpp">
+      <Filter>Source Files\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="Camera.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\vulkan\VulkanTools.cpp">
+      <Filter>Source Files\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="VulkanApp.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\core\Logger.cpp">
+      <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="noiseutils.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\core\MemoryPool.cpp">
+      <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="Skybox.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\core\TimeManager.cpp">
+      <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="VulkanDevice.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\core\Window.cpp">
+      <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="VulkanTools.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\ImGui\imgui.cpp">
+      <Filter>Header Files\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="VulkanTexture.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\ImGui\imgui_demo.cpp">
+      <Filter>Header Files\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="Texture.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\ImGui\imgui_draw.cpp">
+      <Filter>Header Files\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="GameObject.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD.cpp">
+      <Filter>FastNoiseSIMD</Filter>
     </ClCompile>
-    <ClCompile Include="Terrain.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_avx2.cpp">
+      <Filter>FastNoiseSIMD</Filter>
     </ClCompile>
-    <ClCompile Include="Water.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_avx512.cpp">
+      <Filter>FastNoiseSIMD</Filter>
     </ClCompile>
-    <ClCompile Include="MemoryPool.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_internal.cpp">
+      <Filter>FastNoiseSIMD</Filter>
     </ClCompile>
-    <ClCompile Include="TerrainGenerator.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_neon.cpp">
+      <Filter>FastNoiseSIMD</Filter>
     </ClCompile>
-    <ClCompile Include="ImGuiImpl.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_sse2.cpp">
+      <Filter>FastNoiseSIMD</Filter>
     </ClCompile>
-    <ClCompile Include="ImGui\imgui_demo.cpp">
-      <Filter>ImGui</Filter>
+    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_sse41.cpp">
+      <Filter>FastNoiseSIMD</Filter>
     </ClCompile>
-    <ClCompile Include="ImGui\imgui.cpp">
-      <Filter>ImGui</Filter>
+    <ClCompile Include="src\core\VulkanApp.cpp">
+      <Filter>Source Files\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="ImGui\imgui_draw.cpp">
-      <Filter>ImGui</Filter>
+    <ClCompile Include="src\scene\Water.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="NodeGraph.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\scene\Terrain.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="Logger.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\scene\TerrainManager.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="TimeManager.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\scene\TerrainGenerator.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="Scene.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\scene\Skybox.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="TerrainManager.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\scene\Scene.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="VulkanPipeline.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\scene\Camera.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\scene\InstancedSceneObject.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_avx2.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\core\Texture.cpp">
+      <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_avx512.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\core\main.cpp">
+      <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_internal.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\core\Mesh.cpp">
+      <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_neon.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\scene\GameObject.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_sse2.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\gui\ImGuiImpl.cpp">
+      <Filter>Source Files\gui</Filter>
     </ClCompile>
-    <ClCompile Include="FastNoiseSIMD\FastNoiseSIMD_sse41.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\gui\NodeGraph.cpp">
+      <Filter>Source Files\gui</Filter>
     </ClCompile>
-    <ClCompile Include="InstancedSceneObject.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\gui\TerGenNodeGraph.cpp">
+      <Filter>Source Files\gui</Filter>
     </ClCompile>
-    <ClCompile Include="TerGenNodeGraph.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\scene\noiseutils.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="VulkanApp.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\vulkan\VulkanBuffer.hpp">
+      <Filter>Header Files\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="Mesh.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\vulkan\VulkanDevice.hpp">
+      <Filter>Header Files\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\vulkan\VulkanInitializers.hpp">
+      <Filter>Header Files\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="Window.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\vulkan\VulkanModel.hpp">
+      <Filter>Header Files\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanBuffer.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\vulkan\VulkanSwapChain.hpp">
+      <Filter>Header Files\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanInitializers.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\vulkan\VulkanTexture.hpp">
+      <Filter>Header Files\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanSwapChain.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\vulkan\VulkanTools.h">
+      <Filter>Header Files\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanModel.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\core\Logger.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanTools.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\core\MemoryPool.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanTexture.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\core\TimeManager.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="ImGuiImpl.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\core\Window.hpp">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="noiseutils.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\ImGui\imconfig.h">
+      <Filter>Header Files\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="Terrain.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\ImGui\imgui.h">
+      <Filter>Header Files\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="Texture.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\ImGui\imgui_internal.h">
+      <Filter>Header Files\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="Skybox.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\ImGui\stb_rect_pack.h">
+      <Filter>Header Files\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanDevice.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\ImGui\stb_textedit.h">
+      <Filter>Header Files\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="GameObject.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\ImGui\stb_truetype.h">
+      <Filter>Header Files\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="Water.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\FastNoiseSIMD\FastNoiseSIMD.h">
+      <Filter>FastNoiseSIMD</Filter>
     </ClInclude>
-    <ClInclude Include="MemoryPool.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\FastNoiseSIMD\FastNoiseSIMD_internal.h">
+      <Filter>FastNoiseSIMD</Filter>
     </ClInclude>
-    <ClInclude Include="TerrainGenerator.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\scene\Camera.h">
+      <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\imgui.h">
-      <Filter>ImGui</Filter>
+    <ClInclude Include="src\gui\ImGuiImpl.h">
+      <Filter>Header Files\gui</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\imgui_internal.h">
-      <Filter>ImGui</Filter>
+    <ClInclude Include="src\scene\InstancedSceneObject.h">
+      <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\imconfig.h">
-      <Filter>ImGui</Filter>
+    <ClInclude Include="src\core\Mesh.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\stb_rect_pack.h">
-      <Filter>ImGui</Filter>
+    <ClInclude Include="src\scene\GameObject.h">
+      <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\stb_truetype.h">
-      <Filter>ImGui</Filter>
+    <ClInclude Include="src\gui\NodeGraph.h">
+      <Filter>Header Files\gui</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\stb_textedit.h">
-      <Filter>ImGui</Filter>
+    <ClInclude Include="src\scene\Water.h">
+      <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="NodeGraph.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\core\VulkanApp.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="Logger.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\core\Texture.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="TimeManager.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\scene\TerrainManager.h">
+      <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="Scene.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\scene\Terrain.h">
+      <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="TerrainManager.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\scene\TerrainGenerator.h">
+      <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanPipeline.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\gui\TerGenNodeGraph.h">
+      <Filter>Header Files\gui</Filter>
     </ClInclude>
-    <ClInclude Include="FastNoiseSIMD\FastNoiseSIMD.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\scene\Skybox.h">
+      <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="FastNoiseSIMD\FastNoiseSIMD_internal.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\scene\Scene.h">
+      <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="InstancedSceneObject.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\scene\noiseutils.h">
+      <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="TerGenNodeGraph.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\vulkan\VulkanPipeline.hpp">
+      <Filter>Header Files\vulkan</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

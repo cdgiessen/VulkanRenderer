@@ -1,6 +1,6 @@
 #include "Texture.h"
 
-#include "VulkanTools.h"
+#include "..\vulkan\VulkanTools.h"
 
 Texture::Texture() {};
 

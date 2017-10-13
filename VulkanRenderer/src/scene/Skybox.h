@@ -8,11 +8,11 @@
 #include <glm\common.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "Texture.h"
-#include "VulkanTexture.hpp"
-#include "VulkanModel.hpp"
-#include "VulkanDevice.hpp"
-#include "VulkanPipeline.h"
+#include "..\core\Texture.h"
+#include "..\vulkan\VulkanTexture.hpp"
+#include "..\vulkan\VulkanModel.hpp"
+#include "..\vulkan\VulkanDevice.hpp"
+#include "..\vulkan\VulkanPipeline.hpp"
 
 
 struct SkyboxUniformBuffer {

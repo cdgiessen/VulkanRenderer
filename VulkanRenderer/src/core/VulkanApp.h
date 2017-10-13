@@ -20,20 +20,15 @@
 #include <array>
 #include <set>
 
+#include "..\vulkan\VulkanDevice.hpp"
 
-#include "VulkanSwapChain.hpp"
-#include "VulkanDevice.hpp"
-#include "VulkanModel.hpp"
-#include "VulkanTexture.hpp"
-#include "VulkanPipeline.h"
-
-#include "ImGui\imgui.h"
-#include "ImGuiImpl.h"
+#include "..\ImGui\imgui.h"
+#include "..\gui\ImGuiImpl.h"
 
 #include "TimeManager.h"
-#include "Scene.h"
+#include "..\scene\Scene.h"
 
-#include "NodeGraph.h"
+#include "..\gui\NodeGraph.h"
 #include "Logger.h"
 
 const int WIDTH = 1600;
@@ -81,7 +76,6 @@ private:
 
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat findDepthFormat();
-	bool hasStencilComponent(VkFormat format);
 
 	void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);

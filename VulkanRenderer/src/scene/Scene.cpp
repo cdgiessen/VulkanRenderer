@@ -84,7 +84,7 @@ void Scene::UpdateScene(VulkanPipeline pipelineManager, VkRenderPass renderPass,
 	//		camera->Position.y = 2;
 	//}
 
-	glm::mat4 deptheReverser = glm::mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1);
+	glm::mat4 deptheReverser = glm::mat4(1, 0, 0, 0,	0, 1, 0, 0,		0, 0, -1, 0,	0, 0, 1, 1);
 
 	GlobalVariableUniformBuffer cbo = {};
 	cbo.view = camera->GetViewMatrix();

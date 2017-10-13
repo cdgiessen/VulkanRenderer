@@ -1,6 +1,7 @@
 #include "TerrainManager.h"
 
-#include "ImGui\imgui.h"
+#include "..\ImGui\imgui.h"
+#include "..\gui\ImGuiImpl.h"
 
 TerrainManager::TerrainManager(VulkanDevice* device) : device(device)
 {
@@ -34,7 +35,7 @@ void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPas
 	int logicalWidth = numCells * glm::pow(2, terrainMaxLevels);
 	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < terrainGridDimentions; j++) {
-			terrains.push_back(new Terrain(&terrainQuadPool, numCells, terrainMaxLevels,
+			terrains.push_back(new Terrain(&terrainQuadPool, numCells, terrainMaxLevels, terrainHeightScale,
 				glm::vec2((i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2), //position
 				glm::vec2(terrainWidth, terrainWidth), //size
 				glm::i32vec2(i * logicalWidth, j * logicalWidth), //noise position
@@ -121,7 +122,7 @@ void TerrainManager::UpdateTerrainGUI() {
 	ImGui::SliderFloat("Terrain Width", &terrainWidth, 1, 10000);
 	ImGui::SliderInt("Terrain Max Subdivision", &terrainMaxLevels, 0, 10);
 	ImGui::SliderInt("Terrain Grid Width", &terrainGridDimentions, 1, 10);
-
+	ImGui::SliderFloat("Terrain Height Scale", &terrainHeightScale, 1, 1000);
 	if (ImGui::Button("Recreate Terrain", ImVec2(130, 20))) {
 		recreateTerrain = true;
 	}
