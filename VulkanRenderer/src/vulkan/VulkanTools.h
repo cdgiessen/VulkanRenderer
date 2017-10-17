@@ -151,7 +151,7 @@ public:
 		return std::chrono::duration_cast<std::chrono::seconds>(elapsedTime).count();
 	}
 
-	uint64_t GetElapsedTimeMilliSecondsSeconds() {
+	uint64_t GetElapsedTimeMilliSeconds() {
 		return std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count();
 	}
 

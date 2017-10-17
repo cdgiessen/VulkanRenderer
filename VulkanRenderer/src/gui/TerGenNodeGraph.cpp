@@ -255,4 +255,8 @@ namespace NewNodeGraph {
 			}
 		}
 	}
+
+	std::vector<float>& TerGenNodeGraph::GetOutputGreyscaleImage() {
+		return outputImage;
+	}
 }

@@ -162,6 +162,7 @@ namespace NewNodeGraph {
 		void BuildOutputImage(glm::i32vec2 pos, float scale);
 
 		float SampleHeight(const int x, const int y, const int z);
+		std::vector<float>& GetOutputGreyscaleImage();
 
 	private:
 		int seed;

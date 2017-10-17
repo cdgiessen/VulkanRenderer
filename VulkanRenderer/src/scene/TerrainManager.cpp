@@ -32,7 +32,7 @@ void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPas
 	}
 	waters.clear();
 	int numCells = 64;
-	int logicalWidth = numCells * glm::pow(2, terrainMaxLevels);
+	int logicalWidth = (int) numCells * glm::pow(2.0, terrainMaxLevels);
 	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < terrainGridDimentions; j++) {
 			terrains.push_back(new Terrain(&terrainQuadPool, numCells, terrainMaxLevels, terrainHeightScale,
@@ -157,7 +157,7 @@ void TerrainManager::CleanUpTerrain() {
 */
 VkCommandBuffer TerrainManager::CreateTerrainMeshUpdateCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel level)
 {
-	VkCommandBufferAllocateInfo cmdBufAllocateInfo = initializers::commandBufferAllocateInfo(commandPool, level, terrains.size());
+	VkCommandBufferAllocateInfo cmdBufAllocateInfo = initializers::commandBufferAllocateInfo(commandPool, level, (uint32_t)terrains.size());
 
 	VkCommandBuffer cmdBuffer;
 	VK_CHECK_RESULT(vkAllocateCommandBuffers(device->device, &cmdBufAllocateInfo, &cmdBuffer));

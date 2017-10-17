@@ -1,14 +1,5 @@
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-//#define GLM_FORCE_LEFT_HANDED	
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -20,6 +11,19 @@
 #include <array>
 #include <set>
 
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+//#define GLM_FORCE_LEFT_HANDED	
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "Window.hpp"
+#include "Input.h"
+#include "Logger.h"
+
 #include "..\vulkan\VulkanDevice.hpp"
 
 #include "..\ImGui\imgui.h"
@@ -29,7 +33,6 @@
 #include "..\scene\Scene.h"
 
 #include "..\gui\NodeGraph.h"
-#include "Logger.h"
 
 const int WIDTH = 1600;
 const int HEIGHT = 900;
@@ -40,7 +43,7 @@ public:
 	VulkanApp();
 	~VulkanApp();
 
-	void initWindow();
+	//void initWindow();
 	void initVulkan();
 	void mainLoop();
 	void HandleInputs();
@@ -52,9 +55,9 @@ public:
 	void reBuildCommandBuffers();
 
 	//GLFW Callbacks
-	void MouseMoved(double xpos, double ypos);
-	void MouseClicked(int button, int action, int mods);
-	void KeyboardEvent(int key, int scancode, int action, int mods);
+	//void MouseMoved(double xpos, double ypos);
+	//void MouseClicked(int button, int action, int mods);
+	//void KeyboardEvent(int key, int scancode, int action, int mods);
 
 private:
 
@@ -86,15 +89,13 @@ private:
 
 	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
 
+	Window* window;
 	TimeManager* timeManager;
 
 	Scene* scene;
 
 	//Input stuff
-	bool firstMouse;
-	double lastX, lastY;
 	bool mouseControlEnabled;
-	bool keys[512] = {};
 	bool wireframe = false;
 	void SetMouseControl(bool value);
 

@@ -185,9 +185,6 @@
     <ClCompile Include="src\core\TimeManager.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\Window.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
     <ClCompile Include="src\ImGui\imgui.cpp">
       <Filter>Header Files\ImGui</Filter>
     </ClCompile>
@@ -269,6 +266,12 @@
     <ClCompile Include="src\scene\noiseutils.cpp">
       <Filter>Source Files\scene</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\Window.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Input.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\vulkan\VulkanBuffer.hpp">
@@ -299,9 +302,6 @@
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\TimeManager.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\Window.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\ImGui\imconfig.h">
@@ -378,6 +378,12 @@
     </ClInclude>
     <ClInclude Include="src\vulkan\VulkanPipeline.hpp">
       <Filter>Header Files\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\Window.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\Input.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

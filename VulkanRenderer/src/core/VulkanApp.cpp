@@ -7,17 +7,20 @@
 
 VulkanApp::VulkanApp()
 {
-
 	//camera = new Camera(glm::vec3(-2,2,0), glm::vec3(0,1,0), 0, -45);
 	timeManager = new TimeManager();
 
-	initWindow();
+	window = new Window();
+	window->createWindow(glm::uvec2(WIDTH, HEIGHT));
+	vulkanDevice.window = window->getWindowContext();
+	SetMouseControl(true);
+
 	initVulkan();
-
 	pipelineManager = new VulkanPipeline(&vulkanDevice);
-
+	
 	scene = new Scene(&vulkanDevice);
 	scene->PrepareScene(*pipelineManager, renderPass, vulkanSwapChain);
+
 	PrepareImGui();
 	createSemaphores();
 
@@ -30,45 +33,45 @@ VulkanApp::~VulkanApp()
 {
 }
 
-static void onWindowResized(GLFWwindow* window, int width, int height) {
-	if (width == 0 || height == 0) return;
-
-	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-	app->recreateSwapChain();
-}
-
-void onMouseMoved(GLFWwindow* window, double xpos, double ypos)
-{
-	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-	app->MouseMoved(xpos, ypos);
-}
-
-void onMouseClicked(GLFWwindow* window, int button, int action, int mods) {
-	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-	app->MouseClicked(button, action, mods);
-	ImGui_ImplGlfwVulkan_MouseButtonCallback(window, button, action, mods);
-}
-
-void onKeyboardEvent(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-	app->KeyboardEvent(key, scancode, action, mods);
-	ImGui_ImplGlfwVulkan_KeyCallback(window, key, scancode, action, mods);
-}
-
-void VulkanApp::initWindow() {
-	glfwInit();
-
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-	vulkanDevice.window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-
-	glfwSetWindowUserPointer(vulkanDevice.window, this);
-	glfwSetWindowSizeCallback(vulkanDevice.window, onWindowResized);
-	glfwSetCursorPosCallback(vulkanDevice.window, onMouseMoved);
-	glfwSetMouseButtonCallback(vulkanDevice.window, onMouseClicked);
-	glfwSetKeyCallback(vulkanDevice.window, onKeyboardEvent);
-	SetMouseControl(true);
-}
+//static void onWindowResized(GLFWwindow* window, int width, int height) {
+//	if (width == 0 || height == 0) return;
+//
+//	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
+//	app->recreateSwapChain();
+//}
+//
+//void onMouseMoved(GLFWwindow* window, double xpos, double ypos)
+//{
+//	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
+//	app->MouseMoved(xpos, ypos);
+//}
+//
+//void onMouseClicked(GLFWwindow* window, int button, int action, int mods) {
+//	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
+//	app->MouseClicked(button, action, mods);
+//	ImGui_ImplGlfwVulkan_MouseButtonCallback(window, button, action, mods);
+//}
+//
+//void onKeyboardEvent(GLFWwindow* window, int key, int scancode, int action, int mods) {
+//	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
+//	app->KeyboardEvent(key, scancode, action, mods);
+//	ImGui_ImplGlfwVulkan_KeyCallback(window, key, scancode, action, mods);
+//}
+//
+//void VulkanApp::initWindow() {
+//	glfwInit();
+//
+//	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+//
+//	vulkanDevice.window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+//
+//	glfwSetWindowUserPointer(vulkanDevice.window, this);
+//	glfwSetWindowSizeCallback(vulkanDevice.window, onWindowResized);
+//	glfwSetCursorPosCallback(vulkanDevice.window, onMouseMoved);
+//	glfwSetMouseButtonCallback(vulkanDevice.window, onMouseClicked);
+//	glfwSetKeyCallback(vulkanDevice.window, onKeyboardEvent);
+//	SetMouseControl(true);
+//}
 
 void VulkanApp::initVulkan() {
 	vulkanDevice.initVulkanDevice(vulkanSwapChain.surface);
@@ -85,10 +88,11 @@ void VulkanApp::initVulkan() {
 }
 
 void VulkanApp::mainLoop() {
-	while (!glfwWindowShouldClose(vulkanDevice.window)) {
+	int i;
+	while (!window->CheckForWindowClose()) {
 		timeManager->StartFrameTimer();
 
-		glfwPollEvents();
+		InputDirector::GetInstance().UpdateInputs();
 		HandleInputs();
 
 		//updateScene();
@@ -98,6 +102,7 @@ void VulkanApp::mainLoop() {
 		buildCommandBuffers();
 		drawFrame();
 		
+		InputDirector::GetInstance().ResetReleasedInput();
 		timeManager->EndFrameTimer();
 		//std::cout << "main loop breaker. Break me if you want to stop after every frame!" << std::endl;
 	}
@@ -505,7 +510,7 @@ void VulkanApp::CreatePrimaryCommandBuffer() {
 
 
 
-		vkCmdExecuteCommands(commandBuffers[i], commandBuffers.size(), commandBuffers.data());
+		vkCmdExecuteCommands(commandBuffers[i], (uint32_t)commandBuffers.size(), commandBuffers.data());
 		
 		vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -642,75 +647,49 @@ void VulkanApp::CleanUpImgui() {
 void VulkanApp::HandleInputs() {
 	//std::cout << camera->Position.x << " " << camera->Position.y << " " << camera->Position.z << std::endl;
 
-	if (keys[GLFW_KEY_W])
+	if (Input::GetKey(GLFW_KEY_W))
 		scene->GetCamera()->ProcessKeyboard(FORWARD, (float)timeManager->GetDeltaTime());
-	if (keys[GLFW_KEY_S])
+	if (Input::GetKey(GLFW_KEY_S))
 		scene->GetCamera()->ProcessKeyboard(BACKWARD, (float)timeManager->GetDeltaTime());
-	if (keys[GLFW_KEY_A])
+	if (Input::GetKey(GLFW_KEY_A))
 		scene->GetCamera()->ProcessKeyboard(LEFT, (float)timeManager->GetDeltaTime());
-	if (keys[GLFW_KEY_D])
+	if (Input::GetKey(GLFW_KEY_D))
 		scene->GetCamera()->ProcessKeyboard(RIGHT, (float)timeManager->GetDeltaTime());
-	if (keys[GLFW_KEY_SPACE])
+	if (Input::GetKey(GLFW_KEY_SPACE))
 		scene->GetCamera()->ProcessKeyboard(UP, (float)timeManager->GetDeltaTime());
-	if (keys[GLFW_KEY_LEFT_SHIFT])
+	if (Input::GetKey(GLFW_KEY_LEFT_SHIFT))
 		scene->GetCamera()->ProcessKeyboard(DOWN, (float)timeManager->GetDeltaTime());
 
-}
-
-void VulkanApp::KeyboardEvent(int key, int scancode, int action, int mods) {
-	
-	if (key == GLFW_KEY_0   && action == GLFW_PRESS)
+	if (Input::GetKeyDown(GLFW_KEY_0))
 		appLog.AddLog("ZERO WAS HIT REPEAT ZERO WAS HIT\n");
 
-	if (key == GLFW_KEY_ESCAPE  && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(vulkanDevice.window, true);
-	if (key == GLFW_KEY_ENTER  && action == GLFW_PRESS)
+	if (Input::GetKeyDown(GLFW_KEY_ESCAPE))
+		window->SetWindowToClose();
+	if (Input::GetKeyDown(GLFW_KEY_ENTER))
 		SetMouseControl(!mouseControlEnabled);
 
-	if (key == GLFW_KEY_E)
+	if (Input::GetKey(GLFW_KEY_E))
 		scene->GetCamera()->ChangeCameraSpeed(UP);
-	if (key == GLFW_KEY_Q )
+	if (Input::GetKey(GLFW_KEY_Q))
 		scene->GetCamera()->ChangeCameraSpeed(DOWN);
 
-	if (key == GLFW_KEY_N && action == GLFW_PRESS)
+	if (Input::GetKeyDown(GLFW_KEY_N))
 		scene->drawNormals = !scene->drawNormals;
-	if (key == GLFW_KEY_X  && action == GLFW_PRESS) {
+	if (Input::GetKeyDown(GLFW_KEY_X  )) {
 		wireframe = !wireframe;
 		reBuildCommandBuffers();
 		std::cout << "wireframe toggled" << std::endl;
 	}
 
-	if (key == GLFW_KEY_F  && action == GLFW_PRESS) {
+	if (Input::GetKeyDown(GLFW_KEY_F)) {
 		//walkOnGround = !walkOnGround;
 		//std::cout << "flight mode toggled " << std::endl;
 	}
 
-	if (action == GLFW_PRESS)
-		keys[key] = true;
-	if (action == GLFW_RELEASE)
-		keys[key] = false;
+	if (mouseControlEnabled)
+		scene->GetCamera()->ProcessMouseMovement(Input::GetMouseChangeInPosition().x, Input::GetMouseChangeInPosition().y);
 
-}
-
-void VulkanApp::MouseMoved(double xpos, double ypos) {
-	if (firstMouse)
-	{
-		lastX = xpos;
-		lastY = ypos;
-		firstMouse = false;
-	}
-
-	float xoffset = float(xpos - lastX);
-	float yoffset = float(lastY - ypos); // reversed since y-coordinates go from bottom to top
-
-	lastX = xpos;
-	lastY = ypos;
-	if(mouseControlEnabled)
-		scene->GetCamera()->ProcessMouseMovement(xoffset, yoffset);
-}
-
-void VulkanApp::MouseClicked(int button, int action, int mods) {
-	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+	if (Input::GetMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
 		if (!ImGui::IsMouseHoveringAnyWindow()) {
 			SetMouseControl(true);
 		}

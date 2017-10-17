@@ -87,6 +87,7 @@
     <None Include="Shaders\water.vert.spv" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\core\Input.cpp" />
     <ClCompile Include="src\scene\Camera.cpp" />
     <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD.cpp" />
     <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_avx2.cpp" />
@@ -124,6 +125,7 @@
     <ClCompile Include="src\core\VulkanApp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\core\Input.h" />
     <ClInclude Include="src\scene\Camera.h" />
     <ClInclude Include="src\FastNoiseSIMD\FastNoiseSIMD.h" />
     <ClInclude Include="src\FastNoiseSIMD\FastNoiseSIMD_internal.h" />
