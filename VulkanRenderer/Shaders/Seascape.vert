@@ -25,6 +25,7 @@ layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec2 outTexCoord;
 layout(location = 3) out vec4 outColor;
 layout(location = 4) out float outTime;
+layout(location = 5) out vec3 fragCoord;
 
 out gl_PerVertex {
     vec4 gl_Position;
@@ -34,6 +35,7 @@ void main() {
 	outTexCoord = inTexCoord;
 	outColor = inColor;
 
+	fragCoord = (	cbo.proj * ubo.model * vec4(inPosition, 1.0)).xyz;
     gl_Position = cbo.proj * cbo.view * ubo.model * vec4(inPosition, 1.0);
 
 	outNormal = (ubo.normal * vec4(inNormal, 1.0f)).xyz;

@@ -162,6 +162,10 @@
     <None Include="Shaders\normalVecDebug.vert.spv">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\Seascape.frag" />
+    <None Include="Shaders\Seascape.vert" />
+    <None Include="Shaders\Seascape.frag.spv" />
+    <None Include="Shaders\Seascape.vert.spv" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\vulkan\VulkanDevice.cpp">
@@ -271,6 +275,9 @@
     </ClCompile>
     <ClCompile Include="src\core\Input.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vulkan\VulkanLargeBuffer.cpp">
+      <Filter>Source Files\vulkan</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -384,6 +391,9 @@
     </ClInclude>
     <ClInclude Include="src\core\Input.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vulkan\VulkanLargeBuffer.h">
+      <Filter>Header Files\vulkan</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

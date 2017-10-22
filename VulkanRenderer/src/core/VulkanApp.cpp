@@ -33,46 +33,6 @@ VulkanApp::~VulkanApp()
 {
 }
 
-//static void onWindowResized(GLFWwindow* window, int width, int height) {
-//	if (width == 0 || height == 0) return;
-//
-//	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-//	app->recreateSwapChain();
-//}
-//
-//void onMouseMoved(GLFWwindow* window, double xpos, double ypos)
-//{
-//	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-//	app->MouseMoved(xpos, ypos);
-//}
-//
-//void onMouseClicked(GLFWwindow* window, int button, int action, int mods) {
-//	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-//	app->MouseClicked(button, action, mods);
-//	ImGui_ImplGlfwVulkan_MouseButtonCallback(window, button, action, mods);
-//}
-//
-//void onKeyboardEvent(GLFWwindow* window, int key, int scancode, int action, int mods) {
-//	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-//	app->KeyboardEvent(key, scancode, action, mods);
-//	ImGui_ImplGlfwVulkan_KeyCallback(window, key, scancode, action, mods);
-//}
-//
-//void VulkanApp::initWindow() {
-//	glfwInit();
-//
-//	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-//
-//	vulkanDevice.window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-//
-//	glfwSetWindowUserPointer(vulkanDevice.window, this);
-//	glfwSetWindowSizeCallback(vulkanDevice.window, onWindowResized);
-//	glfwSetCursorPosCallback(vulkanDevice.window, onMouseMoved);
-//	glfwSetMouseButtonCallback(vulkanDevice.window, onMouseClicked);
-//	glfwSetKeyCallback(vulkanDevice.window, onKeyboardEvent);
-//	SetMouseControl(true);
-//}
-
 void VulkanApp::initVulkan() {
 	vulkanDevice.initVulkanDevice(vulkanSwapChain.surface);
 

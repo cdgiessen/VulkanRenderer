@@ -22,6 +22,7 @@ public:
 	VulkanDevice *device;
 
 	VkPipeline pipeline;
+	VkPipeline seascapePipeline;
 	VkPipeline wireframe;
 	VkPipelineLayout pipelineLayout;
 

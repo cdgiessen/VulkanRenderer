@@ -69,6 +69,10 @@
     <None Include="Shaders\normalVecDebug.geom.spv" />
     <None Include="Shaders\normalVecDebug.vert" />
     <None Include="Shaders\normalVecDebug.vert.spv" />
+    <None Include="Shaders\Seascape.frag" />
+    <None Include="Shaders\Seascape.frag.spv" />
+    <None Include="Shaders\Seascape.vert" />
+    <None Include="Shaders\Seascape.vert.spv" />
     <None Include="Shaders\terrain.frag" />
     <None Include="Shaders\terrain.frag.spv" />
     <None Include="Shaders\terrain.vert" />
@@ -123,6 +127,7 @@
     <ClCompile Include="src\core\Window.cpp" />
     <ClCompile Include="src\core\main.cpp" />
     <ClCompile Include="src\core\VulkanApp.cpp" />
+    <ClCompile Include="src\vulkan\VulkanLargeBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\Input.h" />
@@ -162,6 +167,7 @@
     <ClInclude Include="src\scene\Water.h" />
     <ClInclude Include="src\core\Window.hpp" />
     <ClInclude Include="src\core\VulkanApp.h" />
+    <ClInclude Include="src\vulkan\VulkanLargeBuffer.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{01643685-db81-49fb-9a7d-ae84cc65648a}</ProjectGuid>

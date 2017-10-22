@@ -80,8 +80,10 @@ void InputDirector::UpdateInputs() {
 }
 
 void InputDirector::ResetReleasedInput() {
-	std::fill(std::begin(keysUp), std::end(keysUp), 0);
+	std::fill(std::begin(keysDown), std::end(keysDown), 0);
+	std::fill(std::begin(keysUp), std::end(keysUp), 0); 
 	std::fill(std::begin(mouseButtonsUp), std::end(mouseButtonsUp), 0);
+	std::fill(std::begin(mouseButtonsDown), std::end(mouseButtonsDown), 0);
 	mouseChangeInPosition = glm::dvec2(0, 0);
 }
 

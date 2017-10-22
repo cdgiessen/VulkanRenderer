@@ -105,6 +105,7 @@ void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe
 
 	//water
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->wireframe : waters.at(0)->pipeline);
+	//vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->wireframe : waters.at(0)->seascapePipeline);
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &waters.at(0)->WaterModel.vertices.buffer, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, waters.at(0)->WaterModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 

@@ -47,6 +47,7 @@ void Water::CleanUp()
 
 	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
 	vkDestroyPipeline(device->device, pipeline, nullptr);
+	vkDestroyPipeline(device->device, seascapePipeline, nullptr);
 	vkDestroyPipeline(device->device, wireframe, nullptr);
 }
 
@@ -150,6 +151,14 @@ void Water::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderPas
 
 	pipelineLayout = PipelineManager.BuildPipelineLayout(myPipe);
 	pipeline = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
+	PipelineManager.CleanShaderResources(myPipe);
+
+	PipelineManager.SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/Seascape.vert.spv"));
+	PipelineManager.SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/Seascape.frag.spv"));
+
+	//pipelineLayout = PipelineManager.BuildPipelineLayout(myPipe);
+	seascapePipeline = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
+
 
 	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 	wireframe = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
