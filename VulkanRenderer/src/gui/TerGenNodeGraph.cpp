@@ -3,8 +3,17 @@
 
 namespace NewNodeGraph {
 
+	INode::~INode() {
+		//std::cout << "Inode Deleted" << std::endl;
+	}
+
 	template<typename T>
 	Link<T>::Link(LinkType type) : linkType(type) {
+
+	}
+
+	template<typename T>
+	Link<T>::Link(LinkType type, T value) : linkType(type) , data(value) {
 
 	}
 
@@ -40,11 +49,14 @@ namespace NewNodeGraph {
 		return false;
 	}
 
-
-
 	template<typename T>
 	Node<T>::Node(LinkType outputLinkType) : outputType(outputLinkType) {
 
+	}
+
+	template<typename T>
+	Node<T>::~Node() {
+		//std::cout << "Node Deleted" << std::endl;
 	}
 
 	template<typename T>
@@ -52,22 +64,15 @@ namespace NewNodeGraph {
 		return outputType;
 	}
 
-	template<typename T>
-	float Node<T>::GetValue(const int x, const int y, const int z, float dummy) {
-		return -1.1;
-	}
+	template<typename T> float		Node<T>::GetValue(const int x, const int y, const int z, float dummy)		{ return -1.1f; }
+	template<typename T> int		Node<T>::GetValue(const int x, const int y, const int z, int dummy)			{ return -2; }
+	template<typename T> double		Node<T>::GetValue(const int x, const int y, const int z, double dummy)		{ return -3.1; }
+	template<typename T> glm::vec2	Node<T>::GetValue(const int x, const int y, const int z, glm::vec2 dummy)	{ return glm::vec2(0, -1); }
+	template<typename T> glm::vec3	Node<T>::GetValue(const int x, const int y, const int z, glm::vec3 dummy)	{ return glm::vec3(0, -1, -2); }
+	template<typename T> glm::vec4	Node<T>::GetValue(const int x, const int y, const int z, glm::vec4 dummy)	{ return glm::vec4(0, -1, -2, -3); }
 
-	template<typename T>
-	int Node<T>::GetValue(const int x, const int y, const int z, int dummy) {
-		return -2;
-	}
-
-	template<typename T>
-	double Node<T>::GetValue(const int x, const int y, const int z, double dummy) {
-		return -3.1;
-	}
-
-	OutputNode::OutputNode() : Node<float>(LinkType::Float), input_output(LinkType::Float) { };
+	OutputNode::OutputNode() : Node<float>(LinkType::Float), input_output(LinkType::Float, 0) { }
+	OutputNode::~OutputNode() { /*std::cout << "Output Node Deleted" << std::endl; */ }
 
 	float OutputNode::GetValue(const int x, const int y, const int z, float dummy) {
 		return input_output.GetValue(x, y, z);
@@ -84,6 +89,8 @@ namespace NewNodeGraph {
 	}
 
 	ConstantFloatNode::ConstantFloatNode() : Node<float>(LinkType::Float), value(LinkType::Float) {};
+	ConstantFloatNode::ConstantFloatNode(float value) : Node<float>(LinkType::Float), value(LinkType::Float, value) {};
+	ConstantFloatNode::~ConstantFloatNode() { /*std::cout << "Constant float Deleted" << std::endl; */ }
 
 	float ConstantFloatNode::GetValue(const int x, const int y, const int z, float dummy)
 	{
@@ -98,7 +105,9 @@ namespace NewNodeGraph {
 		return value.SetInputNode(node);
 	}
 
-	ConstantIntNode::ConstantIntNode() : Node<float>(LinkType::Float), value(LinkType::Int) {};
+	ConstantIntNode::ConstantIntNode() : Node<int>(LinkType::Float), value(LinkType::Int) {};
+	ConstantIntNode::ConstantIntNode(int value) : Node<int>(LinkType::Int), value(LinkType::Int, value) {};
+	ConstantIntNode::~ConstantIntNode() { /*std::cout << "Coanstant int Deleted" << std::endl; */}
 
 	int ConstantIntNode::GetValue(const int x, const int y, const int z, int dummy)
 	{
@@ -112,6 +121,8 @@ namespace NewNodeGraph {
 	bool ConstantIntNode::SetInputLink(int index, std::shared_ptr<INode> node) {
 		return value.SetInputNode(node);
 	}
+
+	SelectorNode::~SelectorNode() {}
 	
 	float SelectorNode::GetValue(const int x, const int y, const int z, float dummy) {
 		//alpha * black + (1 - alpha) * red
@@ -123,7 +134,11 @@ namespace NewNodeGraph {
 	}
 
 
-	NoiseSourceNode::NoiseSourceNode() : Node<float>(LinkType::Float), input_frequency(LinkType::Float), input_persistance(LinkType::Float), input_octaveCount(LinkType::Int) {	};
+	NoiseSourceNode::NoiseSourceNode() : Node<float>(LinkType::Float), input_frequency(LinkType::Float,0.1f), input_persistance(LinkType::Float, 0.5f), input_octaveCount(LinkType::Int, 3) {	};
+	NoiseSourceNode::~NoiseSourceNode() {
+		//std::cout << "Noise Source Deleted" << std::endl;
+		CleanNoiseSet();
+	}
 
 	float NoiseSourceNode::GetValue(const int x, const int y, const int z, float dummy) {
 
@@ -131,7 +146,7 @@ namespace NewNodeGraph {
 		float val = noiseSet[(x * noiseDimention + z)];
 			return val;
 		//}
-		return -1.1; //not in bounds. shouldn't happen but who knows (fortunately -1 is a very valid value, but its easy to tell if things went awry if everythign is -1
+		return -1.1f; //not in bounds. shouldn't happen but who knows (fortunately -1 is a very valid value, but its easy to tell if things went awry if everythign is -1
 	}
 
 	bool NoiseSourceNode::GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) {
@@ -177,13 +192,13 @@ namespace NewNodeGraph {
 
 	TerGenNodeGraph::TerGenNodeGraph(int seed, int numCells, glm::i32vec2 pos, float scaleModifier) : seed(seed), cellsWide(numCells), pos(pos), scale(scaleModifier)
 	{
-		outputNode = std::shared_ptr<OutputNode>(new OutputNode());
-		AddNode(outputNode);
+		AddNode(std::make_shared<OutputNode>(outputNode));
 	}
 
 
 	TerGenNodeGraph::~TerGenNodeGraph()
 	{
+
 	}
 
 	bool TerGenNodeGraph::AddNode(std::shared_ptr<INode> node)
@@ -215,27 +230,12 @@ namespace NewNodeGraph {
 	//Should update the noise modules to use latest settings and compute their values
 	void TerGenNodeGraph::BuildNoiseGraph() {
 
-		auto noiseSource = std::shared_ptr<NoiseSourceNode>(new NoiseSourceNode());
+		auto noiseSource = std::make_shared<NoiseSourceNode>();
 		AddNoiseSourceNode(noiseSource);
 
-		auto freq = std::shared_ptr<ConstantFloatNode>(new ConstantFloatNode());
-		AddNode(freq);
-		freq->SetValue(0.1);
+		outputNode.SetInputLink(0, noiseSource);
 
-		auto persistance = std::shared_ptr<ConstantFloatNode>(new ConstantFloatNode());
-		AddNode(persistance);
-		persistance->SetValue(0.5);
-
-		auto octaveCount = std::shared_ptr<ConstantFloatNode>(new ConstantFloatNode());
-		AddNode(octaveCount);
-		octaveCount->SetValue(3.0);
-
-		noiseSource->SetInputLink(0, freq);
-		noiseSource->SetInputLink(1, persistance);
-		noiseSource->SetInputLink(2, octaveCount);
-
-		outputNode->SetInputLink(0, noiseSource);
-
+		
 	}
 
 	void TerGenNodeGraph::BuildOutputImage(glm::i32vec2 pos, float scale) {
@@ -251,7 +251,7 @@ namespace NewNodeGraph {
 		{
 			for (int j = 0; j < cellsWide; j++)
 			{
-				outputImage[i * cellsWide + j] = outputNode->GetValue(i, 0, j, 0.0f);
+				outputImage[i * cellsWide + j] = outputNode.GetValue(i, 0, j, 0.0f);
 			}
 		}
 	}

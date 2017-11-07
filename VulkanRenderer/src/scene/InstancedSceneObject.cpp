@@ -65,7 +65,7 @@ void InstancedSceneObject::LoadModel(Mesh* mesh) {
 
 void InstancedSceneObject::LoadTexture(std::string filename) {
 	texture = new Texture();
-	texture->loadFromFile(filename);
+	texture->loadFromFileRGBA(filename);
 }
 
 void InstancedSceneObject::SetupUniformBuffer() {

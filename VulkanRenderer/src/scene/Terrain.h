@@ -30,7 +30,7 @@ const int vertElementCount = 12;
 typedef std::array<float, vertCount * vertElementCount> TerrainMeshVertices;
 typedef std::array<uint32_t, indCount> TerrainMeshIndices;
 
-enum Corner_Enum {
+enum class Corner_Enum {
 	uR = 0,
 	uL = 1,
 	dR = 2,
@@ -67,22 +67,22 @@ struct TerrainQuadData {
 	TerrainMeshIndices indices;
 
 	struct SubQuads {
-		TerrainQuadData* UpLeft;
-		TerrainQuadData* DownLeft;
-		TerrainQuadData* UpRight;
-		TerrainQuadData* DownRight;
+		std::shared_ptr<TerrainQuadData> UpLeft;
+		std::shared_ptr<TerrainQuadData> DownLeft;
+		std::shared_ptr<TerrainQuadData> UpRight;
+		std::shared_ptr<TerrainQuadData> DownRight;
 	} subQuads;
 };
 
 class Terrain {
 public:
-	MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* terrainQuads;
-	std::vector<TerrainQuadData*> quadHandles;
-	std::vector<TerrainQuadData*> PrevQuadHandles;
+	//std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> terrainQuads;
+	std::vector<std::shared_ptr<TerrainQuadData>> quadHandles;
+	std::vector<std::shared_ptr<TerrainQuadData>> PrevQuadHandles;
 	std::vector<TerrainMeshVertices> verts;
 	std::vector<TerrainMeshIndices> inds;
 
-	TerrainQuadData* rootQuad;
+	std::shared_ptr<TerrainQuadData> rootQuad;
 	int maxLevels;
 	int maxNumQuads;
 	int numQuads = 0;
@@ -93,7 +93,7 @@ public:
 	glm::i32vec2 noiseSize;
 	float heightScale = 100;
 
-	VulkanDevice *device;
+	std::shared_ptr<VulkanDevice> device;
 
 	VkPipelineLayout pipelineLayout;
 	VkPipeline pipeline;
@@ -106,26 +106,28 @@ public:
 	VulkanBuffer vertexBuffer;
 	VulkanBuffer indexBuffer;
 
-	Texture* terrainSplatMap;
+	std::shared_ptr<Texture> terrainSplatMap;
 	VulkanTexture2D terrainVulkanSplatMap;
 
-	TextureArray* terrainTextureArray;
+	std::shared_ptr<TextureArray> terrainTextureArray;
 	VulkanTexture2DArray terrainVulkanTextureArray;
 
 	VulkanBuffer modelUniformBuffer;
 
-	NewNodeGraph::TerGenNodeGraph* fastTerrainGraph;
+	std::shared_ptr<NewNodeGraph::TerGenNodeGraph> fastTerrainGraph;
 
 	SimpleTimer drawTimer;
 
 	std::vector<std::thread *> terrainGenerationWorkers;
 
-	Terrain(MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>* pool, int numCells, int maxLevels, float heightScale, glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
+	Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> pool, int numCells, int maxLevels, float heightScale, 
+		glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
 	~Terrain();
 
-	void InitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, VkQueue copyQueue, 
+	void InitTerrain(std::shared_ptr<VulkanDevice> device, VulkanPipeline pipelineManager, VkRenderPass renderPass, VkQueue copyQueue,
 		uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos);
-	void ReinitTerrain(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	
+	void ReinitTerrain(std::shared_ptr<VulkanDevice> device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 	void UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
 	void DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], Terrain* curTerrain, bool wireframe);
 	void BuildCommandBuffer(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], Terrain* curTerrain, bool ifWireframe);
@@ -135,11 +137,12 @@ public:
 	void LoadTextureArray();
 private:
 
-	TerrainQuadData* InitTerrainQuad(TerrainQuadData* q, glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, VulkanBuffer &gbo, VulkanBuffer &lbo);
-	TerrainQuadData* InitTerrainQuadFromParent(TerrainQuadData* parent, TerrainQuadData* q, Corner_Enum corner, 
+	std::shared_ptr<TerrainQuadData> InitTerrainQuad(std::shared_ptr<TerrainQuadData> q, glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, 
+		int level, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	std::shared_ptr<TerrainQuadData> InitTerrainQuadFromParent(std::shared_ptr<TerrainQuadData> parent, std::shared_ptr<TerrainQuadData> q, Corner_Enum corner,
 		glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, VulkanBuffer &gbo, VulkanBuffer &lbo, glm::i32vec2 subDivPos);
 
-	bool UpdateTerrainQuad(TerrainQuadData* quad, glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	bool UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
 
 	void SetupMeshbuffers();
 	void SetupUniformBuffer();
@@ -155,8 +158,8 @@ private:
 	void UpdateMeshBuffer(VkQueue copyQueue);
 
 	void UpdateUniformBuffer(float time);
-	void SubdivideTerrain(TerrainQuadData* quad, VkQueue copyQueue, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo);
-	void UnSubdivide(TerrainQuadData* quad);
+	void SubdivideTerrain(std::shared_ptr<TerrainQuadData> quad, VkQueue copyQueue, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	void UnSubdivide(std::shared_ptr<TerrainQuadData> quad);
 
 	std::vector<std::string> texFileNames = {
 		"dirt.jpg",
@@ -174,11 +177,15 @@ private:
 };
 
 //mesh generation functions. Looks at all those parameters. 
-void GenerateNewTerrain(NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels);
+void GenerateNewTerrain(NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels);
 
 //Like GenerateNewTerrain but has corrected texture coordinates for subdivisions. Best to leave that function alone.
-void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices* verts, TerrainMeshIndices* indices, TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);
+void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices, 
+	TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);
 
 //not used as it depends on previous terrains, which is great for runtime but not for first generation (since it has dependence on its parents mesh being ready)
-void GenerateTerrainFromExisting(TerrainGenerator* terrainGenerator, NewNodeGraph::TerGenNodeGraph* fastGraph, TerrainMeshVertices *parentVerts, TerrainMeshIndices *parentIndices,
-	TerrainMeshVertices* verts, TerrainMeshIndices* indices, Corner_Enum corner, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels);
+void GenerateTerrainFromExisting(TerrainGenerator& terrainGenerator, NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& parentVerts, TerrainMeshIndices& parentIndices,
+	TerrainMeshVertices& verts, TerrainMeshIndices& indices, Corner_Enum corner, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels);
+
+//Uses input texture to generate terrain from
+void GenerateTerrainFromTexture(Texture& tex, TerrainMeshVertices& verts, TerrainMeshIndices& indices, TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);

@@ -37,6 +37,9 @@ void Water::ReinitWater(VulkanDevice* device, VulkanPipeline pipelineManager, Vk
 
 void Water::CleanUp()
 {
+	WaterMesh->~Mesh();
+	WaterTexture->~Texture();
+
 	WaterModel.destroy();
 	WaterVulkanTexture.destroy();
 
@@ -53,7 +56,7 @@ void Water::CleanUp()
 
 void Water::LoadTexture(std::string filename) {
 	WaterTexture = new Texture();
-	WaterTexture->loadFromFile(filename);
+	WaterTexture->loadFromFileRGBA(filename);
 }
 
 void Water::SetupUniformBuffer()

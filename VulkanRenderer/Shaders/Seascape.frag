@@ -194,9 +194,9 @@ float heightMapTracing(vec3 ori, vec3 dir, out vec3 p) {
 void main() {
 	
 
-	vec2 uv = fragCoord.xy;
-    uv = uv * 2.0 - 1.0;
-	uv.y = -uv.y;
+	vec2 uv = fragCoord.xz;
+    //uv = uv * 2.0 - 1.0;
+	//uv.y = -uv.y;
 	//uv.x *= 16.0/9.0;
     //uv.x *= seaInput.sea.iResolution.x / seaInput.sea.iResolution.y;    
     float time = inTime * 0.3;
@@ -204,13 +204,13 @@ void main() {
     // ray
     vec3 ang = vec3(sin(time*3.0)*0.1,sin(time)*0.2+0.3,time);    
     vec3 ori = vec3(0.0,3.5,time*5.0);
-    vec3 dir = normalize(vec3(uv.xy,-2.0)); 
+    vec3 dir = (vec3(uv.xy,0.0)); 
 	dir.z += length(uv) * 0.15;
     dir = normalize(dir) * fromEuler(ang);
     
     // tracing
     vec3 p;
-    heightMapTracing(ori,dir,p);
+    heightMapTracing(ori,dir, p);
     vec3 dist = p - ori;
     vec3 n = getNormal(p, dot(dist,dist) * (1.0f / 1000.0f /*seaInput.sea.iResolution.x*/));
     vec3 light = normalize(vec3(0.0,1.0,0.8)); 

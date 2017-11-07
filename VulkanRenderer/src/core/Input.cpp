@@ -32,8 +32,11 @@ namespace Input {
 	glm::vec2 GetMouseChangeInPosition() {
 		return InputDirector::GetInstance().GetMouseChangeInPosition();
 	}
-	float GetMouseScroll() {
-		return InputDirector::GetInstance().GetMouseScroll();
+	float GetMouseScrollX() {
+		return InputDirector::GetInstance().GetMouseScrollX();
+	}
+	float GetMouseScrollY() {
+		return InputDirector::GetInstance().GetMouseScrollY();
 	}
 
 }
@@ -69,8 +72,11 @@ glm::vec2 InputDirector::GetMousePosition() {
 glm::vec2 InputDirector::GetMouseChangeInPosition() {
 	return mouseChangeInPosition;
 }
-float InputDirector::GetMouseScroll() {
+float InputDirector::GetMouseScrollX() {
 	return mouseScroll.x;
+}
+float InputDirector::GetMouseScrollY() {
+	return mouseScroll.y;
 }
 
 void InputDirector::UpdateInputs() {

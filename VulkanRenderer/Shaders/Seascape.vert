@@ -35,7 +35,7 @@ void main() {
 	outTexCoord = inTexCoord;
 	outColor = inColor;
 
-	fragCoord = (	cbo.proj * ubo.model * vec4(inPosition, 1.0)).xyz;
+	fragCoord = ( ubo.model * vec4(inPosition, 1.0)).xyz;
     gl_Position = cbo.proj * cbo.view * ubo.model * vec4(inPosition, 1.0);
 
 	outNormal = (ubo.normal * vec4(inNormal, 1.0f)).xyz;

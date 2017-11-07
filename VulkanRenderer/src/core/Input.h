@@ -14,7 +14,8 @@ namespace Input {
 	bool GetMouseButtonReleased(int button);
 	glm::vec2 GetMousePosition();
 	glm::vec2 GetMouseChangeInPosition();
-	float GetMouseScroll();
+	float GetMouseScrollY();
+	float GetMouseScrollX();
 }
 
 class InputDirector {
@@ -34,7 +35,8 @@ public:
 	bool GetMouseButtonReleased(int button);
 	glm::vec2 GetMousePosition();
 	glm::vec2 GetMouseChangeInPosition();
-	float GetMouseScroll();
+	float GetMouseScrollX();
+	float GetMouseScrollY();
 
 	void keyEvent(int key, int scancode, int action, int mods);
 	void mouseButtonEvent(int button, int action, int mods);

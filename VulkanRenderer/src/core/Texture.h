@@ -24,7 +24,8 @@ public:
 	Texture();
 	~Texture();
 
-	void loadFromFile(std::string filename);
+	void loadFromFileRGBA(std::string filename);
+	void loadFromFileGreyOnly(std::string filename);
 	void loadFromNoiseUtilImage(utils::Image* image);
 	void loadFromGreyscalePixelData(int width, int height, float* pixels);
 

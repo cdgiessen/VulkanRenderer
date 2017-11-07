@@ -608,17 +608,17 @@ void VulkanApp::HandleInputs() {
 	//std::cout << camera->Position.x << " " << camera->Position.y << " " << camera->Position.z << std::endl;
 
 	if (Input::GetKey(GLFW_KEY_W))
-		scene->GetCamera()->ProcessKeyboard(FORWARD, (float)timeManager->GetDeltaTime());
+		scene->GetCamera()->ProcessKeyboard(Camera_Movement::FORWARD, (float)timeManager->GetDeltaTime());
 	if (Input::GetKey(GLFW_KEY_S))
-		scene->GetCamera()->ProcessKeyboard(BACKWARD, (float)timeManager->GetDeltaTime());
+		scene->GetCamera()->ProcessKeyboard(Camera_Movement::BACKWARD, (float)timeManager->GetDeltaTime());
 	if (Input::GetKey(GLFW_KEY_A))
-		scene->GetCamera()->ProcessKeyboard(LEFT, (float)timeManager->GetDeltaTime());
+		scene->GetCamera()->ProcessKeyboard(Camera_Movement::LEFT, (float)timeManager->GetDeltaTime());
 	if (Input::GetKey(GLFW_KEY_D))
-		scene->GetCamera()->ProcessKeyboard(RIGHT, (float)timeManager->GetDeltaTime());
+		scene->GetCamera()->ProcessKeyboard(Camera_Movement::RIGHT, (float)timeManager->GetDeltaTime());
 	if (Input::GetKey(GLFW_KEY_SPACE))
-		scene->GetCamera()->ProcessKeyboard(UP, (float)timeManager->GetDeltaTime());
+		scene->GetCamera()->ProcessKeyboard(Camera_Movement::UP, (float)timeManager->GetDeltaTime());
 	if (Input::GetKey(GLFW_KEY_LEFT_SHIFT))
-		scene->GetCamera()->ProcessKeyboard(DOWN, (float)timeManager->GetDeltaTime());
+		scene->GetCamera()->ProcessKeyboard(Camera_Movement::DOWN, (float)timeManager->GetDeltaTime());
 
 	if (Input::GetKeyDown(GLFW_KEY_0))
 		appLog.AddLog("ZERO WAS HIT REPEAT ZERO WAS HIT\n");
@@ -629,9 +629,9 @@ void VulkanApp::HandleInputs() {
 		SetMouseControl(!mouseControlEnabled);
 
 	if (Input::GetKey(GLFW_KEY_E))
-		scene->GetCamera()->ChangeCameraSpeed(UP);
+		scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::UP);
 	if (Input::GetKey(GLFW_KEY_Q))
-		scene->GetCamera()->ChangeCameraSpeed(DOWN);
+		scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::DOWN);
 
 	if (Input::GetKeyDown(GLFW_KEY_N))
 		scene->drawNormals = !scene->drawNormals;
@@ -646,8 +646,10 @@ void VulkanApp::HandleInputs() {
 		//std::cout << "flight mode toggled " << std::endl;
 	}
 
-	if (mouseControlEnabled)
+	if (mouseControlEnabled) {
 		scene->GetCamera()->ProcessMouseMovement(Input::GetMouseChangeInPosition().x, Input::GetMouseChangeInPosition().y);
+		scene->GetCamera()->ProcessMouseScroll(Input::GetMouseScrollY());
+	}
 
 	if (Input::GetMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
 		if (!ImGui::IsMouseHoveringAnyWindow()) {

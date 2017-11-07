@@ -128,6 +128,10 @@ private:
 	std::chrono::nanoseconds elapsedTime;
 public:
 
+	SimpleTimer() {
+		startTime = std::chrono::high_resolution_clock::now();
+	}
+
 	//Begin timer
 	void StartTimer() {
 		startTime = std::chrono::high_resolution_clock::now();

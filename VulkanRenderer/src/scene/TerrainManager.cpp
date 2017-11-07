@@ -13,7 +13,7 @@ TerrainManager::TerrainManager(VulkanDevice* device) : device(device)
 											   //maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads
 	}
 
-	//terrainQuadPool = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
+	//terrainQuadPool = std::make_shared<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>>();
 }
 
 
@@ -23,19 +23,14 @@ TerrainManager::~TerrainManager()
 
 void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera) {
 	//free resources then delete all created terrains/waters
-	for (Terrain* ter : terrains) {
-		ter->CleanUp();
-	}
-	terrains.clear();
-	for (Water* water : waters) {
-		water->CleanUp();
-	}
-	waters.clear();
+	CleanUpTerrain();
+
 	int numCells = 64;
 	int logicalWidth = (int) numCells * glm::pow(2.0, terrainMaxLevels);
 	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < terrainGridDimentions; j++) {
-			terrains.push_back(new Terrain(&terrainQuadPool, numCells, terrainMaxLevels, terrainHeightScale,
+			
+			terrains.push_back(new Terrain(terrainQuadPool, numCells, terrainMaxLevels, terrainHeightScale,
 				glm::vec2((i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2), //position
 				glm::vec2(terrainWidth, terrainWidth), //size
 				glm::i32vec2(i * logicalWidth, j * logicalWidth), //noise position
@@ -57,7 +52,7 @@ void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPas
 
 	for (Water* water : waters) {
 		water->LoadTexture("Resources/Textures/TileableWaterTexture.jpg");
-		water->InitWater(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
+		water->InitWater(device.get(), pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 	}
 
 	recreateTerrain = false;
@@ -68,12 +63,13 @@ void TerrainManager::ReInitTerrain(VulkanPipeline pipelineManager, VkRenderPass 
 		ter->ReinitTerrain(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 	}
 	for (Water* water : waters) {
-		water->ReinitWater(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+		water->ReinitWater(device.get(), pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 	}
 }
 
 void TerrainManager::UpdateTerrains(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera, TimeManager* timeManager) {
 	if (recreateTerrain) {
+
 		GenerateTerrain(pipelineManager, renderPass, vulkanSwapChain, globalVariableBuffer, lightsInfoBuffer, camera);
 	}
 
@@ -146,6 +142,10 @@ void TerrainManager::CleanUpTerrain() {
 	for (Water* water : waters) {
 		water->CleanUp();
 	}
+	terrains.clear();
+	waters.clear();
+	//delete terrainQuadPool;
+	//terrainQuadPool = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
 }
 
 /**

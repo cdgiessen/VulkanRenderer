@@ -1,22 +1,10 @@
 #include "Camera.h"
 
 // Constructor with vectors
-Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
+Camera::Camera(glm::vec3 position, glm::vec3 up, float pitch, float yaw) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), Pitch(pitch), Yaw(yaw)
 {
 	Position = position;
 	WorldUp = up;
-	Yaw = yaw;
-	Pitch = pitch;
-	updateCameraVectors();
-}
-
-// Constructor with scalar values
-Camera::Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM) 
-{
-	Position = glm::vec3(posX, posY, posZ);
-	WorldUp = glm::vec3(upX, upY, upZ);
-	Yaw = yaw;
-	Pitch = pitch;
 	updateCameraVectors();
 }
 
@@ -24,17 +12,17 @@ Camera::Camera(float posX, float posY, float posZ, float upX, float upY, float u
 void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime)
 {
 	float velocity = MovementSpeed * deltaTime;
-	if (direction == FORWARD)
+	if (direction == Camera_Movement::FORWARD)
 		Position += Front * velocity;
-	if (direction == BACKWARD)
+	if (direction == Camera_Movement::BACKWARD)
 		Position -= Front * velocity;
-	if (direction == LEFT)
+	if (direction == Camera_Movement::LEFT)
 		Position -= Right * velocity;
-	if (direction == RIGHT)
+	if (direction == Camera_Movement::RIGHT)
 		Position += Right * velocity;
-	if (direction == UP)
+	if (direction == Camera_Movement::UP)
 		Position += Up * velocity;
-	if (direction == DOWN)
+	if (direction == Camera_Movement::DOWN)
 		Position -= Up* velocity;
 }
 
@@ -78,11 +66,11 @@ void Camera::ProcessMouseScroll(float yoffset)
 }
 
 void Camera::ChangeCameraSpeed(Camera_Movement direction) {
-	if (direction == UP)
-		MovementSpeed += 4.0f;
-	if (direction == DOWN)
-		MovementSpeed -= 4.0f;
+	if (direction == Camera_Movement::UP)
+		MovementSpeed *= 1.02;
+	if (direction == Camera_Movement::DOWN)
+		MovementSpeed *= 0.98;
 	if (MovementSpeed <= 0) {
-		MovementSpeed = 0.25f;
+		MovementSpeed = 0.5f;
 	}
 }

@@ -29,10 +29,10 @@ public:
 	void FlushTerrainMeshUpdateCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free);
 
 private:
-	VulkanDevice* device;
+	std::shared_ptr<VulkanDevice> device;
 
 	std::vector<Terrain*> terrains;
-	MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)> terrainQuadPool;
+	std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> terrainQuadPool;
 
 	std::vector<Water*> waters;
 
@@ -40,7 +40,7 @@ private:
 	bool recreateTerrain = false;
 	float terrainWidth = 1000;
 	float terrainHeightScale = 100.0f;
-	int terrainMaxLevels = 3;
+	int terrainMaxLevels = 1;
 	int terrainGridDimentions = 1;
 	SimpleTimer terrainUpdateTimer;
 

@@ -5,10 +5,15 @@
 Texture::Texture() {};
 
 Texture::~Texture() {
-	stbi_image_free(pixels);
+	if (pixels != nullptr) {
+		free(pixels);
+	}
+	else {
+		std::cerr << "Failed to free pixels, is there a null pointer?" << std::endl;
+	}
 };
 
-void Texture::loadFromFile(std::string filename) {
+void Texture::loadFromFileRGBA(std::string filename) {
 	if (!fileExists(filename)) {
 		std::cout << "Could not load texture from " << filename << "File not found" << std::endl;
 		return;
@@ -16,6 +21,23 @@ void Texture::loadFromFile(std::string filename) {
 	int texWidth, texHeight, texChannels;
 	this->pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	this->texImageSize = texWidth * texHeight * 4;
+
+	if (!pixels) {
+		throw std::runtime_error("failed to load texture image!");
+	}
+
+	this->width = static_cast<uint32_t>(texWidth);
+	this->height = static_cast<uint32_t>(texHeight);
+};
+
+void Texture::loadFromFileGreyOnly(std::string filename) {
+	if (!fileExists(filename)) {
+		std::cout << "Could not load texture from " << filename << "File not found" << std::endl;
+		return;
+	}
+	int texWidth, texHeight, texChannels;
+	this->pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
+	this->texImageSize = texWidth * texHeight * 1;
 
 	if (!pixels) {
 		throw std::runtime_error("failed to load texture image!");
@@ -86,6 +108,12 @@ TextureArray::TextureArray() {
 }
 
 TextureArray::~TextureArray() {
+	if (pixels != nullptr) {
+		free(pixels);
+	}
+	else {
+		std::cerr << "Failed to free pixels, is there a null pointer?" << std::endl;
+	}
 	for each (Texture* tex in textures) {
 		tex->~Texture();
 	}
@@ -94,7 +122,7 @@ TextureArray::~TextureArray() {
 void TextureArray::loadFromFile(std::string path, std::vector<std::string> filenames){
 	for each (std::string name in filenames) {
 		Texture* tex = new Texture();
-		tex->loadFromFile(path + name);
+		tex->loadFromFileRGBA(path + name);
 		textures.push_back(tex);
 	}
 
@@ -128,12 +156,12 @@ CubeMap::~CubeMap() {
 }
 
 void CubeMap::loadFromFile(std::string filename, std::string fileExt) {
-	cubeImages.Front.loadFromFile(filename + "Front" + fileExt);
-	cubeImages.Back.loadFromFile(filename + "Back" + fileExt);
-	cubeImages.Left.loadFromFile(filename + "Left" + fileExt);
-	cubeImages.Right.loadFromFile(filename + "Right" + fileExt);
-	cubeImages.Top.loadFromFile(filename + "Top" + fileExt);
-	cubeImages.Bottom.loadFromFile(filename + "Bottom" + fileExt);
+	cubeImages.Front.loadFromFileRGBA(filename + "Front" + fileExt);
+	cubeImages.Back.loadFromFileRGBA(filename + "Back" + fileExt);
+	cubeImages.Left.loadFromFileRGBA(filename + "Left" + fileExt);
+	cubeImages.Right.loadFromFileRGBA(filename + "Right" + fileExt);
+	cubeImages.Top.loadFromFileRGBA(filename + "Top" + fileExt);
+	cubeImages.Bottom.loadFromFileRGBA(filename + "Bottom" + fileExt);
 
 	this->width = static_cast<uint32_t>(cubeImages.Front.width);
 	this->height = static_cast<uint32_t>(cubeImages.Front.height);

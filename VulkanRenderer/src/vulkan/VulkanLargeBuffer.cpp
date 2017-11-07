@@ -19,15 +19,22 @@ VulkanLargeBuffer::VulkanLargeBuffer(VulkanDevice* device, VkBufferUsageFlagBits
 	VkMemoryAllocateInfo memAlloc = initializers::memoryAllocateInfo();
 	memAlloc.allocationSize = memReqs.size;
 	// Find a memory type index that fits the properties of the buffer
-	memAlloc.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
+	memAlloc.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits, deviceMemoryPropertyFlags);
 	VK_CHECK_RESULT(vkAllocateMemory(device->device, &memAlloc, nullptr, &buffer.bufferMemory));
 
 	buffer.alignment = memReqs.alignment;
 	buffer.size = memAlloc.allocationSize;
 	buffer.usageFlags = usageFlags;
-	buffer.memoryPropertyFlags = memoryPropertyFlags;
+	buffer.memoryPropertyFlags = deviceMemoryPropertyFlags;
 
 
+
+	//host memory buffer creation
+	VK_CHECK_RESULT(device->createBuffer(
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		hostMemoryPropertyFlags,
+		&stagingBuffer,
+		size));
 }
 
 
@@ -36,9 +43,9 @@ VulkanLargeBuffer::~VulkanLargeBuffer()
 }
 
 VkDeviceMemory* VulkanLargeBuffer::StageResource() {
-
+	return nullptr;
 }
 
 bool VulkanLargeBuffer::TransferBuffers() {
-
+	return false;
 }

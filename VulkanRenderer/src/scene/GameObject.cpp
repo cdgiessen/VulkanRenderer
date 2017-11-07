@@ -61,7 +61,7 @@ void GameObject::LoadModel(Mesh* mesh) {
 
 void GameObject::LoadTexture(std::string filename) {
 	gameObjectTexture = new Texture();
-	gameObjectTexture->loadFromFile(filename);
+	gameObjectTexture->loadFromFileRGBA(filename);
 }
 
 void GameObject::SetupUniformBuffer() {

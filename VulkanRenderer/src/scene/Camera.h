@@ -6,7 +6,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-enum Camera_Movement {
+enum class Camera_Movement {
 	FORWARD,
 	BACKWARD,
 	LEFT,
@@ -14,13 +14,6 @@ enum Camera_Movement {
 	UP,
 	DOWN
 };
-
-// Default camera values
-const float YAW = -90.0f;
-const float PITCH = 00.0f;
-const float SPEED = 2.0f;
-const float SENSITIVTY = 0.3f;
-const float ZOOM = 45.0f;
 
 class Camera
 {
@@ -33,18 +26,15 @@ public:
 	glm::vec3 WorldUp;
 
 	// Eular Angles
-	float Yaw;
-	float Pitch;
+	float Yaw = -90.0f;
+	float Pitch = 0.0f;
 	// Camera options
-	float MovementSpeed;
-	float MouseSensitivity;
-	float Zoom;
+	float MovementSpeed = 2.0f;
+	float MouseSensitivity = 0.3f;
+	float Zoom = 45.0f;
 
 	// Constructor with vectors
-	Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH);
-
-	// Constructor with scalar values
-	Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch);
+	Camera(glm::vec3 position, glm::vec3 up, float pitch, float yaw);
 
 	// Returns the view matrix calculated using Eular Angles and the LookAt Matrix
 	glm::mat4 GetViewMatrix()

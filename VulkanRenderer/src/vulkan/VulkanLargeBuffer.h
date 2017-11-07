@@ -21,7 +21,9 @@ private:
 	VulkanDevice *device;
 
 	VulkanBuffer buffer;
+	VulkanBuffer stagingBuffer;
 
-	VkMemoryPropertyFlags memoryPropertyFlags = (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	VkMemoryPropertyFlags hostMemoryPropertyFlags = (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	VkMemoryPropertyFlags deviceMemoryPropertyFlags = (VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 };
 
