@@ -141,11 +141,15 @@ namespace NewNodeGraph {
 	}
 
 	float NoiseSourceNode::GetValue(const int x, const int y, const int z, float dummy) {
-
-		//if (x >= 0 && x < noiseDimention && y >= 0 && y < noiseDimention && z >= 0 && z < noiseDimention) {
-		float val = noiseSet[(x * noiseDimention + z)];
+		int realX = x;//*/ (int)(x * (float)(noiseDimention));
+		int realY = y;//*/ (int)(y * (float)(noiseDimention));
+		int realZ = z;//*/ (int)(z * (float)(noiseDimention));
+		
+		if (realX >= 0 && realX < noiseDimention && realY >= 0 && realY < noiseDimention && realZ >= 0 && realZ < noiseDimention) {
+		float val = noiseSet[(realX * noiseDimention + realZ)];
 			return val;
-		//}
+			//std::cout << val << std::endl;
+		}
 		return -1.1f; //not in bounds. shouldn't happen but who knows (fortunately -1 is a very valid value, but its easy to tell if things went awry if everythign is -1
 	}
 
@@ -220,13 +224,44 @@ namespace NewNodeGraph {
 	//	return -0.1;
 	//}
 
-	float TerGenNodeGraph::SampleHeight(const int x, const int y, const int z) {
-		if (x >= 0 && x < cellsWide && y == 0 && z >= 0 && z < cellsWide)
-			return outputImage[x * cellsWide + z];
+	float TerGenNodeGraph::SampleHeight(const float x, const float y, const float z) {
+		
+		float xScaled = x*cellsWide;
+		float yScaled = y*cellsWide;
+		float zScaled = z*cellsWide;
+		
+		int realX = (int)glm::clamp(x * (float)(cellsWide), 0.0f, (float)cellsWide - 1);
+		int realY = (int)glm::clamp(y * (float)(cellsWide), 0.0f, (float)cellsWide - 1);
+		int realZ = (int)glm::clamp(z * (float)(cellsWide), 0.0f, (float)cellsWide - 1);
+
+		int realXPlus1 = (int)glm::clamp(x * (float)(cellsWide) + 1, 0.0f, (float)cellsWide - 1); //make sure its not greater than the image size
+		int realYPlus1 = (int)glm::clamp(y * (float)(cellsWide) + 1, 0.0f, (float)cellsWide - 1);
+		int realZPlus1 = (int)glm::clamp(z * (float)(cellsWide) + 1, 0.0f, (float)cellsWide - 1);
+
+		
+
+		if (realX >= 0 && realX < cellsWide && realY >= 0 && realY < cellsWide && realZ >= 0 && realZ < cellsWide) {
+
+			float UL = outputImage[realX * cellsWide + realZ];
+			float UR = outputImage[realX * cellsWide + realZPlus1];
+			float DL = outputImage[realXPlus1 * cellsWide + realZ];
+			float DR = outputImage[realXPlus1 * cellsWide + realZPlus1];
+
+			
+			return (
+					UL * ((float)realXPlus1 - xScaled)	* ((float)realZPlus1 - zScaled)
+				+	DL * (xScaled - (float)realX)		* ((float)realZPlus1 - zScaled)
+				+	UR * ((float)realXPlus1 - xScaled)	* (zScaled - (float)realZ)
+				+	DR * (xScaled - (float)realX)		* (zScaled - (float)realZ)
+					)
+				/ (((float)realXPlus1 - (float)realX) * ((float)realZPlus1 - (float)realZ));
+
+			//return outputImage[realX * cellsWide + realZ];
+		}
 		return -1.0;
 	}
 
-	//Preps graph to prepare for reading.
+	//Creates the graph (for now the graph is hardcoded here)
 	//Should update the noise modules to use latest settings and compute their values
 	void TerGenNodeGraph::BuildNoiseGraph() {
 
@@ -235,15 +270,15 @@ namespace NewNodeGraph {
 
 		outputNode.SetInputLink(0, noiseSource);
 
-		
 	}
 
+	//Creates the image to sample from
 	void TerGenNodeGraph::BuildOutputImage(glm::i32vec2 pos, float scale) {
 		this->pos = pos;
 		this->scale = scale;
 		for (auto item : noiseSources)
 		{
-			item->GenerateNoiseSet(seed, cellsWide, pos, scale);
+			item->GenerateNoiseSet(seed, cellsWide, pos, scale/cellsWide);
 		}
 
 		outputImage.resize(cellsWide * cellsWide);

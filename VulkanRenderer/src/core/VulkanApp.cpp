@@ -629,9 +629,9 @@ void VulkanApp::HandleInputs() {
 		SetMouseControl(!mouseControlEnabled);
 
 	if (Input::GetKey(GLFW_KEY_E))
-		scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::UP);
+		scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::UP, (float)timeManager->GetDeltaTime());
 	if (Input::GetKey(GLFW_KEY_Q))
-		scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::DOWN);
+		scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::DOWN, (float)timeManager->GetDeltaTime());
 
 	if (Input::GetKeyDown(GLFW_KEY_N))
 		scene->drawNormals = !scene->drawNormals;

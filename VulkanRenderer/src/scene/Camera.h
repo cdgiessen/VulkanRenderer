@@ -29,7 +29,7 @@ public:
 	float Yaw = -90.0f;
 	float Pitch = 0.0f;
 	// Camera options
-	float MovementSpeed = 2.0f;
+	float MovementSpeed = 20.0f;
 	float MouseSensitivity = 0.3f;
 	float Zoom = 45.0f;
 
@@ -52,7 +52,7 @@ public:
 	void ProcessMouseScroll(float yoffset);
 
 	//alter the speed of movement
-	void ChangeCameraSpeed(Camera_Movement direction);
+	void ChangeCameraSpeed(Camera_Movement direction, float deltaTime);
 
 private:
 	// Calculates the front vector from the Camera's (updated) Eular Angles

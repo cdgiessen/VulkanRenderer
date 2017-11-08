@@ -72,9 +72,9 @@ namespace NewNodeGraph {
 		virtual LinkType GetNodeType();
 
 		//virtual T GetValue(const double x, const double y, const  double z);
-		virtual float GetValue(const int x, const int y, const int z, float dummy);
-		virtual int GetValue(const int x, const int y, const int z, int dummy);
-		virtual double GetValue(const int x, const int y, const int z, double dummy);
+		virtual float	GetValue(const int x, const int y, const int z, float dummy);
+		virtual int		GetValue(const int x, const int y, const int z, int dummy);
+		virtual double	GetValue(const int x, const int y, const int z, double dummy);
 		virtual glm::vec2 GetValue(const int x, const int y, const int z, glm::vec2 dummy);
 		virtual glm::vec3 GetValue(const int x, const int y, const int z, glm::vec3 dummy);
 		virtual glm::vec4 GetValue(const int x, const int y, const int z, glm::vec4 dummy);
@@ -179,7 +179,7 @@ namespace NewNodeGraph {
 		void BuildNoiseGraph();
 		void BuildOutputImage(glm::i32vec2 pos, float scale);
 
-		float SampleHeight(const int x, const int y, const int z);
+		float SampleHeight(const float x, const float y, const float z);
 		std::vector<float>& GetOutputGreyscaleImage();
 
 	private:
@@ -207,9 +207,39 @@ namespace NewNodeGraph {
 		int cellsWide;
 		std::vector<float>* outputImage;
 
-		float SampleHeight(const int x, const int y, const int z) {
-			if (x >= 0 && x < cellsWide && y == 0 && z >= 0 && z < cellsWide)
-				return outputImage->at(x * cellsWide + z);
+		float SampleHeight(const float x, const float y, const float z) {
+			float xScaled = x*cellsWide;
+			float yScaled = y*cellsWide;
+			float zScaled = z*cellsWide;
+
+			int realX = (int)glm::clamp(x * (float)(cellsWide), 0.0f, (float)cellsWide - 1);
+			int realY = (int)glm::clamp(y * (float)(cellsWide), 0.0f, (float)cellsWide - 1);
+			int realZ = (int)glm::clamp(z * (float)(cellsWide), 0.0f, (float)cellsWide - 1);
+
+			int realXPlus1 = (int)glm::clamp(x * (float)(cellsWide)+1, 0.0f, (float)cellsWide - 1); //make sure its not greater than the image size
+			int realYPlus1 = (int)glm::clamp(y * (float)(cellsWide)+1, 0.0f, (float)cellsWide - 1);
+			int realZPlus1 = (int)glm::clamp(z * (float)(cellsWide)+1, 0.0f, (float)cellsWide - 1);
+
+
+
+			if (realX >= 0 && realX < cellsWide && realY >= 0 && realY < cellsWide && realZ >= 0 && realZ < cellsWide) {
+
+				float UL = outputImage->at(realX * cellsWide + realZ);
+				float UR = outputImage->at(realX * cellsWide + realZPlus1);
+				float DL = outputImage->at(realXPlus1 * cellsWide + realZ);
+				float DR = outputImage->at(realXPlus1 * cellsWide + realZPlus1);
+
+
+				return (
+					UL * ((float)realXPlus1 - xScaled)	* ((float)realZPlus1 - zScaled)
+					+ DL * (xScaled - (float)realX)		* ((float)realZPlus1 - zScaled)
+					+ UR * ((float)realXPlus1 - xScaled)	* (zScaled - (float)realZ)
+					+ DR * (xScaled - (float)realX)		* (zScaled - (float)realZ)
+					)
+					/ (((float)realXPlus1 - (float)realX) * ((float)realZPlus1 - (float)realZ));
+
+				//return outputImage[realX * cellsWide + realZ];
+			}
 			return -1.0;
 		}
 	};

@@ -26,7 +26,7 @@ void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPas
 	CleanUpTerrain();
 
 	int numCells = 64;
-	int logicalWidth = (int) numCells * glm::pow(2.0, terrainMaxLevels);
+	int logicalWidth = 128;// (int)numCells * glm::pow(2.0, terrainMaxLevels);
 	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < terrainGridDimentions; j++) {
 			
