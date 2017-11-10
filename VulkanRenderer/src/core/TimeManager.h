@@ -1,6 +1,11 @@
 #pragma once
 #include <chrono>
 #include <array>
+
+#define _CRTDBG_MAP_ALLOC  
+#include <stdlib.h>  
+#include <crtdbg.h>  
+
 #include "..\vulkan\VulkanTools.h"
 
 typedef std::array<float, 50> TimingsHistory;

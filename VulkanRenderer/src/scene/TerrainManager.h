@@ -1,5 +1,9 @@
 #pragma once
 
+#define _CRTDBG_MAP_ALLOC  
+#include <stdlib.h>  
+#include <crtdbg.h>  
+
 #include "..\core\TimeManager.h"
 #include "..\core\MemoryPool.h"
 
@@ -42,6 +46,7 @@ private:
 	float terrainHeightScale = 100.0f;
 	int terrainMaxLevels = 1;
 	int terrainGridDimentions = 1;
+	int sourceImageResolution = 256;
 	SimpleTimer terrainUpdateTimer;
 
 	int maxNumQuads = 1; //maximum quads managed by this

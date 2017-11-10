@@ -8,6 +8,10 @@
 #include <glm\common.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#define _CRTDBG_MAP_ALLOC  
+#include <stdlib.h>  
+#include <crtdbg.h>  
+
 #include "..\core\Texture.h"
 #include "..\vulkan\VulkanTexture.hpp"
 #include "..\vulkan\VulkanModel.hpp"

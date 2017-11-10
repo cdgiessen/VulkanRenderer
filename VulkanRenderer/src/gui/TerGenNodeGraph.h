@@ -1,11 +1,17 @@
 #pragma once
 
+
+
 #include <memory>
 #include <vector>
 #include <string>
 #include <iostream>
 
 #include <glm\common.hpp>
+
+#define _CRTDBG_MAP_ALLOC  
+#include <stdlib.h>  
+#include <crtdbg.h>  
 
 #include "..\ImGui\imgui.h"
 

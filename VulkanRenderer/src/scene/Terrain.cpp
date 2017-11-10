@@ -1,7 +1,13 @@
 #include "Terrain.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-
+#ifdef _DEBUG
+#define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
+// Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
+// allocations to be of _CLIENT_BLOCK type
+#else
+#define DBG_NEW new
+#endif
 
 TerrainQuad::TerrainQuad() {
 	pos = glm::vec2(0);
@@ -10,7 +16,9 @@ TerrainQuad::TerrainQuad() {
 	isSubdivided = false;
 }
 
-TerrainQuad::~TerrainQuad() {}
+TerrainQuad::~TerrainQuad() {
+
+}
 
 void TerrainQuad::init(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, glm::i32vec2 subDivPos, float centerHeightValue) {
 	this->pos = pos;
@@ -26,7 +34,15 @@ void TerrainQuad::init(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos, g
 
 }
 
-Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> pool, int numCells, int maxLevels, float heightScale,
+TerrainQuadData::~TerrainQuadData()
+{
+	subQuads.DownLeft.reset();
+	subQuads.DownRight.reset();
+	subQuads.UpLeft.reset();
+	subQuads.UpRight.reset();
+}
+
+Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> pool, int numCells, int maxLevels, float heightScale, int sourceImageResolution,
 	glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize) 
 	: maxLevels(maxLevels), heightScale(heightScale), position(pos), size(size), noisePosition(noisePosition), noiseSize(noiseSize)
 {
@@ -46,7 +62,7 @@ Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQ
 	quadHandles.reserve(maxNumQuads);
 	//terrainGenerationWorkers = std::vector < std::thread>(maxNumQuads);
 
-	fastTerrainGraph = std::make_shared<NewNodeGraph::TerGenNodeGraph> (1337, 1024, noisePosition, 1.0f);
+	fastTerrainGraph = std::make_shared<NewNodeGraph::TerGenNodeGraph> (1337, sourceImageResolution, noisePosition, 1.0f);
 	fastTerrainGraph->BuildNoiseGraph();
 
 	LoadSplatMapFromGenerator();
@@ -57,25 +73,36 @@ Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQ
 
 	maillerFace = new Texture();
 	maillerFace->loadFromFileGreyOnly("Resources/Textures/maillerFace.png");
+	
 }
 
 
 Terrain::~Terrain() {
 	CleanUp();
-	
-	terrainSplatMap->~Texture();
-	terrainTextureArray->~TextureArray();
+		
+	terrainSplatMap.reset();
+	terrainTextureArray.reset();
 
+	delete maillerFace;
 }
 
 void Terrain::CleanUp()
 {
-	terrainSplatMap->~Texture();
-	terrainTextureArray->~TextureArray();
 
 	//for (auto item : quadHandles) {
 	//	terrainQuads->destroy(item.get());
 	//}
+
+	RecursiveUnSubdivide(rootQuad);
+	rootQuad.reset();
+	for (auto item : quadHandles) {
+		item.reset();
+	}
+	for (auto item : PrevQuadHandles) {
+		item.reset();
+	}
+	quadHandles.clear();
+	PrevQuadHandles.clear();
 
 	fastTerrainGraph->~TerGenNodeGraph();
 
@@ -607,9 +634,11 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuad(std::shared_ptr<Terrai
 	//q->terrainQuad.CreateTerrainMesh(&q->vertices, &q->indices);
 
 	//SimpleTimer terrainQuadCreateTime;
-	//GenerateNewTerrain(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, heightScale, maxLevels);
+	
+	GenerateNewTerrain(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, heightScale, maxLevels);
 
-	GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
+	//GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
+	
 	//std::thread* worker = new std::thread(GenerateNewTerrain, terrainGenerator, fastTerrainGraph, &q->vertices, &q->indices, q->terrainQuad, heightScale, maxLevels);
 	//terrainGenerationWorkers.push_back(worker);
 	
@@ -652,11 +681,9 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuadFromParent(std::shared_
 	//terrainGenerationWorkers.push_back(worker);
 	//GenerateTerrainFromExisting( fastTerrainGraph, &parent->vertices, &parent->indices, &q->vertices, &q->indices, corner, q->terrainQuad, heightScale, maxLevels);
 	
-	//GenerateNewTerrainSubdivision(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, corner, heightScale, maxLevels);
+	GenerateNewTerrainSubdivision(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, corner, heightScale, maxLevels);
 	
-	//Texture* t = new Texture();
-	//t->loadFromFileGreyOnly("Resources/Textures/maillerFace.png");
-	GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
+	//GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
 
 	//terrainQuadCreateTime.EndTimer();
 	//std::cout << "From Parent " << terrainQuadCreateTime.GetElapsedTimeMicroSeconds() << std::endl;
@@ -730,6 +757,7 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuadData> quad) {
 
 		auto delUR = std::find(quadHandles.begin(), quadHandles.end(), quad->subQuads.UpRight);
 		if (delUR != quadHandles.end()) {
+			delUR->reset();
 			quadHandles.erase(delUR);
 			vkFreeDescriptorSets(device->device, descriptorPool, 1, &quad->subQuads.UpRight->descriptorSet);
 			//terrainQuads->deallocate(quad->subQuads.UpRight);
@@ -739,6 +767,7 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuadData> quad) {
 
 		auto delDR = std::find(quadHandles.begin(), quadHandles.end(), quad->subQuads.DownRight);
 		if (delDR != quadHandles.end()) {
+			delDR->reset();
 			quadHandles.erase(delDR);
 			vkFreeDescriptorSets(device->device, descriptorPool, 1, &quad->subQuads.DownRight->descriptorSet);
 			//terrainQuads->deallocate(quad->subQuads.DownRight);
@@ -748,6 +777,7 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuadData> quad) {
 
 		auto delUL = std::find(quadHandles.begin(), quadHandles.end(), quad->subQuads.UpLeft);
 		if (delUL != quadHandles.end()) {
+			delUL->reset();
 			quadHandles.erase(delUL);
 			vkFreeDescriptorSets(device->device, descriptorPool, 1, &quad->subQuads.UpLeft->descriptorSet);
 			//terrainQuads->deallocate(quad->subQuads.UpLeft);
@@ -757,6 +787,7 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuadData> quad) {
 
 		auto delDL = std::find(quadHandles.begin(), quadHandles.end(), quad->subQuads.DownLeft);
 		if (delDL != quadHandles.end()) {
+			delDL->reset();
 			quadHandles.erase(delDL);
 			vkFreeDescriptorSets(device->device, descriptorPool, 1, &quad->subQuads.DownLeft->descriptorSet);
 			//terrainQuads->deallocate(quad->subQuads.DownLeft);
@@ -768,6 +799,16 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuadData> quad) {
 	}
 	//quad->isSubdivided = false;
 	//std::cout << "Terrain un-subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " << quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << std::endl;
+}
+
+void Terrain::RecursiveUnSubdivide(std::shared_ptr<TerrainQuadData> quad) {
+	if (quad->terrainQuad.isSubdivided) {
+		RecursiveUnSubdivide(quad->subQuads.DownLeft);
+		RecursiveUnSubdivide(quad->subQuads.DownRight);
+		RecursiveUnSubdivide(quad->subQuads.UpLeft);
+		RecursiveUnSubdivide(quad->subQuads.UpRight);
+	}
+	UnSubdivide(quad);
 }
 
 void Terrain::UpdateUniformBuffer(float time)
@@ -1423,3 +1464,4 @@ void GenerateTerrainFromExisting(TerrainGenerator& terrainGenerator, NewNodeGrap
 		}
 	}
 }
+

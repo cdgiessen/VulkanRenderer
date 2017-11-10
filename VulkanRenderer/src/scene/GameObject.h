@@ -4,6 +4,10 @@
 #include <glm\common.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#define _CRTDBG_MAP_ALLOC  
+#include <stdlib.h>  
+#include <crtdbg.h>  
+
 #include "..\vulkan\VulkanDevice.hpp"
 #include "..\vulkan\VulkanModel.hpp"
 #include "..\vulkan\VulkanPipeline.hpp"

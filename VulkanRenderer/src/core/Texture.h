@@ -10,6 +10,10 @@
 
 #include <glm\common.hpp>
 
+#define _CRTDBG_MAP_ALLOC  
+#include <stdlib.h>  
+#include <crtdbg.h>  
+
 #include <stb_image.h>
 #include "noiseutils.h"
 

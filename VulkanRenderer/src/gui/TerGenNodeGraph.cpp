@@ -115,7 +115,7 @@ namespace NewNodeGraph {
 	}
 	void ConstantIntNode::SetValue(const int value)
 	{
-		this->SetValue(value);
+		this->value.SetValue(value);
 	}
 
 	bool ConstantIntNode::SetInputLink(int index, std::shared_ptr<INode> node) {
@@ -192,6 +192,7 @@ namespace NewNodeGraph {
 		default:
 			return false;
 		}
+		return false;
 	}
 
 	TerGenNodeGraph::TerGenNodeGraph(int seed, int numCells, glm::i32vec2 pos, float scaleModifier) : seed(seed), cellsWide(numCells), pos(pos), scale(scaleModifier)

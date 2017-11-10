@@ -4,6 +4,7 @@
 #include <glm\common.hpp>
 #include <GLFW\glfw3.h>
 
+
 namespace Input {
 	bool GetKey(int GLFW_KEY_CODE);
 	bool GetKeyDown(int GLFW_KEY_CODE);
@@ -14,8 +15,8 @@ namespace Input {
 	bool GetMouseButtonReleased(int button);
 	glm::vec2 GetMousePosition();
 	glm::vec2 GetMouseChangeInPosition();
-	float GetMouseScrollY();
 	float GetMouseScrollX();
+	float GetMouseScrollY();
 }
 
 class InputDirector {
@@ -56,10 +57,10 @@ private:
 	bool mouseButtonsUp[15] = { false };
 
 	bool firstMouse = true; //on start
-	glm::dvec2 mousePosition = glm::dvec2(0,0);
-	glm::dvec2 mousePositionPrevious = glm::dvec2(0,0);
-	glm::dvec2 mouseChangeInPosition = glm::dvec2(0,0);
-	glm::dvec2 mouseScroll = glm::dvec2(0, 0);
+	glm::vec2 mousePosition = glm::vec2(0,0);
+	glm::vec2 mousePositionPrevious = glm::vec2(0,0);
+	glm::vec2 mouseChangeInPosition = glm::vec2(0,0);
+	glm::vec2 mouseScroll = glm::vec2(0, 0);
 
 	InputDirector();
 

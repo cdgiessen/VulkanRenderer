@@ -8,8 +8,7 @@ Water::Water(int numCells, float posX, float posY, float sizeX, float sizeY) : n
 }
 
 Water::~Water() {
-	WaterMesh->~Mesh();
-	WaterTexture->~Texture();
+	CleanUp();
 }
 
 

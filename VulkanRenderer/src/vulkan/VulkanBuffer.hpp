@@ -1,9 +1,13 @@
 #pragma once
 
+#define _CRTDBG_MAP_ALLOC  
+#include <stdlib.h>  
+#include <crtdbg.h>  
 
 #include <vector>
 
 #include "vulkan/vulkan.h"
+
 
 /**
 * @brief Encapsulates access to a Vulkan buffer backed up by device memory

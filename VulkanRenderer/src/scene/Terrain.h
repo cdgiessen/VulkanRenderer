@@ -8,6 +8,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vulkan\vulkan.h>
 
+#define _CRTDBG_MAP_ALLOC  
+#include <stdlib.h>  
+#include <crtdbg.h>  
+
 #include "..\vulkan\VulkanDevice.hpp"
 #include "..\vulkan\VulkanModel.hpp"
 #include "..\vulkan\VulkanPipeline.hpp"
@@ -72,11 +76,15 @@ struct TerrainQuadData {
 		std::shared_ptr<TerrainQuadData> UpRight;
 		std::shared_ptr<TerrainQuadData> DownRight;
 	} subQuads;
+
+	~TerrainQuadData();
 };
 
 class Terrain {
 public:
 	//std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> terrainQuads;
+
+	//Refence to all of the quads
 	std::vector<std::shared_ptr<TerrainQuadData>> quadHandles;
 	std::vector<std::shared_ptr<TerrainQuadData>> PrevQuadHandles;
 	std::vector<TerrainMeshVertices> verts;
@@ -120,7 +128,7 @@ public:
 
 	std::vector<std::thread *> terrainGenerationWorkers;
 
-	Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> pool, int numCells, int maxLevels, float heightScale,
+	Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> pool, int numCells, int maxLevels, float heightScale, int sourceImageResolution,
 		glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
 	~Terrain();
 
@@ -160,6 +168,7 @@ private:
 	void UpdateUniformBuffer(float time);
 	void SubdivideTerrain(std::shared_ptr<TerrainQuadData> quad, VkQueue copyQueue, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo);
 	void UnSubdivide(std::shared_ptr<TerrainQuadData> quad);
+	void RecursiveUnSubdivide(std::shared_ptr<TerrainQuadData> quad);
 
 	std::vector<std::string> texFileNames = {
 		"dirt.jpg",

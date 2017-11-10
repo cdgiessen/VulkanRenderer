@@ -30,7 +30,7 @@ void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPas
 	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < terrainGridDimentions; j++) {
 			
-			terrains.push_back(new Terrain(terrainQuadPool, numCells, terrainMaxLevels, terrainHeightScale,
+			terrains.push_back(new Terrain(terrainQuadPool, numCells, terrainMaxLevels, terrainHeightScale, sourceImageResolution,
 				glm::vec2((i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2), //position
 				glm::vec2(terrainWidth, terrainWidth), //size
 				glm::i32vec2(i * logicalWidth, j * logicalWidth), //noise position
@@ -115,11 +115,13 @@ void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe
 void TerrainManager::UpdateTerrainGUI() {
 	
 	ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
-	ImGui::Begin("Terrain Debug Info", &show_terrain_manager_window);
-	ImGui::SliderFloat("Terrain Width", &terrainWidth, 1, 10000);
-	ImGui::SliderInt("Terrain Max Subdivision", &terrainMaxLevels, 0, 10);
-	ImGui::SliderInt("Terrain Grid Width", &terrainGridDimentions, 1, 10);
-	ImGui::SliderFloat("Terrain Height Scale", &terrainHeightScale, 1, 1000);
+	ImGui::Begin("Debug Info", &show_terrain_manager_window);
+	ImGui::SliderFloat("Width", &terrainWidth, 1, 10000);
+	ImGui::SliderInt("Max Subdivision", &terrainMaxLevels, 0, 10);
+	ImGui::SliderInt("Grid Width", &terrainGridDimentions, 1, 10);
+	ImGui::SliderFloat("Height Scale", &terrainHeightScale, 1, 1000);
+	ImGui::SliderInt("Image Resolution", &sourceImageResolution, 1, 2048);
+
 	if (ImGui::Button("Recreate Terrain", ImVec2(130, 20))) {
 		recreateTerrain = true;
 	}
@@ -137,10 +139,10 @@ void TerrainManager::UpdateTerrainGUI() {
 void TerrainManager::CleanUpTerrain() {
 
 	for (Terrain* ter : terrains) {
-		ter->CleanUp();
+		delete ter;
 	}
 	for (Water* water : waters) {
-		water->CleanUp();
+		delete water;
 	}
 	terrains.clear();
 	waters.clear();

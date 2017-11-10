@@ -63,14 +63,16 @@ void Texture::loadFromNoiseUtilImage(utils::Image* image) {
 
 	pixels = (stbi_uc*) malloc(texImageSize);
 
-	for (int i = 0; i < imgHeight; i++)
-	{
-		for (int j = 0; j < imgWidth; j++)
+	if (pixels != nullptr) {
+		for (int i = 0; i < imgHeight; i++)
 		{
-			pixels[(i * imgHeight + j)*4 + 0] = image->GetValue(j, i).red;
-			pixels[(i * imgHeight + j)*4 + 1] = image->GetValue(j, i).green;
-			pixels[(i * imgHeight + j)*4 + 2] = image->GetValue(j, i).blue;
-			pixels[(i * imgHeight + j)*4 + 3] = image->GetValue(j, i).alpha;
+			for (int j = 0; j < imgWidth; j++)
+			{
+				pixels[(i * imgHeight + j) * 4 + 0] = image->GetValue(j, i).red;
+				pixels[(i * imgHeight + j) * 4 + 1] = image->GetValue(j, i).green;
+				pixels[(i * imgHeight + j) * 4 + 2] = image->GetValue(j, i).blue;
+				pixels[(i * imgHeight + j) * 4 + 3] = image->GetValue(j, i).alpha;
+			}
 		}
 	}
 }
@@ -90,15 +92,16 @@ void Texture::loadFromGreyscalePixelData(int width, int height, float* in_pixels
 	this->texImageSize = imgWidth * imgHeight * 4;
 
 	pixels = (stbi_uc*)malloc(texImageSize);
-
-	for (int i = 0; i < width; i++)
-	{
-		for (int j = 0; j < height; j++)
+	if (pixels != nullptr) {
+		for (int i = 0; i < width; i++)
 		{
-			pixels[(i * imgHeight + j) * 4 + 0] = (stbi_uc)(in_pixels[i * imgHeight + j] * 128 + 128);
-			pixels[(i * imgHeight + j) * 4 + 1] = (stbi_uc)(in_pixels[i * imgHeight + j] * 128 + 128);
-			pixels[(i * imgHeight + j) * 4 + 2] = (stbi_uc)(in_pixels[i * imgHeight + j] * 128 + 128);
-			pixels[(i * imgHeight + j) * 4 + 3] = 1;
+			for (int j = 0; j < height; j++)
+			{
+				pixels[(i * imgHeight + j) * 4 + 0] = (stbi_uc)(in_pixels[i * imgHeight + j] * 128 + 128);
+				pixels[(i * imgHeight + j) * 4 + 1] = (stbi_uc)(in_pixels[i * imgHeight + j] * 128 + 128);
+				pixels[(i * imgHeight + j) * 4 + 2] = (stbi_uc)(in_pixels[i * imgHeight + j] * 128 + 128);
+				pixels[(i * imgHeight + j) * 4 + 3] = 1;
+			}
 		}
 	}
 }
