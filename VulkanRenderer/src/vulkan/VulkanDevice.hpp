@@ -58,6 +58,9 @@ public:
 	VkPhysicalDeviceFeatures physical_device_features;
 	VkPhysicalDeviceMemoryProperties memoryProperties;
 
+	VkMemoryPropertyFlags uniformBufferMemPropertyFlags = 
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
 	VulkanDevice();
 
 	~VulkanDevice();
@@ -153,7 +156,7 @@ private:
 
 	void createLogicalDevice(VkSurfaceKHR &surface);
 
-	void createCommandPool(VkSurfaceKHR &surface);
+	void createCommandPools(VkSurfaceKHR &surface);
 
 	VkResult CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback);
 

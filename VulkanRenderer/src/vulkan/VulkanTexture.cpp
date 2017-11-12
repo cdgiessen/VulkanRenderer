@@ -52,7 +52,7 @@ void VulkanTexture2D::loadFromTexture(
 	VkFormat format,
 	VulkanDevice *device,
 	VkQueue copyQueue,
-	VkImageUsageFlags imageUsageFlags ,
+	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout,
 	bool forceLinear,
 	bool genMipMaps,

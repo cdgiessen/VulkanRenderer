@@ -56,7 +56,7 @@ void InstancedSceneObject::CleanUp()
 
 void InstancedSceneObject::LoadModel(std::string filename) {
 	mesh = new Mesh();
-	this->mesh->importFromFile(filename);
+	//this->mesh->importFromFile(filename);
 }
 
 void InstancedSceneObject::LoadModel(Mesh* mesh) {

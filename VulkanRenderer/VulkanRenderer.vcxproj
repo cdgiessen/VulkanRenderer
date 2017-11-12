@@ -93,18 +93,18 @@
   <ItemGroup>
     <ClCompile Include="src\core\Input.cpp" />
     <ClCompile Include="src\scene\Camera.cpp" />
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD.cpp" />
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_avx2.cpp" />
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_avx512.cpp" />
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_internal.cpp" />
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_neon.cpp" />
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_sse2.cpp" />
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_sse41.cpp" />
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD.cpp" />
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_avx2.cpp" />
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_avx512.cpp" />
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_internal.cpp" />
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_neon.cpp" />
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_sse2.cpp" />
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_sse41.cpp" />
     <ClCompile Include="src\scene\GameObject.cpp" />
     <ClCompile Include="src\gui\ImGuiImpl.cpp" />
-    <ClCompile Include="src\ImGui\imgui.cpp" />
-    <ClCompile Include="src\ImGui\imgui_demo.cpp" />
-    <ClCompile Include="src\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="src\third-party\ImGui\imgui.cpp" />
+    <ClCompile Include="src\third-party\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="src\third-party\ImGui\imgui_draw.cpp" />
     <ClCompile Include="src\scene\InstancedSceneObject.cpp" />
     <ClCompile Include="src\core\Logger.cpp" />
     <ClCompile Include="src\core\Mesh.cpp" />
@@ -132,16 +132,16 @@
   <ItemGroup>
     <ClInclude Include="src\core\Input.h" />
     <ClInclude Include="src\scene\Camera.h" />
-    <ClInclude Include="src\FastNoiseSIMD\FastNoiseSIMD.h" />
-    <ClInclude Include="src\FastNoiseSIMD\FastNoiseSIMD_internal.h" />
+    <ClInclude Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD.h" />
+    <ClInclude Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_internal.h" />
     <ClInclude Include="src\scene\GameObject.h" />
     <ClInclude Include="src\gui\ImGuiImpl.h" />
-    <ClInclude Include="src\ImGui\imconfig.h" />
-    <ClInclude Include="src\ImGui\imgui.h" />
-    <ClInclude Include="src\ImGui\imgui_internal.h" />
-    <ClInclude Include="src\ImGui\stb_rect_pack.h" />
-    <ClInclude Include="src\ImGui\stb_textedit.h" />
-    <ClInclude Include="src\ImGui\stb_truetype.h" />
+    <ClInclude Include="src\third-party\ImGui\imconfig.h" />
+    <ClInclude Include="src\third-party\ImGui\imgui.h" />
+    <ClInclude Include="src\third-party\ImGui\imgui_internal.h" />
+    <ClInclude Include="src\third-party\ImGui\stb_rect_pack.h" />
+    <ClInclude Include="src\third-party\ImGui\stb_textedit.h" />
+    <ClInclude Include="src\third-party\ImGui\stb_truetype.h" />
     <ClInclude Include="src\scene\InstancedSceneObject.h" />
     <ClInclude Include="src\core\Logger.h" />
     <ClInclude Include="src\core\Mesh.h" />
@@ -156,6 +156,8 @@
     <ClInclude Include="src\scene\TerrainManager.h" />
     <ClInclude Include="src\core\Texture.h" />
     <ClInclude Include="src\core\TimeManager.h" />
+    <ClInclude Include="src\third-party\stb_image\stb_image.h" />
+    <ClInclude Include="src\third-party\tinyobjloader\tiny_obj_loader.h" />
     <ClInclude Include="src\vulkan\VulkanBuffer.hpp" />
     <ClInclude Include="src\vulkan\VulkanDevice.hpp" />
     <ClInclude Include="src\vulkan\VulkanPipeline.hpp" />
@@ -255,13 +257,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\stb_image\include;C:\VulkanSDK\1.0.51.0\Include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glm;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\libnoise\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\imgui;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\Assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.0.65.0\Include;C:\VulkanSDK\1.0.51.0\Include;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\include;C:\VulkanSDK\1.0.65.0\Third-Party\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;noise.lib;noiseutils-static.lib;assimp-vc140-mt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\Assimp\x64\Debug;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\libnoise\lib;C:\VulkanSDK\1.0.51.0\Lib;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\1.0.65.0\Lib;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -293,15 +295,15 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\stb_image\include;C:\VulkanSDK\1.0.51.0\Include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glm;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\libnoise\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\Assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.0.65.0\Include;C:\VulkanSDK\1.0.51.0\Include;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\include;C:\VulkanSDK\1.0.65.0\Third-Party\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;noise.lib;noiseutils-static.lib;assimp-vc140-mt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\Assimp\x64\Release;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\libnoise\lib;C:\VulkanSDK\1.0.51.0\Lib;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\1.0.65.0\Lib;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

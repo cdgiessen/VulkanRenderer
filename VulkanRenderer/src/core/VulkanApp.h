@@ -30,7 +30,7 @@
 
 #include "..\vulkan\VulkanDevice.hpp"
 
-#include "..\ImGui\imgui.h"
+#include "..\third-party\ImGui\imgui.h"
 #include "..\gui\ImGuiImpl.h"
 
 #include "TimeManager.h"
@@ -38,8 +38,8 @@
 
 #include "..\gui\NodeGraph.h"
 
-const int WIDTH = 1600;
-const int HEIGHT = 900;
+const int WIDTH = 800;
+const int HEIGHT = 600;
 
 class VulkanApp
 {

@@ -1,5 +1,5 @@
-#include <noise\basictypes.h>
-#include <noiseutils.h>
+//#include <noise\basictypes.h>
+//#include <noiseutils.h>
 
 #include <glm\common.hpp>
 
@@ -7,7 +7,7 @@
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
-#include "..\FastNoiseSIMD\FastNoiseSIMD.h"
+#include "..\third-party\FastNoiseSIMD\FastNoiseSIMD.h"
 #include "..\gui\TerGenNodeGraph.h"
 
 struct BiomeColor {
@@ -38,8 +38,8 @@ public:
 	float SampleColor(int channel, float x, float y, float z);
 	float GetBiomeColor(int channel, float rainVal, float tempVal, float elevation);
 
-	utils::Image* getImagePtr();
-
+	//utils::Image* getImagePtr();
+	/*
 private:
 	module::RidgedMulti mountainTerrain;
 	module::Billow baseFlatTerrain;
@@ -64,7 +64,7 @@ private:
 	noise::module::Voronoi rainFallMap;
 	noise::module::Voronoi temperatureMap;
 	noise::module::Perlin elevationMap;
-
+	*/
 	NewNodeGraph::TerGenNodeGraph* nodeGraph;
 
 	/*

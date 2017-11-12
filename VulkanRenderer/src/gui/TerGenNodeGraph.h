@@ -13,9 +13,9 @@
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
-#include "..\ImGui\imgui.h"
+#include "..\third-party\ImGui\imgui.h"
 
-#include "..\FastNoiseSIMD\FastNoiseSIMD.h"
+#include "..\third-party\FastNoiseSIMD\FastNoiseSIMD.h"
 
 namespace NewNodeGraph {
 

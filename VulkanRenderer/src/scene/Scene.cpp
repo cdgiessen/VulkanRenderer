@@ -50,8 +50,10 @@ void Scene::PrepareScene(VulkanPipeline pipelineManager, VkRenderPass renderPass
 }
 
 void Scene::CreateUniformBuffers() {
-	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &globalVariableBuffer, sizeof(GlobalVariableUniformBuffer));
-	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &lightsInfoBuffer, sizeof(PointLight) * pointLights.size());
+	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, device->uniformBufferMemPropertyFlags,
+		&globalVariableBuffer, sizeof(GlobalVariableUniformBuffer));
+	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, device->uniformBufferMemPropertyFlags,
+		&lightsInfoBuffer, sizeof(PointLight) * pointLights.size());
 
 	for (int i = 0; i < pointLights.size(); i++)
 	{

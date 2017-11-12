@@ -52,7 +52,7 @@ void GameObject::CleanUp()
 
 void GameObject::LoadModel(std::string filename) {
 	gameObjectMesh = new Mesh();
-	this->gameObjectMesh->importFromFile(filename);
+	//this->gameObjectMesh->importFromFile(filename);
 }
 
 void GameObject::LoadModel(Mesh* mesh) {

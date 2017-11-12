@@ -10,7 +10,7 @@
 
 #include "..\core\Texture.h"
 
-#include <stb_image.h>
+#include "..\third-party\stb_image\stb_image.h"
 
 class VulkanTexture {
 public:

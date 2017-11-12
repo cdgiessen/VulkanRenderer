@@ -1,6 +1,6 @@
 #include "TerrainManager.h"
 
-#include "..\ImGui\imgui.h"
+#include "..\third-party\ImGui\imgui.h"
 #include "..\gui\ImGuiImpl.h"
 
 TerrainManager::TerrainManager(VulkanDevice* device) : device(device)
