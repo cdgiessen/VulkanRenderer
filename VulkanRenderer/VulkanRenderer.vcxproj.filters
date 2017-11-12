@@ -34,9 +34,6 @@
     <Filter Include="Resources\Textures\TerrainTextures">
       <UniqueIdentifier>{2f5a66ee-30eb-4036-802e-defcdc3efe83}</UniqueIdentifier>
     </Filter>
-    <Filter Include="FastNoiseSIMD">
-      <UniqueIdentifier>{e63cb4f6-d07a-4f0e-9b8f-66c10258c00e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\core">
       <UniqueIdentifier>{9b1c6537-afcf-42c0-802c-5c083ef4cd73}</UniqueIdentifier>
     </Filter>
@@ -55,14 +52,26 @@
     <Filter Include="Header Files\gui">
       <UniqueIdentifier>{1c5eb8d9-96f5-412c-9888-4e311768ebeb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\ImGui">
-      <UniqueIdentifier>{641385be-4019-4f2a-90e8-aca5e7660023}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\scene">
       <UniqueIdentifier>{8f76adf0-54cd-49a3-81b3-ba07dca9ef80}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\gui">
       <UniqueIdentifier>{fbc7c9d2-3d67-4096-bc46-e15077e673f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third-party">
+      <UniqueIdentifier>{1eed7f9a-cb7f-4e0f-a7bf-6677b6734631}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third-party\FastNoiseSIMD">
+      <UniqueIdentifier>{e63cb4f6-d07a-4f0e-9b8f-66c10258c00e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third-party\ImGui">
+      <UniqueIdentifier>{641385be-4019-4f2a-90e8-aca5e7660023}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third-party\tinyobjloader">
+      <UniqueIdentifier>{ac37a588-82dc-49d6-8d29-f2f56d5d2279}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third-party\stb_image">
+      <UniqueIdentifier>{e1994d7f-92d3-435c-84ee-3672cd8d96f8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -162,10 +171,18 @@
     <None Include="Shaders\normalVecDebug.vert.spv">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\Seascape.frag" />
-    <None Include="Shaders\Seascape.vert" />
-    <None Include="Shaders\Seascape.frag.spv" />
-    <None Include="Shaders\Seascape.vert.spv" />
+    <None Include="Shaders\Seascape.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Seascape.frag.spv">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Seascape.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Seascape.vert.spv">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\vulkan\VulkanDevice.cpp">
@@ -188,39 +205,6 @@
     </ClCompile>
     <ClCompile Include="src\core\TimeManager.cpp">
       <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ImGui\imgui.cpp">
-      <Filter>Header Files\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ImGui\imgui_demo.cpp">
-      <Filter>Header Files\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ImGui\imgui_draw.cpp">
-      <Filter>Header Files\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD.cpp">
-      <Filter>FastNoiseSIMD</Filter>
-    </ClCompile>
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_avx2.cpp">
-      <Filter>FastNoiseSIMD</Filter>
-    </ClCompile>
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_avx512.cpp">
-      <Filter>FastNoiseSIMD</Filter>
-    </ClCompile>
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_internal.cpp">
-      <Filter>FastNoiseSIMD</Filter>
-    </ClCompile>
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_neon.cpp">
-      <Filter>FastNoiseSIMD</Filter>
-    </ClCompile>
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_sse2.cpp">
-      <Filter>FastNoiseSIMD</Filter>
-    </ClCompile>
-    <ClCompile Include="src\FastNoiseSIMD\FastNoiseSIMD_sse41.cpp">
-      <Filter>FastNoiseSIMD</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\VulkanApp.cpp">
-      <Filter>Source Files\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\scene\Water.cpp">
       <Filter>Source Files\scene</Filter>
@@ -273,11 +257,44 @@
     <ClCompile Include="src\core\Window.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\Input.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\vulkan\VulkanLargeBuffer.cpp">
       <Filter>Source Files\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Input.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\VulkanApp.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD.cpp">
+      <Filter>third-party\FastNoiseSIMD</Filter>
+    </ClCompile>
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_avx2.cpp">
+      <Filter>third-party\FastNoiseSIMD</Filter>
+    </ClCompile>
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_avx512.cpp">
+      <Filter>third-party\FastNoiseSIMD</Filter>
+    </ClCompile>
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_internal.cpp">
+      <Filter>third-party\FastNoiseSIMD</Filter>
+    </ClCompile>
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_neon.cpp">
+      <Filter>third-party\FastNoiseSIMD</Filter>
+    </ClCompile>
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_sse2.cpp">
+      <Filter>third-party\FastNoiseSIMD</Filter>
+    </ClCompile>
+    <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_sse41.cpp">
+      <Filter>third-party\FastNoiseSIMD</Filter>
+    </ClCompile>
+    <ClCompile Include="src\third-party\ImGui\imgui.cpp">
+      <Filter>third-party\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\third-party\ImGui\imgui_demo.cpp">
+      <Filter>third-party\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\third-party\ImGui\imgui_draw.cpp">
+      <Filter>third-party\ImGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -310,30 +327,6 @@
     </ClInclude>
     <ClInclude Include="src\core\TimeManager.h">
       <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ImGui\imconfig.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ImGui\imgui.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ImGui\imgui_internal.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ImGui\stb_rect_pack.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ImGui\stb_textedit.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ImGui\stb_truetype.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\FastNoiseSIMD\FastNoiseSIMD.h">
-      <Filter>FastNoiseSIMD</Filter>
-    </ClInclude>
-    <ClInclude Include="src\FastNoiseSIMD\FastNoiseSIMD_internal.h">
-      <Filter>FastNoiseSIMD</Filter>
     </ClInclude>
     <ClInclude Include="src\scene\Camera.h">
       <Filter>Header Files\scene</Filter>
@@ -389,11 +382,41 @@
     <ClInclude Include="src\core\Window.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\Input.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\vulkan\VulkanLargeBuffer.h">
       <Filter>Header Files\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD.h">
+      <Filter>third-party\FastNoiseSIMD</Filter>
+    </ClInclude>
+    <ClInclude Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_internal.h">
+      <Filter>third-party\FastNoiseSIMD</Filter>
+    </ClInclude>
+    <ClInclude Include="src\third-party\ImGui\imconfig.h">
+      <Filter>third-party\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\third-party\ImGui\imgui.h">
+      <Filter>third-party\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\third-party\ImGui\imgui_internal.h">
+      <Filter>third-party\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\third-party\ImGui\stb_rect_pack.h">
+      <Filter>third-party\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\third-party\ImGui\stb_textedit.h">
+      <Filter>third-party\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\third-party\ImGui\stb_truetype.h">
+      <Filter>third-party\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\third-party\tinyobjloader\tiny_obj_loader.h">
+      <Filter>third-party\tinyobjloader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\Input.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\third-party\stb_image\stb_image.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

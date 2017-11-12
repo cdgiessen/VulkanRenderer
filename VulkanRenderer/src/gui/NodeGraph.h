@@ -3,10 +3,10 @@
 #include <vector>
 #include <tuple>
 
-#include "..\ImGui\imgui.h"
+#include "..\third-party\ImGui\imgui.h"
 
-#include <noise\basictypes.h>
-#include <noiseutils.h>
+//#include <noise\basictypes.h>
+//#include <noiseutils.h>
 
 enum LinkType{
 Float = 0,
@@ -167,7 +167,7 @@ public:
 
 class NoiseSourceNode : public Node {
 public:
-	module::Perlin noiseInputSource;
+	//module::Perlin noiseInputSource;
 
 	NoiseSourceNode();
 
@@ -196,7 +196,7 @@ private:
 	float testVec[3];
 	//static bool show_node_graph_window = true;
 	std::vector<Node* > nodes;
-	std::vector<Connector* > connectors;
+	std::vector<Connector* > connectors;	
 
 	OutputNode* outputNode;
 

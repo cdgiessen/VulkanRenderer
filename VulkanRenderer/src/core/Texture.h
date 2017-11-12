@@ -14,8 +14,8 @@
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
-#include <stb_image.h>
-#include "noiseutils.h"
+#include "../third-party/stb_image/stb_image.h"
+//#include "noiseutils.h"
 
 class Texture {
 public:
@@ -30,7 +30,7 @@ public:
 
 	void loadFromFileRGBA(std::string filename);
 	void loadFromFileGreyOnly(std::string filename);
-	void loadFromNoiseUtilImage(utils::Image* image);
+	//void loadFromNoiseUtilImage(utils::Image* image);
 	void loadFromGreyscalePixelData(int width, int height, float* pixels);
 
 };

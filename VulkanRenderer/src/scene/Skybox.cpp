@@ -23,7 +23,8 @@ void Skybox::CleanUp() {
 	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
 }
 
-void Skybox::InitSkybox(VulkanDevice* device, std::string filename, std::string fileExt, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
+void Skybox::InitSkybox(VulkanDevice* device, std::string filename, std::string fileExt, VulkanPipeline pipelineManager, 
+	VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
 	this->device = device;
 
 	LoadSkyboxData(filename, fileExt);
@@ -36,7 +37,8 @@ void Skybox::InitSkybox(VulkanDevice* device, std::string filename, std::string 
 
 }
 
-void Skybox::ReinitSkybox(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight){
+void Skybox::ReinitSkybox(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass,
+	uint32_t viewPortWidth, uint32_t viewPortHeight){
 	vkDestroyPipeline(device->device, pipeline, nullptr);
 	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
 
@@ -51,7 +53,9 @@ void Skybox::LoadSkyboxData(std::string skyboxImageFile, std::string fileExt) {
 }
 
 void Skybox::SetupUniformBuffer() {
-	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &skyboxUniformBuffer, sizeof(SkyboxUniformBuffer));
+	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+		(VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), 
+		&skyboxUniformBuffer, sizeof(SkyboxUniformBuffer));
 }
 
 void Skybox::SetupCubeMapImage() {
@@ -60,8 +64,10 @@ void Skybox::SetupCubeMapImage() {
 }
 
 void Skybox::SetupDescriptor() {
-	VkDescriptorSetLayoutBinding skyboxUniformLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1);
-	VkDescriptorSetLayoutBinding skyboxSamplerLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1);
+	VkDescriptorSetLayoutBinding skyboxUniformLayoutBinding 
+		= initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1);
+	VkDescriptorSetLayoutBinding skyboxSamplerLayoutBinding 
+		= initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1);
 
 	std::vector<VkDescriptorSetLayoutBinding> bindings = { skyboxUniformLayoutBinding, skyboxSamplerLayoutBinding };
 	VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
@@ -74,7 +80,8 @@ void Skybox::SetupDescriptor() {
 	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
 	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 
-	VkDescriptorPoolCreateInfo poolInfo = initializers::descriptorPoolCreateInfo(static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), 1);
+	VkDescriptorPoolCreateInfo poolInfo = initializers::descriptorPoolCreateInfo(static_cast<uint32_t>(poolSizes.size()),
+		poolSizes.data(), 1);
 
 	if (vkCreateDescriptorPool(device->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool!");
@@ -90,8 +97,10 @@ void Skybox::SetupDescriptor() {
 	skyboxUniformBuffer.setupDescriptor();
 
 	std::vector<VkWriteDescriptorSet> descriptorWrites;
-	descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &skyboxUniformBuffer.descriptor, 1));
-	descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &vulkanCubeMap.descriptor, 1));
+	descriptorWrites.push_back(initializers::writeDescriptorSet(
+		descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &skyboxUniformBuffer.descriptor, 1));
+	descriptorWrites.push_back(initializers::writeDescriptorSet(
+		descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &vulkanCubeMap.descriptor, 1));
 
 	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
@@ -107,10 +116,12 @@ void Skybox::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderPa
 	PipelineManager.SetViewport(myPipe, viewPortWidth, viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
 	PipelineManager.SetScissor(myPipe, viewPortWidth, viewPortHeight, 0, 0);
 	PipelineManager.SetViewportState(myPipe, 1, 1, 0);
-	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, 
+		VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 	PipelineManager.SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
 	PipelineManager.SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER_OR_EQUAL, VK_FALSE, VK_FALSE);
-	PipelineManager.SetColorBlendingAttachment(myPipe, VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+	PipelineManager.SetColorBlendingAttachment(myPipe, VK_FALSE, 
+		VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
 	PipelineManager.SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
@@ -125,10 +136,12 @@ void Skybox::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderPa
 	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/skybox.vert.spv");
 	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/skybox.frag.spv");
 
-	VkPipelineShaderStageCreateInfo vertShaderStageInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule);
+	VkPipelineShaderStageCreateInfo vertShaderStageInfo = 
+		initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule);
 	vertShaderStageInfo.pName = "main";
 
-	VkPipelineShaderStageCreateInfo fragShaderStageInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule);
+	VkPipelineShaderStageCreateInfo fragShaderStageInfo = 
+		initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule);
 	fragShaderStageInfo.pName = "main";
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
@@ -143,7 +156,8 @@ void Skybox::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderPa
 	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
 	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
-	VkPipelineInputAssemblyStateCreateInfo inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly = 
+		initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 
 	VkViewport viewport = initializers::viewport((float)viewPortWidth, (float)viewPortHeight, 0, 1);
 	viewport.x = 0.0f;
@@ -165,7 +179,8 @@ void Skybox::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderPa
 	VkPipelineMultisampleStateCreateInfo multisampling = initializers::pipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT);
 	multisampling.sampleShadingEnable = VK_FALSE;
 
-	VkPipelineDepthStencilStateCreateInfo depthStencil = initializers::pipelineDepthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
+	VkPipelineDepthStencilStateCreateInfo depthStencil = 
+		initializers::pipelineDepthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
 	depthStencil.depthBoundsTestEnable = VK_FALSE;
 	depthStencil.stencilTestEnable = VK_FALSE;
 
@@ -218,7 +233,8 @@ void Skybox::UpdateUniform(glm::mat4 proj, glm::mat4 view) {
 	skyboxUniformBuffer.unmap();
 };
 
-VkCommandBuffer Skybox::BuildSecondaryCommandBuffer(VkCommandBuffer secondaryCommandBuffer, VkCommandBufferInheritanceInfo inheritanceInfo) {
+VkCommandBuffer Skybox::BuildSecondaryCommandBuffer(VkCommandBuffer secondaryCommandBuffer, 
+		VkCommandBufferInheritanceInfo inheritanceInfo) {
 
 	VkCommandBufferBeginInfo commandBufferBeginInfo = initializers::commandBufferBeginInfo();
 	commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;

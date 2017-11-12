@@ -21,7 +21,7 @@ void VulkanDevice::initVulkanDevice(VkSurfaceKHR &surface)
 	pickPhysicalDevice(surface);
 	//findQueueFamilies();
 	createLogicalDevice(surface);
-	createCommandPool(surface);
+	createCommandPools(surface);
 }
 
 void VulkanDevice::cleanup(VkSurfaceKHR &surface) {
@@ -496,7 +496,7 @@ void VulkanDevice::createLogicalDevice(VkSurfaceKHR &surface) {
 	vkGetPhysicalDeviceMemoryProperties(physical_device, &memoryProperties);
 }
 
-void VulkanDevice::createCommandPool(VkSurfaceKHR &surface) {
+void VulkanDevice::createCommandPools(VkSurfaceKHR &surface) {
 	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physical_device, surface);
 
 	// graphics_queue_command_pool

@@ -1,7 +1,7 @@
 #include "VulkanApp.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include "..\third-party\stb_image\stb_image.h"
 
 #include "..\vulkan\VulkanInitializers.hpp"
 

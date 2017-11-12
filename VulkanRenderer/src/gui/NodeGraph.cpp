@@ -219,11 +219,12 @@ void NoiseSourceNode::SetInputNode(int index, Node* n) {
 }
 
 double NoiseSourceNode::GetValue(double x, double y, double z) {
-	noiseInputSource.SetFrequency(inputs.at(0)->GetValue(x,y,z));
-	noiseInputSource.SetPersistence(inputs.at(1)->GetValue(x, y, z));
-	noiseInputSource.SetOctaveCount(inputs.at(2)->GetValue(x, y, z));
-
-	return noiseInputSource.GetValue(x,y,z);
+	//noiseInputSource.SetFrequency(inputs.at(0)->GetValue(x,y,z));
+	//noiseInputSource.SetPersistence(inputs.at(1)->GetValue(x, y, z));
+	//noiseInputSource.SetOctaveCount(inputs.at(2)->GetValue(x, y, z));
+	//
+	//return noiseInputSource.GetValue(x,y,z);
+	return 0.0;
 }
 
 void NoiseSourceNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {

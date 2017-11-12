@@ -47,35 +47,35 @@ void Texture::loadFromFileGreyOnly(std::string filename) {
 	this->height = static_cast<uint32_t>(texHeight);
 };
 
-void Texture::loadFromNoiseUtilImage(utils::Image* image) {
-	if (image->GetSlabPtr() == nullptr) {
-		std::cout << "Noise Utils Image Null, Cannot load null image" << std::endl;
-		return;
-	}
-
-	int imgWidth = image->GetWidth();
-	int imgHeight = image->GetHeight();
-
-	this->width = static_cast<uint32_t>(imgWidth);
-	this->height = static_cast<uint32_t>(imgHeight);
-
-	this->texImageSize = imgWidth * imgHeight * 4;
-
-	pixels = (stbi_uc*) malloc(texImageSize);
-
-	if (pixels != nullptr) {
-		for (int i = 0; i < imgHeight; i++)
-		{
-			for (int j = 0; j < imgWidth; j++)
-			{
-				pixels[(i * imgHeight + j) * 4 + 0] = image->GetValue(j, i).red;
-				pixels[(i * imgHeight + j) * 4 + 1] = image->GetValue(j, i).green;
-				pixels[(i * imgHeight + j) * 4 + 2] = image->GetValue(j, i).blue;
-				pixels[(i * imgHeight + j) * 4 + 3] = image->GetValue(j, i).alpha;
-			}
-		}
-	}
-}
+//void Texture::loadFromNoiseUtilImage(utils::Image* image) {
+//	if (image->GetSlabPtr() == nullptr) {
+//		std::cout << "Noise Utils Image Null, Cannot load null image" << std::endl;
+//		return;
+//	}
+//
+//	int imgWidth = image->GetWidth();
+//	int imgHeight = image->GetHeight();
+//
+//	this->width = static_cast<uint32_t>(imgWidth);
+//	this->height = static_cast<uint32_t>(imgHeight);
+//
+//	this->texImageSize = imgWidth * imgHeight * 4;
+//
+//	pixels = (stbi_uc*) malloc(texImageSize);
+//
+//	if (pixels != nullptr) {
+//		for (int i = 0; i < imgHeight; i++)
+//		{
+//			for (int j = 0; j < imgWidth; j++)
+//			{
+//				pixels[(i * imgHeight + j) * 4 + 0] = image->GetValue(j, i).red;
+//				pixels[(i * imgHeight + j) * 4 + 1] = image->GetValue(j, i).green;
+//				pixels[(i * imgHeight + j) * 4 + 2] = image->GetValue(j, i).blue;
+//				pixels[(i * imgHeight + j) * 4 + 3] = image->GetValue(j, i).alpha;
+//			}
+//		}
+//	}
+//}
 
 void Texture::loadFromGreyscalePixelData(int width, int height, float* in_pixels) {
 	if (in_pixels == nullptr) {

@@ -6,7 +6,7 @@
 // If you are new to ImGui, see examples/README.txt and documentation at the top of imgui.cpp.
 // https://github.com/ocornut/imgui
 
-#include "..\ImGui\imgui.h"
+#include "..\third-party\ImGui\imgui.h"
 
 // GLFW
 #define GLFW_INCLUDE_NONE
@@ -857,3 +857,4 @@ void ImGui_ImplGlfwVulkan_Render(VkCommandBuffer command_buffer)
 	g_CommandBuffer = VK_NULL_HANDLE;
 	g_FrameIndex = (g_FrameIndex + 1) % IMGUI_VK_QUEUED_FRAMES;
 }
+
