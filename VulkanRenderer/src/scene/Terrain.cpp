@@ -635,9 +635,9 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuad(std::shared_ptr<Terrai
 
 	//SimpleTimer terrainQuadCreateTime;
 	
-	GenerateNewTerrain(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, heightScale, maxLevels);
+	//GenerateNewTerrain(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, heightScale, maxLevels);
 
-	//GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
+	GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
 	
 	//std::thread* worker = new std::thread(GenerateNewTerrain, terrainGenerator, fastTerrainGraph, &q->vertices, &q->indices, q->terrainQuad, heightScale, maxLevels);
 	//terrainGenerationWorkers.push_back(worker);
@@ -681,9 +681,9 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuadFromParent(std::shared_
 	//terrainGenerationWorkers.push_back(worker);
 	//GenerateTerrainFromExisting( fastTerrainGraph, &parent->vertices, &parent->indices, &q->vertices, &q->indices, corner, q->terrainQuad, heightScale, maxLevels);
 	
-	GenerateNewTerrainSubdivision(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, corner, heightScale, maxLevels);
+	//GenerateNewTerrainSubdivision(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, corner, heightScale, maxLevels);
 	
-	//GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
+	GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
 
 	//terrainQuadCreateTime.EndTimer();
 	//std::cout << "From Parent " << terrainQuadCreateTime.GetElapsedTimeMicroSeconds() << std::endl;
