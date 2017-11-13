@@ -8,11 +8,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vulkan\vulkan.h>
 
-#define _CRTDBG_MAP_ALLOC  
+
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
-#include "..\vulkan\VulkanDevice.hpp"
+#include "..\vulkan\vulkanDevice.hpp"
 #include "..\vulkan\VulkanModel.hpp"
 #include "..\vulkan\VulkanPipeline.hpp"
 #include "..\vulkan\VulkanTexture.hpp"
@@ -99,6 +99,7 @@ public:
 	glm::vec2 size;
 	glm::i32vec2 noisePosition;
 	glm::i32vec2 noiseSize;
+	int sourceImageResolution;
 	float heightScale = 100;
 
 	std::shared_ptr<VulkanDevice> device;
@@ -122,6 +123,7 @@ public:
 
 	VulkanBuffer modelUniformBuffer;
 
+	std::shared_ptr<Texture> maillerFace;
 	std::shared_ptr<NewNodeGraph::TerGenNodeGraph> fastTerrainGraph;
 
 	SimpleTimer drawTimer;
@@ -132,13 +134,13 @@ public:
 		glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
 	~Terrain();
 
-	void InitTerrain(std::shared_ptr<VulkanDevice> device, VulkanPipeline pipelineManager, VkRenderPass renderPass, VkQueue copyQueue,
+	void InitTerrain(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VkQueue copyQueue,
 		uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos);
 
-	void ReinitTerrain(std::shared_ptr<VulkanDevice> device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void ReinitTerrain(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 	void UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
-	void DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], Terrain* curTerrain, bool wireframe);
-	void BuildCommandBuffer(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], Terrain* curTerrain, bool ifWireframe);
+	void DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], std::shared_ptr<Terrain> curTerrain, bool wireframe);
+	void BuildCommandBuffer(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], std::shared_ptr<Terrain> curTerrain, bool ifWireframe);
 	void CleanUp();
 
 	void LoadSplatMapFromGenerator();
@@ -156,7 +158,7 @@ private:
 	void SetupUniformBuffer();
 	void SetupImage();
 	void SetupModel();
-	void SetupPipeline(VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void SetupPipeline(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 
 	void SetupDescriptorLayoutAndPool();
 
@@ -183,8 +185,6 @@ private:
 	//	"OakTreeTrunk.png",
 	//	"SpruceTreeTrunk.png"};
 	//
-
-	Texture* maillerFace;
 };
 
 //mesh generation functions. Looks at all those parameters. 

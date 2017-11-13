@@ -7,7 +7,7 @@
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 
-#define _CRTDBG_MAP_ALLOC  
+
 #include <stdlib.h>  
 #include <crtdbg.h>  
 

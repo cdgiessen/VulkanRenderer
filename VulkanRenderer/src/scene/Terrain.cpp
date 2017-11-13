@@ -44,7 +44,7 @@ TerrainQuadData::~TerrainQuadData()
 
 Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> pool, int numCells, int maxLevels, float heightScale, int sourceImageResolution,
 	glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize) 
-	: maxLevels(maxLevels), heightScale(heightScale), position(pos), size(size), noisePosition(noisePosition), noiseSize(noiseSize)
+	: maxLevels(maxLevels), heightScale(heightScale), position(pos), size(size), noisePosition(noisePosition), noiseSize(noiseSize), sourceImageResolution(sourceImageResolution)
 {
 	
 	//simple calculation right now, does the absolute max number of quads possible with given max level
@@ -71,7 +71,7 @@ Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQ
 	//TerrainQuad* test = terrainQuadPool->allocate();
 	//test->init(posX, posY, sizeX, sizeY, 0, meshVertexPool->allocate(), meshIndexPool->allocate());
 
-	maillerFace = new Texture();
+	maillerFace = std::make_shared< Texture>();
 	maillerFace->loadFromFileGreyOnly("Resources/Textures/maillerFace.png");
 	
 }
@@ -83,7 +83,7 @@ Terrain::~Terrain() {
 	terrainSplatMap.reset();
 	terrainTextureArray.reset();
 
-	delete maillerFace;
+	maillerFace.reset();
 }
 
 void Terrain::CleanUp()
@@ -125,7 +125,7 @@ void Terrain::CleanUp()
 }
 
 
-void Terrain::InitTerrain(std::shared_ptr<VulkanDevice> device, VulkanPipeline pipelineManager, VkRenderPass renderPass, VkQueue copyQueue, 
+void Terrain::InitTerrain(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VkQueue copyQueue,
 	uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos)
 {
 	this->device = device;
@@ -148,7 +148,7 @@ void Terrain::InitTerrain(std::shared_ptr<VulkanDevice> device, VulkanPipeline p
 	UpdateMeshBuffer(copyQueue);
 }
 
-void Terrain::ReinitTerrain(std::shared_ptr<VulkanDevice> device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
+void Terrain::ReinitTerrain(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
 {
 	this->device = device;
 
@@ -216,7 +216,7 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3
 void Terrain::LoadSplatMapFromGenerator() {
 	terrainSplatMap = std::make_shared<Texture>();
 	fastTerrainGraph->BuildOutputImage(noisePosition, noiseSize.x);
-	terrainSplatMap->loadFromGreyscalePixelData(NumCells + 1, NumCells + 1, fastTerrainGraph->GetOutputGreyscaleImage().data());
+	terrainSplatMap->loadFromGreyscalePixelData(sourceImageResolution, sourceImageResolution, fastTerrainGraph->GetOutputGreyscaleImage().data());
 }
 
 void Terrain::LoadTextureArray() {
@@ -246,20 +246,23 @@ void Terrain::SetupMeshbuffers() {
 
 void Terrain::SetupUniformBuffer()
 {
-	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &modelUniformBuffer, sizeof(ModelBufferObject) * maxNumQuads);
+	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), 
+		&modelUniformBuffer, sizeof(ModelBufferObject) * maxNumQuads);
 }
 
 void Terrain::SetupImage() 
 {
 	if (terrainSplatMap != nullptr) {
-		terrainVulkanSplatMap.loadFromTexture(terrainSplatMap.get(), VK_FORMAT_R8G8B8A8_UNORM, device.get(), device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
+		terrainVulkanSplatMap.loadFromTexture(terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, 
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
 	
 	}
 	else {
 		throw std::runtime_error("failed to load terrain splat map!");
 
 	}if (terrainTextureArray != nullptr) {
-		terrainVulkanTextureArray.loadTextureArray(terrainTextureArray.get(), VK_FORMAT_R8G8B8A8_UNORM, device.get(), device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
+		terrainVulkanTextureArray.loadTextureArray(terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, 
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
 	}
 	else
 		throw std::runtime_error("failed to load terrain texture array!");
@@ -335,39 +338,39 @@ void Terrain::SetupDescriptorLayoutAndPool()
 	}
 }
 
-void Terrain::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
+void Terrain::SetupPipeline(std::shared_ptr<VulkanPipeline> PipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
 {
-	PipelineCreationObject* myPipe = PipelineManager.CreatePipelineOutline();
+	std::shared_ptr<PipelineCreationObject> myPipe = PipelineManager->CreatePipelineOutline();
 
-	PipelineManager.SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/terrain.vert.spv"));
-	PipelineManager.SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/terrain.frag.spv"));
-	PipelineManager.SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
-	PipelineManager.SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-	PipelineManager.SetViewport(myPipe, (float)viewPortWidth, (float)viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
-	PipelineManager.SetScissor(myPipe, viewPortWidth, viewPortHeight, 0, 0);
-	PipelineManager.SetViewportState(myPipe, 1, 1, 0);
-	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-	PipelineManager.SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
-	PipelineManager.SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
-	PipelineManager.SetColorBlendingAttachment(myPipe, VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+	PipelineManager->SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/terrain.vert.spv"));
+	PipelineManager->SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/terrain.frag.spv"));
+	PipelineManager->SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
+	PipelineManager->SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+	PipelineManager->SetViewport(myPipe, (float)viewPortWidth, (float)viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
+	PipelineManager->SetScissor(myPipe, viewPortWidth, viewPortHeight, 0, 0);
+	PipelineManager->SetViewportState(myPipe, 1, 1, 0);
+	PipelineManager->SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	PipelineManager->SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
+	PipelineManager->SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
+	PipelineManager->SetColorBlendingAttachment(myPipe, VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
-	PipelineManager.SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
-	PipelineManager.SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
+	PipelineManager->SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
+	PipelineManager->SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
 
-	pipelineLayout = PipelineManager.BuildPipelineLayout(myPipe);
-	pipeline = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
+	pipelineLayout = PipelineManager->BuildPipelineLayout(myPipe);
+	pipeline = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
 
-	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-	wireframe = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
+	PipelineManager->SetRasterizer(myPipe, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	wireframe = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
 
-	PipelineManager.CleanShaderResources(myPipe);
-	PipelineManager.SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.vert.spv"));
-	PipelineManager.SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.frag.spv"));
-	PipelineManager.SetGeometryShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.geom.spv"));
+	PipelineManager->CleanShaderResources(myPipe);
+	PipelineManager->SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.vert.spv"));
+	PipelineManager->SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.frag.spv"));
+	PipelineManager->SetGeometryShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.geom.spv"));
 
-	debugNormals = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
-	PipelineManager.CleanShaderResources(myPipe);
+	debugNormals = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
+	PipelineManager->CleanShaderResources(myPipe);
 
 	/*
 	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/terrain.vert.spv");
@@ -635,9 +638,9 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuad(std::shared_ptr<Terrai
 
 	//SimpleTimer terrainQuadCreateTime;
 	
-	//GenerateNewTerrain(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, heightScale, maxLevels);
+	GenerateNewTerrain(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, heightScale, maxLevels);
 
-	GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
+	//GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
 	
 	//std::thread* worker = new std::thread(GenerateNewTerrain, terrainGenerator, fastTerrainGraph, &q->vertices, &q->indices, q->terrainQuad, heightScale, maxLevels);
 	//terrainGenerationWorkers.push_back(worker);
@@ -681,9 +684,9 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuadFromParent(std::shared_
 	//terrainGenerationWorkers.push_back(worker);
 	//GenerateTerrainFromExisting( fastTerrainGraph, &parent->vertices, &parent->indices, &q->vertices, &q->indices, corner, q->terrainQuad, heightScale, maxLevels);
 	
-	//GenerateNewTerrainSubdivision(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, corner, heightScale, maxLevels);
+	GenerateNewTerrainSubdivision(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, corner, heightScale, maxLevels);
 	
-	GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
+	//GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, corner, heightScale, maxLevels);
 
 	//terrainQuadCreateTime.EndTimer();
 	//std::cout << "From Parent " << terrainQuadCreateTime.GetElapsedTimeMicroSeconds() << std::endl;
@@ -817,7 +820,7 @@ void Terrain::UpdateUniformBuffer(float time)
 }
 
 
-void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], Terrain* curTerrain, bool ifWireframe) {
+void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], std::shared_ptr<Terrain> curTerrain, bool ifWireframe) {
 
 	//vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, 0 ? wireframe : pipeline);
 	//DrawTerrainQuad(curTerrain->rootQuad, cmdBuff, cmdBuffIndex, offsets);
@@ -859,7 +862,7 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], Terr
 }
 
 /*
-void Terrain::BuildCommandBuffer(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], Terrain* curTerrain, bool ifWireframe) {
+void Terrain::BuildCommandBuffer(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], std::shared_ptr<Terrain> curTerrain, bool ifWireframe) {
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? wireframe : pipeline);
 
 	std::vector<VkDeviceSize> vertexOffsettings;

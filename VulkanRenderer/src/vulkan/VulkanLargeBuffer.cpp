@@ -1,7 +1,7 @@
 #include "VulkanLargeBuffer.h"
 
 
-VulkanLargeBuffer::VulkanLargeBuffer(VulkanDevice* device, VkBufferUsageFlagBits usageFlags, VkDeviceSize size)
+VulkanLargeBuffer::VulkanLargeBuffer(std::shared_ptr<VulkanDevice> device, VkBufferUsageFlagBits usageFlags, VkDeviceSize size)
 {
 
 	this->device = device;
@@ -42,7 +42,7 @@ VulkanLargeBuffer::~VulkanLargeBuffer()
 {
 }
 
-VkDeviceMemory* VulkanLargeBuffer::StageResource() {
+VkDeviceMemory VulkanLargeBuffer::StageResource() {
 	return nullptr;
 }
 

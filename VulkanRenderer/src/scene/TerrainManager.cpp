@@ -3,7 +3,7 @@
 #include "..\third-party\ImGui\imgui.h"
 #include "..\gui\ImGuiImpl.h"
 
-TerrainManager::TerrainManager(VulkanDevice* device) : device(device)
+TerrainManager::TerrainManager(std::shared_ptr<VulkanDevice> device) : device(device)
 {
 	if (terrainMaxLevels < 0) {
 		maxNumQuads = 1;
@@ -21,7 +21,8 @@ TerrainManager::~TerrainManager()
 {
 }
 
-void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera) {
+void TerrainManager::GenerateTerrain(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer,
+	VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera) {
 	//free resources then delete all created terrains/waters
 	CleanUpTerrain();
 
@@ -30,7 +31,7 @@ void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPas
 	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < terrainGridDimentions; j++) {
 			
-			terrains.push_back(new Terrain(terrainQuadPool, numCells, terrainMaxLevels, terrainHeightScale, sourceImageResolution,
+			terrains.push_back(std::make_shared<Terrain>(terrainQuadPool, numCells, terrainMaxLevels, terrainHeightScale, sourceImageResolution,
 				glm::vec2((i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2), //position
 				glm::vec2(terrainWidth, terrainWidth), //size
 				glm::i32vec2(i * logicalWidth, j * logicalWidth), //noise position
@@ -39,45 +40,48 @@ void TerrainManager::GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPas
 	}
 
 	//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-	for (Terrain* ter : terrains) {
-		ter->InitTerrain(device, pipelineManager, renderPass, device->transfer_queue, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer, camera->Position);
+	for (auto ter : terrains) {
+		ter->InitTerrain(device, pipelineManager, renderPass, device->transfer_queue, vulkanSwapChain.swapChainExtent.width, 
+			vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer, camera->Position);
 	}
 	//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
 	
 	for (int i = 0; i < terrainGridDimentions; i++) {
 		for (int j = 0; j < terrainGridDimentions; j++) {
-			waters.push_back(new Water(64, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
+			waters.push_back(std::make_shared< Water>
+				(64, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
 		}
 	}
 
-	for (Water* water : waters) {
+	for (auto water : waters) {
 		water->LoadTexture("Resources/Textures/TileableWaterTexture.jpg");
-		water->InitWater(device.get(), pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
+		water->InitWater(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
 	}
 
 	recreateTerrain = false;
 }
 
-void TerrainManager::ReInitTerrain(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain) {
-	for (Terrain* ter : terrains) {
+void TerrainManager::ReInitTerrain(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain) {
+	for (auto ter : terrains) {
 		ter->ReinitTerrain(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 	}
-	for (Water* water : waters) {
-		water->ReinitWater(device.get(), pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+	for (auto water : waters) {
+		water->ReinitWater(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 	}
 }
 
-void TerrainManager::UpdateTerrains(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera, TimeManager* timeManager) {
+void TerrainManager::UpdateTerrains(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer,
+	VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager) {
 	if (recreateTerrain) {
 
 		GenerateTerrain(pipelineManager, renderPass, vulkanSwapChain, globalVariableBuffer, lightsInfoBuffer, camera);
 	}
 
-	for (Water* water : waters) {
+	for (auto water : waters) {
 		water->UpdateUniformBuffer((float)timeManager->GetRunningTime(), camera->GetViewMatrix());
 	}
 
-	for (Terrain* ter : terrains) {
+	for (auto ter : terrains) {
 		terrainUpdateTimer.StartTimer();
 		//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
@@ -95,7 +99,7 @@ void TerrainManager::UpdateTerrains(VulkanPipeline pipelineManager, VkRenderPass
 void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe) {
 	VkDeviceSize offsets[] = { 0 };
 	
-	for (Terrain* ter : terrains) {
+	for (auto ter : terrains) {
 		ter->DrawTerrain(commandBuffer, offsets, ter, wireframe);
 	}
 
@@ -105,7 +109,7 @@ void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &waters.at(0)->WaterModel.vertices.buffer, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, waters.at(0)->WaterModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
-	for (Water* water : waters) {
+	for (auto water : waters) {
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, water->pipelineLayout, 0, 1, &water->descriptorSet, 0, nullptr);
 
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(water->WaterModel.indexCount), 1, 0, 0, 0);
@@ -127,7 +131,7 @@ void TerrainManager::UpdateTerrainGUI() {
 	}
 
 	ImGui::Text("All terrains update Time: %u(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
-	for (Terrain* ter : terrains)
+	for (auto ter : terrains)
 	{
 		ImGui::Text("Terrain Draw Time: %u(uS)", ter->drawTimer.GetElapsedTimeMicroSeconds());
 		ImGui::Text("Terrain Quad Count %d", ter->numQuads);
@@ -138,12 +142,6 @@ void TerrainManager::UpdateTerrainGUI() {
 
 void TerrainManager::CleanUpTerrain() {
 
-	for (Terrain* ter : terrains) {
-		delete ter;
-	}
-	for (Water* water : waters) {
-		delete water;
-	}
 	terrains.clear();
 	waters.clear();
 	//delete terrainQuadPool;

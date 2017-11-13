@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanDevice.hpp"
+#include "vulkanDevice.hpp"
 #include "VulkanInitializers.hpp"
 
 VulkanDevice::VulkanDevice()
@@ -24,7 +24,7 @@ void VulkanDevice::initVulkanDevice(VkSurfaceKHR &surface)
 	createCommandPools(surface);
 }
 
-void VulkanDevice::cleanup(VkSurfaceKHR &surface) {
+void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
 	vkDestroyCommandPool(device, graphics_queue_command_pool, nullptr);
 	vkDestroyCommandPool(device, compute_queue_command_pool, nullptr);
 	vkDestroyCommandPool(device, transfer_queue_command_pool, nullptr);
@@ -36,7 +36,6 @@ void VulkanDevice::cleanup(VkSurfaceKHR &surface) {
 	vkDestroyInstance(instance, nullptr);
 
 	glfwDestroyWindow(window);
-
 	glfwTerminate();
 }
 
@@ -550,4 +549,3 @@ void VulkanDevice::DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugRep
 		func(instance, callback, pAllocator);
 	}
 }
-

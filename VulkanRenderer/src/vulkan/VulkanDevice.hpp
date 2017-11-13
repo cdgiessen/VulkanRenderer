@@ -9,7 +9,7 @@
 
 #include <GLFW\glfw3.h>
 
-#define _CRTDBG_MAP_ALLOC  
+
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
@@ -33,7 +33,6 @@ const std::vector<const char*> DEVICE_EXTENSIONS = {
 
 class VulkanDevice {
 public:
-
 	GLFWwindow* window;
 
 	VkDevice device;
@@ -67,7 +66,7 @@ public:
 
 	void initVulkanDevice(VkSurfaceKHR &surface);
 
-	void cleanup(VkSurfaceKHR &surface);
+	void Cleanup(VkSurfaceKHR &surface);
 
 	bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface);
 
@@ -142,16 +141,11 @@ public:
 private:
 
 	void createInstance(std::string appName);
-
-
-
+	
 	void setupDebugCallback();
-
-
-
+	
 	void createSurface(VkSurfaceKHR &surface);
-
-
+	
 	void pickPhysicalDevice(VkSurfaceKHR &surface);
 
 	void createLogicalDevice(VkSurfaceKHR &surface);

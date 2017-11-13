@@ -4,11 +4,16 @@
 #include "..\core\Texture.h"
 #include "..\vulkan\VulkanTexture.hpp"
 #include "..\vulkan\VulkanModel.hpp"
-#include "..\vulkan\VulkanDevice.hpp"
+#include "..\vulkan\vulkanDevice.hpp"
 
 
-Skybox::Skybox() {};
-Skybox::~Skybox() {};
+Skybox::Skybox() {
+
+};
+
+Skybox::~Skybox() {
+
+};
 
 void Skybox::CleanUp() {
 	model.destroy();
@@ -23,7 +28,7 @@ void Skybox::CleanUp() {
 	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
 }
 
-void Skybox::InitSkybox(VulkanDevice* device, std::string filename, std::string fileExt, VulkanPipeline pipelineManager, 
+void Skybox::InitSkybox(std::shared_ptr<VulkanDevice> device, std::string filename, std::string fileExt, std::shared_ptr<VulkanPipeline> pipelineManager,
 	VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
 	this->device = device;
 
@@ -37,7 +42,7 @@ void Skybox::InitSkybox(VulkanDevice* device, std::string filename, std::string 
 
 }
 
-void Skybox::ReinitSkybox(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass,
+void Skybox::ReinitSkybox(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass,
 	uint32_t viewPortWidth, uint32_t viewPortHeight){
 	vkDestroyPipeline(device->device, pipeline, nullptr);
 	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
@@ -47,9 +52,10 @@ void Skybox::ReinitSkybox(VulkanDevice* device, VulkanPipeline pipelineManager, 
 
 
 void Skybox::LoadSkyboxData(std::string skyboxImageFile, std::string fileExt) {
-	model.loadFromFile("Resources/Models/cube.obj", device, device->graphics_queue);
-
-	skyboxCubeMap.loadFromFile(skyboxImageFile, fileExt);
+	//model.loadFromFile("Resources/Models/cube.obj", device, device->graphics_queue);
+	model.loadFromMesh(createCube(), device, device->graphics_queue);
+	skyboxCubeMap = std::make_shared<CubeMap>();
+	skyboxCubeMap->loadFromFile(skyboxImageFile, fileExt);
 }
 
 void Skybox::SetupUniformBuffer() {
@@ -59,7 +65,7 @@ void Skybox::SetupUniformBuffer() {
 }
 
 void Skybox::SetupCubeMapImage() {
-	vulkanCubeMap.loadFromTexture(&skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue);
+	vulkanCubeMap.loadFromTexture(skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue);
 
 }
 
@@ -105,33 +111,33 @@ void Skybox::SetupDescriptor() {
 	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
-void Skybox::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
+void Skybox::SetupPipeline(std::shared_ptr<VulkanPipeline>  PipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
 
-	PipelineCreationObject* myPipe = PipelineManager.CreatePipelineOutline();
+	std::shared_ptr<PipelineCreationObject> myPipe = PipelineManager->CreatePipelineOutline();
 
-	PipelineManager.SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/skybox.vert.spv"));
-	PipelineManager.SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/skybox.frag.spv"));
-	PipelineManager.SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
-	PipelineManager.SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-	PipelineManager.SetViewport(myPipe, viewPortWidth, viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
-	PipelineManager.SetScissor(myPipe, viewPortWidth, viewPortHeight, 0, 0);
-	PipelineManager.SetViewportState(myPipe, 1, 1, 0);
-	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, 
+	PipelineManager->SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/skybox.vert.spv"));
+	PipelineManager->SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/skybox.frag.spv"));
+	PipelineManager->SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
+	PipelineManager->SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+	PipelineManager->SetViewport(myPipe, viewPortWidth, viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
+	PipelineManager->SetScissor(myPipe, viewPortWidth, viewPortHeight, 0, 0);
+	PipelineManager->SetViewportState(myPipe, 1, 1, 0);
+	PipelineManager->SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, 
 		VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-	PipelineManager.SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
-	PipelineManager.SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER_OR_EQUAL, VK_FALSE, VK_FALSE);
-	PipelineManager.SetColorBlendingAttachment(myPipe, VK_FALSE, 
+	PipelineManager->SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
+	PipelineManager->SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER_OR_EQUAL, VK_FALSE, VK_FALSE);
+	PipelineManager->SetColorBlendingAttachment(myPipe, VK_FALSE, 
 		VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
-	PipelineManager.SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
-	PipelineManager.SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
+	PipelineManager->SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
+	PipelineManager->SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
 
-	pipelineLayout = PipelineManager.BuildPipelineLayout(myPipe);
-	pipeline = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
+	pipelineLayout = PipelineManager->BuildPipelineLayout(myPipe);
+	pipeline = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
 
 
-	PipelineManager.CleanShaderResources(myPipe);
+	PipelineManager->CleanShaderResources(myPipe);
 	/*
 	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/skybox.vert.spv");
 	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/skybox.frag.spv");

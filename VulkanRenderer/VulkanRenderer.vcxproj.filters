@@ -251,9 +251,6 @@
     <ClCompile Include="src\gui\TerGenNodeGraph.cpp">
       <Filter>Source Files\gui</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene\noiseutils.cpp">
-      <Filter>Source Files\scene</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\Window.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
@@ -295,6 +292,9 @@
     </ClCompile>
     <ClCompile Include="src\third-party\ImGui\imgui_draw.cpp">
       <Filter>third-party\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vulkan\VulkanSwapChain.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -371,9 +371,6 @@
       <Filter>Header Files\scene</Filter>
     </ClInclude>
     <ClInclude Include="src\scene\Scene.h">
-      <Filter>Header Files\scene</Filter>
-    </ClInclude>
-    <ClInclude Include="src\scene\noiseutils.h">
       <Filter>Header Files\scene</Filter>
     </ClInclude>
     <ClInclude Include="src\vulkan\VulkanPipeline.hpp">

@@ -48,9 +48,9 @@ void VulkanTexture::createImageSampler(VkFilter mag, VkFilter min, VkSamplerMipm
 
 
 void VulkanTexture2D::loadFromTexture(
-	Texture* texture,
+	std::shared_ptr<Texture> texture,
 	VkFormat format,
-	VulkanDevice *device,
+	std::shared_ptr<VulkanDevice> device,
 	VkQueue copyQueue,
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout,
@@ -389,9 +389,9 @@ void VulkanTexture2D::loadFromTexture(
 }
 
 void VulkanTexture2DArray::loadTextureArray(
-	TextureArray* textures,
+	std::shared_ptr<TextureArray> textures,
 	VkFormat format,
-	VulkanDevice *device,
+	std::shared_ptr<VulkanDevice> device,
 	VkQueue copyQueue,
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout,
@@ -445,15 +445,15 @@ void VulkanTexture2DArray::loadTextureArray(
 		bufferCopyRegion.imageSubresource.mipLevel = 0;
 		bufferCopyRegion.imageSubresource.baseArrayLayer = layer;
 		bufferCopyRegion.imageSubresource.layerCount = 1;
-		bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(textures->textures[layer]->width);
-		bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(textures->textures[layer]->height);
+		bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(textures->width);
+		bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(textures->height);
 		bufferCopyRegion.imageExtent.depth = 1;
 		bufferCopyRegion.bufferOffset = offset;
 
 		bufferCopyRegions.push_back(bufferCopyRegion);
 
 		// Increase offset into staging buffer for next level / face
-		offset += textures->textures[layer]->texImageSize;
+		offset += textures->texImageSizePerTex;
 	}
 
 	// Create optimal tiled target image
@@ -624,9 +624,9 @@ void VulkanTexture2DArray::loadTextureArray(
 	
 
 void VulkanCubeMap::loadFromTexture(
-	CubeMap *cubeMap,
+	std::shared_ptr<CubeMap> cubeMap,
 	VkFormat format,
-	VulkanDevice *device,
+	std::shared_ptr<VulkanDevice> device,
 	VkQueue copyQueue,
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout,
@@ -689,7 +689,7 @@ void VulkanCubeMap::loadFromTexture(
 			bufferCopyRegions.push_back(bufferCopyRegion);
 
 			// Increase offset into staging buffer for next level / face
-			offset += cubeMap->cubeImages.Front.texImageSize;
+			offset += cubeMap->texImageSizePerTex;
 		}
 	}
 

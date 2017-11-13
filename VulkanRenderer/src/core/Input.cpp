@@ -81,8 +81,6 @@ float InputDirector::GetMouseScrollY() {
 
 void InputDirector::UpdateInputs() {
 	glfwPollEvents();
-
-
 }
 
 void InputDirector::ResetReleasedInput() {

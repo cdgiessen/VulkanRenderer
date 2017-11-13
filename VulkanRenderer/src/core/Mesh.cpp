@@ -23,17 +23,10 @@ Mesh::~Mesh()
 }
 
 void Mesh::importFromFile(const std::string filename) {
-	std::vector<Vertex> verts;
-	std::vector<uint16_t> indices;
-
+	vertexCount = 0;
+	indexCount = 0;
 
 	if (fileExists(filename)) { //file exists and can be loaded
-
-		std::vector<float> vertexBuffer;
-		std::vector<uint32_t> indexBuffer;
-
-		vertexCount = 0;
-		indexCount = 0;
 
 		glm::vec3 scale(1.0f);
 		glm::vec2 uvscale(1.0f);
@@ -56,34 +49,41 @@ void Mesh::importFromFile(const std::string filename) {
 		}
 
 
-
 		int i = 0, vertexIndex = 0;
 		for (const auto& shape : shapes) {
-			vertexBuffer.resize(shape.mesh.indices.size() * 12);
-			indexBuffer.reserve(shape.mesh.indices.size() * 3);
 
+			vertices.reserve(shape.mesh.indices.size());
+			indices.reserve(shape.mesh.indices.size() * 3);
+			std::unordered_map<Vertex, int> uniqueVertices = {};
+					
 			for (const auto& index : shape.mesh.indices) {
+			
+				Vertex newVertex = {
+					glm::vec3(	attrib.vertices[3 * index.vertex_index + 0],
+								attrib.vertices[3 * index.vertex_index + 1],
+								attrib.vertices[3 * index.vertex_index + 2]),
 
+					glm::vec3(	attrib.normals[3 * index.normal_index + 0],
+								attrib.normals[3 * index.normal_index + 1],
+								attrib.normals[3 * index.normal_index + 2]),
 
-				vertexBuffer[i++] = attrib.vertices[3 * index.vertex_index + 0];
-				vertexBuffer[i++] = attrib.vertices[3 * index.vertex_index + 1];
-				vertexBuffer[i++] = attrib.vertices[3 * index.vertex_index + 2];
+					glm::vec2(	attrib.texcoords[2 * index.texcoord_index + 0],
+								1.0f - attrib.texcoords[2 * index.texcoord_index + 1]),
 
-				vertexBuffer[i++] = attrib.vertices[3 * index.normal_index + 0];
-				vertexBuffer[i++] = attrib.vertices[3 * index.normal_index + 1];
-				vertexBuffer[i++] = attrib.vertices[3 * index.normal_index + 2];
+					glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
+				};
+				
 
-				vertexBuffer[i++] = attrib.texcoords[2 * index.texcoord_index + 0];
-				vertexBuffer[i++] = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
+				if (uniqueVertices.count(newVertex) == 0) {
+					uniqueVertices[newVertex] = vertices.size();
+					vertices.push_back(newVertex);
+				}
 
-				vertexBuffer[i++] = 0.0f;
-				vertexBuffer[i++] = 0.0f;
-				vertexBuffer[i++] = 0.0f;
-				vertexBuffer[i++] = 1.0f;
-
-				indexBuffer[vertexIndex] = vertexIndex;
-				vertexIndex++;
+				indices.push_back(uniqueVertices[newVertex]);
 			}
+
+			vertexCount = vertices.size();
+			indexCount = indices.size();
 		}
 	}
 	else

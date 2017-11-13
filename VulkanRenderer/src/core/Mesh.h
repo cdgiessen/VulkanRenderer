@@ -1,10 +1,13 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
 #include <iostream>
 #include <string>
 
+
 #include <glm\common.hpp>
+#include <glm/gtx/hash.hpp>
 #include <vulkan\vulkan.hpp>
 
 #include "..\vulkan\VulkanInitializers.hpp"
@@ -54,7 +57,23 @@ struct Vertex {
 	Vertex(glm::vec3 pos, glm::vec3 normal, glm::vec2 texCoord, glm::vec4 color) : pos(pos), normal(normal), texCoord(texCoord), color(color) {
 
 	}
+
+	bool operator==(const Vertex& other) const {
+		return pos == other.pos && normal == other.normal && texCoord == other.texCoord && color == other.color;
+	}
 };
+
+//Hash function for indicy uniqueness in model loading.
+namespace std {
+	template<> struct hash<Vertex> {
+		size_t operator()(Vertex const& vertex) const {
+			return (  (hash<glm::vec3>()(vertex.pos) 
+					^ (hash<glm::vec3>()(vertex.normal) << 1)) >> 1) 
+					^ (hash<glm::vec2>()(vertex.texCoord) << 1)
+					^ (hash<glm::vec4>()(vertex.color) << 1);
+		}
+	};
+}
 
 class Mesh
 {
@@ -90,28 +109,29 @@ public:
 private:
 };
 
-static Mesh* createSinglePlane() {
-	return new Mesh(
+static std::shared_ptr<Mesh> createSinglePlane() {
+	return std::make_shared<Mesh>(std::initializer_list<Vertex>{
 		//vertices
-	{
-		{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
+
+		{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
 		{ { 0.5f, -0.5f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
 		{ { 0.5f, 0.5f, 0.0f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 1.0f, 1.0f, 1.0f } },
 		{ { -0.5f, 0.5f, 0.0f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
 
-		
-	},
-		//indices
-	{
+
+			
+			//indices
+	}, std::initializer_list<uint16_t>{
 		0, 1, 2, 2, 3, 0
-		
+
+	
 	});
 }
 
-static Mesh* createDoublePlane() {
-	return new Mesh(
+static std::shared_ptr<Mesh> createDoublePlane() {
+	return std::make_shared<Mesh>(std::initializer_list<Vertex>{
 		//vertices
-	{
+	
 		{ { -0.5f, -0.5f, 1.0f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
 		{ { 0.5f, -0.5f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
 		{ { 0.5f, 0.5f, 1.0f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
@@ -121,19 +141,19 @@ static Mesh* createDoublePlane() {
 		{ { 0.5f, -0.5f, -1.5f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
 		{ { 0.5f, 0.5f, -1.5f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
 		{ { -0.5f, 0.5f, -1.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
-	},
+	
 		//indices
-	{
+	}, std::initializer_list<uint16_t>{
 		0, 1, 2, 2, 3, 0,
 		4, 5, 6, 6, 7, 4
-	});
+	} );
 }
 
 static glm::vec3 lerp(glm::vec3 a, glm::vec3 b, float t) {
 	return a + (b - a)*t;
 }
 
-//static Mesh* generateTerrainMesh(int numCells, float xLoc, float yLoc, float xSize, float ySize) {
+//static std::shared_ptr<Mesh> generateTerrainMesh(int numCells, float xLoc, float yLoc, float xSize, float ySize) {
 //	std::vector<Vertex> verts;
 //	std::vector<uint16_t> indices;
 //
@@ -227,7 +247,7 @@ static glm::vec3 lerp(glm::vec3 a, glm::vec3 b, float t) {
 //	return new Mesh(verts, indices);
 //}
 
-static Mesh* createFlatPlane(int numCells, glm::vec3 size) {
+static std::shared_ptr<Mesh> createFlatPlane(int numCells, glm::vec3 size) {
 	std::vector<Vertex> verts;
 	std::vector<uint16_t> indices;
 
@@ -256,12 +276,12 @@ static Mesh* createFlatPlane(int numCells, glm::vec3 size) {
 		}
 	}
 
-	return new Mesh(verts, indices);
+	return std::make_shared<Mesh>(verts, indices);
 }
 
-static Mesh* createCube() {
-	return new Mesh(
-	{
+static std::shared_ptr<Mesh> createCube() {
+	return std::make_shared<Mesh>(std::initializer_list<Vertex>{
+
 		//Left face
 		{{ 0.5f, -0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.333f, 1.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
 		{{ -0.5f, -0.5f, -0.5f	},{0.0f, 0.0f, -1.0f},{ 0.667f, 1.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
@@ -309,10 +329,10 @@ static Mesh* createCube() {
 		{{ -0.5f, 0.5f, 0.5f	},{0.0f, 1.0f, 0.0f},{ 0.667f, 0.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
 		{{ 0.5f, 0.5f, 0.5f		},{0.0f, 1.0f, 0.0f},{ 1.0f, 0.0f	}, {1.0f,1.0f,1.0f, 1.0f}},
 		{{ -0.5f, 0.5f, -0.5f	},{0.0f, 1.0f, 0.0f},{ 0.667f, 0.5f	}, {1.0f,1.0f,1.0f, 1.0f}}
-	},
+	
 
 	//indices
-	{
+	}, std::initializer_list<uint16_t>{
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35
 	});
 			

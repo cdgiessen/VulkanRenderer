@@ -1,10 +1,10 @@
 #pragma once
 
-#define _CRTDBG_MAP_ALLOC  
+
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
-#include "..\vulkan\VulkanDevice.hpp"
+#include "..\vulkan\vulkanDevice.hpp"
 #include "..\vulkan\VulkanModel.hpp"
 #include "..\vulkan\VulkanPipeline.hpp"
 #include "..\vulkan\VulkanTexture.hpp"
@@ -20,9 +20,9 @@ public:
 	int numCells; //
 	glm::vec3 pos; //position of corner
 	glm::vec3 size; //width and length
-	Mesh* mesh;
+	std::shared_ptr<Mesh> mesh;
 
-	VulkanDevice *device;
+	std::shared_ptr<VulkanDevice> device;
 
 	VkPipeline pipeline;
 	VkPipeline seascapePipeline;
@@ -33,10 +33,10 @@ public:
 	VkDescriptorPool descriptorPool;
 	VkDescriptorSet descriptorSet;
 
-	Mesh* WaterMesh;
+	std::shared_ptr<Mesh> WaterMesh;
 	VulkanModel WaterModel;
 
-	Texture* WaterTexture;
+	std::shared_ptr<Texture> WaterTexture;
 	VulkanTexture2D WaterVulkanTexture;
 
 	ModelBufferObject modelUniformObject;
@@ -47,8 +47,10 @@ public:
 	Water(int numCells, float posX, float posY, float sizeX, float sizeY);
 	~Water();
 
-	void InitWater(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
-	void ReinitWater(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void InitWater(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth,
+		uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
+	void ReinitWater(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth,
+		uint32_t viewPortHeight);
 	void CleanUp();
 	void UpdateUniformBuffer(float time, glm::mat4 view);
 
@@ -59,8 +61,8 @@ public:
 	void SetupModel();
 
 	void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
-	void SetupPipeline(VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void SetupPipeline(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
 
-	void BuildCommandBuffer(VulkanSwapChain* swapChain, VkRenderPass* renderPass);
-	void RebuildCommandBuffer(VulkanSwapChain* swapChain, VkRenderPass* renderPass);
+	void BuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass);
+	void RebuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass);
 };

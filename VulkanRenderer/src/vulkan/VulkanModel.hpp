@@ -1,14 +1,12 @@
 #pragma once
 
-#define _CRTDBG_MAP_ALLOC  
+
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
-//#include <unordered_map>
-
 #include "vulkan\vulkan.h"
 #include "VulkanTools.h"
-#include "VulkanDevice.hpp"
+#include "vulkanDevice.hpp"
 #include "VulkanBuffer.hpp"
 
 //#include <assimp/Importer.hpp>
@@ -23,7 +21,7 @@ public:
 
 
 
-	VkDevice device;
+	std::shared_ptr<VulkanDevice> device;
 	VulkanBuffer vertices;
 	VulkanBuffer indices;
 	uint32_t vertexCount = 0;
@@ -38,9 +36,9 @@ public:
 	};
 	std::vector<ModelPart> parts;
 
-	bool loadFromMesh(Mesh* mesh, VulkanDevice* device, VkQueue copyQueue) {
+	bool loadFromMesh(std::shared_ptr<Mesh> mesh, std::shared_ptr<VulkanDevice> device, VkQueue copyQueue) {
 
-		this->device = device->device;
+		this->device = device;
 
 		std::vector<float> vertexBuffer;
 		std::vector<uint32_t> indexBuffer;
@@ -51,7 +49,7 @@ public:
 		vertexBuffer.resize(vertexCount * 12);
 		for (int i = 0; i < (int)vertexCount; i++)
 		{
-			vertexBuffer[i * 12]	 = mesh->vertices[i].pos[0];
+			vertexBuffer[i * 12 + 0] = mesh->vertices[i].pos[0];
 			vertexBuffer[i * 12 + 1] = mesh->vertices[i].pos[1];
 			vertexBuffer[i * 12 + 2] = mesh->vertices[i].pos[2];
 			vertexBuffer[i * 12 + 3] = mesh->vertices[i].normal[0];
@@ -143,15 +141,15 @@ public:
 	* @param copyQueue Queue used for the memory staging copy commands (must support transfer)
 	* @param (Optional) flags ASSIMP model loading flags
 	*/
-	bool loadFromFile(const std::string& filename, VulkanDevice* device, VkQueue copyQueue)
+	bool loadFromFile(const std::string& filename, std::shared_ptr<VulkanDevice> device, VkQueue copyQueue)
 	{
-		this->device = device->device;
-		Mesh importedMesh;;
+		this->device = device;
+		Mesh importedMesh;
 		if (fileExists(filename)) { //file exists and can be loaded
 			importedMesh.importFromFile(filename);
 
-			std::vector<float> vertexBuffer;
-			std::vector<uint32_t> indexBuffer;
+			std::vector<float> vertexBuffer(importedMesh.vertexCount * 12);
+			std::vector<uint32_t> indexBuffer(importedMesh.indexCount);
 
 			for (int i = 0; i < importedMesh.vertices.size(); i++) {
 				vertexBuffer[i * 12 + 0] = importedMesh.vertices[i].pos.x;
@@ -364,13 +362,13 @@ public:
 		//assert(device);
 		if (vertices.buffer != VK_NULL_HANDLE) 
 		{
-			vkDestroyBuffer(device, vertices.buffer, nullptr);
-			vkFreeMemory(device, vertices.bufferMemory, nullptr);
+			vkDestroyBuffer(device->device, vertices.buffer, nullptr);
+			vkFreeMemory(device->device, vertices.bufferMemory, nullptr);
 		}
 		if (indices.buffer != VK_NULL_HANDLE)
 		{
-			vkDestroyBuffer(device, indices.buffer, nullptr);
-			vkFreeMemory(device, indices.bufferMemory, nullptr);
+			vkDestroyBuffer(device->device, indices.buffer, nullptr);
+			vkFreeMemory(device->device, indices.bufferMemory, nullptr);
 		}
 	}
 };

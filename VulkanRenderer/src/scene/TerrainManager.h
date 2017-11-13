@@ -1,6 +1,6 @@
 #pragma once
 
-#define _CRTDBG_MAP_ALLOC  
+
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
@@ -18,13 +18,19 @@
 class TerrainManager
 {
 public:
-	TerrainManager(VulkanDevice* device);
+	TerrainManager(std::shared_ptr<VulkanDevice> device);
 	~TerrainManager();
 
-	void GenerateTerrain(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera);
-	void ReInitTerrain(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain);
-	void UpdateTerrains(VulkanPipeline pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer, VulkanBuffer lightsInfoBuffer, Camera* camera, TimeManager* timeManager);
+	void GenerateTerrain(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer,
+		VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera);
+
+	void ReInitTerrain(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain);
+
+	void UpdateTerrains(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer,
+		VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager);
+
 	void RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe);
+
 	void UpdateTerrainGUI();
 
 	void CleanUpTerrain();
@@ -35,10 +41,10 @@ public:
 private:
 	std::shared_ptr<VulkanDevice> device;
 
-	std::vector<Terrain*> terrains;
+	std::vector<std::shared_ptr<Terrain>> terrains;
 	std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> terrainQuadPool;
 
-	std::vector<Water*> waters;
+	std::vector<std::shared_ptr<Water>> waters;
 
 	bool show_terrain_manager_window = true;
 	bool recreateTerrain = false;

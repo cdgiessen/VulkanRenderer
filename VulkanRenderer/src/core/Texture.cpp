@@ -1,81 +1,47 @@
 #include "Texture.h"
 
-#include "..\vulkan\VulkanTools.h"
+Texture::Texture() {
 
-Texture::Texture() {};
+};
 
 Texture::~Texture() {
-	if (pixels != nullptr) {
+	if (pixels) {
 		free(pixels);
+		pixels = 0;
 	}
 	else {
+		throw std::runtime_error("failed to free texture image!");
 		std::cerr << "Failed to free pixels, is there a null pointer?" << std::endl;
 	}
 };
 
-void Texture::loadFromFileRGBA(std::string filename) {
-	if (!fileExists(filename)) {
+bool Texture::loadTexture(std::string filename, int imgType) {
+	std::ifstream filestream(filename.c_str());
+	if (filestream.fail()) {
 		std::cout << "Could not load texture from " << filename << "File not found" << std::endl;
-		return;
+		return false;
 	}
 	int texWidth, texHeight, texChannels;
-	this->pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-	this->texImageSize = texWidth * texHeight * 4;
+	this->pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, imgType);
 
 	if (!pixels) {
 		throw std::runtime_error("failed to load texture image!");
+		return false;
 	}
 
+	this->texImageSize = texWidth * texHeight * 4;
 	this->width = static_cast<uint32_t>(texWidth);
 	this->height = static_cast<uint32_t>(texHeight);
+	return true;
+}
+
+void Texture::loadFromFileRGBA(std::string filename) {
+	loadTexture(filename, STBI_rgb_alpha);
 };
 
 void Texture::loadFromFileGreyOnly(std::string filename) {
-	if (!fileExists(filename)) {
-		std::cout << "Could not load texture from " << filename << "File not found" << std::endl;
-		return;
-	}
-	int texWidth, texHeight, texChannels;
-	this->pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
-	this->texImageSize = texWidth * texHeight * 1;
-
-	if (!pixels) {
-		throw std::runtime_error("failed to load texture image!");
-	}
-
-	this->width = static_cast<uint32_t>(texWidth);
-	this->height = static_cast<uint32_t>(texHeight);
+	loadTexture(filename, STBI_grey);
 };
-
-//void Texture::loadFromNoiseUtilImage(utils::Image* image) {
-//	if (image->GetSlabPtr() == nullptr) {
-//		std::cout << "Noise Utils Image Null, Cannot load null image" << std::endl;
-//		return;
-//	}
-//
-//	int imgWidth = image->GetWidth();
-//	int imgHeight = image->GetHeight();
-//
-//	this->width = static_cast<uint32_t>(imgWidth);
-//	this->height = static_cast<uint32_t>(imgHeight);
-//
-//	this->texImageSize = imgWidth * imgHeight * 4;
-//
-//	pixels = (stbi_uc*) malloc(texImageSize);
-//
-//	if (pixels != nullptr) {
-//		for (int i = 0; i < imgHeight; i++)
-//		{
-//			for (int j = 0; j < imgWidth; j++)
-//			{
-//				pixels[(i * imgHeight + j) * 4 + 0] = image->GetValue(j, i).red;
-//				pixels[(i * imgHeight + j) * 4 + 1] = image->GetValue(j, i).green;
-//				pixels[(i * imgHeight + j) * 4 + 2] = image->GetValue(j, i).blue;
-//				pixels[(i * imgHeight + j) * 4 + 3] = image->GetValue(j, i).alpha;
-//			}
-//		}
-//	}
-//}
 
 void Texture::loadFromGreyscalePixelData(int width, int height, float* in_pixels) {
 	if (in_pixels == nullptr) {
@@ -111,84 +77,125 @@ TextureArray::TextureArray() {
 }
 
 TextureArray::~TextureArray() {
-	if (pixels != nullptr) {
+	if (pixels) {
 		free(pixels);
+		pixels = 0;
 	}
 	else {
+		throw std::runtime_error("failed to free texture image!");
 		std::cerr << "Failed to free pixels, is there a null pointer?" << std::endl;
-	}
-	for each (Texture* tex in textures) {
-		tex->~Texture();
 	}
 }
 
 void TextureArray::loadFromFile(std::string path, std::vector<std::string> filenames){
+	std::vector<std::shared_ptr<Texture>> textures;
+	textures.reserve(filenames.size());
+
 	for each (std::string name in filenames) {
-		Texture* tex = new Texture();
+		std::shared_ptr<Texture> tex = std::make_shared<Texture>();
 		tex->loadFromFileRGBA(path + name);
 		textures.push_back(tex);
 	}
 
-	this->width = static_cast<uint32_t>(textures.at(0)->width);
-	this->height = static_cast<uint32_t>(textures.at(0)->height);
-
-	this->texImageSize = textures.size() * textures.at(0)->texImageSize;
-	this->layerCount = textures.size();
-
-	stbi_uc* pix = (stbi_uc*)malloc(texImageSize);
-	stbi_uc* offset = pix;
-
-	for (int i = 0; i < layerCount; i++)
-	{
-		std::memcpy(offset, textures.at(i)->pixels, textures.at(i)->texImageSize);
-		offset += textures.at(i)->texImageSize;
+	if (textures.size() == 0) {
+		std::cerr << "No images to load. Is this intended?" << std::endl;
+		return;
 	}
 
-	this->pixels = pix;
+	bool sameSize = true;
+	int width = textures.at(0)->width;
+	int height = textures.at(0)->height;
+	for (auto tex : textures) {
+		if (tex->width != width || tex->height != height)
+			sameSize = false;
+	}
+	if (sameSize) {
+		this->width = static_cast<uint32_t>(width);
+		this->height = static_cast<uint32_t>(height);
+
+		this->texImageSize = textures.size() * textures.at(0)->texImageSize;
+		this->texImageSizePerTex = textures.at(0)->texImageSize;
+		this->layerCount = textures.size();
+
+		stbi_uc* pix = (stbi_uc*)malloc(texImageSize);
+		stbi_uc* offset = pix;
+
+		for (int i = 0; i < layerCount; i++)
+		{
+			std::memcpy(offset, textures.at(i)->pixels, textures.at(i)->texImageSize);
+			offset += textures.at(i)->texImageSize;
+		}
+
+		this->pixels = pix;
+	}
+	else {
+		throw std::runtime_error("Texture array not all same size!");
+	}
 }
 
 CubeMap::~CubeMap() {
-	cubeImages.Front.~Texture();
-	cubeImages.Back.~Texture();
-	cubeImages.Left.~Texture();
-	cubeImages.Right.~Texture();
-	cubeImages.Top.~Texture();
-	cubeImages.Bottom.~Texture();
-
-	free(pixels);
+	if (pixels) {
+		free(pixels);
+		pixels = 0;
+	}
+	else {
+		throw std::runtime_error("failed to free texture image!");
+	}
 }
 
 void CubeMap::loadFromFile(std::string filename, std::string fileExt) {
-	cubeImages.Front.loadFromFileRGBA(filename + "Front" + fileExt);
-	cubeImages.Back.loadFromFileRGBA(filename + "Back" + fileExt);
-	cubeImages.Left.loadFromFileRGBA(filename + "Left" + fileExt);
-	cubeImages.Right.loadFromFileRGBA(filename + "Right" + fileExt);
-	cubeImages.Top.loadFromFileRGBA(filename + "Top" + fileExt);
-	cubeImages.Bottom.loadFromFileRGBA(filename + "Bottom" + fileExt);
+	Texture Front, Back, Left, Right, Top, Bottom;
 
-	this->width = static_cast<uint32_t>(cubeImages.Front.width);
-	this->height = static_cast<uint32_t>(cubeImages.Front.height);
+	Front.loadFromFileRGBA(filename + "Front" + fileExt);
+	Back.loadFromFileRGBA(filename + "Back" + fileExt);
+	Right.loadFromFileRGBA(filename + "Right" + fileExt);
+	Left.loadFromFileRGBA(filename + "Left" + fileExt);
+	Top.loadFromFileRGBA(filename + "Top" + fileExt);
+	Bottom.loadFromFileRGBA(filename + "Bottom" + fileExt);
+	
+	this->width = static_cast<uint32_t>(Front.width);
+	this->height = static_cast<uint32_t>(Front.height);
 
-	this->texImageSize = (cubeImages.Front.texImageSize + cubeImages.Back.texImageSize + cubeImages.Top.texImageSize + cubeImages.Bottom.texImageSize + cubeImages.Right.texImageSize + cubeImages.Left.texImageSize);
+	if (   width == Back.width 
+		&& width == Left.width 
+		&& width == Right.width 
+		&& width == Top.width 
+		&& width == Bottom.width
 
-	stbi_uc* pix = (stbi_uc*)malloc(texImageSize);
-	stbi_uc* offset = pix;
-	std::memcpy(offset, cubeImages.Front.pixels, cubeImages.Front.texImageSize);
+		&& height == Back.height 
+		&& height == Left.height 
+		&& height == Right.height 
+		&& height == Top.height 
+		&& height == Bottom.height) {
 
-	offset += cubeImages.Front.texImageSize;
-	std::memcpy(offset, cubeImages.Back.pixels, cubeImages.Back.texImageSize);
+		this->texImageSize = (Front.texImageSize + Back.texImageSize + Top.texImageSize + Bottom.texImageSize + Right.texImageSize + Left.texImageSize);
+		this->texImageSizePerTex = Front.texImageSize;
 
-	offset += cubeImages.Back.texImageSize;
-	std::memcpy(offset, cubeImages.Top.pixels, cubeImages.Top.texImageSize);
+		this->pixels = (stbi_uc*)malloc(texImageSize);
+		if (!pixels) {
+			throw std::runtime_error("failed to allocate texture image!");
+		}
 
-	offset += cubeImages.Top.texImageSize;
-	std::memcpy(offset, cubeImages.Bottom.pixels, cubeImages.Bottom.texImageSize);
+		stbi_uc* offset = this->pixels;
 
-	offset += cubeImages.Bottom.texImageSize;
-	std::memcpy(offset, cubeImages.Left.pixels, cubeImages.Left.texImageSize);
+		std::memcpy(offset, Front.pixels, Front.texImageSize);
 
-	offset += cubeImages.Left.texImageSize;
-	std::memcpy(offset, cubeImages.Right.pixels, cubeImages.Right.texImageSize);
+		offset += Front.texImageSize;
+		std::memcpy(offset, Back.pixels, Back.texImageSize);
 
-	this->pixels = pix;
+		offset += Back.texImageSize;
+		std::memcpy(offset, Top.pixels, Top.texImageSize);
+
+		offset += Top.texImageSize;
+		std::memcpy(offset, Bottom.pixels, Bottom.texImageSize);
+
+		offset += Bottom.texImageSize;
+		std::memcpy(offset, Left.pixels, Left.texImageSize);
+
+		offset += Left.texImageSize;
+		std::memcpy(offset, Right.pixels, Right.texImageSize);
+	}
+	else {
+		std::cerr << "Skybox dimentions incorrect! " << std::endl;
+	}
 };

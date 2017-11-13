@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 
-#define _CRTDBG_MAP_ALLOC  
+
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
@@ -14,7 +14,7 @@
 
 class VulkanTexture {
 public:
-	VulkanDevice *device;
+	std::shared_ptr<VulkanDevice> device;
 
 	VkImage textureImage;
 	VkImageLayout textureImageLayout;
@@ -50,12 +50,12 @@ public:
 */
 class VulkanTexture2D : public VulkanTexture {
 public:
-	Texture* texture;
+	std::shared_ptr<Texture> texture;
 
 	void loadFromTexture(
-		Texture* texture,
+		std::shared_ptr<Texture> texture,
 		VkFormat format,
-		VulkanDevice *device,
+		std::shared_ptr<VulkanDevice> device,
 		VkQueue copyQueue,
 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -67,7 +67,7 @@ public:
 
 class VulkanTexture2DArray : public VulkanTexture {
 public:
-	TextureArray* textures;
+	std::shared_ptr<TextureArray> textures;
 
 	/**
 	* Load a 2D texture array including all mip levels
@@ -81,9 +81,9 @@ public:
 	*
 	*/
 	void loadTextureArray(
-		TextureArray* textures,
+		std::shared_ptr<TextureArray> textures,
 		VkFormat format,
-		VulkanDevice *device,
+		std::shared_ptr<VulkanDevice> device,
 		VkQueue copyQueue,
 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -93,7 +93,7 @@ public:
 
 class VulkanCubeMap : public VulkanTexture {
 public:
-	CubeMap* cubeMap;
+	std::shared_ptr<CubeMap> cubeMap;
 
 	/**
 	* Load a cubemap texture including all mip levels from a single file
@@ -107,9 +107,9 @@ public:
 	*
 	*/
 	void loadFromTexture(
-		CubeMap* cubeMap,
+		std::shared_ptr<CubeMap> cubeMap,
 		VkFormat format,
-		VulkanDevice *device,
+		std::shared_ptr<VulkanDevice> device,
 		VkQueue copyQueue,
 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,

@@ -20,7 +20,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#define _CRTDBG_MAP_ALLOC  
+
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
@@ -54,7 +54,6 @@ public:
 	void drawFrame();
 	void cleanup();
 
-	void cleanupSwapChain();
 	void recreateSwapChain();
 	void reBuildCommandBuffers();
 
@@ -93,10 +92,10 @@ private:
 
 	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
 
-	Window* window;
-	TimeManager* timeManager;
+	std::shared_ptr<Window> window;
+	std::shared_ptr<TimeManager> timeManager;
 
-	Scene* scene;
+	std::shared_ptr<Scene> scene;
 
 	//Input stuff
 	bool mouseControlEnabled;
@@ -112,11 +111,11 @@ private:
 
 	//Vulkan specific members
 	//uint32_t frameIndex = 1; // which frame of the swapchain it is on
-	VulkanDevice vulkanDevice;
+	std::shared_ptr<VulkanDevice> vulkanDevice;
 	VulkanSwapChain vulkanSwapChain;
 	VkRenderPass renderPass;
 
-	VulkanPipeline* pipelineManager;
+	std::shared_ptr<VulkanPipeline> pipelineManager;
 
 	//Depth buffer
 	VkImage depthImage; 

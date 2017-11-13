@@ -7,19 +7,21 @@
 
 VulkanApp::VulkanApp()
 {
-	//camera = new Camera(glm::vec3(-2,2,0), glm::vec3(0,1,0), 0, -45);
-	timeManager = new TimeManager();
+	vulkanDevice = std::make_shared<VulkanDevice>();
 
-	window = new Window();
+	//camera = new Camera(glm::vec3(-2,2,0), glm::vec3(0,1,0), 0, -45);
+	timeManager = std::make_shared<TimeManager>();
+
+	window = std::make_shared<Window>();
 	window->createWindow(glm::uvec2(WIDTH, HEIGHT));
-	vulkanDevice.window = window->getWindowContext();
+	vulkanDevice->window = window->getWindowContext();
 	SetMouseControl(true);
 
 	initVulkan();
-	pipelineManager = new VulkanPipeline(&vulkanDevice);
+	pipelineManager = std::make_shared<VulkanPipeline>(vulkanDevice);
 	
-	scene = new Scene(&vulkanDevice);
-	scene->PrepareScene(*pipelineManager, renderPass, vulkanSwapChain);
+	scene = std::make_shared<Scene>(vulkanDevice);
+	scene->PrepareScene(pipelineManager, renderPass, vulkanSwapChain);
 
 	PrepareImGui();
 	createSemaphores();
@@ -34,9 +36,9 @@ VulkanApp::~VulkanApp()
 }
 
 void VulkanApp::initVulkan() {
-	vulkanDevice.initVulkanDevice(vulkanSwapChain.surface);
+	vulkanDevice->initVulkanDevice(vulkanSwapChain.surface);
 
-	vulkanSwapChain.initSwapChain(vulkanDevice.instance, vulkanDevice.physical_device, vulkanDevice.device, vulkanDevice.window);
+	vulkanSwapChain.initSwapChain(vulkanDevice, vulkanDevice->window);
 
 	//createImageViews();
 	createRenderPass();
@@ -56,7 +58,7 @@ void VulkanApp::mainLoop() {
 		HandleInputs();
 
 		//updateScene();
-		scene->UpdateScene(*pipelineManager, renderPass, vulkanSwapChain, timeManager);
+		scene->UpdateScene(pipelineManager, renderPass, vulkanSwapChain, timeManager);
 		BuildImgui();
 
 		buildCommandBuffers();
@@ -67,7 +69,7 @@ void VulkanApp::mainLoop() {
 		//std::cout << "main loop breaker. Break me if you want to stop after every frame!" << std::endl;
 	}
 
-	vkDeviceWaitIdle(vulkanDevice.device);
+	vkDeviceWaitIdle(vulkanDevice->device);
 
 }
 
@@ -76,59 +78,39 @@ void VulkanApp::cleanup() {
 
 	scene->CleanUpScene();
 
-	cleanupSwapChain();
+	vulkanSwapChain.CleanUp(depthImageView, depthImage, depthImageMemory, renderPass);
 
-	vkDestroySemaphore(vulkanDevice.device, renderFinishedSemaphore, nullptr);
-	vkDestroySemaphore(vulkanDevice.device, imageAvailableSemaphore, nullptr);
+	vkDestroySemaphore(vulkanDevice->device, renderFinishedSemaphore, nullptr);
+	vkDestroySemaphore(vulkanDevice->device, imageAvailableSemaphore, nullptr);
 
 	for (auto& shaderModule : shaderModules)
 	{
-		vkDestroyShaderModule(vulkanDevice.device, shaderModule, nullptr);
+		vkDestroyShaderModule(vulkanDevice->device, shaderModule, nullptr);
 	}
 	
-	vulkanDevice.cleanup(vulkanSwapChain.surface);
-}
-
-void VulkanApp::cleanupSwapChain() {
-	
-
-	vkDestroyImageView(vulkanDevice.device, depthImageView, nullptr);
-	vkDestroyImage(vulkanDevice.device, depthImage, nullptr);
-	vkFreeMemory(vulkanDevice.device, depthImageMemory, nullptr);
-
-	for (size_t i = 0; i < vulkanSwapChain.swapChainFramebuffers.size(); i++) {
-		vkDestroyFramebuffer(vulkanDevice.device, vulkanSwapChain.swapChainFramebuffers[i], nullptr);
-	}
-
-	vkDestroyRenderPass(vulkanDevice.device, renderPass, nullptr);
-
-	for (size_t i = 0; i < vulkanSwapChain.swapChainImageViews.size(); i++) {
-		vkDestroyImageView(vulkanDevice.device, vulkanSwapChain.swapChainImageViews[i], nullptr);
-	}
-
-	vkDestroySwapchainKHR(vulkanDevice.device, vulkanSwapChain.swapChain, nullptr);
+	vulkanDevice->Cleanup(vulkanSwapChain.surface);
 }
 
 void VulkanApp::recreateSwapChain() {
-	vkDeviceWaitIdle(vulkanDevice.device);
+	vkDeviceWaitIdle(vulkanDevice->device);
 
-	cleanupSwapChain();
+	vulkanSwapChain.CleanUp(depthImageView, depthImage, depthImageMemory, renderPass);
 
-	vulkanSwapChain.recreateSwapChain(vulkanDevice.window);
+	vulkanSwapChain.recreateSwapChain(vulkanDevice->window);
 	
 	createRenderPass();
 	createDepthResources();
 	createFramebuffers();
 	
-	scene->ReInitScene(*pipelineManager, renderPass, vulkanSwapChain);
+	scene->ReInitScene(pipelineManager, renderPass, vulkanSwapChain);
 
 	//frameIndex = 1; //cause it needs it to be synced back to zero (yes I know it says one, thats intended, build command buffers uses the "next" frame index since it has to sync with the swapchain so it starts at one....)
 	reBuildCommandBuffers();
 }
 
 void VulkanApp::reBuildCommandBuffers() {
-	vkFreeCommandBuffers(vulkanDevice.device, vulkanDevice.graphics_queue_command_pool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
-	vkResetCommandPool(vulkanDevice.device, vulkanDevice.graphics_queue_command_pool, 0);
+	vkFreeCommandBuffers(vulkanDevice->device, vulkanDevice->graphics_queue_command_pool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+	vkResetCommandPool(vulkanDevice->device, vulkanDevice->graphics_queue_command_pool, 0);
 
 	createCommandBuffers();
 	buildCommandBuffers();
@@ -188,7 +170,7 @@ void VulkanApp::createRenderPass() {
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies = &dependency;
 
-	if (vkCreateRenderPass(vulkanDevice.device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+	if (vkCreateRenderPass(vulkanDevice->device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create render pass!");
 	}
 }
@@ -199,19 +181,19 @@ void VulkanApp::createDepthResources() {
 	depthFormat = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
 
 	createImage(vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-	depthImageView = createImageView(vulkanDevice.device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	depthImageView = createImageView(vulkanDevice->device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 	
 	transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-	//VkCommandBuffer copyBuf = vulkanDevice.createCommandBuffer(vulkanDevice.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	//VkCommandBuffer copyBuf = vulkanDevice->createCommandBuffer(vulkanDevice->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 	//setImageLayout(copyBuf, depthImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIONAL, 
-	//vulkanDevice.flushCommandBuffer(copyBuf, vulkanDevice.graphics_queue, true);
+	//vulkanDevice->flushCommandBuffer(copyBuf, vulkanDevice->graphics_queue, true);
 }
 
 VkFormat VulkanApp::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
 	for (VkFormat format : candidates) {
 		VkFormatProperties props;
-		vkGetPhysicalDeviceFormatProperties(vulkanDevice.physical_device, format, &props);
+		vkGetPhysicalDeviceFormatProperties(vulkanDevice->physical_device, format, &props);
 
 		if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
 			return format;
@@ -250,7 +232,7 @@ void VulkanApp::createFramebuffers() {
 		framebufferInfo.height = vulkanSwapChain.swapChainExtent.height;
 		framebufferInfo.layers = 1;
 
-		if (vkCreateFramebuffer(vulkanDevice.device, &framebufferInfo, nullptr, &vulkanSwapChain.swapChainFramebuffers[i]) != VK_SUCCESS) {
+		if (vkCreateFramebuffer(vulkanDevice->device, &framebufferInfo, nullptr, &vulkanSwapChain.swapChainFramebuffers[i]) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create framebuffer!");
 		}
 	}
@@ -272,22 +254,22 @@ void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format, Vk
 	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-	if (vkCreateImage(vulkanDevice.device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+	if (vkCreateImage(vulkanDevice->device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create image!");
 	}
 
 	VkMemoryRequirements memRequirements;
-	vkGetImageMemoryRequirements(vulkanDevice.device, image, &memRequirements);
+	vkGetImageMemoryRequirements(vulkanDevice->device, image, &memRequirements);
 
 	VkMemoryAllocateInfo allocInfo = initializers::memoryAllocateInfo();
 	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findMemoryType(vulkanDevice.physical_device, memRequirements.memoryTypeBits, properties);
+	allocInfo.memoryTypeIndex = findMemoryType(vulkanDevice->physical_device, memRequirements.memoryTypeBits, properties);
 
-	if (vkAllocateMemory(vulkanDevice.device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+	if (vkAllocateMemory(vulkanDevice->device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate image memory!");
 	}
 
-	vkBindImageMemory(vulkanDevice.device, image, imageMemory, 0);
+	vkBindImageMemory(vulkanDevice->device, image, imageMemory, 0);
 }
 
 void VulkanApp::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
@@ -340,10 +322,10 @@ void VulkanApp::transitionImageLayout(VkImage image, VkFormat format, VkImageLay
 }
 
 VkCommandBuffer VulkanApp::beginSingleTimeCommands() {
-	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(vulkanDevice.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(vulkanDevice->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
 	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(vulkanDevice.device, &allocInfo, &commandBuffer);
+	vkAllocateCommandBuffers(vulkanDevice->device, &allocInfo, &commandBuffer);
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -361,10 +343,10 @@ void VulkanApp::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffer;
 
-	vkQueueSubmit(vulkanDevice.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(vulkanDevice.graphics_queue);
+	vkQueueSubmit(vulkanDevice->graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(vulkanDevice->graphics_queue);
 
-	vkFreeCommandBuffers(vulkanDevice.device, vulkanDevice.graphics_queue_command_pool, 1, &commandBuffer);
+	vkFreeCommandBuffers(vulkanDevice->device, vulkanDevice->graphics_queue_command_pool, 1, &commandBuffer);
 }
 
 void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
@@ -383,9 +365,9 @@ void VulkanApp::createCommandBuffers() {
 
 	commandBuffers.resize(vulkanSwapChain.swapChainFramebuffers.size());
 
-	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(vulkanDevice.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
+	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(vulkanDevice->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
 
-	if (vkAllocateCommandBuffers(vulkanDevice.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(vulkanDevice->device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
 	}
 
@@ -433,9 +415,9 @@ void VulkanApp::buildCommandBuffers(){
 void VulkanApp::CreatePrimaryCommandBuffer() {
 	commandBuffers.resize(vulkanSwapChain.swapChainFramebuffers.size());
 
-	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(vulkanDevice.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
+	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(vulkanDevice->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
 
-	if (vkAllocateCommandBuffers(vulkanDevice.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(vulkanDevice->device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
 	}
 	
@@ -485,8 +467,8 @@ void VulkanApp::CreatePrimaryCommandBuffer() {
 void VulkanApp::createSemaphores() {
 	VkSemaphoreCreateInfo semaphoreInfo = initializers::semaphoreCreateInfo();
 
-	if (vkCreateSemaphore(vulkanDevice.device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
-		vkCreateSemaphore(vulkanDevice.device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS) {
+	if (vkCreateSemaphore(vulkanDevice->device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
+		vkCreateSemaphore(vulkanDevice->device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS) {
 
 		throw std::runtime_error("failed to create semaphores!");
 	}
@@ -498,7 +480,7 @@ VkPipelineShaderStageCreateInfo VulkanApp::loadShader(std::string fileName, VkSh
 	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shaderStage.stage = stage;
 
-	shaderStage.module = loadShaderModule(vulkanDevice.device, fileName.c_str());
+	shaderStage.module = loadShaderModule(vulkanDevice->device, fileName.c_str());
 
 	shaderStage.pName = "main"; 
 	assert(shaderStage.module != VK_NULL_HANDLE);
@@ -537,23 +519,23 @@ void  VulkanApp::PrepareImGui()
 		pool_info.maxSets = 1000 * 11;
 		pool_info.poolSizeCount = 11;
 		pool_info.pPoolSizes = pool_size;
-		VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanDevice.device, &pool_info, VK_NULL_HANDLE, &imgui_descriptor_pool));
+		VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanDevice->device, &pool_info, VK_NULL_HANDLE, &imgui_descriptor_pool));
 	}
 
 	ImGui_ImplGlfwVulkan_Init_Data init_data = {};
 	init_data.allocator = VK_NULL_HANDLE;
-	init_data.gpu = vulkanDevice.physical_device;
-	init_data.device = vulkanDevice.device;
+	init_data.gpu = vulkanDevice->physical_device;
+	init_data.device = vulkanDevice->device;
 	init_data.render_pass = renderPass;
 	init_data.pipeline_cache = VK_NULL_HANDLE;
 	init_data.descriptor_pool = imgui_descriptor_pool;
 	init_data.check_vk_result = imgui_check_vk_result;
 	
-	ImGui_ImplGlfwVulkan_Init(vulkanDevice.window, false, &init_data);
+	ImGui_ImplGlfwVulkan_Init(vulkanDevice->window, false, &init_data);
 
-	VkCommandBuffer fontUploader = vulkanDevice.createCommandBuffer(vulkanDevice.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	VkCommandBuffer fontUploader = vulkanDevice->createCommandBuffer(vulkanDevice->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 	ImGui_ImplGlfwVulkan_CreateFontsTexture(fontUploader);
-	vulkanDevice.flushCommandBuffer(fontUploader, vulkanDevice.graphics_queue, true);
+	vulkanDevice->flushCommandBuffer(fontUploader, vulkanDevice->graphics_queue, true);
 }
 
 // Build imGui windows and elements
@@ -601,7 +583,7 @@ void VulkanApp::BuildImgui() {
 //Release associated resources and shutdown imgui
 void VulkanApp::CleanUpImgui() {
 	ImGui_ImplGlfwVulkan_Shutdown();
-	vkDestroyDescriptorPool(vulkanDevice.device, imgui_descriptor_pool, VK_NULL_HANDLE);
+	vkDestroyDescriptorPool(vulkanDevice->device, imgui_descriptor_pool, VK_NULL_HANDLE);
 }
 
 void VulkanApp::HandleInputs() {
@@ -661,14 +643,14 @@ void VulkanApp::HandleInputs() {
 void VulkanApp::SetMouseControl(bool value) {
 	mouseControlEnabled = value;
 	if(mouseControlEnabled)
-		glfwSetInputMode(vulkanDevice.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		glfwSetInputMode(vulkanDevice->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	else
-		glfwSetInputMode(vulkanDevice.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		glfwSetInputMode(vulkanDevice->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 void VulkanApp::drawFrame() {
 	uint32_t frameIndex; //which of the swapchain images the app is rendering to
-	VkResult result = vkAcquireNextImageKHR(vulkanDevice.device, vulkanSwapChain.swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &frameIndex);
+	VkResult result = vkAcquireNextImageKHR(vulkanDevice->device, vulkanSwapChain.swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &frameIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		recreateSwapChain();
@@ -693,7 +675,7 @@ void VulkanApp::drawFrame() {
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit(vulkanDevice.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+	if (vkQueueSubmit(vulkanDevice->graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
 
@@ -709,7 +691,7 @@ void VulkanApp::drawFrame() {
 
 	presentInfo.pImageIndices = &frameIndex;
 
-	result = vkQueuePresentKHR(vulkanDevice.present_queue, &presentInfo);
+	result = vkQueuePresentKHR(vulkanDevice->present_queue, &presentInfo);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
 		recreateSwapChain();
@@ -718,5 +700,5 @@ void VulkanApp::drawFrame() {
 		throw std::runtime_error("failed to present swap chain image!");
 	}
 
-	vkQueueWaitIdle(vulkanDevice.present_queue);
+	vkQueueWaitIdle(vulkanDevice->present_queue);
 }

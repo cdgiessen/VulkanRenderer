@@ -109,7 +109,6 @@
     <ClCompile Include="src\core\Logger.cpp" />
     <ClCompile Include="src\core\Mesh.cpp" />
     <ClCompile Include="src\gui\NodeGraph.cpp" />
-    <ClCompile Include="src\scene\noiseutils.cpp" />
     <ClCompile Include="src\core\MemoryPool.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\gui\TerGenNodeGraph.cpp" />
@@ -119,6 +118,7 @@
     <ClCompile Include="src\core\Texture.cpp" />
     <ClCompile Include="src\core\TimeManager.cpp" />
     <ClCompile Include="src\vulkan\VulkanPipeline.cpp" />
+    <ClCompile Include="src\vulkan\VulkanSwapChain.cpp" />
     <ClCompile Include="src\vulkan\VulkanTexture.cpp" />
     <ClCompile Include="src\vulkan\VulkanDevice.cpp" />
     <ClCompile Include="src\scene\Skybox.cpp" />
@@ -146,7 +146,6 @@
     <ClInclude Include="src\core\Logger.h" />
     <ClInclude Include="src\core\Mesh.h" />
     <ClInclude Include="src\gui\NodeGraph.h" />
-    <ClInclude Include="src\scene\noiseutils.h" />
     <ClInclude Include="src\core\MemoryPool.h" />
     <ClInclude Include="src\scene\Scene.h" />
     <ClInclude Include="src\scene\Skybox.h" />
@@ -257,13 +256,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.0.65.0\Include;C:\VulkanSDK\1.0.51.0\Include;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\include;C:\VulkanSDK\1.0.65.0\Third-Party\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\include;C:\VulkanSDK\1.0.51.0\Include;C:\VulkanSDK\1.0.65.0\Include;C:\VulkanSDK\1.0.51.0\Third-Party\Include;C:\VulkanSDK\1.0.65.0\Third-Party\Include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\include;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\VulkanSDK\1.0.65.0\Lib;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\lib;C:\VulkanSDK\1.0.51.0\Lib;C:\VulkanSDK\1.0.65.0\Lib;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\lib-vc2015;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -295,7 +294,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.0.65.0\Include;C:\VulkanSDK\1.0.51.0\Include;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\include;C:\VulkanSDK\1.0.65.0\Third-Party\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\include;C:\VulkanSDK\1.0.51.0\Include;C:\VulkanSDK\1.0.65.0\Include;C:\VulkanSDK\1.0.51.0\Third-Party\Include;C:\VulkanSDK\1.0.65.0\Third-Party\Include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\include;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -303,7 +302,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\VulkanSDK\1.0.65.0\Lib;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\lib;C:\VulkanSDK\1.0.51.0\Lib;C:\VulkanSDK\1.0.65.0\Lib;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\lib-vc2015;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

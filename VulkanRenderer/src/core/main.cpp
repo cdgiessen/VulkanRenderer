@@ -1,4 +1,4 @@
-#define _CRTDBG_MAP_ALLOC  
+
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
@@ -14,9 +14,9 @@
 
 int main() {
 	{
-		VulkanApp* vkApp;
+		std::shared_ptr<VulkanApp> vkApp;
 		try {
-			vkApp = new VulkanApp();
+			vkApp = std::make_shared<VulkanApp>();
 		}
 		catch (const std::runtime_error& e) {
 			std::cerr << e.what() << std::endl;

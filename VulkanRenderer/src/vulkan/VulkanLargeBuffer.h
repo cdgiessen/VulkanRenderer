@@ -2,7 +2,7 @@
 
 #include <vulkan\vulkan.h>
 
-#define _CRTDBG_MAP_ALLOC  
+
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
@@ -14,15 +14,15 @@
 class VulkanLargeBuffer
 {
 public:
-	VulkanLargeBuffer(VulkanDevice* device, VkBufferUsageFlagBits usageFlags, VkDeviceSize size);
+	VulkanLargeBuffer(std::shared_ptr<VulkanDevice> device, VkBufferUsageFlagBits usageFlags, VkDeviceSize size);
 	~VulkanLargeBuffer();
 
-	VkDeviceMemory* StageResource();
+	VkDeviceMemory StageResource();
 
 	bool TransferBuffers();
 
 private:
-	VulkanDevice *device;
+	std::shared_ptr<VulkanDevice> device;
 
 	VulkanBuffer buffer;
 	VulkanBuffer stagingBuffer;

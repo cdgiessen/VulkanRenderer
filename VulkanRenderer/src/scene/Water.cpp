@@ -12,7 +12,7 @@ Water::~Water() {
 }
 
 
-void Water::InitWater(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
+void Water::InitWater(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
 {
 	this->device = device;
 
@@ -23,7 +23,7 @@ void Water::InitWater(VulkanDevice* device, VulkanPipeline pipelineManager, VkRe
 	SetupPipeline(pipelineManager, renderPass, viewPortWidth, viewPortHeight);
 }
 
-void Water::ReinitWater(VulkanDevice* device, VulkanPipeline pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
+void Water::ReinitWater(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
 {
 	this->device = device;
 
@@ -36,9 +36,6 @@ void Water::ReinitWater(VulkanDevice* device, VulkanPipeline pipelineManager, Vk
 
 void Water::CleanUp()
 {
-	WaterMesh->~Mesh();
-	WaterTexture->~Texture();
-
 	WaterModel.destroy();
 	WaterVulkanTexture.destroy();
 
@@ -54,7 +51,7 @@ void Water::CleanUp()
 }
 
 void Water::LoadTexture(std::string filename) {
-	WaterTexture = new Texture();
+	WaterTexture = std::make_shared<Texture>();
 	WaterTexture->loadFromFileRGBA(filename);
 }
 
@@ -131,41 +128,41 @@ void Water::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting)
 	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
-void Water::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
+void Water::SetupPipeline(std::shared_ptr<VulkanPipeline> PipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
 {
-	PipelineCreationObject* myPipe = PipelineManager.CreatePipelineOutline();
+	std::shared_ptr<PipelineCreationObject> myPipe = PipelineManager->CreatePipelineOutline();
 	
-	PipelineManager.SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/water.vert.spv"));
-	PipelineManager.SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/water.frag.spv"));
-	PipelineManager.SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
-	PipelineManager.SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-	PipelineManager.SetViewport(myPipe, (float)viewPortWidth, (float)viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
-	PipelineManager.SetScissor(myPipe, viewPortWidth, viewPortHeight, 0, 0);
-	PipelineManager.SetViewportState(myPipe, 1, 1, 0);
-	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-	PipelineManager.SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
-	PipelineManager.SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
-	PipelineManager.SetColorBlendingAttachment(myPipe, VK_TRUE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT, 
+	PipelineManager->SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/water.vert.spv"));
+	PipelineManager->SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/water.frag.spv"));
+	PipelineManager->SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
+	PipelineManager->SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+	PipelineManager->SetViewport(myPipe, (float)viewPortWidth, (float)viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
+	PipelineManager->SetScissor(myPipe, viewPortWidth, viewPortHeight, 0, 0);
+	PipelineManager->SetViewportState(myPipe, 1, 1, 0);
+	PipelineManager->SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	PipelineManager->SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
+	PipelineManager->SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
+	PipelineManager->SetColorBlendingAttachment(myPipe, VK_TRUE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT, 
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
-	PipelineManager.SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
-	PipelineManager.SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
+	PipelineManager->SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
+	PipelineManager->SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
 
-	pipelineLayout = PipelineManager.BuildPipelineLayout(myPipe);
-	pipeline = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
+	pipelineLayout = PipelineManager->BuildPipelineLayout(myPipe);
+	pipeline = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
 
-	PipelineManager.SetRasterizer(myPipe, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-	wireframe = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
+	PipelineManager->SetRasterizer(myPipe, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	wireframe = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
 
-	PipelineManager.CleanShaderResources(myPipe);
-	PipelineManager.SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/Seascape.vert.spv"));
-	PipelineManager.SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/Seascape.frag.spv"));
+	PipelineManager->CleanShaderResources(myPipe);
+	PipelineManager->SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/Seascape.vert.spv"));
+	PipelineManager->SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/Seascape.frag.spv"));
 
-	//pipelineLayout = PipelineManager.BuildPipelineLayout(myPipe);
-	seascapePipeline = PipelineManager.BuildPipeline(myPipe, renderPass, 0);
+	//pipelineLayout = PipelineManager->BuildPipelineLayout(myPipe);
+	seascapePipeline = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
 
 	
-	PipelineManager.CleanShaderResources(myPipe);
+	PipelineManager->CleanShaderResources(myPipe);
 	/*
 	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/water.vert.spv");
 	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/water.frag.spv");
@@ -268,7 +265,7 @@ void Water::SetupPipeline(VulkanPipeline PipelineManager, VkRenderPass renderPas
 	//*/
 }
 
-void Water::BuildCommandBuffer(VulkanSwapChain* swapChain, VkRenderPass* renderPass)
+void Water::BuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass)
 {
 	commandBuffers.resize(swapChain->swapChainFramebuffers.size());
 
@@ -317,7 +314,7 @@ void Water::BuildCommandBuffer(VulkanSwapChain* swapChain, VkRenderPass* renderP
 	}
 }
 
-void Water::RebuildCommandBuffer(VulkanSwapChain* swapChain, VkRenderPass* renderPass)
+void Water::RebuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass)
 {
 	vkFreeCommandBuffers(device->device, device->graphics_queue_command_pool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
 
