@@ -9,27 +9,27 @@ GameObject::~GameObject()
 {
 }
 
-void GameObject::InitGameObject(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline>  pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting)
+void GameObject::InitGameObject(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting)
 {
-	this->device = device;
+	this->renderer = renderer;
 
 	SetupUniformBuffer();
 	SetupImage();
 	SetupModel();
 	SetupDescriptor(global, lighting);
-	SetupPipeline(pipelineManager, renderPass, viewPortWidth, viewPortHeight);
+	SetupPipeline();
 }
 
-void GameObject::ReinitGameObject(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline>  pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
+void GameObject::ReinitGameObject(std::shared_ptr<VulkanRenderer> renderer)
 {
-	this->device = device;
+	this->renderer = renderer;
 
-	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
-	vkDestroyPipeline(device->device, pipeline, nullptr);
-	vkDestroyPipeline(device->device, wireframe, nullptr);
-	vkDestroyPipeline(device->device, debugNormals, nullptr);
+	vkDestroyPipelineLayout(renderer->device.device, pipelineLayout, nullptr);
+	vkDestroyPipeline(renderer->device.device, pipeline, nullptr);
+	vkDestroyPipeline(renderer->device.device, wireframe, nullptr);
+	vkDestroyPipeline(renderer->device.device, debugNormals, nullptr);
 
-	SetupPipeline(pipelineManager, renderPass, viewPortWidth, viewPortHeight);
+	SetupPipeline();
 }
 
 void GameObject::CleanUp()
@@ -39,13 +39,13 @@ void GameObject::CleanUp()
 
 	modelUniformBuffer.cleanBuffer();
 
-	vkDestroyDescriptorSetLayout(device->device, descriptorSetLayout, nullptr);
-	vkDestroyDescriptorPool(device->device, descriptorPool, nullptr);
+	vkDestroyDescriptorSetLayout(renderer->device.device, descriptorSetLayout, nullptr);
+	vkDestroyDescriptorPool(renderer->device.device, descriptorPool, nullptr);
 
-	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
-	vkDestroyPipeline(device->device, pipeline, nullptr);
-	vkDestroyPipeline(device->device, wireframe, nullptr);
-	vkDestroyPipeline(device->device, debugNormals, nullptr);
+	vkDestroyPipelineLayout(renderer->device.device, pipelineLayout, nullptr);
+	vkDestroyPipeline(renderer->device.device, pipeline, nullptr);
+	vkDestroyPipeline(renderer->device.device, wireframe, nullptr);
+	vkDestroyPipeline(renderer->device.device, debugNormals, nullptr);
 }
 
 void GameObject::LoadModel(std::string filename) {
@@ -63,15 +63,15 @@ void GameObject::LoadTexture(std::string filename) {
 }
 
 void GameObject::SetupUniformBuffer() {
-	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &modelUniformBuffer, sizeof(ModelBufferObject));
+	renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &modelUniformBuffer, sizeof(ModelBufferObject));
 }
 
 void GameObject::SetupImage() {
-	gameObjectVulkanTexture.loadFromTexture(gameObjectTexture, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
+	gameObjectVulkanTexture.loadFromTexture(gameObjectTexture, VK_FORMAT_R8G8B8A8_UNORM, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
 }
 
 void GameObject::SetupModel() {
-	gameObjectModel.loadFromMesh(gameObjectMesh, device, device->graphics_queue);
+	gameObjectModel.loadFromMesh(gameObjectMesh, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue);
 }
 
 void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting) {
@@ -84,7 +84,7 @@ void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting) {
 	std::vector<VkDescriptorSetLayoutBinding> bindings = { cboLayoutBinding, uboLayoutBinding, lboLayoutBinding, samplerLayoutBinding };
 	VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
 
-	if (vkCreateDescriptorSetLayout(device->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+	if (vkCreateDescriptorSetLayout(renderer->device.device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor set layout!");
 	}
 
@@ -97,7 +97,7 @@ void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting) {
 
 	VkDescriptorPoolCreateInfo poolInfo = initializers::descriptorPoolCreateInfo(static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), 1);
 
-	if (vkCreateDescriptorPool(device->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+	if (vkCreateDescriptorPool(renderer->device.device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool!");
 	}
 
@@ -105,7 +105,7 @@ void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting) {
 	VkDescriptorSetLayout layouts[] = { descriptorSetLayout };
 	VkDescriptorSetAllocateInfo allocInfo = initializers::descriptorSetAllocateInfo(descriptorPool, layouts, 1);
 
-	if (vkAllocateDescriptorSets(device->device, &allocInfo, &descriptorSet) != VK_SUCCESS) {
+	if (vkAllocateDescriptorSets(renderer->device.device, &allocInfo, &descriptorSet) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate descriptor set!");
 	}
 	
@@ -117,46 +117,47 @@ void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting) {
 	descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lighting.descriptor, 1));
 	descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &gameObjectVulkanTexture.descriptor, 1));
 
-	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	vkUpdateDescriptorSets(renderer->device.device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
-void GameObject::SetupPipeline(std::shared_ptr<VulkanPipeline>  PipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
+void GameObject::SetupPipeline() {
 
-	std::shared_ptr<PipelineCreationObject> myPipe = PipelineManager->CreatePipelineOutline();
+	VulkanPipeline &pipeMan = renderer->pipelineManager;
+	std::shared_ptr<PipelineCreationObject> myPipe = pipeMan.CreatePipelineOutline();
 
-	PipelineManager->SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/gameObject_shader.vert.spv"));
-	PipelineManager->SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/gameObject_shader.frag.spv"));
-	PipelineManager->SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
-	PipelineManager->SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-	PipelineManager->SetViewport(myPipe, (float)viewPortWidth, (float)viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
-	PipelineManager->SetScissor(myPipe, viewPortWidth, viewPortHeight, 0, 0);
-	PipelineManager->SetViewportState(myPipe, 1, 1, 0);
-	PipelineManager->SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-	PipelineManager->SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
-	PipelineManager->SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
-	PipelineManager->SetColorBlendingAttachment(myPipe, VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+	pipeMan.SetVertexShader(myPipe, loadShaderModule(renderer->device.device, "shaders/gameObject_shader.vert.spv"));
+	pipeMan.SetFragmentShader(myPipe, loadShaderModule(renderer->device.device, "shaders/gameObject_shader.frag.spv"));
+	pipeMan.SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
+	pipeMan.SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+	pipeMan.SetViewport(myPipe, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
+	pipeMan.SetScissor(myPipe, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);
+	pipeMan.SetViewportState(myPipe, 1, 1, 0);
+	pipeMan.SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	pipeMan.SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
+	pipeMan.SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
+	pipeMan.SetColorBlendingAttachment(myPipe, VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
-	PipelineManager->SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
-	PipelineManager->SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
+	pipeMan.SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
+	pipeMan.SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
 
-	pipelineLayout = PipelineManager->BuildPipelineLayout(myPipe);
-	pipeline = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
+	pipelineLayout = pipeMan.BuildPipelineLayout(myPipe);
+	pipeline = pipeMan.BuildPipeline(myPipe, renderer->renderPass, 0);
 
-	PipelineManager->SetRasterizer(myPipe, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-	wireframe = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
+	pipeMan.SetRasterizer(myPipe, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	wireframe = pipeMan.BuildPipeline(myPipe, renderer->renderPass, 0);
 
-	PipelineManager->CleanShaderResources(myPipe);
-	PipelineManager->SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.vert.spv"));
-	PipelineManager->SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.frag.spv"));
-	PipelineManager->SetGeometryShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.geom.spv"));
+	pipeMan.CleanShaderResources(myPipe);
+	pipeMan.SetVertexShader(myPipe, loadShaderModule(renderer->device.device, "shaders/normalVecDebug.vert.spv"));
+	pipeMan.SetFragmentShader(myPipe, loadShaderModule(renderer->device.device, "shaders/normalVecDebug.frag.spv"));
+	pipeMan.SetGeometryShader(myPipe, loadShaderModule(renderer->device.device, "shaders/normalVecDebug.geom.spv"));
 
-	debugNormals = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
-	PipelineManager->CleanShaderResources(myPipe);
+	debugNormals = pipeMan.BuildPipeline(myPipe, renderer->renderPass, 0);
+	pipeMan.CleanShaderResources(myPipe);
 	/*
 
-	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/gameObject_shader.vert.spv");
-	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/gameObject_shader.frag.spv");
+	VkShaderModule vertShaderModule = loadShaderModule(renderer->device.device, "shaders/gameObject_shader.vert.spv");
+	VkShaderModule fragShaderModule = loadShaderModule(renderer->device.device, "shaders/gameObject_shader.frag.spv");
 
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule);
 	vertShaderStageInfo.pName = "main";
@@ -215,7 +216,7 @@ void GameObject::SetupPipeline(std::shared_ptr<VulkanPipeline>  PipelineManager,
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(&descriptorSetLayout, 1);
 
-	if (vkCreatePipelineLayout(device->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+	if (vkCreatePipelineLayout(renderer->device.device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
 
@@ -232,7 +233,7 @@ void GameObject::SetupPipeline(std::shared_ptr<VulkanPipeline>  PipelineManager,
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-	if (vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(renderer->device.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
 
@@ -241,13 +242,13 @@ void GameObject::SetupPipeline(std::shared_ptr<VulkanPipeline>  PipelineManager,
 	rasterizer.lineWidth = 1.0f;
 
 	if (device->physical_device_features.fillModeNonSolid == VK_TRUE) {
-		if (vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &wireframe) != VK_SUCCESS) {
+		if (vkCreateGraphicsPipelines(renderer->device.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &wireframe) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create wireframe pipeline!");
 		}
 	}
 
-	vkDestroyShaderModule(device->device, vertShaderModule, nullptr);
-	vkDestroyShaderModule(device->device, fragShaderModule, nullptr);
+	vkDestroyShaderModule(renderer->device.device, vertShaderModule, nullptr);
+	vkDestroyShaderModule(renderer->device.device, fragShaderModule, nullptr);
 	*/
 }
 
@@ -259,7 +260,7 @@ void GameObject::UpdateUniformBuffer(float time)
 	ubo.model = glm::rotate(ubo.model, time / 2.0f, glm::vec3(0.5, 1, 0));
 	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 
-	modelUniformBuffer.map(device->device);
+	modelUniformBuffer.map(renderer->device.device);
 	modelUniformBuffer.copyTo(&ubo, sizeof(ubo));
 	modelUniformBuffer.unmap();
 }

@@ -3,7 +3,7 @@
 #include "..\third-party\ImGui\imgui.h"
 #include "..\gui\ImGuiImpl.h"
 
-TerrainManager::TerrainManager(std::shared_ptr<VulkanDevice> device) : device(device)
+TerrainManager::TerrainManager()
 {
 	if (terrainMaxLevels < 0) {
 		maxNumQuads = 1;
@@ -21,8 +21,10 @@ TerrainManager::~TerrainManager()
 {
 }
 
-void TerrainManager::GenerateTerrain(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer,
+void TerrainManager::GenerateTerrain(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
 	VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera) {
+	this->renderer = renderer;
+
 	//free resources then delete all created terrains/waters
 	CleanUpTerrain();
 
@@ -41,8 +43,7 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<VulkanPipeline> pipelineMan
 
 	//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	for (auto ter : terrains) {
-		ter->InitTerrain(device, pipelineManager, renderPass, device->transfer_queue, vulkanSwapChain.swapChainExtent.width, 
-			vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer, camera->Position);
+		ter->InitTerrain(renderer, globalVariableBuffer, lightsInfoBuffer, camera->Position);
 	}
 	//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
 	
@@ -55,26 +56,28 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<VulkanPipeline> pipelineMan
 
 	for (auto water : waters) {
 		water->LoadTexture("Resources/Textures/TileableWaterTexture.jpg");
-		water->InitWater(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, globalVariableBuffer, lightsInfoBuffer);
+		water->InitWater(renderer, globalVariableBuffer, lightsInfoBuffer);
 	}
 
 	recreateTerrain = false;
 }
 
-void TerrainManager::ReInitTerrain(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain) {
+void TerrainManager::ReInitTerrain(std::shared_ptr<VulkanRenderer> renderer) {
+	this->renderer = renderer;
 	for (auto ter : terrains) {
-		ter->ReinitTerrain(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+		ter->ReinitTerrain(renderer);
 	}
 	for (auto water : waters) {
-		water->ReinitWater(device, pipelineManager, renderPass, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+		water->ReinitWater(renderer);
 	}
 }
 
-void TerrainManager::UpdateTerrains(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer,
+void TerrainManager::UpdateTerrains(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
 	VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager) {
+	this->renderer = renderer;
 	if (recreateTerrain) {
 
-		GenerateTerrain(pipelineManager, renderPass, vulkanSwapChain, globalVariableBuffer, lightsInfoBuffer, camera);
+		GenerateTerrain(renderer, globalVariableBuffer, lightsInfoBuffer, camera);
 	}
 
 	for (auto water : waters) {
@@ -85,7 +88,7 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<VulkanPipeline> pipelineMana
 		terrainUpdateTimer.StartTimer();
 		//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-		ter->UpdateTerrain(camera->Position, device->transfer_queue, globalVariableBuffer, lightsInfoBuffer);
+		ter->UpdateTerrain(camera->Position, globalVariableBuffer, lightsInfoBuffer);
 
 		//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
 		terrainUpdateTimer.EndTimer();
@@ -161,7 +164,7 @@ VkCommandBuffer TerrainManager::CreateTerrainMeshUpdateCommandBuffer(VkCommandPo
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo = initializers::commandBufferAllocateInfo(commandPool, level, (uint32_t)terrains.size());
 
 	VkCommandBuffer cmdBuffer;
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(device->device, &cmdBufAllocateInfo, &cmdBuffer));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(renderer->device.device, &cmdBufAllocateInfo, &cmdBuffer));
 
 	
 	VkCommandBufferBeginInfo cmdBufInfo = initializers::commandBufferBeginInfo();
@@ -197,17 +200,17 @@ void TerrainManager::FlushTerrainMeshUpdateCommandBuffer(VkCommandBuffer command
 	// Create fence to ensure that the command buffer has finished executing
 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
 	VkFence fence;
-	VK_CHECK_RESULT(vkCreateFence(device->device, &fenceInfo, nullptr, &fence));
+	VK_CHECK_RESULT(vkCreateFence(renderer->device.device, &fenceInfo, nullptr, &fence));
 
 	// Submit to the queue
 	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
 	// Wait for the fence to signal that command buffer has finished executing
-	VK_CHECK_RESULT(vkWaitForFences(device->device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
+	VK_CHECK_RESULT(vkWaitForFences(renderer->device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
 
-	vkDestroyFence(device->device, fence, nullptr);
+	vkDestroyFence(renderer->device.device, fence, nullptr);
 
 	if (free)
 	{
-		vkFreeCommandBuffers(device->device, device->graphics_queue_command_pool, 1, &commandBuffer);
+		vkFreeCommandBuffers(renderer->device.device, renderer->device.graphics_queue_command_pool, 1, &commandBuffer);
 	}
 }

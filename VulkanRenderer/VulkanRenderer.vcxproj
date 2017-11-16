@@ -23,6 +23,7 @@
     <Image Include="Resources\Textures\grass.jpg" />
     <Image Include="Resources\Textures\lowPolyGrass.png" />
     <Image Include="Resources\Textures\lowPolyScatter.png" />
+    <Image Include="Resources\Textures\maillerFace.png" />
     <Image Include="Resources\Textures\Skybox\Skybox2Back.png" />
     <Image Include="Resources\Textures\Skybox\Skybox2Bottom.png" />
     <Image Include="Resources\Textures\Skybox\Skybox2Front.png" />
@@ -128,6 +129,8 @@
     <ClCompile Include="src\core\main.cpp" />
     <ClCompile Include="src\core\VulkanApp.cpp" />
     <ClCompile Include="src\vulkan\VulkanLargeBuffer.cpp" />
+    <ClCompile Include="src\vulkan\VulkanShader.cpp" />
+    <ClCompile Include="src\vulkan\VulkanRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\Input.h" />
@@ -169,6 +172,8 @@
     <ClInclude Include="src\core\Window.hpp" />
     <ClInclude Include="src\core\VulkanApp.h" />
     <ClInclude Include="src\vulkan\VulkanLargeBuffer.h" />
+    <ClInclude Include="src\vulkan\VulkanShader.hpp" />
+    <ClInclude Include="src\vulkan\VulkanRenderer.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{01643685-db81-49fb-9a7d-ae84cc65648a}</ProjectGuid>

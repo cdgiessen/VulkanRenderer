@@ -294,6 +294,12 @@
       <Filter>third-party\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="src\vulkan\VulkanSwapChain.cpp">
+      <Filter>Source Files\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vulkan\VulkanShader.cpp">
+      <Filter>Source Files\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vulkan\VulkanRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -413,6 +419,12 @@
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\third-party\stb_image\stb_image.h">
+      <Filter>third-party\stb_image</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vulkan\VulkanShader.hpp">
+      <Filter>Header Files\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vulkan\VulkanRenderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -512,6 +524,9 @@
     </Image>
     <Image Include="Resources\Textures\TerrainTextures\Snow.jpg">
       <Filter>Resources\Textures\TerrainTextures</Filter>
+    </Image>
+    <Image Include="Resources\Textures\maillerFace.png">
+      <Filter>Shaders</Filter>
     </Image>
   </ItemGroup>
 </Project>

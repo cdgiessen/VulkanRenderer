@@ -1,11 +1,6 @@
 #pragma once
 
 #include "Skybox.h"
-#include "..\core\Texture.h"
-#include "..\vulkan\VulkanTexture.hpp"
-#include "..\vulkan\VulkanModel.hpp"
-#include "..\vulkan\vulkanDevice.hpp"
-
 
 Skybox::Skybox() {
 
@@ -21,16 +16,15 @@ void Skybox::CleanUp() {
 
 	skyboxUniformBuffer.cleanBuffer();
 
-	vkDestroyDescriptorSetLayout(device->device, descriptorSetLayout, nullptr);
-	vkDestroyDescriptorPool(device->device, descriptorPool, nullptr);
+	vkDestroyDescriptorSetLayout(renderer->device.device, descriptorSetLayout, nullptr);
+	vkDestroyDescriptorPool(renderer->device.device, descriptorPool, nullptr);
 
-	vkDestroyPipeline(device->device, pipeline, nullptr);
-	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
+	vkDestroyPipeline(renderer->device.device, pipeline, nullptr);
+	vkDestroyPipelineLayout(renderer->device.device, pipelineLayout, nullptr);
 }
 
-void Skybox::InitSkybox(std::shared_ptr<VulkanDevice> device, std::string filename, std::string fileExt, std::shared_ptr<VulkanPipeline> pipelineManager,
-	VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
-	this->device = device;
+void Skybox::InitSkybox(std::shared_ptr<VulkanRenderer> renderer, std::string filename, std::string fileExt) {
+	this->renderer = renderer;
 
 	LoadSkyboxData(filename, fileExt);
 
@@ -38,34 +32,35 @@ void Skybox::InitSkybox(std::shared_ptr<VulkanDevice> device, std::string filena
 	SetupUniformBuffer();
 	SetupCubeMapImage();
 	SetupDescriptor();
-	SetupPipeline(pipelineManager, renderPass, viewPortWidth, viewPortHeight);
+	SetupPipeline();
 
 }
 
-void Skybox::ReinitSkybox(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass,
-	uint32_t viewPortWidth, uint32_t viewPortHeight){
-	vkDestroyPipeline(device->device, pipeline, nullptr);
-	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
+void Skybox::ReinitSkybox(std::shared_ptr<VulkanRenderer> renderer){
+	this->renderer = renderer;
 
-	SetupPipeline(pipelineManager, renderPass, viewPortWidth, viewPortHeight);
+	vkDestroyPipeline(renderer->device.device, pipeline, nullptr);
+	vkDestroyPipelineLayout(renderer->device.device, pipelineLayout, nullptr);
+
+	SetupPipeline();
 }
 
 
 void Skybox::LoadSkyboxData(std::string skyboxImageFile, std::string fileExt) {
 	//model.loadFromFile("Resources/Models/cube.obj", device, device->graphics_queue);
-	model.loadFromMesh(createCube(), device, device->graphics_queue);
+	model.loadFromMesh(createCube(), std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue);
 	skyboxCubeMap = std::make_shared<CubeMap>();
 	skyboxCubeMap->loadFromFile(skyboxImageFile, fileExt);
 }
 
 void Skybox::SetupUniformBuffer() {
-	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+	renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
 		(VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), 
 		&skyboxUniformBuffer, sizeof(SkyboxUniformBuffer));
 }
 
 void Skybox::SetupCubeMapImage() {
-	vulkanCubeMap.loadFromTexture(skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue);
+	vulkanCubeMap.loadFromTexture(skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue);
 
 }
 
@@ -78,7 +73,7 @@ void Skybox::SetupDescriptor() {
 	std::vector<VkDescriptorSetLayoutBinding> bindings = { skyboxUniformLayoutBinding, skyboxSamplerLayoutBinding };
 	VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
 
-	if (vkCreateDescriptorSetLayout(device->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+	if (vkCreateDescriptorSetLayout(renderer->device.device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor set layout!");
 	}
 
@@ -89,14 +84,14 @@ void Skybox::SetupDescriptor() {
 	VkDescriptorPoolCreateInfo poolInfo = initializers::descriptorPoolCreateInfo(static_cast<uint32_t>(poolSizes.size()),
 		poolSizes.data(), 1);
 
-	if (vkCreateDescriptorPool(device->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+	if (vkCreateDescriptorPool(renderer->device.device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool!");
 	}
 
 	VkDescriptorSetLayout layouts[] = { descriptorSetLayout };
 	VkDescriptorSetAllocateInfo allocInfo = initializers::descriptorSetAllocateInfo(descriptorPool, layouts, 1);
 
-	if (vkAllocateDescriptorSets(device->device, &allocInfo, &descriptorSet) != VK_SUCCESS) {
+	if (vkAllocateDescriptorSets(renderer->device.device, &allocInfo, &descriptorSet) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate descriptor set!");
 	}
 
@@ -108,36 +103,36 @@ void Skybox::SetupDescriptor() {
 	descriptorWrites.push_back(initializers::writeDescriptorSet(
 		descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &vulkanCubeMap.descriptor, 1));
 
-	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	vkUpdateDescriptorSets(renderer->device.device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
-void Skybox::SetupPipeline(std::shared_ptr<VulkanPipeline>  PipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight) {
+void Skybox::SetupPipeline() {
+	VulkanPipeline &pipeMan = renderer->pipelineManager;
+	std::shared_ptr<PipelineCreationObject> myPipe = pipeMan.CreatePipelineOutline();
 
-	std::shared_ptr<PipelineCreationObject> myPipe = PipelineManager->CreatePipelineOutline();
-
-	PipelineManager->SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/skybox.vert.spv"));
-	PipelineManager->SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/skybox.frag.spv"));
-	PipelineManager->SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
-	PipelineManager->SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-	PipelineManager->SetViewport(myPipe, viewPortWidth, viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
-	PipelineManager->SetScissor(myPipe, viewPortWidth, viewPortHeight, 0, 0);
-	PipelineManager->SetViewportState(myPipe, 1, 1, 0);
-	PipelineManager->SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, 
+	pipeMan.SetVertexShader(myPipe, loadShaderModule(renderer->device.device, "shaders/skybox.vert.spv"));
+	pipeMan.SetFragmentShader(myPipe, loadShaderModule(renderer->device.device, "shaders/skybox.frag.spv"));
+	pipeMan.SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
+	pipeMan.SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+	pipeMan.SetViewport(myPipe, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
+	pipeMan.SetScissor(myPipe, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);
+	pipeMan.SetViewportState(myPipe, 1, 1, 0);
+	pipeMan.SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, 
 		VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-	PipelineManager->SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
-	PipelineManager->SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER_OR_EQUAL, VK_FALSE, VK_FALSE);
-	PipelineManager->SetColorBlendingAttachment(myPipe, VK_FALSE, 
+	pipeMan.SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
+	pipeMan.SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER_OR_EQUAL, VK_FALSE, VK_FALSE);
+	pipeMan.SetColorBlendingAttachment(myPipe, VK_FALSE,  
 		VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
-	PipelineManager->SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
-	PipelineManager->SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
+	pipeMan.SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
+	pipeMan.SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
 
-	pipelineLayout = PipelineManager->BuildPipelineLayout(myPipe);
-	pipeline = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
+	pipelineLayout = pipeMan.BuildPipelineLayout(myPipe);
+	pipeline = pipeMan.BuildPipeline(myPipe, renderer->renderPass, 0);
 
 
-	PipelineManager->CleanShaderResources(myPipe);
+	pipeMan.CleanShaderResources(myPipe);
 	/*
 	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/skybox.vert.spv");
 	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/skybox.frag.spv");
@@ -234,7 +229,7 @@ void Skybox::UpdateUniform(glm::mat4 proj, glm::mat4 view) {
 	sbo.proj = proj;
 	sbo.view = glm::mat4(glm::mat3(view));
 
-	skyboxUniformBuffer.map(device->device);
+	skyboxUniformBuffer.map(renderer->device.device);
 	skyboxUniformBuffer.copyTo(&sbo, sizeof(sbo));
 	skyboxUniformBuffer.unmap();
 };

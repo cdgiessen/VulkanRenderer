@@ -4,9 +4,11 @@
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
-#include "..\vulkan\vulkanDevice.hpp"
+#include "..\vulkan\VulkanRenderer.hpp"
 
 #include "..\core\Mesh.h"
+#include "..\core\TimeManager.h"
+
 #include "Camera.h"
 #include "Terrain.h"
 #include "Skybox.h"
@@ -15,18 +17,17 @@
 #include "TerrainManager.h"
 #include "InstancedSceneObject.h"
 
-#include "..\core\TimeManager.h"
 
 class Scene
 {
 public:
-	Scene(std::shared_ptr<VulkanDevice> device);
+	Scene();
 	~Scene();
 
-	void PrepareScene(std::shared_ptr<VulkanPipeline>  pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain);
-	void ReInitScene(std::shared_ptr<VulkanPipeline>  pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain);
-	void UpdateScene(std::shared_ptr<VulkanPipeline>  pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, std::shared_ptr<TimeManager> timeManager);
-	void RenderScene(VkCommandBuffer commandBuffer, bool wireframe);
+	void PrepareScene(std::shared_ptr<VulkanRenderer> renderer);
+	void ReInitScene(std::shared_ptr<VulkanRenderer> renderer);
+	void UpdateScene(std::shared_ptr<TimeManager> timeManager);
+	void RenderScene(std::shared_ptr<VulkanRenderer> renderer, VkCommandBuffer commandBuffer, bool wireframe);
 	void UpdateSceneGUI();
 	void CleanUpScene();
 
@@ -37,7 +38,7 @@ public:
 	bool drawNormals = false;
 private:
 
-	std::shared_ptr<VulkanDevice> device;
+	std::shared_ptr<VulkanRenderer> renderer;
 
 	VulkanBuffer globalVariableBuffer;
 	VulkanBuffer lightsInfoBuffer;

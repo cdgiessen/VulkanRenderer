@@ -1,15 +1,14 @@
 #include "VulkanSwapChain.hpp"
 
 
-VulkanSwapChain::VulkanSwapChain() {
+VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device) : device(device) {
 
 }
 
-void VulkanSwapChain::initSwapChain(std::shared_ptr<VulkanDevice> device, GLFWwindow* window) {
+void VulkanSwapChain::initSwapChain(GLFWwindow* window) {
 
-	this->device = device;
-	this->instance = device->instance;
-	this->physicalDevice = device->physical_device;
+	this->instance = device.instance;
+	this->physicalDevice = device.physical_device;
 
 	createSwapChain(window);
 	createImageViews();
@@ -60,13 +59,13 @@ void VulkanSwapChain::createSwapChain(GLFWwindow* window) {
 	createInfo.presentMode = presentMode;
 	createInfo.clipped = VK_TRUE;
 
-	if (vkCreateSwapchainKHR(device->device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+	if (vkCreateSwapchainKHR(device.device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create swap chain!");
 	}
 
-	vkGetSwapchainImagesKHR(device->device, swapChain, &imageCount, nullptr);
+	vkGetSwapchainImagesKHR(device.device, swapChain, &imageCount, nullptr);
 	swapChainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(device->device, swapChain, &imageCount, swapChainImages.data());
+	vkGetSwapchainImagesKHR(device.device, swapChain, &imageCount, swapChainImages.data());
 
 	swapChainImageFormat = surfaceFormat.format;
 	swapChainExtent = extent;
@@ -77,26 +76,26 @@ void VulkanSwapChain::createImageViews() {
 	swapChainImageViews.resize(swapChainImages.size());
 
 	for (uint32_t i = 0; i < swapChainImages.size(); i++) {
-		swapChainImageViews[i] = createImageView(device->device, swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+		swapChainImageViews[i] = createImageView(device.device, swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 }
 
 void VulkanSwapChain::CleanUp(VkImageView depthImageView, VkImage depthImage, VkDeviceMemory depthImageMemory, VkRenderPass renderPass) {
 
 
-	vkDestroyImageView(device->device, depthImageView, nullptr);
-	vkDestroyImage(device->device, depthImage, nullptr);
-	vkFreeMemory(device->device, depthImageMemory, nullptr);
+	vkDestroyImageView(device.device, depthImageView, nullptr);
+	vkDestroyImage(device.device, depthImage, nullptr);
+	vkFreeMemory(device.device, depthImageMemory, nullptr);
 
 	for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
-		vkDestroyFramebuffer(device->device, swapChainFramebuffers[i], nullptr);
+		vkDestroyFramebuffer(device.device, swapChainFramebuffers[i], nullptr);
 	}
 
-	vkDestroyRenderPass(device->device, renderPass, nullptr);
+	vkDestroyRenderPass(device.device, renderPass, nullptr);
 
 	for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-		vkDestroyImageView(device->device, swapChainImageViews[i], nullptr);
+		vkDestroyImageView(device.device, swapChainImageViews[i], nullptr);
 	}
 
-	vkDestroySwapchainKHR(device->device, swapChain, nullptr);
+	vkDestroySwapchainKHR(device.device, swapChain, nullptr);
 }

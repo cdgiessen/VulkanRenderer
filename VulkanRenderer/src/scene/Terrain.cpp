@@ -115,61 +115,60 @@ void Terrain::CleanUp()
 
 	modelUniformBuffer.cleanBuffer();
 
-	vkDestroyDescriptorSetLayout(device->device, descriptorSetLayout, nullptr);
-	vkDestroyDescriptorPool(device->device, descriptorPool, nullptr);
+	vkDestroyDescriptorSetLayout(renderer->device.device, descriptorSetLayout, nullptr);
+	vkDestroyDescriptorPool(renderer->device.device, descriptorPool, nullptr);
 
-	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
-	vkDestroyPipeline(device->device, pipeline, nullptr);
-	vkDestroyPipeline(device->device, wireframe, nullptr);
-	vkDestroyPipeline(device->device, debugNormals, nullptr);
+	vkDestroyPipelineLayout(renderer->device.device, pipelineLayout, nullptr);
+	vkDestroyPipeline(renderer->device.device, pipeline, nullptr);
+	vkDestroyPipeline(renderer->device.device, wireframe, nullptr);
+	vkDestroyPipeline(renderer->device.device, debugNormals, nullptr);
 }
 
 
-void Terrain::InitTerrain(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VkQueue copyQueue,
-	uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos)
+void Terrain::InitTerrain(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos)
 {
-	this->device = device;
+	this->renderer = renderer;
 
 	SetupMeshbuffers();
 	SetupUniformBuffer();
 	SetupImage();
 	SetupModel();
 	SetupDescriptorLayoutAndPool();
-	SetupPipeline(pipelineManager, renderPass, viewPortWidth, viewPortHeight);
+	SetupPipeline();
 
 	//std::shared_ptr<TerrainQuadData> q = std::make_shared<TerrainQuadData>(terrainQuads->allocate());
 	std::shared_ptr<TerrainQuadData> q = std::make_shared<TerrainQuadData>();
 	quadHandles.push_back(q);
 	rootQuad = InitTerrainQuad(q, position, size, noisePosition, noiseSize, 0, global, lighting);
 
-	UpdateTerrainQuad(rootQuad, cameraPos, copyQueue, global, lighting);
+	UpdateTerrainQuad(rootQuad, cameraPos, global, lighting);
 
-	UpdateModelBuffer(copyQueue, global, lighting);
-	UpdateMeshBuffer(copyQueue);
+	UpdateModelBuffer(global, lighting);
+	UpdateMeshBuffer();
 }
 
-void Terrain::ReinitTerrain(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
+void Terrain::ReinitTerrain(std::shared_ptr<VulkanRenderer> renderer)
 {
-	this->device = device;
+	this->renderer = renderer;
 
-	vkDestroyPipelineLayout(device->device, pipelineLayout, nullptr);
-	vkDestroyPipeline(device->device, pipeline, nullptr);
-	vkDestroyPipeline(device->device, wireframe, nullptr);
-	vkDestroyPipeline(device->device, debugNormals, nullptr);
+	vkDestroyPipelineLayout(renderer->device.device, pipelineLayout, nullptr);
+	vkDestroyPipeline(renderer->device.device, pipeline, nullptr);
+	vkDestroyPipeline(renderer->device.device, wireframe, nullptr);
+	vkDestroyPipeline(renderer->device.device, debugNormals, nullptr);
 
-	SetupPipeline(pipelineManager, renderPass, viewPortWidth, viewPortHeight);
+	SetupPipeline();
 }
 
-void Terrain::UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo) {
+void Terrain::UpdateTerrain(glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo) {
 	SimpleTimer updateTime;
 	updateTime.StartTimer();
 		
-	bool shouldUpdateBuffers = UpdateTerrainQuad(rootQuad, viewerPos, copyQueue, gbo, lbo);
+	bool shouldUpdateBuffers = UpdateTerrainQuad(rootQuad, viewerPos, gbo, lbo);
 	
 	
 	if (shouldUpdateBuffers) {
-		UpdateModelBuffer(copyQueue, gbo, lbo);
-		UpdateMeshBuffer(copyQueue);
+		UpdateModelBuffer(gbo, lbo);
+		UpdateMeshBuffer();
 	}
 	PrevQuadHandles = quadHandles;
 
@@ -179,7 +178,7 @@ void Terrain::UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer
 		std::cout << " Update time " << updateTime.GetElapsedTimeMicroSeconds() << std::endl;
 }
 
-bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo) {
+bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo) {
 	
 	glm::vec3 center = glm::vec3(quad->terrainQuad.pos.x + quad->terrainQuad.size.x / 2.0f, quad->terrainQuad.heightValAtCenter, quad->terrainQuad.pos.y + quad->terrainQuad.size.y / 2.0f);
 	float distanceToViewer = glm::distance(viewerPos, center);
@@ -188,7 +187,7 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3
 
 	if (!quad->terrainQuad.isSubdivided) { //can only subdivide if this quad isn't already subdivided
 		if (distanceToViewer < quad->terrainQuad.size.x * 2.0f && quad->terrainQuad.level < maxLevels) { //must be 
-			SubdivideTerrain(quad, copyQueue, viewerPos, gbo, lbo);
+			SubdivideTerrain(quad, viewerPos, gbo, lbo);
 			shouldUpdateBuffers = true;
 		} 
 	}
@@ -196,10 +195,10 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3
 	else {
 		bool uL = false, uR = false, dL = false, dR = false;
 
-		uL = UpdateTerrainQuad(quad->subQuads.UpLeft, viewerPos, copyQueue, gbo, lbo);
-		uR = UpdateTerrainQuad(quad->subQuads.UpRight, viewerPos, copyQueue, gbo, lbo);
-		dL = UpdateTerrainQuad(quad->subQuads.DownLeft, viewerPos, copyQueue, gbo, lbo);
-		dR = UpdateTerrainQuad(quad->subQuads.DownRight, viewerPos, copyQueue, gbo, lbo);
+		uL = UpdateTerrainQuad(quad->subQuads.UpLeft, viewerPos, gbo, lbo);
+		uR = UpdateTerrainQuad(quad->subQuads.UpRight, viewerPos, gbo, lbo);
+		dL = UpdateTerrainQuad(quad->subQuads.DownLeft, viewerPos, gbo, lbo);
+		dR = UpdateTerrainQuad(quad->subQuads.DownRight, viewerPos, gbo, lbo);
 
 		if (uL || uR || dL || dR)
 			shouldUpdateBuffers = true;
@@ -230,14 +229,14 @@ void Terrain::SetupMeshbuffers() {
 
 	// Create device local target buffers
 	// Vertex buffer
-	VK_CHECK_RESULT(device->createBuffer(
+	VK_CHECK_RESULT(renderer->device.createBuffer(
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		&vertexBuffer,
 		vBufferSize));
 
 	// Index buffer
-	VK_CHECK_RESULT(device->createBuffer(
+	VK_CHECK_RESULT(renderer->device.createBuffer(
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		&indexBuffer,
@@ -246,14 +245,14 @@ void Terrain::SetupMeshbuffers() {
 
 void Terrain::SetupUniformBuffer()
 {
-	device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), 
+	renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
 		&modelUniformBuffer, sizeof(ModelBufferObject) * maxNumQuads);
 }
 
 void Terrain::SetupImage() 
 {
 	if (terrainSplatMap != nullptr) {
-		terrainVulkanSplatMap.loadFromTexture(terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, 
+		terrainVulkanSplatMap.loadFromTexture(terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
 	
 	}
@@ -261,7 +260,7 @@ void Terrain::SetupImage()
 		throw std::runtime_error("failed to load terrain splat map!");
 
 	}if (terrainTextureArray != nullptr) {
-		terrainVulkanTextureArray.loadTextureArray(terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, device, device->graphics_queue, 
+		terrainVulkanTextureArray.loadTextureArray(terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
 	}
 	else
@@ -313,7 +312,7 @@ void Terrain::SetupDescriptorLayoutAndPool()
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
 
-	if (vkCreateDescriptorSetLayout(device->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+	if (vkCreateDescriptorSetLayout(renderer->device.device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor set layout!");
 	}
 
@@ -333,48 +332,49 @@ void Terrain::SetupDescriptorLayoutAndPool()
 
 	poolInfoTerrain.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-	if (vkCreateDescriptorPool(device->device, &poolInfoTerrain, nullptr, &descriptorPool) != VK_SUCCESS) {
+	if (vkCreateDescriptorPool(renderer->device.device, &poolInfoTerrain, nullptr, &descriptorPool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool!");
 	}
 }
 
-void Terrain::SetupPipeline(std::shared_ptr<VulkanPipeline> PipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight)
+void Terrain::SetupPipeline()
 {
-	std::shared_ptr<PipelineCreationObject> myPipe = PipelineManager->CreatePipelineOutline();
+	VulkanPipeline &pipeMan = renderer->pipelineManager;
+	std::shared_ptr<PipelineCreationObject> myPipe = pipeMan.CreatePipelineOutline();
 
-	PipelineManager->SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/terrain.vert.spv"));
-	PipelineManager->SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/terrain.frag.spv"));
-	PipelineManager->SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
-	PipelineManager->SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-	PipelineManager->SetViewport(myPipe, (float)viewPortWidth, (float)viewPortHeight, 0.0f, 1.0f, 0.0f, 0.0f);
-	PipelineManager->SetScissor(myPipe, viewPortWidth, viewPortHeight, 0, 0);
-	PipelineManager->SetViewportState(myPipe, 1, 1, 0);
-	PipelineManager->SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-	PipelineManager->SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
-	PipelineManager->SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
-	PipelineManager->SetColorBlendingAttachment(myPipe, VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+	pipeMan.SetVertexShader(myPipe, loadShaderModule(renderer->device.device, "shaders/terrain.vert.spv"));
+	pipeMan.SetFragmentShader(myPipe, loadShaderModule(renderer->device.device, "shaders/terrain.frag.spv"));
+	pipeMan.SetVertexInput(myPipe, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
+	pipeMan.SetInputAssembly(myPipe, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+	pipeMan.SetViewport(myPipe, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
+	pipeMan.SetScissor(myPipe, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);
+	pipeMan.SetViewportState(myPipe, 1, 1, 0);
+	pipeMan.SetRasterizer(myPipe, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	pipeMan.SetMultisampling(myPipe, VK_SAMPLE_COUNT_1_BIT);
+	pipeMan.SetDepthStencil(myPipe, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
+	pipeMan.SetColorBlendingAttachment(myPipe, VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
-	PipelineManager->SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
-	PipelineManager->SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
+	pipeMan.SetColorBlending(myPipe, 1, &myPipe->colorBlendAttachment);
+	pipeMan.SetDescriptorSetLayout(myPipe, { &descriptorSetLayout }, 1);
 
-	pipelineLayout = PipelineManager->BuildPipelineLayout(myPipe);
-	pipeline = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
+	pipelineLayout = pipeMan.BuildPipelineLayout(myPipe);
+	pipeline = pipeMan.BuildPipeline(myPipe, renderer->renderPass, 0);
 
-	PipelineManager->SetRasterizer(myPipe, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-	wireframe = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
+	pipeMan.SetRasterizer(myPipe, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	wireframe = pipeMan.BuildPipeline(myPipe, renderer->renderPass, 0);
 
-	PipelineManager->CleanShaderResources(myPipe);
-	PipelineManager->SetVertexShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.vert.spv"));
-	PipelineManager->SetFragmentShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.frag.spv"));
-	PipelineManager->SetGeometryShader(myPipe, loadShaderModule(device->device, "shaders/normalVecDebug.geom.spv"));
+	pipeMan.CleanShaderResources(myPipe);
+	pipeMan.SetVertexShader(myPipe, loadShaderModule(renderer->device.device, "shaders/normalVecDebug.vert.spv"));
+	pipeMan.SetFragmentShader(myPipe, loadShaderModule(renderer->device.device, "shaders/normalVecDebug.frag.spv"));
+	pipeMan.SetGeometryShader(myPipe, loadShaderModule(renderer->device.device, "shaders/normalVecDebug.geom.spv"));
 
-	debugNormals = PipelineManager->BuildPipeline(myPipe, renderPass, 0);
-	PipelineManager->CleanShaderResources(myPipe);
+	debugNormals = pipeMan.BuildPipeline(myPipe, renderer->renderPass, 0);
+	pipeMan.CleanShaderResources(myPipe);
 
 	/*
-	VkShaderModule vertShaderModule = loadShaderModule(device->device, "shaders/terrain.vert.spv");
-	VkShaderModule fragShaderModule = loadShaderModule(device->device, "shaders/terrain.frag.spv");
+	VkShaderModule vertShaderModule = loadShaderModule(renderer->device.device, "shaders/terrain.vert.spv");
+	VkShaderModule fragShaderModule = loadShaderModule(renderer->device.device, "shaders/terrain.frag.spv");
 
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule);
 	vertShaderStageInfo.pName = "main";
@@ -433,7 +433,7 @@ void Terrain::SetupPipeline(std::shared_ptr<VulkanPipeline> PipelineManager, VkR
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(&descriptorSetLayout, 1);
 
-	if (vkCreatePipelineLayout(device->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+	if (vkCreatePipelineLayout(renderer->device.device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
 
@@ -450,7 +450,7 @@ void Terrain::SetupPipeline(std::shared_ptr<VulkanPipeline> PipelineManager, VkR
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-	if (vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(renderer->device.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
 
@@ -459,25 +459,25 @@ void Terrain::SetupPipeline(std::shared_ptr<VulkanPipeline> PipelineManager, VkR
 	rasterizer.lineWidth = 1.0f;
 
 	if (device->physical_device_features.fillModeNonSolid == VK_TRUE) {
-		if (vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &wireframe) != VK_SUCCESS) {
+		if (vkCreateGraphicsPipelines(renderer->device.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &wireframe) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create wireframe pipeline!");
 		}
 	}
 
-	vkDestroyShaderModule(device->device, vertShaderModule, nullptr);
-	vkDestroyShaderModule(device->device, fragShaderModule, nullptr);
+	vkDestroyShaderModule(renderer->device.device, vertShaderModule, nullptr);
+	vkDestroyShaderModule(renderer->device.device, fragShaderModule, nullptr);
 	*/
 }
 
-void Terrain::UpdateModelBuffer(VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo) {
+void Terrain::UpdateModelBuffer(VulkanBuffer &gbo, VulkanBuffer &lbo) {
 	VkDescriptorSetAllocateInfo allocInfoTerrain = initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
 
 	for (auto it = quadHandles.begin(); it != quadHandles.end(); it++) {
 
-		vkFreeDescriptorSets(device->device, descriptorPool, 1, &(*it)->descriptorSet);
+		vkFreeDescriptorSets(renderer->device.device, descriptorPool, 1, &(*it)->descriptorSet);
 
 
-		if (vkAllocateDescriptorSets(device->device, &allocInfoTerrain, &(*it)->descriptorSet) != VK_SUCCESS) {
+		if (vkAllocateDescriptorSets(renderer->device.device, &allocInfoTerrain, &(*it)->descriptorSet) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate descriptor set!");
 		}
 
@@ -490,7 +490,7 @@ void Terrain::UpdateModelBuffer(VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuff
 		descriptorWrites.push_back(initializers::writeDescriptorSet((*it)->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &terrainVulkanSplatMap.descriptor, 1));
 		descriptorWrites.push_back(initializers::writeDescriptorSet((*it)->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, &terrainVulkanTextureArray.descriptor, 1));
 
-		vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+		vkUpdateDescriptorSets(renderer->device.device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 
 	}
 
@@ -501,25 +501,25 @@ void Terrain::UpdateModelBuffer(VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuff
 		modelObjects.push_back((*it)->terrainQuad.modelUniformObject);
 	}
 
-	modelUniformBuffer.map(device->device, modelObjects.size() * sizeof(ModelBufferObject));
+	modelUniformBuffer.map(renderer->device.device, modelObjects.size() * sizeof(ModelBufferObject));
 	modelUniformBuffer.copyTo(modelObjects.data(), modelObjects.size() * sizeof(ModelBufferObject));
 	modelUniformBuffer.unmap();
 }
 
-void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
-	//	vertexBuffer.map(device->device, meshVertexPool->MaxChunks() * sizeof(TerrainMeshVertices), 0);
+void Terrain::UpdateMeshBuffer() {
+	//	vertexBuffer.map(renderer->device.device, meshVertexPool->MaxChunks() * sizeof(TerrainMeshVertices), 0);
 	//	vertexBuffer.copyTo(&meshVertexPool, meshVertexPool->ChunksUsed() * sizeof(TerrainMeshVertices));
 	//	vertexBuffer.unmap();
 	//
-	//	indexBuffer.map(device->device, meshIndexPool->MaxChunks() * sizeof(TerrainMeshIndices), 0);
+	//	indexBuffer.map(renderer->device.device, meshIndexPool->MaxChunks() * sizeof(TerrainMeshIndices), 0);
 	//	indexBuffer.copyTo(&meshIndexPool, meshIndexPool->ChunksUsed() * sizeof(TerrainMeshIndices));
 	//	indexBuffer.unmap();
 	//
 
-	//vkDestroyBuffer(device->device, vertexBuffer.buffer, nullptr);
-	//vkFreeMemory(device->device, vertexBuffer.bufferMemory, nullptr);
-	//vkDestroyBuffer(device->device, indexBuffer.buffer, nullptr);
-	//vkFreeMemory(device->device, indexBuffer.bufferMemory, nullptr);
+	//vkDestroyBuffer(renderer->device.device, vertexBuffer.buffer, nullptr);
+	//vkFreeMemory(renderer->device.device, vertexBuffer.bufferMemory, nullptr);
+	//vkDestroyBuffer(renderer->device.device, indexBuffer.buffer, nullptr);
+	//vkFreeMemory(renderer->device.device, indexBuffer.bufferMemory, nullptr);
 
 	while (terrainGenerationWorkers.size() > 0) {
 		terrainGenerationWorkers.front()->join();
@@ -587,7 +587,7 @@ void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
 		VulkanBuffer vertexStaging, indexStaging;
 
 		// Vertex buffer
-		VK_CHECK_RESULT(device->createBuffer(
+		VK_CHECK_RESULT(renderer->device.createBuffer(
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 			&vertexStaging,
@@ -595,7 +595,7 @@ void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
 			verts.data()));
 
 		// Index buffer
-		VK_CHECK_RESULT(device->createBuffer(
+		VK_CHECK_RESULT(renderer->device.createBuffer(
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 			&indexStaging,
@@ -603,7 +603,7 @@ void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
 			inds.data()));
 
 		// Copy from staging buffers
-		VkCommandBuffer copyCmd = device->createCommandBuffer(device->transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+		VkCommandBuffer copyCmd = renderer->device.createCommandBuffer(renderer->device.transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
 		//VkBufferCopy copyRegion{};
 
@@ -613,13 +613,13 @@ void Terrain::UpdateMeshBuffer(VkQueue copyQueue) {
 		//copyRegion.size = indexBuffer.size;
 		vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indexBuffer.buffer, (uint32_t)indexCopyRegions.size(), indexCopyRegions.data());
 
-		device->flushCommandBuffer(device->transfer_queue_command_pool, copyCmd, copyQueue);
+		renderer->device.flushCommandBuffer(renderer->device.transfer_queue_command_pool, copyCmd, renderer->device.transfer_queue);
 
 		// Destroy staging resources
-		vkDestroyBuffer(device->device, vertexStaging.buffer, nullptr);
-		vkFreeMemory(device->device, vertexStaging.bufferMemory, nullptr);
-		vkDestroyBuffer(device->device, indexStaging.buffer, nullptr);
-		vkFreeMemory(device->device, indexStaging.bufferMemory, nullptr);
+		vkDestroyBuffer(renderer->device.device, vertexStaging.buffer, nullptr);
+		vkFreeMemory(renderer->device.device, vertexStaging.bufferMemory, nullptr);
+		vkDestroyBuffer(renderer->device.device, indexStaging.buffer, nullptr);
+		vkFreeMemory(renderer->device.device, indexStaging.bufferMemory, nullptr);
 	}
 	gpuTransferTime.EndTimer();
 
@@ -654,7 +654,7 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuad(std::shared_ptr<Terrai
 
 	VkDescriptorSetAllocateInfo allocInfoTerrain = initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
 	
-	if (vkAllocateDescriptorSets(device->device, &allocInfoTerrain, &q->descriptorSet) != VK_SUCCESS) {
+	if (vkAllocateDescriptorSets(renderer->device.device, &allocInfoTerrain, &q->descriptorSet) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate descriptor set!");
 	}
 	
@@ -667,7 +667,7 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuad(std::shared_ptr<Terrai
 	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &terrainVulkanSplatMap.descriptor, 1));
 	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, &terrainVulkanTextureArray.descriptor, 1));
 
-	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	vkUpdateDescriptorSets(renderer->device.device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 
 	return q;
 }
@@ -696,7 +696,7 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuadFromParent(std::shared_
 
 	VkDescriptorSetAllocateInfo allocInfoTerrain = initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
 
-	if (vkAllocateDescriptorSets(device->device, &allocInfoTerrain, &q->descriptorSet) != VK_SUCCESS) {
+	if (vkAllocateDescriptorSets(renderer->device.device, &allocInfoTerrain, &q->descriptorSet) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate descriptor set!");
 	}
 
@@ -709,12 +709,12 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuadFromParent(std::shared_
 	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &terrainVulkanSplatMap.descriptor, 1));
 	descriptorWrites.push_back(initializers::writeDescriptorSet(q->descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, &terrainVulkanTextureArray.descriptor, 1));
 
-	vkUpdateDescriptorSets(device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	vkUpdateDescriptorSets(renderer->device.device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 
 	return q;
 }
 
-void Terrain::SubdivideTerrain(std::shared_ptr<TerrainQuadData> quad, VkQueue copyQueue, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo) {
+void Terrain::SubdivideTerrain(std::shared_ptr<TerrainQuadData> quad, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo) {
 	quad->terrainQuad.isSubdivided = true;
 	numQuads += 4;
 
@@ -745,10 +745,10 @@ void Terrain::SubdivideTerrain(std::shared_ptr<TerrainQuadData> quad, VkQueue co
 	quad->subQuads.DownLeft = InitTerrainQuadFromParent(quad, qDL, Corner_Enum::dL, glm::vec2(new_pos.x + new_size.x, new_pos.y + new_size.y), new_size, 
 		glm::i32vec2(new_lpos.x + new_lsize.x, new_lpos.y + new_lsize.y), new_lsize, quad->terrainQuad.level + 1, gbo, lbo, glm::i32vec2(quad->terrainQuad.subDivPos.x * 2 + 1, quad->terrainQuad.subDivPos.y * 2 + 1));
 
-	UpdateTerrainQuad(quad->subQuads.UpRight, viewerPos, copyQueue, gbo, lbo);
-	UpdateTerrainQuad(quad->subQuads.UpLeft, viewerPos, copyQueue, gbo, lbo);
-	UpdateTerrainQuad(quad->subQuads.DownRight, viewerPos, copyQueue, gbo, lbo);
-	UpdateTerrainQuad(quad->subQuads.DownLeft, viewerPos, copyQueue, gbo, lbo);
+	UpdateTerrainQuad(quad->subQuads.UpRight, viewerPos, gbo, lbo);
+	UpdateTerrainQuad(quad->subQuads.UpLeft, viewerPos, gbo, lbo);
+	UpdateTerrainQuad(quad->subQuads.DownRight, viewerPos, gbo, lbo);
+	UpdateTerrainQuad(quad->subQuads.DownLeft, viewerPos, gbo, lbo);
 
 	//std::cout << "Terrain subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " <<quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << std::endl;
 
@@ -762,7 +762,7 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuadData> quad) {
 		if (delUR != quadHandles.end()) {
 			delUR->reset();
 			quadHandles.erase(delUR);
-			vkFreeDescriptorSets(device->device, descriptorPool, 1, &quad->subQuads.UpRight->descriptorSet);
+			vkFreeDescriptorSets(renderer->device.device, descriptorPool, 1, &quad->subQuads.UpRight->descriptorSet);
 			//terrainQuads->deallocate(quad->subQuads.UpRight);
 			//terrainQuads->deleteElement(quad->subQuads.UpRight.get());
 			numQuads--;
@@ -772,7 +772,7 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuadData> quad) {
 		if (delDR != quadHandles.end()) {
 			delDR->reset();
 			quadHandles.erase(delDR);
-			vkFreeDescriptorSets(device->device, descriptorPool, 1, &quad->subQuads.DownRight->descriptorSet);
+			vkFreeDescriptorSets(renderer->device.device, descriptorPool, 1, &quad->subQuads.DownRight->descriptorSet);
 			//terrainQuads->deallocate(quad->subQuads.DownRight);
 			//terrainQuads->deleteElement(quad->subQuads.DownRight.get());
 			numQuads--;
@@ -782,7 +782,7 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuadData> quad) {
 		if (delUL != quadHandles.end()) {
 			delUL->reset();
 			quadHandles.erase(delUL);
-			vkFreeDescriptorSets(device->device, descriptorPool, 1, &quad->subQuads.UpLeft->descriptorSet);
+			vkFreeDescriptorSets(renderer->device.device, descriptorPool, 1, &quad->subQuads.UpLeft->descriptorSet);
 			//terrainQuads->deallocate(quad->subQuads.UpLeft);
 			//terrainQuads->deleteElement(quad->subQuads.UpLeft.get());
 			numQuads--;
@@ -792,7 +792,7 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuadData> quad) {
 		if (delDL != quadHandles.end()) {
 			delDL->reset();
 			quadHandles.erase(delDL);
-			vkFreeDescriptorSets(device->device, descriptorPool, 1, &quad->subQuads.DownLeft->descriptorSet);
+			vkFreeDescriptorSets(renderer->device.device, descriptorPool, 1, &quad->subQuads.DownLeft->descriptorSet);
 			//terrainQuads->deallocate(quad->subQuads.DownLeft);
 			//terrainQuads->deleteElement(quad->subQuads.DownLeft.get());
 			numQuads--;

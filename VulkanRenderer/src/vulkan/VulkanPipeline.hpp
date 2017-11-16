@@ -47,8 +47,10 @@ struct PipelineCreationObject {
 class VulkanPipeline
 {
 public:
-	VulkanPipeline(std::shared_ptr<VulkanDevice> device);
+	VulkanPipeline(const VulkanDevice &device);
 	~VulkanPipeline();
+
+	void InitPipeline(std::shared_ptr<VulkanDevice> device);
 
 	std::shared_ptr<PipelineCreationObject> CreatePipelineOutline(); //returns a pipeline ready to build
 	VkPipelineLayout VulkanPipeline::BuildPipelineLayout(std::shared_ptr<PipelineCreationObject> pco); //returns the pipeline layout of the pco (must have done SetDescriptorSetLayout
@@ -83,6 +85,7 @@ public:
 
 	void SetDynamicState(std::shared_ptr<PipelineCreationObject> pco, uint32_t dynamicStateCount, VkDynamicState* pDynamicStates, VkPipelineDynamicStateCreateFlags flags);
 private:
-	std::shared_ptr<VulkanDevice> device; 
+	const VulkanDevice &device;
+	//std::shared_ptr<VulkanDevice> device; 
 };
 

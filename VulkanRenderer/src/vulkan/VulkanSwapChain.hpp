@@ -19,9 +19,9 @@
 
 class VulkanSwapChain {
 public:
-	VulkanSwapChain();
+	VulkanSwapChain(const VulkanDevice& device);
 
-	void initSwapChain(std::shared_ptr<VulkanDevice> device, GLFWwindow* window);
+	void initSwapChain(GLFWwindow* window);
 
 	void recreateSwapChain(GLFWwindow* window);
 	
@@ -38,7 +38,7 @@ public:
 
 private:
 
-	std::shared_ptr<VulkanDevice> device; 
+	const VulkanDevice& device; 
 	VkInstance instance;
 	VkPhysicalDevice physicalDevice;
 

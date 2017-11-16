@@ -2,13 +2,13 @@
 
 #include "..\core\Mesh.h"
 
-VulkanPipeline::VulkanPipeline(std::shared_ptr<VulkanDevice> device) : device(device)
-{
-}
+VulkanPipeline::VulkanPipeline(const VulkanDevice &device) :device(device) {
 
+}
 
 VulkanPipeline::~VulkanPipeline()
 {
+
 }
 
 std::shared_ptr<PipelineCreationObject> VulkanPipeline::CreatePipelineOutline()
@@ -18,7 +18,7 @@ std::shared_ptr<PipelineCreationObject> VulkanPipeline::CreatePipelineOutline()
 }
 
 VkPipelineLayout VulkanPipeline::BuildPipelineLayout(std::shared_ptr<PipelineCreationObject> pco) {
-	if (vkCreatePipelineLayout(device->device, &pco->pipelineLayoutInfo, nullptr, &pco->pipelineLayout) != VK_SUCCESS) {
+	if (vkCreatePipelineLayout(device.device, &pco->pipelineLayoutInfo, nullptr, &pco->pipelineLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
 	return pco->pipelineLayout;
@@ -53,7 +53,7 @@ VkPipeline VulkanPipeline::BuildPipeline(std::shared_ptr<PipelineCreationObject>
 	pco->pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	
 	VkPipeline pipeline;
-	if (vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1, &pco->pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(device.device, VK_NULL_HANDLE, 1, &pco->pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
 
@@ -94,10 +94,10 @@ void VulkanPipeline::SetTesselationShader(std::shared_ptr<PipelineCreationObject
 }
 
 void VulkanPipeline::CleanShaderResources(std::shared_ptr<PipelineCreationObject> pco) {
-	vkDestroyShaderModule(device->device, pco->vertShaderModule, nullptr);
-	vkDestroyShaderModule(device->device, pco->fragShaderModule, nullptr);
-	vkDestroyShaderModule(device->device, pco->geomShaderModule, nullptr);
-	vkDestroyShaderModule(device->device, pco->tessShaderModule, nullptr);
+	vkDestroyShaderModule(device.device, pco->vertShaderModule, nullptr);
+	vkDestroyShaderModule(device.device, pco->fragShaderModule, nullptr);
+	vkDestroyShaderModule(device.device, pco->geomShaderModule, nullptr);
+	vkDestroyShaderModule(device.device, pco->tessShaderModule, nullptr);
 }
 
 void VulkanPipeline::SetVertexInput(std::shared_ptr<PipelineCreationObject> pco, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescriptions)

@@ -24,18 +24,18 @@
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
+#include "..\third-party\ImGui\imgui.h"
+
 #include "Window.hpp"
 #include "Input.h"
 #include "Logger.h"
-
-#include "..\vulkan\VulkanDevice.hpp"
-
-#include "..\third-party\ImGui\imgui.h"
-#include "..\gui\ImGuiImpl.h"
-
 #include "TimeManager.h"
+
+#include "..\vulkan\VulkanRenderer.hpp"
+
 #include "..\scene\Scene.h"
 
+#include "..\gui\ImGuiImpl.h"
 #include "..\gui\NodeGraph.h"
 
 const int WIDTH = 800;
@@ -47,50 +47,21 @@ public:
 	VulkanApp();
 	~VulkanApp();
 
-	//void initWindow();
-	void initVulkan();
 	void mainLoop();
 	void HandleInputs();
 	void drawFrame();
 	void cleanup();
 
 	void recreateSwapChain();
-	void reBuildCommandBuffers();
-
-	//GLFW Callbacks
-	//void MouseMoved(double xpos, double ypos);
-	//void MouseClicked(int button, int action, int mods);
-	//void KeyboardEvent(int key, int scancode, int action, int mods);
 
 private:
 
-	void createRenderPass();
-	void createDepthResources();
-	void createFramebuffers();
 
-	void buildCommandBuffers();
-
-	void createCommandBuffers();
-	void createSemaphores();
 
 	//ImGUI functions
 	void PrepareImGui();
 	void BuildImgui();
 	void CleanUpImgui();
-
-	void CreatePrimaryCommandBuffer();
-
-	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-	VkFormat findDepthFormat();
-
-	void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
-	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-
-	VkCommandBuffer beginSingleTimeCommands();
-	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
-	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-
-	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
 
 	std::shared_ptr<Window> window;
 	std::shared_ptr<TimeManager> timeManager;
@@ -108,27 +79,6 @@ private:
 	SimpleTimer imGuiTimer;
 	Logger appLog;
 	
-
-	//Vulkan specific members
-	//uint32_t frameIndex = 1; // which frame of the swapchain it is on
-	std::shared_ptr<VulkanDevice> vulkanDevice;
-	VulkanSwapChain vulkanSwapChain;
-	VkRenderPass renderPass;
-
-	std::shared_ptr<VulkanPipeline> pipelineManager;
-
-	//Depth buffer
-	VkImage depthImage; 
-	VkDeviceMemory depthImageMemory;
-	VkImageView depthImageView;
-
-	//Command buffer per frame
-	std::vector<VkCommandBuffer> commandBuffers;
-
-	VkSemaphore imageAvailableSemaphore;
-	VkSemaphore renderFinishedSemaphore;
-
-	// List of shader modules created (stored for cleanup)
-	std::vector<VkShaderModule> shaderModules;
+	std::shared_ptr<VulkanRenderer> vulkanRenderer;
 };
 

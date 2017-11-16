@@ -7,9 +7,7 @@
 #include "..\core\TimeManager.h"
 #include "..\core\MemoryPool.h"
 
-#include "..\vulkan\VulkanSwapChain.hpp"
-#include "..\vulkan\VulkanPipeline.hpp"
-#include "..\vulkan\VulkanTools.h"
+#include "..\vulkan\VulkanRenderer.hpp"
 
 #include "Camera.h"
 #include "Terrain.h"
@@ -18,15 +16,15 @@
 class TerrainManager
 {
 public:
-	TerrainManager(std::shared_ptr<VulkanDevice> device);
+	TerrainManager();
 	~TerrainManager();
 
-	void GenerateTerrain(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer,
+	void GenerateTerrain(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
 		VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera);
 
-	void ReInitTerrain(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain);
+	void ReInitTerrain(std::shared_ptr<VulkanRenderer> renderer);
 
-	void UpdateTerrains(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VulkanSwapChain vulkanSwapChain, VulkanBuffer globalVariableBuffer,
+	void UpdateTerrains(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
 		VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager);
 
 	void RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe);
@@ -39,7 +37,7 @@ public:
 	void FlushTerrainMeshUpdateCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free);
 
 private:
-	std::shared_ptr<VulkanDevice> device;
+	std::shared_ptr<VulkanRenderer> renderer;
 
 	std::vector<std::shared_ptr<Terrain>> terrains;
 	std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> terrainQuadPool;

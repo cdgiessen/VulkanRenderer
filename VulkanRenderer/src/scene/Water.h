@@ -4,12 +4,9 @@
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
-#include "..\vulkan\vulkanDevice.hpp"
+#include "..\vulkan\VulkanRenderer.hpp"
 #include "..\vulkan\VulkanModel.hpp"
-#include "..\vulkan\VulkanPipeline.hpp"
 #include "..\vulkan\VulkanTexture.hpp"
-#include "..\vulkan\VulkanSwapChain.hpp"
-#include "..\vulkan\VulkanInitializers.hpp"
 
 #include "..\core\Mesh.h"
 #include "..\core\Texture.h"
@@ -22,7 +19,7 @@ public:
 	glm::vec3 size; //width and length
 	std::shared_ptr<Mesh> mesh;
 
-	std::shared_ptr<VulkanDevice> device;
+	std::shared_ptr<VulkanRenderer> renderer;
 
 	VkPipeline pipeline;
 	VkPipeline seascapePipeline;
@@ -47,10 +44,8 @@ public:
 	Water(int numCells, float posX, float posY, float sizeX, float sizeY);
 	~Water();
 
-	void InitWater(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth,
-		uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
-	void ReinitWater(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth,
-		uint32_t viewPortHeight);
+	void InitWater(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting);
+	void ReinitWater(std::shared_ptr<VulkanRenderer> renderer);
 	void CleanUp();
 	void UpdateUniformBuffer(float time, glm::mat4 view);
 
@@ -61,7 +56,7 @@ public:
 	void SetupModel();
 
 	void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
-	void SetupPipeline(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void SetupPipeline();
 
 	void BuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass);
 	void RebuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass);

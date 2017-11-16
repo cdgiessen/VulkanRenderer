@@ -12,11 +12,10 @@
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
-#include "..\vulkan\vulkanDevice.hpp"
+#include "..\vulkan\VulkanRenderer.hpp"
 #include "..\vulkan\VulkanModel.hpp"
-#include "..\vulkan\VulkanPipeline.hpp"
+
 #include "..\vulkan\VulkanTexture.hpp"
-#include "..\vulkan\VulkanInitializers.hpp"
 
 #include "..\core\Texture.h"
 
@@ -102,7 +101,7 @@ public:
 	int sourceImageResolution;
 	float heightScale = 100;
 
-	std::shared_ptr<VulkanDevice> device;
+	std::shared_ptr<VulkanRenderer> renderer;
 
 	VkPipelineLayout pipelineLayout;
 	VkPipeline pipeline;
@@ -134,13 +133,12 @@ public:
 		glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
 	~Terrain();
 
-	void InitTerrain(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, VkQueue copyQueue,
-		uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos);
+	void InitTerrain(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos);
 
-	void ReinitTerrain(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
-	void UpdateTerrain(glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	void ReinitTerrain(std::shared_ptr<VulkanRenderer> renderer);
+	void UpdateTerrain(glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo);
 	void DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], std::shared_ptr<Terrain> curTerrain, bool wireframe);
-	void BuildCommandBuffer(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], std::shared_ptr<Terrain> curTerrain, bool ifWireframe);
+	void BuildCommandBuffer(std::shared_ptr<Terrain> curTerrain, bool ifWireframe);
 	void CleanUp();
 
 	void LoadSplatMapFromGenerator();
@@ -152,23 +150,23 @@ private:
 	std::shared_ptr<TerrainQuadData> InitTerrainQuadFromParent(std::shared_ptr<TerrainQuadData> parent, std::shared_ptr<TerrainQuadData> q, Corner_Enum corner,
 		glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, VulkanBuffer &gbo, VulkanBuffer &lbo, glm::i32vec2 subDivPos);
 
-	bool UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3 viewerPos, VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	bool UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo);
 
 	void SetupMeshbuffers();
 	void SetupUniformBuffer();
 	void SetupImage();
 	void SetupModel();
-	void SetupPipeline(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void SetupPipeline();
 
 	void SetupDescriptorLayoutAndPool();
 
-	void UpdateModelBuffer(VkQueue copyQueue, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	void UpdateModelBuffer(VulkanBuffer &gbo, VulkanBuffer &lbo);
 
-	void UploadMeshBuffer(VkQueue copyQueue);
-	void UpdateMeshBuffer(VkQueue copyQueue);
+	void UploadMeshBuffer();
+	void UpdateMeshBuffer();
 
 	void UpdateUniformBuffer(float time);
-	void SubdivideTerrain(std::shared_ptr<TerrainQuadData> quad, VkQueue copyQueue, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	void SubdivideTerrain(std::shared_ptr<TerrainQuadData> quad, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo);
 	void UnSubdivide(std::shared_ptr<TerrainQuadData> quad);
 	void RecursiveUnSubdivide(std::shared_ptr<TerrainQuadData> quad);
 

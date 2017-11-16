@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vulkanDevice.hpp"
+#include "VulkanDevice.hpp"
 #include "VulkanInitializers.hpp"
 
 VulkanDevice::VulkanDevice()
@@ -34,9 +34,6 @@ void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
 	DestroyDebugReportCallbackEXT(instance, callback, nullptr);
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyInstance(instance, nullptr);
-
-	glfwDestroyWindow(window);
-	glfwTerminate();
 }
 
 bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) {

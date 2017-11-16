@@ -8,11 +8,10 @@
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
-#include "..\vulkan\vulkanDevice.hpp"
+#include "..\vulkan\VulkanRenderer.hpp"
 #include "..\vulkan\VulkanModel.hpp"
-#include "..\vulkan\VulkanPipeline.hpp"
 #include "..\vulkan\VulkanTexture.hpp"
-#include "..\vulkan\VulkanInitializers.hpp"
+
 #include "..\core\Mesh.h"
 #include "..\core\Texture.h"
 
@@ -22,7 +21,7 @@ public:
 	GameObject();
 	~GameObject();
 
-	std::shared_ptr<VulkanDevice> device;
+	std::shared_ptr<VulkanRenderer> renderer;
 
 	VkPipeline pipeline;
 	VkPipeline wireframe;
@@ -42,10 +41,8 @@ public:
 	ModelBufferObject modelUniformObject;
 	VulkanBuffer modelUniformBuffer;
 
-	void InitGameObject(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass,
-		uint32_t viewPortWidth, uint32_t viewPortHeight, VulkanBuffer &global, VulkanBuffer &lighting);
-	void ReinitGameObject(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass,
-		uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void InitGameObject(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting);
+	void ReinitGameObject(std::shared_ptr<VulkanRenderer> renderer);
 	void CleanUp();
 	void UpdateUniformBuffer(float time);
 
@@ -58,6 +55,6 @@ public:
 	void SetupModel();
 
 	void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
-	void SetupPipeline(std::shared_ptr<VulkanPipeline> pipelineManager, VkRenderPass renderPass, uint32_t viewPortWidth, uint32_t viewPortHeight);
+	void SetupPipeline();
 };
 
