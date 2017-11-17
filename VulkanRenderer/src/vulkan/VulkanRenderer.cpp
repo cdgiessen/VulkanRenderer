@@ -353,7 +353,7 @@ void VulkanRenderer::BuildCommandBuffers(std::shared_ptr<Scene> scene, bool wire
 		VkDeviceSize offsets[] = { 0 };
 
 		
-		scene->RenderScene(std::shared_ptr<VulkanRenderer>(this), commandBuffers[i], wireframe);
+		scene->RenderScene(commandBuffers[i], wireframe);
 
 		//Imgui rendering
 		ImGui_ImplGlfwVulkan_Render(commandBuffers[i]);

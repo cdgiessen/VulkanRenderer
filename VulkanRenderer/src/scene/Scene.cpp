@@ -109,7 +109,7 @@ void Scene::UpdateScene(std::shared_ptr<TimeManager> timeManager) {
 	terrainManager->UpdateTerrains(renderer, globalVariableBuffer, lightsInfoBuffer, camera, timeManager);
 }
 
-void Scene::RenderScene(std::shared_ptr<VulkanRenderer> renderer, VkCommandBuffer commandBuffer, bool wireframe) {
+void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	VkDeviceSize offsets[] = { 0 };
 
 	terrainManager->RenderTerrain(commandBuffer, wireframe);

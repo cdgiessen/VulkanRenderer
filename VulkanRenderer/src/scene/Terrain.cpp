@@ -80,10 +80,10 @@ Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQ
 Terrain::~Terrain() {
 	CleanUp();
 		
-	terrainSplatMap.reset();
-	terrainTextureArray.reset();
+	//terrainSplatMap.reset();
+	//terrainTextureArray.reset();
 
-	maillerFace.reset();
+	//maillerFace.reset();
 }
 
 void Terrain::CleanUp()
@@ -93,18 +93,18 @@ void Terrain::CleanUp()
 	//	terrainQuads->destroy(item.get());
 	//}
 
-	RecursiveUnSubdivide(rootQuad);
-	rootQuad.reset();
-	for (auto item : quadHandles) {
-		item.reset();
-	}
-	for (auto item : PrevQuadHandles) {
-		item.reset();
-	}
-	quadHandles.clear();
-	PrevQuadHandles.clear();
+	//RecursiveUnSubdivide(rootQuad);
+	//rootQuad.reset();
+	//for (auto item : quadHandles) {
+	//	item.reset();
+	//}
+	//for (auto item : PrevQuadHandles) {
+	//	item.reset();
+	//}
+	//quadHandles.clear();
+	//PrevQuadHandles.clear();
 
-	fastTerrainGraph->~TerGenNodeGraph();
+	//fastTerrainGraph->~TerGenNodeGraph();
 
 	//cleanup model buffers
 	vertexBuffer.cleanBuffer();
@@ -174,7 +174,7 @@ void Terrain::UpdateTerrain(glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer
 
 	updateTime.EndTimer();
 	
-	if (updateTime.GetElapsedTimeMicroSeconds() > 500)
+	if (updateTime.GetElapsedTimeMicroSeconds() > 1500)
 		std::cout << " Update time " << updateTime.GetElapsedTimeMicroSeconds() << std::endl;
 }
 
