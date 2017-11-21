@@ -37,8 +37,8 @@ void InstancedSceneObject::ReinitInstancedSceneObject(std::shared_ptr<VulkanRend
 
 void InstancedSceneObject::CleanUp()
 {
-	vulkanModel.destroy();
-	vulkanTexture.destroy();
+	vulkanModel.destroy(renderer->device);
+	vulkanTexture.destroy(renderer->device);
 
 	uniformBuffer.cleanBuffer();
 	vkDestroyBuffer(renderer->device.device, instanceBuffer.buffer, nullptr);
@@ -82,11 +82,11 @@ void InstancedSceneObject::SetupUniformBuffer() {
 }
 
 void InstancedSceneObject::SetupImage() {
-	vulkanTexture.loadFromTexture(texture, VK_FORMAT_R8G8B8A8_UNORM, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
+	vulkanTexture.loadFromTexture(renderer->device, texture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
 }
 
 void InstancedSceneObject::SetupModel() {
-	vulkanModel.loadFromMesh(mesh, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue);
+	vulkanModel.loadFromMesh(mesh, renderer->device, renderer->device.graphics_queue);
 }
 
 void InstancedSceneObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting) {

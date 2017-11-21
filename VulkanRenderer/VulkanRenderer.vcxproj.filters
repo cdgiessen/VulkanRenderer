@@ -427,6 +427,9 @@
     <ClInclude Include="src\vulkan\VulkanRenderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\third-party\stb_image\stb_image_write.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resources\Textures\texture.jpg">

@@ -9,6 +9,7 @@ Scene::Scene() : renderer()
 
 Scene::~Scene()
 {
+	std::cout << "scene deleted\n";
 }
 
 void Scene::PrepareScene(std::shared_ptr<VulkanRenderer> renderer) {

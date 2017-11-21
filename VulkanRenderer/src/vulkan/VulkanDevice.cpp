@@ -10,7 +10,7 @@ VulkanDevice::VulkanDevice()
 
 VulkanDevice::~VulkanDevice()
 {
-
+	std::cout << "device deleted\n";
 }
 
 void VulkanDevice::initVulkanDevice(VkSurfaceKHR &surface)
@@ -531,7 +531,7 @@ void VulkanDevice::createCommandPools(VkSurfaceKHR &surface) {
 }
 
 VkResult VulkanDevice::CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) {
-	auto func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
+	auto func = reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT"));
 	if (func != nullptr) {
 		return func(instance, pCreateInfo, pAllocator, pCallback);
 	}
@@ -541,7 +541,7 @@ VkResult VulkanDevice::CreateDebugReportCallbackEXT(VkInstance instance, const V
 }
 
 void VulkanDevice::DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator) {
-	auto func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
+	auto func = reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>(vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT"));
 	if (func != nullptr) {
 		func(instance, callback, pAllocator);
 	}

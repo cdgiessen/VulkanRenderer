@@ -7,7 +7,6 @@
 
 VulkanApp::VulkanApp()
 {
-	//camera = new Camera(glm::vec3(-2,2,0), glm::vec3(0,1,0), 0, -45);
 	timeManager = std::make_shared<TimeManager>();
 
 	window = std::make_shared<Window>();
@@ -16,21 +15,35 @@ VulkanApp::VulkanApp()
 
 	vulkanRenderer = std::make_shared<VulkanRenderer>();
 	vulkanRenderer->InitVulkanRenderer(window->getWindowContext());
+	vulkanRenderer->CreateSemaphores();
 	
 	scene = std::make_shared<Scene>();
 	scene->PrepareScene(vulkanRenderer);
 
 	PrepareImGui();
 
-	vulkanRenderer->CreateSemaphores();
 
 	mainLoop();
-	cleanup(); 
+
+	clean();
 }
 
 
 VulkanApp::~VulkanApp()
 {
+}
+
+
+void VulkanApp::clean() {
+	CleanUpImgui();
+
+	scene->CleanUpScene();
+
+	vulkanRenderer->CleanVulkanResources();
+
+	window->destroyWindow();
+	glfwTerminate();
+
 }
 
 void VulkanApp::mainLoop() {
@@ -57,22 +70,11 @@ void VulkanApp::mainLoop() {
 
 }
 
-void VulkanApp::cleanup() {
-	CleanUpImgui();
-
-	scene->CleanUpScene();
-
-	vulkanRenderer->CleanVulkanResources();
-
-	window->destroyWindow();
-	glfwTerminate();
-}
-
 void VulkanApp::recreateSwapChain() {
 	vkDeviceWaitIdle(vulkanRenderer->device.device);
 
 	scene->ReInitScene(vulkanRenderer);
-
+	
 }
 
 static void imgui_check_vk_result(VkResult err)
@@ -213,6 +215,10 @@ void VulkanApp::HandleInputs() {
 	if (Input::GetKeyDown(GLFW_KEY_F)) {
 		//walkOnGround = !walkOnGround;
 		//std::cout << "flight mode toggled " << std::endl;
+	}
+
+	if (Input::GetKeyDown(GLFW_KEY_F10)) {
+		vulkanRenderer->SaveScreenshot("VulkanScreenshot.png");
 	}
 
 	if (mouseControlEnabled) {

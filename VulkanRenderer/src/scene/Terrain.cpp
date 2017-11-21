@@ -78,6 +78,7 @@ Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQ
 
 
 Terrain::~Terrain() {
+	std::cout << "terrain deleted\n";
 	CleanUp();
 		
 	//terrainSplatMap.reset();
@@ -110,8 +111,8 @@ void Terrain::CleanUp()
 	vertexBuffer.cleanBuffer();
 	indexBuffer.cleanBuffer();
 
-	terrainVulkanSplatMap.destroy();
-	terrainVulkanTextureArray.destroy();
+	terrainVulkanSplatMap.destroy(renderer->device);
+	terrainVulkanTextureArray.destroy(renderer->device);
 
 	modelUniformBuffer.cleanBuffer();
 
@@ -252,7 +253,7 @@ void Terrain::SetupUniformBuffer()
 void Terrain::SetupImage() 
 {
 	if (terrainSplatMap != nullptr) {
-		terrainVulkanSplatMap.loadFromTexture(terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue,
+		terrainVulkanSplatMap.loadFromTexture(renderer->device, terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
 	
 	}
@@ -260,7 +261,7 @@ void Terrain::SetupImage()
 		throw std::runtime_error("failed to load terrain splat map!");
 
 	}if (terrainTextureArray != nullptr) {
-		terrainVulkanTextureArray.loadTextureArray(terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue,
+		terrainVulkanTextureArray.loadTextureArray(renderer->device, terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
 	}
 	else

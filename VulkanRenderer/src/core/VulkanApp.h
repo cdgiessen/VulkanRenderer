@@ -50,7 +50,7 @@ public:
 	void mainLoop();
 	void HandleInputs();
 	void drawFrame();
-	void cleanup();
+	void clean();
 
 	void recreateSwapChain();
 
@@ -67,6 +67,7 @@ private:
 	std::shared_ptr<TimeManager> timeManager;
 
 	std::shared_ptr<Scene> scene;
+	std::shared_ptr<VulkanRenderer> vulkanRenderer;
 
 	//Input stuff
 	bool mouseControlEnabled;
@@ -79,6 +80,5 @@ private:
 	SimpleTimer imGuiTimer;
 	Logger appLog;
 	
-	std::shared_ptr<VulkanRenderer> vulkanRenderer;
 };
 

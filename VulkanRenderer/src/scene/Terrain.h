@@ -9,12 +9,8 @@
 #include <vulkan\vulkan.h>
 
 
-#include <stdlib.h>  
-#include <crtdbg.h>  
-
 #include "..\vulkan\VulkanRenderer.hpp"
 #include "..\vulkan\VulkanModel.hpp"
-
 #include "..\vulkan\VulkanTexture.hpp"
 
 #include "..\core\Texture.h"

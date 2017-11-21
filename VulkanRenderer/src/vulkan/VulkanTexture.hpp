@@ -14,8 +14,6 @@
 
 class VulkanTexture {
 public:
-	std::shared_ptr<VulkanDevice> device;
-
 	VkImage textureImage;
 	VkImageLayout textureImageLayout;
 	VkDeviceMemory textureImageMemory;
@@ -28,9 +26,9 @@ public:
 
 	void updateDescriptor();
 
-	void destroy();
+	void destroy(VulkanDevice &device);
 
-	void createImageSampler(VkFilter mag = VK_FILTER_LINEAR, VkFilter min = VK_FILTER_LINEAR, VkSamplerMipmapMode mipMapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+	void createImageSampler(VulkanDevice &device, VkFilter mag = VK_FILTER_LINEAR, VkFilter min = VK_FILTER_LINEAR, VkSamplerMipmapMode mipMapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
 		VkSamplerAddressMode textureWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, float mipMapLodBias = 0.0f, bool useStaging = 1, bool anisotropy = 1, float maxAnisotropy = 8,
 		VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
@@ -53,9 +51,9 @@ public:
 	std::shared_ptr<Texture> texture;
 
 	void loadFromTexture(
+		VulkanDevice &device,
 		std::shared_ptr<Texture> texture,
 		VkFormat format,
-		std::shared_ptr<VulkanDevice> device,
 		VkQueue copyQueue,
 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -81,9 +79,9 @@ public:
 	*
 	*/
 	void loadTextureArray(
+		VulkanDevice &device,
 		std::shared_ptr<TextureArray> textures,
 		VkFormat format,
-		std::shared_ptr<VulkanDevice> device,
 		VkQueue copyQueue,
 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -107,9 +105,9 @@ public:
 	*
 	*/
 	void loadFromTexture(
+		VulkanDevice &device,
 		std::shared_ptr<CubeMap> cubeMap,
 		VkFormat format,
-		std::shared_ptr<VulkanDevice> device,
 		VkQueue copyQueue,
 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,

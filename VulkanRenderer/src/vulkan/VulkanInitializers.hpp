@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <vector>
 #include <vulkan\vulkan.h>
 
@@ -62,6 +63,19 @@ namespace initializers
 	{
 		VkRenderPassBeginInfo renderPassBeginInfo{};
 		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		return renderPassBeginInfo;
+	}
+
+	inline VkRenderPassBeginInfo renderPassBeginInfo(VkRenderPass renderPass, VkFramebuffer frameBuffer, VkOffset2D offset, VkExtent2D extent, std::array<VkClearValue, 2> clearValues)
+	{
+		VkRenderPassBeginInfo renderPassBeginInfo{};
+		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassBeginInfo.renderPass = renderPass;
+		renderPassBeginInfo.framebuffer = frameBuffer;
+		renderPassBeginInfo.renderArea.offset = offset;
+		renderPassBeginInfo.renderArea.extent = extent;
+		renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+		renderPassBeginInfo.pClearValues = clearValues.data();
 		return renderPassBeginInfo;
 	}
 

@@ -20,21 +20,24 @@
 class VulkanSwapChain {
 public:
 	VulkanSwapChain(const VulkanDevice& device);
+	~VulkanSwapChain();
 
 	void initSwapChain(GLFWwindow* window);
 
 	void recreateSwapChain(GLFWwindow* window);
 	
-	void CleanUp(VkImageView depthImageView, VkImage depthImage, VkDeviceMemory depthImageMemory, VkRenderPass renderPass);
+	void CleanUp();
 
 	VkSurfaceKHR surface;
 
-	VkSwapchainKHR swapChain;
+	VkSwapchainKHR swapChain = VK_NULL_HANDLE;
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
+	// Active frame buffer index
+	uint32_t currentBuffer = 0;
 
 private:
 

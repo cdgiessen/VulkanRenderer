@@ -104,7 +104,7 @@ void OutputNode::Draw(ImDrawList* draw_list, ImVec2 canvas_pos) {
 
 }
 
-ConstantNode::ConstantNode() : Node("Constant", "Holds a value") {
+ConstantNode::ConstantNode() : Node("Constant", "Holds a value"), value(0) {
 	outputRect = Rectangle(ImVec2(bodyRect.size.x, 0), ImVec2(10, 10));
 }
 

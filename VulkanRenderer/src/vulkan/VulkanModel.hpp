@@ -19,9 +19,6 @@
 class VulkanModel {
 public:
 
-
-
-	std::shared_ptr<VulkanDevice> device;
 	VulkanBuffer vertices;
 	VulkanBuffer indices;
 	uint32_t vertexCount = 0;
@@ -36,9 +33,7 @@ public:
 	};
 	std::vector<ModelPart> parts;
 
-	bool loadFromMesh(std::shared_ptr<Mesh> mesh, std::shared_ptr<VulkanDevice> device, VkQueue copyQueue) {
-
-		this->device = device;
+	bool loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device, VkQueue copyQueue) {
 
 		std::vector<float> vertexBuffer;
 		std::vector<uint32_t> indexBuffer;
@@ -79,7 +74,7 @@ public:
 		VulkanBuffer vertexStaging, indexStaging;
 
 		// Vertex buffer
-		VK_CHECK_RESULT(device->createBuffer(
+		VK_CHECK_RESULT(device.createBuffer(
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 			&vertexStaging,
@@ -87,7 +82,7 @@ public:
 			vertexBuffer.data()));
 		//auto vbdata = vertexBuffer.data();
 		// Index buffer
-		VK_CHECK_RESULT(device->createBuffer(
+		VK_CHECK_RESULT(device.createBuffer(
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 			&indexStaging,
@@ -96,21 +91,21 @@ public:
 
 		// Create device local target buffers
 		// Vertex buffer
-		VK_CHECK_RESULT(device->createBuffer(
+		VK_CHECK_RESULT(device.createBuffer(
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			&vertices,
 			vBufferSize));
 
 		// Index buffer
-		VK_CHECK_RESULT(device->createBuffer(
+		VK_CHECK_RESULT(device.createBuffer(
 			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			&indices,
 			iBufferSize));
 
 		// Copy from staging buffers
-		VkCommandBuffer copyCmd = device->createCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+		VkCommandBuffer copyCmd = device.createCommandBuffer(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
 		VkBufferCopy copyRegion{};
 
@@ -120,13 +115,13 @@ public:
 		copyRegion.size = indices.size;
 		vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indices.buffer, 1, &copyRegion);
 
-		device->flushCommandBuffer(copyCmd, copyQueue);
+		device.flushCommandBuffer(copyCmd, copyQueue);
 
 		// Destroy staging resources
-		vkDestroyBuffer(device->device, vertexStaging.buffer, nullptr);
-		vkFreeMemory(device->device, vertexStaging.bufferMemory, nullptr);
-		vkDestroyBuffer(device->device, indexStaging.buffer, nullptr);
-		vkFreeMemory(device->device, indexStaging.bufferMemory, nullptr);
+		vkDestroyBuffer(device.device, vertexStaging.buffer, nullptr);
+		vkFreeMemory(device.device, vertexStaging.bufferMemory, nullptr);
+		vkDestroyBuffer(device.device, indexStaging.buffer, nullptr);
+		vkFreeMemory(device.device, indexStaging.bufferMemory, nullptr);
 
 		return true;
 	}
@@ -141,9 +136,8 @@ public:
 	* @param copyQueue Queue used for the memory staging copy commands (must support transfer)
 	* @param (Optional) flags ASSIMP model loading flags
 	*/
-	bool loadFromFile(const std::string& filename, std::shared_ptr<VulkanDevice> device, VkQueue copyQueue)
+	bool loadFromFile(const std::string& filename, VulkanDevice &device, VkQueue copyQueue)
 	{
-		this->device = device;
 		Mesh importedMesh;
 		if (fileExists(filename)) { //file exists and can be loaded
 			importedMesh.importFromFile(filename);
@@ -295,7 +289,7 @@ public:
 			VulkanBuffer vertexStaging, indexStaging;
 
 			// Vertex buffer
-			VK_CHECK_RESULT(device->createBuffer(
+			VK_CHECK_RESULT(device.createBuffer(
 				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				&vertexStaging,
@@ -303,7 +297,7 @@ public:
 				vertexBuffer.data()));
 
 			// Index buffer
-			VK_CHECK_RESULT(device->createBuffer(
+			VK_CHECK_RESULT(device.createBuffer(
 				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				&indexStaging,
@@ -312,21 +306,21 @@ public:
 
 			// Create device local target buffers
 			// Vertex buffer
-			VK_CHECK_RESULT(device->createBuffer(
+			VK_CHECK_RESULT(device.createBuffer(
 				VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 				&vertices,
 				vBufferSize));
 
 			// Index buffer
-			VK_CHECK_RESULT(device->createBuffer(
+			VK_CHECK_RESULT(device.createBuffer(
 				VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 				&indices,
 				iBufferSize));
 
 			// Copy from staging buffers
-			VkCommandBuffer copyCmd = device->createCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+			VkCommandBuffer copyCmd = device.createCommandBuffer(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
 			VkBufferCopy copyRegion{};
 
@@ -336,13 +330,13 @@ public:
 			copyRegion.size = indices.size;
 			vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indices.buffer, 1, &copyRegion);
 
-			device->flushCommandBuffer(copyCmd, copyQueue);
+			device.flushCommandBuffer(copyCmd, copyQueue);
 
 			// Destroy staging resources
-			vkDestroyBuffer(device->device, vertexStaging.buffer, nullptr);
-			vkFreeMemory(device->device, vertexStaging.bufferMemory, nullptr);
-			vkDestroyBuffer(device->device, indexStaging.buffer, nullptr);
-			vkFreeMemory(device->device, indexStaging.bufferMemory, nullptr);
+			vkDestroyBuffer(device.device, vertexStaging.buffer, nullptr);
+			vkFreeMemory(device.device, vertexStaging.bufferMemory, nullptr);
+			vkDestroyBuffer(device.device, indexStaging.buffer, nullptr);
+			vkFreeMemory(device.device, indexStaging.bufferMemory, nullptr);
 
 			return true;
 		}
@@ -357,18 +351,18 @@ public:
 	};
 
 	/** @brief Release all Vulkan resources of this model */
-	void destroy()
+	void destroy(VulkanDevice& device)
 	{
 		//assert(device);
 		if (vertices.buffer != VK_NULL_HANDLE) 
 		{
-			vkDestroyBuffer(device->device, vertices.buffer, nullptr);
-			vkFreeMemory(device->device, vertices.bufferMemory, nullptr);
+			vkDestroyBuffer(device.device, vertices.buffer, nullptr);
+			vkFreeMemory(device.device, vertices.bufferMemory, nullptr);
 		}
 		if (indices.buffer != VK_NULL_HANDLE)
 		{
-			vkDestroyBuffer(device->device, indices.buffer, nullptr);
-			vkFreeMemory(device->device, indices.bufferMemory, nullptr);
+			vkDestroyBuffer(device.device, indices.buffer, nullptr);
+			vkFreeMemory(device.device, indices.bufferMemory, nullptr);
 		}
 	}
 };

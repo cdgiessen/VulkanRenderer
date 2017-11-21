@@ -11,8 +11,8 @@ Skybox::~Skybox() {
 };
 
 void Skybox::CleanUp() {
-	model.destroy();
-	vulkanCubeMap.destroy();
+	model.destroy(renderer->device);
+	vulkanCubeMap.destroy(renderer->device);
 
 	skyboxUniformBuffer.cleanBuffer();
 
@@ -48,7 +48,7 @@ void Skybox::ReinitSkybox(std::shared_ptr<VulkanRenderer> renderer){
 
 void Skybox::LoadSkyboxData(std::string skyboxImageFile, std::string fileExt) {
 	//model.loadFromFile("Resources/Models/cube.obj", device, device->graphics_queue);
-	model.loadFromMesh(createCube(), std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue);
+	model.loadFromMesh(createCube(), renderer->device, renderer->device.graphics_queue);
 	skyboxCubeMap = std::make_shared<CubeMap>();
 	skyboxCubeMap->loadFromFile(skyboxImageFile, fileExt);
 }
@@ -60,7 +60,7 @@ void Skybox::SetupUniformBuffer() {
 }
 
 void Skybox::SetupCubeMapImage() {
-	vulkanCubeMap.loadFromTexture(skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue);
+	vulkanCubeMap.loadFromTexture(renderer->device, skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue);
 
 }
 

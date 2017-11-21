@@ -19,6 +19,7 @@ TerrainManager::TerrainManager()
 
 TerrainManager::~TerrainManager()
 {
+	std::cout << "terrain manager deleted\n";
 }
 
 void TerrainManager::GenerateTerrain(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,

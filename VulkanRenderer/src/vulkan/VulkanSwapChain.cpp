@@ -5,6 +5,12 @@ VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device) : device(device) {
 
 }
 
+VulkanSwapChain::~VulkanSwapChain()
+{
+	std::cout << "swapchain deleted\n";
+	//CleanUp();
+}
+
 void VulkanSwapChain::initSwapChain(GLFWwindow* window) {
 
 	this->instance = device.instance;
@@ -31,6 +37,9 @@ void VulkanSwapChain::createSwapChain(GLFWwindow* window) {
 		imageCount = swapChainSupport.capabilities.maxImageCount;
 	}
 
+	swapChainImageFormat = surfaceFormat.format;
+	swapChainExtent = extent;
+
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	createInfo.surface = surface;
@@ -41,6 +50,12 @@ void VulkanSwapChain::createSwapChain(GLFWwindow* window) {
 	createInfo.imageExtent = extent;
 	createInfo.imageArrayLayers = 1;
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+	VkFormatProperties formatProps;
+	vkGetPhysicalDeviceFormatProperties(physicalDevice, swapChainImageFormat, &formatProps);
+	if (formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT) {
+		createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	}
 
 	QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
 	uint32_t queueFamilyIndices[] = { (uint32_t)indices.graphicsFamily, (uint32_t)indices.presentFamily };
@@ -66,9 +81,6 @@ void VulkanSwapChain::createSwapChain(GLFWwindow* window) {
 	vkGetSwapchainImagesKHR(device.device, swapChain, &imageCount, nullptr);
 	swapChainImages.resize(imageCount);
 	vkGetSwapchainImagesKHR(device.device, swapChain, &imageCount, swapChainImages.data());
-
-	swapChainImageFormat = surfaceFormat.format;
-	swapChainExtent = extent;
 }
 
 //7
@@ -80,18 +92,12 @@ void VulkanSwapChain::createImageViews() {
 	}
 }
 
-void VulkanSwapChain::CleanUp(VkImageView depthImageView, VkImage depthImage, VkDeviceMemory depthImageMemory, VkRenderPass renderPass) {
+void VulkanSwapChain::CleanUp() {
 
-
-	vkDestroyImageView(device.device, depthImageView, nullptr);
-	vkDestroyImage(device.device, depthImage, nullptr);
-	vkFreeMemory(device.device, depthImageMemory, nullptr);
 
 	for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
 		vkDestroyFramebuffer(device.device, swapChainFramebuffers[i], nullptr);
 	}
-
-	vkDestroyRenderPass(device.device, renderPass, nullptr);
 
 	for (size_t i = 0; i < swapChainImageViews.size(); i++) {
 		vkDestroyImageView(device.device, swapChainImageViews[i], nullptr);

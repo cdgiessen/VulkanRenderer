@@ -4,6 +4,9 @@
 #include "../scene/Scene.h"
 #include "..\gui\ImGuiImpl.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "../third-party/stb_image/stb_image_write.h"
+
 VulkanRenderer::VulkanRenderer() : vulkanSwapChain(device), pipelineManager(device), shaderManager(device)
 {
 }
@@ -11,6 +14,8 @@ VulkanRenderer::VulkanRenderer() : vulkanSwapChain(device), pipelineManager(devi
 
 VulkanRenderer::~VulkanRenderer()
 {
+	std::cout << "renderer deleted\n";
+	//CleanVulkanResources();
 }
 
 void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
@@ -19,7 +24,6 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 	device.initVulkanDevice(vulkanSwapChain.surface);
 
 	vulkanSwapChain.initSwapChain(device.window);
-	//pipelineManager.InitPipeline(std::shared_ptr<VulkanDevice>(&device));
 
 	//createImageViews();
 	CreateRenderPass();
@@ -31,7 +35,12 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 }
 
 void VulkanRenderer::CleanVulkanResources() {
-	vulkanSwapChain.CleanUp(depthImageView, depthImage, depthImageMemory, renderPass);
+	vkDestroyImageView(device.device, depthImageView, nullptr);
+	vkDestroyImage(device.device, depthImage, nullptr);
+	vkFreeMemory(device.device, depthImageMemory, nullptr);
+
+	vkDestroyRenderPass(device.device, renderPass, nullptr);
+	vulkanSwapChain.CleanUp();
 
 	vkDestroySemaphore(device.device, renderFinishedSemaphore, nullptr);
 	vkDestroySemaphore(device.device, imageAvailableSemaphore, nullptr);
@@ -49,7 +58,7 @@ void VulkanRenderer::InitSwapchain() {
 }
 
 void VulkanRenderer::ReInitSwapchain(std::shared_ptr<Scene> scene, bool wireframe) {
-	vulkanSwapChain.CleanUp(depthImageView, depthImage, depthImageMemory, renderPass);
+	vulkanSwapChain.CleanUp();
 
 	vulkanSwapChain.recreateSwapChain(device.window);
 
@@ -62,7 +71,7 @@ void VulkanRenderer::ReInitSwapchain(std::shared_ptr<Scene> scene, bool wirefram
 }
 
 void VulkanRenderer::RecreateSwapChain() {
-	
+
 }
 
 void VulkanRenderer::ReBuildCommandBuffers(std::shared_ptr<Scene> scene, bool wireframe) {
@@ -336,28 +345,17 @@ void VulkanRenderer::BuildCommandBuffers(std::shared_ptr<Scene> scene, bool wire
 
 		vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
 
-		VkRenderPassBeginInfo renderPassInfo = initializers::renderPassBeginInfo();
-		renderPassInfo.renderPass = renderPass;
-		renderPassInfo.framebuffer = vulkanSwapChain.swapChainFramebuffers[i];
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = vulkanSwapChain.swapChainExtent;
-
-		std::array<VkClearValue, 2> clearValues = {};
-		clearValues[0].color = { 0.2f, 0.3f, 0.3f, 1.0f };
-		clearValues[1].depthStencil = { 0.0f, 0 };
-
-		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-		renderPassInfo.pClearValues = clearValues.data();
+		VkRenderPassBeginInfo renderPassInfo =
+			initializers::renderPassBeginInfo(renderPass, vulkanSwapChain.swapChainFramebuffers[i], { 0, 0 }, vulkanSwapChain.swapChainExtent, GetClearValues());
 
 		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		VkDeviceSize offsets[] = { 0 };
 
-		
 		scene->RenderScene(commandBuffers[i], wireframe);
 
 		//Imgui rendering
 		ImGui_ImplGlfwVulkan_Render(commandBuffers[i]);
-		
+
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -381,17 +379,8 @@ void VulkanRenderer::CreatePrimaryCommandBuffer() {
 		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-		std::array<VkClearValue, 2> clearValues = {};
-		clearValues[0].color = { 0.2f, 0.3f, 0.3f, 1.0f };
-		clearValues[1].depthStencil = { 0.0f, 0 };
-
-		VkRenderPassBeginInfo renderPassInfo = initializers::renderPassBeginInfo();
-		renderPassInfo.renderPass = renderPass;
-		renderPassInfo.framebuffer = vulkanSwapChain.swapChainFramebuffers[i];
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = vulkanSwapChain.swapChainExtent;
-		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-		renderPassInfo.pClearValues = clearValues.data();
+		VkRenderPassBeginInfo renderPassInfo =
+			initializers::renderPassBeginInfo(renderPass, vulkanSwapChain.swapChainFramebuffers[i], { 0, 0 }, vulkanSwapChain.swapChainExtent, GetClearValues());
 
 		vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
 
@@ -404,7 +393,7 @@ void VulkanRenderer::CreatePrimaryCommandBuffer() {
 		//Render stuff
 
 		// Contains the list of secondary command buffers to be executed
-		std::vector<VkCommandBuffer> commandBuffers;
+		std::vector<VkCommandBuffer> secondaryCommandBuffers;
 
 
 
@@ -430,3 +419,288 @@ void VulkanRenderer::CreateSemaphores() {
 	}
 }
 
+std::array<VkClearValue, 2> VulkanRenderer::GetClearValues() {
+	std::array<VkClearValue, 2> clearValues;
+	clearValues[0].color = clearColor;
+	clearValues[1].depthStencil = depthClearColor;
+	return clearValues;
+}
+
+void VulkanRenderer::PrepareFrame()
+{
+	uint32_t frameIndex; //which of the swapchain images the app is rendering to
+	VkResult result = vkAcquireNextImageKHR(device.device, vulkanSwapChain.swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &frameIndex);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || (result == VK_SUBOPTIMAL_KHR)) {
+		RecreateSwapChain();
+		return;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+		throw std::runtime_error("failed to acquire swap chain image!");
+	}
+}
+
+void VulkanRenderer::SubmitFrame()
+{
+
+}
+
+// Take a screenshot for the curretn swapchain image
+// This is done using a blit from the swapchain image to a linear image whose memory content is then saved as a ppm image
+// Getting the image date directly from a swapchain image wouldn't work as they're usually stored in an implementation dependant optimal tiling format
+// Note: This requires the swapchain images to be created with the VK_IMAGE_USAGE_TRANSFER_SRC_BIT flag (see VulkanSwapChain::create)
+bool VulkanRenderer::SaveScreenshot(const std::string filename)
+{
+	// Get format properties for the swapchain color format
+	VkFormatProperties formatProps;
+
+	bool supportsBlit = true;
+
+	// Check blit support for source and destination
+
+	// Check if the device supports blitting from optimal images (the swapchain images are in optimal format)
+	vulkanSwapChain.swapChain;
+	vkGetPhysicalDeviceFormatProperties(device.physical_device, vulkanSwapChain.swapChainImageFormat, &formatProps);
+	if (!(formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT)) {
+		std::cerr << "Device does not support blitting from optimal tiled images, using copy instead of blit!" << std::endl;
+		supportsBlit = false;
+	}
+
+	// Check if the device supports blitting to linear images 
+	vkGetPhysicalDeviceFormatProperties(device.physical_device, VK_FORMAT_R8G8B8A8_UNORM, &formatProps);
+	if (!(formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+		std::cerr << "Device does not support blitting to linear tiled images, using copy instead of blit!" << std::endl;
+		supportsBlit = false;
+	}
+
+	// Source for the copy is the last rendered swapchain image
+	VkImage srcImage = vulkanSwapChain.swapChainImages[vulkanSwapChain.currentBuffer];
+
+	// Create the linear tiled destination image to copy to and to read the memory from
+	VkImageCreateInfo imgCreateInfo(initializers::imageCreateInfo());
+	imgCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	// Note that vkCmdBlitImage (if supported) will also do format conversions if the swapchain color format would differ
+	imgCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+	imgCreateInfo.extent.width = vulkanSwapChain.swapChainExtent.width;
+	imgCreateInfo.extent.height = vulkanSwapChain.swapChainExtent.height;
+	imgCreateInfo.extent.depth = 1;
+	imgCreateInfo.arrayLayers = 1;
+	imgCreateInfo.mipLevels = 1;
+	imgCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imgCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imgCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
+	imgCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+	// Create the image
+	VkImage dstImage;
+	VK_CHECK_RESULT(vkCreateImage(device.device, &imgCreateInfo, nullptr, &dstImage));
+	// Create memory to back up the image
+	VkMemoryRequirements memRequirements;
+	VkMemoryAllocateInfo memAllocInfo(initializers::memoryAllocateInfo());
+	VkDeviceMemory dstImageMemory;
+	vkGetImageMemoryRequirements(device.device, dstImage, &memRequirements);
+	memAllocInfo.allocationSize = memRequirements.size;
+	// Memory must be host visible to copy from
+	memAllocInfo.memoryTypeIndex = device.getMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	VK_CHECK_RESULT(vkAllocateMemory(device.device, &memAllocInfo, nullptr, &dstImageMemory));
+	VK_CHECK_RESULT(vkBindImageMemory(device.device, dstImage, dstImageMemory, 0));
+
+	// Do the actual blit from the swapchain image to our host visible destination image
+	VkCommandBuffer copyCmd = device.createCommandBuffer(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+
+	VkImageMemoryBarrier imageMemoryBarrier = initializers::imageMemoryBarrier();
+
+	// Transition destination image to transfer destination layout
+	InsertImageMemoryBarrier(
+		copyCmd,
+		dstImage,
+		0,
+		VK_ACCESS_TRANSFER_WRITE_BIT,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+	// Transition swapchain image from present to transfer source layout
+	InsertImageMemoryBarrier(
+		copyCmd,
+		srcImage,
+		VK_ACCESS_MEMORY_READ_BIT,
+		VK_ACCESS_TRANSFER_READ_BIT,
+		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+
+
+	// If source and destination support blit we'll blit as this also does automatic format conversion (e.g. from BGR to RGB)
+	if (supportsBlit)
+	{
+		// Define the region to blit (we will blit the whole swapchain image)
+		VkOffset3D blitSize;
+		blitSize.x = vulkanSwapChain.swapChainExtent.width;
+		blitSize.y = vulkanSwapChain.swapChainExtent.height;
+		blitSize.z = 1;
+		VkImageBlit imageBlitRegion{};
+		imageBlitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageBlitRegion.srcSubresource.layerCount = 1;
+		imageBlitRegion.srcOffsets[1] = blitSize;
+		imageBlitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageBlitRegion.dstSubresource.layerCount = 1;
+		imageBlitRegion.dstOffsets[1] = blitSize;
+
+		// Issue the blit command
+		vkCmdBlitImage(
+			copyCmd,
+			srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1,
+			&imageBlitRegion,
+			VK_FILTER_NEAREST);
+	}
+	else
+	{
+		// Otherwise use image copy (requires us to manually flip components)
+		VkImageCopy imageCopyRegion{};
+		imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageCopyRegion.srcSubresource.layerCount = 1;
+		imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageCopyRegion.dstSubresource.layerCount = 1;
+		imageCopyRegion.extent.width = vulkanSwapChain.swapChainExtent.width;
+		imageCopyRegion.extent.height = vulkanSwapChain.swapChainExtent.height;
+		imageCopyRegion.extent.depth = 1;
+
+		// Issue the copy command
+		vkCmdCopyImage(
+			copyCmd,
+			srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1,
+			&imageCopyRegion);
+	}
+
+	// Transition destination image to general layout, which is the required layout for mapping the image memory later on
+	InsertImageMemoryBarrier(
+		copyCmd,
+		dstImage,
+		VK_ACCESS_TRANSFER_WRITE_BIT,
+		VK_ACCESS_MEMORY_READ_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_GENERAL,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+	// Transition back the swap chain image after the blit is done
+	InsertImageMemoryBarrier(
+		copyCmd,
+		srcImage,
+		VK_ACCESS_TRANSFER_READ_BIT,
+		VK_ACCESS_MEMORY_READ_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+
+
+	device.flushCommandBuffer(copyCmd, device.graphics_queue);
+
+	// Get layout of the image (including row pitch)
+	VkImageSubresource subResource{};
+	subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	VkSubresourceLayout subResourceLayout;
+
+	vkGetImageSubresourceLayout(device.device, dstImage, &subResource, &subResourceLayout);
+
+	// Map image memory so we can start copying from it
+	const char* data;
+	const char* dataForSTB;
+	vkMapMemory(device.device, dstImageMemory, 0, VK_WHOLE_SIZE, 0, (void**)&data);
+	dataForSTB = data;
+	data += subResourceLayout.offset;
+
+	//std::ofstream file(filename, std::ios::out | std::ios::binary);
+	//
+	//// ppm header
+	//file << "P6\n" << vulkanSwapChain.swapChainExtent.width << "\n" << vulkanSwapChain.swapChainExtent.height << "\n" << 255 << "\n";
+	//
+	//// If source is BGR (destination is always RGB) and we can't use blit (which does automatic conversion), we'll have to manually swizzle color components
+	//bool colorSwizzle = false;
+	//// Check if source is BGR 
+	//// Note: Not complete, only contains most common and basic BGR surface formats for demonstation purposes
+	//if (!supportsBlit)
+	//{
+	//	std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
+	//	colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), vulkanSwapChain.swapChainImageFormat) != formatsBGR.end());
+	//}
+	//
+	//// ppm binary pixel data
+	//for (uint32_t y = 0; y < vulkanSwapChain.swapChainExtent.height; y++)
+	//{
+	//	unsigned int *row = (unsigned int*)data;
+	//	for (uint32_t x = 0; x < vulkanSwapChain.swapChainExtent.width; x++)
+	//	{
+	//		if (colorSwizzle)
+	//		{
+	//			file.write((char*)row + 2, 1);
+	//			file.write((char*)row + 1, 1);
+	//			file.write((char*)row, 1);
+	//		}
+	//		else
+	//		{
+	//			file.write((char*)row, 3);
+	//		}
+	//		row++;
+	//	}
+	//	data += subResourceLayout.rowPitch;
+	//}
+	//file.close();
+	
+	int err = stbi_write_png(filename.c_str(), vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, STBI_rgb_alpha, dataForSTB, vulkanSwapChain.swapChainExtent.width * STBI_rgb_alpha);
+	if (err == 0) {
+		std::cout << "Screenshot saved to disk" << std::endl;
+	}
+	else {
+		std::cout << "Failed to save screenshot!\nError code = "<< err << std::endl;
+	}
+	// Clean up resources
+	vkUnmapMemory(device.device, dstImageMemory);
+	vkFreeMemory(device.device, dstImageMemory, nullptr);
+	vkDestroyImage(device.device, dstImage, nullptr);
+
+	return true;
+}
+
+void VulkanRenderer::InsertImageMemoryBarrier(
+	VkCommandBuffer cmdbuffer,
+	VkImage image,
+	VkAccessFlags srcAccessMask,
+	VkAccessFlags dstAccessMask,
+	VkImageLayout oldImageLayout,
+	VkImageLayout newImageLayout,
+	VkPipelineStageFlags srcStageMask,
+	VkPipelineStageFlags dstStageMask,
+	VkImageSubresourceRange subresourceRange)
+{
+	VkImageMemoryBarrier imageMemoryBarrier = initializers::imageMemoryBarrier();
+	imageMemoryBarrier.srcAccessMask = srcAccessMask;
+	imageMemoryBarrier.dstAccessMask = dstAccessMask;
+	imageMemoryBarrier.oldLayout = oldImageLayout;
+	imageMemoryBarrier.newLayout = newImageLayout;
+	imageMemoryBarrier.image = image;
+	imageMemoryBarrier.subresourceRange = subresourceRange;
+
+	vkCmdPipelineBarrier(
+		cmdbuffer,
+		srcStageMask,
+		dstStageMask,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &imageMemoryBarrier);
+}

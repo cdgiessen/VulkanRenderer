@@ -7,6 +7,7 @@ GameObject::GameObject()
 
 GameObject::~GameObject()
 {
+	std::cout << "game object deleted\n";
 }
 
 void GameObject::InitGameObject(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting)
@@ -34,8 +35,8 @@ void GameObject::ReinitGameObject(std::shared_ptr<VulkanRenderer> renderer)
 
 void GameObject::CleanUp()
 {
-	gameObjectModel.destroy();
-	gameObjectVulkanTexture.destroy();
+	gameObjectModel.destroy(renderer->device);
+	gameObjectVulkanTexture.destroy(renderer->device);
 
 	modelUniformBuffer.cleanBuffer();
 
@@ -67,11 +68,11 @@ void GameObject::SetupUniformBuffer() {
 }
 
 void GameObject::SetupImage() {
-	gameObjectVulkanTexture.loadFromTexture(gameObjectTexture, VK_FORMAT_R8G8B8A8_UNORM, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
+	gameObjectVulkanTexture.loadFromTexture(renderer->device, gameObjectTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
 }
 
 void GameObject::SetupModel() {
-	gameObjectModel.loadFromMesh(gameObjectMesh, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue);
+	gameObjectModel.loadFromMesh(gameObjectMesh, renderer->device, renderer->device.graphics_queue);
 }
 
 void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting) {

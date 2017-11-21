@@ -159,6 +159,7 @@
     <ClInclude Include="src\core\Texture.h" />
     <ClInclude Include="src\core\TimeManager.h" />
     <ClInclude Include="src\third-party\stb_image\stb_image.h" />
+    <ClInclude Include="src\third-party\stb_image\stb_image_write.h" />
     <ClInclude Include="src\third-party\tinyobjloader\tiny_obj_loader.h" />
     <ClInclude Include="src\vulkan\VulkanBuffer.hpp" />
     <ClInclude Include="src\vulkan\VulkanDevice.hpp" />

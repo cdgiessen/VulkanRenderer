@@ -36,8 +36,8 @@ void Water::ReinitWater(std::shared_ptr<VulkanRenderer> renderer)
 
 void Water::CleanUp()
 {
-	WaterModel.destroy();
-	WaterVulkanTexture.destroy();
+	WaterModel.destroy(renderer->device);
+	WaterVulkanTexture.destroy(renderer->device);
 
 	modelUniformBuffer.cleanBuffer();
 
@@ -70,12 +70,12 @@ void Water::SetupUniformBuffer()
 
 void Water::SetupImage()
 {
-	WaterVulkanTexture.loadFromTexture(WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
+	WaterVulkanTexture.loadFromTexture(renderer->device, WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
 }
 
 void Water::SetupModel()
 {
-	WaterModel.loadFromMesh(WaterMesh, std::shared_ptr<VulkanDevice>(&renderer->device), renderer->device.graphics_queue);
+	WaterModel.loadFromMesh(WaterMesh, renderer->device, renderer->device.graphics_queue);
 }
 
 void Water::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting)
