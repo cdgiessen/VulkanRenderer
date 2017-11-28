@@ -7,7 +7,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../third-party/stb_image/stb_image_write.h"
 
-VulkanRenderer::VulkanRenderer() : vulkanSwapChain(device), pipelineManager(device), shaderManager(device)
+VulkanRenderer::VulkanRenderer(std::shared_ptr<Scene> scene) : vulkanSwapChain(device), pipelineManager(device), shaderManager(device), scene(scene)
 {
 }
 
@@ -23,15 +23,26 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 
 	device.initVulkanDevice(vulkanSwapChain.surface);
 
-	vulkanSwapChain.initSwapChain(device.window);
+	vulkanSwapChain.InitSwapChain(device.window);
+
+	pipelineManager.InitPipelineCache();
 
 	//createImageViews();
 	CreateRenderPass();
 
 	CreateDepthResources();
-	CreateFramebuffers();
+	vulkanSwapChain.CreateFramebuffers(depthImageView, renderPass);
 
 	CreateCommandBuffers();
+}
+
+void VulkanRenderer::RenderFrame() {
+
+	PrepareFrame();
+	
+	BuildCommandBuffers();
+	
+	SubmitFrame();
 }
 
 void VulkanRenderer::CleanVulkanResources() {
@@ -45,41 +56,42 @@ void VulkanRenderer::CleanVulkanResources() {
 	vkDestroySemaphore(device.device, renderFinishedSemaphore, nullptr);
 	vkDestroySemaphore(device.device, imageAvailableSemaphore, nullptr);
 
-	//for (auto& shaderModule : shaderModules)
-	//{
-	//	vkDestroyShaderModule(vulkanDevice->device, shaderModule, nullptr);
-	//}
+	pipelineManager.CleanUp();
 
 	device.Cleanup(vulkanSwapChain.surface);
 }
 
-void VulkanRenderer::InitSwapchain() {
+void VulkanRenderer::RecreateSwapChain() {
+	std::cout << "Recreating SwapChain" << std::endl;
+	
+	vkDestroyImageView(device.device, depthImageView, nullptr);
+	vkDestroyImage(device.device, depthImage, nullptr);
+	vkFreeMemory(device.device, depthImageMemory, nullptr);
 
-}
-
-void VulkanRenderer::ReInitSwapchain(std::shared_ptr<Scene> scene, bool wireframe) {
-	vulkanSwapChain.CleanUp();
-
-	vulkanSwapChain.recreateSwapChain(device.window);
+	vkDestroyRenderPass(device.device, renderPass, nullptr);
+	
+	vulkanSwapChain.RecreateSwapChain(device.window);
 
 	CreateRenderPass();
 	CreateDepthResources();
-	CreateFramebuffers();
+	vulkanSwapChain.CreateFramebuffers(depthImageView, renderPass);
+
+	pipelineManager.ReInitPipelines();
 
 	//frameIndex = 1; //cause it needs it to be synced back to zero (yes I know it says one, thats intended, build command buffers uses the "next" frame index since it has to sync with the swapchain so it starts at one....)
-	ReBuildCommandBuffers(scene, wireframe);
+	ReBuildCommandBuffers();
 }
 
-void VulkanRenderer::RecreateSwapChain() {
-
-}
-
-void VulkanRenderer::ReBuildCommandBuffers(std::shared_ptr<Scene> scene, bool wireframe) {
+void VulkanRenderer::ReBuildCommandBuffers() {
 	vkFreeCommandBuffers(device.device, device.graphics_queue_command_pool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
 	vkResetCommandPool(device.device, device.graphics_queue_command_pool, 0);
 
 	CreateCommandBuffers();
-	BuildCommandBuffers(scene, wireframe);
+	BuildCommandBuffers();
+}
+
+void VulkanRenderer::SetWireframe(bool wireframe) {
+	this->wireframe = wireframe;
 }
 
 
@@ -153,29 +165,6 @@ void VulkanRenderer::CreateDepthResources() {
 	//VkCommandBuffer copyBuf = vulkanDevice->createCommandBuffer(vulkanDevice->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 	//setImageLayout(copyBuf, depthImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIONAL, 
 	//vulkanDevice->flushCommandBuffer(copyBuf, vulkanDevice->graphics_queue, true);
-}
-
-void VulkanRenderer::CreateFramebuffers() {
-	vulkanSwapChain.swapChainFramebuffers.resize(vulkanSwapChain.swapChainImageViews.size());
-
-	for (size_t i = 0; i < vulkanSwapChain.swapChainImageViews.size(); i++) {
-		std::array<VkImageView, 2> attachments = {
-			vulkanSwapChain.swapChainImageViews[i],
-			depthImageView
-		};
-
-		VkFramebufferCreateInfo framebufferInfo = initializers::framebufferCreateInfo();
-		framebufferInfo.renderPass = renderPass;
-		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-		framebufferInfo.pAttachments = attachments.data();
-		framebufferInfo.width = vulkanSwapChain.swapChainExtent.width;
-		framebufferInfo.height = vulkanSwapChain.swapChainExtent.height;
-		framebufferInfo.layers = 1;
-
-		if (vkCreateFramebuffer(device.device, &framebufferInfo, nullptr, &vulkanSwapChain.swapChainFramebuffers[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create framebuffer!");
-		}
-	}
 }
 
 VkFormat VulkanRenderer::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
@@ -336,33 +325,33 @@ void VulkanRenderer::CreateCommandBuffers() {
 
 }
 
-void VulkanRenderer::BuildCommandBuffers(std::shared_ptr<Scene> scene, bool wireframe) {
+void VulkanRenderer::BuildCommandBuffers() {
 
-	for (size_t i = 0; i < commandBuffers.size(); i++) {
+	//for (size_t i = 0; i < commandBuffers.size(); i++) {
 
 		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-		vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
+		vkBeginCommandBuffer(commandBuffers[frameIndex], &beginInfo);
 
 		VkRenderPassBeginInfo renderPassInfo =
-			initializers::renderPassBeginInfo(renderPass, vulkanSwapChain.swapChainFramebuffers[i], { 0, 0 }, vulkanSwapChain.swapChainExtent, GetClearValues());
+			initializers::renderPassBeginInfo(renderPass, vulkanSwapChain.swapChainFramebuffers[frameIndex], { 0, 0 }, vulkanSwapChain.swapChainExtent, GetFramebufferClearValues());
 
-		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(commandBuffers[frameIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		VkDeviceSize offsets[] = { 0 };
 
-		scene->RenderScene(commandBuffers[i], wireframe);
+		scene->RenderScene(commandBuffers[frameIndex], wireframe);
 
 		//Imgui rendering
-		ImGui_ImplGlfwVulkan_Render(commandBuffers[i]);
+		ImGui_ImplGlfwVulkan_Render(commandBuffers[frameIndex]);
 
 
-		vkCmdEndRenderPass(commandBuffers[i]);
+		vkCmdEndRenderPass(commandBuffers[frameIndex]);
 
-		if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
+		if (vkEndCommandBuffer(commandBuffers[frameIndex]) != VK_SUCCESS) {
 			throw std::runtime_error("failed to record command buffer!");
 		}
-	}
+	//}
 }
 
 //Meant to be used in conjunction with secondary command buffers
@@ -380,7 +369,7 @@ void VulkanRenderer::CreatePrimaryCommandBuffer() {
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
 		VkRenderPassBeginInfo renderPassInfo =
-			initializers::renderPassBeginInfo(renderPass, vulkanSwapChain.swapChainFramebuffers[i], { 0, 0 }, vulkanSwapChain.swapChainExtent, GetClearValues());
+			initializers::renderPassBeginInfo(renderPass, vulkanSwapChain.swapChainFramebuffers[i], { 0, 0 }, vulkanSwapChain.swapChainExtent, GetFramebufferClearValues());
 
 		vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
 
@@ -419,7 +408,7 @@ void VulkanRenderer::CreateSemaphores() {
 	}
 }
 
-std::array<VkClearValue, 2> VulkanRenderer::GetClearValues() {
+std::array<VkClearValue, 2> VulkanRenderer::GetFramebufferClearValues() {
 	std::array<VkClearValue, 2> clearValues;
 	clearValues[0].color = clearColor;
 	clearValues[1].depthStencil = depthClearColor;
@@ -428,7 +417,6 @@ std::array<VkClearValue, 2> VulkanRenderer::GetClearValues() {
 
 void VulkanRenderer::PrepareFrame()
 {
-	uint32_t frameIndex; //which of the swapchain images the app is rendering to
 	VkResult result = vkAcquireNextImageKHR(device.device, vulkanSwapChain.swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &frameIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || (result == VK_SUBOPTIMAL_KHR)) {
@@ -442,7 +430,47 @@ void VulkanRenderer::PrepareFrame()
 
 void VulkanRenderer::SubmitFrame()
 {
+	VkSubmitInfo submitInfo = initializers::submitInfo();
 
+	VkSemaphore waitSemaphores[] = { imageAvailableSemaphore };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffers[frameIndex];
+
+	VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+
+	if (vkQueueSubmit(device.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+		throw std::runtime_error("failed to submit draw command buffer!");
+	}
+
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;
+
+	VkSwapchainKHR swapChains[] = { vulkanSwapChain.swapChain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+
+	presentInfo.pImageIndices = &frameIndex;
+
+	VkResult result = vkQueuePresentKHR(device.present_queue, &presentInfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+		RecreateSwapChain();
+	}
+	else if (result != VK_SUCCESS) {
+		throw std::runtime_error("failed to present swap chain image!");
+	}
+
+	vkQueueWaitIdle(device.present_queue);
 }
 
 // Take a screenshot for the curretn swapchain image

@@ -63,16 +63,6 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<VulkanRenderer> renderer, V
 	recreateTerrain = false;
 }
 
-void TerrainManager::ReInitTerrain(std::shared_ptr<VulkanRenderer> renderer) {
-	this->renderer = renderer;
-	for (auto ter : terrains) {
-		ter->ReinitTerrain(renderer);
-	}
-	for (auto water : waters) {
-		water->ReinitWater(renderer);
-	}
-}
-
 void TerrainManager::UpdateTerrains(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
 	VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager) {
 	this->renderer = renderer;
@@ -108,13 +98,13 @@ void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe
 	}
 
 	//water
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->wireframe : waters.at(0)->pipeline);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->mvp->pipelines->at(1) : waters.at(0)->mvp->pipelines->at(0));
 	//vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->wireframe : waters.at(0)->seascapePipeline);
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &waters.at(0)->WaterModel.vertices.buffer, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, waters.at(0)->WaterModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 	for (auto water : waters) {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, water->pipelineLayout, 0, 1, &water->descriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, water->mvp->layout, 0, 1, &water->descriptorSet, 0, nullptr);
 
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(water->WaterModel.indexCount), 1, 0, 0, 0);
 	}

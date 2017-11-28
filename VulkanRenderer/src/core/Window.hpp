@@ -7,7 +7,6 @@
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 
-
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
@@ -35,6 +34,7 @@ public:
 
 	GLFWwindow* getWindowContext();
 	bool CheckForWindowResizing();
+	void SetWindowResizeDone();
 	bool CheckForWindowClose();
 	void SetWindowToClose();
 
@@ -42,8 +42,6 @@ protected:
 	//
 	// Event handlers are called by the GLFW callback mechanism and should not be called directly
 	//
-
-	void windowResized(const glm::uvec2& newSize) {	updateWindowSize = true; }
 
 	static void KeyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static void MouseButtonHandler(GLFWwindow* window, int button, int action, int mods);

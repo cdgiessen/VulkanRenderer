@@ -22,8 +22,6 @@ public:
 	void GenerateTerrain(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
 		VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera);
 
-	void ReInitTerrain(std::shared_ptr<VulkanRenderer> renderer);
-
 	void UpdateTerrains(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
 		VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager);
 

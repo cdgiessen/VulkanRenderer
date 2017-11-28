@@ -25,7 +25,6 @@ public:
 	~Scene();
 
 	void PrepareScene(std::shared_ptr<VulkanRenderer> renderer);
-	void ReInitScene(std::shared_ptr<VulkanRenderer> renderer);
 	void UpdateScene(std::shared_ptr<TimeManager> timeManager);
 	void RenderScene(VkCommandBuffer commandBuffer, bool wireframe);
 	void UpdateSceneGUI();

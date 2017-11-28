@@ -38,7 +38,6 @@ public:
 	~InstancedSceneObject();
 
 	void InitInstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting);
-	void ReinitInstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer);
 	void CleanUp();
 	void UpdateUniformBuffer();
 
@@ -49,9 +48,9 @@ public:
 	void SetupUniformBuffer();
 	void SetupImage();
 	void SetupModel();
+	void SetupPipeline();
 
 	void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
-	void SetupPipeline();
 
 	void InstancedSceneObject::AddInstances(std::vector<glm::vec3> positions);
 	//void InstancedSceneObject::RemoveInstance(std::vector<glm::vec3> positions);
@@ -60,10 +59,7 @@ public:
 
 	std::shared_ptr<VulkanRenderer> renderer;
 
-	VkPipelineLayout pipelineLayout;
-	VkPipeline pipeline;
-	VkPipeline wireframe;
-	VkPipeline debugNormals;
+	std::shared_ptr<ManagedVulkanPipeline> mvp;
 
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorPool descriptorPool;
@@ -81,4 +77,3 @@ public:
 	VulkanBuffer uniformBuffer;
 	int instanceCount;
 };
-

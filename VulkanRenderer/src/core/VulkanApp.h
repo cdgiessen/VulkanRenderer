@@ -49,10 +49,9 @@ public:
 
 	void mainLoop();
 	void HandleInputs();
-	void drawFrame();
 	void clean();
 
-	void recreateSwapChain();
+	void RecreateSwapChain();
 
 private:
 

@@ -13,11 +13,11 @@ VulkanApp::VulkanApp()
 	window->createWindow(glm::uvec2(WIDTH, HEIGHT));
 	SetMouseControl(true);
 
-	vulkanRenderer = std::make_shared<VulkanRenderer>();
+	scene = std::make_shared<Scene>();
+	vulkanRenderer = std::make_shared<VulkanRenderer>(scene);
+	
 	vulkanRenderer->InitVulkanRenderer(window->getWindowContext());
 	vulkanRenderer->CreateSemaphores();
-	
-	scene = std::make_shared<Scene>();
 	scene->PrepareScene(vulkanRenderer);
 
 	PrepareImGui();
@@ -47,9 +47,14 @@ void VulkanApp::clean() {
 }
 
 void VulkanApp::mainLoop() {
-	int i;
+	
 	while (!window->CheckForWindowClose()) {
 		timeManager->StartFrameTimer();
+
+		if (window->CheckForWindowResizing()) {
+			RecreateSwapChain();
+			window->SetWindowResizeDone();
+		}
 
 		InputDirector::GetInstance().UpdateInputs();
 		HandleInputs();
@@ -58,8 +63,7 @@ void VulkanApp::mainLoop() {
 		scene->UpdateScene(timeManager);
 		BuildImgui();
 
-		vulkanRenderer->BuildCommandBuffers(scene, wireframe);
-		drawFrame();
+		vulkanRenderer->RenderFrame();
 		
 		InputDirector::GetInstance().ResetReleasedInput();
 		timeManager->EndFrameTimer();
@@ -70,11 +74,10 @@ void VulkanApp::mainLoop() {
 
 }
 
-void VulkanApp::recreateSwapChain() {
+void VulkanApp::RecreateSwapChain() {
 	vkDeviceWaitIdle(vulkanRenderer->device.device);
 
-	scene->ReInitScene(vulkanRenderer);
-	
+	vulkanRenderer->RecreateSwapChain();
 }
 
 static void imgui_check_vk_result(VkResult err)
@@ -131,6 +134,7 @@ void  VulkanApp::PrepareImGui()
 void VulkanApp::BuildImgui() {
 	imGuiTimer.StartTimer();
 
+
 	ImGui_ImplGlfwVulkan_NewFrame();
 	
 	bool show_test_window = true;
@@ -139,6 +143,7 @@ void VulkanApp::BuildImgui() {
 	//Application Debuf info
 	{
 		ImGui::Begin("Application Debug Information", &show_test_window);
+		//ImGui::SetWindowSize(ImVec2((float)200, (float)300));
 		static float f = 0.0f;
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::Text("Delta Time: %f(s)", timeManager->GetDeltaTime());
@@ -167,6 +172,7 @@ void VulkanApp::BuildImgui() {
 
 	imGuiTimer.EndTimer();
 	//std::cout << imGuiTimer.GetElapsedTimeNanoSeconds() << std::endl;
+
 }
 
 //Release associated resources and shutdown imgui
@@ -208,7 +214,7 @@ void VulkanApp::HandleInputs() {
 		scene->drawNormals = !scene->drawNormals;
 	if (Input::GetKeyDown(GLFW_KEY_X  )) {
 		wireframe = !wireframe;
-		vulkanRenderer->ReBuildCommandBuffers(scene, wireframe);
+		vulkanRenderer->SetWireframe(wireframe);
 		std::cout << "wireframe toggled" << std::endl;
 	}
 
@@ -239,59 +245,4 @@ void VulkanApp::SetMouseControl(bool value) {
 		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	else
 		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-}
-
-void VulkanApp::drawFrame() {
-	uint32_t frameIndex; //which of the swapchain images the app is rendering to
-	VkResult result = vkAcquireNextImageKHR(vulkanRenderer->device.device, vulkanRenderer->vulkanSwapChain.swapChain, std::numeric_limits<uint64_t>::max(), vulkanRenderer->imageAvailableSemaphore, VK_NULL_HANDLE, &frameIndex);
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-		recreateSwapChain();
-		return;
-	}
-	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-		throw std::runtime_error("failed to acquire swap chain image!");
-	}
-
-	VkSubmitInfo submitInfo = initializers::submitInfo();
-
-	VkSemaphore waitSemaphores[] = { vulkanRenderer->imageAvailableSemaphore };
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &vulkanRenderer->commandBuffers[frameIndex];
-
-	VkSemaphore signalSemaphores[] = { vulkanRenderer->renderFinishedSemaphore };
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
-
-	if (vkQueueSubmit(vulkanRenderer->device.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-		throw std::runtime_error("failed to submit draw command buffer!");
-	}
-
-	VkPresentInfoKHR presentInfo = {};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = signalSemaphores;
-
-	VkSwapchainKHR swapChains[] = { vulkanRenderer->vulkanSwapChain.swapChain };
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-
-	presentInfo.pImageIndices = &frameIndex;
-
-	result = vkQueuePresentKHR(vulkanRenderer->device.present_queue, &presentInfo);
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-		recreateSwapChain();
-	}
-	else if (result != VK_SUCCESS) {
-		throw std::runtime_error("failed to present swap chain image!");
-	}
-
-	vkQueueWaitIdle(vulkanRenderer->device.present_queue);
 }

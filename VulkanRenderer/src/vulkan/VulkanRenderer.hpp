@@ -17,7 +17,7 @@ class Scene;
 class VulkanRenderer
 {
 public:
-	VulkanRenderer();
+	VulkanRenderer(std::shared_ptr<Scene> scene);
 	VulkanRenderer(const VulkanRenderer& other) = default; //copy
 	VulkanRenderer(VulkanRenderer&& other) = default; //move
 	VulkanRenderer& operator=(const VulkanRenderer&) = default;
@@ -25,18 +25,17 @@ public:
 	~VulkanRenderer();
 
 	void InitVulkanRenderer(GLFWwindow* window);
+	void RenderFrame();
 	void CleanVulkanResources();
 
-	void InitSwapchain();
-	void ReInitSwapchain(std::shared_ptr<Scene> scene, bool wireframe);
+	//void InitSwapchain();
 	void RecreateSwapChain();
 
 	void CreateRenderPass();
 	void CreateDepthResources();
-	void CreateFramebuffers();
 
-	void BuildCommandBuffers(std::shared_ptr<Scene> scene, bool wireframe);
-	void ReBuildCommandBuffers(std::shared_ptr<Scene> scene, bool wireframe);
+	void BuildCommandBuffers();
+	void ReBuildCommandBuffers();
 	
 	void CreatePrimaryCommandBuffer(); //testing out multiple command buffers
 
@@ -57,6 +56,7 @@ public:
 	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 	bool SaveScreenshot(const std::string filename);
+	void SetWireframe(bool wireframe);
 
 	VulkanDevice device;
 	VulkanSwapChain vulkanSwapChain;
@@ -79,10 +79,16 @@ public:
 	VkSemaphore renderFinishedSemaphore;
 
 private:
+	std::shared_ptr<Scene> scene;
+
+	uint32_t frameIndex; //which of the swapchain images the app is rendering to
+	bool wireframe = false; //whether or not to use the wireframe pipeline for the scene.
+
+
 	VkClearColorValue clearColor = { 0.2f, 0.3f, 0.3f, 1.0f };
 	VkClearDepthStencilValue depthClearColor = { 0.0f, 0 };
 
-	std::array<VkClearValue, 2> GetClearValues();
+	std::array<VkClearValue, 2> GetFramebufferClearValues();
 
 	void InsertImageMemoryBarrier(
 		VkCommandBuffer cmdbuffer,

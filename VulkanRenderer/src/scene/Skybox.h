@@ -30,8 +30,7 @@ public:
 
 	std::shared_ptr<VulkanRenderer> renderer;
 
-	VkPipeline pipeline;
-	VkPipelineLayout pipelineLayout;
+	std::shared_ptr<ManagedVulkanPipeline> mvp;
 
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorPool descriptorPool;
@@ -47,7 +46,6 @@ public:
 
 
 	void InitSkybox(std::shared_ptr<VulkanRenderer> device, std::string filename, std::string fileExt);
-	void ReinitSkybox(std::shared_ptr<VulkanRenderer> device); //rebuilds stuff when screen size changes
 	
 	void CleanUp();
 
@@ -58,7 +56,6 @@ public:
 	void SetupUniformBuffer();
 	void SetupCubeMapImage();
 	void SetupDescriptor();
-
 	void SetupPipeline();
 
 	//Builds a secondary command buffer for the skybox and returns the buffer
@@ -67,4 +64,3 @@ public:
 private:
 
 };
-

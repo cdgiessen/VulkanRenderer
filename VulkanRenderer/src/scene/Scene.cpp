@@ -70,16 +70,6 @@ void Scene::CreateUniformBuffers() {
 	}
 }
 
-void Scene::ReInitScene(std::shared_ptr<VulkanRenderer> renderer) {
-	skybox->ReinitSkybox(renderer);
-	for (auto obj : gameObjects) {
-		obj->ReinitGameObject(renderer);
-	}
-
-	treesInstanced->ReinitInstancedSceneObject(renderer);
-	terrainManager->ReInitTerrain(renderer);
-}
-
 void Scene::UpdateScene(std::shared_ptr<TimeManager> timeManager) {
 	//if (walkOnGround) {
 	//	//very choppy movement for right now, but since its just a quick 'n dirty way to put the camera at walking height, its just fine
@@ -116,8 +106,8 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	terrainManager->RenderTerrain(commandBuffer, wireframe);
 	
 	for (auto obj : gameObjects) {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->pipelineLayout, 0, 1, &obj->descriptorSet, 0, nullptr);
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? obj->wireframe : obj->pipeline);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->mvp->layout, 0, 1, &obj->descriptorSet, 0, nullptr);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? obj->mvp->pipelines->at(1) : obj->mvp->pipelines->at(0));
 
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &obj->gameObjectModel.vertices.buffer, offsets);
 		vkCmdBindIndexBuffer(commandBuffer, obj->gameObjectModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
@@ -125,7 +115,7 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 
 		if (drawNormals) {
 			bool drawNormals = false;
-			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->debugNormals);
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->mvp->pipelines->at(2));
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->gameObjectModel.indexCount), 1, 0, 0, 0);
 		}
 	}
@@ -133,8 +123,8 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
 
 	//skybox
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->pipelineLayout, 0, 1, &skybox->descriptorSet, 0, nullptr);
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->pipeline);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->layout, 0, 1, &skybox->descriptorSet, 0, nullptr);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->pipelines->at(0));
 
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &skybox->model.vertices.buffer, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, skybox->model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);

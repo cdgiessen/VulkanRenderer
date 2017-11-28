@@ -22,10 +22,12 @@ public:
 	VulkanSwapChain(const VulkanDevice& device);
 	~VulkanSwapChain();
 
-	void initSwapChain(GLFWwindow* window);
+	void InitSwapChain(GLFWwindow* window);
 
-	void recreateSwapChain(GLFWwindow* window);
+	void RecreateSwapChain(GLFWwindow* window);
 	
+	void CreateFramebuffers(VkImageView depthImageView, VkRenderPass renderPass);
+
 	void CleanUp();
 
 	VkSurfaceKHR surface;

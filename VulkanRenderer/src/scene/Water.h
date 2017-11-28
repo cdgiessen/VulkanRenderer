@@ -21,10 +21,7 @@ public:
 
 	std::shared_ptr<VulkanRenderer> renderer;
 
-	VkPipeline pipeline;
-	VkPipeline seascapePipeline;
-	VkPipeline wireframe;
-	VkPipelineLayout pipelineLayout;
+	std::shared_ptr<ManagedVulkanPipeline> mvp;
 
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorPool descriptorPool;
@@ -54,9 +51,9 @@ public:
 	void SetupUniformBuffer();
 	void SetupImage();
 	void SetupModel();
+	void SetupPipeline();
 
 	void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
-	void SetupPipeline();
 
 	void BuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass);
 	void RebuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass);

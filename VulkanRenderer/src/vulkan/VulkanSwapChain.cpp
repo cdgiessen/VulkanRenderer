@@ -11,7 +11,7 @@ VulkanSwapChain::~VulkanSwapChain()
 	//CleanUp();
 }
 
-void VulkanSwapChain::initSwapChain(GLFWwindow* window) {
+void VulkanSwapChain::InitSwapChain(GLFWwindow* window) {
 
 	this->instance = device.instance;
 	this->physicalDevice = device.physical_device;
@@ -20,7 +20,9 @@ void VulkanSwapChain::initSwapChain(GLFWwindow* window) {
 	createImageViews();
 }
 
-void VulkanSwapChain::recreateSwapChain(GLFWwindow* window) {
+void VulkanSwapChain::RecreateSwapChain(GLFWwindow* window) {
+	CleanUp();
+
 	createSwapChain(window);
 	createImageViews();
 }
@@ -89,6 +91,29 @@ void VulkanSwapChain::createImageViews() {
 
 	for (uint32_t i = 0; i < swapChainImages.size(); i++) {
 		swapChainImageViews[i] = createImageView(device.device, swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+	}
+}
+
+void VulkanSwapChain::CreateFramebuffers(VkImageView depthImageView, VkRenderPass renderPass) {
+	swapChainFramebuffers.resize(swapChainImageViews.size());
+
+	for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+		std::array<VkImageView, 2> attachments = {
+			swapChainImageViews[i],
+			depthImageView
+		};
+
+		VkFramebufferCreateInfo framebufferInfo = initializers::framebufferCreateInfo();
+		framebufferInfo.renderPass = renderPass;
+		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+		framebufferInfo.pAttachments = attachments.data();
+		framebufferInfo.width = swapChainExtent.width;
+		framebufferInfo.height = swapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(device.device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create framebuffer!");
+		}
 	}
 }
 

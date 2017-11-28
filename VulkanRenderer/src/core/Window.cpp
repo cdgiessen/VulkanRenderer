@@ -73,6 +73,10 @@ bool Window::CheckForWindowResizing() {
 	return updateWindowSize;
 }
 
+void Window::SetWindowResizeDone() {
+	updateWindowSize = false;
+}
+
 bool Window::CheckForWindowClose() {
 	return shouldCloseWindow;
 }
@@ -113,13 +117,15 @@ void Window::CloseHandler(GLFWwindow* window) {
 
 void Window::FramebufferSizeHandler(GLFWwindow* window, int width, int height) {
 	Window* w = (Window*)glfwGetWindowUserPointer(window);
-	w->windowResized(glm::uvec2(width, height));
+
+	w->updateWindowSize = true;
 }
 
 void Window::WindowResizeHandler(GLFWwindow* window, int width, int height) {
 	if (width == 0 || height == 0) return;
 
 	Window* w = (Window*)glfwGetWindowUserPointer(window);
-	w->windowResized(glm::uvec2(width, height));
+	//glfwSetWindowSize(window, width, height);
+	w->updateWindowSize = true;
+	
 }
-

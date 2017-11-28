@@ -99,10 +99,7 @@ public:
 
 	std::shared_ptr<VulkanRenderer> renderer;
 
-	VkPipelineLayout pipelineLayout;
-	VkPipeline pipeline;
-	VkPipeline wireframe;
-	VkPipeline debugNormals;
+	std::shared_ptr<ManagedVulkanPipeline> mvp;
 
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorPool descriptorPool;
@@ -131,7 +128,6 @@ public:
 
 	void InitTerrain(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos);
 
-	void ReinitTerrain(std::shared_ptr<VulkanRenderer> renderer);
 	void UpdateTerrain(glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo);
 	void DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], std::shared_ptr<Terrain> curTerrain, bool wireframe);
 	void BuildCommandBuffer(std::shared_ptr<Terrain> curTerrain, bool ifWireframe);

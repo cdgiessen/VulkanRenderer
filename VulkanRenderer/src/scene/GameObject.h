@@ -23,10 +23,7 @@ public:
 
 	std::shared_ptr<VulkanRenderer> renderer;
 
-	VkPipeline pipeline;
-	VkPipeline wireframe;
-	VkPipeline debugNormals;
-	VkPipelineLayout pipelineLayout;
+	std::shared_ptr<ManagedVulkanPipeline> mvp;
 
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorPool descriptorPool;
@@ -42,7 +39,6 @@ public:
 	VulkanBuffer modelUniformBuffer;
 
 	void InitGameObject(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting);
-	void ReinitGameObject(std::shared_ptr<VulkanRenderer> renderer);
 	void CleanUp();
 	void UpdateUniformBuffer(float time);
 
@@ -53,8 +49,8 @@ public:
 	void SetupUniformBuffer();
 	void SetupImage();
 	void SetupModel();
+	void SetupPipeline();
 
 	void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
-	void SetupPipeline();
 };
 
