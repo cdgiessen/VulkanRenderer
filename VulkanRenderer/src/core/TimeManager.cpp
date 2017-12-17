@@ -27,12 +27,12 @@ void TimeManager::EndFrameTimer() {
 	{
 		std::rotate(frameTimes.begin(), frameTimes.begin() + 1, frameTimes.end());
 		double frameTime = 1000.0f / (deltaTime * 1000.0f);
-		frameTimes.back() = frameTime;
+		frameTimes.back() = (float)frameTime;
 		if (frameTime < frameTimeMin) {
-			frameTimeMin = frameTime;
+			frameTimeMin = (float)frameTime;
 		}
 		if (frameTime > frameTimeMax) {
-			frameTimeMax = frameTime;
+			frameTimeMax = (float)frameTime;
 		}
 	}
 }

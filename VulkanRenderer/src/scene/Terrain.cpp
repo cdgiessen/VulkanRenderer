@@ -54,7 +54,7 @@ Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQ
 	}
 	else {
 		//with current quad density this is the average upper bound (kidna a guess but its probably more than enough for now (had to add 25 cause it wasn't enough lol!)
-		maxNumQuads = 1 + 16 + + 25 + 50 * maxLevels; 
+		maxNumQuads = 1 + 16 + 20 + 25 + 50 * maxLevels; 
 		//maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads (like if everything was subdivided)
 	}
 	//terrainQuads = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
@@ -67,22 +67,19 @@ Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQ
 
 	splatmapTextureGradient.SetFrontColor(glm::vec4(1, 0, 0, 0));
 
-	splatmapTextureGradient.AddControlPoint(0.2, glm::vec4(1, 0, 0, 0));
-	splatmapTextureGradient.AddControlPoint(0.3, glm::vec4(0, 1, 0, 0));
-	splatmapTextureGradient.AddControlPoint(0.6, glm::vec4(0, 1, 0, 0));
-	splatmapTextureGradient.AddControlPoint(0.8, glm::vec4(0, 0, 1, 0));
-	splatmapTextureGradient.AddControlPoint(0.9, glm::vec4(0, 0, 1, 0));
+	splatmapTextureGradient.AddControlPoint(0.5f, glm::vec4(1, 0, 0, 0));
+	splatmapTextureGradient.AddControlPoint(0.6f, glm::vec4(0, 1, 0, 0));
+	splatmapTextureGradient.AddControlPoint(0.65f, glm::vec4(0, 1, 0, 0));
+	splatmapTextureGradient.AddControlPoint(0.7f, glm::vec4(0, 0, 1, 0));
+	splatmapTextureGradient.AddControlPoint(0.8f, glm::vec4(0, 0, 1, 0));
 
 	splatmapTextureGradient.SetBackColor(glm::vec4(0, 0, 0, 1));
-
-	LoadSplatMapFromGenerator();
-	LoadTextureArray();
 
 	//TerrainQuad* test = terrainQuadPool->allocate();
 	//test->init(posX, posY, sizeX, sizeY, 0, meshVertexPool->allocate(), meshIndexPool->allocate());
 
-	maillerFace = std::make_shared< Texture>();
-	maillerFace->loadFromFileGreyOnly("Resources/Textures/maillerFace.png");
+	//maillerFace = std::make_shared< Texture>();
+	//maillerFace->loadFromFileGreyOnly("Resources/Textures/maillerFace.png");
 	
 }
 
@@ -210,28 +207,23 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3
 	return shouldUpdateBuffers;
 }
 
-void Terrain::LoadSplatMapFromGenerator() {
-	terrainSplatMap = std::make_shared<Texture>();
-	fastTerrainGraph->BuildOutputImage(noisePosition, noiseSize.x);
+RGBA_pixel*  Terrain::LoadSplatMapFromGenerator() {
+	//terrainSplatMap = std::make_shared<Texture>();
+	fastTerrainGraph->BuildOutputImage(noisePosition, (float)noiseSize.x);
 
 	float* pixData = fastTerrainGraph->GetOutputGreyscaleImage().data();
 	RGBA_pixel* imageData = (RGBA_pixel*)malloc(sizeof(RGBA_pixel)*sourceImageResolution*sourceImageResolution);
 
 	if (imageData == nullptr) {
 		std::cerr << "failed to create splatmap image" << std::endl;
-		return;
+		return nullptr;
 	}
 	for (int i = 0; i < sourceImageResolution * sourceImageResolution; i++ ) {
 		glm::vec4 col = splatmapTextureGradient.SampleGradient((pixData[i] + 1)/2);
-		imageData[i] = RGBA_pixel(col.x * 255, col.y * 255, col.z * 255, col.w * 255);
+		imageData[i] = RGBA_pixel((stbi_uc)(col.x * 255), (stbi_uc)(col.y * 255), (stbi_uc)(col.z * 255), (stbi_uc)(col.w * 255));
 	}
 
-	terrainSplatMap->loadFromRGBAPixelData(sourceImageResolution, sourceImageResolution, imageData);
-}
-
-void Terrain::LoadTextureArray() {
-	terrainTextureArray = std::make_shared<TextureArray>();
-	terrainTextureArray->loadFromFile("Resources/Textures/TerrainTextures/", texFileNames);
+	return imageData;
 }
 
 void Terrain::SetupMeshbuffers() {
@@ -356,7 +348,7 @@ void Terrain::SetupPipeline()
 	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "shaders/terrain.frag.spv"));
 	pipeMan.SetVertexInput(mvp, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-	pipeMan.SetViewport(mvp, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
+	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width, (float) renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
 	pipeMan.SetScissor(mvp, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);
 	pipeMan.SetViewportState(mvp, 1, 1, 0);
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
@@ -838,67 +830,6 @@ void RecalculateNormals(int numCells, TerrainMeshVertices& verts, TerrainMeshInd
 		(verts)[i * vertElementCount + 4] = normal.y;
 		(verts)[i * vertElementCount + 5] = normal.z;
 	}
-}
-
-
-void GenerateNewTerrain(NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices, 
-	TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels) {
-	
-	int numCells = NumCells;
-	
-	//NewNodeGraph::TerGenNodeGraph myGraph = NewNodeGraph::TerGenNodeGraph(fastGraph);
-	//myGraph.BuildOutputImage(terrainQuad.logicalPos, (float) (1.0/glm::pow(2.0, terrainQuad.level)));
-
-	float xLoc = terrainQuad.pos.x, zLoc = terrainQuad.pos.y, xSize = terrainQuad.size.x, zSize = terrainQuad.size.y;
-
-	for (int i = 0; i <= numCells; i++)
-	{
-		for (int j = 0; j <= numCells; j++)
-		{
-			//float value = (terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0.0, (float)j *(zSize) / (float)numCells + (zLoc)));
-			//
-			//float hL = terrainGenerator->SampleHeight((float)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc)*heightScale;
-			//float hR = terrainGenerator->SampleHeight((float)(i - 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc)*heightScale;
-			//float hD = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j + 1)*(zSize) / (float)numCells + zLoc)*heightScale;
-			//float hU = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j - 1)*(zSize) / (float)numCells + zLoc)*heightScale;
-			glm::vec3 normal = glm::vec3(0, 1, 0); // glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
-
-			float uvU = (float)i / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPos.x / (float)(1 << terrainQuad.level);
-			float uvV = (float)j / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPos.y / (float)(1 << terrainQuad.level);
-
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 0] = (float)i *(xSize) / (float)numCells;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 1] = (float)fastGraph.SampleHeight((float)i / (float)numCells, 0, (float)j / (float)numCells) * heightScale;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 2] = (float)j * (zSize) / (float)numCells;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 3] = normal.x;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 4] = normal.y;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 5] = normal.z;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 6] = (float)i/(float)numCells;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 7] = (float)j/(float)numCells;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 8] = 0;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 9] = 0;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 10] = 0;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 11] = 0;
-			//std::cout << value << std::endl;
-		}
-	}
-
-	int counter = 0;
-	for (int i = 0; i < numCells; i++)
-	{
-		for (int j = 0; j < numCells; j++)
-		{
-			(indices)[counter++] = i * (numCells + 1) + j;
-			(indices)[counter++] = i * (numCells + 1) + j + 1;
-			(indices)[counter++] = (i + 1) * (numCells + 1) + j;
-			(indices)[counter++] = i * (numCells + 1) + j + 1;
-			(indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
-			(indices)[counter++] = (i + 1) * (numCells + 1) + j;
-		}
-	}
-
-	RecalculateNormals(numCells, verts, indices);
-
-	//myGraph.~TerGenNodeGraph();
 }
 
 void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices,

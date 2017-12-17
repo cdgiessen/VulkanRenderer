@@ -13,7 +13,7 @@
 //#include <assimp/scene.h>
 //#include <assimp/postprocess.h>
 
-#include "..\core\Mesh.h"
+#include "..\resources\Mesh.h"
 
 
 class VulkanModel {

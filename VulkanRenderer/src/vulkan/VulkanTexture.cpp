@@ -59,7 +59,7 @@ void VulkanTexture2D::loadFromTexture(
 	bool wrapBorder)
 {
 	this->texture = texture;
-	int maxMipMapLevelsPossible = floor(log2(std::max(texture->width, texture->height))) + 1;
+	int maxMipMapLevelsPossible = (int)floor(log2(std::max(texture->width, texture->height))) + 1;
 	mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
 
 	// Get device properites for the requested texture format
@@ -668,9 +668,9 @@ void VulkanCubeMap::loadFromTexture(
 	std::vector<VkBufferImageCopy> bufferCopyRegions;
 	size_t offset = 0;
 
-	for (uint32_t face = 0; face < 6; face++)
+	for (int face = 0; face < 6; face++)
 	{
-		for (uint32_t level = 0; level < mipLevels; level++)
+		for (int level = 0; level < mipLevels; level++)
 		{
 			VkBufferImageCopy bufferCopyRegion = {};
 			bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;

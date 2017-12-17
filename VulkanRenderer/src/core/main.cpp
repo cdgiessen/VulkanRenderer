@@ -12,6 +12,12 @@
 
 #include "VulkanApp.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "..\third-party\stb_image\stb_image.h"
+
+#define VMA_IMPLEMENTATION
+#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+
 int main() {
 	{
 		std::shared_ptr<VulkanApp> vkApp;

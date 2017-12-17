@@ -22,7 +22,7 @@ TerrainManager::~TerrainManager()
 	std::cout << "terrain manager deleted\n";
 }
 
-void TerrainManager::GenerateTerrain(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
+void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
 	VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera) {
 	this->renderer = renderer;
 
@@ -34,11 +34,16 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<VulkanRenderer> renderer, V
 	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < terrainGridDimentions; j++) {
 			
-			terrains.push_back(std::make_shared<Terrain>(terrainQuadPool, numCells, terrainMaxLevels, terrainHeightScale, sourceImageResolution,
+			auto terrain = std::make_shared<Terrain>(terrainQuadPool, numCells, terrainMaxLevels, terrainHeightScale, sourceImageResolution,
 				glm::vec2((i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2), //position
 				glm::vec2(terrainWidth, terrainWidth), //size
 				glm::i32vec2(i * logicalWidth, j * logicalWidth), //noise position
-				glm::i32vec2(logicalWidth, logicalWidth))); //noiseSize 
+				glm::i32vec2(logicalWidth, logicalWidth)); //noiseSize 
+
+			terrain->terrainTextureArray = resourceMan->texManager.loadTextureArrayFromFile("Resources/Textures/TerrainTextures/", terrainTextureFileNames);
+			terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(sourceImageResolution, sourceImageResolution, terrain->LoadSplatMapFromGenerator());
+
+			terrains.push_back(terrain);
 		}
 	}
 
@@ -50,25 +55,25 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<VulkanRenderer> renderer, V
 	
 	for (int i = 0; i < terrainGridDimentions; i++) {
 		for (int j = 0; j < terrainGridDimentions; j++) {
-			waters.push_back(std::make_shared< Water>
-				(64, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth));
+			auto water = std::make_shared< Water>
+				(64, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth);
+			
+			water->WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("Resources/Textures/TileableWaterTexture.jpg");
+			water->InitWater(renderer, globalVariableBuffer, lightsInfoBuffer);
+			
+			waters.push_back(water);
 		}
-	}
-
-	for (auto water : waters) {
-		water->LoadTexture("Resources/Textures/TileableWaterTexture.jpg");
-		water->InitWater(renderer, globalVariableBuffer, lightsInfoBuffer);
 	}
 
 	recreateTerrain = false;
 }
 
-void TerrainManager::UpdateTerrains(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
+void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
 	VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager) {
 	this->renderer = renderer;
 	if (recreateTerrain) {
 
-		GenerateTerrain(renderer, globalVariableBuffer, lightsInfoBuffer, camera);
+		GenerateTerrain(resourceMan, renderer, globalVariableBuffer, lightsInfoBuffer, camera);
 	}
 
 	for (auto water : waters) {

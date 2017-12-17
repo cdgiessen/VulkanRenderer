@@ -12,7 +12,8 @@
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
-#include "..\core\Texture.h"
+#include "..\resources\Texture.h"
+
 #include "..\vulkan\VulkanTexture.hpp"
 #include "..\vulkan\VulkanModel.hpp"
 #include "..\vulkan\VulkanRenderer.hpp"
@@ -45,13 +46,11 @@ public:
 	VulkanBuffer skyboxUniformBuffer;
 
 
-	void InitSkybox(std::shared_ptr<VulkanRenderer> device, std::string filename, std::string fileExt);
+	void InitSkybox(std::shared_ptr<VulkanRenderer> renderer);
 	
 	void CleanUp();
 
 	void UpdateUniform(glm::mat4 proj, glm::mat4 view);
-
-	void LoadSkyboxData(std::string filename, std::string fileExt);
 
 	void SetupUniformBuffer();
 	void SetupCubeMapImage();

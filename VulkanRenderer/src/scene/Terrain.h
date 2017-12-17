@@ -13,7 +13,7 @@
 #include "..\vulkan\VulkanModel.hpp"
 #include "..\vulkan\VulkanTexture.hpp"
 
-#include "..\core\Texture.h"
+#include "..\resources\Texture.h"
 #include "..\core\Gradient.h"
 #include "..\core\MemoryPool.h"
 
@@ -135,8 +135,7 @@ public:
 	void BuildCommandBuffer(std::shared_ptr<Terrain> curTerrain, bool ifWireframe);
 	void CleanUp();
 
-	void LoadSplatMapFromGenerator();
-	void LoadTextureArray();
+	RGBA_pixel* LoadSplatMapFromGenerator();
 private:
 
 	std::shared_ptr<TerrainQuadData> InitTerrainQuad(std::shared_ptr<TerrainQuadData> q, glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,
@@ -164,25 +163,10 @@ private:
 	void UnSubdivide(std::shared_ptr<TerrainQuadData> quad);
 	void RecursiveUnSubdivide(std::shared_ptr<TerrainQuadData> quad);
 
-	std::vector<std::string> texFileNames = {
-		"dirt.jpg",
-		"grass.jpg",
-		"rockSmall.jpg",
-		"Snow.jpg",
-	};
-	// Extra splatmap images, starting with just 4 for now
-	//	"OakTreeLeaf.png",
-	//	"Sand.png",
-	//	"DeadOakTreeTrunk.png",
-	//	"OakTreeTrunk.png",
-	//	"SpruceTreeTrunk.png"};
-	//
 };
 
-//mesh generation functions. Looks at all those parameters. 
-void GenerateNewTerrain(NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices, TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);
 
-//Like GenerateNewTerrain but has corrected texture coordinates for subdivisions. Best to leave that function alone.
+//Create a mesh chunk for rendering using fastgraph as the input data
 void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices, 
 	TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);
 

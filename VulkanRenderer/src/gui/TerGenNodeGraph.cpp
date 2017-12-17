@@ -134,7 +134,11 @@ namespace NewNodeGraph {
 	}
 
 
-	NoiseSourceNode::NoiseSourceNode() : Node<float>(LinkType::Float), input_frequency(LinkType::Float,0.1f), input_persistance(LinkType::Float, 0.5f), input_octaveCount(LinkType::Int, 3) {	};
+	NoiseSourceNode::NoiseSourceNode() 
+		: Node<float>(LinkType::Float), input_frequency(LinkType::Float, 0.1f)
+		, input_persistance(LinkType::Float, 0.5f), input_octaveCount(LinkType::Int, 3) {	
+	};
+
 	NoiseSourceNode::~NoiseSourceNode() {
 		//std::cout << "Noise Source Deleted" << std::endl;
 		CleanNoiseSet();
@@ -159,7 +163,7 @@ namespace NewNodeGraph {
 		myNoise->SetFractalOctaves(input_octaveCount.GetValue());
 		noiseDimention = numCells; 
 		
-		noiseSet = myNoise->GetValueSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier);
+		noiseSet = myNoise->GetEmptySet(numCells * numCells);
 		return true;
 	}
 
@@ -195,6 +199,66 @@ namespace NewNodeGraph {
 		return false;
 	}
 
+	bool ValueFractalNoiseNode::GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) {
+		myNoise->SetSeed(seed);
+		myNoise->SetFrequency(input_frequency.GetValue());
+		myNoise->SetFractalOctaves(input_octaveCount.GetValue());
+		noiseDimention = numCells;
+
+		noiseSet = myNoise->GetValueFractalSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier);
+		return true;
+	}
+
+	bool SimplexFractalNoiseNode::GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) {
+		myNoise->SetSeed(seed);
+		myNoise->SetFrequency(input_frequency.GetValue());
+		myNoise->SetFractalOctaves(input_octaveCount.GetValue());
+		noiseDimention = numCells;
+
+		noiseSet = myNoise->GetSimplexFractalSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier);
+		return true;
+	}
+
+	bool PerlinFractalNoiseNode::GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) {
+		myNoise->SetSeed(seed);
+		myNoise->SetFrequency(input_frequency.GetValue());
+		myNoise->SetFractalOctaves(input_octaveCount.GetValue());
+		noiseDimention = numCells;
+
+		noiseSet = myNoise->GetPerlinFractalSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier);
+		return true;
+	}
+
+	bool CellularNoiseNode::GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) {
+		myNoise->SetSeed(seed);
+		myNoise->SetFrequency(input_frequency.GetValue());
+		myNoise->SetFractalOctaves(input_octaveCount.GetValue());
+		noiseDimention = numCells;
+
+		noiseSet = myNoise->GetCellularSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier);
+		return true;
+	}
+
+	bool CubicFractalNoiseNode::GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) {
+		myNoise->SetSeed(seed);
+		myNoise->SetFrequency(input_frequency.GetValue());
+		myNoise->SetFractalOctaves(input_octaveCount.GetValue());
+		noiseDimention = numCells;
+
+		noiseSet = myNoise->GetCubicFractalSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier);
+		return true;
+	}
+
+	bool WhiteNoiseNode::GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) {
+		myNoise->SetSeed(seed);
+		myNoise->SetFrequency(input_frequency.GetValue());
+		myNoise->SetFractalOctaves(input_octaveCount.GetValue());
+		noiseDimention = numCells;
+
+		noiseSet = myNoise->GetWhiteNoiseSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier);
+		return true;
+	}
+
 	TerGenNodeGraph::TerGenNodeGraph(int seed, int numCells, glm::i32vec2 pos, float scaleModifier) : seed(seed), cellsWide(numCells), pos(pos), scale(scaleModifier)
 	{
 		AddNode(std::make_shared<OutputNode>(outputNode));
@@ -218,12 +282,6 @@ namespace NewNodeGraph {
 		noiseSources.push_back(node);
 		return true;
 	}
-
-	//float TerGenNodeGraph::SampleHeight(const double x, const double y, const double z) {
-	//	//if (x >= pos.x && x < pos.x + cellsWide && y >= pos.y && y < pos.y + cellsWide && z >= pos.z && z < pos.z + cellsWide)
-	//		return outputNode->GetValue(x, y, z, 1.0f);
-	//	return -0.1;
-	//}
 
 	float TerGenNodeGraph::SampleHeight(const float x, const float y, const float z) {
 		
@@ -271,7 +329,7 @@ namespace NewNodeGraph {
 	//Should update the noise modules to use latest settings and compute their values
 	void TerGenNodeGraph::BuildNoiseGraph() {
 
-		auto noiseSource = std::make_shared<NoiseSourceNode>();
+		auto noiseSource = std::make_shared<SimplexFractalNoiseNode>();
 		AddNoiseSourceNode(noiseSource);
 
 		outputNode.SetInputLink(0, noiseSource);
@@ -284,7 +342,7 @@ namespace NewNodeGraph {
 		this->scale = scale;
 		for (auto item : noiseSources)
 		{
-			item->GenerateNoiseSet(seed, cellsWide, glm::ivec2(pos.x * (cellsWide - 1)/scale, pos.y * (cellsWide - 1) / scale), scale / cellsWide);
+			item->GenerateNoiseSet(seed, cellsWide, glm::ivec2(pos.x * (cellsWide)/scale, pos.y * (cellsWide) / scale), scale / cellsWide);
 		}
 
 		outputImage.resize(cellsWide * cellsWide);

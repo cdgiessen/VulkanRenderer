@@ -30,6 +30,8 @@
 #include "Logger.h"
 #include "TimeManager.h"
 
+#include "..\resources\ResourceManager.h"
+
 #include "..\vulkan\VulkanRenderer.hpp"
 
 #include "..\scene\Scene.h"
@@ -54,23 +56,23 @@ public:
 
 private:
 
-
-
-	//ImGUI functions
-	void PrepareImGui();
-	void BuildImgui();
-	void CleanUpImgui();
-
 	std::shared_ptr<Window> window;
+	std::shared_ptr<ResourceManager> resourceManager;
 	std::shared_ptr<TimeManager> timeManager;
 
 	std::shared_ptr<Scene> scene;
+	
 	std::shared_ptr<VulkanRenderer> vulkanRenderer;
 
 	//Input stuff
 	bool mouseControlEnabled;
 	bool wireframe = false;
 	void SetMouseControl(bool value);
+
+	//ImGUI functions
+	void PrepareImGui();
+	void BuildImgui();
+	void CleanUpImgui();
 
 	//ImGui resources
 	VkDescriptorPool imgui_descriptor_pool;

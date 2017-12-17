@@ -1,8 +1,5 @@
 #include "VulkanApp.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "..\third-party\stb_image\stb_image.h"
-
 #include "..\vulkan\VulkanInitializers.hpp"
 
 VulkanApp::VulkanApp()
@@ -13,12 +10,14 @@ VulkanApp::VulkanApp()
 	window->createWindow(glm::uvec2(WIDTH, HEIGHT));
 	SetMouseControl(true);
 
+	resourceManager = std::make_shared<ResourceManager>();
+
 	scene = std::make_shared<Scene>();
 	vulkanRenderer = std::make_shared<VulkanRenderer>(scene);
 	
 	vulkanRenderer->InitVulkanRenderer(window->getWindowContext());
 	vulkanRenderer->CreateSemaphores();
-	scene->PrepareScene(vulkanRenderer);
+	scene->PrepareScene(resourceManager, vulkanRenderer);
 
 	PrepareImGui();
 
@@ -60,7 +59,7 @@ void VulkanApp::mainLoop() {
 		HandleInputs();
 
 		//updateScene();
-		scene->UpdateScene(timeManager);
+		scene->UpdateScene(resourceManager, timeManager);
 		BuildImgui();
 
 		vulkanRenderer->RenderFrame();

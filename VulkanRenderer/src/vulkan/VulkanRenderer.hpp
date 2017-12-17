@@ -4,17 +4,16 @@
 #include <vector>
 #include <string>
 
-
-
 #include <vulkan\vulkan.h>
 
+//#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+
+#include "VulkanTools.h"
 #include "VulkanDevice.hpp"
 #include "VulkanInitializers.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanShader.hpp"
 #include "VulkanSwapChain.hpp"
-
-#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 class Scene;
 
@@ -63,7 +62,7 @@ public:
 	void SetWireframe(bool wireframe);
 
 	VulkanDevice device;
-	VmaAllocator allocator;
+	//VmaAllocator allocator;
 	VulkanSwapChain vulkanSwapChain;
 	VkRenderPass renderPass;
 
@@ -94,16 +93,5 @@ private:
 	VkClearDepthStencilValue depthClearColor = { 0.0f, 0 };
 
 	std::array<VkClearValue, 2> GetFramebufferClearValues();
-
-	void InsertImageMemoryBarrier(
-		VkCommandBuffer cmdbuffer,
-		VkImage image,
-		VkAccessFlags srcAccessMask,
-		VkAccessFlags dstAccessMask,
-		VkImageLayout oldImageLayout,
-		VkImageLayout newImageLayout,
-		VkPipelineStageFlags srcStageMask,
-		VkPipelineStageFlags dstStageMask,
-		VkImageSubresourceRange subresourceRange);
 };
 

@@ -155,12 +155,11 @@ namespace NewNodeGraph {
 		float GetValue(const int x, const int y, const int z, float dummy) override;
 
 		virtual bool GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier);
-
 		bool CleanNoiseSet();
 
 		bool SetInputLink(int index, std::shared_ptr<INode> node) override;
 
-	private:
+	protected:
 		Link<float> input_frequency;
 		Link<float> input_persistance;
 		Link<int> input_octaveCount;
@@ -170,7 +169,35 @@ namespace NewNodeGraph {
 		int noiseDimention;
 	};
 
+	class ValueFractalNoiseNode : public NoiseSourceNode {
+	public:
+		bool GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) override;
+	};
 
+	class SimplexFractalNoiseNode : public NoiseSourceNode {
+	public:
+		bool GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) override;
+	};
+
+	class PerlinFractalNoiseNode : public NoiseSourceNode {
+	public:
+		bool GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) override;
+	};
+
+	class WhiteNoiseNode : public NoiseSourceNode {
+	public:
+		bool GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) override;
+	};
+
+	class CellularNoiseNode : public NoiseSourceNode {
+	public:
+		bool GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) override;
+	};
+
+	class CubicFractalNoiseNode : public NoiseSourceNode {
+	public:
+		bool GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) override;
+	};
 
 	class TerGenNodeGraph
 	{

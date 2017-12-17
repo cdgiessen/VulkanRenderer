@@ -233,13 +233,7 @@
     <ClCompile Include="src\scene\InstancedSceneObject.cpp">
       <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\Texture.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\main.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\Mesh.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
     <ClCompile Include="src\scene\GameObject.cpp">
@@ -308,8 +302,20 @@
     <ClCompile Include="src\core\Gradient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\AssetManager.cpp">
+    <ClCompile Include="src\resources\TextureManager.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\resources\ResourceManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\resources\MeshManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\resources\Texture.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\resources\Mesh.cpp">
+      <Filter>Source Files\core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -352,9 +358,6 @@
     <ClInclude Include="src\scene\InstancedSceneObject.h">
       <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\Mesh.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
     <ClInclude Include="src\scene\GameObject.h">
       <Filter>Header Files\scene</Filter>
     </ClInclude>
@@ -365,9 +368,6 @@
       <Filter>Header Files\scene</Filter>
     </ClInclude>
     <ClInclude Include="src\core\VulkanApp.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\Texture.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\scene\TerrainManager.h">
@@ -454,8 +454,20 @@
     <ClInclude Include="src\core\Gradient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\AssetManager.h">
+    <ClInclude Include="src\resources\TextureManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resources\ResourceManager.h">
       <Filter>Header Files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resources\MeshManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resources\Texture.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resources\Mesh.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

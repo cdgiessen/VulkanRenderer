@@ -8,8 +8,8 @@
 #include "..\vulkan\VulkanModel.hpp"
 #include "..\vulkan\VulkanTexture.hpp"
 
-#include "..\core\Mesh.h"
-#include "..\core\Texture.h"
+#include "..\resources\Mesh.h"
+#include "..\resources\Texture.h"
 #include <glm\common.hpp>
 
 class Water {
@@ -45,8 +45,6 @@ public:
 	void ReinitWater(std::shared_ptr<VulkanRenderer> renderer);
 	void CleanUp();
 	void UpdateUniformBuffer(float time, glm::mat4 view);
-
-	void LoadTexture(std::string filename);
 
 	void SetupUniformBuffer();
 	void SetupImage();

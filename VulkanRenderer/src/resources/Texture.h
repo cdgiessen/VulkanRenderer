@@ -1,13 +1,13 @@
 #pragma once
 
-#include <vulkan\vulkan.h>
-
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
 #include <memory>
+
+#include <vulkan\vulkan.h>
 
 #include <glm\common.hpp>
 
@@ -36,14 +36,6 @@ public:
 	Texture();
 	~Texture();
 
-	void loadFromFileRGBA(std::string filename);
-	void loadFromFileGreyOnly(std::string filename);
-	//void loadFromNoiseUtilImage(utils::Image* image);
-	void loadFromGreyscalePixelData(int width, int height, float* pixels);
-	void loadFromRGBAPixelData(int width, int height, RGBA_pixel* pixels);
-
-private:
-	bool loadTexture(std::string, int imgType);
 };
 
 class TextureArray {
@@ -58,7 +50,6 @@ public:
 	TextureArray();
 	~TextureArray();
 
-	void loadFromFile(std::string path, std::vector<std::string> filenames);
 };
 
 class CubeMap {
@@ -70,8 +61,6 @@ public:
 	VkDeviceSize texImageSizePerTex = 0;
 
 	~CubeMap();
-
-	void loadFromFile(std::string filename, std::string fileExt);
 
 	stbi_uc* pixels = 0;
 };

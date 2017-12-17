@@ -1,6 +1,6 @@
 #include "VulkanPipeline.hpp"
 
-#include "..\core\Mesh.h"
+#include "..\resources\Mesh.h"
 
 VulkanPipeline::VulkanPipeline(const VulkanDevice &device) :device(device) {
 }
@@ -77,7 +77,7 @@ void VulkanPipeline::BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> mvp, V
 	}
 
 	mvp->pco.pipelineInfo = initializers::pipelineCreateInfo(mvp->layout, renderPass, flags);
-	mvp->pco.pipelineInfo.stageCount = shaderStages.size();
+	mvp->pco.pipelineInfo.stageCount = (uint32_t)shaderStages.size();
 	mvp->pco.pipelineInfo.pStages = shaderStages.data();
 
 	mvp->pco.pipelineInfo.pVertexInputState = &mvp->pco.vertexInputInfo;

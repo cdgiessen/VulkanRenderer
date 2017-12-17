@@ -45,12 +45,6 @@ void GameObject::LoadModel(std::shared_ptr<Mesh> mesh)
     this->gameObjectMesh = mesh;
 }
 
-void GameObject::LoadTexture(std::string filename)
-{
-    gameObjectTexture = std::make_shared<Texture>();
-    gameObjectTexture->loadFromFileRGBA(filename);
-}
-
 void GameObject::SetupUniformBuffer()
 {
     renderer->device.createBuffer(
@@ -176,8 +170,8 @@ void GameObject::SetupPipeline()
                            Vertex::getAttributeDescriptions());
     pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0,
                              VK_FALSE);
-    pipeMan.SetViewport(mvp, renderer->vulkanSwapChain.swapChainExtent.width,
-                        renderer->vulkanSwapChain.swapChainExtent.height, 0.0f,
+    pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width,
+		(float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f,
                         1.0f, 0.0f, 0.0f);
     pipeMan.SetScissor(mvp, renderer->vulkanSwapChain.swapChainExtent.width,
                        renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);

@@ -51,11 +51,6 @@ void InstancedSceneObject::LoadModel(std::shared_ptr<Mesh> mesh) {
 	this->mesh = mesh;
 }
 
-void InstancedSceneObject::LoadTexture(std::string filename) {
-	texture = std::make_shared<Texture>();
-	texture->loadFromFileRGBA(filename);
-}
-
 void InstancedSceneObject::SetupUniformBuffer() {
 	renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &uniformBuffer, sizeof(ModelBufferObject));
 
@@ -132,7 +127,7 @@ void InstancedSceneObject::SetupPipeline()
 	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "shaders/instancedSceneObject.frag.spv"));
 	//pipeMan.SetVertexInput(mvp, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-	pipeMan.SetViewport(mvp, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
+	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width, (float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
 	pipeMan.SetScissor(mvp, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);
 	pipeMan.SetViewportState(mvp, 1, 1, 0);
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);

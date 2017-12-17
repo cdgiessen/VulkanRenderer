@@ -1,14 +1,10 @@
 #include "VulkanRenderer.hpp"
 
-
-#include "../scene/Scene.h"
-#include "..\gui\ImGuiImpl.h"
-
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../third-party/stb_image/stb_image_write.h"
 
-#define VMA_IMPLEMENTATION
-#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+#include "../scene/Scene.h"
+#include "..\gui\ImGuiImpl.h"
 
 VulkanRenderer::VulkanRenderer(std::shared_ptr<Scene> scene) : vulkanSwapChain(device), pipelineManager(device), shaderManager(device), scene(scene)
 {
@@ -25,11 +21,12 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 	device.window = window;
 
 	device.initVulkanDevice(vulkanSwapChain.surface);
-	VmaAllocatorCreateInfo allocatorInfo = {};
-	allocatorInfo.physicalDevice = device.physical_device;
-	allocatorInfo.device = device.device;
 	
-	vmaCreateAllocator(&allocatorInfo, &allocator);
+	//VmaAllocatorCreateInfo allocatorInfo = {};
+	//allocatorInfo.physicalDevice = device.physical_device;
+	//allocatorInfo.device = device.device;
+	//
+	//vmaCreateAllocator(&allocatorInfo, &allocator);
 
 	vulkanSwapChain.InitSwapChain(device.window);
 
@@ -481,6 +478,37 @@ void VulkanRenderer::SubmitFrame()
 	vkQueueWaitIdle(device.present_queue);
 }
 
+void InsertImageMemoryBarrier(
+	VkCommandBuffer cmdbuffer,
+	VkImage image,
+	VkAccessFlags srcAccessMask,
+	VkAccessFlags dstAccessMask,
+	VkImageLayout oldImageLayout,
+	VkImageLayout newImageLayout,
+	VkPipelineStageFlags srcStageMask,
+	VkPipelineStageFlags dstStageMask,
+	VkImageSubresourceRange subresourceRange)
+{
+	VkImageMemoryBarrier imageMemoryBarrier = initializers::imageMemoryBarrier();
+	imageMemoryBarrier.srcAccessMask = srcAccessMask;
+	imageMemoryBarrier.dstAccessMask = dstAccessMask;
+	imageMemoryBarrier.oldLayout = oldImageLayout;
+	imageMemoryBarrier.newLayout = newImageLayout;
+	imageMemoryBarrier.image = image;
+	imageMemoryBarrier.subresourceRange = subresourceRange;
+
+	vkCmdPipelineBarrier(
+		cmdbuffer,
+		srcStageMask,
+		dstStageMask,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &imageMemoryBarrier);
+
+	//std::cout << " HI " << std::endl;
+}
+
 // Take a screenshot for the curretn swapchain image
 // This is done using a blit from the swapchain image to a linear image whose memory content is then saved as a ppm image
 // Getting the image date directly from a swapchain image wouldn't work as they're usually stored in an implementation dependant optimal tiling format
@@ -704,41 +732,11 @@ bool VulkanRenderer::SaveScreenshot(const std::string filename)
 	else {
 		std::cout << "Failed to save screenshot!\nError code = "<< err << std::endl;
 	}
+
 	// Clean up resources
 	vkUnmapMemory(device.device, dstImageMemory);
 	vkFreeMemory(device.device, dstImageMemory, nullptr);
 	vkDestroyImage(device.device, dstImage, nullptr);
 
 	return true;
-}
-
-void VulkanRenderer::InsertImageMemoryBarrier(
-	VkCommandBuffer cmdbuffer,
-	VkImage image,
-	VkAccessFlags srcAccessMask,
-	VkAccessFlags dstAccessMask,
-	VkImageLayout oldImageLayout,
-	VkImageLayout newImageLayout,
-	VkPipelineStageFlags srcStageMask,
-	VkPipelineStageFlags dstStageMask,
-	VkImageSubresourceRange subresourceRange)
-{
-	VkImageMemoryBarrier imageMemoryBarrier = initializers::imageMemoryBarrier();
-	imageMemoryBarrier.srcAccessMask = srcAccessMask;
-	imageMemoryBarrier.dstAccessMask = dstAccessMask;
-	imageMemoryBarrier.oldLayout = oldImageLayout;
-	imageMemoryBarrier.newLayout = newImageLayout;
-	imageMemoryBarrier.image = image;
-	imageMemoryBarrier.subresourceRange = subresourceRange;
-
-	vkCmdPipelineBarrier(
-		cmdbuffer,
-		srcStageMask,
-		dstStageMask,
-		0,
-		0, nullptr,
-		0, nullptr,
-		1, &imageMemoryBarrier);
-
-	//std::cout << " HI " << std::endl;
 }

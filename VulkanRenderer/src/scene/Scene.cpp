@@ -14,7 +14,7 @@ Scene::~Scene()
 	std::cout << "scene deleted\n";
 }
 
-void Scene::PrepareScene(std::shared_ptr<VulkanRenderer> renderer) {
+void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer) {
 	this->renderer = renderer;
 	
 	camera = std::make_shared< Camera>(glm::vec3(-2, 2, 0), glm::vec3(0, 1, 0), 0, -45);
@@ -33,20 +33,23 @@ void Scene::PrepareScene(std::shared_ptr<VulkanRenderer> renderer) {
 	lightsInfoBuffer.setupDescriptor();
 
 	skybox = std::make_shared< Skybox>();
-	skybox->InitSkybox(renderer, "Resources/Textures/Skybox/Skybox2", ".png");
+	skybox->skyboxCubeMap = resourceMan->texManager.loadCubeMapFromFile("Resources/Textures/Skybox/Skybox2", ".png");
+	skybox->model.loadFromMesh(createCube(), renderer->device, renderer->device.graphics_queue);
+	skybox->InitSkybox(renderer);
 
 	std::shared_ptr<GameObject> cubeObject = std::make_shared<GameObject>();
 	cubeObject->LoadModel(createCube());
-	cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
+	cubeObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("Resources/Textures/ColorGradientCube.png");
+	//cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
 	cubeObject->InitGameObject(renderer, globalVariableBuffer, lightsInfoBuffer);
 	gameObjects.push_back(cubeObject);
 	
 	terrainManager = std::make_shared<TerrainManager>();
-	terrainManager->GenerateTerrain(renderer, globalVariableBuffer, lightsInfoBuffer, camera);
+	terrainManager->GenerateTerrain(resourceMan, renderer, globalVariableBuffer, lightsInfoBuffer, camera);
 
 	treesInstanced = std::make_shared<InstancedSceneObject>();
 	treesInstanced->LoadModel(createCube());
-	treesInstanced->LoadTexture("Resources/Textures/grass.jpg");
+	treesInstanced->texture = resourceMan->texManager.loadTextureFromFileRGBA("Resources/Textures/grass.jpg");
 	treesInstanced->InitInstancedSceneObject(renderer, globalVariableBuffer, lightsInfoBuffer);
 	treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(20,0,10), glm::vec3(10,0,40), glm::vec3(10,0,-40), glm::vec3(100,0,40) });
 
@@ -72,7 +75,7 @@ void Scene::CreateUniformBuffers() {
 	}
 }
 
-void Scene::UpdateScene(std::shared_ptr<TimeManager> timeManager) {
+void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<TimeManager> timeManager) {
 	//if (walkOnGround) {
 	//	//very choppy movement for right now, but since its just a quick 'n dirty way to put the camera at walking height, its just fine
 	//	camera->Position.y = terrains.at(0)->terrainGenerator->SampleHeight(camera->Position.x, 0, camera->Position.z) * terrains.at(0)->heightScale + 2.0;
@@ -99,7 +102,7 @@ void Scene::UpdateScene(std::shared_ptr<TimeManager> timeManager) {
 
 	skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
 	if(!Input::GetKey(GLFW_KEY_V))
-		terrainManager->UpdateTerrains(renderer, globalVariableBuffer, lightsInfoBuffer, camera, timeManager);
+		terrainManager->UpdateTerrains(resourceMan, renderer, globalVariableBuffer, lightsInfoBuffer, camera, timeManager);
 }
 
 void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {

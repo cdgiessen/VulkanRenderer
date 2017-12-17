@@ -11,8 +11,8 @@
 #include "..\vulkan\VulkanRenderer.hpp"
 #include "..\vulkan\VulkanTexture.hpp"
 
-#include "..\core\Mesh.h"
-#include "..\core\Texture.h"
+#include "..\resources\Mesh.h"
+#include "..\resources\Texture.h"
 
 class GameObject
 {
@@ -43,7 +43,6 @@ class GameObject
 
     void LoadModel(std::string fileName);
     void LoadModel(std::shared_ptr<Mesh> mesh);
-    void LoadTexture(std::string filename);
 
     void SetupUniformBuffer();
     void SetupImage();

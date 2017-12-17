@@ -6,7 +6,8 @@
 
 #include "..\vulkan\VulkanRenderer.hpp"
 
-#include "..\core\Mesh.h"
+#include "..\resources\ResourceManager.h"
+#include "..\resources\Mesh.h"
 #include "..\core\TimeManager.h"
 
 #include "Camera.h"
@@ -24,8 +25,8 @@ public:
 	Scene();
 	~Scene();
 
-	void PrepareScene(std::shared_ptr<VulkanRenderer> renderer);
-	void UpdateScene(std::shared_ptr<TimeManager> timeManager);
+	void PrepareScene(std::shared_ptr<ResourceManager> resourceMan,  std::shared_ptr<VulkanRenderer> renderer);
+	void UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<TimeManager> timeManager);
 	void RenderScene(VkCommandBuffer commandBuffer, bool wireframe);
 	void UpdateSceneGUI();
 	void CleanUpScene();

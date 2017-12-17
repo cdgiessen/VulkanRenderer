@@ -75,15 +75,15 @@ void Mesh::importFromFile(const std::string filename) {
 				
 
 				if (uniqueVertices.count(newVertex) == 0) {
-					uniqueVertices[newVertex] = vertices.size();
+					uniqueVertices[newVertex] = (int)vertices.size();
 					vertices.push_back(newVertex);
 				}
 
 				indices.push_back(uniqueVertices[newVertex]);
 			}
 
-			vertexCount = vertices.size();
-			indexCount = indices.size();
+			vertexCount = (int) vertices.size();
+			indexCount = (int) indices.size();
 		}
 	}
 	else
