@@ -364,6 +364,8 @@ void setImageLayout(
 		0, nullptr,
 		0, nullptr,
 		1, &imageMemoryBarrier);
+
+	//std::cout << " HI" << std::endl;
 }
 
 // Fixed sub resource on first mip level and layer

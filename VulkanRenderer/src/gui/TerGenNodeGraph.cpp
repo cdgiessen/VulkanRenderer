@@ -227,39 +227,44 @@ namespace NewNodeGraph {
 
 	float TerGenNodeGraph::SampleHeight(const float x, const float y, const float z) {
 		
-		float xScaled = x*cellsWide;
-		float yScaled = y*cellsWide;
-		float zScaled = z*cellsWide;
+		int cellScale = cellsWide - 1;
+
+		float xScaled = x*(float)cellScale;
+		float yScaled = y*(float)cellScale;
+		float zScaled = z*(float)cellScale;
 		
-		int realX = (int)glm::clamp(x * (float)(cellsWide), 0.0f, (float)cellsWide - 1);
-		int realY = (int)glm::clamp(y * (float)(cellsWide), 0.0f, (float)cellsWide - 1);
-		int realZ = (int)glm::clamp(z * (float)(cellsWide), 0.0f, (float)cellsWide - 1);
+		int realX = (int)glm::clamp(xScaled, 0.0f, (float)cellScale);
+		int realY = (int)glm::clamp(yScaled, 0.0f, (float)cellScale);
+		int realZ = (int)glm::clamp(zScaled, 0.0f, (float)cellScale);
 
-		int realXPlus1 = (int)glm::clamp(x * (float)(cellsWide) + 1, 0.0f, (float)cellsWide - 1); //make sure its not greater than the image size
-		int realYPlus1 = (int)glm::clamp(y * (float)(cellsWide) + 1, 0.0f, (float)cellsWide - 1);
-		int realZPlus1 = (int)glm::clamp(z * (float)(cellsWide) + 1, 0.0f, (float)cellsWide - 1);
+		int realXPlus1 = (int)glm::clamp(xScaled + 1, 0.0f, (float)cellScale); //make sure its not greater than the image size
+		int realYPlus1 = (int)glm::clamp(yScaled + 1, 0.0f, (float)cellScale);
+		int realZPlus1 = (int)glm::clamp(zScaled + 1, 0.0f, (float)cellScale);
 
+		float UL = outputImage[realX * cellsWide + realZ];
+		float UR = outputImage[realX * cellsWide + realZPlus1];
+		float DL = outputImage[realXPlus1 * cellsWide + realZ];
+		float DR = outputImage[realXPlus1 * cellsWide + realZPlus1];
 		
-
-		if (realX >= 0 && realX < cellsWide && realY >= 0 && realY < cellsWide && realZ >= 0 && realZ < cellsWide) {
-
-			float UL = outputImage[realX * cellsWide + realZ];
-			float UR = outputImage[realX * cellsWide + realZPlus1];
-			float DL = outputImage[realXPlus1 * cellsWide + realZ];
-			float DR = outputImage[realXPlus1 * cellsWide + realZPlus1];
-
-			
-			return (
-					UL * ((float)realXPlus1 - xScaled)	* ((float)realZPlus1 - zScaled)
-				+	DL * (xScaled - (float)realX)		* ((float)realZPlus1 - zScaled)
-				+	UR * ((float)realXPlus1 - xScaled)	* (zScaled - (float)realZ)
-				+	DR * (xScaled - (float)realX)		* (zScaled - (float)realZ)
-					)
-				/ (((float)realXPlus1 - (float)realX) * ((float)realZPlus1 - (float)realZ));
-
-			//return outputImage[realX * cellsWide + realZ];
+		if (realX == realXPlus1 && realZ == realZPlus1) {
+			return DR;
 		}
-		return -1.0;
+		else if (realX == realXPlus1) {
+			return (DR * (realZPlus1 - zScaled) + DL * (zScaled - realZ)) / (realZPlus1 - realZ);
+		}
+		else if (realZ == realZPlus1) {
+			return (DR * (realXPlus1 - xScaled) + UR * (xScaled - realX)) / (realXPlus1 - realX);
+		} 
+		else {
+
+			return (
+				UL * (realXPlus1 - xScaled)	* (realZPlus1 - zScaled)
+				+ DL * (xScaled - realX)	* (realZPlus1 - zScaled)
+				+ UR * (realXPlus1 - xScaled)	* (zScaled - realZ)
+				+ DR * (xScaled - realX)	* (zScaled - realZ)
+				)
+				/ ((realXPlus1 - realX) * (realZPlus1 - realZ));
+		}
 	}
 
 	//Creates the graph (for now the graph is hardcoded here)
@@ -279,7 +284,7 @@ namespace NewNodeGraph {
 		this->scale = scale;
 		for (auto item : noiseSources)
 		{
-			item->GenerateNoiseSet(seed, cellsWide, pos, scale/cellsWide);
+			item->GenerateNoiseSet(seed, cellsWide, glm::ivec2(pos.x * (cellsWide - 1)/scale, pos.y * (cellsWide - 1) / scale), scale / cellsWide);
 		}
 
 		outputImage.resize(cellsWide * cellsWide);

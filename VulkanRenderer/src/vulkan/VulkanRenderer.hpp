@@ -4,13 +4,17 @@
 #include <vector>
 #include <string>
 
-#include "vulkan\vulkan.h"
+
+
+#include <vulkan\vulkan.h>
 
 #include "VulkanDevice.hpp"
 #include "VulkanInitializers.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanShader.hpp"
 #include "VulkanSwapChain.hpp"
+
+#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 class Scene;
 
@@ -59,6 +63,7 @@ public:
 	void SetWireframe(bool wireframe);
 
 	VulkanDevice device;
+	VmaAllocator allocator;
 	VulkanSwapChain vulkanSwapChain;
 	VkRenderPass renderPass;
 

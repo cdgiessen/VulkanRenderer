@@ -14,14 +14,14 @@
 #include "..\vulkan\VulkanTexture.hpp"
 
 #include "..\core\Texture.h"
-
+#include "..\core\Gradient.h"
 #include "..\core\MemoryPool.h"
 
 #include "TerrainGenerator.h"
 #include "..\gui\TerGenNodeGraph.h"
 
 const int SplatMapSize = 1024;
-const int NumCells = 64;
+const int NumCells = 32;
 const int vertCount = (NumCells + 1) * (NumCells + 1);
 const int indCount = NumCells * NumCells * 6;
 const int vertElementCount = 12;
@@ -118,6 +118,8 @@ public:
 	std::shared_ptr<Texture> maillerFace;
 	std::shared_ptr<NewNodeGraph::TerGenNodeGraph> fastTerrainGraph;
 
+	Gradient splatmapTextureGradient;
+
 	SimpleTimer drawTimer;
 
 	std::vector<std::thread *> terrainGenerationWorkers;
@@ -178,7 +180,7 @@ private:
 };
 
 //mesh generation functions. Looks at all those parameters. 
-void GenerateNewTerrain(NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels);
+void GenerateNewTerrain(NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices, TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);
 
 //Like GenerateNewTerrain but has corrected texture coordinates for subdivisions. Best to leave that function alone.
 void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices, 

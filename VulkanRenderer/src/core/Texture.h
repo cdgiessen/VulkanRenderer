@@ -13,6 +13,17 @@
 
 #include "../third-party/stb_image/stb_image.h"
 
+struct RGBA_pixel {
+	stbi_uc red = 0;
+	stbi_uc green = 0;
+	stbi_uc blue = 0;
+	stbi_uc alpha = 1;
+
+	RGBA_pixel() {};
+	RGBA_pixel(stbi_uc red, stbi_uc green, stbi_uc blue, stbi_uc alpha) : red(red), green(green), blue(blue), alpha(alpha) {  };
+
+};
+
 
 class Texture {
 public:
@@ -29,6 +40,7 @@ public:
 	void loadFromFileGreyOnly(std::string filename);
 	//void loadFromNoiseUtilImage(utils::Image* image);
 	void loadFromGreyscalePixelData(int width, int height, float* pixels);
+	void loadFromRGBAPixelData(int width, int height, RGBA_pixel* pixels);
 
 private:
 	bool loadTexture(std::string, int imgType);

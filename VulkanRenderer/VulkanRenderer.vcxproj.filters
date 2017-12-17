@@ -73,6 +73,9 @@
     <Filter Include="third-party\stb_image">
       <UniqueIdentifier>{e1994d7f-92d3-435c-84ee-3672cd8d96f8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\third-party">
+      <UniqueIdentifier>{f4835d5a-fe55-4ecc-97ae-f1eedff9bc2f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\compile.bat">
@@ -302,6 +305,12 @@
     <ClCompile Include="src\vulkan\VulkanRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\Gradient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\AssetManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\vulkan\VulkanBuffer.hpp">
@@ -424,11 +433,29 @@
     <ClInclude Include="src\vulkan\VulkanShader.hpp">
       <Filter>Header Files\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="src\vulkan\VulkanRenderer.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\third-party\glTF2-loader\glTF2.hpp">
+      <Filter>Header Files\third-party</Filter>
+    </ClInclude>
+    <ClInclude Include="src\third-party\json\json.hpp">
+      <Filter>Header Files\third-party</Filter>
+    </ClInclude>
+    <ClInclude Include="src\third-party\stb_image\stb_image_resize.h">
+      <Filter>Header Files\third-party</Filter>
+    </ClInclude>
+    <ClInclude Include="src\third-party\VulkanMemoryAllocator\vk_mem_alloc.h">
+      <Filter>Header Files\third-party</Filter>
     </ClInclude>
     <ClInclude Include="src\third-party\stb_image\stb_image_write.h">
+      <Filter>Header Files\third-party</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vulkan\VulkanRenderer.hpp">
+      <Filter>Header Files\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\Gradient.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\AssetManager.h">
+      <Filter>Header Files\scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

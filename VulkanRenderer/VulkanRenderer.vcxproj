@@ -92,6 +92,8 @@
     <None Include="Shaders\water.vert.spv" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\core\AssetManager.cpp" />
+    <ClCompile Include="src\core\Gradient.cpp" />
     <ClCompile Include="src\core\Input.cpp" />
     <ClCompile Include="src\scene\Camera.cpp" />
     <ClCompile Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD.cpp" />
@@ -133,12 +135,16 @@
     <ClCompile Include="src\vulkan\VulkanRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\core\AssetManager.h" />
+    <ClInclude Include="src\core\Gradient.h" />
     <ClInclude Include="src\core\Input.h" />
     <ClInclude Include="src\scene\Camera.h" />
     <ClInclude Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD.h" />
     <ClInclude Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_internal.h" />
     <ClInclude Include="src\scene\GameObject.h" />
     <ClInclude Include="src\gui\ImGuiImpl.h" />
+    <ClInclude Include="src\third-party\glTF2-loader\glTF2.hpp" />
+    <ClInclude Include="src\third-party\stb_image\stb_image_resize.h" />
     <ClInclude Include="src\third-party\ImGui\imconfig.h" />
     <ClInclude Include="src\third-party\ImGui\imgui.h" />
     <ClInclude Include="src\third-party\ImGui\imgui_internal.h" />
@@ -158,9 +164,11 @@
     <ClInclude Include="src\scene\TerrainManager.h" />
     <ClInclude Include="src\core\Texture.h" />
     <ClInclude Include="src\core\TimeManager.h" />
+    <ClInclude Include="src\third-party\json\json.hpp" />
     <ClInclude Include="src\third-party\stb_image\stb_image.h" />
     <ClInclude Include="src\third-party\stb_image\stb_image_write.h" />
     <ClInclude Include="src\third-party\tinyobjloader\tiny_obj_loader.h" />
+    <ClInclude Include="src\third-party\VulkanMemoryAllocator\vk_mem_alloc.h" />
     <ClInclude Include="src\vulkan\VulkanBuffer.hpp" />
     <ClInclude Include="src\vulkan\VulkanDevice.hpp" />
     <ClInclude Include="src\vulkan\VulkanPipeline.hpp" />
@@ -262,13 +270,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\include;C:\VulkanSDK\1.0.51.0\Include;C:\VulkanSDK\1.0.65.0\Include;C:\VulkanSDK\1.0.51.0\Third-Party\Include;C:\VulkanSDK\1.0.65.0\Third-Party\Include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\include;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Users\Charles\Documents\Visual Studio 2017\Libraries\glTF2-loader\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\include;C:\VulkanSDK\1.0.65.1\Include;C:\VulkanSDK\1.0.65.0\Include;C:\VulkanSDK\1.0.65.1\Third-Party\Include;C:\VulkanSDK\1.0.65.0\Third-Party\Include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\include;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\lib;C:\VulkanSDK\1.0.51.0\Lib;C:\VulkanSDK\1.0.65.0\Lib;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\lib-vc2015;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gltf2-loader-d.lib;vulkan-1.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Users\Charles\Documents\Visual Studio 2017\Libraries\glTF2-loader\lib\debug;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\lib;C:\VulkanSDK\1.0.65.1\Lib;C:\VulkanSDK\1.0.65.0\Lib;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\lib-vc2015;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -300,15 +308,15 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\include;C:\VulkanSDK\1.0.51.0\Include;C:\VulkanSDK\1.0.65.0\Include;C:\VulkanSDK\1.0.51.0\Third-Party\Include;C:\VulkanSDK\1.0.65.0\Third-Party\Include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\include;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Users\Charles\Documents\Visual Studio 2017\Libraries\glTF2-loader\include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\include;C:\VulkanSDK\1.0.65.1\Include;C:\VulkanSDK\1.0.65.0\Include;C:\VulkanSDK\1.0.65.1\Third-Party\Include;C:\VulkanSDK\1.0.65.0\Third-Party\Include;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\include;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\lib;C:\VulkanSDK\1.0.51.0\Lib;C:\VulkanSDK\1.0.65.0\Lib;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\lib-vc2015;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gltf2-loader.lib;vulkan-1.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Users\Charles\Documents\Visual Studio 2017\Libraries\glTF2-loader\lib\release;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\x64\lib;C:\VulkanSDK\1.0.65.1\Lib;C:\VulkanSDK\1.0.65.0\Lib;D:\Users\Charles\Documents\Visual Studio 2015\Libraries\glfw\lib-vc2015;C:\Users\Charles\Documents\Visual Studio 2017\Libraries\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

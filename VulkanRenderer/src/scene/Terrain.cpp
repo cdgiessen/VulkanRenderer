@@ -62,8 +62,18 @@ Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQ
 	quadHandles.reserve(maxNumQuads);
 	//terrainGenerationWorkers = std::vector < std::thread>(maxNumQuads);
 
-	fastTerrainGraph = std::make_shared<NewNodeGraph::TerGenNodeGraph> (1337, sourceImageResolution, noisePosition, 1.0f);
+	fastTerrainGraph = std::make_shared<NewNodeGraph::TerGenNodeGraph> (1337, sourceImageResolution, noisePosition, noiseSize.x);
 	fastTerrainGraph->BuildNoiseGraph();
+
+	splatmapTextureGradient.SetFrontColor(glm::vec4(1, 0, 0, 0));
+
+	splatmapTextureGradient.AddControlPoint(0.2, glm::vec4(1, 0, 0, 0));
+	splatmapTextureGradient.AddControlPoint(0.3, glm::vec4(0, 1, 0, 0));
+	splatmapTextureGradient.AddControlPoint(0.6, glm::vec4(0, 1, 0, 0));
+	splatmapTextureGradient.AddControlPoint(0.8, glm::vec4(0, 0, 1, 0));
+	splatmapTextureGradient.AddControlPoint(0.9, glm::vec4(0, 0, 1, 0));
+
+	splatmapTextureGradient.SetBackColor(glm::vec4(0, 0, 0, 1));
 
 	LoadSplatMapFromGenerator();
 	LoadTextureArray();
@@ -78,7 +88,7 @@ Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQ
 
 
 Terrain::~Terrain() {
-	std::cout << "terrain deleted\n";
+	//std::cout << "terrain deleted\n";
 	CleanUp();
 		
 	//terrainSplatMap.reset();
@@ -203,7 +213,20 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3
 void Terrain::LoadSplatMapFromGenerator() {
 	terrainSplatMap = std::make_shared<Texture>();
 	fastTerrainGraph->BuildOutputImage(noisePosition, noiseSize.x);
-	terrainSplatMap->loadFromGreyscalePixelData(sourceImageResolution, sourceImageResolution, fastTerrainGraph->GetOutputGreyscaleImage().data());
+
+	float* pixData = fastTerrainGraph->GetOutputGreyscaleImage().data();
+	RGBA_pixel* imageData = (RGBA_pixel*)malloc(sizeof(RGBA_pixel)*sourceImageResolution*sourceImageResolution);
+
+	if (imageData == nullptr) {
+		std::cerr << "failed to create splatmap image" << std::endl;
+		return;
+	}
+	for (int i = 0; i < sourceImageResolution * sourceImageResolution; i++ ) {
+		glm::vec4 col = splatmapTextureGradient.SampleGradient((pixData[i] + 1)/2);
+		imageData[i] = RGBA_pixel(col.x * 255, col.y * 255, col.z * 255, col.w * 255);
+	}
+
+	terrainSplatMap->loadFromRGBAPixelData(sourceImageResolution, sourceImageResolution, imageData);
 }
 
 void Terrain::LoadTextureArray() {
@@ -531,7 +554,7 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuad(std::shared_ptr<Terrai
 
 	//SimpleTimer terrainQuadCreateTime;
 	
-	GenerateNewTerrain(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, heightScale, maxLevels);
+	GenerateNewTerrainSubdivision(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
 
 	//GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
 	
@@ -738,8 +761,8 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], std:
 			vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
 			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vertexBuffer.buffer, &vertexOffsettings[i]);
 			vkCmdBindIndexBuffer(cmdBuff, indexBuffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
-
 			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 0, 1, &quadHandles[i]->descriptorSet, 0, nullptr);
+
 
 			vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
 
@@ -818,7 +841,9 @@ void RecalculateNormals(int numCells, TerrainMeshVertices& verts, TerrainMeshInd
 }
 
 
-void GenerateNewTerrain(NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels) {
+void GenerateNewTerrain(NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices, 
+	TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels) {
+	
 	int numCells = NumCells;
 	
 	//NewNodeGraph::TerGenNodeGraph myGraph = NewNodeGraph::TerGenNodeGraph(fastGraph);
@@ -889,6 +914,7 @@ void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenNodeGraph& fastGraph, Ter
 	{
 		for (int j = 0; j <= numCells; j++)
 		{
+			
 			//float value = (terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0.0, (float)j *(zSize) / (float)numCells + (zLoc)));
 			//
 			//float hL = terrainGenerator->SampleHeight((float)(i + 1) *(xSize) / (float)numCells + (xLoc), 0, (float)j *(zSize) / (float)numCells + zLoc)*heightScale;
@@ -898,8 +924,8 @@ void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenNodeGraph& fastGraph, Ter
 			//glm::vec3 normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
 			glm::vec3 normal = glm::vec3(0, 1, 0);
 
-			float uvU = (float)i / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPos.x / (float)(1 << terrainQuad.level);
-			float uvV = (float)j / ((1 << terrainQuad.level) * (float)numCells) + (float)terrainQuad.subDivPos.y / (float)(1 << terrainQuad.level);
+			float uvU = (float)i / ((1 << terrainQuad.level) * (float)(numCells)) + (float)terrainQuad.subDivPos.x / (float)(1 << terrainQuad.level);
+			float uvV = (float)j / ((1 << terrainQuad.level) * (float)(numCells)) + (float)terrainQuad.subDivPos.y / (float)(1 << terrainQuad.level);
 
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 0] = (float)i *(xSize) / (float)numCells;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 1] = (float)fastGraph.SampleHeight(uvU, 0, uvV) * heightScale;
@@ -907,8 +933,8 @@ void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenNodeGraph& fastGraph, Ter
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 3] = normal.x;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 4] = normal.y;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 5] = normal.z;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 6] = uvU;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 7] = uvV;
+			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 6] = uvV;
+			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 7] = uvU;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 8] = 0;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 9] = 0;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 10] = 0;

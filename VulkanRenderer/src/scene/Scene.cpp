@@ -1,5 +1,7 @@
 #include "Scene.h"
 
+#include "../core/Input.h"
+
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
 
@@ -96,8 +98,8 @@ void Scene::UpdateScene(std::shared_ptr<TimeManager> timeManager) {
 	}
 
 	skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
-
-	terrainManager->UpdateTerrains(renderer, globalVariableBuffer, lightsInfoBuffer, camera, timeManager);
+	if(!Input::GetKey(GLFW_KEY_V))
+		terrainManager->UpdateTerrains(renderer, globalVariableBuffer, lightsInfoBuffer, camera, timeManager);
 }
 
 void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {

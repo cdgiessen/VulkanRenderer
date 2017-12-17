@@ -72,6 +72,14 @@ void Texture::loadFromGreyscalePixelData(int width, int height, float* in_pixels
 	}
 }
 
+void Texture::loadFromRGBAPixelData(int width, int height, RGBA_pixel* in_pixels) {
+	this->width = static_cast<uint32_t>(width);
+	this->height = static_cast<uint32_t>(height);
+	this->texImageSize = width * height * 4;
+
+	this->pixels = (stbi_uc*)in_pixels;
+}
+
 TextureArray::TextureArray() {
 
 }

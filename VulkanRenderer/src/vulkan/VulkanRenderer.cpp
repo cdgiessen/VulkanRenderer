@@ -7,6 +7,9 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../third-party/stb_image/stb_image_write.h"
 
+#define VMA_IMPLEMENTATION
+#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+
 VulkanRenderer::VulkanRenderer(std::shared_ptr<Scene> scene) : vulkanSwapChain(device), pipelineManager(device), shaderManager(device), scene(scene)
 {
 }
@@ -22,6 +25,11 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 	device.window = window;
 
 	device.initVulkanDevice(vulkanSwapChain.surface);
+	VmaAllocatorCreateInfo allocatorInfo = {};
+	allocatorInfo.physicalDevice = device.physical_device;
+	allocatorInfo.device = device.device;
+	
+	vmaCreateAllocator(&allocatorInfo, &allocator);
 
 	vulkanSwapChain.InitSwapChain(device.window);
 
@@ -731,4 +739,6 @@ void VulkanRenderer::InsertImageMemoryBarrier(
 		0, nullptr,
 		0, nullptr,
 		1, &imageMemoryBarrier);
+
+	//std::cout << " HI " << std::endl;
 }
