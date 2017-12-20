@@ -317,6 +317,9 @@
     <ClCompile Include="src\resources\Mesh.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\gui\ProcTerrainNodeGraph.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\vulkan\VulkanBuffer.hpp">
@@ -433,9 +436,6 @@
     <ClInclude Include="src\vulkan\VulkanShader.hpp">
       <Filter>Header Files\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="src\third-party\glTF2-loader\glTF2.hpp">
-      <Filter>Header Files\third-party</Filter>
-    </ClInclude>
     <ClInclude Include="src\third-party\json\json.hpp">
       <Filter>Header Files\third-party</Filter>
     </ClInclude>
@@ -468,6 +468,12 @@
     </ClInclude>
     <ClInclude Include="src\resources\Mesh.h">
       <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vulkan\RendererStructs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gui\ProcTerrainNodeGraph.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

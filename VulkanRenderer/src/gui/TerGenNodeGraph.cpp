@@ -3,19 +3,13 @@
 
 namespace NewNodeGraph {
 
-	INode::~INode() {
-		//std::cout << "Inode Deleted" << std::endl;
-	}
+	INode::~INode() {}
 
 	template<typename T>
-	Link<T>::Link(LinkType type) : linkType(type) {
-
-	}
+	Link<T>::Link(LinkType type) : linkType(type) {}
 
 	template<typename T>
-	Link<T>::Link(LinkType type, T value) : linkType(type) , data(value) {
-
-	}
+	Link<T>::Link(LinkType type, T value) : linkType(type) , data(value) {}
 
 	template<typename T>
 	T Link<T>::GetValue(const int x, const int y, const int z) {
@@ -55,9 +49,7 @@ namespace NewNodeGraph {
 	}
 
 	template<typename T>
-	Node<T>::~Node() {
-		//std::cout << "Node Deleted" << std::endl;
-	}
+	Node<T>::~Node() {}
 
 	template<typename T>
 	LinkType Node<T>::GetNodeType() {
@@ -121,6 +113,48 @@ namespace NewNodeGraph {
 	bool ConstantIntNode::SetInputLink(int index, std::shared_ptr<INode> node) {
 		return value.SetInputNode(node);
 	}
+
+	MathNode::MathNode() : Node<float>(LinkType::Float), input_a(LinkType::Float), input_b(LinkType::Float) {}
+	MathNode::~MathNode() { }
+	
+	float MathNode::GetValue(const int x, const int y, const int z, float dummy)
+	{
+		return 0.0f;
+	}
+
+	bool MathNode::SetInputLink(int index, std::shared_ptr<INode> node)
+	{
+		if (index == 0) {
+			input_a.SetInputNode(node);
+		}
+		if (index == 1) {
+			input_b.SetInputNode(node);
+		}
+
+		return false;
+	}
+	
+	AdditionNode::AdditionNode() : MathNode() {};
+	SubtractNode::SubtractNode() : MathNode() {};
+	MultiplyNode::MultiplyNode() : MathNode() {};
+	DivideNode::DivideNode() : MathNode() {};
+	PowerNode::PowerNode() : MathNode() {};
+
+	AdditionNode::~AdditionNode(){};
+	SubtractNode::~SubtractNode(){};
+	MultiplyNode::~MultiplyNode(){};
+	DivideNode::~DivideNode(){};
+	PowerNode::~PowerNode(){};
+
+	float AdditionNode::GetValue(const int x, const int y, const int z, float dummy)	{ return input_a.GetValue(x, y, z) + input_b.GetValue(x, y, z); }
+	float SubtractNode::GetValue(const int x, const int y, const int z, float dummy)	{ return input_a.GetValue(x, y, z) - input_b.GetValue(x, y, z); }
+	float MultiplyNode::GetValue(const int x, const int y, const int z, float dummy)	{ return input_a.GetValue(x, y, z) * input_b.GetValue(x, y, z); }
+	float DivideNode::GetValue(const int x, const int y, const int z, float dummy)		{ return input_a.GetValue(x, y, z) / input_b.GetValue(x, y, z); }
+	float PowerNode::GetValue(const int x, const int y, const int z, float dummy)		{ return pow(input_a.GetValue(x, y, z),  input_b.GetValue(x, y, z)); }
+
+
+	SelectorNode::SelectorNode() : Node<float>(LinkType::Float), input_a(LinkType::Float), input_b(LinkType::Float), input_blendAmount(LinkType::Float), input_cutoff(LinkType::Float)  {}
+
 
 	SelectorNode::~SelectorNode() {}
 	
@@ -329,11 +363,17 @@ namespace NewNodeGraph {
 	//Should update the noise modules to use latest settings and compute their values
 	void TerGenNodeGraph::BuildNoiseGraph() {
 
-		auto noiseSource = std::make_shared<SimplexFractalNoiseNode>();
-		AddNoiseSourceNode(noiseSource);
+		auto nSource1 = std::make_shared<SimplexFractalNoiseNode>();
+		auto nSource2 = std::make_shared<PerlinFractalNoiseNode>();
+		auto addNode = std::make_shared<AdditionNode>();
+		
+		AddNoiseSourceNode(nSource1);
+		AddNoiseSourceNode(nSource2);
 
-		outputNode.SetInputLink(0, noiseSource);
+		addNode->SetInputLink(0, nSource1);
+		addNode->SetInputLink(1, nSource2);
 
+		outputNode.SetInputLink(0, addNode);
 	}
 
 	//Creates the image to sample from

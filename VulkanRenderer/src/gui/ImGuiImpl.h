@@ -6,6 +6,8 @@
 // If you are new to ImGui, see examples/README.txt and documentation at the top of imgui.cpp.
 // https://github.com/ocornut/imgui
 
+#include <vulkan\vulkan.h>
+
 struct GLFWwindow;
 
 #define IMGUI_VK_QUEUED_FRAMES 2

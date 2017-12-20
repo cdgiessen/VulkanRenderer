@@ -16,8 +16,7 @@ void GameObject::InitGameObject(std::shared_ptr<VulkanRenderer> renderer,
 
     VulkanPipeline &pipeMan = renderer->pipelineManager;
     mvp = pipeMan.CreateManagedPipeline();
-    mvp->ObjectCallBackFunction = std::make_unique<std::function<void(void)>>(
-        std::bind(&GameObject::SetupPipeline, this));
+    mvp->ObjectCallBackFunction = std::make_unique<std::function<void(void)>>( std::bind(&GameObject::SetupPipeline, this));
 
     SetupPipeline();
 }
@@ -49,8 +48,7 @@ void GameObject::SetupUniformBuffer()
 {
     renderer->device.createBuffer(
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
+        (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
         &modelUniformBuffer, sizeof(ModelBufferObject));
 }
 
@@ -67,6 +65,8 @@ void GameObject::SetupModel()
 {
     gameObjectModel.loadFromMesh(gameObjectMesh, renderer->device,
                                  renderer->device.graphics_queue);
+
+	//renderer->device.CreateUniformBuffer(gameObjectMesh->vertexCount);
 }
 
 void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting)

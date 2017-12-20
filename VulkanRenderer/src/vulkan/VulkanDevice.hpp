@@ -13,6 +13,8 @@
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
+#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+
 #include "VulkanBuffer.hpp"
 #include "VulkanTools.h"
 
@@ -57,6 +59,8 @@ public:
 	VkPhysicalDeviceFeatures physical_device_features;
 	VkPhysicalDeviceMemoryProperties memoryProperties;
 
+	VmaAllocator allocator;
+
 	VkMemoryPropertyFlags uniformBufferMemPropertyFlags = 
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
@@ -73,6 +77,11 @@ public:
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
 	bool checkValidationLayerSupport();
+
+	VkResult CreateVulkanAllocator();
+
+	VkResult CreateUniformBuffer(VkBuffer buffer, VmaAllocation allocation, VkDeviceSize bufferSize);
+	VkResult CreateStagingUniformBuffer(VkBuffer buffer, VmaAllocation allocation, VkDeviceSize bufferSize);
 
 	/**
 	* Create a buffer on the device

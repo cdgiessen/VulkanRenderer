@@ -22,6 +22,7 @@ void VulkanDevice::initVulkanDevice(VkSurfaceKHR &surface)
 	//findQueueFamilies();
 	createLogicalDevice(surface);
 	createCommandPools(surface);
+	CreateVulkanAllocator();
 }
 
 void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
@@ -91,6 +92,37 @@ bool VulkanDevice::checkValidationLayerSupport() {
 	}
 
 	return true;
+}
+
+VkResult VulkanDevice::CreateVulkanAllocator()
+{
+	VmaAllocatorCreateInfo allocatorInfo = {};
+	allocatorInfo.physicalDevice = physical_device;
+	allocatorInfo.device = device;
+
+	return vmaCreateAllocator(&allocatorInfo, &allocator);
+}
+
+VkResult VulkanDevice::CreateUniformBuffer(VkBuffer buffer, VmaAllocation allocation, VkDeviceSize bufferSize) {
+	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+	bufferInfo.size = bufferSize;
+	bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+	
+	VmaAllocationCreateInfo allocInfo = {};
+	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	
+	return vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
+}
+
+VkResult VulkanDevice::CreateStagingUniformBuffer(VkBuffer buffer, VmaAllocation allocation, VkDeviceSize bufferSize) {
+	VkBufferCreateInfo bufferInfo = initializers::bufferCreateInfo();
+	bufferInfo.size = bufferSize;
+	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+	VmaAllocationCreateInfo allocInfo = {};
+	allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+	return vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
 }
 
 /**

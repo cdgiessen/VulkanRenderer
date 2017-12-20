@@ -22,12 +22,6 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 
 	device.initVulkanDevice(vulkanSwapChain.surface);
 	
-	//VmaAllocatorCreateInfo allocatorInfo = {};
-	//allocatorInfo.physicalDevice = device.physical_device;
-	//allocatorInfo.device = device.device;
-	//
-	//vmaCreateAllocator(&allocatorInfo, &allocator);
-
 	vulkanSwapChain.InitSwapChain(device.window);
 
 	pipelineManager.InitPipelineCache();

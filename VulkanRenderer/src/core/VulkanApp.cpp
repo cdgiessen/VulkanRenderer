@@ -129,46 +129,67 @@ void  VulkanApp::PrepareImGui()
 	vulkanRenderer->device.flushCommandBuffer(fontUploader, vulkanRenderer->device.graphics_queue, true);
 }
 
-// Build imGui windows and elements
-void VulkanApp::BuildImgui() {
-	imGuiTimer.StartTimer();
-
-
-	ImGui_ImplGlfwVulkan_NewFrame();
-	
-	bool show_test_window = true;
-	bool show_log_window = true;
-
-	//Application Debuf info
+void VulkanApp::DebugOverlay(bool* show_debug_overlay) {
 	{
-		ImGui::Begin("Application Debug Information", &show_test_window);
-		//ImGui::SetWindowSize(ImVec2((float)200, (float)300));
-		static float f = 0.0f;
-		ImGui::Text("App avg %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		static bool verbose = false;
+		ImGui::SetNextWindowPos(ImVec2(0, 0));
+		if (!ImGui::Begin("Debug Stats", show_debug_overlay, ImVec2(0, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
+		{
+			ImGui::End();
+			return;
+		}
+		ImGui::Text("FPS %.3f", ImGui::GetIO().Framerate);
 		ImGui::Text("DeltaT: %f(s)", timeManager->GetDeltaTime());
-		ImGui::Text("Run Time: %f(s)", timeManager->GetRunningTime());
-		ImGui::Text("Last frame time%f(s)", timeManager->GetPreviousFrameTime());
-		ImGui::PlotLines("Frame Times", &timeManager->GetFrameTimeHistory()[0], 50, 0, "", timeManager->GetFrameTimeMin(), timeManager->GetFrameTimeMax(), ImVec2(0, 80));
-		ImGui::Text("Camera");
-		ImGui::InputFloat3("pos", &scene->GetCamera()->Position.x, 2);
-		ImGui::InputFloat3("rot", &scene->GetCamera()->Front.x, 2);
-		ImGui::Text("Camera Movement Speed");
-		ImGui::SliderFloat("Speed", &scene->GetCamera()->MovementSpeed, 0.1f, 100.0f);
-		//ImGui::ColorEdit3("clear color", (float*)&clear_color);
-		//if (ImGui::Button("Test Window")) show_test_window ^= 1;
-		//if (ImGui::Button("Another Window")) show_another_window ^= 1;
-		//ImGui::Text("Frame index (of swap chain) : %u", (frameIndex));
+		if (ImGui::Button("Toggle Verbose")) {
+			verbose = !verbose;
+		}
+		if (verbose) ImGui::Text("Run Time: %f(s)", timeManager->GetRunningTime());
+		if (verbose) ImGui::Text("Last frame time%f(s)", timeManager->GetPreviousFrameTime());
+		if (verbose) ImGui::Text("Last frame time%f(s)", timeManager->GetPreviousFrameTime());
+		ImGui::Separator();
+		ImGui::Text("Mouse Position: (%.1f,%.1f)", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
 		ImGui::End();
 	}
+}
 
-	scene->UpdateSceneGUI();
-	
-	{ //simple app log - taken from imgui exampels
-		appLog.Draw("Example: Log", &show_log_window);
+void VulkanApp::CameraWindow(bool* show_camera_window) {
+	ImGui::Begin("Camera Window", show_camera_window);
+	ImGui::Text("Camera");
+	ImGui::DragFloat3("Position", &scene->GetCamera()->Position.x, 2);
+	ImGui::DragFloat3("Rotation", &scene->GetCamera()->Front.x, 2);
+	ImGui::Text("Camera Movement Speed");
+	ImGui::SliderFloat("Speed", &scene->GetCamera()->MovementSpeed, 0.1f, 100.0f);
+	//ImGui::ColorEdit3("clear color", (float*)&clear_color);
+	//if (ImGui::Button("Test Window")) show_test_window ^= 1;
+	//if (ImGui::Button("Another Window")) show_another_window ^= 1;
+	//ImGui::Text("Frame index (of swap chain) : %u", (frameIndex));
+	ImGui::End();
+}
+
+// Build imGui windows and elements
+void VulkanApp::BuildImgui() {
+
+	imGuiTimer.StartTimer();
+
+	ImGui_ImplGlfwVulkan_NewFrame();
+	if (showGui) {
+
+		bool show_camera_window = true;
+		bool show_log_window = true;
+		bool show_debug_overlay = true;
+
+		if (show_debug_overlay) DebugOverlay(&show_debug_overlay);
+		if (show_camera_window) CameraWindow(&show_camera_window);
+
+		scene->UpdateSceneGUI();
+
+		{ //simple app log - taken from imgui exampels
+			appLog.Draw("Example: Log", &show_log_window);
+		}
+
+		imgui_nodeGraph_terrain.Draw();
+
 	}
-
-	nodeGraph_terrain.DrawGraph();
-
 	imGuiTimer.EndTimer();
 	//std::cout << imGuiTimer.GetElapsedTimeNanoSeconds() << std::endl;
 
@@ -211,6 +232,7 @@ void VulkanApp::HandleInputs() {
 
 	if (Input::GetKeyDown(GLFW_KEY_N))
 		scene->drawNormals = !scene->drawNormals;
+	
 	if (Input::GetKeyDown(GLFW_KEY_X  )) {
 		wireframe = !wireframe;
 		vulkanRenderer->SetWireframe(wireframe);
@@ -220,6 +242,10 @@ void VulkanApp::HandleInputs() {
 	if (Input::GetKeyDown(GLFW_KEY_F)) {
 		//walkOnGround = !walkOnGround;
 		//std::cout << "flight mode toggled " << std::endl;
+	}
+
+	if (Input::GetKeyDown(GLFW_KEY_H)) {
+		showGui = !showGui;
 	}
 
 	if (Input::GetKeyDown(GLFW_KEY_F10)) {

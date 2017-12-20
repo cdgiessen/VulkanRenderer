@@ -75,6 +75,8 @@ namespace std {
 	};
 }
 
+
+
 class Mesh
 {
 public:
@@ -118,13 +120,9 @@ static std::shared_ptr<Mesh> createSinglePlane() {
 		{ { 0.5f, 0.5f, 0.0f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 1.0f, 1.0f, 1.0f } },
 		{ { -0.5f, 0.5f, 0.0f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
 
-
-			
-			//indices
+		//indices
 	}, std::initializer_list<uint16_t>{
-		0, 1, 2, 2, 3, 0
-
-	
+		0, 1, 2, 2, 3, 0	
 	});
 }
 
@@ -149,103 +147,6 @@ static std::shared_ptr<Mesh> createDoublePlane() {
 	} );
 }
 
-static glm::vec3 lerp(glm::vec3 a, glm::vec3 b, float t) {
-	return a + (b - a)*t;
-}
-
-//static std::shared_ptr<Mesh> generateTerrainMesh(int numCells, float xLoc, float yLoc, float xSize, float ySize) {
-//	std::vector<Vertex> verts;
-//	std::vector<uint16_t> indices;
-//
-//	noise::module::Perlin myModule;
-//	myModule.SetOctaveCount(6);
-//	myModule.SetFrequency(0.05);
-//	myModule.SetPersistence(0.6);
-//
-//	noise::utils::NoiseMap heightMap;
-//	utils::NoiseMapBuilderPlane heightMapBuilder;
-//	heightMapBuilder.SetSourceModule(myModule);
-//	heightMapBuilder.SetDestNoiseMap(heightMap);
-//	heightMapBuilder.SetDestSize(numCells + 1, numCells + 1);
-//	heightMapBuilder.SetBounds(xLoc, xLoc + xSize + (double)xSize/numCells, yLoc, yLoc + ySize + (double)ySize/numCells);
-//	heightMapBuilder.Build();
-//
-//	utils::RendererImage renderer;
-//	utils::Image image;
-//	renderer.ClearGradient();
-//	//old gradient for vertex colors, new one for tex splat map
-//	////renderer.AddGradientPoint(-1.0000, utils::Color(0, 0, 128, 255)); // deeps
-//	////renderer.AddGradientPoint(0.000, utils::Color(0, 0, 255, 255)); // shallow
-//	////renderer.AddGradientPoint(0.1000, utils::Color(0, 128, 255, 255)); // shore
-//	//renderer.AddGradientPoint(-1.0000, utils::Color(76, 36, 16, 255)); // Ocean bottom
-//	//renderer.AddGradientPoint(-0.1000, utils::Color(107, 71, 53, 255)); // shallow ocean
-//	//renderer.AddGradientPoint(0.1000, utils::Color(228, 163, 55, 255)); // shore
-//	//renderer.AddGradientPoint(0.1625, utils::Color(240, 240, 64, 255)); // sand
-//	//renderer.AddGradientPoint(0.2250, utils::Color(32, 160, 0, 255)); // grass
-//	//renderer.AddGradientPoint(0.4750, utils::Color(127, 91, 48, 255)); // dirt
-//	//renderer.AddGradientPoint(0.7500, utils::Color(128, 128, 128, 255)); // rock
-//	//renderer.AddGradientPoint(1.0000, utils::Color(255, 255, 255, 255)); // snow
-//
-//	/*
-//	"DeadSpruceTreeTrunk.png",
-//	"Sand.png",
-//	"SpruceTreeLeaf.png",
-//	"Rock.png",
-//	"Snow.png",
-//	*/
-//
-//	renderer.AddGradientPoint(-1.000, utils::Color(255, 0, 0, 32)); 
-//	renderer.AddGradientPoint(0.0000, utils::Color(255, 0, 0, 255));
-//	renderer.AddGradientPoint(0.1000, utils::Color(0, 255, 0, 255));
-//	renderer.AddGradientPoint(0.4000, utils::Color(0, 255, 0, 255));
-//	renderer.AddGradientPoint(0.5000, utils::Color(255, 0, 0, 255));
-//	renderer.AddGradientPoint(0.6000, utils::Color(0, 0, 255, 255));
-//	renderer.AddGradientPoint(0.8000, utils::Color(0, 0, 255, 255));
-//	renderer.AddGradientPoint(1.0000, utils::Color(0, 0, 0, 255));
-//
-//	renderer.SetSourceNoiseMap(heightMap);
-//	renderer.SetDestImage(image);
-//	renderer.Render();
-//
-//
-//	verts.resize((numCells + 1) * (numCells + 1));
-//	indices.resize((numCells) * (numCells) * 6);
-//
-//	for (int i = 0; i <= numCells; i++)
-//	{
-//		for (int j = 0; j <= numCells; j++)
-//		{
-//			double hL = myModule.GetValue((double)(i + 1) *(xSize) / numCells + (xLoc), 0, (double)j *(ySize) / numCells + yLoc);
-//			double hR = myModule.GetValue((double)(i - 1) *(xSize) / numCells + (xLoc), 0, (double)j *(ySize) / numCells + yLoc);
-//			double hD = myModule.GetValue((double)i *(xSize) / numCells + (xLoc), 0, (double)(j + 1)*(ySize) / numCells + yLoc);
-//			double hU = myModule.GetValue((double)i *(xSize) / numCells + (xLoc), 0, (double)(j - 1)*(ySize) / numCells + yLoc);
-//			glm::vec3 normal(hR - hL, 1, hU - hD);
-//
-//			double value = (myModule.GetValue((double)i *(xSize) / numCells + (xLoc), 0.0, (double)j *(ySize) / numCells + (yLoc)));
-//
-//			verts[(i)*(numCells + 1) + j] = Vertex(glm::vec3((double)i *(xSize) / numCells, value * 5, (double)j * (ySize) / numCells), normal,
-//				glm::vec2(i, j),
-//				glm::vec4((float)image.GetValue(i, j).red / 256, (float)image.GetValue(i, j).green / 256, (float)image.GetValue(i, j).blue / 256, (float)image.GetValue(i,j).alpha/256));
-//			//std::cout << value << std::endl;
-//		}
-//	}
-//
-//	int counter = 0;
-//	for (int i = 0; i < numCells; i++)
-//	{
-//		for (int j = 0; j < numCells; j++)
-//		{
-//			indices[counter++] = i * (numCells + 1) + j;
-//			indices[counter++] = i * (numCells + 1) + j + 1;
-//			indices[counter++] = (i + 1) * (numCells + 1) + j;
-//			indices[counter++] = i * (numCells + 1) + j + 1;
-//			indices[counter++] = (i + 1) * (numCells + 1) + j + 1;
-//			indices[counter++] = (i + 1) * (numCells + 1) + j;
-//		}
-//	}
-//
-//	return new Mesh(verts, indices);
-//}
 
 static std::shared_ptr<Mesh> createFlatPlane(int numCells, glm::vec3 size) {
 	std::vector<Vertex> verts;

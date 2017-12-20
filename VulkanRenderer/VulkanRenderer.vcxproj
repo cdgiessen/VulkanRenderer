@@ -92,6 +92,7 @@
     <None Include="Shaders\water.vert.spv" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\gui\ProcTerrainNodeGraph.cpp" />
     <ClCompile Include="src\resources\MeshManager.cpp" />
     <ClCompile Include="src\resources\ResourceManager.cpp" />
     <ClCompile Include="src\core\Gradient.cpp" />
@@ -137,6 +138,7 @@
     <ClCompile Include="src\vulkan\VulkanRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\gui\ProcTerrainNodeGraph.h" />
     <ClInclude Include="src\resources\MeshManager.h" />
     <ClInclude Include="src\resources\ResourceManager.h" />
     <ClInclude Include="src\core\Gradient.h" />
@@ -147,7 +149,6 @@
     <ClInclude Include="src\third-party\FastNoiseSIMD\FastNoiseSIMD_internal.h" />
     <ClInclude Include="src\scene\GameObject.h" />
     <ClInclude Include="src\gui\ImGuiImpl.h" />
-    <ClInclude Include="src\third-party\glTF2-loader\glTF2.hpp" />
     <ClInclude Include="src\third-party\stb_image\stb_image_resize.h" />
     <ClInclude Include="src\third-party\ImGui\imconfig.h" />
     <ClInclude Include="src\third-party\ImGui\imgui.h" />
@@ -173,6 +174,7 @@
     <ClInclude Include="src\third-party\stb_image\stb_image_write.h" />
     <ClInclude Include="src\third-party\tinyobjloader\tiny_obj_loader.h" />
     <ClInclude Include="src\third-party\VulkanMemoryAllocator\vk_mem_alloc.h" />
+    <ClInclude Include="src\vulkan\RendererStructs.h" />
     <ClInclude Include="src\vulkan\VulkanBuffer.hpp" />
     <ClInclude Include="src\vulkan\VulkanDevice.hpp" />
     <ClInclude Include="src\vulkan\VulkanPipeline.hpp" />

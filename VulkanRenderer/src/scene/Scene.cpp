@@ -54,6 +54,11 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(20,0,10), glm::vec3(10,0,40), glm::vec3(10,0,-40), glm::vec3(100,0,40) });
 
 	rocksInstanced = std::make_shared<InstancedSceneObject>();
+
+	// gltf2 integration
+	//std::shared_ptr< gltf2::Asset> tree_test = std::make_shared<gltf2::Asset>();
+	//*tree_test = gltf2::load("Resources/Assets/tree_test.gltf");
+
 }
 
 void Scene::CreateUniformBuffers() {
@@ -66,7 +71,7 @@ void Scene::CreateUniformBuffers() {
 	{
 		PointLight lbo;
 		lbo.lightPos = pointLights[i].lightPos;
-		lbo.color = pointLights[i].color;
+		lbo.color = pointLights[i].color; 
 		lbo.attenuation = pointLights[i].attenuation;
 
 		lightsInfoBuffer.map(renderer->device.device, sizeof(PointLight), i * sizeof(PointLight));

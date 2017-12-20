@@ -4,14 +4,12 @@
 #include <stdlib.h>  
 #include <crtdbg.h>  
 
-#include "vulkan\vulkan.h"
+#include <vulkan\vulkan.h>
+
+#include "RendererStructs.h"
 #include "VulkanTools.h"
 #include "vulkanDevice.hpp"
 #include "VulkanBuffer.hpp"
-
-//#include <assimp/Importer.hpp>
-//#include <assimp/scene.h>
-//#include <assimp/postprocess.h>
 
 #include "..\resources\Mesh.h"
 

@@ -11,6 +11,8 @@
 #include "..\vulkan\VulkanRenderer.hpp"
 #include "..\vulkan\VulkanTexture.hpp"
 
+#include "..\third-party\VulkanMemoryAllocator\vk_mem_alloc.h"
+
 #include "..\resources\Mesh.h"
 #include "..\resources\Texture.h"
 
@@ -36,6 +38,8 @@ class GameObject
 
     ModelBufferObject modelUniformObject;
     VulkanBuffer modelUniformBuffer;
+
+	VmaAllocation vmaModelBuffer;
 
     void InitGameObject(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting);
     void CleanUp();

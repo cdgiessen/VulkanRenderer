@@ -6,9 +6,8 @@
 
 #include <vulkan\vulkan.h>
 
-//#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
-
 #include "VulkanTools.h"
+#include "RendererStructs.h"
 #include "VulkanDevice.hpp"
 #include "VulkanInitializers.hpp"
 #include "VulkanPipeline.hpp"
@@ -62,7 +61,6 @@ public:
 	void SetWireframe(bool wireframe);
 
 	VulkanDevice device;
-	//VmaAllocator allocator;
 	VulkanSwapChain vulkanSwapChain;
 	VkRenderPass renderPass;
 

@@ -38,6 +38,7 @@ namespace NewNodeGraph {
 		virtual ~INode();
 
 		virtual LinkType GetNodeType() =0;
+
 		virtual float GetValue(const int x, const int y, const int z, float dummy) =0;
 		virtual int GetValue(const int x, const int y, const int z, int dummy) =0;
 		virtual double GetValue(const int x, const int y, const int z, double dummy) =0;
@@ -134,8 +135,57 @@ namespace NewNodeGraph {
 		Link<int> value;
 	};
 
+	class MathNode : public Node<float> {
+	public:
+		MathNode();
+		virtual ~MathNode() override;
+
+		virtual float GetValue(const int x, const int y, const int z, float dummy) override;
+
+		virtual bool SetInputLink(int index, std::shared_ptr<INode> node);
+	protected:
+		Link<float> input_a;
+		Link<float> input_b;
+	};
+
+	class AdditionNode : public MathNode {
+	public:
+		AdditionNode();
+		~AdditionNode() override;
+		float GetValue(const int x, const int y, const int z, float dummy) override;
+	};
+
+	class SubtractNode : public MathNode {
+	public:
+		SubtractNode();
+		~SubtractNode() override;
+		float GetValue(const int x, const int y, const int z, float dummy) override;
+	};
+
+	class MultiplyNode : public MathNode {
+	public:
+		MultiplyNode();
+		~MultiplyNode() override;
+		float GetValue(const int x, const int y, const int z, float dummy) override;
+	};
+
+	class DivideNode : public MathNode {
+	public:
+		DivideNode();
+		~DivideNode() override;
+		float GetValue(const int x, const int y, const int z, float dummy) override;
+	};
+
+	class PowerNode : public MathNode {
+	public:
+		PowerNode();
+		~PowerNode() override;
+		float GetValue(const int x, const int y, const int z, float dummy) override;
+	};
+
 	class SelectorNode : Node<float> {
 	public:
+		SelectorNode();
 		~SelectorNode();
 
 		float GetValue(const int x, const int y, const int z, float dummy) override;

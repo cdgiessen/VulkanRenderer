@@ -37,10 +37,11 @@
 #include "..\scene\Scene.h"
 
 #include "..\gui\ImGuiImpl.h"
-#include "..\gui\NodeGraph.h"
+#include "..\gui\ProcTerrainNodeGraph.h"
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
+
+const int WIDTH = 1600;
+const int HEIGHT = 900;
 
 class VulkanApp
 {
@@ -67,6 +68,7 @@ private:
 	//Input stuff
 	bool mouseControlEnabled;
 	bool wireframe = false;
+	bool showGui = true;
 	void SetMouseControl(bool value);
 
 	//ImGUI functions
@@ -74,9 +76,12 @@ private:
 	void BuildImgui();
 	void CleanUpImgui();
 
+	void DebugOverlay(bool* show_debug_overlay);
+	void CameraWindow(bool* show_camera_overlay);
+
 	//ImGui resources
 	VkDescriptorPool imgui_descriptor_pool;
-	NodeGraph nodeGraph_terrain;
+	ProcTerrainNodeGraph imgui_nodeGraph_terrain;
 	SimpleTimer imGuiTimer;
 	Logger appLog;
 	
