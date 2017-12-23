@@ -1,5 +1,8 @@
 #include "TextureManager.h"
 
+
+#include <cstring>
+
 TextureManager::TextureManager()
 {
 }
@@ -16,14 +19,14 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromFile(std::string filenam
 	std::ifstream filestream(filename.c_str());
 	if (filestream.fail()) {
 		std::cout << "Could not load texture from " << filename << "File not found" << std::endl;
-		return false;
+		return std::shared_ptr<Texture>(nullptr);
 	}
 	int texWidth, texHeight, texChannels;
 	tex->pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, imgType);
 
 	if (!tex->pixels) {
 		throw std::runtime_error("failed to load texture image!");
-		return false;
+		return std::shared_ptr<Texture>(nullptr);
 	}
 
 	tex->texImageSize = texWidth * texHeight * 4;
@@ -70,7 +73,7 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromGreyscalePixelData(int w
 	
 	if (in_pixels == nullptr) {
 		std::cout << "Noise Utils Image Null, Cannot load null image" << std::endl;
-		return nullptr;
+		return std::shared_ptr<Texture>(nullptr);
 	}
 
 	tex->pixels = (stbi_uc*)malloc(tex->texImageSize);
@@ -87,7 +90,7 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromGreyscalePixelData(int w
 		}
 	}
 	else {
-		throw std::exception("Failed to allocate memory for texture! Did we run out?");
+		throw std::runtime_error("Failed to allocate memory for texture! Did we run out?");
 	}
 
 	return tex;
@@ -108,14 +111,14 @@ std::shared_ptr<TextureArray> TextureManager::loadTextureArrayFromFile(std::stri
 	std::vector<std::shared_ptr<Texture>> textures;
 	textures.reserve(filenames.size());
 
-	for each (std::string name in filenames) {
+	for (std::string name : filenames) {
 		auto tex = loadTextureFromFileRGBA(path + name);
 		textures.push_back(tex);
 	}
 
 	if (textures.size() == 0) {
 		std::cerr << "No images to load. Is this intended?" << std::endl;
-		return nullptr;
+		return std::shared_ptr<TextureArray>(nullptr);
 	}
 
 	bool sameSize = true;
@@ -138,7 +141,7 @@ std::shared_ptr<TextureArray> TextureManager::loadTextureArrayFromFile(std::stri
 
 		for (uint32_t i = 0; i < texArray->layerCount; i++)
 		{
-			std::memcpy(offset, textures.at(i)->pixels, textures.at(i)->texImageSize);
+			memcpy(offset, textures.at(i)->pixels, textures.at(i)->texImageSize);
 			offset += textures.at(i)->texImageSize;
 		}
 
@@ -187,22 +190,22 @@ std::shared_ptr<CubeMap> TextureManager::loadCubeMapFromFile(std::string filenam
 
 		stbi_uc* offset = cubeMap->pixels;
 
-		std::memcpy(offset, Front->pixels, Front->texImageSize);
+		memcpy(offset, Front->pixels, Front->texImageSize);
 
 		offset += Front->texImageSize;
-		std::memcpy(offset, Back->pixels, Back->texImageSize);
+		memcpy(offset, Back->pixels, Back->texImageSize);
 
 		offset += Back->texImageSize;
-		std::memcpy(offset, Top->pixels, Top->texImageSize);
+		memcpy(offset, Top->pixels, Top->texImageSize);
 
 		offset += Top->texImageSize;
-		std::memcpy(offset, Bottom->pixels, Bottom->texImageSize);
+		memcpy(offset, Bottom->pixels, Bottom->texImageSize);
 
 		offset += Bottom->texImageSize;
-		std::memcpy(offset, Left->pixels, Left->texImageSize);
+		memcpy(offset, Left->pixels, Left->texImageSize);
 
 		offset += Left->texImageSize;
-		std::memcpy(offset, Right->pixels, Right->texImageSize);
+		memcpy(offset, Right->pixels, Right->texImageSize);
 	}
 	else {
 		std::cerr << "Skybox dimentions incorrect! " << std::endl;
