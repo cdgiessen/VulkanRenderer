@@ -4,6 +4,8 @@
 #include <glm/common.hpp>
 #include <GLFW/glfw3.h>
 
+#include <array>
+
 
 namespace Input {
 	bool GetKey(int GLFW_KEY_CODE);
@@ -48,13 +50,13 @@ public:
 	void UpdateInputs();
 
 private:
-	bool keys[1024] = {false};
-	bool keysDown[1024] = { false };
-	bool keysUp[1024] = { false };
+	std::array<bool, 1024> keys = { false };
+	std::array<bool, 1024> keysDown = { false };
+	std::array<bool, 1024> keysUp = { false };
 
-	bool mouseButtons[15] = { false };
-	bool mouseButtonsDown[15] = { false };
-	bool mouseButtonsUp[15] = { false };
+	std::array<bool, 15> mouseButtons = { false };
+	std::array<bool, 15> mouseButtonsDown = { false };
+	std::array<bool, 15> mouseButtonsUp = { false };
 
 	bool firstMouse = true; //on start
 	glm::vec2 mousePosition = glm::vec2(0,0);
