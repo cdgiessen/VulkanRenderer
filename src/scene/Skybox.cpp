@@ -1,5 +1,3 @@
-#pragma once
-
 #include "Skybox.h"
 
 Skybox::Skybox() {
