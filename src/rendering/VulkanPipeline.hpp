@@ -62,7 +62,7 @@ public:
 
 	std::shared_ptr<ManagedVulkanPipeline> CreateManagedPipeline();
 
-	void VulkanPipeline::BuildPipelineLayout(std::shared_ptr<ManagedVulkanPipeline> pco); //returns the pipeline layout of the pco (must have done SetDescriptorSetLayout
+	void BuildPipelineLayout(std::shared_ptr<ManagedVulkanPipeline> pco); //returns the pipeline layout of the pco (must have done SetDescriptorSetLayout
 	void BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> pco, VkRenderPass renderPass, VkPipelineCreateFlags flags);
 
 	void SetVertexShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule vert);

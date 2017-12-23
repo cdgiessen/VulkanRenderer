@@ -51,7 +51,7 @@ public:
 
 	void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
 
-	void InstancedSceneObject::AddInstances(std::vector<glm::vec3> positions);
+	void AddInstances(std::vector<glm::vec3> positions);
 	//void InstancedSceneObject::RemoveInstance(std::vector<glm::vec3> positions);
 
 	void WriteToCommandBuffer(VkCommandBuffer commandBuffer, bool wireframe);
