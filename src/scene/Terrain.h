@@ -4,21 +4,21 @@
 #include <vector>
 #include <thread>
 
-#include <glm\common.hpp>
-#include <glm\gtc\matrix_transform.hpp>
-#include <vulkan\vulkan.h>
+#include <glm/common.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <vulkan/vulkan.h>
 
 
-#include "..\rendering\VulkanRenderer.hpp"
-#include "..\rendering\VulkanModel.hpp"
-#include "..\rendering\VulkanTexture.hpp"
+#include "../rendering/VulkanRenderer.hpp"
+#include "../rendering/VulkanModel.hpp"
+#include "../rendering/VulkanTexture.hpp"
 
-#include "..\resources\Texture.h"
-#include "..\core\Gradient.h"
-#include "..\core\MemoryPool.h"
+#include "../resources/Texture.h"
+#include "../core/Gradient.h"
+#include "../core/MemoryPool.h"
 
 #include "TerrainGenerator.h"
-#include "..\gui\TerGenNodeGraph.h"
+#include "../gui/TerGenNodeGraph.h"
 
 const int SplatMapSize = 1024;
 const int NumCells = 32;

@@ -4,16 +4,16 @@
 #include <iostream>
 #include <set>
 
-#include <vulkan\vulkan.h>
-#include <vulkan\vulkan.hpp>
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
-#include <GLFW\glfw3.h>
+#include <GLFW/glfw3.h>
 
 
   
   
 
-#include "..\..\third-party\VulkanMemoryAllocator\vk_mem_alloc.h"
+#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 #include "VulkanBuffer.hpp"
 #include "VulkanTools.h"

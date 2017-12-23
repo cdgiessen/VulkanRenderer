@@ -1,10 +1,10 @@
 #include "VulkanRenderer.hpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "..\..\third-party\stb_image\stb_image_write.h"
+#include "../../third-party/stb_image/stb_image_write.h"
 
-#include "..\scene\Scene.h"
-#include "..\gui\ImGuiImpl.h"
+#include "../scene/Scene.h"
+#include "../gui/ImGuiImpl.h"
 
 VulkanRenderer::VulkanRenderer(std::shared_ptr<Scene> scene) : vulkanSwapChain(device), pipelineManager(device), shaderManager(device), scene(scene)
 {

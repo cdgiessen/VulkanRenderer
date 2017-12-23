@@ -5,12 +5,12 @@
   
   
 
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan.h>
 #include "VulkanDevice.hpp"
 
-#include "..\resources\Texture.h"
+#include "../resources/Texture.h"
 
-#include "..\..\third-party\stb_image\stb_image.h"
+#include "../../third-party/stb_image/stb_image.h"
 
 class VulkanTexture {
 public:

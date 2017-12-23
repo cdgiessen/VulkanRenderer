@@ -1,6 +1,6 @@
 #pragma once
 
-#include "..\..\third-party\ImGui\imgui.h"
+#include "../../third-party/ImGui/imgui.h"
 #include <stdio.h>
 
 #include <math.h>

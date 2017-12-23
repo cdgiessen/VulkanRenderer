@@ -4,11 +4,11 @@
   
   
 
-#include "..\core\TimeManager.h"
-#include "..\core\MemoryPool.h"
+#include "../core/TimeManager.h"
+#include "../core/MemoryPool.h"
 
-#include "..\rendering\VulkanRenderer.hpp"
-#include "..\resources\ResourceManager.h"
+#include "../rendering/VulkanRenderer.hpp"
+#include "../resources/ResourceManager.h"
 
 #include "Camera.h"
 #include "Terrain.h"

@@ -3,7 +3,7 @@
 #include <vector>
 #include <tuple>
 
-#include "..\..\third-party\ImGui\imgui.h"
+#include "../../third-party/ImGui/imgui.h"
 
 //#include <noise\basictypes.h>
 //#include <noiseutils.h>

@@ -2,10 +2,10 @@
 #include "VulkanApp.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "..\..\third-party\stb_image\stb_image.h"
+#include "../../third-party/stb_image/stb_image.h"
 
 #define VMA_IMPLEMENTATION
-#include "..\..\third-party\VulkanMemoryAllocator\vk_mem_alloc.h"
+#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 void inline WaitForUserInput() {
 	std::cerr << "Press anything to continue..." << std::endl;

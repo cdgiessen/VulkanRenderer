@@ -1,6 +1,6 @@
 #include "VulkanPipeline.hpp"
 
-#include "..\resources\Mesh.h"
+#include "../resources/Mesh.h"
 
 VulkanPipeline::VulkanPipeline(const VulkanDevice &device) :device(device) {
 }

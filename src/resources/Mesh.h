@@ -6,11 +6,11 @@
 #include <string>
 
 
-#include <glm\common.hpp>
-#include <glm\gtx\hash.hpp>
-#include <vulkan\vulkan.hpp>
+#include <glm/common.hpp>
+#include <glm/gtx/hash.hpp>
+#include <vulkan/vulkan.hpp>
 
-#include "..\rendering\VulkanInitializers.hpp"
+#include "../rendering/VulkanInitializers.hpp"
 
 struct Vertex {
 	glm::vec3 pos;

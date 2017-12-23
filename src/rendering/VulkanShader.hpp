@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "VulkanDevice.hpp"
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan.h>
 #include "VulkanInitializers.hpp"
 #include "VulkanTools.h"
 

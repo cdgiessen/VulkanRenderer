@@ -11,9 +11,9 @@
 #include <array>
 #include <set>
 
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan.h>
 
-#include <glm\common.hpp>
+#include <glm/common.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <GLFW/glfw3.h>

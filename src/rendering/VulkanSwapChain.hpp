@@ -8,10 +8,10 @@
 
 #include <memory>
 
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan.h>
 
 
-#include <GLFW\glfw3.h>
+#include <GLFW/glfw3.h>
 
 #include "VulkanInitializers.hpp"
 #include "VulkanTools.h"

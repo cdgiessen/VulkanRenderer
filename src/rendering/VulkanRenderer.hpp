@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan.h>
 
 #include "VulkanTools.h"
 #include "RendererStructs.h"

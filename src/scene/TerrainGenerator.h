@@ -1,14 +1,14 @@
-//#include <noise\basictypes.h>
+//#include <noise/basictypes.h>
 //#include <noiseutils.h>
 
-#include <glm\common.hpp>
+#include <glm/common.hpp>
 
 
   
   
 
-#include "..\..\third-party\FastNoiseSIMD\FastNoiseSIMD.h"
-#include "..\gui\TerGenNodeGraph.h"
+#include "../../third-party/FastNoiseSIMD/FastNoiseSIMD.h"
+#include "../gui/TerGenNodeGraph.h"
 
 struct BiomeColor {
 	float r;

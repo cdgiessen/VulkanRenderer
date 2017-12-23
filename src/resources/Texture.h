@@ -7,11 +7,11 @@
 #include <vector>
 #include <memory>
 
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan.h>
 
-#include <glm\common.hpp>
+#include <glm/common.hpp>
 
-#include "..\..\third-party\stb_image\stb_image.h"
+#include "../../third-party/stb_image/stb_image.h"
 
 struct RGBA_pixel {
 	stbi_uc red = 0;

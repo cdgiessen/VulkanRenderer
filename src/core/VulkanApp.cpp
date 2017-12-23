@@ -1,6 +1,6 @@
 #include "VulkanApp.h"
 
-#include "..\rendering\VulkanInitializers.hpp"
+#include "../rendering/VulkanInitializers.hpp"
 
 VulkanApp::VulkanApp()
 {

@@ -23,21 +23,21 @@
   
   
 
-#include "..\..\third-party\ImGui\imgui.h"
+#include "../../third-party/ImGui/imgui.h"
 
 #include "Window.hpp"
 #include "Input.h"
 #include "Logger.h"
 #include "TimeManager.h"
 
-#include "..\resources\ResourceManager.h"
+#include "../resources/ResourceManager.h"
 
-#include "..\rendering\VulkanRenderer.hpp"
+#include "../rendering/VulkanRenderer.hpp"
 
-#include "..\scene\Scene.h"
+#include "../scene/Scene.h"
 
-#include "..\gui\ImGuiImpl.h"
-#include "..\gui\ProcTerrainNodeGraph.h"
+#include "../gui/ImGuiImpl.h"
+#include "../gui/ProcTerrainNodeGraph.h"
 
 
 const int WIDTH = 1600;

@@ -1,8 +1,8 @@
 #pragma once
 
 //Input wrapper around GLFW, so the input isn't being driven by the vulkanapp class
-#include <glm\common.hpp>
-#include <GLFW\glfw3.h>
+#include <glm/common.hpp>
+#include <GLFW/glfw3.h>
 
 
 namespace Input {

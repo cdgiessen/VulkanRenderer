@@ -2,16 +2,16 @@
 
 #include <vector>
 
-#include <vulkan\vulkan.h>
-#include <glm\common.hpp>
-#include <glm\gtc\matrix_transform.hpp>
+#include <vulkan/vulkan.h>
+#include <glm/common.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
-#include "..\rendering\VulkanRenderer.hpp"
-#include "..\rendering\VulkanModel.hpp"
-#include "..\rendering\VulkanTexture.hpp"
+#include "../rendering/VulkanRenderer.hpp"
+#include "../rendering/VulkanModel.hpp"
+#include "../rendering/VulkanTexture.hpp"
 
-#include "..\resources\Mesh.h"
-#include "..\resources\Texture.h"
+#include "../resources/Mesh.h"
+#include "../resources/Texture.h"
 
 
 class InstancedSceneObject

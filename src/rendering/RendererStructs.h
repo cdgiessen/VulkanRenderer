@@ -3,10 +3,10 @@
 #include <vector>
 #include <memory>
 
-#include <glm\common.hpp>
-#include <glm\gtc\matrix_transform.hpp>
+#include <glm/common.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
-#include "..\resources\Texture.h"
+#include "../resources/Texture.h"
 
 /* Common uniform buffers */
 

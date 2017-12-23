@@ -1,7 +1,7 @@
 #include "TerrainManager.h"
 
-#include "..\third-party\ImGui\imgui.h"
-#include "..\gui\ImGuiImpl.h"
+#include "../third-party/ImGui/imgui.h"
+#include "../gui/ImGuiImpl.h"
 
 TerrainManager::TerrainManager()
 {

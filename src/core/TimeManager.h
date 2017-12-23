@@ -6,7 +6,7 @@
   
   
 
-#include "..\rendering\VulkanTools.h"
+#include "../rendering/VulkanTools.h"
 
 typedef std::array<float, 50> TimingsHistory;
 

@@ -2,7 +2,7 @@
 
 #include "../core/Input.h"
 
-#include <GLFW\glfw3.h>
+#include <GLFW/glfw3.h>
 
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1

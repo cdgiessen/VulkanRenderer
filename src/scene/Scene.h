@@ -4,11 +4,11 @@
   
   
 
-#include "..\rendering\VulkanRenderer.hpp"
+#include "../rendering/VulkanRenderer.hpp"
 
-#include "..\resources\ResourceManager.h"
-#include "..\resources\Mesh.h"
-#include "..\core\TimeManager.h"
+#include "../resources/ResourceManager.h"
+#include "../resources/Mesh.h"
+#include "../core/TimeManager.h"
 
 #include "Camera.h"
 #include "Terrain.h"

@@ -4,13 +4,13 @@
   
   
 
-#include "..\rendering\VulkanRenderer.hpp"
-#include "..\rendering\VulkanModel.hpp"
-#include "..\rendering\VulkanTexture.hpp"
+#include "../rendering/VulkanRenderer.hpp"
+#include "../rendering/VulkanModel.hpp"
+#include "../rendering/VulkanTexture.hpp"
 
-#include "..\resources\Mesh.h"
-#include "..\resources\Texture.h"
-#include <glm\common.hpp>
+#include "../resources/Mesh.h"
+#include "../resources/Texture.h"
+#include <glm/common.hpp>
 
 class Water {
 public:

@@ -3,20 +3,20 @@
 #include <string>
 #include <iostream>
 
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan.h>
 
-#include <glm\common.hpp>
-#include <glm\gtc\matrix_transform.hpp>
+#include <glm/common.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 
   
   
 
-#include "..\resources\Texture.h"
+#include "../resources/Texture.h"
 
-#include "..\rendering\VulkanTexture.hpp"
-#include "..\rendering\VulkanModel.hpp"
-#include "..\rendering\VulkanRenderer.hpp"
+#include "../rendering/VulkanTexture.hpp"
+#include "../rendering/VulkanModel.hpp"
+#include "../rendering/VulkanRenderer.hpp"
 
 
 struct SkyboxUniformBuffer {

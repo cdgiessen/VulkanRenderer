@@ -2,8 +2,8 @@
 #include <mutex>
 #include "Input.h"
 
-#include "..\third-party\ImGui\imgui.h"
-#include "..\gui\ImGuiImpl.h"
+#include "../third-party/ImGui/imgui.h"
+#include "../gui/ImGuiImpl.h"
 
 std::set<std::string> getRequiredInstanceExtensions() {
 	std::set<std::string> result;

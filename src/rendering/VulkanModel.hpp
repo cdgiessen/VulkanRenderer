@@ -4,14 +4,14 @@
   
   
 
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan.h>
 
 #include "RendererStructs.h"
 #include "VulkanTools.h"
 #include "vulkanDevice.hpp"
 #include "VulkanBuffer.hpp"
 
-#include "..\resources\Mesh.h"
+#include "../resources/Mesh.h"
 
 
 class VulkanModel {

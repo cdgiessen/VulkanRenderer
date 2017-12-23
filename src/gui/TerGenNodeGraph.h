@@ -7,15 +7,15 @@
 #include <string>
 #include <iostream>
 
-#include <glm\common.hpp>
+#include <glm/common.hpp>
 
 
   
   
 
-#include "..\..\third-party\ImGui\imgui.h"
+#include "../../third-party/ImGui/imgui.h"
 
-#include "..\..\third-party\FastNoiseSIMD\FastNoiseSIMD.h"
+#include "../../third-party/FastNoiseSIMD/FastNoiseSIMD.h"
 
 namespace NewNodeGraph {
 
