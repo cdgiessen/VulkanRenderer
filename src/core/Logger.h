@@ -5,6 +5,7 @@
 //  static ExampleAppLog my_log;
 //  my_log.AddLog("Hello %d world\n", 123);
 //  my_log.Draw("title");
+
 class Logger
 {
 private:
@@ -15,7 +16,7 @@ private:
 public:
 	void Clear();
 
-	void AddLog(const char* fmt, ...) IM_PRINTFARGS(2);
+	//void AddLog(const char* fmt, ...);
 
 	void Draw(const char* title, bool* p_open = NULL);
 };

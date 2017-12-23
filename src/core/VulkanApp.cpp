@@ -217,8 +217,9 @@ void VulkanApp::HandleInputs() {
 	if (Input::GetKey(GLFW_KEY_LEFT_SHIFT))
 		scene->GetCamera()->ProcessKeyboard(Camera_Movement::DOWN, (float)timeManager->GetDeltaTime());
 
-	if (Input::GetKeyDown(GLFW_KEY_0))
-		appLog.AddLog("ZERO WAS HIT REPEAT ZERO WAS HIT\n");
+	if (Input::GetKeyDown(GLFW_KEY_0)) {
+		//appLog.AddLog("ZERO WAS HIT REPEAT ZERO WAS HIT\n");
+	}
 
 	if (Input::GetKeyDown(GLFW_KEY_ESCAPE))
 		window->SetWindowToClose();
