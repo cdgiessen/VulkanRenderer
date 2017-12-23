@@ -1,8 +1,5 @@
 #pragma once
-
-
-  
-  
+ 
 
 #include "../rendering/VulkanRenderer.hpp"
 #include "../rendering/VulkanModel.hpp"

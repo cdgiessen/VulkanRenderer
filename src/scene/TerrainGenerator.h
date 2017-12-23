@@ -2,9 +2,6 @@
 //#include <noiseutils.h>
 
 #include <glm/common.hpp>
-
-
-  
   
 
 #include "../../third-party/FastNoiseSIMD/FastNoiseSIMD.h"

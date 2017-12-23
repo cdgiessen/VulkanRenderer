@@ -15,7 +15,7 @@
 
 #include "VulkanInitializers.hpp"
 #include "VulkanTools.h"
-#include "vulkanDevice.hpp"
+#include "VulkanDevice.hpp"
 
 class VulkanSwapChain {
 public:

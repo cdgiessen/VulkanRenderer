@@ -7,7 +7,7 @@
 #include <vector>
 #include <functional>
 
-#include "vulkanDevice.hpp"
+#include "VulkanDevice.hpp"
 #include <vulkan/vulkan.h>
 #include "VulkanInitializers.hpp"
 #include "VulkanTools.h"

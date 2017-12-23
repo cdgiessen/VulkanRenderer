@@ -1,17 +1,11 @@
 #pragma once
 
-
-
 #include <memory>
 #include <vector>
 #include <string>
 #include <iostream>
 
 #include <glm/common.hpp>
-
-
-  
-  
 
 #include "../../third-party/ImGui/imgui.h"
 
