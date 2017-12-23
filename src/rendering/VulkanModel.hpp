@@ -8,7 +8,7 @@
 
 #include "RendererStructs.h"
 #include "VulkanTools.h"
-#include "vulkanDevice.hpp"
+#include "VulkanDevice.hpp"
 #include "VulkanBuffer.hpp"
 
 #include "../resources/Mesh.h"
