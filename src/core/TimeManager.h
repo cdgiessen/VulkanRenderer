@@ -3,8 +3,8 @@
 #include <array>
 
 
-#include <stdlib.h>  
-#include <crtdbg.h>  
+  
+  
 
 #include "..\rendering\VulkanTools.h"
 

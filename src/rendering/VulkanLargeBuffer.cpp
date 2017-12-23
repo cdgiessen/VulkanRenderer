@@ -43,7 +43,7 @@ VulkanLargeBuffer::~VulkanLargeBuffer()
 }
 
 VkDeviceMemory VulkanLargeBuffer::StageResource() {
-	return nullptr;
+	return 0;
 }
 
 bool VulkanLargeBuffer::TransferBuffers() {

@@ -5,8 +5,8 @@
 #include <vulkan\vulkan.h>
 
 
-#include <stdlib.h>  
-#include <crtdbg.h>  
+  
+  
 
 namespace initializers
 {

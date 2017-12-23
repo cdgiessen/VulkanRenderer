@@ -2,8 +2,8 @@
 #include <iostream>
 
 
-#include <stdlib.h>  
-#include <crtdbg.h>  
+  
+  
 
 #include <vulkan\vulkan.h>
 #include "VulkanDevice.hpp"

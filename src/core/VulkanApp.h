@@ -20,8 +20,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <stdlib.h>  
-#include <crtdbg.h>  
+  
+  
 
 #include "..\..\third-party\ImGui\imgui.h"
 

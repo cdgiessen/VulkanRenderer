@@ -3,8 +3,8 @@
 #include <vulkan\vulkan.h>
 
 
-#include <stdlib.h>  
-#include <crtdbg.h>  
+  
+  
 
 #include "VulkanDevice.hpp"
 #include "VulkanBuffer.hpp"

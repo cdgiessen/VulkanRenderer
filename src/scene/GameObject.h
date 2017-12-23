@@ -4,8 +4,8 @@
 #include <glm\common.hpp>
 #include <vulkan\vulkan.h>
 
-#include <crtdbg.h>
-#include <stdlib.h>
+
+
 
 #include "..\rendering\VulkanModel.hpp"
 #include "..\rendering\VulkanRenderer.hpp"

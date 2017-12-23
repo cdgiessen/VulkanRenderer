@@ -10,8 +10,8 @@
 #include <glm\common.hpp>
 
 
-#include <stdlib.h>  
-#include <crtdbg.h>  
+  
+  
 
 #include "..\..\third-party\ImGui\imgui.h"
 

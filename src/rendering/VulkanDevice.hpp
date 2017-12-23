@@ -10,8 +10,8 @@
 #include <GLFW\glfw3.h>
 
 
-#include <stdlib.h>  
-#include <crtdbg.h>  
+  
+  
 
 #include "..\..\third-party\VulkanMemoryAllocator\vk_mem_alloc.h"
 

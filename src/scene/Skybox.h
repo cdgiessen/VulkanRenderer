@@ -9,8 +9,8 @@
 #include <glm\gtc\matrix_transform.hpp>
 
 
-#include <stdlib.h>  
-#include <crtdbg.h>  
+  
+  
 
 #include "..\resources\Texture.h"
 

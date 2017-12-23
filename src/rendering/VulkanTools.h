@@ -19,8 +19,8 @@
 #include <GLFW/glfw3.h>
 
 
-#include <stdlib.h>  
-#include <crtdbg.h>  
+  
+  
 
 //#define VMA_IMPLEMENTATION
 //#include <vk_mem_alloc.h>

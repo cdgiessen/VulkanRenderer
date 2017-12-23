@@ -7,8 +7,8 @@
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 
-#include <stdlib.h>  
-#include <crtdbg.h>  
+  
+  
 
 std::set<std::string> getRequiredInstanceExtensions();
 VkSurfaceKHR createWindowSurface(const vk::Instance& instance, GLFWwindow* window, const vk::AllocationCallbacks* pAllocator = nullptr);

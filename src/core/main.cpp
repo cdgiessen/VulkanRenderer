@@ -1,15 +1,4 @@
 
-#include <stdlib.h>  
-#include <crtdbg.h>  
-
-#ifdef _DEBUG
-#define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
-// Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
-// allocations to be of _CLIENT_BLOCK type
-#else
-#define DBG_NEW new
-#endif
-
 #include "VulkanApp.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -17,6 +6,11 @@
 
 #define VMA_IMPLEMENTATION
 #include "..\..\third-party\VulkanMemoryAllocator\vk_mem_alloc.h"
+
+void inline WaitForUserInput() {
+	std::cerr << "Press anything to continue..." << std::endl;
+	std::cin.get();
+}
 
 int main() {
 	{
@@ -26,12 +20,12 @@ int main() {
 		}
 		catch (const std::runtime_error& e) {
 			std::cerr << e.what() << std::endl;
-			system("PAUSE");
+			WaitForUserInput();
 			return EXIT_FAILURE;
 		}
 	}
-	_CrtDumpMemoryLeaks();
-	system("PAUSE");
+	
+	WaitForUserInput();
 	return EXIT_SUCCESS;
 
 }

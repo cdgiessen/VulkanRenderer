@@ -113,7 +113,9 @@ include_directories(third-party/glm)
 #        "${PROJECT_BINARY_DIR}/third-party/glfw-3.2.1/src/glfw3.dll"      # <--this is in-file
 #        "${PROJECT_BINARY_DIR}")										# <--this is out-file path
 
-add_custom_command(TARGET VulkanApp POST_BUILD        # Adds a post-build event to VulkanApp
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
-        "${PROJECT_SOURCE_DIR}/assets"		# <--this is in-file
-        "${PROJECT_BINARY_DIR}/assets")		# <--this is out-file path
+# copy files over
+
+#add_custom_command(TARGET VulkanApp POST_BUILD        # Adds a post-build event to VulkanApp
+#    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
+#        "${PROJECT_SOURCE_DIR}/assets"		# <--this is in-file
+#        "${PROJECT_BINARY_DIR}/assets")		# <--this is out-file path
