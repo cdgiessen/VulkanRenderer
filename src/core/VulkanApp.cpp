@@ -155,10 +155,10 @@ void VulkanApp::DebugOverlay(bool* show_debug_overlay) {
 void VulkanApp::CameraWindow(bool* show_camera_window) {
 	ImGui::Begin("Camera Window", show_camera_window);
 	ImGui::Text("Camera");
-	ImGui::DragFloat3("Position", &scene->GetCamera()->Position.x, 2);
-	ImGui::DragFloat3("Rotation", &scene->GetCamera()->Front.x, 2);
+	ImGui::DragFloat3("Pos", &scene->GetCamera()->Position.x, 2);
+	ImGui::DragFloat3("Rot", &scene->GetCamera()->Front.x, 2);
 	ImGui::Text("Camera Movement Speed");
-	ImGui::SliderFloat("Speed", &scene->GetCamera()->MovementSpeed, 0.1f, 100.0f);
+	ImGui::SliderFloat("", &scene->GetCamera()->MovementSpeed, 0.1f, 100.0f);
 	//ImGui::ColorEdit3("clear color", (float*)&clear_color);
 	//if (ImGui::Button("Test Window")) show_test_window ^= 1;
 	//if (ImGui::Button("Another Window")) show_another_window ^= 1;

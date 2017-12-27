@@ -373,7 +373,7 @@ namespace NewNodeGraph {
 		addNode->SetInputLink(0, nSource1);
 		addNode->SetInputLink(1, nSource2);
 
-		outputNode.SetInputLink(0, addNode);
+		outputNode.SetInputLink(0, nSource2);
 	}
 
 	//Creates the image to sample from

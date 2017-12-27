@@ -22,6 +22,9 @@ struct GlobalVariableUniformBuffer {
 struct ModelBufferObject {
 	glm::mat4 model;
 	glm::mat4 normal;
+
+	glm::mat4 paddingOne;
+	glm::mat4 paddingTwo;
 };
 
 //Lighting struct
