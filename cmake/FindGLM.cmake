@@ -23,10 +23,11 @@ if (WIN32)
 		GLM_INCLUDE_DIR
 		NAMES glm/glm.hpp
 		PATHS
+		${CMAKE_SOURCE_DIR}/third-party/glm
 		$ENV{PROGRAMFILES}/include
 		${GLM_ROOT_DIR}/include
 		DOC "The directory where glm/glm.hpp resides"
-		../third-party/glm)
+		)
 else()
 	# Find include files
 	find_path(
@@ -37,7 +38,7 @@ else()
 		/usr/local/include
 		/sw/include
 		/opt/local/include
-		../third-party/glm
+		${CMAKE_SOURCE_DIR}/third-party/glm
 		${GLM_ROOT_DIR}/include
 		DOC "The directory where glm/glm.hpp resides")
 endif()

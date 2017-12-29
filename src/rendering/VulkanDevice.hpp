@@ -9,17 +9,13 @@
 
 #include <GLFW/glfw3.h>
 
-
-  
-  
-
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 #include "VulkanBuffer.hpp"
 #include "VulkanTools.h"
 
 #ifdef NDEBUG
-const bool enableValidationLayers = true;
+const bool enableValidationLayers = false;
 #else
 const bool enableValidationLayers = true;
 #endif
@@ -166,7 +162,7 @@ private:
 	void DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator);
 	
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData) {
-		std::cerr << "validation layer: " << msg << std::endl;
+		std::cout << "validation layer: " << msg << std::endl;
 
 		return VK_FALSE;
 	}

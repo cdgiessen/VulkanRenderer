@@ -83,7 +83,7 @@ private:
 	VkDescriptorPool imgui_descriptor_pool;
 	ProcTerrainNodeGraph imgui_nodeGraph_terrain;
 	SimpleTimer imGuiTimer;
-	Logger appLog;
+	DebugLog::Logger appLog;
 	
 };
 

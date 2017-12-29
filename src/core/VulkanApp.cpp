@@ -4,6 +4,8 @@
 
 VulkanApp::VulkanApp()
 {
+	DebugLog::SetupCoutCapture();
+
 	timeManager = std::make_shared<TimeManager>();
 
 	window = std::make_shared<Window>();
@@ -21,10 +23,11 @@ VulkanApp::VulkanApp()
 
 	PrepareImGui();
 
-
 	mainLoop();
 
 	clean();
+
+	DebugLog::ReleaseCoutCapture();
 }
 
 
@@ -234,9 +237,10 @@ void VulkanApp::HandleInputs() {
 	if (Input::GetKeyDown(GLFW_KEY_N))
 		scene->drawNormals = !scene->drawNormals;
 	
-	if (Input::GetKeyDown(GLFW_KEY_X  )) {
+	if (Input::GetKeyDown(GLFW_KEY_X)) {
 		wireframe = !wireframe;
 		vulkanRenderer->SetWireframe(wireframe);
+		//DebugLog::log.GetLog() << "wireframe toggled" << std::endl;
 		std::cout << "wireframe toggled" << std::endl;
 	}
 

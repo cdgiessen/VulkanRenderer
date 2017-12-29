@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
 
 project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
 
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(Vulkan REQUIRED)
@@ -79,7 +80,7 @@ third-party/FastNoiseSIMD/FastNoiseSIMD_sse41.cpp
 
 set(GLFW_DIR "third-party/glfw-3.2.1")
 
-set(GLFW_BUILD_SHARED_LIBS ON CACHE INTERNAL "Build shared libraries")
+set(GLFW_BUILD_SHARED_LIBS OFF CACHE INTERNAL "Build shared libraries")
 set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "Build the GLFW example programs")
 set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "Build the GLFW test programs")
 set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation")
@@ -107,17 +108,24 @@ if(VULKAN_FOUND)
 endif (VULKAN_FOUND)
 
 #glm
-target_include_directories(VulkanApp PUBLIC third-party)
-include_directories(third-party/glm)
+if(GLM_FOUND)
+	target_include_directories(VulkanApp PUBLIC third-party)
+	include_directories(third-party/glm)
+endif(GLM_FOUND)
 
-#add_custom_command(TARGET VulkanApp POST_BUILD        # Adds a post-build event to VulkanApp
-#    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
-#        "${PROJECT_BINARY_DIR}/third-party/glfw-3.2.1/src/glfw3.dll"      # <--this is in-file
-#        "${PROJECT_BINARY_DIR}")										# <--this is out-file path
+if(MSVC)
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")	
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+endif(MSVC)
+
+add_custom_command(TARGET VulkanApp POST_BUILD        # Adds a post-build event to VulkanApp
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
+        "${PROJECT_BINARY_DIR}/third-party/glfw-3.2.1/src/glfw3.dll"      # <--this is in-file
+        "${PROJECT_BINARY_DIR}")										# <--this is out-file path
 
 # copy files over
 
-#add_custom_command(TARGET VulkanApp POST_BUILD        # Adds a post-build event to VulkanApp
-#    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
-#        "${PROJECT_SOURCE_DIR}/assets"		# <--this is in-file
-#        "${PROJECT_BINARY_DIR}/assets")		# <--this is out-file path
+add_custom_command(TARGET VulkanApp POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_directory
+		${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets)
