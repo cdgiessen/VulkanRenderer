@@ -3,7 +3,7 @@
 #include "VulkanDevice.hpp"
 #include "VulkanInitializers.hpp"
 
-VulkanDevice::VulkanDevice()
+VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(validationLayers)
 {
 
 }

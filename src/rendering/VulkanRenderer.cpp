@@ -6,7 +6,7 @@
 #include "../scene/Scene.h"
 #include "../gui/ImGuiImpl.h"
 
-VulkanRenderer::VulkanRenderer(std::shared_ptr<Scene> scene) : vulkanSwapChain(device), pipelineManager(device), shaderManager(device), scene(scene)
+VulkanRenderer::VulkanRenderer(bool validationLayer, std::shared_ptr<Scene> scene) : device(validationLayer), vulkanSwapChain(device), pipelineManager(device), shaderManager(device), scene(scene)
 {
 }
 

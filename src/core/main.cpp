@@ -1,4 +1,7 @@
 
+#include <string>
+
+#include "CoreTools.h"
 #include "VulkanApp.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -7,8 +10,9 @@
 #define VMA_IMPLEMENTATION
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
-int main() {
+int main(int argc, char* argv[]) {
 
+	SetExecutableFilePath(argv[0]);
 
 	std::shared_ptr<VulkanApp> vkApp;
 	try {

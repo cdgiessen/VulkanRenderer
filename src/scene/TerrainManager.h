@@ -10,6 +10,8 @@
 #include "../rendering/VulkanRenderer.hpp"
 #include "../resources/ResourceManager.h"
 
+#include "../gui/TerGenNodeGraph.h"
+
 #include "Camera.h"
 #include "Terrain.h"
 #include "Water.h"
@@ -17,7 +19,7 @@
 class TerrainManager
 {
 public:
-	TerrainManager();
+	TerrainManager(NewNodeGraph::TerGenNodeGraph& nodeGraph);
 	~TerrainManager();
 
 	void GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
@@ -36,13 +38,15 @@ public:
 	void FlushTerrainMeshUpdateCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free);
 
 private:
+	NewNodeGraph::TerGenNodeGraph& nodeGraph;
+
 	std::shared_ptr<VulkanRenderer> renderer;
 
 	std::vector<std::shared_ptr<Terrain>> terrains;
 	std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> terrainQuadPool;
 
 	std::vector<std::shared_ptr<Water>> waters;
-
+	
 	bool show_terrain_manager_window = true;
 	bool recreateTerrain = false;
 	float terrainWidth = 1000;

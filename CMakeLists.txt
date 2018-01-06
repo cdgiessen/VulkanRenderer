@@ -18,6 +18,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
 add_executable(VulkanApp 
 
 src/core/main.cpp
+src/core/CoreTools.cpp
 src/core/VulkanApp.cpp
 src/core/Gradient.cpp
 src/core/Input.cpp
@@ -124,8 +125,13 @@ add_custom_command(TARGET VulkanApp POST_BUILD        # Adds a post-build event 
         "${PROJECT_BINARY_DIR}/third-party/glfw-3.2.1/src/glfw3.dll"      # <--this is in-file
         "${PROJECT_BINARY_DIR}")										# <--this is out-file path
 
-# copy files over
+# copy settings.json
+add_custom_command(TARGET VulkanApp POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		${PROJECT_SOURCE_DIR}/settings.json $<TARGET_FILE_DIR:VulkanApp>/settings.json)
 
+
+# copy files over
 add_custom_command(TARGET VulkanApp POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets)

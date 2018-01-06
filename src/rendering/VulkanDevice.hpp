@@ -14,12 +14,6 @@
 #include "VulkanBuffer.hpp"
 #include "VulkanTools.h"
 
-#ifdef NDEBUG
-const bool enableValidationLayers = false;
-#else
-const bool enableValidationLayers = true;
-#endif
-
 const std::vector<const char*> VALIDATION_LAYERS = {
 	"VK_LAYER_LUNARG_standard_validation"
 	
@@ -60,7 +54,7 @@ public:
 	VkMemoryPropertyFlags uniformBufferMemPropertyFlags = 
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-	VulkanDevice();
+	VulkanDevice(bool validationLayers);
 
 	~VulkanDevice();
 
@@ -144,6 +138,8 @@ public:
 	void flushCommandBuffer(VkCommandPool pool, VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
 
 private:
+
+	bool enableValidationLayers = false;
 
 	void createInstance(std::string appName);
 	

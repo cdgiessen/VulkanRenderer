@@ -42,7 +42,10 @@ TerrainQuadData::~TerrainQuadData()
 	subQuads.UpRight.reset();
 }
 
-Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> pool, int numCells, int maxLevels, float heightScale, int sourceImageResolution,
+Terrain::Terrain(
+	std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> pool, 
+	NewNodeGraph::TerGenNodeGraph& sourceGraph,
+	int numCells, int maxLevels, float heightScale, int sourceImageResolution,
 	glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize) 
 	: maxLevels(maxLevels), heightScale(heightScale), position(pos), size(size), noisePosition(noisePosition), noiseSize(noiseSize), sourceImageResolution(sourceImageResolution)
 {
@@ -62,8 +65,10 @@ Terrain::Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQ
 	quadHandles.reserve(maxNumQuads);
 	//terrainGenerationWorkers = std::vector < std::thread>(maxNumQuads);
 
-	fastTerrainGraph = std::make_shared<NewNodeGraph::TerGenNodeGraph> (1337, sourceImageResolution, noisePosition, noiseSize.x);
-	fastTerrainGraph->BuildNoiseGraph();
+	fastTerrainUser = std::make_unique<NewNodeGraph::TerGenGraphUser>(sourceGraph, 1337, sourceImageResolution, noisePosition, noiseSize.x);
+
+	//fastTerrainGraph = std::make_shared<NewNodeGraph::TerGenNodeGraph> (1337, sourceImageResolution, noisePosition, noiseSize.x);
+	//fastTerrainGraph->BuildNoiseGraph();
 
 	splatmapTextureGradient.SetFrontColor(glm::vec4(1, 0, 0, 0));
 
@@ -209,9 +214,9 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3
 
 RGBA_pixel*  Terrain::LoadSplatMapFromGenerator() {
 	//terrainSplatMap = std::make_shared<Texture>();
-	fastTerrainGraph->BuildOutputImage(noisePosition, (float)noiseSize.x);
+	fastTerrainUser->BuildOutputImage(noisePosition, (float)noiseSize.x);
 
-	float* pixData = fastTerrainGraph->GetOutputGreyscaleImage().data();
+	float* pixData = fastTerrainUser->GetOutputGreyscaleImage();
 	RGBA_pixel* imageData = (RGBA_pixel*)malloc(sizeof(RGBA_pixel)*sourceImageResolution*sourceImageResolution);
 
 	if (imageData == nullptr) {
@@ -546,7 +551,7 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuad(std::shared_ptr<Terrai
 
 	//SimpleTimer terrainQuadCreateTime;
 	
-	GenerateNewTerrainSubdivision(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
+	GenerateNewTerrainSubdivision(*fastTerrainUser, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
 
 	//GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, Corner_Enum::uR, heightScale, maxLevels);
 	
@@ -592,7 +597,7 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuadFromParent(std::shared_
 	//terrainGenerationWorkers.push_back(worker);
 	//GenerateTerrainFromExisting( fastTerrainGraph, &parent->vertices, &parent->indices, &q->vertices, &q->indices, corner, q->terrainQuad, heightScale, maxLevels);
 	
-	GenerateNewTerrainSubdivision(*fastTerrainGraph, q->vertices, q->indices, q->terrainQuad, corner, heightScale, maxLevels);
+	GenerateNewTerrainSubdivision(*fastTerrainUser, q->vertices, q->indices, q->terrainQuad, corner, heightScale, maxLevels);
 	
 	//GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, corner, heightScale, maxLevels);
 
@@ -832,7 +837,7 @@ void RecalculateNormals(int numCells, TerrainMeshVertices& verts, TerrainMeshInd
 	}
 }
 
-void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices,
+void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenGraphUser& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices,
 	TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels) {
 
 	int numCells = NumCells;
@@ -952,13 +957,13 @@ void GenerateTerrainFromTexture(Texture& tex, TerrainMeshVertices& verts, Terrai
 }
 
 //Needs to account for which corner the new terrain is in
-void GenerateTerrainFromExisting(TerrainGenerator& terrainGenerator, NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& parentVerts, TerrainMeshIndices& parentIndices,
+void GenerateTerrainFromExisting(TerrainGenerator& terrainGenerator, NewNodeGraph::TerGenGraphUser& fastGraph, TerrainMeshVertices& parentVerts, TerrainMeshIndices& parentIndices,
 	TerrainMeshVertices& verts, TerrainMeshIndices& indices, Corner_Enum corner, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels) {
 
 	int numCells = NumCells;
 	float xLoc = terrainQuad.pos.x, zLoc = terrainQuad.pos.y, xSize = terrainQuad.size.x, zSize = terrainQuad.size.y;
 
-	NewNodeGraph::TerGenNodeGraph myGraph = NewNodeGraph::TerGenNodeGraph(fastGraph);
+	NewNodeGraph::TerGenGraphUser myGraph = NewNodeGraph::TerGenGraphUser(fastGraph);
 	myGraph.BuildOutputImage(terrainQuad.logicalPos, (float) (1.0 / glm::pow(2.0, terrainQuad.level)));
 
 	int parentIOffset = (corner == Corner_Enum::dR || corner == Corner_Enum::dL) ? (numCells + 1) / 2 : 0;

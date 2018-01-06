@@ -19,7 +19,7 @@ class Scene;
 class VulkanRenderer
 {
 public:
-	VulkanRenderer(std::shared_ptr<Scene> scene);
+	VulkanRenderer(bool enableValidationLayer, std::shared_ptr<Scene> scene);
 	VulkanRenderer(const VulkanRenderer& other) = default; //copy
 	VulkanRenderer(VulkanRenderer&& other) = default; //move
 	VulkanRenderer& operator=(const VulkanRenderer&) = default;

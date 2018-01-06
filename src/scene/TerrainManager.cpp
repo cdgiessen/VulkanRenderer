@@ -3,7 +3,7 @@
 #include "../third-party/ImGui/imgui.h"
 #include "../gui/ImGuiImpl.h"
 
-TerrainManager::TerrainManager()
+TerrainManager::TerrainManager(NewNodeGraph::TerGenNodeGraph& nodeGraph): nodeGraph(nodeGraph)
 {
 	if (terrainMaxLevels < 0) {
 		maxNumQuads = 1;
@@ -14,6 +14,7 @@ TerrainManager::TerrainManager()
 	}
 
 	//terrainQuadPool = std::make_shared<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>>();
+	//nodeGraph.BuildNoiseGraph();
 }
 
 
@@ -34,7 +35,7 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < terrainGridDimentions; j++) {
 			
-			auto terrain = std::make_shared<Terrain>(terrainQuadPool, numCells, terrainMaxLevels, terrainHeightScale, sourceImageResolution,
+			auto terrain = std::make_shared<Terrain>(terrainQuadPool, nodeGraph, numCells, terrainMaxLevels, terrainHeightScale, sourceImageResolution,
 				glm::vec2((i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2), //position
 				glm::vec2(terrainWidth, terrainWidth), //size
 				glm::i32vec2(i * logicalWidth, j * logicalWidth), //noise position

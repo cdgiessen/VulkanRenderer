@@ -39,10 +39,6 @@
 #include "../gui/ImGuiImpl.h"
 #include "../gui/ProcTerrainNodeGraph.h"
 
-
-const int WIDTH = 1600;
-const int HEIGHT = 900;
-
 class VulkanApp
 {
 public:
@@ -71,6 +67,8 @@ private:
 	bool showGui = true;
 	void SetMouseControl(bool value);
 
+	void ReadSettings();
+
 	//ImGUI functions
 	void PrepareImGui();
 	void BuildImgui();
@@ -84,6 +82,11 @@ private:
 	ProcTerrainNodeGraph imgui_nodeGraph_terrain;
 	SimpleTimer imGuiTimer;
 	DebugLog::Logger appLog;
-	
+
+	int screenWidth = 800;
+	int screenHeight = 600;
+
+	bool useValidationLayers = true;
+
 };
 

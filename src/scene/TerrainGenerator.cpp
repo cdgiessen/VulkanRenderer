@@ -149,9 +149,9 @@ float TerrainGenerator::SampleColor(int channel, float x, float y, float z) {
 
 FastTerrainGenerator::FastTerrainGenerator(int splatMapSize, int numCells, glm::vec3 pos, glm::vec3 size)
 {
-	nodeGraph = new NewNodeGraph::TerGenNodeGraph(1337, 100, glm::i32vec2(0,0), 1.0f);
+	//nodeGraph = new NewNodeGraph::TerGenGraphUser(1337, 100, glm::i32vec2(0,0), 1.0f);
 
-	nodeGraph->BuildNoiseGraph();
+	//nodeGraph->BuildNoiseGraph();
 }
 
 

@@ -16,7 +16,7 @@ Scene::~Scene()
 	std::cout << "scene deleted\n";
 }
 
-void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer) {
+void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, NewNodeGraph::TerGenNodeGraph& graph) {
 	this->renderer = renderer;
 	
 	camera = std::make_shared< Camera>(glm::vec3(-2, 2, 0), glm::vec3(0, 1, 0), 0, -45);
@@ -46,7 +46,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	cubeObject->InitGameObject(renderer, globalVariableBuffer, lightsInfoBuffer);
 	gameObjects.push_back(cubeObject);
 	
-	terrainManager = std::make_shared<TerrainManager>();
+	terrainManager = std::make_shared<TerrainManager>(graph);
 	terrainManager->GenerateTerrain(resourceMan, renderer, globalVariableBuffer, lightsInfoBuffer, camera);
 
 	treesInstanced = std::make_shared<InstancedSceneObject>();

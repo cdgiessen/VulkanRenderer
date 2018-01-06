@@ -2,24 +2,29 @@
 
 #include "../rendering/VulkanInitializers.hpp"
 
+#include "../third-party/json/json.hpp"
+
 VulkanApp::VulkanApp()
 {
-	DebugLog::SetupCoutCapture();
+	ReadSettings();
+
+
+	//DebugLog::SetupCoutCapture();
 
 	timeManager = std::make_shared<TimeManager>();
 
 	window = std::make_shared<Window>();
-	window->createWindow(glm::uvec2(WIDTH, HEIGHT));
+	window->createWindow(glm::uvec2(screenWidth, screenHeight));
 	SetMouseControl(true);
 
 	resourceManager = std::make_shared<ResourceManager>();
 
 	scene = std::make_shared<Scene>();
-	vulkanRenderer = std::make_shared<VulkanRenderer>(scene);
+	vulkanRenderer = std::make_shared<VulkanRenderer>(useValidationLayers, scene);
 	
 	vulkanRenderer->InitVulkanRenderer(window->getWindowContext());
 	vulkanRenderer->CreateSemaphores();
-	scene->PrepareScene(resourceManager, vulkanRenderer);
+	scene->PrepareScene(resourceManager, vulkanRenderer, imgui_nodeGraph_terrain.GetGraph());
 
 	PrepareImGui();
 
@@ -74,6 +79,18 @@ void VulkanApp::mainLoop() {
 
 	vkDeviceWaitIdle(vulkanRenderer->device.device);
 
+}
+
+void VulkanApp::ReadSettings() {
+
+	std::ifstream input("settings.json");
+	nlohmann::json settings;
+	input >> settings;
+
+	screenWidth = settings["initial-screen-size"]["width"];
+	screenHeight = settings["initial-screen-size"]["height"];
+
+	useValidationLayers = settings["use-validation-layers"];
 }
 
 void VulkanApp::RecreateSwapChain() {

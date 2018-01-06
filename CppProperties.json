@@ -1,0 +1,76 @@
+{
+  "configurations": [
+    {
+      "inheritEnvironments": [
+        "msvc_x86"
+      ],
+      "name": "x86-Debug",
+      "includePath": [
+        "${env.INCLUDE}",
+        "F:\\USERS\\CHARLES\\DOCUMENTS\\PROJECTS\\VULKAN-STUFF\\VULKANRENDERER-MASTER\\THIRD-PARTY\\IMGUI",
+        "F:\\USERS\\CHARLES\\DOCUMENTS\\PROJECTS\\VULKAN-STUFF\\VULKANRENDERER-MASTER\\"
+      ],
+      "defines": [
+        "WIN32",
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "intelliSenseMode": "windows-msvc-x86"
+    },
+    {
+      "inheritEnvironments": [
+        "msvc_x86"
+      ],
+      "name": "x86-Release",
+      "includePath": [
+        "${env.INCLUDE}",
+        "F:\\USERS\\CHARLES\\DOCUMENTS\\PROJECTS\\VULKAN-STUFF\\VULKANRENDERER-MASTER\\THIRD-PARTY\\IMGUI",
+        "F:\\USERS\\CHARLES\\DOCUMENTS\\PROJECTS\\VULKAN-STUFF\\VULKANRENDERER-MASTER\\"
+      ],
+      "defines": [
+        "WIN32",
+        "NDEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "intelliSenseMode": "windows-msvc-x86"
+    },
+    {
+      "inheritEnvironments": [
+        "msvc_x64"
+      ],
+      "name": "x64-Debug",
+      "includePath": [
+        "${env.INCLUDE}",
+        "F:\\USERS\\CHARLES\\DOCUMENTS\\PROJECTS\\VULKAN-STUFF\\VULKANRENDERER-MASTER\\THIRD-PARTY\\IMGUI",
+        "F:\\USERS\\CHARLES\\DOCUMENTS\\PROJECTS\\VULKAN-STUFF\\VULKANRENDERER-MASTER\\"
+      ],
+      "defines": [
+        "WIN32",
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "intelliSenseMode": "windows-msvc-x64"
+    },
+    {
+      "inheritEnvironments": [
+        "msvc_x64"
+      ],
+      "name": "x64-Release",
+      "includePath": [
+        "${env.INCLUDE}",
+        "F:\\USERS\\CHARLES\\DOCUMENTS\\PROJECTS\\VULKAN-STUFF\\VULKANRENDERER-MASTER\\THIRD-PARTY\\IMGUI",
+        "F:\\USERS\\CHARLES\\DOCUMENTS\\PROJECTS\\VULKAN-STUFF\\VULKANRENDERER-MASTER\\"
+      ],
+      "defines": [
+        "WIN32",
+        "NDEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "intelliSenseMode": "windows-msvc-x64"
+    }
+  ]
+}

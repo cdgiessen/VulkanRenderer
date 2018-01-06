@@ -116,7 +116,8 @@ public:
 	VulkanBuffer modelUniformBuffer;
 
 	std::shared_ptr<Texture> maillerFace;
-	std::shared_ptr<NewNodeGraph::TerGenNodeGraph> fastTerrainGraph;
+	std::unique_ptr<NewNodeGraph::TerGenGraphUser> fastTerrainUser;
+	//std::shared_ptr<NewNodeGraph::TerGenNodeGraph> fastTerrainGraph;
 
 	Gradient splatmapTextureGradient;
 
@@ -124,7 +125,8 @@ public:
 
 	std::vector<std::thread *> terrainGenerationWorkers;
 
-	Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> pool, int numCells, int maxLevels, float heightScale, int sourceImageResolution,
+	Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> pool, NewNodeGraph::TerGenNodeGraph& sourceGraph,
+		int numCells, int maxLevels, float heightScale, int sourceImageResolution,
 		glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
 	~Terrain();
 
@@ -167,11 +169,11 @@ private:
 
 
 //Create a mesh chunk for rendering using fastgraph as the input data
-void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices, 
+void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenGraphUser& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices,
 	TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);
 
 //not used as it depends on previous terrains, which is great for runtime but not for first generation (since it has dependence on its parents mesh being ready)
-void GenerateTerrainFromExisting(TerrainGenerator& terrainGenerator, NewNodeGraph::TerGenNodeGraph& fastGraph, TerrainMeshVertices& parentVerts, TerrainMeshIndices& parentIndices,
+void GenerateTerrainFromExisting(TerrainGenerator& terrainGenerator, NewNodeGraph::TerGenGraphUser& fastGraph, TerrainMeshVertices& parentVerts, TerrainMeshIndices& parentIndices,
 	TerrainMeshVertices& verts, TerrainMeshIndices& indices, Corner_Enum corner, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels);
 
 //Uses input texture to generate terrain from

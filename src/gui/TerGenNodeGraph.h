@@ -7,11 +7,51 @@
 
 #include <glm/common.hpp>
 
+#include "../third-party/json/json.hpp"
+
 #include "../../third-party/ImGui/imgui.h"
 
 #include "../../third-party/FastNoiseSIMD/FastNoiseSIMD.h"
 
 namespace NewNodeGraph {
+
+	class NoiseImage2D {
+	public:
+		NoiseImage2D();
+
+		NoiseImage2D(int width);
+		~NoiseImage2D();
+		
+		//resize underlying vector to appropriate size
+		void PrepareImage();
+
+		//size, in pixels, of the image;
+		const int GetSize() const;
+
+		//dimention of the image
+		const int GetImageWidth() const;
+
+		void SetWidth(int width);
+
+		const size_t GetSizeBytes() const;
+
+		//No error look
+		const float LookUp(int x, int z) const;
+
+		//Error checked sample, returns -1 if fails
+		const float BoundedLookUp(int x, int z) const;
+
+		void SetPixelValue(int x, int z, float value);
+
+		float* GetImageData();
+		void SetImageData(float* data);
+
+	private:
+		int width;
+		float* image;
+	};
+
+	static float BilinearImageSample2D(const NoiseImage2D& noiseImage, const float x, const float z);
 
 	enum class LinkType {
 		None = 0,
@@ -27,19 +67,7 @@ namespace NewNodeGraph {
 		String = 10,
 	};
 
-	class INode {
-	public:
-		virtual ~INode();
-
-		virtual LinkType GetNodeType() =0;
-
-		virtual float GetValue(const int x, const int y, const int z, float dummy) =0;
-		virtual int GetValue(const int x, const int y, const int z, int dummy) =0;
-		virtual double GetValue(const int x, const int y, const int z, double dummy) =0;
-		virtual glm::vec2 GetValue(const int x, const int y, const int z, glm::vec2 dummy) = 0;
-		virtual glm::vec3 GetValue(const int x, const int y, const int z, glm::vec3 dummy) = 0;
-		virtual glm::vec4 GetValue(const int x, const int y, const int z, glm::vec4 dummy) = 0;
-	};
+	class INode;
 
 	template<typename T>
 	class Link {
@@ -48,14 +76,17 @@ namespace NewNodeGraph {
 		Link(LinkType type);
 		Link(LinkType type, T data);
 
-		T GetValue(const int x, const int y, const int z);
+		T GetValue(const int x, const int y, const int z) const;
 
-		T GetValue();
+		T GetData() const;
 		void SetValue(T);
 
-		LinkType GetLinkType();
+		const LinkType GetLinkType() const;
 
 		bool SetInputNode(std::shared_ptr<INode> node);
+		bool ResetInputNode();
+
+		std::string GetJsonStringRep() const;
 
 	private:
 		LinkType linkType = LinkType::None;
@@ -63,24 +94,50 @@ namespace NewNodeGraph {
 		std::shared_ptr<INode> input = nullptr;
 	};
 
+	class INode {
+	public:
+		virtual ~INode() = 0;
+
+		virtual LinkType GetNodeType() const = 0;
+
+		virtual float GetValue(const int x, const int y, const int z, float dummy) const = 0;
+		virtual int GetValue(const int x, const int y, const int z, int dummy) const = 0;
+		virtual double GetValue(const int x, const int y, const int z, double dummy) const = 0;
+		virtual glm::vec2 GetValue(const int x, const int y, const int z, glm::vec2 dummy) const = 0;
+		virtual glm::vec3 GetValue(const int x, const int y, const int z, glm::vec3 dummy) const = 0;
+		virtual glm::vec4 GetValue(const int x, const int y, const int z, glm::vec4 dummy) const = 0;
+
+		virtual void SaveToJson(nlohmann::json& json) = 0;
+
+		virtual bool SetInputLink(int index, std::shared_ptr<INode> node) = 0;
+		virtual bool ResetInputLink(int index) =0;
+
+		void SetID(int ID);
+	protected:
+		int ID;
+	};
+
 	template<typename T>
 	class Node : public INode {
 	public:
 
 		Node(LinkType outputLinkType);
-		virtual ~Node() =0;
+		virtual ~Node() override;
 
-		virtual LinkType GetNodeType();
+		virtual LinkType GetNodeType() const;
 
-		//virtual T GetValue(const double x, const double y, const  double z);
-		virtual float	GetValue(const int x, const int y, const int z, float dummy);
-		virtual int		GetValue(const int x, const int y, const int z, int dummy);
-		virtual double	GetValue(const int x, const int y, const int z, double dummy);
-		virtual glm::vec2 GetValue(const int x, const int y, const int z, glm::vec2 dummy);
-		virtual glm::vec3 GetValue(const int x, const int y, const int z, glm::vec3 dummy);
-		virtual glm::vec4 GetValue(const int x, const int y, const int z, glm::vec4 dummy);
+		//virtual T GetValue(const int x, const int y, const  int z, T dummy) const;
+		virtual float	GetValue(const int x, const int y, const int z, float dummy) const ;
+		virtual int		GetValue(const int x, const int y, const int z, int dummy) const ;
+		virtual double	GetValue(const int x, const int y, const int z, double dummy) const ;
+		virtual glm::vec2 GetValue(const int x, const int y, const int z, glm::vec2 dummy) const;
+		virtual glm::vec3 GetValue(const int x, const int y, const int z, glm::vec3 dummy) const;
+		virtual glm::vec4 GetValue(const int x, const int y, const int z, glm::vec4 dummy) const;
 
 		virtual bool SetInputLink(int index, std::shared_ptr<INode> node) = 0;
+		virtual bool ResetInputLink(int index) = 0;
+
+		virtual void SaveToJson(nlohmann::json& json);
 
 	private:
 		LinkType outputType;
@@ -92,39 +149,44 @@ namespace NewNodeGraph {
 		OutputNode();
 		~OutputNode() override;
 
-		float GetValue(const int x, const int y, const int z, float dummy) override;
+		float GetValue(const int x, const int y, const int z, float dummy) const override;
 
 		bool SetInputLink(int index, std::shared_ptr<INode> node) override;
+		bool ResetInputLink(int index) override;
 
+		void SaveToJson(nlohmann::json& json) override;
 	private:
 		Link<float> input_output; //lol well some names are just confusing aren't they?
 	};
 
 	class ConstantFloatNode : public Node<float> {
 	public:
-		ConstantFloatNode();
 		ConstantFloatNode(float value);
 		~ConstantFloatNode() override;
 
-		float GetValue(const int x, const int y, const int z, float dummy) override;
+		float GetValue(const int x, const int y, const int z, float dummy) const override;
 		void SetValue(const float value);
 
 		bool SetInputLink(int index, std::shared_ptr<INode> node) override;
+		bool ResetInputLink(int index) override;
 
+		void SaveToJson(nlohmann::json& json) override;
 	private:
 		Link<float> value;
 	};
 
 	class ConstantIntNode : public Node<int> {
 	public:
-		ConstantIntNode();
 		ConstantIntNode(int value);
 		~ConstantIntNode() override;
 
-		int GetValue(const int x, const int y, const int z, int dummy) override;
+		int GetValue(const int x, const int y, const int z, int dummy) const override;
 		void SetValue(const int value);
 
 		bool SetInputLink(int index, std::shared_ptr<INode> node) override;
+		bool ResetInputLink(int index) override;
+
+		void SaveToJson(nlohmann::json& json) override;
 	private:
 		Link<int> value;
 	};
@@ -134,9 +196,12 @@ namespace NewNodeGraph {
 		MathNode();
 		virtual ~MathNode() override;
 
-		virtual float GetValue(const int x, const int y, const int z, float dummy) override;
+		virtual float GetValue(const int x, const int y, const int z, float dummy) const override;
 
-		virtual bool SetInputLink(int index, std::shared_ptr<INode> node);
+		virtual bool SetInputLink(int index, std::shared_ptr<INode> node) override;
+		bool ResetInputLink(int index) override;
+
+		void SaveToJson(nlohmann::json& json) override;
 	protected:
 		Link<float> input_a;
 		Link<float> input_b;
@@ -144,50 +209,45 @@ namespace NewNodeGraph {
 
 	class AdditionNode : public MathNode {
 	public:
-		AdditionNode();
-		~AdditionNode() override;
-		float GetValue(const int x, const int y, const int z, float dummy) override;
+		float GetValue(const int x, const int y, const int z, float dummy) const override;
 	};
 
 	class SubtractNode : public MathNode {
 	public:
-		SubtractNode();
-		~SubtractNode() override;
-		float GetValue(const int x, const int y, const int z, float dummy) override;
+		float GetValue(const int x, const int y, const int z, float dummy) const override;
 	};
 
 	class MultiplyNode : public MathNode {
 	public:
-		MultiplyNode();
-		~MultiplyNode() override;
-		float GetValue(const int x, const int y, const int z, float dummy) override;
+		float GetValue(const int x, const int y, const int z, float dummy) const override;
 	};
 
 	class DivideNode : public MathNode {
 	public:
-		DivideNode();
-		~DivideNode() override;
-		float GetValue(const int x, const int y, const int z, float dummy) override;
+		float GetValue(const int x, const int y, const int z, float dummy) const override;
 	};
 
 	class PowerNode : public MathNode {
 	public:
-		PowerNode();
-		~PowerNode() override;
-		float GetValue(const int x, const int y, const int z, float dummy) override;
+		float GetValue(const int x, const int y, const int z, float dummy) const override;
 	};
 
-	class SelectorNode : Node<float> {
+	class SelectorNode : public Node<float> {
 	public:
 		SelectorNode();
 		~SelectorNode();
 
-		float GetValue(const int x, const int y, const int z, float dummy) override;
+		float GetValue(const int x, const int y, const int z, float dummy) const override;
+
+		bool SetInputLink(int index, std::shared_ptr<INode> node) override;
+		bool ResetInputLink(int index) override;
+
+		void SaveToJson(nlohmann::json& json) override;
 	private:
-		Link<float> input_cutoff;
-		Link<float> input_blendAmount; //not done currently.
 		Link<float> input_a;
 		Link<float> input_b;
+		Link<float> input_cutoff;
+		Link<float> input_blendAmount; //not done currently.
 
 	};
 
@@ -196,20 +256,22 @@ namespace NewNodeGraph {
 		NoiseSourceNode();
 		~NoiseSourceNode() override;
 
-		float GetValue(const int x, const int y, const int z, float dummy) override;
+		float GetValue(const int x, const int y, const int z, float dummy) const override;
 
 		virtual bool GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier);
 		bool CleanNoiseSet();
 
 		bool SetInputLink(int index, std::shared_ptr<INode> node) override;
+		bool ResetInputLink(int index) override;
 
+		void SaveToJson(nlohmann::json& json) override;
 	protected:
 		Link<float> input_frequency;
 		Link<float> input_persistance;
 		Link<int> input_octaveCount;
 
 		FastNoiseSIMD* myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
-		float* noiseSet;
+		NoiseImage2D noiseSet;
 		int noiseDimention;
 	};
 
@@ -243,34 +305,64 @@ namespace NewNodeGraph {
 		bool GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) override;
 	};
 
+	class VoironiFractalNoiseNode : public NoiseSourceNode {
+	public:
+		bool GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) override;
+	};
+
+
 	class TerGenNodeGraph
 	{
 	public:
-		TerGenNodeGraph(const TerGenNodeGraph&) = default;
-		TerGenNodeGraph(int seed, int numCells, glm::i32vec2 pos, float scale);
+		//TerGenNodeGraph(const TerGenNodeGraph&) = default;
+		TerGenNodeGraph();
 		~TerGenNodeGraph();
 
 		bool AddNode(std::shared_ptr<INode> node);
 		bool AddNoiseSourceNode(std::shared_ptr<NoiseSourceNode> node);
 
+		bool DeleteNode(std::shared_ptr<INode> node);
+
 		void BuildNoiseGraph();
+
+		nlohmann::json  SaveGraphToJson();
+		void LoadGraphFromJson(nlohmann::json inputjson);
+
+		const std::shared_ptr<OutputNode> GetOutputNode() const;
+
+		int GetNextID();
+
+		const std::vector<std::shared_ptr<NoiseSourceNode>>& GetNoiseSources()const ;
+
+	private:
+		int IDCounter = 0;
+		std::vector<std::shared_ptr<INode>> nodes;
+
+		std::shared_ptr<OutputNode> outputNode;
+
+		std::vector<std::shared_ptr<NoiseSourceNode>> noiseSources;
+
+
+	};
+
+	class TerGenGraphUser {
+	public:
+		TerGenGraphUser(const TerGenNodeGraph& sourceGraph, int seed, int numCells, glm::i32vec2 pos, float scale);
+
 		void BuildOutputImage(glm::i32vec2 pos, float scale);
 
 		float SampleHeight(const float x, const float y, const float z);
-		std::vector<float>& GetOutputGreyscaleImage();
+		float* GetOutputGreyscaleImage();
 
 	private:
+		const TerGenNodeGraph& sourceGraph;
+
 		int seed;
 		glm::i32vec2 pos;
 		float scale;
 		int cellsWide;
 
-		std::vector<float> outputImage;
-
-		std::vector<std::shared_ptr<INode>> nodes;
-		OutputNode outputNode;
-
-		std::vector<std::shared_ptr<NoiseSourceNode>> noiseSources;
+		NoiseImage2D outputImage;
 	};
 
 	class TEMPTerGenNodeGraph
