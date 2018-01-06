@@ -175,6 +175,20 @@ enum class ConnectionType
 	Color,
 };
 
+struct SlotValueHolder {
+	
+	int i;
+	float f;
+	glm::vec2 glm2;
+	glm::vec3 glm3;
+	glm::vec4 glm4;
+	
+	
+	ConnectionType type = ConnectionType::Null;
+
+	SlotValueHolder(ConnectionType type) : type(type) {};
+};
+
 class Node;
 
 class Connection {
@@ -214,7 +228,7 @@ public:
 
 	bool hasConnection = false;
 	std::shared_ptr<Connection> connection;
-	
+	SlotValueHolder value;
 };
 
 class OutputConnectionSlot : public ConnectionSlot {

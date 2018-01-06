@@ -6,6 +6,8 @@
 
 #include "../core/Input.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 namespace SampleNodeGraphWindow {
 
 	static void setupConnections(std::vector<Connection*>& connections, ConnectionDesc* connectionDescs)
@@ -812,6 +814,8 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 		imDrawList->ChannelsSetCurrent(1); // Foreground
 		bool old_any_active = ImGui::IsAnyItemActive();
 
+		ImVec2 titleArea = ImVec2(node->size.x, 30.0f);
+
 		// Draw title in center
 		ImVec2 textSize = ImGui::CalcTextSize(node->name.c_str());
 
@@ -833,7 +837,7 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 		imDrawList->ChannelsSetCurrent(0); // Background
 
 		ImGui::SetCursorScreenPos(windowPos + node->pos);
-		ImGui::InvisibleButton("node", node->size);
+		ImGui::InvisibleButton("node", titleArea);
 
 		if (ImGui::IsItemHovered())
 		{
@@ -846,16 +850,12 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 		if (ImGui::IsItemActive() )
 			node_moving_active = true;
 
-	
-
 		ImU32 node_bg_color = (node_hovered_in_scene == node->id) ? ImColor(75, 75, 75) : ImColor(60, 60, 60);
 		imDrawList->AddRectFilled(windowPos + node->pos, windowPos + node->pos + node->size, node_bg_color, 4.0f);
 
-		ImVec2 titleArea = node->pos + node->size;
-		titleArea.y = node->pos.y + 30.0f;
 
 		// Draw text bg area
-		imDrawList->AddRectFilled(windowPos + node->pos + ImVec2(1, 1), windowPos + titleArea, ImColor(100, 0, 0), 4.0f);
+		imDrawList->AddRectFilled(windowPos + node->pos + ImVec2(1, 1), windowPos + node->pos + titleArea, ImColor(100, 0, 0), 4.0f);
 		imDrawList->AddRect(windowPos + node->pos, windowPos + node->pos + node->size, ImColor(100, 100, 100), 4.0f);
 
 
@@ -877,7 +877,7 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 			ImGui::EndPopup();
 		}
 */
-
+		int i = 0;
 		for (auto slot : node->inputSlots)
 		{
 			ImGui::SetCursorScreenPos(windowPos + node->pos + slot.pos + ImVec2(10, -slot.nodeSlotRadius));
@@ -894,6 +894,32 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 				ImGui::EndPopup();
 			}
 
+			ImVec2 slotNameSize = ImGui::CalcTextSize(slot.name.c_str());
+			ImGui::SetCursorScreenPos(windowPos + node->pos + slot.pos + ImVec2(10 + slotNameSize.x, -slot.nodeSlotRadius));
+			//ImGui::InvisibleButton("slot value", slotNameSize);
+			
+			switch (slot.value.type) {
+			case(ConnectionType::Int): 
+				ImGui::DragInt("##Value", &(node->inputSlots[i].value.i), 0.1f, 0.0f, 0.0f);
+				break;
+			case(ConnectionType::Float): 
+				ImGui::DragFloat("##Value", &(node->inputSlots[i].value.f), 0.1f, 0.0f, 0.0f);
+				break;
+			case(ConnectionType::Color): 
+				ImGui::DragFloat3("##Value", glm::value_ptr(node->inputSlots[i].value.glm3), 0.1f, 0.0f, 0.0f);
+				break;
+			case(ConnectionType::Vec2): 
+				ImGui::DragFloat2("##Value", glm::value_ptr(node->inputSlots[i].value.glm2), 0.1f, 0.0f, 0.0f);
+				break;
+			case(ConnectionType::Vec3): 
+				ImGui::DragFloat3("##Value", glm::value_ptr(node->inputSlots[i].value.glm3), 0.1f, 0.0f, 0.0f);
+				break;
+			case(ConnectionType::Vec4): 
+				ImGui::DragFloat4("##Value", glm::value_ptr(node->inputSlots[i].value.glm4), 0.1f, 0.0f, 0.0f);
+				break;
+			}
+			
+
 			ImColor conColor = ImColor(150, 150, 150);
 
 			if (slot.hasConnection)
@@ -903,6 +929,7 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 				conColor = ImColor(200, 200, 200);
 
 			imDrawList->AddCircleFilled(windowPos + node->pos + slot.pos, slot.nodeSlotRadius, conColor);
+			i++;
 		}
 
 		if (node_widgets_active || node_moving_active) {
@@ -1122,8 +1149,16 @@ ConnectionType ConnectionSlot::GetType() {
 	return conType;
 }
 
-InputConnectionSlot::InputConnectionSlot(ImVec2 pos, ConnectionType type, std::string name) : ConnectionSlot(pos, type, name)
+InputConnectionSlot::InputConnectionSlot(ImVec2 pos, ConnectionType type, std::string name) : ConnectionSlot(pos, type, name), value(type)
 {
+	switch (type) {
+		case(ConnectionType::Int): value.i = 0; break;
+		case(ConnectionType::Float): value.f = 0.0f;  break;
+		case(ConnectionType::Color): value.glm3 = glm::vec3(0); break;
+		case(ConnectionType::Vec2): value.glm2 = glm::vec2(0); break;
+		case(ConnectionType::Vec3): value.glm3 = glm::vec3(0); break;
+		case(ConnectionType::Vec4): value.glm4 = glm::vec4(0); break;
+	}
 }
 
 OutputConnectionSlot::OutputConnectionSlot(ImVec2 pos, ConnectionType type): ConnectionSlot(pos, type)

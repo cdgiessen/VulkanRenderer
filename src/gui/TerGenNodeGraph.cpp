@@ -391,6 +391,7 @@ namespace NewNodeGraph {
 
 	bool NoiseSourceNode::CleanNoiseSet() {
 		myNoise->FreeNoiseSet(noiseSet.GetImageData());
+		noiseSet.SetImageData(nullptr);
 		return true;
 	}
 
@@ -609,7 +610,7 @@ namespace NewNodeGraph {
 		this->scale = scale;
 		
 		for (auto noise : sourceGraph.GetNoiseSources()) {
-			noise->GenerateNoiseSet(seed, cellsWide, glm::ivec2(pos.x * (cellsWide)/scale, pos.y * (cellsWide) / scale), scale / cellsWide);
+			noise->GenerateNoiseSet(seed, cellsWide, glm::ivec2(pos.x * (cellsWide)/scale, pos.y * (cellsWide) / scale), scale / (cellsWide));
 		}
 
 		for (int i = 0; i < cellsWide; i++)	{
