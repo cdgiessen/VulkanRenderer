@@ -7,7 +7,7 @@
 
 #include <glm/common.hpp>
 
-#include "../third-party/json/json.hpp"
+#include "../../third-party/json/json.hpp"
 
 #include "../../third-party/ImGui/imgui.h"
 

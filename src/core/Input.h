@@ -50,13 +50,13 @@ public:
 	void UpdateInputs();
 
 private:
-	std::array<bool, 1024> keys = { false };
-	std::array<bool, 1024> keysDown = { false };
-	std::array<bool, 1024> keysUp = { false };
+	std::array<bool, 1024> keys = {{ false }};
+	std::array<bool, 1024> keysDown = {{ false }};
+	std::array<bool, 1024> keysUp = {{ false }};
 
-	std::array<bool, 15> mouseButtons = { false };
-	std::array<bool, 15> mouseButtonsDown = { false };
-	std::array<bool, 15> mouseButtonsUp = { false };
+	std::array<bool, 15> mouseButtons = {{ false }};
+	std::array<bool, 15> mouseButtonsDown = {{ false }};
+	std::array<bool, 15> mouseButtonsUp = {{ false }};
 
 	bool firstMouse = true; //on start
 	glm::vec2 mousePosition = glm::vec2(0,0);

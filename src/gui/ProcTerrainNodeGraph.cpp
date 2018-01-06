@@ -1,6 +1,6 @@
 #include "ProcTerrainNodeGraph.h"
 
-#include "../third-party/noc/noc_file_dialog.h"
+//#include "../../third-party/noc/noc_file_dialog.h"
 
 #include "../core/CoreTools.h"
 
@@ -1089,14 +1089,14 @@ void ProcTerrainNodeGraph::DrawConnections(ImDrawList*  imDrawList) {
 
 void ProcTerrainNodeGraph::SaveGraphFromFile()
 {
-	const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_SAVE, NULL, GetExecutableFilePath().c_str(), NULL);
+	//const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_SAVE, NULL, GetExecutableFilePath().c_str(), NULL);
 
 }
 
 void ProcTerrainNodeGraph::LoadGraphFromFile()
 {
 
-	const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, NULL, GetExecutableFilePath().c_str(), NULL);
+	//const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, NULL, GetExecutableFilePath().c_str(), NULL);
 
 }
 

@@ -2,12 +2,11 @@
 
 #include "../rendering/VulkanInitializers.hpp"
 
-#include "../third-party/json/json.hpp"
+#include "../../third-party/json/json.hpp"
 
 VulkanApp::VulkanApp()
 {
 	ReadSettings();
-
 
 	//DebugLog::SetupCoutCapture();
 

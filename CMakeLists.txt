@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
 
 project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 14)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
@@ -120,10 +121,18 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
 endif(MSVC)
 
+if(WIN32)
 add_custom_command(TARGET VulkanApp POST_BUILD        # Adds a post-build event to VulkanApp
     COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
         "${PROJECT_BINARY_DIR}/third-party/glfw-3.2.1/src/glfw3.dll"      # <--this is in-file
-        "${PROJECT_BINARY_DIR}")										# <--this is out-file path
+"${PROJECT_BINARY_DIR}")										# <--this is out-file pat
+else (UNIX)
+add_custom_command(TARGET VulkanApp POST_BUILD        # Adds a post-build event to VulkanApp
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
+        "${PROJECT_BINARY_DIR}/third-party/glfw-3.2.1/src/libglfw.so"      # <--this is in-file
+ "${PROJECT_BINARY_DIR}")										# <--this is out-file path
+
+endif(WIN32)
 
 # copy settings.json
 add_custom_command(TARGET VulkanApp POST_BUILD

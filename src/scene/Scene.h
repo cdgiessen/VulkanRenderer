@@ -1,9 +1,5 @@
 #pragma once
 
-
-  
-  
-
 #include "../rendering/VulkanRenderer.hpp"
 
 #include "../resources/ResourceManager.h"

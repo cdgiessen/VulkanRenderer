@@ -7,7 +7,7 @@ std::string GetFilePathFromFullPath(std::string file) {
 	#ifdef _WIN32
 	auto pos = path.rfind("\\");
 	#else
-	auto pos = path.rfind("//");
+	auto pos = path.rfind("/");
 	#endif // _WIN32
 	path.erase(pos, path.size() - pos);
 

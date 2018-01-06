@@ -87,7 +87,7 @@ private:
 	bool wireframe = false; //whether or not to use the wireframe pipeline for the scene.
 
 
-	VkClearColorValue clearColor = { 0.2f, 0.3f, 0.3f, 1.0f };
+	VkClearColorValue clearColor = {{ 0.2f, 0.3f, 0.3f, 1.0f }};
 	VkClearDepthStencilValue depthClearColor = { 0.0f, 0 };
 
 	std::array<VkClearValue, 2> GetFramebufferClearValues();
