@@ -3,8 +3,7 @@
 #include <vector>
 #include <memory>
 
-#include <glm/common.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <glm/glm.hpp>
 
 #include "../resources/Texture.h"
 

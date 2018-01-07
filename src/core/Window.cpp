@@ -1,4 +1,6 @@
 #include "Window.hpp"
+
+#include <glm/glm.hpp>
 #include <mutex>
 #include "Input.h"
 

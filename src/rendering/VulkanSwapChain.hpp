@@ -2,10 +2,6 @@
 
 #include <vector>
 
-
-  
-  
-
 #include <memory>
 
 #include <vulkan/vulkan.h>
@@ -14,8 +10,14 @@
 #include <GLFW/glfw3.h>
 
 #include "VulkanInitializers.hpp"
-#include "VulkanTools.h"
 #include "VulkanDevice.hpp"
+
+struct SwapChainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR capabilities;
+	std::vector<VkSurfaceFormatKHR> formats;
+	std::vector<VkPresentModeKHR> present_modes;
+};
 
 class VulkanSwapChain {
 public:
@@ -30,11 +32,14 @@ public:
 
 	void CleanUp();
 
+	static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
+
 	VkSurfaceKHR surface;
 
 	VkSwapchainKHR swapChain = VK_NULL_HANDLE;
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
+
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
@@ -46,10 +51,16 @@ private:
 	const VulkanDevice& device; 
 	VkInstance instance;
 	VkPhysicalDevice physicalDevice;
+	GLFWwindow *window;
 
-	void createSwapChain(GLFWwindow* window);
+	SwapChainSupportDetails details;
+
+	void createSwapChain();
 
 	//7
 	void createImageViews();
 
+	VkPresentModeKHR chooseSwapPresentMode();
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat();
+	VkExtent2D chooseSwapExtent();
 };

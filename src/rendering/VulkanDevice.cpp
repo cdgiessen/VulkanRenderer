@@ -3,6 +3,8 @@
 #include "VulkanDevice.hpp"
 #include "VulkanInitializers.hpp"
 
+#include "VulkanSwapChain.hpp"
+
 VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(validationLayers)
 {
 
@@ -44,7 +46,7 @@ bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surfac
 
 	bool swapChainAdequate = false;
 	if (extensionsSupported) {
-		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device, surface);
+		SwapChainSupportDetails swapChainSupport = VulkanSwapChain::querySwapChainSupport(device, surface);
 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.present_modes.empty();
 	}
 

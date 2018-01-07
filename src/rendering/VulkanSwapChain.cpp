@@ -1,5 +1,5 @@
 #include "VulkanSwapChain.hpp"
-
+#include "VulkanTools.h"
 
 VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device) : device(device) {
 
@@ -15,28 +15,30 @@ void VulkanSwapChain::InitSwapChain(GLFWwindow* window) {
 
 	this->instance = device.instance;
 	this->physicalDevice = device.physical_device;
+	this->window = window;
 
-	createSwapChain(window);
+	createSwapChain();
 	createImageViews();
 }
 
 void VulkanSwapChain::RecreateSwapChain(GLFWwindow* window) {
 	CleanUp();
+	this->window = window;
 
-	createSwapChain(window);
+	createSwapChain();
 	createImageViews();
 }
 
-void VulkanSwapChain::createSwapChain(GLFWwindow* window) {
-	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
+void VulkanSwapChain::createSwapChain() {
+	details = querySwapChainSupport(physicalDevice, surface);
 
-	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.present_modes);
-	VkExtent2D extent = chooseSwapExtent(window, swapChainSupport.capabilities);
+	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat();
+	VkPresentModeKHR presentMode = chooseSwapPresentMode();
+	VkExtent2D extent = chooseSwapExtent();
 
-	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
-		imageCount = swapChainSupport.capabilities.maxImageCount;
+	uint32_t imageCount = details.capabilities.minImageCount + 1;
+	if (details.capabilities.maxImageCount > 0 && imageCount > details.capabilities.maxImageCount) {
+		imageCount = details.capabilities.maxImageCount;
 	}
 
 	swapChainImageFormat = surfaceFormat.format;
@@ -71,7 +73,7 @@ void VulkanSwapChain::createSwapChain(GLFWwindow* window) {
 		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	}
 
-	createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+	createInfo.preTransform = details.capabilities.currentTransform;
 	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	createInfo.presentMode = presentMode;
 	createInfo.clipped = VK_TRUE;
@@ -129,4 +131,78 @@ void VulkanSwapChain::CleanUp() {
 	}
 
 	vkDestroySwapchainKHR(device.device, swapChain, nullptr);
+}
+
+VkSurfaceFormatKHR VulkanSwapChain::chooseSwapSurfaceFormat() {
+	if (details.formats.size() == 1 && details.formats[0].format == VK_FORMAT_UNDEFINED) {
+		return{ VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+	}
+
+	for (const auto& availableFormat : details.formats) {
+		if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+			return availableFormat;
+		}
+	}
+
+	return details.formats[0];
+}
+
+VkPresentModeKHR VulkanSwapChain::chooseSwapPresentMode() {
+	VkPresentModeKHR bestMode = VK_PRESENT_MODE_FIFO_KHR;
+
+	for (const auto& availablePresentMode : details.present_modes) {
+		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+			return availablePresentMode;
+		}
+		else if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+			bestMode = availablePresentMode;
+		}
+	}
+
+	return bestMode;
+}
+
+VkExtent2D VulkanSwapChain::chooseSwapExtent() {
+	if (details.capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+		return details.capabilities.currentExtent;
+	}
+	else {
+		int width, height;
+		glfwGetWindowSize(window, &width, &height);
+
+		VkExtent2D actualExtent = {
+			static_cast<uint32_t>(width),
+			static_cast<uint32_t>(height)
+		};
+
+		actualExtent.width = std::max(details.capabilities.minImageExtent.width, std::min(details.capabilities.maxImageExtent.width, actualExtent.width));
+		actualExtent.height = std::max(details.capabilities.minImageExtent.height, std::min(details.capabilities.maxImageExtent.height, actualExtent.height));
+
+		return actualExtent;
+	}
+}
+
+SwapChainSupportDetails VulkanSwapChain::querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
+
+	SwapChainSupportDetails details;
+
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+	uint32_t formatCount;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+	if (formatCount != 0) {
+		details.formats.resize(formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+	}
+
+	uint32_t presentModeCount;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+
+	if (presentModeCount != 0) {
+		details.present_modes.resize(presentModeCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.present_modes.data());
+	}
+
+	return details;
 }

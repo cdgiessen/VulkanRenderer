@@ -3,6 +3,7 @@
 #include "VulkanInitializers.hpp"
 #include <algorithm>
 
+
 void VulkanTexture::updateDescriptor()
 {
 	descriptor.sampler = textureSampler;

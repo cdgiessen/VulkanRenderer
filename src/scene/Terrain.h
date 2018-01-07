@@ -16,6 +16,7 @@
 #include "../resources/Texture.h"
 #include "../core/Gradient.h"
 #include "../core/MemoryPool.h"
+#include "../core/CoreTools.h"
 
 #include "TerrainGenerator.h"
 #include "../gui/TerGenNodeGraph.h"

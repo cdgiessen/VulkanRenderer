@@ -1,5 +1,5 @@
 #include "Mesh.h"
-#include "../rendering/VulkanTools.h"
+#include "../core/CoreTools.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../../third-party/tinyobjloader/tiny_obj_loader.h"

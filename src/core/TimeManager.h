@@ -2,7 +2,7 @@
 #include <chrono>
 #include <array>
 
-#include "../rendering/VulkanTools.h"
+#include "CoreTools.h"
 
 typedef std::array<float, 50> TimingsHistory;
 

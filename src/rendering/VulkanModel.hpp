@@ -1,9 +1,5 @@
 #pragma once
 
-
-  
-  
-
 #include <vulkan/vulkan.h>
 
 #include "RendererStructs.h"
@@ -12,6 +8,7 @@
 #include "VulkanBuffer.hpp"
 
 #include "../resources/Mesh.h"
+#include "../core/CoreTools.h"
 
 
 class VulkanModel {

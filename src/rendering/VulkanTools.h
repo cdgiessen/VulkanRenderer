@@ -4,7 +4,6 @@
 #include <fstream>
 #include <stdexcept>
 #include <algorithm>
-#include <chrono>
 #include <vector>
 #include <cstring>
 #include <string>
@@ -13,24 +12,8 @@
 
 #include <vulkan/vulkan.h>
 
-#include <glm/common.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-#include <GLFW/glfw3.h>
-
-
-  
-  
-
 //#define VMA_IMPLEMENTATION
 //#include <vk_mem_alloc.h>
-
-struct SwapChainSupportDetails
-{
-	VkSurfaceCapabilitiesKHR capabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> present_modes;
-};
 
 struct QueueFamilyIndices {
 	int graphicsFamily = -1;
@@ -42,18 +25,6 @@ struct QueueFamilyIndices {
 		return graphicsFamily >= 0 && presentFamily >= 0;
 	}
 };
-
-SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
-
-VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-
-VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes);
-
-VkExtent2D chooseSwapExtent(GLFWwindow *window, const VkSurfaceCapabilitiesKHR& capabilities);
-
-bool fileExists(const std::string &filename);
-
-static std::vector<char> readFile(const std::string& filename);
 
 VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath);
 
@@ -87,53 +58,3 @@ std::string errorString(VkResult errorCode);
 #define VK_FLAGS_NONE 0
 // Default fence timeout in nanoseconds
 #define DEFAULT_FENCE_TIMEOUT 100000000000
-
-
-class SimpleTimer {
-private:
-	std::chrono::time_point<std::chrono::high_resolution_clock> endTime;
-	std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
-
-	std::chrono::nanoseconds elapsedTime;
-public:
-
-	SimpleTimer() {
-		startTime = std::chrono::high_resolution_clock::now();
-	}
-
-	//Begin timer
-	void StartTimer() {
-		startTime = std::chrono::high_resolution_clock::now();
-	}
-	
-	//End timer
-	void EndTimer() {
-		endTime = std::chrono::high_resolution_clock::now();
-		elapsedTime = endTime - startTime;
-	}
-
-	std::chrono::time_point<std::chrono::high_resolution_clock> GetStartTime() {
-		return startTime;
-	}
-	
-	std::chrono::time_point<std::chrono::high_resolution_clock> GetEndTime() {
-		return endTime;
-	}
-
-	uint64_t GetElapsedTimeSeconds() {
-		return std::chrono::duration_cast<std::chrono::seconds>(elapsedTime).count();
-	}
-
-	uint64_t GetElapsedTimeMilliSeconds() {
-		return std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count();
-	}
-
-	uint64_t GetElapsedTimeMicroSeconds() {
-		return std::chrono::duration_cast<std::chrono::microseconds>(elapsedTime).count();
-	}
-
-	uint64_t GetElapsedTimeNanoSeconds() {
-		return std::chrono::duration_cast<std::chrono::nanoseconds>(elapsedTime).count();
-	}
-
-};
