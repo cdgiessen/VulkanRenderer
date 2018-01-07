@@ -261,7 +261,7 @@ void VulkanApp::HandleInputs() {
 	}
 
 	if (Input::GetKeyDown(GLFW_KEY_F)) {
-		//walkOnGround = !walkOnGround;
+		scene->walkOnGround = !scene->walkOnGround;
 		//std::cout << "flight mode toggled " << std::endl;
 	}
 

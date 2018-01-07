@@ -33,6 +33,7 @@ public:
 	std::shared_ptr<Camera> GetCamera();
 
 	bool drawNormals = false;
+	bool walkOnGround = false;
 private:
 
 	std::shared_ptr<VulkanRenderer> renderer;

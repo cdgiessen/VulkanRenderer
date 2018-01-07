@@ -116,6 +116,18 @@ void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe
 	}
 }
 
+float TerrainManager::GetTerrainHeightAtLocation(float x, float z) {
+	for (auto terrain : terrains)
+	{
+		glm::vec2 pos = terrain->position;
+		glm::vec2 size = terrain->size;
+		if (pos.x <= x && pos.x + size.x >= x && pos.y <= z && pos.y + size.y >= z) {
+			return terrain->GetHeightAtLocation((x - pos.x)/ terrainWidth, (z - pos.y)/ terrainWidth);
+		}
+	}
+	return 0;
+}
+
 void TerrainManager::UpdateTerrainGUI() {
 	
 	ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);

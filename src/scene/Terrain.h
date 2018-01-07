@@ -139,6 +139,8 @@ public:
 	void CleanUp();
 
 	RGBA_pixel* LoadSplatMapFromGenerator();
+
+	float GetHeightAtLocation(float x, float z);
 private:
 
 	std::shared_ptr<TerrainQuadData> InitTerrainQuad(std::shared_ptr<TerrainQuadData> q, glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,

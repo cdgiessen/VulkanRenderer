@@ -2,8 +2,6 @@
 
 #include "../core/Input.h"
 
-#include <GLFW/glfw3.h>
-
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
 
@@ -83,12 +81,11 @@ void Scene::CreateUniformBuffers() {
 }
 
 void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<TimeManager> timeManager) {
-	//if (walkOnGround) {
-	//	//very choppy movement for right now, but since its just a quick 'n dirty way to put the camera at walking height, its just fine
-	//	camera->Position.y = terrains.at(0)->terrainGenerator->SampleHeight(camera->Position.x, 0, camera->Position.z) * terrains.at(0)->heightScale + 2.0;
-	//	if (camera->Position.y < 2) //for over water
-	//		camera->Position.y = 2;
-	//}
+	if (walkOnGround) {
+		camera->Position.y = terrainManager->GetTerrainHeightAtLocation(camera->Position.x, camera->Position.z) + 2.0f;
+		if (camera->Position.y < 2) //for over water
+			camera->Position.y = 2;
+	}
 
 	glm::mat4 deptheReverser = glm::mat4(1, 0, 0, 0,	0, 1, 0, 0,		0, 0, -1, 0,	0, 0, 1, 1);
 
@@ -108,8 +105,8 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 	}
 
 	skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
-	if(!Input::GetKey(GLFW_KEY_V))
-		terrainManager->UpdateTerrains(resourceMan, renderer, globalVariableBuffer, lightsInfoBuffer, camera, timeManager);
+	//if(!Input::GetKey(GLFW_KEY_V))
+	terrainManager->UpdateTerrains(resourceMan, renderer, globalVariableBuffer, lightsInfoBuffer, camera, timeManager);
 }
 
 void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {

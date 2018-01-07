@@ -774,6 +774,11 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], std:
 
 }
 
+float Terrain::GetHeightAtLocation(float x, float z) {
+
+	return fastTerrainUser->SampleHeight(x, 0, z) * heightScale;
+}
+
 /*
 void Terrain::BuildCommandBuffer(std::vector<VkCommandBuffer> cmdBuff, int cmdBuffIndex, VkDeviceSize offsets[1], std::shared_ptr<Terrain> curTerrain, bool ifWireframe) {
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? wireframe : pipeline);
