@@ -40,6 +40,7 @@ struct SlotValueHolder {
 };
 
 class Node;
+class ProcTerrainNodeGraph;
 
 class Connection {
 public:
@@ -57,24 +58,29 @@ public:
 
 class ConnectionSlot {
 public:
-	ConnectionSlot(ImVec2 pos, ConnectionType type);
-	ConnectionSlot(ImVec2 pos, ConnectionType type, std::string name);
+	ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type);
+	ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name);
 
-	bool IsHoveredOver(ImVec2 parentPos);
+	virtual void Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph& graph, const Node& parentNode) =0;
+	bool IsHoveredOver(ImVec2 parentPos) const;
 	ConnectionType GetType();
 
+	int slotNum;
 	ImVec2 pos;
-
 	float nodeSlotRadius = 5.0f;
+	ImColor slotColor = ImColor(150, 150, 150);
 
 	std::string name;
 
 	ConnectionType conType;
+
 };
 
 class InputConnectionSlot : public ConnectionSlot {
 public:
-	InputConnectionSlot(ImVec2 pos, ConnectionType type, std::string name);
+	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name);
+
+	void Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph& graph, const Node& parentNode) override;
 
 	bool hasConnection = false;
 	std::shared_ptr<Connection> connection;
@@ -83,7 +89,9 @@ public:
 
 class OutputConnectionSlot : public ConnectionSlot {
 public:
-	OutputConnectionSlot(ImVec2 pos, ConnectionType type);
+	OutputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type);
+
+	void Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph& graph, const Node& parentNode) override;
 
 	std::vector<std::shared_ptr<Connection>> connections;
 
@@ -192,6 +200,11 @@ public:
 	NewNodeGraph::TerGenNodeGraph& GetGraph();
 
 private:
+	friend class Node;
+	friend class ConnectionSlot;
+	friend class InputConnectionSlot;
+	friend class OutputConnectionSlot;
+
 	void DrawMenuBar();
 	void DrawButtonBar();
 	void DrawNodeButtons();

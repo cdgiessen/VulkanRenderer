@@ -5,7 +5,7 @@
 #include <string>
 #include <iostream>
 
-#include <glm/common.hpp>
+#include <glm/glm.hpp>
 
 #include "../../third-party/json/json.hpp"
 
@@ -100,17 +100,24 @@ namespace NewNodeGraph {
 
 		virtual LinkType GetNodeType() const = 0;
 
-		virtual float GetValue(const int x, const int y, const int z, float dummy) const = 0;
-		virtual int GetValue(const int x, const int y, const int z, int dummy) const = 0;
-		virtual double GetValue(const int x, const int y, const int z, double dummy) const = 0;
-		virtual glm::vec2 GetValue(const int x, const int y, const int z, glm::vec2 dummy) const = 0;
-		virtual glm::vec3 GetValue(const int x, const int y, const int z, glm::vec3 dummy) const = 0;
-		virtual glm::vec4 GetValue(const int x, const int y, const int z, glm::vec4 dummy) const = 0;
+		virtual float		GetValue(const int x, const int y, const int z, float dummy) const = 0;
+		virtual int			GetValue(const int x, const int y, const int z, int dummy) const = 0;
+		virtual double		GetValue(const int x, const int y, const int z, double dummy) const = 0;
+		virtual glm::vec2	GetValue(const int x, const int y, const int z, glm::vec2 dummy) const = 0;
+		virtual glm::vec3	GetValue(const int x, const int y, const int z, glm::vec3 dummy) const = 0;
+		virtual glm::vec4	GetValue(const int x, const int y, const int z, glm::vec4 dummy) const = 0;
 
 		virtual void SaveToJson(nlohmann::json& json) = 0;
 
 		virtual bool SetInputLink(int index, std::shared_ptr<INode> node) = 0;
 		virtual bool ResetInputLink(int index) =0;
+
+		virtual void SetValue(const int index, float value) = 0;
+		virtual void SetValue(const int index, int value) = 0;
+		virtual void SetValue(const int index, double value) = 0;
+		virtual void SetValue(const int index, glm::vec2 value) = 0;
+		virtual void SetValue(const int index, glm::vec3 value) = 0;
+		virtual void SetValue(const int index, glm::vec4 value) = 0;
 
 		void SetID(int ID);
 	protected:
@@ -137,6 +144,13 @@ namespace NewNodeGraph {
 		virtual bool SetInputLink(int index, std::shared_ptr<INode> node) = 0;
 		virtual bool ResetInputLink(int index) = 0;
 
+		virtual void SetValue(const int index, float value);
+		virtual void SetValue(const int index, int value);
+		virtual void SetValue(const int index, double value);
+		virtual void SetValue(const int index, glm::vec2 value);
+		virtual void SetValue(const int index, glm::vec3 value);
+		virtual void SetValue(const int index, glm::vec4 value);
+
 		virtual void SaveToJson(nlohmann::json& json);
 
 	private:
@@ -154,6 +168,8 @@ namespace NewNodeGraph {
 		bool SetInputLink(int index, std::shared_ptr<INode> node) override;
 		bool ResetInputLink(int index) override;
 
+		void SetValue(const int index, float value) override;
+
 		void SaveToJson(nlohmann::json& json) override;
 	private:
 		Link<float> input_output; //lol well some names are just confusing aren't they?
@@ -169,6 +185,8 @@ namespace NewNodeGraph {
 
 		bool SetInputLink(int index, std::shared_ptr<INode> node) override;
 		bool ResetInputLink(int index) override;
+
+		void SetValue(const int index, float value) override;
 
 		void SaveToJson(nlohmann::json& json) override;
 	private:
@@ -186,6 +204,8 @@ namespace NewNodeGraph {
 		bool SetInputLink(int index, std::shared_ptr<INode> node) override;
 		bool ResetInputLink(int index) override;
 
+		void SetValue(const int index, int value) override;
+
 		void SaveToJson(nlohmann::json& json) override;
 	private:
 		Link<int> value;
@@ -200,6 +220,8 @@ namespace NewNodeGraph {
 
 		virtual bool SetInputLink(int index, std::shared_ptr<INode> node) override;
 		bool ResetInputLink(int index) override;
+
+		void SetValue(const int index, float value) override;
 
 		void SaveToJson(nlohmann::json& json) override;
 	protected:
@@ -242,6 +264,8 @@ namespace NewNodeGraph {
 		bool SetInputLink(int index, std::shared_ptr<INode> node) override;
 		bool ResetInputLink(int index) override;
 
+		void SetValue(const int index, float value) override;
+
 		void SaveToJson(nlohmann::json& json) override;
 	private:
 		Link<float> input_a;
@@ -264,11 +288,14 @@ namespace NewNodeGraph {
 		bool SetInputLink(int index, std::shared_ptr<INode> node) override;
 		bool ResetInputLink(int index) override;
 
+		void SetValue(const int index, float value) override;
+		void SetValue(const int index, int value) override;
+
 		void SaveToJson(nlohmann::json& json) override;
 	protected:
-		Link<float> input_frequency;
-		Link<float> input_persistance;
 		Link<int> input_octaveCount;
+		Link<float> input_persistance;
+		Link<float> input_frequency;
 
 		FastNoiseSIMD* myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 		NoiseImage2D noiseSet;

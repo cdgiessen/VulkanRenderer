@@ -34,8 +34,8 @@ void ProcTerrainNodeGraph::DeleteNode(std::shared_ptr<Node> node) {
 	if (found != nodes.end()) {
 		for (auto slot : (*found)->inputSlots) 
 			DeleteConnection(slot.connection);
-		for(auto slot : (*found)->outputSlot.connections)
-			DeleteConnection(slot);
+		for(auto con : (*found)->outputSlot.connections)
+			DeleteConnection(con);
 
 		curGraph.DeleteNode((*found)->internal_node);
 		nodes.erase(found);
@@ -182,6 +182,8 @@ void ProcTerrainNodeGraph::DrawNodeCanvas() {
 
 void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 
+	std::vector<std::shared_ptr<Node>> nodesToDelete;
+
 	for (auto node : nodes) {
 
 		//updates nodes positions, relative to mouseDelta
@@ -242,17 +244,21 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 		imDrawList->AddRectFilled(windowPos + node->pos + ImVec2(1, 1), windowPos + node->pos + titleArea, ImColor(100, 0, 0), 4.0f);
 		imDrawList->AddRect(windowPos + node->pos, windowPos + node->pos + node->size, ImColor(100, 100, 100), 4.0f);
 
-
-		ImColor outSlotColor = ImColor(150, 150, 150);
-
-		if (node->outputSlot.IsHoveredOver(windowPos + node->pos))
-			outSlotColor = ImColor(200, 200, 200);
-
-		// Draw output circle
-		imDrawList->AddCircleFilled(windowPos + node->pos + node->outputSlot.pos, node->outputSlot.nodeSlotRadius, outSlotColor);
-			
-		/*if (ImGui::BeginPopupContextItem("output context menu"))
+		if (ImGui::BeginPopupContextItem("slot context menu"))
 		{
+			if (ImGui::Selectable("Delete Node")) {
+				nodesToDelete.push_back(node);
+			}
+			ImGui::PushItemWidth(-1);
+			//ImGui::DragFloat("##Value", &value, 0.1f, 0.0f, 0.0f);
+			ImGui::PopItemWidth();
+			ImGui::EndPopup();
+		}
+
+		node->outputSlot.Draw(imDrawList, *this, *node);
+	
+		/*if (ImGui::BeginPopupContextItem("output context menu"))
+		{ 
 			if (ImGui::Selectable("Reset Outputs")) {
 				if (node->outputSlot.connections.size() > 0)
 					for(auto con : node->outputSlot.connections)
@@ -261,60 +267,13 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 			ImGui::EndPopup();
 		}
 */
-		int i = 0;
-		for (auto slot : node->inputSlots)
+		for (int i = 0; i < node->inputSlots.size(); i++)
 		{
-			ImGui::SetCursorScreenPos(windowPos + node->pos + slot.pos + ImVec2(10, -slot.nodeSlotRadius));
-			ImGui::Text("%s", slot.name.c_str());
-			if (ImGui::BeginPopupContextItem("slot context menu"))
-			{
-				if (ImGui::Selectable("Reset Connection")) {
-					if (slot.connection != nullptr)
-						DeleteConnection(slot.connection);
-				}
-				ImGui::PushItemWidth(-1);
-				//ImGui::DragFloat("##Value", &value, 0.1f, 0.0f, 0.0f);
-				ImGui::PopItemWidth();
-				ImGui::EndPopup();
-			}
-
-			ImVec2 slotNameSize = ImGui::CalcTextSize(slot.name.c_str());
-			ImGui::SetCursorScreenPos(windowPos + node->pos + slot.pos + ImVec2(10 + slotNameSize.x, -slot.nodeSlotRadius));
-			//ImGui::InvisibleButton("slot value", slotNameSize);
-			
-			switch (slot.value.type) {
-			case(ConnectionType::Int): 
-				ImGui::DragInt("##Value", &(node->inputSlots[i].value.i), 0.1f, 0.0f, 0.0f);
-				break;
-			case(ConnectionType::Float): 
-				ImGui::DragFloat("##Value", &(node->inputSlots[i].value.f), 0.1f, 0.0f, 0.0f);
-				break;
-			case(ConnectionType::Color): 
-				ImGui::DragFloat3("##Value", glm::value_ptr(node->inputSlots[i].value.glm3), 0.1f, 0.0f, 0.0f);
-				break;
-			case(ConnectionType::Vec2): 
-				ImGui::DragFloat2("##Value", glm::value_ptr(node->inputSlots[i].value.glm2), 0.1f, 0.0f, 0.0f);
-				break;
-			case(ConnectionType::Vec3): 
-				ImGui::DragFloat3("##Value", glm::value_ptr(node->inputSlots[i].value.glm3), 0.1f, 0.0f, 0.0f);
-				break;
-			case(ConnectionType::Vec4): 
-				ImGui::DragFloat4("##Value", glm::value_ptr(node->inputSlots[i].value.glm4), 0.1f, 0.0f, 0.0f);
-				break;
-			}
-			
-
-			ImColor conColor = ImColor(150, 150, 150);
-
-			if (slot.hasConnection)
-				conColor = ImColor(220, 220, 0);
-
-			if (slot.IsHoveredOver(windowPos + node->pos))
-				conColor = ImColor(200, 200, 200);
-
-			imDrawList->AddCircleFilled(windowPos + node->pos + slot.pos, slot.nodeSlotRadius, conColor);
-			i++;
+			node->inputSlots[i].Draw(imDrawList, *this, *node);
 		}
+//		for (auto slot : node->inputSlots) {
+//			slot.Draw(imDrawList, *this, *node);
+//		}
 
 		if (node_widgets_active || node_moving_active) {
 
@@ -326,6 +285,11 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 			node->pos = node->pos + ImGui::GetIO().MouseDelta;
 
 		ImGui::PopID();
+	}
+
+	while (nodesToDelete.size() > 0) {
+		DeleteNode(nodesToDelete.at(0));
+		nodesToDelete.erase(nodesToDelete.begin());
 	}
 }
 
@@ -374,7 +338,8 @@ void ProcTerrainNodeGraph::DrawPossibleConnection(ImDrawList* imDrawList) {
 		if (ImGui::IsMouseClicked(0))
 		{
 			if (PossibleConnection::GetActiveSlotType(posCon.slot)
-				== PossibleConnection::GetActiveSlotType(info)) {
+				== PossibleConnection::GetActiveSlotType(info)
+				&& posCon.slot.node != info.node) {
 
 				std::shared_ptr<Connection> newConnection;
 
@@ -396,15 +361,13 @@ void ProcTerrainNodeGraph::DrawPossibleConnection(ImDrawList* imDrawList) {
 					outgoingSlot.node,
 					incomingSlot.node);
 
-				//Delete old connection
-				if (incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection == nullptr) {
-					incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection = newConnection;
-
-				} else {
+				//Delete old connection if exists
+				if (incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection != nullptr) 
 					DeleteConnection(incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection);
-					incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection = newConnection;
-				}
-				
+
+				incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection = newConnection;
+				outgoingSlot.node->outputSlot.connections.push_back(newConnection);
+
 				newConnection->startPosRelNode = PossibleConnection::GetActiveSlotPosition(outgoingSlot);
 				newConnection->endPosRelNode = PossibleConnection::GetActiveSlotPosition(incomingSlot);
 
@@ -510,15 +473,15 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType)
 
 }
 
-ConnectionSlot::ConnectionSlot(ImVec2 pos, ConnectionType type): conType(type), pos(pos)
+ConnectionSlot::ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type): slotNum(slotNum), conType(type), pos(pos)
 {
 }
 
-ConnectionSlot::ConnectionSlot(ImVec2 pos, ConnectionType type, std::string name) : conType(type), name(name), pos(pos)
+ConnectionSlot::ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name) : slotNum(slotNum), conType(type), pos(pos), name(name)
 {
 }
 
-bool ConnectionSlot::IsHoveredOver(ImVec2 parentPos)
+bool ConnectionSlot::IsHoveredOver(ImVec2 parentPos) const
 {
 	ImVec2 mousePos = ImGui::GetIO().MousePos;
 	ImVec2 conPos = parentPos + pos;
@@ -533,7 +496,7 @@ ConnectionType ConnectionSlot::GetType() {
 	return conType;
 }
 
-InputConnectionSlot::InputConnectionSlot(ImVec2 pos, ConnectionType type, std::string name) : ConnectionSlot(pos, type, name), value(type)
+InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name) : ConnectionSlot(slotNum, pos, type, name), value(type)
 {
 	switch (type) {
 		case(ConnectionType::Int): value.i = 0; break;
@@ -545,17 +508,86 @@ InputConnectionSlot::InputConnectionSlot(ImVec2 pos, ConnectionType type, std::s
 	}
 }
 
-OutputConnectionSlot::OutputConnectionSlot(ImVec2 pos, ConnectionType type): ConnectionSlot(pos, type)
+void InputConnectionSlot::Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph& graph, const Node& parentNode) {
+
+	ImVec2 relPos = ImVec2(graph.windowPos.x + parentNode.pos.x, graph.windowPos.y + parentNode.pos.y);
+
+	ImGui::SetCursorScreenPos(relPos + pos + ImVec2(10, -nodeSlotRadius));
+	ImGui::Text("%s", name.c_str());
+	//if (ImGui::BeginPopupContextItem("slot context menu"))
+	//{
+	//	if (ImGui::Selectable("Reset Connection")) {
+	//		if (slot.connection != nullptr)
+	//			//TODO
+	//			//graph.DeleteConnection(slot.connection);
+	//	}
+	//	ImGui::EndPopup();
+	//}
+
+	ImVec2 slotNameSize = ImGui::CalcTextSize(name.c_str());
+	ImGui::SetCursorScreenPos(relPos + pos + ImVec2(10 + slotNameSize.x, -nodeSlotRadius));
+	//ImGui::InvisibleButton("slot value", slotNameSize);
+
+	ImGui::PushItemWidth(parentNode.size.x - slotNameSize.x);
+	std::string uniqueID = (std::to_string(parentNode.id * 100 + slotNum));
+	switch (value.type) {
+	case(ConnectionType::Int):
+		ImGui::DragInt(std::string("##int" + uniqueID).c_str(), &(value.i), 0.1f, 0.0f, 0.0f);
+		parentNode.internal_node->SetValue(slotNum, value.i);
+		break;
+	case(ConnectionType::Float):
+		ImGui::DragFloat(std::string("##float" + uniqueID).c_str(), &(value.f), 0.01f, 0.0f, 0.0f);
+		parentNode.internal_node->SetValue(slotNum, value.f);
+		break;
+	case(ConnectionType::Color):
+		ImGui::DragFloat3(std::string("##color" + uniqueID).c_str(), glm::value_ptr(value.glm3), 0.01f, 0.0f, 0.0f);
+		parentNode.internal_node->SetValue(slotNum, value.glm3);
+		break;
+	case(ConnectionType::Vec2):
+		ImGui::DragFloat2(std::string("##vec2" + uniqueID).c_str(), glm::value_ptr(value.glm2), 0.01f, 0.0f, 0.0f);
+		parentNode.internal_node->SetValue(slotNum, value.glm2);
+		break;
+	case(ConnectionType::Vec3):
+		ImGui::DragFloat3(std::string("##vec3" + uniqueID).c_str(), glm::value_ptr(value.glm3), 0.01f, 0.0f, 0.0f);
+		parentNode.internal_node->SetValue(slotNum, value.glm3);
+		break;
+	case(ConnectionType::Vec4):
+		ImGui::DragFloat4(std::string("##vec4" + uniqueID).c_str(), glm::value_ptr(value.glm4), 0.01f, 0.0f, 0.0f);
+		parentNode.internal_node->SetValue(slotNum, value.glm4);
+		break;
+	}
+	ImGui::PopItemWidth();
+
+	ImColor conColor = ImColor(150, 150, 150);
+
+	if (hasConnection)
+		conColor = ImColor(220, 220, 0);
+
+	if (IsHoveredOver(relPos))
+		conColor = ImColor(200, 200, 200);
+
+	imDrawList->AddCircleFilled(relPos + pos, nodeSlotRadius, conColor);
+}
+
+OutputConnectionSlot::OutputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type): ConnectionSlot(slotNum, pos, type)
 {
 }
 
+void OutputConnectionSlot::Draw(ImDrawList* imDrawList, const  ProcTerrainNodeGraph& graph, const Node& parentNode) {
+	slotColor = ImColor(150, 150, 150);
+	ImVec2 relPos = ImVec2(graph.windowPos.x + parentNode.pos.x, graph.windowPos.y + parentNode.pos.y);
+	if (IsHoveredOver(relPos))
+		slotColor = ImColor(200, 200, 200);
+
+	imDrawList->AddCircleFilled(relPos + pos, nodeSlotRadius, slotColor);
+}
 
 Connection::Connection(ConnectionType conType, std::shared_ptr<Node> input, std::shared_ptr<Node> output)
 	: conType(conType), input(input), output(output)
 {
 }
 
-Node::Node(std::string name, ConnectionType outputType) : name(name), outputSlot(ImVec2(size.x, 15), outputType)
+Node::Node(std::string name, ConnectionType outputType) : name(name), outputSlot(0, ImVec2(size.x, 15), outputType)
 {
 
 
@@ -567,7 +599,7 @@ void Node::SetInternalLink(int index, std::shared_ptr<NewNodeGraph::INode> inode
 
 void Node::AddInputSlot(ConnectionType type, std::string name)
 {
-	inputSlots.push_back(InputConnectionSlot(ImVec2(0, 40 + (float)inputSlots.size() * 15), type, name));
+	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40 + (float)inputSlots.size() * 15), type, name));
 }
 
 OutputNode::OutputNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("Output", ConnectionType::Float)

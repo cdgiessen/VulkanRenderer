@@ -195,6 +195,13 @@ namespace NewNodeGraph {
 	template<typename T> glm::vec3	Node<T>::GetValue(const int x, const int y, const int z, glm::vec3 dummy)	const { return glm::vec3(0, -1, -2); }
 	template<typename T> glm::vec4	Node<T>::GetValue(const int x, const int y, const int z, glm::vec4 dummy)	const { return glm::vec4(0, -1, -2, -3); }
 
+	template<typename T> void Node<T>::SetValue(const int index, float value)	{};
+	template<typename T> void Node<T>::SetValue(const int index, int value)		{};
+	template<typename T> void Node<T>::SetValue(const int index, double value)	{};
+	template<typename T> void Node<T>::SetValue(const int index, glm::vec2 value){};
+	template<typename T> void Node<T>::SetValue(const int index, glm::vec3 value){};
+	template<typename T> void Node<T>::SetValue(const int index, glm::vec4 value){};
+
 	OutputNode::OutputNode() : Node<float>(LinkType::Float), input_output(LinkType::Float, 0) { }
 	OutputNode::~OutputNode() { /*std::cout << "Output Node Deleted" << std::endl; */ }
 
@@ -212,6 +219,11 @@ namespace NewNodeGraph {
 	bool OutputNode::ResetInputLink(int index) {
 		if (index == 0)
 			return input_output.ResetInputNode();
+	}
+
+	void OutputNode::SetValue(const int index, float value) {
+		if(index == 0)
+			input_output.SetValue(value);
 	}
 
 	void OutputNode::SaveToJson(nlohmann::json & json)
@@ -241,6 +253,10 @@ namespace NewNodeGraph {
 		return value.ResetInputNode();
 	}
 
+	void ConstantFloatNode::SetValue(const int index, float value) {
+		this->value.SetValue(value);
+	}
+
 	void ConstantFloatNode::SaveToJson(nlohmann::json & json)
 	{
 		// TODO : fill out json
@@ -260,6 +276,10 @@ namespace NewNodeGraph {
 
 	bool ConstantIntNode::SetInputLink(int index, std::shared_ptr<INode> node) {
 		return value.SetInputNode(node);
+	}
+
+	void ConstantIntNode::SetValue(const int index, int value) {
+		this->value.SetValue(value);
 	}
 
 	bool ConstantIntNode::ResetInputLink(int index) {
@@ -296,6 +316,14 @@ namespace NewNodeGraph {
 			return input_b.ResetInputNode();
 		return false;
 	}
+
+	void MathNode::SetValue(const int index, float value) {
+		if(index == 0)
+			input_a.SetValue(value);
+		else if(index == 1)
+			input_b.SetValue(value);
+	}
+
 
 	void MathNode::SaveToJson(nlohmann::json & json)
 	{
@@ -335,8 +363,7 @@ namespace NewNodeGraph {
 		return false;
 	}
 	
-	bool SelectorNode::ResetInputLink(int index)
-	{
+	bool SelectorNode::ResetInputLink(int index) {
 		if (index == 0)
 			return input_a.ResetInputNode();
 		else if (index == 1)
@@ -346,6 +373,17 @@ namespace NewNodeGraph {
 		else if (index == 3)
 			return input_blendAmount.ResetInputNode();
 		return false;
+	}
+
+	void SelectorNode::SetValue(const int index, float value) {
+		if (index == 0)
+			input_a.SetValue(value);
+		else if (index == 1)
+			input_b.SetValue(value);
+		else if (index == 2)
+			input_cutoff.SetValue(value);
+		else if (index == 3)
+			input_blendAmount.SetValue(value);
 	}
 
 	void SelectorNode::SaveToJson(nlohmann::json & json)
@@ -396,29 +434,40 @@ namespace NewNodeGraph {
 	}
 
 	bool NoiseSourceNode::SetInputLink(int index, std::shared_ptr<INode> node) {
-		if(index == 0 && input_frequency.GetLinkType() == node->GetNodeType())
-			return input_frequency.SetInputNode(node);
 
+		if (index == 0 && input_octaveCount.GetLinkType() == node->GetNodeType())
+			return input_octaveCount.SetInputNode(node);
 		else if(index == 1 && input_persistance.GetLinkType() == node->GetNodeType())
 			return input_persistance.SetInputNode(node);
+		else if(index == 2 && input_frequency.GetLinkType() == node->GetNodeType())
+			return input_frequency.SetInputNode(node);
 
-		else if (index == 2 && input_octaveCount.GetLinkType() == node->GetNodeType())
-			return input_octaveCount.SetInputNode(node);
 		return false;
 	}
 
-	bool NoiseSourceNode::ResetInputLink(int index)
-	{
+	bool NoiseSourceNode::ResetInputLink(int index)	{
 		if (index == 0)
-			return input_frequency.ResetInputNode();
+			return input_octaveCount.ResetInputNode();
 		else if (index == 1)
 			return input_persistance.ResetInputNode();
 		else if (index == 2)
-			return input_octaveCount.ResetInputNode();
+			return input_frequency.ResetInputNode();
 
 		return false;
-
 	}
+
+	void NoiseSourceNode::SetValue(const int index, int value) {
+		if (index == 0)
+			input_octaveCount.SetValue(value);
+	}
+
+	void NoiseSourceNode::SetValue(const int index, float value) {
+		if (index == 1)
+			input_persistance.SetValue(value);
+		else if (index == 2)
+			input_frequency.SetValue(value);
+	}
+
 
 	void NoiseSourceNode::SaveToJson(nlohmann::json & json)
 	{
@@ -430,6 +479,7 @@ namespace NewNodeGraph {
 		myNoise->SetSeed(seed);
 		myNoise->SetFrequency(input_frequency.GetData());
 		myNoise->SetFractalOctaves(input_octaveCount.GetData());
+		myNoise->SetFractalGain(input_persistance.GetData());
 		noiseDimention = numCells;
 		noiseSet.SetWidth(numCells);
 		noiseSet.SetImageData(myNoise->GetValueFractalSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier));
@@ -441,6 +491,7 @@ namespace NewNodeGraph {
 		myNoise->SetSeed(seed);
 		myNoise->SetFrequency(input_frequency.GetData());
 		myNoise->SetFractalOctaves(input_octaveCount.GetData());
+		myNoise->SetFractalGain(input_persistance.GetData());
 		noiseDimention = numCells;
 		noiseSet.SetWidth(numCells);
 		noiseSet.SetImageData(myNoise->GetSimplexFractalSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier));
@@ -452,6 +503,7 @@ namespace NewNodeGraph {
 		myNoise->SetSeed(seed);
 		myNoise->SetFrequency(input_frequency.GetData());
 		myNoise->SetFractalOctaves(input_octaveCount.GetData());
+		myNoise->SetFractalGain(input_persistance.GetData());
 		noiseDimention = numCells;
 		noiseSet.SetWidth(numCells);
 		noiseSet.SetImageData(myNoise->GetPerlinFractalSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier));
@@ -463,6 +515,7 @@ namespace NewNodeGraph {
 		myNoise->SetSeed(seed);
 		myNoise->SetFrequency(input_frequency.GetData());
 		myNoise->SetFractalOctaves(input_octaveCount.GetData());
+		myNoise->SetFractalGain(input_persistance.GetData());
 		noiseDimention = numCells;
 		noiseSet.SetWidth(numCells);
 		noiseSet.SetImageData(myNoise->GetCellularSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier));
@@ -474,6 +527,7 @@ namespace NewNodeGraph {
 		myNoise->SetSeed(seed);
 		myNoise->SetFrequency(input_frequency.GetData());
 		myNoise->SetFractalOctaves(input_octaveCount.GetData());
+		myNoise->SetFractalGain(input_persistance.GetData());
 		noiseDimention = numCells;
 		noiseSet.SetWidth(numCells);
 		noiseSet.SetImageData(myNoise->GetCubicFractalSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier));
@@ -485,6 +539,7 @@ namespace NewNodeGraph {
 		myNoise->SetSeed(seed);
 		myNoise->SetFrequency(input_frequency.GetData());
 		myNoise->SetFractalOctaves(input_octaveCount.GetData());
+		myNoise->SetFractalGain(input_persistance.GetData());
 		noiseDimention = numCells;
 		noiseSet.SetWidth(numCells);
 		noiseSet.SetImageData(myNoise->GetWhiteNoiseSet(pos.x, 0, pos.y, numCells, 1, numCells, scaleModifier));
@@ -496,6 +551,7 @@ namespace NewNodeGraph {
 		myNoise->SetSeed(seed);
 		myNoise->SetFrequency(input_frequency.GetData());
 		myNoise->SetFractalOctaves(input_octaveCount.GetData());
+		myNoise->SetFractalGain(input_persistance.GetData());
 		noiseDimention = numCells;
 		noiseSet.SetWidth(numCells);
 		myNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::CellValue);

@@ -196,21 +196,38 @@ void VulkanApp::BuildImgui() {
 		bool show_camera_window = true;
 		bool show_log_window = true;
 		bool show_debug_overlay = true;
+		bool show_controls_list = true;
 
 		if (show_debug_overlay) DebugOverlay(&show_debug_overlay);
 		if (show_camera_window) CameraWindow(&show_camera_window);
 
 		scene->UpdateSceneGUI();
 
-		{ //simple app log - taken from imgui exampels
+		if(show_log_window){
 			appLog.Draw("Example: Log", &show_log_window);
 		}
 
 		imgui_nodeGraph_terrain.Draw();
 
+		if (show_controls_list) {
+			ImGui::Begin("Controls", &show_controls_list);
+			ImGui::Text("Horizontal Movement: WASD");
+			ImGui::Text("Vertical Movement: Space/Shift");
+			ImGui::Text("Looking: Mouse");
+			ImGui::Text("Change Move Speed: E/Q");
+			ImGui::Text("Unlock Mouse: Enter");
+			ImGui::Text("Show Wireframe: X");
+			//ImGui::Text("Show Normals: N");
+			ImGui::Text("Toggle Flying: F");
+			ImGui::Text("Screenshot: F10 - EXPERIMENTAL!");
+			ImGui::Text("Hide Gui: H");
+			ImGui::Text("Exit: Escape");
+			ImGui::End();
+		}
 	}
 	imGuiTimer.EndTimer();
 	//std::cout << imGuiTimer.GetElapsedTimeNanoSeconds() << std::endl;
+
 
 }
 
@@ -236,9 +253,9 @@ void VulkanApp::HandleInputs() {
 	if (Input::GetKey(GLFW_KEY_LEFT_SHIFT))
 		scene->GetCamera()->ProcessKeyboard(Camera_Movement::DOWN, (float)timeManager->GetDeltaTime());
 
-	if (Input::GetKeyDown(GLFW_KEY_0)) {
-		//appLog.AddLog("ZERO WAS HIT REPEAT ZERO WAS HIT\n");
-	}
+	//if (Input::GetKeyDown(GLFW_KEY_0)) {
+	//	//appLog.AddLog("ZERO WAS HIT REPEAT ZERO WAS HIT\n");
+	//}
 
 	if (Input::GetKeyDown(GLFW_KEY_ESCAPE))
 		window->SetWindowToClose();
