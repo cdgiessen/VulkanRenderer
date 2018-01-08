@@ -1,5 +1,3 @@
-#pragma once
-
 #include "VulkanDevice.hpp"
 #include "VulkanInitializers.hpp"
 

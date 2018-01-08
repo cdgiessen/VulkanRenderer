@@ -1,5 +1,5 @@
 #include "TimeManager.h"
-
+#include <algorithm>
 
 
 TimeManager::TimeManager()

@@ -1,5 +1,3 @@
-#pragma once
-
 #include "../core/CoreTools.h"
 #include "VulkanTools.h"
 #include "VulkanInitializers.hpp"
