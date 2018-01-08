@@ -79,12 +79,18 @@ public:
 class InputConnectionSlot : public ConnectionSlot {
 public:
 	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name);
+	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name, 
+		float defaultVal, float sliderStepSize, float lowerBound, float upperBound);
+	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name, 
+		int defaultVal, float sliderStepSize, float lowerBound, float upperBound);
 
 	void Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph& graph, const Node& parentNode) override;
 
 	bool hasConnection = false;
 	std::shared_ptr<Connection> connection;
 	SlotValueHolder value;
+	float sliderStepSize = 0.1f, lowerBound = 0.0f, upperBound = 1.0f;
+
 };
 
 class OutputConnectionSlot : public ConnectionSlot {
@@ -112,6 +118,8 @@ public:
 	OutputConnectionSlot outputSlot;
 
 	void AddInputSlot(ConnectionType type, std::string name);
+	void AddInputSlot(ConnectionType type, std::string name, float defaultValue, float sliderStepSize, float lowerBound, float upperBound);
+	void AddInputSlot(ConnectionType type, std::string name, int defaultValue, float sliderStepSize, float lowerBound, float upperBound);
 
 	std::shared_ptr<NewNodeGraph::INode> internal_node;
 	//void Draw(ImDrawList*  imDrawList, ImVec2 offset);
@@ -221,6 +229,7 @@ private:
 
 	void DeleteNode(std::shared_ptr<Node> node);
 	void DeleteConnection(std::shared_ptr<Connection> con);
+	void ResetGraph();
 
 	HoveredSlotInfo GetHoveredSlot();
 

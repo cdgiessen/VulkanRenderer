@@ -39,6 +39,8 @@ public:
 	VkCommandBuffer CreateTerrainMeshUpdateCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel level);
 	void FlushTerrainMeshUpdateCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free);
 
+	void RecreateTerrain();
+
 private:
 	NewNodeGraph::TerGenNodeGraph& nodeGraph;
 

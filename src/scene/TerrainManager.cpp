@@ -152,6 +152,10 @@ void TerrainManager::UpdateTerrainGUI() {
 	
 }
 
+void TerrainManager::RecreateTerrain(){
+	recreateTerrain = true;
+}
+
 void TerrainManager::CleanUpTerrain() {
 
 	terrains.clear();

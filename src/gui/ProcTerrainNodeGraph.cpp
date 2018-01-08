@@ -26,7 +26,7 @@ NewNodeGraph::TerGenNodeGraph& ProcTerrainNodeGraph::GetGraph() {
 }
 
 void ProcTerrainNodeGraph::BuildTerGenNodeGraph() {
-
+	
 }
 
 void ProcTerrainNodeGraph::DeleteNode(std::shared_ptr<Node> node) {
@@ -50,6 +50,18 @@ void ProcTerrainNodeGraph::DeleteConnection(std::shared_ptr<Connection> con) {
 	}
 }
 
+void ProcTerrainNodeGraph::ResetGraph(){
+	while(connections.size() > 0){
+		DeleteConnection(connections.at(0));
+	}
+	while(nodes.size() > 0){
+		DeleteNode(nodes.at(0));
+	}
+	outputNode = std::make_shared<OutputNode>(curGraph);
+	outputNode->id = curID++;
+	outputNode->internal_node = curGraph.GetOutputNode();
+	nodes.push_back(outputNode);
+}
 
 void ProcTerrainNodeGraph::Draw() {
 
@@ -120,7 +132,13 @@ void ProcTerrainNodeGraph::DrawButtonBar() {
 		BuildTerGenNodeGraph();
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Other Button")) {
+	if (ImGui::Button("Reset graph")) {
+		ResetGraph();
+	}
+	if (ImGui::Button("Save graph")) {
+		
+	}
+	if (ImGui::Button("Load graph")) {
 		
 	}
 
@@ -477,7 +495,8 @@ ConnectionSlot::ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type): sl
 {
 }
 
-ConnectionSlot::ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name) : slotNum(slotNum), conType(type), pos(pos), name(name)
+ConnectionSlot::ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name) 
+	: slotNum(slotNum), conType(type), pos(pos), name(name)
 {
 }
 
@@ -496,10 +515,39 @@ ConnectionType ConnectionSlot::GetType() {
 	return conType;
 }
 
-InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name) : ConnectionSlot(slotNum, pos, type, name), value(type)
+InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name) 
+: ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound) 
 {
 	switch (type) {
 		case(ConnectionType::Int): value.i = 0; break;
+		case(ConnectionType::Float): value.f = 0.0f;  break;
+		case(ConnectionType::Color): value.glm3 = glm::vec3(0); break;
+		case(ConnectionType::Vec2): value.glm2 = glm::vec2(0); break;
+		case(ConnectionType::Vec3): value.glm3 = glm::vec3(0); break;
+		case(ConnectionType::Vec4): value.glm4 = glm::vec4(0); break;
+	}
+}
+
+InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name,
+float defaultVal, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float upperBound = 0.0f) 
+: ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound) 
+{
+	switch (type) {
+		case(ConnectionType::Int): value.i = 0; break;
+		case(ConnectionType::Float): value.f = defaultVal;  break;
+		case(ConnectionType::Color): value.glm3 = glm::vec3(0); break;
+		case(ConnectionType::Vec2): value.glm2 = glm::vec2(0); break;
+		case(ConnectionType::Vec3): value.glm3 = glm::vec3(0); break;
+		case(ConnectionType::Vec4): value.glm4 = glm::vec4(0); break;
+	}
+}
+
+InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name,
+int defaultVal, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float upperBound = 0.0f) 
+: ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound) 
+{
+	switch (type) {
+		case(ConnectionType::Int): value.i = defaultVal; break;
 		case(ConnectionType::Float): value.f = 0.0f;  break;
 		case(ConnectionType::Color): value.glm3 = glm::vec3(0); break;
 		case(ConnectionType::Vec2): value.glm2 = glm::vec2(0); break;
@@ -601,6 +649,15 @@ void Node::AddInputSlot(ConnectionType type, std::string name)
 {
 	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40 + (float)inputSlots.size() * 15), type, name));
 }
+void Node::AddInputSlot(ConnectionType type, std::string name,  float defaultValue, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float upperBound = 0.0f)
+{
+	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40 + (float)inputSlots.size() * 15), type, name, defaultValue, sliderStepSize, lowerBound, upperBound));
+}
+
+void Node::AddInputSlot(ConnectionType type, std::string name, int defaultValue, float sliderStepSize = 0.1f, float lowerBound = 0.0f, float upperBound = 0.0f)
+{
+	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40 + (float)inputSlots.size() * 15), type, name, defaultValue, sliderStepSize, lowerBound, upperBound));
+}
 
 OutputNode::OutputNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("Output", ConnectionType::Float)
 {
@@ -609,17 +666,17 @@ OutputNode::OutputNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("Output", Co
 
 SelectorNode::SelectorNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("Selector", ConnectionType::Float)
 {
-	AddInputSlot(ConnectionType::Float, "A");
-	AddInputSlot(ConnectionType::Float, "B");
-	AddInputSlot(ConnectionType::Float, "Control");
+	AddInputSlot(ConnectionType::Float, "A", 0.0f, 0.01f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "B", 1.0f, 0.01f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "Control", 0.5f);
 	internal_node = std::make_shared<NewNodeGraph::SelectorNode>();
 	graph.AddNode(internal_node);
 }
 
 MathNode::MathNode(std::string name) : Node(name, ConnectionType::Float)
 {
-	AddInputSlot(ConnectionType::Float, "A");
-	AddInputSlot(ConnectionType::Float, "B");
+	AddInputSlot(ConnectionType::Float, "A", 0.0f, 0.01f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "B", 0.0f, 0.01f, 0.0f, 0.0f);
 }
 
 AdditionNode::AdditionNode(NewNodeGraph::TerGenNodeGraph& graph) : MathNode("Addition")
@@ -656,9 +713,9 @@ PowerNode::PowerNode(NewNodeGraph::TerGenNodeGraph& graph) : MathNode("Power")
 
 NoiseNode::NoiseNode(std::string name) : Node(name, ConnectionType::Float)
 {
-	AddInputSlot(ConnectionType::Int, "Octaves");
-	AddInputSlot(ConnectionType::Float, "Persistance");
-	AddInputSlot(ConnectionType::Float, "Frequency");
+	AddInputSlot(ConnectionType::Int, "Octaves", 1, 0.1f, 0.0f, 1.0f);
+	AddInputSlot(ConnectionType::Float, "Persistance", 0.5f, 0.01f, 0.0f, 1.0f);
+	AddInputSlot(ConnectionType::Float, "Frequency", 0.15f,0.01f, 0.0f, 1.0f);
 }
 
 SimplexNode::SimplexNode(NewNodeGraph::TerGenNodeGraph& graph) : NoiseNode("Simplex")
@@ -699,14 +756,14 @@ CellNoiseNode::CellNoiseNode(NewNodeGraph::TerGenNodeGraph& graph) : NoiseNode("
 
 ConstantIntNode::ConstantIntNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("ConstantInt", ConnectionType::Int)
 {
-	AddInputSlot(ConnectionType::Int, "Value");
+	AddInputSlot(ConnectionType::Int, "Value", 0.0f, 0.1f, 0.0f, 0.0f);
 	internal_node = std::make_shared<NewNodeGraph::ConstantIntNode>(1);
 	graph.AddNode(internal_node);
 }
 
 ConstantFloatNode::ConstantFloatNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("ConstantFloat", ConnectionType::Float)
 {
-	AddInputSlot(ConnectionType::Float, "Value");
+	AddInputSlot(ConnectionType::Float, "Value", 0.0f, 0.0f, 0.0f, 0.0f);
 	internal_node = std::make_shared<NewNodeGraph::ConstantFloatNode>(1.0f);
 	graph.AddNode(internal_node);
 }
