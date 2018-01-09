@@ -1,14 +1,6 @@
 #pragma once
 
-#include <iostream>
-#include <fstream>
-#include <stdexcept>
-#include <algorithm>
-#include <vector>
-#include <cstring>
 #include <string>
-#include <array>
-#include <set>
 
 #include <vulkan/vulkan.h>
 
@@ -44,14 +36,14 @@ void setImageLayout(VkCommandBuffer cmdbuffer, VkImage image, VkImageAspectFlags
 /** @brief Returns an error code as a string */
 std::string errorString(VkResult errorCode);
 
-#define VK_CHECK_RESULT(f)																				\
-{																										\
-	VkResult res = (f);																					\
-	if (res != VK_SUCCESS)																				\
-	{																									\
-		std::cout << "Fatal : VkResult is \"" << errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << std::endl; \
-		assert(res == VK_SUCCESS);																		\
-	}																									\
+#define VK_CHECK_RESULT(f)																										\
+{																																\
+	VkResult res = (f);																											\
+	if (res != VK_SUCCESS)																										\
+	{																															\
+		Log::Debug << "Fatal : VkResult is \"" << errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n";	\
+		assert(res == VK_SUCCESS);																								\
+	}																															\
 }
 
 // Custom define for better code readability

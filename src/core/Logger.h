@@ -1,37 +1,42 @@
 #pragma once
 
 #include "../../third-party/ImGui/imgui.h"
-// Usage:
-//  static ExampleAppLog my_log;
-//  my_log.AddLog("Hello %d world\n", 123);
-//  my_log.Draw("title");
 
+#include <iosfwd>
 #include <fstream>
+#include <ostream> 
 
-namespace DebugLog {
+namespace Log {
 	
-	class CusLog {
+	class Log {
 	public:
-		CusLog();
-		CusLog(std::string logName);
-		~CusLog();
+		Log(std::string fileOut, std::streambuf* consoleOut);
 
-		std::ofstream& GetLog();
-		std::ostream& GetOldStream();
+		std::ofstream fileOut;
+		std::ostream consoleOut;
 
-		void CaptureStream(std::ostream& buf);
-		std::ostream* ReleaseStream();
+		template<typename T>
+		Log& operator << (T& stream) {
+			consoleOut << stream;
+			fileOut << stream;
+			return *this;
+		}
 
-	private:
-		std::ofstream log;
-		std::ostream oldStream;
+		Log& operator << (int stream) {
+			consoleOut << stream;
+			fileOut << stream;
+			return *this;
+		}
+
 	};
 
-	extern CusLog log;
-	
-	void SetupCoutCapture();
-	void ReleaseCoutCapture();
+	extern Log Error;
+	extern Log Debug;
 
+	// Usage:
+	//  static ExampleAppLog my_log;
+	//  my_log.AddLog("Hello %d world\n", 123);
+	//  my_log.Draw("title");
 	class Logger
 	{
 	private:

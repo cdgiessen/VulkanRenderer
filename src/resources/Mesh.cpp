@@ -1,5 +1,6 @@
 #include "Mesh.h"
 #include "../core/CoreTools.h"
+#include "../core/Logger.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../../third-party/tinyobjloader/tiny_obj_loader.h"
@@ -40,11 +41,11 @@ void Mesh::importFromFile(const std::string filename) {
 		bool cret = tinyobj::LoadObj(&attrib, &shapes, &materials, &cerr, filename.c_str());
 
 		if (!cerr.empty()) { // `err` may contain warning message.
-			std::cerr << cerr << std::endl;
+			Log::Error << cerr << "\n";
 		}
 
 		if (!cret) {
-			std::cerr << "Failed to load model" << std::endl;
+			Log::Error << "Failed to load model" << "\n";
 			exit(1);
 		}
 

@@ -6,14 +6,15 @@
 #include "../scene/Scene.h"
 #include "../gui/ImGuiImpl.h"
 
-VulkanRenderer::VulkanRenderer(bool validationLayer, std::shared_ptr<Scene> scene) : device(validationLayer), vulkanSwapChain(device), pipelineManager(device), shaderManager(device), scene(scene)
+VulkanRenderer::VulkanRenderer(bool validationLayer, std::shared_ptr<Scene> scene) 
+	: device(validationLayer), vulkanSwapChain(device), shaderManager(device), pipelineManager(device), scene(scene), textureManager(device)
 {
 }
 
 
 VulkanRenderer::~VulkanRenderer()
 {
-	std::cout << "renderer deleted\n";
+	Log::Debug << "renderer deleted\n";
 	//CleanVulkanResources();
 }
 
@@ -61,7 +62,7 @@ void VulkanRenderer::CleanVulkanResources() {
 }
 
 void VulkanRenderer::RecreateSwapChain() {
-	std::cout << "Recreating SwapChain" << std::endl;
+	Log::Debug << "Recreating SwapChain" << "\n";
 	
 	vkDestroyImageView(device.device, depthImageView, nullptr);
 	vkDestroyImage(device.device, depthImage, nullptr);
@@ -500,7 +501,7 @@ void InsertImageMemoryBarrier(
 		0, nullptr,
 		1, &imageMemoryBarrier);
 
-	//std::cout << " HI " << std::endl;
+	//Log::Debug << " HI " << "\n";
 }
 
 // Take a screenshot for the curretn swapchain image
@@ -520,14 +521,14 @@ bool VulkanRenderer::SaveScreenshot(const std::string filename)
 	vulkanSwapChain.swapChain;
 	vkGetPhysicalDeviceFormatProperties(device.physical_device, vulkanSwapChain.swapChainImageFormat, &formatProps);
 	if (!(formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT)) {
-		std::cerr << "Device does not support blitting from optimal tiled images, using copy instead of blit!" << std::endl;
+		Log::Error << "Device does not support blitting from optimal tiled images, using copy instead of blit!" << "\n";
 		supportsBlit = false;
 	}
 
 	// Check if the device supports blitting to linear images 
 	vkGetPhysicalDeviceFormatProperties(device.physical_device, VK_FORMAT_R8G8B8A8_UNORM, &formatProps);
 	if (!(formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
-		std::cerr << "Device does not support blitting to linear tiled images, using copy instead of blit!" << std::endl;
+		Log::Error << "Device does not support blitting to linear tiled images, using copy instead of blit!" << "\n";
 		supportsBlit = false;
 	}
 
@@ -721,10 +722,10 @@ bool VulkanRenderer::SaveScreenshot(const std::string filename)
 	
 	int err = stbi_write_png(filename.c_str(), vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, STBI_rgb_alpha, dataForSTB, vulkanSwapChain.swapChainExtent.width * STBI_rgb_alpha);
 	if (err == 0) {
-		std::cout << "Screenshot saved to disk" << std::endl;
+		Log::Debug << "Screenshot saved to disk" << "\n";
 	}
 	else {
-		std::cout << "Failed to save screenshot!\nError code = "<< err << std::endl;
+		Log::Debug << "Failed to save screenshot!\nError code = "<< err << "\n";
 	}
 
 	// Clean up resources

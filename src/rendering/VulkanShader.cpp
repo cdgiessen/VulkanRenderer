@@ -1,5 +1,10 @@
 #include "VulkanShader.hpp"
 
+#include "../core/CoreTools.h"
+#include "VulkanInitializers.hpp"
+#include "VulkanTools.h"
+
+
 VulkanShader::VulkanShader(const VulkanDevice &device) : device(device)
 {
 	shaderModules.reserve(32);
@@ -17,36 +22,43 @@ VulkanShader::~VulkanShader()
 
 VkShaderModule VulkanShader::loadShaderModule(std::shared_ptr<VulkanDevice> device, const std::string& codePath, VulkanShader::ShaderType type) {
 	std::vector<char> shaderCode;
+	bool useDefaults = false;
 	try {
 		shaderCode = readShaderFile(codePath);
+	
 	}
-	catch (std::runtime_error){
-		switch (type) {
-		case(VulkanShader::ShaderType::vertex):
-			shaderCode = defaultVertexShader;
-			break;
-		case(VulkanShader::ShaderType::fragment):
-			shaderCode = defaultVertexShader;
-			break;
-		case(VulkanShader::ShaderType::geometry):
-			shaderCode = defaultVertexShader;
-			break;
-		case(VulkanShader::ShaderType::tesselation):
-			shaderCode = defaultVertexShader;
-			break;
-		default:
-			throw std::runtime_error("shader type does not exist!");
-		}
+	catch (std::runtime_error) {
+		Log::Debug << "Shader doesn't exist! Using defaults" << "\n";
+		useDefaults = true;
 	}
 
 	VkShaderModuleCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = shaderCode.size();
 
-	std::vector<uint32_t> codeAligned(shaderCode.size() / 4 + 1);
-	memcpy(codeAligned.data(), shaderCode.data(), shaderCode.size());
+	if(useDefaults){
+		switch (type) {
+		case(VulkanShader::ShaderType::vertex):
+			createInfo.codeSize = sizeof(defaultVertexShader);
+			createInfo.pCode = (uint32_t*)defaultVertexShader;
 
-	createInfo.pCode = codeAligned.data();
+			break;
+		case(VulkanShader::ShaderType::fragment):
+			createInfo.codeSize = sizeof(defaultFragmentShader);
+			createInfo.pCode = (uint32_t*)defaultFragmentShader;
+					
+			break;
+		default:
+			throw std::runtime_error("shader type does not exist! (no default geometry or tess shaders");
+		}
+	}
+	else {
+		createInfo.codeSize = shaderCode.size();
+
+		std::vector<uint32_t> codeAligned(shaderCode.size() / 4 + 1);
+		memcpy(codeAligned.data(), shaderCode.data(), shaderCode.size());
+
+		createInfo.pCode = codeAligned.data();
+	}
 
 	VkShaderModule shaderModule;
 	if (vkCreateShaderModule(device->device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {

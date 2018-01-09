@@ -69,7 +69,7 @@ void ProcTerrainNodeGraph::Draw() {
 	ImGui::SetNextWindowPos(ImVec2(0, 300), ImGuiSetCond_FirstUseEver);
 
 
-	if (ImGui::Begin("Node Graph", &window_open, ImGuiWindowFlags_MenuBar)) {
+	if (ImGui::Begin("Node Graph", &window_open, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar)) {
 		windowPos = ImGui::GetWindowPos();
 
 
@@ -135,9 +135,11 @@ void ProcTerrainNodeGraph::DrawButtonBar() {
 	if (ImGui::Button("Reset graph")) {
 		ResetGraph();
 	}
+	ImGui::SameLine();
 	if (ImGui::Button("Save graph")) {
 		
 	}
+	ImGui::SameLine();
 	if (ImGui::Button("Load graph")) {
 		
 	}
@@ -148,7 +150,7 @@ void ProcTerrainNodeGraph::DrawButtonBar() {
 void ProcTerrainNodeGraph::DrawNodeButtons() {
 
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 2.0f);
-	ImGui::BeginChild("Sub2", ImVec2(120, 300), true);
+	ImGui::BeginChild("Sub2", ImVec2(120, 0.0f), true);
 
 	if (ImGui::Button("Add", ImVec2(-1.0f, 0.0f)))				{ AddNode(NodeType::Addition); }
 	if (ImGui::Button("Subtract", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Subtraction); }
@@ -267,9 +269,18 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 			if (ImGui::Selectable("Delete Node")) {
 				nodesToDelete.push_back(node);
 			}
-			ImGui::PushItemWidth(-1);
-			//ImGui::DragFloat("##Value", &value, 0.1f, 0.0f, 0.0f);
-			ImGui::PopItemWidth();
+			ImGui::Text("Edit name:");
+			char name[32];
+			memset(name, '\0', 32);
+			//name[0] = '\0';
+			node->name.copy(name, 31);
+			if (ImGui::InputText("##edit", name, sizeof(char) * 32)) {
+				name[31] = '\0';
+				node->name.replace(node->name.begin(), node->name.end(), name);
+			}
+			else {
+
+			}
 			ImGui::EndPopup();
 		}
 

@@ -1,49 +1,14 @@
-#include <iostream>
 #include "Logger.h"
+
+#include <iostream>
 #include <memory>
+#include <fstream>
 
-namespace DebugLog {
+namespace Log {
+	Log Debug(std::string("output.txt"), std::cout.rdbuf());
+	Log Error(std::string("error.txt"), std::cerr.rdbuf());
 
-	CusLog log;
-
-	CusLog::CusLog() : log("output.txt"), oldStream(std::cout.rdbuf()) {
-
-	}
-
-	CusLog::~CusLog() {
-		log.close();
-	}
-
-	CusLog::CusLog(std::string logName) : log(logName.c_str()), oldStream(std::cout.rdbuf()) {
-
-	}
-
-	void CusLog::CaptureStream(std::ostream& buf){
-		oldStream.rdbuf(buf.rdbuf());
-		
-		buf.rdbuf(log.rdbuf());
-	}
-	
-	std::ostream*  CusLog::ReleaseStream(){
-		this->log.close();
-		return &oldStream;
-	}
-
-	std::ofstream& CusLog::GetLog() {
-		
-		return log;
-	}
-
-	std::ostream& CusLog::GetOldStream() {
-		return oldStream;
-	}
-
-	void SetupCoutCapture() {
-		log.CaptureStream(std::cout);
-	}
-
-	void ReleaseCoutCapture() {
-		std::cout.rdbuf(log.ReleaseStream()->rdbuf());
+	Log::Log(std::string fileOut, std::streambuf* consoleStream) : fileOut(fileOut.c_str()), consoleOut(consoleStream) {
 	}
 
 	void Logger::Clear() {

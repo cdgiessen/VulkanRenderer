@@ -95,21 +95,22 @@ VkSurfaceKHR createWindowSurface(const vk::Instance& instance, GLFWwindow* windo
 }
 
 void Window::KeyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	InputDirector::GetInstance().keyEvent(key, scancode, action, mods);
+	Input::inputDirector.keyEvent(key, scancode, action, mods);
 	ImGui_ImplGlfwVulkan_KeyCallback(window, key, scancode, action, mods);
+	ImGui_ImplGlfwVulkan_CharCallback(window, static_cast<unsigned int>(key));
 }
 
 void Window::MouseButtonHandler(GLFWwindow* window, int button, int action, int mods) {
-	InputDirector::GetInstance().mouseButtonEvent(button, action, mods);
+	Input::inputDirector.mouseButtonEvent(button, action, mods);
 	ImGui_ImplGlfwVulkan_MouseButtonCallback(window, button, action, mods);
 }
 
 void Window::MouseMoveHandler(GLFWwindow* window, double posx, double posy) {
-	InputDirector::GetInstance().mouseMoveEvent(posx, posy);
+	Input::inputDirector.mouseMoveEvent(posx, posy);
 }
 
 void Window::MouseScrollHandler(GLFWwindow* window, double xoffset, double yoffset) {
-	InputDirector::GetInstance().mouseScrollEvent(xoffset, yoffset);
+	Input::inputDirector.mouseScrollEvent(xoffset, yoffset);
 }
 
 void Window::CloseHandler(GLFWwindow* window) {

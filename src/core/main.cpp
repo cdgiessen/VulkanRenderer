@@ -1,5 +1,6 @@
 
 #include <string>
+#include <iostream>
 
 #include "CoreTools.h"
 #include "VulkanApp.h"

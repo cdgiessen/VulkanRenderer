@@ -1,6 +1,6 @@
 //#include "NodeGraph.h"
 //
-//#include <iostream>
+//
 //#include <string>
 //
 ////Does a rect bound check with the pos and size of the box
@@ -255,7 +255,7 @@
 //		ImGui::Text("Test");
 //		ImGui::InputFloat3("Test Inputs", &testVec[0], -10, 10);
 //		if (ImGui::Button("Calc on test inputs")) {
-//			std::cout << outputNode->GetValue(testVec[0], testVec[1], testVec[2]) << std::endl;
+//			Log::Debug << outputNode->GetValue(testVec[0], testVec[1], testVec[2]) << "\n";
 //		}
 //
 //		{ //menu bar - implement functions
@@ -398,7 +398,7 @@
 //									connectors.insert(connectors.begin(), new Connector(adding_connector));
 //									node->AddOutputConnector(connectors.at(0));
 //									connectors.at(0)->startNode->AddInputConnector(connectors.at(0));
-//									std::cout << "connected to output " << std::endl;
+//									Log::Debug << "connected to output " << "\n";
 //								}
 //							}
 //						}
@@ -413,7 +413,7 @@
 //										connectors.insert(connectors.begin(), new Connector(adding_connector));
 //										node->AddInputConnector(connectors.at(0));
 //										connectors.at(0)->endNode->AddOutputConnector(connectors.at(0));
-//										std::cout << "connected to input " << std::endl;
+//										Log::Debug << "connected to input " << "\n";
 //									}
 //								}
 //							}
@@ -423,7 +423,7 @@
 //				else { //user hasn't clicked on any node
 //					if (AABBCheck(node->outputRect.pos + node->bodyRect.pos, node->outputRect.size, mouse_pos_in_canvas)) {
 //						if (ImGui::IsMouseClicked(0)) {
-//							std::cout << "Clicked on outputnode " << std::endl;
+//							Log::Debug << "Clicked on outputnode " << "\n";
 //							adding_connection = true;
 //							adding_connector.SetStart(node); 
 //							FirstConnectionIsOutput = true;
@@ -432,7 +432,7 @@
 //					for (Rectangle inputRect : node->inputRects) {
 //						if (AABBCheck(inputRect.pos + node->bodyRect.pos, inputRect.size, mouse_pos_in_canvas)) {
 //							if (ImGui::IsMouseClicked(0)) {
-//								std::cout << "Clicked on inputNode" << std::endl;
+//								Log::Debug << "Clicked on inputNode" << "\n";
 //								adding_connection = true;
 //								adding_connector.SetEnd(node, inputRect);
 //								FirstConnectionIsOutput = false;
@@ -442,7 +442,7 @@
 //				}
 //				//Delete node if right clicking and over the node
 //				if (AABBCheck(node->bodyRect.pos, node->bodyRect.size, mouse_pos_in_canvas) && ImGui::IsMouseClicked(1)) {
-//					std::cout << "Removed Node" << std::endl;
+//					Log::Debug << "Removed Node" << "\n";
 //					
 //					//Remove the connector's nodes reference to connected nodes
 //					for (Connector* c : node->inputConnections) {

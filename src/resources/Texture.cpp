@@ -1,5 +1,7 @@
 #include "Texture.h"
 
+#include "../core/Logger.h"
+
 Texture::Texture() {
 
 };
@@ -10,8 +12,8 @@ Texture::~Texture() {
 		pixels = 0;
 	}
 	else {
+		Log::Error << "Failed to free pixels, is there a null pointer?" << "\n";
 		throw std::runtime_error("failed to free texture image!");
-		std::cerr << "Failed to free pixels, is there a null pointer?" << std::endl;
 	}
 };
 
@@ -26,8 +28,8 @@ TextureArray::~TextureArray() {
 		pixels = 0;
 	}
 	else {
+		Log::Error << "Failed to free pixels, is there a null pointer?" << "\n";
 		throw std::runtime_error("failed to free texture image!");
-		std::cerr << "Failed to free pixels, is there a null pointer?" << std::endl;
 	}
 }
 
@@ -38,6 +40,7 @@ CubeMap::~CubeMap() {
 		pixels = 0;
 	}
 	else {
+		Log::Error << "Failed to free pixels, is there a null pointer?" << "\n";
 		throw std::runtime_error("failed to free texture image!");
 	}
 }

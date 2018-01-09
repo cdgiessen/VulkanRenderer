@@ -2,7 +2,7 @@
 
 GameObject::GameObject() {}
 
-GameObject::~GameObject() { std::cout << "game object deleted\n"; }
+GameObject::~GameObject() { Log::Debug << "game object deleted\n"; }
 
 void GameObject::InitGameObject(std::shared_ptr<VulkanRenderer> renderer,
                                 VulkanBuffer &global, VulkanBuffer &lighting)

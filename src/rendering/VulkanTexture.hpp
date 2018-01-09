@@ -26,7 +26,7 @@ public:
 	void createImageSampler(VulkanDevice &device, VkFilter mag = VK_FILTER_LINEAR, VkFilter min = VK_FILTER_LINEAR, VkSamplerMipmapMode mipMapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
 		VkSamplerAddressMode textureWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, float mipMapLodBias = 0.0f, bool useStaging = 1, bool anisotropy = 1, float maxAnisotropy = 8,
 		VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-
+	
 };
 
 /**
@@ -108,4 +108,17 @@ public:
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		bool genMipMaps = false,
 		int mipMapLevelsToGen = 1);
+};
+
+class VulkanTextureManager {
+public:
+	VulkanTextureManager(VulkanDevice &device);
+	~VulkanTextureManager();
+
+
+
+private:
+	VulkanDevice& device;
+
+	std::vector<VulkanTexture> vulkanTextures;
 };

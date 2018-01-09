@@ -1,6 +1,8 @@
 #include "Terrain.h"
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "../core/Logger.h"
+
 #ifdef _DEBUG
 #define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
 // Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
@@ -90,7 +92,7 @@ Terrain::Terrain(
 
 
 Terrain::~Terrain() {
-	//std::cout << "terrain deleted\n";
+	//Log::Debug << "terrain deleted\n";
 	CleanUp();
 		
 	//terrainSplatMap.reset();
@@ -175,7 +177,7 @@ void Terrain::UpdateTerrain(glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer
 	updateTime.EndTimer();
 	
 	//if (updateTime.GetElapsedTimeMicroSeconds() > 1500)
-	//	std::cout << " Update time " << updateTime.GetElapsedTimeMicroSeconds() << std::endl;
+	//	Log::Debug << " Update time " << updateTime.GetElapsedTimeMicroSeconds() << "\n";
 }
 
 bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo) {
@@ -220,7 +222,7 @@ RGBA_pixel*  Terrain::LoadSplatMapFromGenerator() {
 	RGBA_pixel* imageData = (RGBA_pixel*)malloc(sizeof(RGBA_pixel)*sourceImageResolution*sourceImageResolution);
 
 	if (imageData == nullptr) {
-		std::cerr << "failed to create splatmap image" << std::endl;
+		Log::Error << "failed to create splatmap image" << "\n";
 		return nullptr;
 	}
 	for (int i = 0; i < sourceImageResolution * sourceImageResolution; i++ ) {
@@ -536,8 +538,8 @@ void Terrain::UpdateMeshBuffer() {
 	}
 	gpuTransferTime.EndTimer();
 
-	//std::cout << "Create copy command: " << cpuDataTime.GetElapsedTimeMicroSeconds() << std::endl;
-	//std::cout << "Execute buffer copies: " << gpuTransferTime.GetElapsedTimeMicroSeconds() << std::endl;
+	//Log::Debug << "Create copy command: " << cpuDataTime.GetElapsedTimeMicroSeconds() << "\n";
+	//Log::Debug << "Execute buffer copies: " << gpuTransferTime.GetElapsedTimeMicroSeconds() << "\n";
 }
 
 
@@ -559,7 +561,7 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuad(std::shared_ptr<Terrai
 	//terrainGenerationWorkers.push_back(worker);
 	
 	//terrainQuadCreateTime.EndTimer();
-	//std::cout << "Original " << terrainQuadCreateTime.GetElapsedTimeMicroSeconds() << std::endl;
+	//Log::Debug << "Original " << terrainQuadCreateTime.GetElapsedTimeMicroSeconds() << "\n";
 
 	//std::vector<VkDescriptorSetLayout> layouts;
 	//layouts.resize(maxNumQuads);
@@ -602,7 +604,7 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuadFromParent(std::shared_
 	//GenerateTerrainFromTexture(*maillerFace, q->vertices, q->indices, q->terrainQuad, corner, heightScale, maxLevels);
 
 	//terrainQuadCreateTime.EndTimer();
-	//std::cout << "From Parent " << terrainQuadCreateTime.GetElapsedTimeMicroSeconds() << std::endl;
+	//Log::Debug << "From Parent " << terrainQuadCreateTime.GetElapsedTimeMicroSeconds() << "\n";
 	//std::vector<VkDescriptorSetLayout> layouts;
 	//layouts.resize(maxNumQuads);
 	//std::fill(layouts.begin(), layouts.end(), descriptorSetLayout);
@@ -663,7 +665,7 @@ void Terrain::SubdivideTerrain(std::shared_ptr<TerrainQuadData> quad, glm::vec3 
 	UpdateTerrainQuad(quad->subQuads.DownRight, viewerPos, gbo, lbo);
 	UpdateTerrainQuad(quad->subQuads.DownLeft, viewerPos, gbo, lbo);
 
-	//std::cout << "Terrain subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " <<quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << std::endl;
+	//Log::Debug << "Terrain subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " <<quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << "\n";
 
 	
 }
@@ -714,7 +716,7 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuadData> quad) {
 		quad->terrainQuad.isSubdivided = false;
 	}
 	//quad->isSubdivided = false;
-	//std::cout << "Terrain un-subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " << quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << std::endl;
+	//Log::Debug << "Terrain un-subdivided: Level: " << quad->terrainQuad.level << " Position: " << quad->terrainQuad.pos.x << ", " << quad->terrainQuad.pos.z << " Size: " << quad->terrainQuad.size.x << ", " << quad->terrainQuad.size.z << "\n";
 }
 
 void Terrain::RecursiveUnSubdivide(std::shared_ptr<TerrainQuadData> quad) {
@@ -880,7 +882,7 @@ void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenGraphUser& fastGraph, Ter
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 9] = 0;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 10] = 0;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 11] = 0;
-			//std::cout << value << std::endl;
+			//Log::Debug << value << "\n";
 		}
 	}
 
@@ -940,7 +942,7 @@ void GenerateTerrainFromTexture(Texture& tex, TerrainMeshVertices& verts, Terrai
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 9] = sample * 2 - 1;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 10] = sample * 2 - 1;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 11] = 1.0;
-			//std::cout << value << std::endl;
+			//Log::Debug << value << "\n";
 		}
 	}
 

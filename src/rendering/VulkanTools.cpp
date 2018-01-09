@@ -1,5 +1,14 @@
-#include "../core/CoreTools.h"
 #include "VulkanTools.h"
+
+#include <fstream>
+#include <stdexcept>
+#include <algorithm>
+#include <vector>
+#include <cstring>
+#include <array>
+#include <set>
+
+#include "../core/CoreTools.h"
 #include "VulkanInitializers.hpp"
 
 VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath) {
@@ -267,7 +276,7 @@ void setImageLayout(
 		0, nullptr,
 		1, &imageMemoryBarrier);
 
-	//std::cout << " HI" << std::endl;
+	//Log::Debug << " HI" << "\n";
 }
 
 // Fixed sub resource on first mip level and layer

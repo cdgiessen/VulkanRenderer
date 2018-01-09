@@ -11,7 +11,7 @@ Scene::Scene() : renderer()
 
 Scene::~Scene()
 {
-	std::cout << "scene deleted\n";
+	Log::Debug << "scene deleted\n";
 }
 
 void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, NewNodeGraph::TerGenNodeGraph& graph) {

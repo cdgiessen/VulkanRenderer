@@ -203,7 +203,7 @@ namespace NewNodeGraph {
 	template<typename T> void Node<T>::SetValue(const int index, glm::vec4 value){};
 
 	OutputNode::OutputNode() : Node<float>(LinkType::Float), input_output(LinkType::Float, 0) { }
-	OutputNode::~OutputNode() { /*std::cout << "Output Node Deleted" << std::endl; */ }
+	OutputNode::~OutputNode() { /*Log::Debug << "Output Node Deleted" << "\n"; */ }
 
 	float OutputNode::GetValue(const int x, const int y, const int z, float dummy) const {
 		return input_output.GetValue(x, y, z);
@@ -234,7 +234,7 @@ namespace NewNodeGraph {
 	}
 
 	ConstantFloatNode::ConstantFloatNode(float value) : Node<float>(LinkType::Float), value(LinkType::Float, value) {};
-	ConstantFloatNode::~ConstantFloatNode() { /*std::cout << "Constant float Deleted" << std::endl; */ }
+	ConstantFloatNode::~ConstantFloatNode() { /*Log::Debug << "Constant float Deleted" << "\n"; */ }
 
 	float ConstantFloatNode::GetValue(const int x, const int y, const int z, float dummy) const
 	{
@@ -263,7 +263,7 @@ namespace NewNodeGraph {
 	}
 
 	ConstantIntNode::ConstantIntNode(int value) : Node<int>(LinkType::Float), value(LinkType::Int, value) {};
-	ConstantIntNode::~ConstantIntNode() { /*std::cout << "Coanstant int Deleted" << std::endl; */}
+	ConstantIntNode::~ConstantIntNode() { /*Log::Debug << "Coanstant int Deleted" << "\n"; */}
 
 	int ConstantIntNode::GetValue(const int x, const int y, const int z, int dummy) const
 	{
@@ -398,7 +398,7 @@ namespace NewNodeGraph {
 	};
 
 	NoiseSourceNode::~NoiseSourceNode() {
-		//std::cout << "Noise Source Deleted" << std::endl;
+		//Log::Debug << "Noise Source Deleted" << "\n";
 		CleanNoiseSet();
 	}
 
@@ -410,7 +410,7 @@ namespace NewNodeGraph {
 		if (realX >= 0 && realX < noiseDimention && realY >= 0 && realY < noiseDimention && realZ >= 0 && realZ < noiseDimention) {
 			float val = noiseSet.BoundedLookUp(realX, realZ);// [(realX * noiseDimention + realZ)];
 			return val;
-			//std::cout << val << std::endl;
+			//Log::Debug << val << "\n";
 		}
 		return -1.1f; //not in bounds. shouldn't happen but who knows (fortunately -1 is a very valid value, but its easy to tell if things went awry if everythign is -1
 	}

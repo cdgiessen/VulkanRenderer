@@ -1,6 +1,6 @@
 #include "TerrainGenerator.h"
 
-#include <iostream>
+
 
 TerrainGenerator::TerrainGenerator(int numCells, int splatMapSize, glm::vec3 pos, glm::vec3 size)
 {

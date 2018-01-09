@@ -7,7 +7,7 @@ VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device) : device(device) {
 
 VulkanSwapChain::~VulkanSwapChain()
 {
-	std::cout << "swapchain deleted\n";
+	Log::Debug << "swapchain deleted\n";
 	//CleanUp();
 }
 

@@ -10,7 +10,7 @@ VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(valid
 
 VulkanDevice::~VulkanDevice()
 {
-	std::cout << "device deleted\n";
+	Log::Debug << "device deleted\n";
 }
 
 void VulkanDevice::initVulkanDevice(VkSurfaceKHR &surface)
@@ -371,7 +371,9 @@ void VulkanDevice::flushCommandBuffer(VkCommandPool commandPool, VkCommandBuffer
 
 void VulkanDevice::createInstance(std::string appName) {
 	if (enableValidationLayers && !checkValidationLayerSupport()) {
-		throw std::runtime_error("validation layers requested, but not available!");
+		Log::Debug << "validation layers requested, but not available!" << "\n";
+		enableValidationLayers = false;
+		//throw std::runtime_error("validation layers requested, but not available!");
 	}
 
 	VkApplicationInfo appInfo = {};
@@ -403,12 +405,10 @@ void VulkanDevice::createInstance(std::string appName) {
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 	createInfo.ppEnabledExtensionNames = extensions.data();
 
+	createInfo.enabledLayerCount = 0;
 	if (enableValidationLayers) {
 		createInfo.enabledLayerCount = static_cast<uint32_t>(VALIDATION_LAYERS.size());
 		createInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
-	}
-	else {
-		createInfo.enabledLayerCount = 0;
 	}
 
 	if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {

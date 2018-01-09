@@ -20,7 +20,7 @@ TerrainManager::TerrainManager(NewNodeGraph::TerGenNodeGraph& nodeGraph): nodeGr
 
 TerrainManager::~TerrainManager()
 {
-	std::cout << "terrain manager deleted\n";
+	Log::Debug << "terrain manager deleted\n";
 }
 
 void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
@@ -90,7 +90,7 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 		//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
 		terrainUpdateTimer.EndTimer();
 		//if (terrainUpdateTimer.GetElapsedTimeMicroSeconds() > 1000) {
-		//	std::cout << terrainUpdateTimer.GetElapsedTimeMicroSeconds() << std::endl;
+		//	Log::Debug << terrainUpdateTimer.GetElapsedTimeMicroSeconds() << "\n";
 		//}
 	}
 

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <fstream>
 #include <stdexcept>
 #include <algorithm>
@@ -82,12 +81,13 @@ private:
 	VkDescriptorPool imgui_descriptor_pool;
 	ProcTerrainNodeGraph imgui_nodeGraph_terrain;
 	SimpleTimer imGuiTimer;
-	DebugLog::Logger appLog;
+	Log::Logger appLog;
 
 	int screenWidth = 800;
 	int screenHeight = 600;
 
 	bool useValidationLayers = true;
+	bool userInputtingText = false;
 
 };
 

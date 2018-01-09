@@ -13,6 +13,7 @@
 #include "VulkanPipeline.hpp"
 #include "VulkanShader.hpp"
 #include "VulkanSwapChain.hpp"
+#include "VulkanTexture.hpp"
 
 class Scene;
 
@@ -64,8 +65,12 @@ public:
 	VulkanSwapChain vulkanSwapChain;
 	VkRenderPass renderPass;
 
-	VulkanPipeline pipelineManager;
 	VulkanShader shaderManager;
+	VulkanPipeline pipelineManager;
+	VulkanTextureManager textureManager;
+
+	std::shared_ptr<Scene> scene;
+private:
 
 	//uint32_t frameIndex = 1; // which frame of the swapchain it is on
 
@@ -79,9 +84,6 @@ public:
 
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
-
-private:
-	std::shared_ptr<Scene> scene;
 
 	uint32_t frameIndex; //which of the swapchain images the app is rendering to
 	bool wireframe = false; //whether or not to use the wireframe pipeline for the scene.

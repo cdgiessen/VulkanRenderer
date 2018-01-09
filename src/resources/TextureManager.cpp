@@ -1,7 +1,8 @@
 #include "TextureManager.h"
 
-
 #include <cstring>
+
+#include "../core/Logger.h"
 
 TextureManager::TextureManager()
 {
@@ -18,7 +19,7 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromFile(std::string filenam
 
 	std::ifstream filestream(filename.c_str());
 	if (filestream.fail()) {
-		std::cout << "Could not load texture from " << filename << "File not found" << std::endl;
+		Log::Debug << "Could not load texture from " << filename << "File not found! \n";
 		return std::shared_ptr<Texture>(nullptr);
 	}
 	int texWidth, texHeight, texChannels;
@@ -48,7 +49,7 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromFileGreyOnly(std::string
 std::shared_ptr<Texture> TextureManager::loadTextureFromPixelData(int width, int height) {
 
 	if (width < 0 || height < 0) {
-		std::cerr << "Can't have negative dimentions!" << std::endl;
+		Log::Error << "Can't have negative dimentions!\n";
 		return nullptr;
 	}
 	
@@ -72,7 +73,7 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromGreyscalePixelData(int w
 	auto tex = loadTextureFromPixelData(width, height);
 	
 	if (in_pixels == nullptr) {
-		std::cout << "Noise Utils Image Null, Cannot load null image" << std::endl;
+		Log::Debug << "Noise Utils Image Null, Cannot load null image!\n";
 		return std::shared_ptr<Texture>(nullptr);
 	}
 
@@ -117,7 +118,7 @@ std::shared_ptr<TextureArray> TextureManager::loadTextureArrayFromFile(std::stri
 	}
 
 	if (textures.size() == 0) {
-		std::cerr << "No images to load. Is this intended?" << std::endl;
+		Log::Error << "No images to load. Is this intended?\n";
 		return std::shared_ptr<TextureArray>(nullptr);
 	}
 
@@ -208,7 +209,7 @@ std::shared_ptr<CubeMap> TextureManager::loadCubeMapFromFile(std::string filenam
 		memcpy(offset, Right->pixels, Right->texImageSize);
 	}
 	else {
-		std::cerr << "Skybox dimentions incorrect! " << std::endl;
+		Log::Error << "Skybox dimentions incorrect! \n";
 	}
 
 	return cubeMap;
