@@ -185,8 +185,8 @@ void Water::BuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::
 		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, 0 ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
 		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 0, 1, &descriptorSet, 0, nullptr);
 
-		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &WaterModel.vertices.buffer, offsets);
-		vkCmdBindIndexBuffer(commandBuffers[i], WaterModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &WaterModel.vmaBufferVertex, offsets);
+		vkCmdBindIndexBuffer(commandBuffers[i], WaterModel.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
 
 		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(WaterModel.indexCount), 1, 0, 0, 0);
 

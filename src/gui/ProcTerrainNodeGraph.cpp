@@ -529,13 +529,13 @@ ConnectionType ConnectionSlot::GetType() {
 InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name) 
 : ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound) 
 {
-	switch (type) {
-		case(ConnectionType::Int): value.i = 0; break;
-		case(ConnectionType::Float): value.f = 0.0f;  break;
-		case(ConnectionType::Color): value.glm3 = glm::vec3(0); break;
-		case(ConnectionType::Vec2): value.glm2 = glm::vec2(0); break;
-		case(ConnectionType::Vec3): value.glm3 = glm::vec3(0); break;
-		case(ConnectionType::Vec4): value.glm4 = glm::vec4(0); break;
+	switch (value.type) {
+		case(ConnectionType::Int): value.value = 0; break;
+		case(ConnectionType::Float): value.value = 0.0f;  break;
+		case(ConnectionType::Color): value.value = glm::vec3(0); break;
+		case(ConnectionType::Vec2): value.value = glm::vec2(0); break;
+		case(ConnectionType::Vec3): value.value = glm::vec3(0); break;
+		case(ConnectionType::Vec4): value.value = glm::vec4(0); break;
 	}
 }
 
@@ -544,12 +544,12 @@ float defaultVal, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float u
 : ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound) 
 {
 	switch (type) {
-		case(ConnectionType::Int): value.i = 0; break;
-		case(ConnectionType::Float): value.f = defaultVal;  break;
-		case(ConnectionType::Color): value.glm3 = glm::vec3(0); break;
-		case(ConnectionType::Vec2): value.glm2 = glm::vec2(0); break;
-		case(ConnectionType::Vec3): value.glm3 = glm::vec3(0); break;
-		case(ConnectionType::Vec4): value.glm4 = glm::vec4(0); break;
+		case(ConnectionType::Int): value.value = 0; break;
+		case(ConnectionType::Float): value.value = defaultVal;  break;
+		case(ConnectionType::Color): value.value = glm::vec3(0); break;
+		case(ConnectionType::Vec2): value.value = glm::vec2(0); break;
+		case(ConnectionType::Vec3): value.value = glm::vec3(0); break;
+		case(ConnectionType::Vec4): value.value = glm::vec4(0); break;
 	}
 }
 
@@ -558,12 +558,12 @@ int defaultVal, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float upp
 : ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound) 
 {
 	switch (type) {
-		case(ConnectionType::Int): value.i = defaultVal; break;
-		case(ConnectionType::Float): value.f = 0.0f;  break;
-		case(ConnectionType::Color): value.glm3 = glm::vec3(0); break;
-		case(ConnectionType::Vec2): value.glm2 = glm::vec2(0); break;
-		case(ConnectionType::Vec3): value.glm3 = glm::vec3(0); break;
-		case(ConnectionType::Vec4): value.glm4 = glm::vec4(0); break;
+		case(ConnectionType::Int): value.value = defaultVal; break;
+		case(ConnectionType::Float): value.value = 0.0f;  break;
+		case(ConnectionType::Color): value.value = glm::vec3(0); break;
+		case(ConnectionType::Vec2): value.value = glm::vec2(0); break;
+		case(ConnectionType::Vec3): value.value = glm::vec3(0); break;
+		case(ConnectionType::Vec4): value.value = glm::vec4(0); break;
 	}
 }
 
@@ -591,28 +591,28 @@ void InputConnectionSlot::Draw(ImDrawList* imDrawList, const ProcTerrainNodeGrap
 	std::string uniqueID = (std::to_string(parentNode.id * 100 + slotNum));
 	switch (value.type) {
 	case(ConnectionType::Int):
-		ImGui::DragInt(std::string("##int" + uniqueID).c_str(), &(value.i), 0.1f, 0.0f, 0.0f);
-		parentNode.internal_node->SetValue(slotNum, value.i);
+		ImGui::DragInt(std::string("##int" + uniqueID).c_str(), &(std::get<int>(value.value)), 0.1f, 0.0f, 0.0f);
+		parentNode.internal_node->SetValue(slotNum, std::get<int>(value.value));
 		break;
 	case(ConnectionType::Float):
-		ImGui::DragFloat(std::string("##float" + uniqueID).c_str(), &(value.f), 0.01f, 0.0f, 0.0f);
-		parentNode.internal_node->SetValue(slotNum, value.f);
+		ImGui::DragFloat(std::string("##float" + uniqueID).c_str(), &(std::get<float>(value.value)), 0.01f, 0.0f, 0.0f);
+		parentNode.internal_node->SetValue(slotNum, std::get<float>(value.value));
 		break;
 	case(ConnectionType::Color):
-		ImGui::DragFloat3(std::string("##color" + uniqueID).c_str(), glm::value_ptr(value.glm3), 0.01f, 0.0f, 0.0f);
-		parentNode.internal_node->SetValue(slotNum, value.glm3);
+		ImGui::DragFloat3(std::string("##color" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec3>(value.value)), 0.01f, 0.0f, 0.0f);
+		parentNode.internal_node->SetValue(slotNum, std::get<glm::vec3>(value.value));
 		break;
 	case(ConnectionType::Vec2):
-		ImGui::DragFloat2(std::string("##vec2" + uniqueID).c_str(), glm::value_ptr(value.glm2), 0.01f, 0.0f, 0.0f);
-		parentNode.internal_node->SetValue(slotNum, value.glm2);
+		ImGui::DragFloat2(std::string("##vec2" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec2>(value.value)), 0.01f, 0.0f, 0.0f);
+		parentNode.internal_node->SetValue(slotNum, std::get<glm::vec2>(value.value));
 		break;
 	case(ConnectionType::Vec3):
-		ImGui::DragFloat3(std::string("##vec3" + uniqueID).c_str(), glm::value_ptr(value.glm3), 0.01f, 0.0f, 0.0f);
-		parentNode.internal_node->SetValue(slotNum, value.glm3);
+		ImGui::DragFloat3(std::string("##vec3" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec3>(value.value)), 0.01f, 0.0f, 0.0f);
+		parentNode.internal_node->SetValue(slotNum, std::get<glm::vec3>(value.value));
 		break;
 	case(ConnectionType::Vec4):
-		ImGui::DragFloat4(std::string("##vec4" + uniqueID).c_str(), glm::value_ptr(value.glm4), 0.01f, 0.0f, 0.0f);
-		parentNode.internal_node->SetValue(slotNum, value.glm4);
+		ImGui::DragFloat4(std::string("##vec4" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec4>(value.value)), 0.01f, 0.0f, 0.0f);
+		parentNode.internal_node->SetValue(slotNum, std::get<glm::vec4>(value.value));
 		break;
 	}
 	ImGui::PopItemWidth();

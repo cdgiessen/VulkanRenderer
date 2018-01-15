@@ -1,5 +1,7 @@
 #include "GameObject.h"
 
+#include "../core/Logger.h"
+
 GameObject::GameObject() {}
 
 GameObject::~GameObject() { Log::Debug << "game object deleted\n"; }
@@ -46,6 +48,8 @@ void GameObject::LoadModel(std::shared_ptr<Mesh> mesh)
 
 void GameObject::SetupUniformBuffer()
 {
+	//renderer->device.CreateUniformBuffer(modelUniformBuffer, vmaModelBuffer, sizeof(ModelBufferObject));
+
     renderer->device.createBuffer(
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
@@ -66,7 +70,6 @@ void GameObject::SetupModel()
     gameObjectModel.loadFromMesh(gameObjectMesh, renderer->device,
                                  renderer->device.graphics_queue);
 
-	//renderer->device.CreateUniformBuffer(gameObjectMesh->vertexCount);
 }
 
 void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting)
@@ -76,14 +79,17 @@ void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting)
         initializers::descriptorSetLayoutBinding(
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1);
+
     VkDescriptorSetLayoutBinding uboLayoutBinding =
         initializers::descriptorSetLayoutBinding(
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1,
             1);
+
     VkDescriptorSetLayoutBinding lboLayoutBinding =
         initializers::descriptorSetLayoutBinding(
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 2,
             1);
+
     VkDescriptorSetLayoutBinding samplerLayoutBinding =
         initializers::descriptorSetLayoutBinding(
             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -106,10 +112,13 @@ void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting)
     std::vector<VkDescriptorPoolSize> poolSizes;
     poolSizes.push_back(
         initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+
     poolSizes.push_back(
         initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+
     poolSizes.push_back(
         initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+
     poolSizes.push_back(initializers::descriptorPoolSize(
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 
@@ -140,12 +149,15 @@ void GameObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting)
     descriptorWrites.push_back(initializers::writeDescriptorSet(
         descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &global.descriptor,
         1));
+
     descriptorWrites.push_back(initializers::writeDescriptorSet(
         descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
         &modelUniformBuffer.descriptor, 1));
+
     descriptorWrites.push_back(initializers::writeDescriptorSet(
         descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2,
         &lighting.descriptor, 1));
+
     descriptorWrites.push_back(initializers::writeDescriptorSet(
         descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3,
         &gameObjectVulkanTexture.descriptor, 1));
@@ -226,4 +238,29 @@ void GameObject::UpdateUniformBuffer(float time)
     modelUniformBuffer.map(renderer->device.device);
     modelUniformBuffer.copyTo(&ubo, sizeof(ubo));
     modelUniformBuffer.unmap();
+}
+
+void GameObject::Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNormals) {
+
+	VkDeviceSize offsets[] = { 0 };
+
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 0, 1, &descriptorSet, 0, nullptr);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
+
+	//vkCmdBindVertexBuffers(commandBuffer, 0, 1, &gameObjectModel.vertices.buffer, offsets);
+	//vkCmdBindIndexBuffer(commandBuffer, gameObjectModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+	//vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(gameObjectModel.indexCount), 1, 0, 0, 0);
+
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &gameObjectModel.vmaBufferVertex, offsets);
+	vkCmdBindIndexBuffer(commandBuffer, gameObjectModel.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(gameObjectModel.indexCount), 1, 0, 0, 0);
+
+
+	if (drawNormals) {
+		bool drawNormals = false;
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(2));
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(gameObjectModel.indexCount), 1, 0, 0, 0);
+	}
+
+
 }

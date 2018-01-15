@@ -1,6 +1,7 @@
 #include "Scene.h"
 
 #include "../core/Input.h"
+#include "../core/Logger.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
@@ -16,6 +17,7 @@ Scene::~Scene()
 
 void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, NewNodeGraph::TerGenNodeGraph& graph) {
 	this->renderer = renderer;
+	renderer->PrepareDMACommandBuffer();
 	
 	camera = std::make_shared< Camera>(glm::vec3(-2, 2, 0), glm::vec3(0, 1, 0), 0, -45);
 
@@ -115,18 +117,7 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	terrainManager->RenderTerrain(commandBuffer, wireframe);
 	
 	for (auto obj : gameObjects) {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->mvp->layout, 0, 1, &obj->descriptorSet, 0, nullptr);
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? obj->mvp->pipelines->at(1) : obj->mvp->pipelines->at(0));
-
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &obj->gameObjectModel.vertices.buffer, offsets);
-		vkCmdBindIndexBuffer(commandBuffer, obj->gameObjectModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->gameObjectModel.indexCount), 1, 0, 0, 0);
-
-		if (drawNormals) {
-			bool drawNormals = false;
-			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->mvp->pipelines->at(2));
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->gameObjectModel.indexCount), 1, 0, 0, 0);
-		}
+		obj->Draw(commandBuffer, wireframe, drawNormals);
 	}
 	
 	treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
@@ -135,8 +126,8 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->layout, 0, 1, &skybox->descriptorSet, 0, nullptr);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->pipelines->at(0));
 
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &skybox->model.vertices.buffer, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, skybox->model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &skybox->model.vmaBufferVertex, offsets);
+	vkCmdBindIndexBuffer(commandBuffer, skybox->model.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(skybox->model.indexCount), 1, 0, 0, 0);
 
 }

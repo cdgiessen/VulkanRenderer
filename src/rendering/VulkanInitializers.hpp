@@ -120,6 +120,35 @@ namespace initializers
 		return imageCreateInfo;
 	}
 
+	inline VkImageCreateInfo imageCreateInfo(
+		VkImageType imageType,
+		VkFormat format,
+		uint32_t mipLevels,
+		uint32_t layers,
+		VkSampleCountFlagBits sampleCounts,
+		VkImageTiling tiling,
+		VkSharingMode sharingMode,
+		VkImageLayout initialLayout,
+		VkExtent3D extent,
+		VkImageUsageFlags usageFlags)
+	{
+		VkImageCreateInfo imageCreateInfo{};
+		imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageCreateInfo.imageType = imageType;
+		imageCreateInfo.format = format;
+		imageCreateInfo.mipLevels = mipLevels;
+		imageCreateInfo.arrayLayers = layers;
+		imageCreateInfo.samples = sampleCounts;
+		imageCreateInfo.tiling = tiling;
+		imageCreateInfo.sharingMode = sharingMode;
+		imageCreateInfo.initialLayout = initialLayout;
+		imageCreateInfo.extent = extent;
+		imageCreateInfo.usage = usageFlags;
+		imageCreateInfo.flags = 0;
+		
+		return imageCreateInfo;
+	}
+
 	inline VkSamplerCreateInfo samplerCreateInfo()
 	{
 		VkSamplerCreateInfo samplerCreateInfo{};

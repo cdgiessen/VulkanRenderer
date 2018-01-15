@@ -3,6 +3,8 @@
 
 #include "VulkanSwapChain.hpp"
 
+#include "../core/Logger.h"
+
 VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(validationLayers)
 {
 
@@ -11,6 +13,12 @@ VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(valid
 VulkanDevice::~VulkanDevice()
 {
 	Log::Debug << "device deleted\n";
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData) {
+	Log::Debug << "validation layer: " << msg << "\n";// << "\n";
+
+	return VK_FALSE;
 }
 
 void VulkanDevice::initVulkanDevice(VkSurfaceKHR &surface)
@@ -94,16 +102,18 @@ bool VulkanDevice::checkValidationLayerSupport() {
 	return true;
 }
 
-VkResult VulkanDevice::CreateVulkanAllocator()
+void VulkanDevice::CreateVulkanAllocator()
 {
 	VmaAllocatorCreateInfo allocatorInfo = {};
 	allocatorInfo.physicalDevice = physical_device;
 	allocatorInfo.device = device;
+	
+	VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &allocator));
 
-	return vmaCreateAllocator(&allocatorInfo, &allocator);
+
 }
 
-VkResult VulkanDevice::CreateUniformBuffer(VkBuffer buffer, VmaAllocation allocation, VkDeviceSize bufferSize) {
+void VulkanDevice::CreateUniformBuffer(VulkanBuffer& buffer, VmaAllocation* allocation, VkDeviceSize bufferSize) {
 	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 	bufferInfo.size = bufferSize;
 	bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -111,10 +121,10 @@ VkResult VulkanDevice::CreateUniformBuffer(VkBuffer buffer, VmaAllocation alloca
 	VmaAllocationCreateInfo allocInfo = {};
 	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 	
-	return vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, allocation, nullptr));
 }
 
-VkResult VulkanDevice::CreateStagingUniformBuffer(VkBuffer buffer, VmaAllocation allocation, VkDeviceSize bufferSize) {
+void VulkanDevice::CreateStagingUniformBuffer(VulkanBuffer& buffer, VmaAllocation* allocation, VkDeviceSize bufferSize) {
 	VkBufferCreateInfo bufferInfo = initializers::bufferCreateInfo();
 	bufferInfo.size = bufferSize;
 	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -122,7 +132,112 @@ VkResult VulkanDevice::CreateStagingUniformBuffer(VkBuffer buffer, VmaAllocation
 	VmaAllocationCreateInfo allocInfo = {};
 	allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
-	return vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, allocation, nullptr));
+}
+
+
+
+void VulkanDevice::CreateMeshBufferVertex(VkBuffer* buffer, VmaAllocation* allocation, VkDeviceSize bufferSize) {
+	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+	bufferInfo.size = bufferSize;
+	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+	VmaAllocationCreateInfo allocInfo = {};
+	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, buffer, allocation, nullptr));
+}
+
+void VulkanDevice::CreateMeshBufferIndex(VkBuffer* buffer, VmaAllocation* allocation, VkDeviceSize bufferSize) {
+	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+	bufferInfo.size = bufferSize;
+	bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+	VmaAllocationCreateInfo allocInfo = {};
+	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, buffer, allocation, nullptr));
+}
+
+void VulkanDevice::CreateMeshStagingBuffer(VkBuffer* buffer, VmaAllocation* allocation, void* data, VkDeviceSize bufferSize) {
+	VkBufferCreateInfo bufferInfo = initializers::bufferCreateInfo();
+	bufferInfo.size = bufferSize;
+	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+	VmaAllocationCreateInfo allocCreateInfo = {};
+	allocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+	allocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+	
+	VmaAllocationInfo allocInfo = {};
+
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocCreateInfo, buffer, allocation, &allocInfo));
+
+	memcpy(allocInfo.pMappedData, data, bufferSize);
+}
+
+void VulkanDevice::DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation) {
+	vmaDestroyBuffer(allocator, *buffer, *allocation);
+}
+
+void VulkanDevice::CreateImage2D(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation) {
+
+	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
+		| VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+		| VK_IMAGE_USAGE_SAMPLED_BIT;
+
+	VmaAllocationCreateInfo imageAllocCreateInfo = {};
+	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	
+	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &imageAllocCreateInfo, image, allocation, nullptr));
+}
+
+void VulkanDevice::CreateStagingImage2D(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, std::shared_ptr<Texture> texture) {
+
+	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+	VmaAllocationCreateInfo stagingImageAllocCreateInfo = {};
+	stagingImageAllocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+	stagingImageAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+	VmaAllocationInfo stagingImageAllocInfo = {};
+
+	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &stagingImageAllocCreateInfo, image, allocation, &stagingImageAllocInfo));
+
+	memcpy(stagingImageAllocInfo.pMappedData, texture->pixels, texture->texImageSize);
+}
+
+void VulkanDevice::CreateStagingImage2DArray(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, std::shared_ptr<TextureArray> texture) {
+
+	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+	VmaAllocationCreateInfo stagingImageAllocCreateInfo = {};
+	stagingImageAllocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+	stagingImageAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+	VmaAllocationInfo stagingImageAllocInfo = {};
+
+	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &stagingImageAllocCreateInfo, image, allocation, &stagingImageAllocInfo));
+
+	memcpy(stagingImageAllocInfo.pMappedData, texture->pixels, texture->texImageSize);
+}
+
+void VulkanDevice::CreateStagingImage2DCubeMap(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, std::shared_ptr<CubeMap> cubeMap) {
+
+	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+	VmaAllocationCreateInfo stagingImageAllocCreateInfo = {};
+	stagingImageAllocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+	stagingImageAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+	VmaAllocationInfo stagingImageAllocInfo = {};
+
+	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &stagingImageAllocCreateInfo, image, allocation, &stagingImageAllocInfo));
+
+	memcpy(stagingImageAllocInfo.pMappedData, cubeMap->pixels, cubeMap->texImageSize);
+}
+
+void VulkanDevice::DestroyVmaAllocatedImage(VkImage* image, VmaAllocation* allocation) {
+	vmaDestroyImage(allocator, *image, *allocation);
 }
 
 /**
@@ -369,9 +484,47 @@ void VulkanDevice::flushCommandBuffer(VkCommandPool commandPool, VkCommandBuffer
 	}
 }
 
+VkCommandBuffer VulkanDevice::GetTransferCommandBuffer() {
+	if (!isDmaCmdBufWritable)
+		CreateTransferCommandBuffer();
+	return dmaCmdBuf;
+}
+
+void VulkanDevice::CreateTransferCommandBuffer() {
+	if (!isDmaCmdBufWritable) {
+
+		VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+
+		vkAllocateCommandBuffers(device, &allocInfo, &dmaCmdBuf);
+
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		
+		vkBeginCommandBuffer(dmaCmdBuf, &beginInfo);
+		isDmaCmdBufWritable = true;
+	}
+}
+
+void VulkanDevice::SubmitTransferCommandBuffer() {
+	if (isDmaCmdBufWritable) {
+		vkEndCommandBuffer(dmaCmdBuf);
+
+		VkSubmitInfo submitInfo = initializers::submitInfo();
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &dmaCmdBuf;
+
+		vkQueueSubmit(transfer_queue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(transfer_queue);
+
+		vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &dmaCmdBuf);
+		isDmaCmdBufWritable = false;
+	}
+}
+
 void VulkanDevice::createInstance(std::string appName) {
 	if (enableValidationLayers && !checkValidationLayerSupport()) {
-		Log::Debug << "validation layers requested, but not available!" << "\n";
+		Log::Debug << "validation layers requested, but not available! " << "\n";
 		enableValidationLayers = false;
 		//throw std::runtime_error("validation layers requested, but not available!");
 	}
@@ -463,6 +616,25 @@ void VulkanDevice::pickPhysicalDevice(VkSurfaceKHR &surface) {
 	}
 }
 
+//Put all device specific features here
+VkPhysicalDeviceFeatures VulkanDevice::QueryDeviceFeatures() {
+	VkPhysicalDeviceFeatures deviceFeatures = {};
+	if (physical_device_features.samplerAnisotropy)
+		deviceFeatures.samplerAnisotropy = VK_TRUE;
+
+	if (physical_device_features.fillModeNonSolid)
+		deviceFeatures.fillModeNonSolid = VK_TRUE;
+
+	if (physical_device_features.geometryShader)
+		deviceFeatures.geometryShader = VK_TRUE;
+
+	if (physical_device_features.tessellationShader)
+		deviceFeatures.tessellationShader = VK_TRUE;
+
+	return deviceFeatures;
+}
+
+
 void VulkanDevice::createLogicalDevice(VkSurfaceKHR &surface) {
 	QueueFamilyIndices indices = findQueueFamilies(physical_device, surface);
 
@@ -479,17 +651,7 @@ void VulkanDevice::createLogicalDevice(VkSurfaceKHR &surface) {
 		queueCreateInfos.push_back(queueCreateInfo);
 	}
 
-	VkPhysicalDeviceFeatures deviceFeatures = {};
-	deviceFeatures.samplerAnisotropy = VK_TRUE;
-	if (physical_device_features.fillModeNonSolid) {
-		deviceFeatures.fillModeNonSolid = VK_TRUE;
-	}
-	if (physical_device_features.geometryShader) {
-		deviceFeatures.geometryShader = VK_TRUE;
-	}
-	if (physical_device_features.tessellationShader) {
-		deviceFeatures.tessellationShader = VK_TRUE;
-	}
+	VkPhysicalDeviceFeatures deviceFeatures = QueryDeviceFeatures();
 
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

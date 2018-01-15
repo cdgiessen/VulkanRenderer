@@ -8,6 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include <memory>
+#include <variant>
 #include <stdint.h>
 
 #include "TerGenNodeGraph.h"
@@ -27,11 +28,7 @@ enum class ConnectionType
 
 struct SlotValueHolder {
 	
-	int i;
-	float f;
-	glm::vec2 glm2;
-	glm::vec3 glm3;
-	glm::vec4 glm4;
+	std::variant<int, float, glm::vec2, glm::vec3, glm::vec4> value;
 	
 	
 	ConnectionType type = ConnectionType::Null;

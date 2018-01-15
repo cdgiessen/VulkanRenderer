@@ -108,6 +108,9 @@ public:
 	VulkanBuffer vertexBuffer;
 	VulkanBuffer indexBuffer;
 
+	VkBuffer vmaBufferVertex;
+	VkBuffer vmaBufferIndex;
+
 	std::shared_ptr<Texture> terrainSplatMap;
 	VulkanTexture2D terrainVulkanSplatMap;
 

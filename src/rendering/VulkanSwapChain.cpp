@@ -1,6 +1,8 @@
 #include "VulkanSwapChain.hpp"
 #include "VulkanTools.h"
 
+#include "../core/Logger.h"
+
 VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device) : device(device) {
 
 }
@@ -82,9 +84,14 @@ void VulkanSwapChain::createSwapChain() {
 		throw std::runtime_error("failed to create swap chain!");
 	}
 
-	vkGetSwapchainImagesKHR(device.device, swapChain, &imageCount, nullptr);
+	if (vkGetSwapchainImagesKHR(device.device, swapChain, &imageCount, nullptr) != VK_SUCCESS) {
+		throw std::runtime_error("failed to get number of swapchain images!");
+	}
 	swapChainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(device.device, swapChain, &imageCount, swapChainImages.data());
+
+	if (vkGetSwapchainImagesKHR(device.device, swapChain, &imageCount, swapChainImages.data()) != VK_SUCCESS) {
+		throw std::runtime_error("failed to get swapchain images!");
+	}
 }
 
 //7
@@ -186,22 +193,31 @@ SwapChainSupportDetails VulkanSwapChain::querySwapChainSupport(VkPhysicalDevice 
 
 	SwapChainSupportDetails details;
 
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
-
+	if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities) != VK_SUCCESS) {
+		throw std::runtime_error("failed to get physical device surface capabilities!");
+	}
 	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+	if (vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr) != VK_SUCCESS) {
+		throw std::runtime_error("failed to get physical device surface formats count!");
+	}
 
 	if (formatCount != 0) {
 		details.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+		if(vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data()) != VK_SUCCESS) {
+			throw std::runtime_error("failed to get physical device surface formats!");
+		}
 	}
 
 	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+	if (vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr) != VK_SUCCESS) {
+			throw std::runtime_error("failed to get physical device surface present modes count!");
+		}
 
 	if (presentModeCount != 0) {
 		details.present_modes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.present_modes.data());
+		if (vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.present_modes.data()) != VK_SUCCESS) {
+			throw std::runtime_error("failed to get physical device surface present modes!");
+		}
 	}
 
 	return details;

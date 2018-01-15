@@ -497,44 +497,27 @@ void Terrain::UpdateMeshBuffer() {
 
 	if (vertexCopyRegions.size() > 0 || indexCopyRegions.size() > 0)
 	{
-		// Use staging buffer to move vertex and index buffer to device local memory
-		// Create staging buffers
-		VulkanBuffer vertexStaging, indexStaging;
+		VkBuffer vmaStagingBufVertex = VK_NULL_HANDLE;
+		VkBuffer vmaStagingBufIndex = VK_NULL_HANDLE;
 
-		// Vertex buffer
-		VK_CHECK_RESULT(renderer->device.createBuffer(
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-			&vertexStaging,
-			vBufferSize,
-			verts.data()));
+		VmaAllocation vmaStagingVertices = VK_NULL_HANDLE;
+		VmaAllocation vmaStagingIndecies = VK_NULL_HANDLE;
 
-		// Index buffer
-		VK_CHECK_RESULT(renderer->device.createBuffer(
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-			&indexStaging,
-			iBufferSize,
-			inds.data()));
+		renderer->device.CreateMeshStagingBuffer(&vmaStagingBufVertex, &vmaStagingVertices, verts.data(), vBufferSize);
+		renderer->device.CreateMeshStagingBuffer(&vmaStagingBufIndex, &vmaStagingIndecies, inds.data(), iBufferSize);
 
-		// Copy from staging buffers
-		VkCommandBuffer copyCmd = renderer->device.createCommandBuffer(renderer->device.transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+		VkCommandBuffer copyCmd = renderer->device.GetTransferCommandBuffer();
 
-		//VkBufferCopy copyRegion{};
-
-		//copyRegion.size = vertexBuffer.size;
-		vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, vertexBuffer.buffer, (uint32_t) vertexCopyRegions.size(), vertexCopyRegions.data());
+		vkCmdCopyBuffer(copyCmd, vmaStagingBufVertex, vertexBuffer.buffer, (uint32_t)vertexCopyRegions.size(), vertexCopyRegions.data());
 
 		//copyRegion.size = indexBuffer.size;
-		vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indexBuffer.buffer, (uint32_t)indexCopyRegions.size(), indexCopyRegions.data());
+		vkCmdCopyBuffer(copyCmd, vmaStagingBufIndex, indexBuffer.buffer, (uint32_t)indexCopyRegions.size(), indexCopyRegions.data());
 
-		renderer->device.flushCommandBuffer(renderer->device.transfer_queue_command_pool, copyCmd, renderer->device.transfer_queue);
+		renderer->device.SubmitTransferCommandBuffer();
 
-		// Destroy staging resources
-		vkDestroyBuffer(renderer->device.device, vertexStaging.buffer, nullptr);
-		vkFreeMemory(renderer->device.device, vertexStaging.bufferMemory, nullptr);
-		vkDestroyBuffer(renderer->device.device, indexStaging.buffer, nullptr);
-		vkFreeMemory(renderer->device.device, indexStaging.bufferMemory, nullptr);
+		renderer->device.DestroyVmaAllocatedBuffer(&vmaStagingBufVertex, &vmaStagingVertices);
+		renderer->device.DestroyVmaAllocatedBuffer(&vmaStagingBufIndex, &vmaStagingIndecies);
+
 	}
 	gpuTransferTime.EndTimer();
 

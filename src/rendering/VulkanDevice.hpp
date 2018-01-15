@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include <set>
 
 #include <vulkan/vulkan.h>
@@ -10,7 +11,7 @@
 
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
-#include "../core/Logger.h"
+#include "../resources/Texture.h"
 
 #include "VulkanBuffer.hpp"
 #include "VulkanTools.h"
@@ -69,10 +70,30 @@ public:
 
 	bool checkValidationLayerSupport();
 
-	VkResult CreateVulkanAllocator();
+	void CreateVulkanAllocator();
 
-	VkResult CreateUniformBuffer(VkBuffer buffer, VmaAllocation allocation, VkDeviceSize bufferSize);
-	VkResult CreateStagingUniformBuffer(VkBuffer buffer, VmaAllocation allocation, VkDeviceSize bufferSize);
+	void CreateUniformBuffer(VulkanBuffer& buffer, VmaAllocation* allocation, VkDeviceSize bufferSize);
+	void CreateStagingUniformBuffer(VulkanBuffer& buffer, VmaAllocation* allocation, VkDeviceSize bufferSize);
+
+	void CreateMeshBufferVertex(VkBuffer* buffer, VmaAllocation* allocation, VkDeviceSize bufferSize);
+	void CreateMeshBufferIndex(VkBuffer* buffer, VmaAllocation* allocation, VkDeviceSize bufferSize);
+	void CreateMeshStagingBuffer(VkBuffer* buffer, VmaAllocation* allocation, void* data, VkDeviceSize bufferSize);
+
+	void DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation);
+
+	void CreateImage2D(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation);
+
+	void CreateStagingImage2D(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, std::shared_ptr<Texture> texture);
+	void CreateStagingImage2DArray(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, std::shared_ptr<TextureArray> texture);
+	void CreateStagingImage2DCubeMap(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, std::shared_ptr<CubeMap> cubeMap);
+
+
+	void DestroyVmaAllocatedImage(VkImage* image, VmaAllocation* allocation);
+
+	VkCommandBuffer GetTransferCommandBuffer();
+
+	void CreateTransferCommandBuffer();
+	void SubmitTransferCommandBuffer();
 
 	/**
 	* Create a buffer on the device
@@ -139,8 +160,11 @@ public:
 	void flushCommandBuffer(VkCommandPool pool, VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
 
 private:
-
+	
 	bool enableValidationLayers = false;
+
+	VkCommandBuffer dmaCmdBuf;
+	bool isDmaCmdBufWritable = false;
 
 	void createInstance(std::string appName);
 	
@@ -154,13 +178,11 @@ private:
 
 	void createCommandPools(VkSurfaceKHR &surface);
 
+	VkPhysicalDeviceFeatures QueryDeviceFeatures();
+	
 	VkResult CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback);
 
 	void DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator);
 	
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData) {
-		Log::Debug << "validation layer: " << msg << "\n";// << "\n";
-
-		return VK_FALSE;
-	}
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData);
 };

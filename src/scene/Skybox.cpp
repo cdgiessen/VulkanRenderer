@@ -126,27 +126,27 @@ void Skybox::UpdateUniform(glm::mat4 proj, glm::mat4 view) {
 	skyboxUniformBuffer.unmap();
 };
 
-VkCommandBuffer Skybox::BuildSecondaryCommandBuffer(VkCommandBuffer secondaryCommandBuffer, 
-		VkCommandBufferInheritanceInfo inheritanceInfo) {
-
-	VkCommandBufferBeginInfo commandBufferBeginInfo = initializers::commandBufferBeginInfo();
-	commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-	commandBufferBeginInfo.pInheritanceInfo = &inheritanceInfo;
-
-	VK_CHECK_RESULT(vkBeginCommandBuffer(secondaryCommandBuffer, &commandBufferBeginInfo));
-
-	
-	vkCmdBindDescriptorSets(secondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 0, 1, &descriptorSet, 0, nullptr);
-	vkCmdBindPipeline(secondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(0));
-
-	VkDeviceSize offsets[1] = { 0 };
-	vkCmdBindVertexBuffers(secondaryCommandBuffer, 0, 1, &model.vertices.buffer, offsets);
-	vkCmdBindIndexBuffer(secondaryCommandBuffer, model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdDrawIndexed(secondaryCommandBuffer, static_cast<uint32_t>(model.indexCount), 1, 0, 0, 0);
-
-	VK_CHECK_RESULT(vkEndCommandBuffer(secondaryCommandBuffer));
-
-	return secondaryCommandBuffer;
-}
+//VkCommandBuffer Skybox::BuildSecondaryCommandBuffer(VkCommandBuffer secondaryCommandBuffer, 
+//		VkCommandBufferInheritanceInfo inheritanceInfo) {
+//
+//	VkCommandBufferBeginInfo commandBufferBeginInfo = initializers::commandBufferBeginInfo();
+//	commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+//	commandBufferBeginInfo.pInheritanceInfo = &inheritanceInfo;
+//
+//	VK_CHECK_RESULT(vkBeginCommandBuffer(secondaryCommandBuffer, &commandBufferBeginInfo));
+//
+//	
+//	vkCmdBindDescriptorSets(secondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 0, 1, &descriptorSet, 0, nullptr);
+//	vkCmdBindPipeline(secondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(0));
+//
+//	VkDeviceSize offsets[1] = { 0 };
+//	vkCmdBindVertexBuffers(secondaryCommandBuffer, 0, 1, &model.vertices.buffer, offsets);
+//	vkCmdBindIndexBuffer(secondaryCommandBuffer, model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+//	vkCmdDrawIndexed(secondaryCommandBuffer, static_cast<uint32_t>(model.indexCount), 1, 0, 0, 0);
+//
+//	VK_CHECK_RESULT(vkEndCommandBuffer(secondaryCommandBuffer));
+//
+//	return secondaryCommandBuffer;
+//}
 
 

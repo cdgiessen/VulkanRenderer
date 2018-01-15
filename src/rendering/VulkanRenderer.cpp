@@ -6,6 +6,8 @@
 #include "../scene/Scene.h"
 #include "../gui/ImGuiImpl.h"
 
+#include "../core/Logger.h"
+
 VulkanRenderer::VulkanRenderer(bool validationLayer, std::shared_ptr<Scene> scene) 
 	: device(validationLayer), vulkanSwapChain(device), shaderManager(device), pipelineManager(device), scene(scene), textureManager(device)
 {
@@ -34,10 +36,12 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 	vulkanSwapChain.CreateFramebuffers(depthImageView, renderPass);
 
 	CreateCommandBuffers();
+
+	PrepareDMACommandBuffer();
 }
 
 void VulkanRenderer::RenderFrame() {
-
+	
 	PrepareFrame();
 	
 	BuildCommandBuffers();
@@ -274,7 +278,11 @@ void VulkanRenderer::TransitionImageLayout(VkImage image, VkFormat format, VkIma
 }
 
 VkCommandBuffer VulkanRenderer::BeginSingleTimeCommands() {
-	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+	VkCommandBufferAllocateInfo allocInfo = 
+		initializers::commandBufferAllocateInfo(
+			device.graphics_queue_command_pool, 
+			VK_COMMAND_BUFFER_LEVEL_PRIMARY, 
+			1);
 
 	VkCommandBuffer commandBuffer;
 	vkAllocateCommandBuffers(device.device, &allocInfo, &commandBuffer);
@@ -283,7 +291,7 @@ VkCommandBuffer VulkanRenderer::BeginSingleTimeCommands() {
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	VK_CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 
 	return commandBuffer;
 }
@@ -413,6 +421,14 @@ std::array<VkClearValue, 2> VulkanRenderer::GetFramebufferClearValues() {
 	clearValues[0].color = clearColor;
 	clearValues[1].depthStencil = depthClearColor;
 	return clearValues;
+}
+
+void VulkanRenderer::PrepareDMACommandBuffer() {
+	device.CreateTransferCommandBuffer();
+}
+
+void VulkanRenderer::SubmitDMACommandBuffer() {
+	device.SubmitTransferCommandBuffer();
 }
 
 void VulkanRenderer::PrepareFrame()

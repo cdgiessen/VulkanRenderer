@@ -1,5 +1,7 @@
 #include "VulkanLargeBuffer.h"
+#include "VulkanTools.h"
 
+#include "../core/Logger.h"
 
 VulkanLargeBuffer::VulkanLargeBuffer(std::shared_ptr<VulkanDevice> device, VkBufferUsageFlagBits usageFlags, VkDeviceSize size)
 {

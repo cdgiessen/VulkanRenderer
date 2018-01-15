@@ -1,6 +1,7 @@
 #include "VulkanShader.hpp"
 
 #include "../core/CoreTools.h"
+#include "../core/Logger.h"
 #include "VulkanInitializers.hpp"
 #include "VulkanTools.h"
 

@@ -7,9 +7,14 @@
 
 #include "../../third-party/stb_image/stb_image.h"
 
+#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+
 class VulkanTexture {
 public:
-	VkImage textureImage;
+	VkImage vmaImage;
+	VmaAllocation vmaImageAlloc;
+	
+	//VkImage textureImage;
 	VkImageLayout textureImageLayout;
 	VkDeviceMemory textureImageMemory;
 	VkImageView textureImageView;
@@ -27,6 +32,10 @@ public:
 		VkSamplerAddressMode textureWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, float mipMapLodBias = 0.0f, bool useStaging = 1, bool anisotropy = 1, float maxAnisotropy = 8,
 		VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 	
+	void GenerateMipMaps(VulkanDevice& device, VkImage image, std::shared_ptr<Texture> texture, int mipLevels);
+	void GenerateMipMapsTexArray(VulkanDevice& device, std::shared_ptr<TextureArray> textures, int mipLevels);
+	void GenerateMipMapsCubeMap(VulkanDevice& device, std::shared_ptr<CubeMap> cubeMap, int mipLevels);
+
 };
 
 /**

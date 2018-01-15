@@ -42,6 +42,7 @@ std::string errorString(VkResult errorCode);
 	if (res != VK_SUCCESS)																										\
 	{																															\
 		Log::Debug << "Fatal : VkResult is \"" << errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n";	\
+		Log::Error << "Fatal : VkResult is \"" << errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n";	\
 		assert(res == VK_SUCCESS);																								\
 	}																															\
 }

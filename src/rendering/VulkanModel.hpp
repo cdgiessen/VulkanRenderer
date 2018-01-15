@@ -2,6 +2,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+
 #include "RendererStructs.h"
 #include "VulkanTools.h"
 #include "VulkanDevice.hpp"
@@ -14,12 +16,17 @@
 class VulkanModel {
 public:
 
-	VulkanBuffer vertices;
-	VulkanBuffer indices;
+	//VulkanBuffer vertices;
+	//VulkanBuffer indices;
 	uint32_t vertexCount = 0;
 	uint32_t indexCount = 0;
 
-	/** @brief Stores vertex and index base and counts for each part of a model */ //multi part models...
+	VkBuffer vmaBufferVertex = VK_NULL_HANDLE;
+	VkBuffer vmaBufferIndex = VK_NULL_HANDLE;
+
+	VmaAllocation vmaModelVertices = VK_NULL_HANDLE;
+	VmaAllocation vmaModelIndices = VK_NULL_HANDLE;
+
 	struct ModelPart {
 		uint32_t vertexBase;
 		uint32_t vertexCount;
@@ -64,61 +71,95 @@ public:
 		uint32_t vBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(float);
 		uint32_t iBufferSize = static_cast<uint32_t>(indexBuffer.size()) * sizeof(uint32_t);
 
-		// Use staging buffer to move vertex and index buffer to device local memory
-		// Create staging buffers
-		VulkanBuffer vertexStaging, indexStaging;
+		
+		device.CreateMeshBufferVertex(&vmaBufferVertex, &vmaModelVertices, vBufferSize);
+		device.CreateMeshBufferIndex(&vmaBufferIndex, &vmaModelIndices, iBufferSize);
 
-		// Vertex buffer
-		VK_CHECK_RESULT(device.createBuffer(
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-			&vertexStaging,
-			vBufferSize,
-			vertexBuffer.data()));
-		//auto vbdata = vertexBuffer.data();
-		// Index buffer
-		VK_CHECK_RESULT(device.createBuffer(
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-			&indexStaging,
-			iBufferSize,
-			indexBuffer.data()));
+		VkBuffer vmaStagingBufVertex = VK_NULL_HANDLE;
+		VkBuffer vmaStagingBufIndex = VK_NULL_HANDLE;
 
-		// Create device local target buffers
-		// Vertex buffer
-		VK_CHECK_RESULT(device.createBuffer(
-			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			&vertices,
-			vBufferSize));
+		VmaAllocation vmaStagingVertices = VK_NULL_HANDLE;
+		VmaAllocation vmaStagingIndecies = VK_NULL_HANDLE;
 
-		// Index buffer
-		VK_CHECK_RESULT(device.createBuffer(
-			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			&indices,
-			iBufferSize));
+		device.CreateMeshStagingBuffer(&vmaStagingBufVertex, &vmaStagingVertices, vertexBuffer.data(), vBufferSize);
+		device.CreateMeshStagingBuffer(&vmaStagingBufIndex, &vmaStagingIndecies, indexBuffer.data(), iBufferSize);
 
-		// Copy from staging buffers
-		VkCommandBuffer copyCmd = device.createCommandBuffer(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+		//VkCommandBuffer copyCmd = device.createCommandBuffer(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+		VkCommandBuffer copyCmd = device.GetTransferCommandBuffer();
 
 		VkBufferCopy copyRegion{};
 
-		copyRegion.size = vertices.size;
-		vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, vertices.buffer, 1, &copyRegion);
+		copyRegion.size = vBufferSize;
+		vkCmdCopyBuffer(copyCmd, vmaStagingBufVertex, vmaBufferVertex, 1, &copyRegion);
 
-		copyRegion.size = indices.size;
-		vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indices.buffer, 1, &copyRegion);
+		copyRegion.size = iBufferSize;
+		vkCmdCopyBuffer(copyCmd, vmaStagingBufIndex, vmaBufferIndex, 1, &copyRegion);
 
-		device.flushCommandBuffer(copyCmd, copyQueue);
+		//device.flushCommandBuffer(copyCmd, copyQueue);
+		device.SubmitTransferCommandBuffer();
 
-		// Destroy staging resources
-		vkDestroyBuffer(device.device, vertexStaging.buffer, nullptr);
-		vkFreeMemory(device.device, vertexStaging.bufferMemory, nullptr);
-		vkDestroyBuffer(device.device, indexStaging.buffer, nullptr);
-		vkFreeMemory(device.device, indexStaging.bufferMemory, nullptr);
-
+		device.DestroyVmaAllocatedBuffer(&vmaStagingBufVertex, &vmaStagingVertices);
+		device.DestroyVmaAllocatedBuffer(&vmaStagingBufIndex, &vmaStagingIndecies);
 		return true;
+
+		
+
+		//// Use staging buffer to move vertex and index buffer to device local memory
+		//// Create staging buffers
+		//VulkanBuffer vertexStaging, indexStaging;
+
+		//// Vertex buffer
+		//VK_CHECK_RESULT(device.createBuffer(
+		//	VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		//	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		//	&vertexStaging,
+		//	vBufferSize,
+		//	vertexBuffer.data()));
+		////auto vbdata = vertexBuffer.data();
+		//// Index buffer
+		//VK_CHECK_RESULT(device.createBuffer(
+		//	VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		//	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		//	&indexStaging,
+		//	iBufferSize,
+		//	indexBuffer.data()));
+
+		//// Create device local target buffers
+		//// Vertex buffer
+		//VK_CHECK_RESULT(device.createBuffer(
+		//	VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		//	VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		//	&vertices,
+		//	vBufferSize));
+
+		//// Index buffer
+		//VK_CHECK_RESULT(device.createBuffer(
+		//	VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		//	VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		//	&indices,
+		//	iBufferSize));
+
+		//// Copy from staging buffers
+		////VkCommandBuffer copyCmd = 
+		//VkCommandBuffer copyCmd = device.createCommandBuffer(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+
+		//VkBufferCopy copyRegion{};
+
+		//copyRegion.size = vertices.size;
+		//vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, vertices.buffer, 1, &copyRegion);
+
+		//copyRegion.size = indices.size;
+		//vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indices.buffer, 1, &copyRegion);
+
+		//device.flushCommandBuffer(copyCmd, copyQueue);
+
+		//// Destroy staging resources
+		//vkDestroyBuffer(device.device, vertexStaging.buffer, nullptr);
+		//vkFreeMemory(device.device, vertexStaging.bufferMemory, nullptr);
+		//vkDestroyBuffer(device.device, indexStaging.buffer, nullptr);
+		//vkFreeMemory(device.device, indexStaging.bufferMemory, nullptr);
+
+		//return true;
 	}
 
 	/**
@@ -133,214 +174,214 @@ public:
 	*/
 	bool loadFromFile(const std::string& filename, VulkanDevice &device, VkQueue copyQueue)
 	{
-		Mesh importedMesh;
-		if (fileExists(filename)) { //file exists and can be loaded
-			importedMesh.importFromFile(filename);
+		//Mesh importedMesh;
+		//if (fileExists(filename)) { //file exists and can be loaded
+		//	importedMesh.importFromFile(filename);
 
-			std::vector<float> vertexBuffer(importedMesh.vertexCount * 12);
-			std::vector<uint32_t> indexBuffer(importedMesh.indexCount);
+		//	std::vector<float> vertexBuffer(importedMesh.vertexCount * 12);
+		//	std::vector<uint32_t> indexBuffer(importedMesh.indexCount);
 
-			for (int i = 0; i < importedMesh.vertices.size(); i++) {
-				vertexBuffer[i * 12 + 0] = importedMesh.vertices[i].pos.x;
-				vertexBuffer[i * 12 + 1] = importedMesh.vertices[i].pos.y;
-				vertexBuffer[i * 12 + 2] = importedMesh.vertices[i].pos.z;
-				vertexBuffer[i * 12 + 3] = importedMesh.vertices[i].normal.x;
-				vertexBuffer[i * 12 + 4] = importedMesh.vertices[i].normal.y;
-				vertexBuffer[i * 12 + 5] = importedMesh.vertices[i].normal.z;
-				vertexBuffer[i * 12 + 6] = importedMesh.vertices[i].texCoord.x;
-				vertexBuffer[i * 12 + 7] = importedMesh.vertices[i].texCoord.y;
-				vertexBuffer[i * 12 + 8] = importedMesh.vertices[i].color.r;
-				vertexBuffer[i * 12 + 9] = importedMesh.vertices[i].color.g;
-				vertexBuffer[i * 12 + 10] = importedMesh.vertices[i].color.b;
-				vertexBuffer[i * 12 + 11] = importedMesh.vertices[i].color.a;
-			}
+		//	for (int i = 0; i < importedMesh.vertices.size(); i++) {
+		//		vertexBuffer[i * 12 + 0] = importedMesh.vertices[i].pos.x;
+		//		vertexBuffer[i * 12 + 1] = importedMesh.vertices[i].pos.y;
+		//		vertexBuffer[i * 12 + 2] = importedMesh.vertices[i].pos.z;
+		//		vertexBuffer[i * 12 + 3] = importedMesh.vertices[i].normal.x;
+		//		vertexBuffer[i * 12 + 4] = importedMesh.vertices[i].normal.y;
+		//		vertexBuffer[i * 12 + 5] = importedMesh.vertices[i].normal.z;
+		//		vertexBuffer[i * 12 + 6] = importedMesh.vertices[i].texCoord.x;
+		//		vertexBuffer[i * 12 + 7] = importedMesh.vertices[i].texCoord.y;
+		//		vertexBuffer[i * 12 + 8] = importedMesh.vertices[i].color.r;
+		//		vertexBuffer[i * 12 + 9] = importedMesh.vertices[i].color.g;
+		//		vertexBuffer[i * 12 + 10] = importedMesh.vertices[i].color.b;
+		//		vertexBuffer[i * 12 + 11] = importedMesh.vertices[i].color.a;
+		//	}
 
-			for (int i = 0; i < importedMesh.indices.size(); i++) {
-				indexBuffer[i] = importedMesh.indices[i];
-			}
+		//	for (int i = 0; i < importedMesh.indices.size(); i++) {
+		//		indexBuffer[i] = importedMesh.indices[i];
+		//	}
 
-			//Assimp::Importer Importer;
-			//const aiScene* pScene;
+		//Assimp::Importer Importer;
+		//const aiScene* pScene;
 
-			//pScene = Importer.ReadFile(filename.c_str(), aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals);
+		//pScene = Importer.ReadFile(filename.c_str(), aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals);
 
-			//if (pScene)
-			//{
-			//	parts.clear();
-			//	parts.resize(pScene->mNumMeshes);
-
-
-			//	std::vector<float> vertexBuffer;
-			//	std::vector<uint32_t> indexBuffer;
+		//if (pScene)
+		//{
+		//	parts.clear();
+		//	parts.resize(pScene->mNumMeshes);
 
 
-			//	// Load meshes
-			//	for (unsigned int i = 0; i < pScene->mNumMeshes; i++)
-			//	{
-			//		const aiMesh* paiMesh = pScene->mMeshes[i];
+		//	std::vector<float> vertexBuffer;
+		//	std::vector<uint32_t> indexBuffer;
 
-			//		parts[i] = {};
-			//		parts[i].vertexBase = vertexCount;
-			//		parts[i].indexBase = indexCount;
 
-			//		vertexCount += pScene->mMeshes[i]->mNumVertices;
+		//	// Load meshes
+		//	for (unsigned int i = 0; i < pScene->mNumMeshes; i++)
+		//	{
+		//		const aiMesh* paiMesh = pScene->mMeshes[i];
 
-			//		aiColor3D pColor(0.f, 0.f, 0.f);
-			//		pScene->mMaterials[paiMesh->mMaterialIndex]->Get(AI_MATKEY_COLOR_DIFFUSE, pColor);
+		//		parts[i] = {};
+		//		parts[i].vertexBase = vertexCount;
+		//		parts[i].indexBase = indexCount;
 
-			//		const aiVector3D Zero3D(0.0f, 0.0f, 0.0f);
+		//		vertexCount += pScene->mMeshes[i]->mNumVertices;
 
-			//		for (unsigned int j = 0; j < paiMesh->mNumVertices; j++)
-			//		{
-			//			const aiVector3D* pPos = &(paiMesh->mVertices[j]);
-			//			const aiVector3D* pNormal = &(paiMesh->mNormals[j]);
-			//			const aiVector3D* pTexCoord = (paiMesh->HasTextureCoords(0)) ? &(paiMesh->mTextureCoords[0][j]) : &Zero3D;
-			//			const aiVector3D* pTangent = (paiMesh->HasTangentsAndBitangents()) ? &(paiMesh->mTangents[j]) : &Zero3D;
-			//			const aiVector3D* pBiTangent = (paiMesh->HasTangentsAndBitangents()) ? &(paiMesh->mBitangents[j]) : &Zero3D;
+		//		aiColor3D pColor(0.f, 0.f, 0.f);
+		//		pScene->mMaterials[paiMesh->mMaterialIndex]->Get(AI_MATKEY_COLOR_DIFFUSE, pColor);
 
-			//			vertexBuffer.push_back(pPos->x * scale.x + center.x);
-			//			vertexBuffer.push_back(-pPos->y * scale.y + center.y);
-			//			vertexBuffer.push_back(pPos->z * scale.z + center.z);
+		//		const aiVector3D Zero3D(0.0f, 0.0f, 0.0f);
 
-			//			vertexBuffer.push_back(pNormal->x);
-			//			vertexBuffer.push_back(-pNormal->y);
-			//			vertexBuffer.push_back(pNormal->z);
+		//		for (unsigned int j = 0; j < paiMesh->mNumVertices; j++)
+		//		{
+		//			const aiVector3D* pPos = &(paiMesh->mVertices[j]);
+		//			const aiVector3D* pNormal = &(paiMesh->mNormals[j]);
+		//			const aiVector3D* pTexCoord = (paiMesh->HasTextureCoords(0)) ? &(paiMesh->mTextureCoords[0][j]) : &Zero3D;
+		//			const aiVector3D* pTangent = (paiMesh->HasTangentsAndBitangents()) ? &(paiMesh->mTangents[j]) : &Zero3D;
+		//			const aiVector3D* pBiTangent = (paiMesh->HasTangentsAndBitangents()) ? &(paiMesh->mBitangents[j]) : &Zero3D;
 
-			//			vertexBuffer.push_back(pTexCoord->x * uvscale.s);
-			//			vertexBuffer.push_back(pTexCoord->y * uvscale.t);
+		//			vertexBuffer.push_back(pPos->x * scale.x + center.x);
+		//			vertexBuffer.push_back(-pPos->y * scale.y + center.y);
+		//			vertexBuffer.push_back(pPos->z * scale.z + center.z);
 
-			//			vertexBuffer.push_back(pColor.r);
-			//			vertexBuffer.push_back(pColor.g);
-			//			vertexBuffer.push_back(pColor.b);
-			//			vertexBuffer.push_back(1.0f);
+		//			vertexBuffer.push_back(pNormal->x);
+		//			vertexBuffer.push_back(-pNormal->y);
+		//			vertexBuffer.push_back(pNormal->z);
 
-			//			/*for (auto& component : layout.components)
-			//			{
-			//			switch (component) {
-			//			case VERTEX_COMPONENT_POSITION:
-			//			vertexBuffer.push_back(pPos->x * scale.x + center.x);
-			//			vertexBuffer.push_back(-pPos->y * scale.y + center.y);
-			//			vertexBuffer.push_back(pPos->z * scale.z + center.z);
-			//			break;
-			//			case VERTEX_COMPONENT_NORMAL:
-			//			vertexBuffer.push_back(pNormal->x);
-			//			vertexBuffer.push_back(-pNormal->y);
-			//			vertexBuffer.push_back(pNormal->z);
-			//			break;
-			//			case VERTEX_COMPONENT_UV:
-			//			vertexBuffer.push_back(pTexCoord->x * uvscale.s);
-			//			vertexBuffer.push_back(pTexCoord->y * uvscale.t);
-			//			break;
-			//			case VERTEX_COMPONENT_COLOR:
-			//			vertexBuffer.push_back(pColor.r);
-			//			vertexBuffer.push_back(pColor.g);
-			//			vertexBuffer.push_back(pColor.b);
-			//			break;
-			//			case VERTEX_COMPONENT_TANGENT:
-			//			vertexBuffer.push_back(pTangent->x);
-			//			vertexBuffer.push_back(pTangent->y);
-			//			vertexBuffer.push_back(pTangent->z);
-			//			break;
-			//			case VERTEX_COMPONENT_BITANGENT:
-			//			vertexBuffer.push_back(pBiTangent->x);
-			//			vertexBuffer.push_back(pBiTangent->y);
-			//			vertexBuffer.push_back(pBiTangent->z);
-			//			break;
-			//			// Dummy components for padding
-			//			case VERTEX_COMPONENT_DUMMY_FLOAT:
-			//			vertexBuffer.push_back(0.0f);
-			//			break;
-			//			case VERTEX_COMPONENT_DUMMY_VEC4:
-			//			vertexBuffer.push_back(0.0f);
-			//			vertexBuffer.push_back(0.0f);
-			//			vertexBuffer.push_back(0.0f);
-			//			vertexBuffer.push_back(0.0f);
-			//			break;
-			//			};
-			//			}*/
-			//		}
+		//			vertexBuffer.push_back(pTexCoord->x * uvscale.s);
+		//			vertexBuffer.push_back(pTexCoord->y * uvscale.t);
 
-			//		parts[i].vertexCount = paiMesh->mNumVertices;
+		//			vertexBuffer.push_back(pColor.r);
+		//			vertexBuffer.push_back(pColor.g);
+		//			vertexBuffer.push_back(pColor.b);
+		//			vertexBuffer.push_back(1.0f);
 
-			//		uint32_t indexBase = static_cast<uint32_t>(indexBuffer.size());
-			//		for (unsigned int j = 0; j < paiMesh->mNumFaces; j++)
-			//		{
-			//			const aiFace& Face = paiMesh->mFaces[j];
-			//			if (Face.mNumIndices != 3)
-			//				continue;
-			//			indexBuffer.push_back(indexBase + Face.mIndices[0]);
-			//			indexBuffer.push_back(indexBase + Face.mIndices[1]);
-			//			indexBuffer.push_back(indexBase + Face.mIndices[2]);
-			//			parts[i].indexCount += 3;
-			//			indexCount += 3;
-			//		}
-			//	}
+		//			/*for (auto& component : layout.components)
+		//			{
+		//			switch (component) {
+		//			case VERTEX_COMPONENT_POSITION:
+		//			vertexBuffer.push_back(pPos->x * scale.x + center.x);
+		//			vertexBuffer.push_back(-pPos->y * scale.y + center.y);
+		//			vertexBuffer.push_back(pPos->z * scale.z + center.z);
+		//			break;
+		//			case VERTEX_COMPONENT_NORMAL:
+		//			vertexBuffer.push_back(pNormal->x);
+		//			vertexBuffer.push_back(-pNormal->y);
+		//			vertexBuffer.push_back(pNormal->z);
+		//			break;
+		//			case VERTEX_COMPONENT_UV:
+		//			vertexBuffer.push_back(pTexCoord->x * uvscale.s);
+		//			vertexBuffer.push_back(pTexCoord->y * uvscale.t);
+		//			break;
+		//			case VERTEX_COMPONENT_COLOR:
+		//			vertexBuffer.push_back(pColor.r);
+		//			vertexBuffer.push_back(pColor.g);
+		//			vertexBuffer.push_back(pColor.b);
+		//			break;
+		//			case VERTEX_COMPONENT_TANGENT:
+		//			vertexBuffer.push_back(pTangent->x);
+		//			vertexBuffer.push_back(pTangent->y);
+		//			vertexBuffer.push_back(pTangent->z);
+		//			break;
+		//			case VERTEX_COMPONENT_BITANGENT:
+		//			vertexBuffer.push_back(pBiTangent->x);
+		//			vertexBuffer.push_back(pBiTangent->y);
+		//			vertexBuffer.push_back(pBiTangent->z);
+		//			break;
+		//			// Dummy components for padding
+		//			case VERTEX_COMPONENT_DUMMY_FLOAT:
+		//			vertexBuffer.push_back(0.0f);
+		//			break;
+		//			case VERTEX_COMPONENT_DUMMY_VEC4:
+		//			vertexBuffer.push_back(0.0f);
+		//			vertexBuffer.push_back(0.0f);
+		//			vertexBuffer.push_back(0.0f);
+		//			vertexBuffer.push_back(0.0f);
+		//			break;
+		//			};
+		//			}*/
+		//		}
 
-			uint32_t vBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(float);
-			uint32_t iBufferSize = static_cast<uint32_t>(indexBuffer.size()) * sizeof(uint32_t);
+		//		parts[i].vertexCount = paiMesh->mNumVertices;
 
-			// Use staging buffer to move vertex and index buffer to device local memory
-			// Create staging buffers
-			VulkanBuffer vertexStaging, indexStaging;
+		//		uint32_t indexBase = static_cast<uint32_t>(indexBuffer.size());
+		//		for (unsigned int j = 0; j < paiMesh->mNumFaces; j++)
+		//		{
+		//			const aiFace& Face = paiMesh->mFaces[j];
+		//			if (Face.mNumIndices != 3)
+		//				continue;
+		//			indexBuffer.push_back(indexBase + Face.mIndices[0]);
+		//			indexBuffer.push_back(indexBase + Face.mIndices[1]);
+		//			indexBuffer.push_back(indexBase + Face.mIndices[2]);
+		//			parts[i].indexCount += 3;
+		//			indexCount += 3;
+		//		}
+		//	}
 
-			// Vertex buffer
-			VK_CHECK_RESULT(device.createBuffer(
-				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-				&vertexStaging,
-				vBufferSize,
-				vertexBuffer.data()));
+		//	uint32_t vBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(float);
+		//	uint32_t iBufferSize = static_cast<uint32_t>(indexBuffer.size()) * sizeof(uint32_t);
 
-			// Index buffer
-			VK_CHECK_RESULT(device.createBuffer(
-				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-				&indexStaging,
-				iBufferSize,
-				indexBuffer.data()));
+		//	// Use staging buffer to move vertex and index buffer to device local memory
+		//	// Create staging buffers
+		//	VulkanBuffer vertexStaging, indexStaging;
 
-			// Create device local target buffers
-			// Vertex buffer
-			VK_CHECK_RESULT(device.createBuffer(
-				VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-				&vertices,
-				vBufferSize));
+		//	// Vertex buffer
+		//	VK_CHECK_RESULT(device.createBuffer(
+		//		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		//		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		//		&vertexStaging,
+		//		vBufferSize,
+		//		vertexBuffer.data()));
 
-			// Index buffer
-			VK_CHECK_RESULT(device.createBuffer(
-				VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-				&indices,
-				iBufferSize));
+		//	// Index buffer
+		//	VK_CHECK_RESULT(device.createBuffer(
+		//		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		//		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		//		&indexStaging,
+		//		iBufferSize,
+		//		indexBuffer.data()));
 
-			// Copy from staging buffers
-			VkCommandBuffer copyCmd = device.createCommandBuffer(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+		//	// Create device local target buffers
+		//	// Vertex buffer
+		//	VK_CHECK_RESULT(device.createBuffer(
+		//		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		//		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		//		&vertices,
+		//		vBufferSize));
 
-			VkBufferCopy copyRegion{};
+		//	// Index buffer
+		//	VK_CHECK_RESULT(device.createBuffer(
+		//		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		//		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		//		&indices,
+		//		iBufferSize));
 
-			copyRegion.size = vertices.size;
-			vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, vertices.buffer, 1, &copyRegion);
+		//	// Copy from staging buffers
+		//	VkCommandBuffer copyCmd = device.createCommandBuffer(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
-			copyRegion.size = indices.size;
-			vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indices.buffer, 1, &copyRegion);
+		//	VkBufferCopy copyRegion{};
 
-			device.flushCommandBuffer(copyCmd, copyQueue);
+		//	copyRegion.size = vertices.size;
+		//	vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, vertices.buffer, 1, &copyRegion);
 
-			// Destroy staging resources
-			vkDestroyBuffer(device.device, vertexStaging.buffer, nullptr);
-			vkFreeMemory(device.device, vertexStaging.bufferMemory, nullptr);
-			vkDestroyBuffer(device.device, indexStaging.buffer, nullptr);
-			vkFreeMemory(device.device, indexStaging.bufferMemory, nullptr);
+		//	copyRegion.size = indices.size;
+		//	vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indices.buffer, 1, &copyRegion);
 
-			return true;
-		}
-		else
-		{
-			printf("Error parsing '%s': '\n", filename.c_str());
-			return false;
-		}
-		
+		//	device.flushCommandBuffer(copyCmd, copyQueue);
+
+		//	// Destroy staging resources
+		//	vkDestroyBuffer(device.device, vertexStaging.buffer, nullptr);
+		//	vkFreeMemory(device.device, vertexStaging.bufferMemory, nullptr);
+		//	vkDestroyBuffer(device.device, indexStaging.buffer, nullptr);
+		//	vkFreeMemory(device.device, indexStaging.bufferMemory, nullptr);
+
+		//	return true;
+		//}
+		//else
+		//{
+		//	printf("Error parsing '%s': '\n", filename.c_str());
+		//	return false;
+		//}
+		//
 
 		
 	};
@@ -348,16 +389,7 @@ public:
 	/** @brief Release all Vulkan resources of this model */
 	void destroy(VulkanDevice& device)
 	{
-		//assert(device);
-		if (vertices.buffer != VK_NULL_HANDLE) 
-		{
-			vkDestroyBuffer(device.device, vertices.buffer, nullptr);
-			vkFreeMemory(device.device, vertices.bufferMemory, nullptr);
-		}
-		if (indices.buffer != VK_NULL_HANDLE)
-		{
-			vkDestroyBuffer(device.device, indices.buffer, nullptr);
-			vkFreeMemory(device.device, indices.bufferMemory, nullptr);
-		}
+		device.DestroyVmaAllocatedBuffer(&vmaBufferVertex, &vmaModelVertices);
+		device.DestroyVmaAllocatedBuffer(&vmaBufferIndex, &vmaModelIndices);
 	}
 };

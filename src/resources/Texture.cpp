@@ -13,7 +13,7 @@ Texture::~Texture() {
 	}
 	else {
 		Log::Error << "Failed to free pixels, is there a null pointer?" << "\n";
-		throw std::runtime_error("failed to free texture image!");
+		//throw std::runtime_error("failed to free texture image!");
 	}
 };
 
@@ -29,7 +29,7 @@ TextureArray::~TextureArray() {
 	}
 	else {
 		Log::Error << "Failed to free pixels, is there a null pointer?" << "\n";
-		throw std::runtime_error("failed to free texture image!");
+		//throw std::runtime_error("failed to free texture image!");
 	}
 }
 
@@ -41,6 +41,6 @@ CubeMap::~CubeMap() {
 	}
 	else {
 		Log::Error << "Failed to free pixels, is there a null pointer?" << "\n";
-		throw std::runtime_error("failed to free texture image!");
+		//throw std::runtime_error("failed to free texture image!");
 	}
 }

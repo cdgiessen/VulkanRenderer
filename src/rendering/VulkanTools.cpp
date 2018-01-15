@@ -43,9 +43,10 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR windo
 	//finds a transfer only queue
 	int i = 0;
 	for (const auto& queueFamily : queueFamilies) {
-		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT && 
-			((queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && 
-			((queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) == 0)) {
+		if (queueFamily.queueCount > 0 
+			&& (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT )
+			&& ((queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) 
+			&& ((queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) == 0)) {
 			
 			indices.transferFamily = i;
 		}
