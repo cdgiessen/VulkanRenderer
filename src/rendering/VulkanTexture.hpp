@@ -11,14 +11,12 @@
 
 class VulkanTexture {
 public:
-	VkImage vmaImage;
-	VmaAllocation vmaImageAlloc;
-	
-	//VkImage textureImage;
+	VkImage vmaImage = VK_NULL_HANDLE;
+	VmaAllocation vmaImageAlloc = VK_NULL_HANDLE;
+
 	VkImageLayout textureImageLayout;
-	VkDeviceMemory textureImageMemory;
-	VkImageView textureImageView;
-	VkSampler textureSampler;
+	VkImageView textureImageView = VK_NULL_HANDLE;
+	VkSampler textureSampler = VK_NULL_HANDLE;
 
 	VkDescriptorImageInfo descriptor;
 
@@ -28,15 +26,15 @@ public:
 
 	void destroy(VulkanDevice &device);
 
-	void createImageSampler(VulkanDevice &device, VkFilter mag = VK_FILTER_LINEAR, VkFilter min = VK_FILTER_LINEAR, VkSamplerMipmapMode mipMapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-		VkSamplerAddressMode textureWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, float mipMapLodBias = 0.0f, bool useStaging = 1, bool anisotropy = 1, float maxAnisotropy = 8,
-		VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-	
-	void GenerateMipMaps(VulkanDevice& device, VkImage image, std::shared_ptr<Texture> texture, int mipLevels);
-	void GenerateMipMapsTexArray(VulkanDevice& device, std::shared_ptr<TextureArray> textures, int mipLevels);
-	void GenerateMipMapsCubeMap(VulkanDevice& device, std::shared_ptr<CubeMap> cubeMap, int mipLevels);
+	void GenerateMipMaps(VulkanDevice& device, VkImage image, int width, int height, int depth, int layers, int mipLevels);
 
+	static VkSampler CreateImageSampler(VulkanDevice &device, VkFilter mag = VK_FILTER_LINEAR, VkFilter min = VK_FILTER_LINEAR, VkSamplerMipmapMode mipMapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+				VkSamplerAddressMode textureWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, float mipMapLodBias = 0.0f, bool useMipmaps = 1, int mipLevels = 0, bool anisotropy = 1, float maxAnisotropy = 8,
+				VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+				
+	static VkImageView CreateImageView(VulkanDevice& device, VkImage image, VkImageViewType viewType, VkFormat format, VkImageAspectFlags aspectFlags, VkComponentMapping components, int mipLevels, int layers);
 };
+
 
 /**
 * Load a 2D texture including all mip levels
@@ -117,6 +115,11 @@ public:
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		bool genMipMaps = false,
 		int mipMapLevelsToGen = 1);
+};
+
+class VulkanTextureDepthBuffer : public VulkanTexture {
+public:
+	void CreateDepthImage(VulkanDevice &device, VkFormat depthFormat, int width, int height);
 };
 
 class VulkanTextureManager {

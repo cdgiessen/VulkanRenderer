@@ -82,10 +82,8 @@ public:
 	void DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation);
 
 	void CreateImage2D(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation);
-
-	void CreateStagingImage2D(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, std::shared_ptr<Texture> texture);
-	void CreateStagingImage2DArray(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, std::shared_ptr<TextureArray> texture);
-	void CreateStagingImage2DCubeMap(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, std::shared_ptr<CubeMap> cubeMap);
+	void CreateDepthImage(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation);
+	void CreateStagingImage2D(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, VmaAllocationInfo* allocInfo);
 
 
 	void DestroyVmaAllocatedImage(VkImage* image, VmaAllocation* allocation);

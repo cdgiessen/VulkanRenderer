@@ -18,7 +18,7 @@ Scene::~Scene()
 void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, NewNodeGraph::TerGenNodeGraph& graph) {
 	this->renderer = renderer;
 	renderer->PrepareDMACommandBuffer();
-	
+
 	camera = std::make_shared< Camera>(glm::vec3(-2, 2, 0), glm::vec3(0, 1, 0), 0, -45);
 
 	pointLights.resize(5);

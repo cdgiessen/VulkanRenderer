@@ -33,7 +33,7 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 	CreateRenderPass();
 
 	CreateDepthResources();
-	vulkanSwapChain.CreateFramebuffers(depthImageView, renderPass);
+	vulkanSwapChain.CreateFramebuffers(depthBuffer.textureImageView, renderPass);
 
 	CreateCommandBuffers();
 
@@ -50,9 +50,7 @@ void VulkanRenderer::RenderFrame() {
 }
 
 void VulkanRenderer::CleanVulkanResources() {
-	vkDestroyImageView(device.device, depthImageView, nullptr);
-	vkDestroyImage(device.device, depthImage, nullptr);
-	vkFreeMemory(device.device, depthImageMemory, nullptr);
+	depthBuffer.destroy(device);
 
 	vkDestroyRenderPass(device.device, renderPass, nullptr);
 	vulkanSwapChain.CleanUp();
@@ -68,9 +66,7 @@ void VulkanRenderer::CleanVulkanResources() {
 void VulkanRenderer::RecreateSwapChain() {
 	Log::Debug << "Recreating SwapChain" << "\n";
 	
-	vkDestroyImageView(device.device, depthImageView, nullptr);
-	vkDestroyImage(device.device, depthImage, nullptr);
-	vkFreeMemory(device.device, depthImageMemory, nullptr);
+	depthBuffer.destroy(device);
 
 	vkDestroyRenderPass(device.device, renderPass, nullptr);
 	
@@ -78,7 +74,7 @@ void VulkanRenderer::RecreateSwapChain() {
 
 	CreateRenderPass();
 	CreateDepthResources();
-	vulkanSwapChain.CreateFramebuffers(depthImageView, renderPass);
+	vulkanSwapChain.CreateFramebuffers(depthBuffer.textureImageView, renderPass);
 
 	pipelineManager.ReInitPipelines();
 
@@ -161,14 +157,12 @@ void VulkanRenderer::CreateDepthResources() {
 	VkFormat depthFormat = FindDepthFormat();
 	depthFormat = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
 
-	CreateImage(vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-	depthImageView = createImageView(device.device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	depthBuffer.CreateDepthImage(device, depthFormat, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 
-	TransitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	//CreateImage(vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+	//depthImageView = createImageView(device.device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	//TransitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-	//VkCommandBuffer copyBuf = vulkanDevice->createCommandBuffer(vulkanDevice->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-	//setImageLayout(copyBuf, depthImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIONAL, 
-	//vulkanDevice->flushCommandBuffer(copyBuf, vulkanDevice->graphics_queue, true);
 }
 
 VkFormat VulkanRenderer::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
@@ -194,131 +188,6 @@ VkFormat VulkanRenderer::FindDepthFormat() {
 		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
 	);
 }
-
-void VulkanRenderer::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
-	VkImageCreateInfo imageInfo = initializers::imageCreateInfo();
-	imageInfo.imageType = VK_IMAGE_TYPE_2D;
-	imageInfo.extent.width = width;
-	imageInfo.extent.height = height;
-	imageInfo.extent.depth = 1;
-	imageInfo.mipLevels = 1;
-	imageInfo.arrayLayers = 1;
-	imageInfo.format = format;
-	imageInfo.tiling = tiling;
-	imageInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-	imageInfo.usage = usage;
-	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	if (vkCreateImage(device.device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create image!");
-	}
-
-	VkMemoryRequirements memRequirements;
-	vkGetImageMemoryRequirements(device.device, image, &memRequirements);
-
-	VkMemoryAllocateInfo allocInfo = initializers::memoryAllocateInfo();
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findMemoryType(device.physical_device, memRequirements.memoryTypeBits, properties);
-
-	if (vkAllocateMemory(device.device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate image memory!");
-	}
-
-	vkBindImageMemory(device.device, image, imageMemory, 0);
-}
-
-void VulkanRenderer::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
-	VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
-
-	VkImageMemoryBarrier barrier = initializers::imageMemoryBarrier();
-	barrier.oldLayout = oldLayout;
-	barrier.newLayout = newLayout;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = image;
-
-	if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-		if (format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT) { //has stencil component
-			barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-		}
-	}
-	else {
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	}
-
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
-
-	if (oldLayout == VK_IMAGE_LAYOUT_PREINITIALIZED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-		barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-		barrier.srcAccessMask = 0;
-		barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-	}
-	else {
-		throw std::invalid_argument("unsupported layout transition!");
-	}
-
-	vkCmdPipelineBarrier(
-		commandBuffer,
-		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-
-	EndSingleTimeCommands(commandBuffer);
-}
-
-VkCommandBuffer VulkanRenderer::BeginSingleTimeCommands() {
-	VkCommandBufferAllocateInfo allocInfo = 
-		initializers::commandBufferAllocateInfo(
-			device.graphics_queue_command_pool, 
-			VK_COMMAND_BUFFER_LEVEL_PRIMARY, 
-			1);
-
-	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(device.device, &allocInfo, &commandBuffer);
-
-	VkCommandBufferBeginInfo beginInfo = {};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-	VK_CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-
-	return commandBuffer;
-}
-
-void VulkanRenderer::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
-	vkEndCommandBuffer(commandBuffer);
-
-	VkSubmitInfo submitInfo = initializers::submitInfo();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
-
-	vkQueueSubmit(device.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(device.graphics_queue);
-
-	vkFreeCommandBuffers(device.device, device.graphics_queue_command_pool, 1, &commandBuffer);
-}
-
-void VulkanRenderer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-	VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
-
-	VkBufferCopy copyRegion = {};
-	copyRegion.size = size;
-	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-
-	EndSingleTimeCommands(commandBuffer);
-}
-
 
 //20
 void VulkanRenderer::CreateCommandBuffers() {

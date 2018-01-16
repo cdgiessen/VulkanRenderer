@@ -149,6 +149,22 @@ namespace initializers
 		return imageCreateInfo;
 	}
 
+	inline VkImageSubresourceRange imageSubresourceRangeCreateInfo(
+		VkImageAspectFlags aspectMask,
+		int mipLevels = 1,
+		int layerCount = 1
+	) {
+	
+		VkImageSubresourceRange subresourceRange = {};
+		subresourceRange.aspectMask = aspectMask;
+		subresourceRange.baseMipLevel = 0;
+		subresourceRange.levelCount = mipLevels;
+		subresourceRange.baseArrayLayer = 0;
+		subresourceRange.layerCount = layerCount;
+
+		return subresourceRange;
+	}
+
 	inline VkSamplerCreateInfo samplerCreateInfo()
 	{
 		VkSamplerCreateInfo samplerCreateInfo{};

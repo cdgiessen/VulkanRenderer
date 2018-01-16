@@ -191,22 +191,16 @@ void VulkanDevice::CreateImage2D(VkImageCreateInfo imageInfo, VkImage* image, Vm
 	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &imageAllocCreateInfo, image, allocation, nullptr));
 }
 
-void VulkanDevice::CreateStagingImage2D(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, std::shared_ptr<Texture> texture) {
+void VulkanDevice::CreateDepthImage(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation) {
+	imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	VmaAllocationCreateInfo imageAllocCreateInfo = {};
+	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-	VmaAllocationCreateInfo stagingImageAllocCreateInfo = {};
-	stagingImageAllocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-	stagingImageAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-
-	VmaAllocationInfo stagingImageAllocInfo = {};
-
-	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &stagingImageAllocCreateInfo, image, allocation, &stagingImageAllocInfo));
-
-	memcpy(stagingImageAllocInfo.pMappedData, texture->pixels, texture->texImageSize);
+	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &imageAllocCreateInfo, image, allocation, nullptr));
 }
 
-void VulkanDevice::CreateStagingImage2DArray(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, std::shared_ptr<TextureArray> texture) {
+void VulkanDevice::CreateStagingImage2D(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, VmaAllocationInfo* allocInfo) {
 
 	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
@@ -214,26 +208,8 @@ void VulkanDevice::CreateStagingImage2DArray(VkImageCreateInfo imageInfo, VkImag
 	stagingImageAllocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 	stagingImageAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-	VmaAllocationInfo stagingImageAllocInfo = {};
+	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &stagingImageAllocCreateInfo, image, allocation, allocInfo));
 
-	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &stagingImageAllocCreateInfo, image, allocation, &stagingImageAllocInfo));
-
-	memcpy(stagingImageAllocInfo.pMappedData, texture->pixels, texture->texImageSize);
-}
-
-void VulkanDevice::CreateStagingImage2DCubeMap(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, std::shared_ptr<CubeMap> cubeMap) {
-
-	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-
-	VmaAllocationCreateInfo stagingImageAllocCreateInfo = {};
-	stagingImageAllocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-	stagingImageAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-
-	VmaAllocationInfo stagingImageAllocInfo = {};
-
-	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &stagingImageAllocCreateInfo, image, allocation, &stagingImageAllocInfo));
-
-	memcpy(stagingImageAllocInfo.pMappedData, cubeMap->pixels, cubeMap->texImageSize);
 }
 
 void VulkanDevice::DestroyVmaAllocatedImage(VkImage* image, VmaAllocation* allocation) {

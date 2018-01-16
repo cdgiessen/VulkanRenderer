@@ -53,13 +53,6 @@ public:
 	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat FindDepthFormat();
 
-	void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
-	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-
-	VkCommandBuffer BeginSingleTimeCommands();
-	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
-	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-
 	bool SaveScreenshot(const std::string filename);
 	void SetWireframe(bool wireframe);
 
@@ -76,10 +69,7 @@ private:
 
 	//uint32_t frameIndex = 1; // which frame of the swapchain it is on
 
-	//Depth buffer
-	VkImage depthImage;
-	VkDeviceMemory depthImageMemory;
-	VkImageView depthImageView;
+	VulkanTextureDepthBuffer depthBuffer;
 
 	//Command buffer per frame
 	std::vector<VkCommandBuffer> commandBuffers;
