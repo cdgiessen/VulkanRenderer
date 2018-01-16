@@ -253,10 +253,20 @@ namespace NewNodeGraph {
 		float GetValue(const int x, const int y, const int z, float dummy) const override;
 	};
 
-	class SelectorNode : public Node<float> {
+	class MaxNode : public MathNode {
 	public:
-		SelectorNode();
-		~SelectorNode();
+		float GetValue(const int x, const int y, const int z, float dummy) const override;
+	};
+
+	class MinNode : public MathNode {
+	public:
+		float GetValue(const int x, const int y, const int z, float dummy) const override;
+	};
+
+	class BlendNode : public Node<float> {
+	public:
+		BlendNode();
+		~BlendNode();
 
 		float GetValue(const int x, const int y, const int z, float dummy) const override;
 
@@ -270,7 +280,27 @@ namespace NewNodeGraph {
 		Link<float> input_a;
 		Link<float> input_b;
 		Link<float> input_cutoff;
-		Link<float> input_blendAmount; //not done currently.
+		//Link<float> input_blendAmount; //not done currently.
+
+	};
+
+	class ClampNode : public Node<float> {
+	public:
+		ClampNode();
+		~ClampNode();
+
+		float GetValue(const int x, const int y, const int z, float dummy) const override;
+
+		bool SetInputLink(int index, std::shared_ptr<INode> node) override;
+		bool ResetInputLink(int index) override;
+
+		void SetValue(const int index, float value) override;
+
+		void SaveToJson(nlohmann::json& json) override;
+	private:
+		Link<float> input;
+		Link<float> lowerBound;
+		Link<float> upperBound;
 
 	};
 

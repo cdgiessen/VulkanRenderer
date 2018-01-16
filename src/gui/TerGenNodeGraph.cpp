@@ -330,63 +330,114 @@ namespace NewNodeGraph {
 		// TODO : fill out json
 	}
 	
-	float AdditionNode::GetValue(const int x, const int y, const int z, float dummy)const 	{ return input_a.GetValue(x, y, z) + input_b.GetValue(x, y, z); }
-	float SubtractNode::GetValue(const int x, const int y, const int z, float dummy)const 	{ return input_a.GetValue(x, y, z) - input_b.GetValue(x, y, z); }
-	float MultiplyNode::GetValue(const int x, const int y, const int z, float dummy)const 	{ return input_a.GetValue(x, y, z) * input_b.GetValue(x, y, z); }
-	float DivideNode::GetValue(const int x, const int y, const int z, float dummy)	const 	{ return input_a.GetValue(x, y, z) / input_b.GetValue(x, y, z); }
-	float PowerNode::GetValue(const int x, const int y, const int z, float dummy)	const 	{ return pow(input_a.GetValue(x, y, z),  input_b.GetValue(x, y, z)); }
+	float AdditionNode::GetValue(const int x, const int y, const int z, float dummy)const	{ return input_a.GetValue(x, y, z) + input_b.GetValue(x, y, z); }
+	float SubtractNode::GetValue(const int x, const int y, const int z, float dummy)const	{ return input_a.GetValue(x, y, z) - input_b.GetValue(x, y, z); }
+	float MultiplyNode::GetValue(const int x, const int y, const int z, float dummy)const	{ return input_a.GetValue(x, y, z) * input_b.GetValue(x, y, z); }
+	float DivideNode::GetValue(const int x, const int y, const int z, float dummy)	const	{ return input_a.GetValue(x, y, z) / input_b.GetValue(x, y, z); }
+	float PowerNode::GetValue(const int x, const int y, const int z, float dummy)	const	{ return glm::pow(input_a.GetValue(x, y, z), input_b.GetValue(x, y, z)); }
+	float MaxNode::GetValue(const int x, const int y, const int z, float dummy)		const	{ return glm::max(input_a.GetValue(x, y, z), input_b.GetValue(x, y, z)); }
+	float MinNode::GetValue(const int x, const int y, const int z, float dummy)		const	{ return glm::min(input_a.GetValue(x, y, z), input_b.GetValue(x, y, z)); }
 
 
-	SelectorNode::SelectorNode() : Node<float>(LinkType::Float), input_a(LinkType::Float), input_b(LinkType::Float), input_blendAmount(LinkType::Float), input_cutoff(LinkType::Float)  {}
+	BlendNode::BlendNode() : Node<float>(LinkType::Float), input_a(LinkType::Float), input_b(LinkType::Float), input_cutoff(LinkType::Float)  {} //input_blendAmount(LinkType::Float)
 
 
-	SelectorNode::~SelectorNode() {}
+	BlendNode::~BlendNode() {}
 	
-	float SelectorNode::GetValue(const int x, const int y, const int z, float dummy) const {
+	float BlendNode::GetValue(const int x, const int y, const int z, float dummy) const {
 		//alpha * black + (1 - alpha) * red
-		float alpha = input_cutoff.GetValue(x, y, z);
 		float a = input_a.GetValue(x, y, z);
 		float b = input_b.GetValue(x, y, z);
+		float alpha = input_cutoff.GetValue(x, y, z);
 
-		return alpha * a + (1 - alpha) + b;
+		return alpha * b + (1 - alpha) * a;
 	}
 
-	bool SelectorNode::SetInputLink(int index, std::shared_ptr<INode> node) {
+	bool BlendNode::SetInputLink(int index, std::shared_ptr<INode> node) {
 		if (index == 0)
 			return input_a.SetInputNode(node);
 		else if (index == 1)
 			return input_b.SetInputNode(node);
 		else if (index == 2)
 			return input_cutoff.SetInputNode(node);
-		else if (index == 3)
-			return input_blendAmount.SetInputNode(node);
+		//else if (index == 3)
+		//	return input_blendAmount.SetInputNode(node);
 		return false;
 	}
 	
-	bool SelectorNode::ResetInputLink(int index) {
+	bool BlendNode::ResetInputLink(int index) {
 		if (index == 0)
 			return input_a.ResetInputNode();
 		else if (index == 1)
 			return input_b.ResetInputNode();
 		else if (index == 2)
 			return input_cutoff.ResetInputNode();
-		else if (index == 3)
-			return input_blendAmount.ResetInputNode();
+		//else if (index == 3)
+		//	return input_blendAmount.ResetInputNode();
 		return false;
 	}
 
-	void SelectorNode::SetValue(const int index, float value) {
+	void BlendNode::SetValue(const int index, float value) {
 		if (index == 0)
 			input_a.SetValue(value);
 		else if (index == 1)
 			input_b.SetValue(value);
 		else if (index == 2)
 			input_cutoff.SetValue(value);
-		else if (index == 3)
-			input_blendAmount.SetValue(value);
+		//else if (index == 3)
+		//	input_blendAmount.SetValue(value);
 	}
 
-	void SelectorNode::SaveToJson(nlohmann::json & json)
+	void BlendNode::SaveToJson(nlohmann::json & json)
+	{
+		// TODO : fill out json
+	}
+
+	ClampNode::ClampNode() : Node<float>(LinkType::Float), input(LinkType::Float), lowerBound(LinkType::Float), upperBound(LinkType::Float) {} 
+
+
+	ClampNode::~ClampNode() {}
+
+	float ClampNode::GetValue(const int x, const int y, const int z, float dummy) const {
+		
+		float value = input.GetValue(x, y, z);
+		float lower = lowerBound.GetValue(x, y, z);
+		float upper = upperBound.GetValue(x, y, z);
+
+		return glm::clamp(value, lower, upper);
+	}
+
+	bool ClampNode::SetInputLink(int index, std::shared_ptr<INode> node) {
+		if (index == 0)
+			return input.SetInputNode(node);
+		else if (index == 1)
+			return lowerBound.SetInputNode(node);
+		else if (index == 2)
+			return upperBound.SetInputNode(node);
+		return false;
+	}
+
+	bool ClampNode::ResetInputLink(int index) {
+		if (index == 0)
+			return input.ResetInputNode();
+		else if (index == 1)
+			return lowerBound.ResetInputNode();
+		else if (index == 2)
+			return upperBound.ResetInputNode();
+		return false;
+	}
+
+	void ClampNode::SetValue(const int index, float value) {
+		if (index == 0)
+			input.SetValue(value);
+		else if (index == 1)
+			lowerBound.SetValue(value);
+		else if (index == 2)
+			upperBound.SetValue(value);
+
+	}
+
+	void ClampNode::SaveToJson(nlohmann::json & json)
 	{
 		// TODO : fill out json
 	}

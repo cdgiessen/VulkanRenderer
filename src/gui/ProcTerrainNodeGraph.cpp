@@ -150,20 +150,27 @@ void ProcTerrainNodeGraph::DrawButtonBar() {
 void ProcTerrainNodeGraph::DrawNodeButtons() {
 
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 2.0f);
-	ImGui::BeginChild("Sub2", ImVec2(120, 0.0f), true);
+	ImGui::BeginChild("node buttons", ImVec2(120, 0.0f), true);
 
+	ImGui::Text("Noise Sources");
+	if (ImGui::Button("Perlin", ImVec2(-1.0f, 0.0f)))		{ AddNode(NodeType::Perlin); }
+	if (ImGui::Button("Simplex", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::Simplex); }
+	if (ImGui::Button("Value", ImVec2(-1.0f, 0.0f)))		{ AddNode(NodeType::ValueNoise); }
+	if (ImGui::Button("Voronoi", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::Voroni); }
+	if (ImGui::Button("Cellular", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::CellNoise); }
+	ImGui::Separator();
+	ImGui::Text("Modifiers");
+	if (ImGui::Button("Constant Int", ImVec2(-1.0f, 0.0f)))		{ AddNode(NodeType::ConstantInt); }
+	if (ImGui::Button("Constant Float", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::ConstantFloat); }
 	if (ImGui::Button("Add", ImVec2(-1.0f, 0.0f)))				{ AddNode(NodeType::Addition); }
 	if (ImGui::Button("Subtract", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Subtraction); }
 	if (ImGui::Button("Multiply", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Multiplication); }
 	if (ImGui::Button("Divide", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Division); }
-	if (ImGui::Button("Selector", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Selector); }
-	if (ImGui::Button("Perlin Noise", ImVec2(-1.0f, 0.0f)))		{ AddNode(NodeType::Perlin); }
-	if (ImGui::Button("Simplex Noise", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::Simplex); }
-	if (ImGui::Button("Value Noise", ImVec2(-1.0f, 0.0f)))		{ AddNode(NodeType::ValueNoise); }
-	if (ImGui::Button("Voronoi Noise", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::Voroni); }
-	if (ImGui::Button("Cellular Noise", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::CellNoise); }
-	if (ImGui::Button("Constant Int", ImVec2(-1.0f, 0.0f)))		{ AddNode(NodeType::ConstantInt); }
-	if (ImGui::Button("Constant Float", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::ConstantFloat); }
+	if (ImGui::Button("Power", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Power); }
+	if (ImGui::Button("Max", ImVec2(-1.0f, 0.0f)))				{ AddNode(NodeType::Max); }
+	if (ImGui::Button("Min", ImVec2(-1.0f, 0.0f)))				{ AddNode(NodeType::Min); }
+	if (ImGui::Button("Blend", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Blend); }
+	if (ImGui::Button("Clamp", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Clamp); }
 
 	ImGui::EndChild();
 	ImGui::PopStyleVar();
@@ -487,7 +494,10 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType)
 	case(NodeType::Multiplication): newNode = std::make_shared<MultiplicationNode>(curGraph); break;
 	case(NodeType::Division): newNode = std::make_shared<DivisionNode>(curGraph); break;
 	case(NodeType::Power): newNode = std::make_shared<PowerNode>(curGraph); break;
-	case(NodeType::Selector): newNode = std::make_shared<SelectorNode>(curGraph); break;
+	case(NodeType::Max): newNode = std::make_shared<MaxNode>(curGraph); break;
+	case(NodeType::Min): newNode = std::make_shared<MinNode>(curGraph); break;
+	case(NodeType::Blend): newNode = std::make_shared<BlendNode>(curGraph); break;
+	case(NodeType::Clamp): newNode = std::make_shared<ClampNode>(curGraph); break;
 	case(NodeType::Perlin): newNode = std::make_shared<PerlinNode>(curGraph); break;
 	case(NodeType::Simplex): newNode = std::make_shared<SimplexNode>(curGraph); break;
 	case(NodeType::CellNoise): newNode = std::make_shared<CellNoiseNode>(curGraph); break;
@@ -591,27 +601,27 @@ void InputConnectionSlot::Draw(ImDrawList* imDrawList, const ProcTerrainNodeGrap
 	std::string uniqueID = (std::to_string(parentNode.id * 100 + slotNum));
 	switch (value.type) {
 	case(ConnectionType::Int):
-		ImGui::DragInt(std::string("##int" + uniqueID).c_str(), &(std::get<int>(value.value)), 0.1f, 0.0f, 0.0f);
+		ImGui::DragInt(std::string("##int" + uniqueID).c_str(), &(std::get<int>(value.value)), sliderStepSize, lowerBound, upperBound);
 		parentNode.internal_node->SetValue(slotNum, std::get<int>(value.value));
 		break;
 	case(ConnectionType::Float):
-		ImGui::DragFloat(std::string("##float" + uniqueID).c_str(), &(std::get<float>(value.value)), 0.01f, 0.0f, 0.0f);
+		ImGui::DragFloat(std::string("##float" + uniqueID).c_str(), &(std::get<float>(value.value)), sliderStepSize, lowerBound, upperBound);
 		parentNode.internal_node->SetValue(slotNum, std::get<float>(value.value));
 		break;
 	case(ConnectionType::Color):
-		ImGui::DragFloat3(std::string("##color" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec3>(value.value)), 0.01f, 0.0f, 0.0f);
+		ImGui::DragFloat3(std::string("##color" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec3>(value.value)), sliderStepSize, lowerBound, upperBound);
 		parentNode.internal_node->SetValue(slotNum, std::get<glm::vec3>(value.value));
 		break;
 	case(ConnectionType::Vec2):
-		ImGui::DragFloat2(std::string("##vec2" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec2>(value.value)), 0.01f, 0.0f, 0.0f);
+		ImGui::DragFloat2(std::string("##vec2" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec2>(value.value)), sliderStepSize, lowerBound, upperBound);
 		parentNode.internal_node->SetValue(slotNum, std::get<glm::vec2>(value.value));
 		break;
 	case(ConnectionType::Vec3):
-		ImGui::DragFloat3(std::string("##vec3" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec3>(value.value)), 0.01f, 0.0f, 0.0f);
+		ImGui::DragFloat3(std::string("##vec3" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec3>(value.value)), sliderStepSize, lowerBound, upperBound);
 		parentNode.internal_node->SetValue(slotNum, std::get<glm::vec3>(value.value));
 		break;
 	case(ConnectionType::Vec4):
-		ImGui::DragFloat4(std::string("##vec4" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec4>(value.value)), 0.01f, 0.0f, 0.0f);
+		ImGui::DragFloat4(std::string("##vec4" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec4>(value.value)), sliderStepSize, lowerBound, upperBound);
 		parentNode.internal_node->SetValue(slotNum, std::get<glm::vec4>(value.value));
 		break;
 	}
@@ -675,12 +685,21 @@ OutputNode::OutputNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("Output", Co
 	AddInputSlot(ConnectionType::Float, "Out");
 }
 
-SelectorNode::SelectorNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("Selector", ConnectionType::Float)
+BlendNode::BlendNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("Blend", ConnectionType::Float)
 {
 	AddInputSlot(ConnectionType::Float, "A", 0.0f, 0.01f, 0.0f, 0.0f);
 	AddInputSlot(ConnectionType::Float, "B", 1.0f, 0.01f, 0.0f, 0.0f);
-	AddInputSlot(ConnectionType::Float, "Control", 0.5f);
-	internal_node = std::make_shared<NewNodeGraph::SelectorNode>();
+	AddInputSlot(ConnectionType::Float, "Factor", 0.5f, 0.005f, 0.0f, 1.0f);
+	internal_node = std::make_shared<NewNodeGraph::BlendNode>();
+	graph.AddNode(internal_node);
+}
+
+ClampNode::ClampNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("Clamp", ConnectionType::Float)
+{
+	AddInputSlot(ConnectionType::Float, "input", 0.0f, 0.01f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "lower", 0.0f, 0.005f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "upper", 1.0f, 0.005f, 0.0f, 0.0f);
+	internal_node = std::make_shared<NewNodeGraph::ClampNode>();
 	graph.AddNode(internal_node);
 }
 
@@ -720,11 +739,22 @@ PowerNode::PowerNode(NewNodeGraph::TerGenNodeGraph& graph) : MathNode("Power")
 	graph.AddNode(internal_node);
 }
 
+MaxNode::MaxNode(NewNodeGraph::TerGenNodeGraph& graph) : MathNode("Max")
+{
+	internal_node = std::make_shared<NewNodeGraph::MaxNode>();
+	graph.AddNode(internal_node);
+}
+
+MinNode::MinNode(NewNodeGraph::TerGenNodeGraph& graph) : MathNode("Min")
+{
+	internal_node = std::make_shared<NewNodeGraph::MinNode>();
+	graph.AddNode(internal_node);
+}
 
 
 NoiseNode::NoiseNode(std::string name) : Node(name, ConnectionType::Float)
 {
-	AddInputSlot(ConnectionType::Int, "Octaves", 1, 0.1f, 0.0f, 1.0f);
+	AddInputSlot(ConnectionType::Int, "Octaves", 1, 0.1f, 0.0f, 10.0f);
 	AddInputSlot(ConnectionType::Float, "Persistance", 0.5f, 0.01f, 0.0f, 1.0f);
 	AddInputSlot(ConnectionType::Float, "Frequency", 0.15f,0.01f, 0.0f, 1.0f);
 }
@@ -774,7 +804,7 @@ ConstantIntNode::ConstantIntNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("C
 
 ConstantFloatNode::ConstantFloatNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("ConstantFloat", ConnectionType::Float)
 {
-	AddInputSlot(ConnectionType::Float, "Value", 0.0f, 0.0f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "Value", 0.0f, 0.01f, 0.0f, 0.0f);
 	internal_node = std::make_shared<NewNodeGraph::ConstantFloatNode>(1.0f);
 	graph.AddNode(internal_node);
 }

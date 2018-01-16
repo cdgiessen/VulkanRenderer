@@ -129,7 +129,10 @@ enum class NodeType {
 	Multiplication,
 	Division,
 	Power,
-	Selector,
+	Max,
+	Min,
+	Blend,
+	Clamp,
 	Perlin,
 	Simplex,
 	CellNoise,
@@ -148,8 +151,13 @@ class SubtractionNode	: public MathNode { public: SubtractionNode(NewNodeGraph::
 class MultiplicationNode: public MathNode { public: MultiplicationNode(NewNodeGraph::TerGenNodeGraph& graph); };
 class DivisionNode		: public MathNode { public: DivisionNode(NewNodeGraph::TerGenNodeGraph& graph); };
 class PowerNode			: public MathNode { public: PowerNode(NewNodeGraph::TerGenNodeGraph& graph); };
+class MaxNode			: public MathNode { public: MaxNode(NewNodeGraph::TerGenNodeGraph& graph); };
+class MinNode			: public MathNode { public: MinNode(NewNodeGraph::TerGenNodeGraph& graph); };
 
-class SelectorNode		: public Node { public: SelectorNode(NewNodeGraph::TerGenNodeGraph& graph); };
+
+
+class BlendNode			: public Node { public: BlendNode(NewNodeGraph::TerGenNodeGraph& graph); };
+class ClampNode			: public Node { public: ClampNode(NewNodeGraph::TerGenNodeGraph& graph); };
 
 class NoiseNode			: public Node { public: NoiseNode(std::string name);
 	std::shared_ptr<NewNodeGraph::NoiseSourceNode> internal_node_noise;
