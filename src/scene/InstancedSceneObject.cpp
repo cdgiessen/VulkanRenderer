@@ -33,6 +33,8 @@ void InstancedSceneObject::InitInstancedSceneObject(std::shared_ptr<VulkanRender
 
 void InstancedSceneObject::CleanUp()
 {
+	renderer->pipelineManager.DeleteManagedPipeline(mvp);
+
 	vulkanModel.destroy(renderer->device);
 	vulkanTexture.destroy(renderer->device);
 

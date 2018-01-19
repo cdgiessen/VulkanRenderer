@@ -57,6 +57,7 @@ public:
 	void ReInitPipelines();
 
 	std::shared_ptr<ManagedVulkanPipeline> CreateManagedPipeline();
+	void DeleteManagedPipeline(std::shared_ptr<ManagedVulkanPipeline> pipe);
 
 	void BuildPipelineLayout(std::shared_ptr<ManagedVulkanPipeline> pco); //returns the pipeline layout of the pco (must have done SetDescriptorSetLayout
 	void BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> pco, VkRenderPass renderPass, VkPipelineCreateFlags flags);

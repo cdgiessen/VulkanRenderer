@@ -10,9 +10,12 @@
 
 ProcTerrainNodeGraph::ProcTerrainNodeGraph()
 {
+	float initialVvalue = -0.5f;
 	outputNode = std::make_shared<OutputNode>(curGraph);
 	outputNode->id = curID++;
 	outputNode->internal_node = curGraph.GetOutputNode();
+	outputNode->inputSlots.at(0).value.value = initialVvalue;
+	outputNode->internal_node->SetValue(0, initialVvalue);
 	nodes.push_back(outputNode);
 }
 

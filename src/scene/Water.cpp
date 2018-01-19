@@ -29,6 +29,8 @@ void Water::InitWater(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &gl
 
 void Water::CleanUp()
 {
+	renderer->pipelineManager.DeleteManagedPipeline(mvp);
+
 	WaterModel.destroy(renderer->device);
 	WaterVulkanTexture.destroy(renderer->device);
 

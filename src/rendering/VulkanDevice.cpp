@@ -34,10 +34,11 @@ void VulkanDevice::initVulkanDevice(VkSurfaceKHR &surface)
 }
 
 void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
+	vmaDestroyAllocator(allocator);
+
 	vkDestroyCommandPool(device, graphics_queue_command_pool, nullptr);
 	vkDestroyCommandPool(device, compute_queue_command_pool, nullptr);
 	vkDestroyCommandPool(device, transfer_queue_command_pool, nullptr);
-
 
 	vkDestroyDevice(device, nullptr);
 	DestroyDebugReportCallbackEXT(instance, callback, nullptr);

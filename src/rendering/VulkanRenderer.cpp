@@ -29,7 +29,6 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 
 	pipelineManager.InitPipelineCache();
 
-	//createImageViews();
 	CreateRenderPass();
 
 	CreateDepthResources();

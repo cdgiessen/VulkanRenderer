@@ -165,6 +165,19 @@ namespace initializers
 		return subresourceRange;
 	}
 
+	inline VkImageSubresource imageSubresourceCreateInfo(
+		VkImageAspectFlags aspectMask,
+		int mipLevel = 0,
+		int arrayLayer = 0
+	) {
+		VkImageSubresource subresource = {};
+		subresource.aspectMask = aspectMask;
+		subresource.mipLevel = mipLevel;
+		subresource.arrayLayer = arrayLayer;
+
+		return subresource;
+	}
+
 	inline VkSamplerCreateInfo samplerCreateInfo()
 	{
 		VkSamplerCreateInfo samplerCreateInfo{};

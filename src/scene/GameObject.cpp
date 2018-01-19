@@ -25,6 +25,8 @@ void GameObject::InitGameObject(std::shared_ptr<VulkanRenderer> renderer,
 
 void GameObject::CleanUp()
 {
+	renderer->pipelineManager.DeleteManagedPipeline(mvp);
+
     gameObjectModel.destroy(renderer->device);
     gameObjectVulkanTexture.destroy(renderer->device);
 

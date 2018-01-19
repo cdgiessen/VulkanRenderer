@@ -45,7 +45,8 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	//cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
 	cubeObject->InitGameObject(renderer, globalVariableBuffer, lightsInfoBuffer);
 	gameObjects.push_back(cubeObject);
-	
+
+
 	terrainManager = std::make_shared<TerrainManager>(graph);
 	terrainManager->GenerateTerrain(resourceMan, renderer, globalVariableBuffer, lightsInfoBuffer, camera);
 
