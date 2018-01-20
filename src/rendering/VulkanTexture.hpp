@@ -7,7 +7,7 @@
 
 #include "../../third-party/stb_image/stb_image.h"
 
-#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 class VulkanTexture {
 public:
