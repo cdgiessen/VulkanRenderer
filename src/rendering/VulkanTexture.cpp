@@ -32,11 +32,13 @@ void VulkanTexture::GenerateMipMaps(VulkanDevice& device, VkImage image, int wid
 	// Copy down mips from n-1 to n
 	for (int32_t i = 1; i < mipLevels; i++)
 	{
+
 		VkImageBlit imageBlit{};
 
 		// Source
 		imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		imageBlit.srcSubresource.layerCount = layers;
+		imageBlit.srcSubresource.baseArrayLayer = 0;
 		imageBlit.srcSubresource.mipLevel = i - 1;
 		imageBlit.srcOffsets[1].x = int32_t(width >> (i - 1));
 		imageBlit.srcOffsets[1].y = int32_t(height >> (i - 1));
@@ -45,14 +47,16 @@ void VulkanTexture::GenerateMipMaps(VulkanDevice& device, VkImage image, int wid
 		// Destination
 		imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		imageBlit.dstSubresource.layerCount = layers;
+		imageBlit.dstSubresource.baseArrayLayer = 0;
 		imageBlit.dstSubresource.mipLevel = i;
 		imageBlit.dstOffsets[1].x = int32_t(width >> i);
 		imageBlit.dstOffsets[1].y = int32_t(height >> i);
 		imageBlit.dstOffsets[1].z = 1;
 
-		VkImageSubresourceRange mipSubRange = initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, 1, layers);
-		mipSubRange.baseMipLevel = i - 1;
-		
+		VkImageSubresourceRange mipSubRange =
+			initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, 1, layers);
+		mipSubRange.baseMipLevel = i;
+
 
 		// Transiton current mip level to transfer dest
 		setImageLayout(
@@ -84,9 +88,11 @@ void VulkanTexture::GenerateMipMaps(VulkanDevice& device, VkImage image, int wid
 			mipSubRange,
 			VK_PIPELINE_STAGE_TRANSFER_BIT,
 			VK_PIPELINE_STAGE_TRANSFER_BIT);
+	
 	}
-	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, layers);
-
+	VkImageSubresourceRange subresourceRange = 
+		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, layers);
+	
 	// After the loop, all mip layers are in TRANSFER_SRC layout, so transition all to SHADER_READ
 	setImageLayout(
 		blitCmd,
@@ -125,7 +131,9 @@ VkSampler VulkanTexture::CreateImageSampler(VulkanDevice &device, VkFilter mag, 
 	return sampler;
 }
 
-VkImageView VulkanTexture::CreateImageView(VulkanDevice& device, VkImage image, VkImageViewType viewType, VkFormat format, VkImageAspectFlags aspectFlags, VkComponentMapping components, int mipLevels, int layers) {
+VkImageView VulkanTexture::CreateImageView(VulkanDevice& device, VkImage image, VkImageViewType viewType, 
+	VkFormat format, VkImageAspectFlags aspectFlags, VkComponentMapping components, int mipLevels, int layers) 
+{
 	VkImageViewCreateInfo viewInfo = initializers::imageViewCreateInfo();
 	viewInfo.image = image;
 	viewInfo.viewType = viewType;
@@ -136,7 +144,7 @@ VkImageView VulkanTexture::CreateImageView(VulkanDevice& device, VkImage image, 
 	viewInfo.subresourceRange.levelCount = mipLevels;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
 	viewInfo.subresourceRange.layerCount = layers;
-
+	
 	VkImageView imageView;
 	VK_CHECK_RESULT(vkCreateImageView(device.device, &viewInfo, nullptr, &imageView));
 
@@ -161,7 +169,7 @@ void VulkanTexture2D::loadFromTexture(
 
 	this->texture = texture;
 	int maxMipMapLevelsPossible = (int)floor(log2(std::max(texture->width, texture->height))) + 1;
-	mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
+	int mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
 
 	// Get device properites for the requested texture format
 	VkFormatProperties formatProperties;
@@ -282,16 +290,24 @@ void VulkanTexture2D::loadFromTexture(
 	{
 		// Create a defaultsampler
 		if (wrapBorder)
-			textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+			textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
+				VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, 
+				true, mipLevels, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 		else
-			textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f, true, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+			textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
+				VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f,
+				true, mipLevels, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 	}
 	else {
 		// Create a defaultsampler
 		if (wrapBorder)
-			textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, false, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+			textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
+				VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, 
+				true, mipLevels, false, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 		else				 
-			textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f, true, false, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+			textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
+				VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f, 
+				true, mipLevels, false, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 	}
 	
 	textureImageView = CreateImageView(device, vmaImage, VK_IMAGE_VIEW_TYPE_2D, format, VK_IMAGE_ASPECT_COLOR_BIT,
@@ -335,7 +351,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	VmaAllocation stagingAlloc = VK_NULL_HANDLE;
 
 	this->textures = textures;
-	this->mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
+	int mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
 
 	VkExtent3D imageExtent = { textures->width, textures->height, 1 };
 
@@ -431,9 +447,12 @@ void VulkanTexture2DArray::loadTextureArray(
 
 	GenerateMipMaps(device, vmaImage, textures->width, textures->height, 1, textures->layerCount, mipLevels);
 
-	textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+	textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR,
+		VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, mipLevels,
+		true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
-	textureImageView = CreateImageView(device, vmaImage, VK_IMAGE_VIEW_TYPE_2D_ARRAY, format, VK_IMAGE_ASPECT_COLOR_BIT,
+	textureImageView = CreateImageView(device, vmaImage, VK_IMAGE_VIEW_TYPE_2D_ARRAY, format, 
+		VK_IMAGE_ASPECT_COLOR_BIT, 
 		VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
 		mipLevels, textures->layerCount);
 
@@ -464,12 +483,49 @@ void VulkanCubeMap::loadFromTexture(
 	int mipMapLevelsToGen)
 {
 	this->cubeMap = cubeMap;
-	mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
+	int mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
 	
 	VkImage stagingImage = VK_NULL_HANDLE;
 	VmaAllocation stagingAlloc = VK_NULL_HANDLE;
 
 	VkExtent3D imageExtent = { cubeMap->width, cubeMap->height, 1 };
+
+	VkImageCreateInfo stagingImageCreateInfo = initializers::imageCreateInfo(
+		VK_IMAGE_TYPE_2D,
+		format,
+		(uint32_t)1,
+		(uint32_t)6,
+		VK_SAMPLE_COUNT_1_BIT,
+		VK_IMAGE_TILING_LINEAR,
+		VK_SHARING_MODE_EXCLUSIVE,
+		VK_IMAGE_LAYOUT_PREINITIALIZED,
+		imageExtent,
+		VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+	stagingImageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+
+
+	VmaAllocationInfo stagingImageAllocInfo = {};
+	
+	device.CreateStagingImage2D(stagingImageCreateInfo, &stagingImage, &stagingAlloc, &stagingImageAllocInfo);
+	
+	VkSubresourceLayout sub;
+
+	const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+	vkGetImageSubresourceLayout(device.device, stagingImage, &imSub, &sub);
+	
+	int offset = 0;
+	int texOff = 0;
+	for (int i = 0; i < 6; i++) {
+		for (int r = 0; r < cubeMap->height; r++) {
+			char* stagingPointer = (char*)stagingImageAllocInfo.pMappedData;
+			memcpy(stagingPointer + offset,
+				cubeMap->pixels + texOff,
+				cubeMap->width * 4);
+			offset += sub.rowPitch;
+			texOff += cubeMap->width * 4;
+		}
+	}
+
 
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo(
 		VK_IMAGE_TYPE_2D,
@@ -486,28 +542,37 @@ void VulkanCubeMap::loadFromTexture(
 		| VK_IMAGE_USAGE_SAMPLED_BIT);
 	imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
-	VkImageCreateInfo stagingImageCreateInfo = initializers::imageCreateInfo(
-		VK_IMAGE_TYPE_2D,
-		format,
-		(uint32_t)mipLevels,
-		(uint32_t)6,
-		VK_SAMPLE_COUNT_1_BIT,
-		VK_IMAGE_TILING_LINEAR,
-		VK_SHARING_MODE_EXCLUSIVE,
-		VK_IMAGE_LAYOUT_PREINITIALIZED,
-		imageExtent,
-		VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-	stagingImageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-
-	VmaAllocationInfo stagingImageAllocInfo = {};
-	device.CreateStagingImage2D(stagingImageCreateInfo, &stagingImage, &stagingAlloc, &stagingImageAllocInfo);
-	memcpy(stagingImageAllocInfo.pMappedData, cubeMap->pixels, cubeMap->texImageSize);
-
-
 	device.CreateImage2D(imageCreateInfo, &vmaImage, &vmaImageAlloc);
 
+	/*VkImageSubresource stagingImageSubresource = {};
+	stagingImageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	stagingImageSubresource.mipLevel = 0;
+	stagingImageSubresource.arrayLayer = 0;
+	
+	VkSubresourceLayout stagingImageLayout = {};
+	vkGetImageSubresourceLayout(device.device, stagingImage, &stagingImageSubresource, &stagingImageLayout);
+
+	char* const pMipLevelData = (char*)stagingImageAllocInfo.pMappedData + stagingImageLayout.offset;
+	uint8_t* pRowData = (uint8_t*)pMipLevelData;
+	for (uint32_t y = 0; y < cubeMap->height; ++y)
+	{
+		uint32_t* pPixelData = (uint32_t*)pRowData;
+		for (uint32_t x = 0; x < cubeMap->width; ++x)
+		{
+			*pPixelData =
+				((x & 0x18) == 0x08 ? 0x000000FF : 0x00000000) |
+				((x & 0x18) == 0x10 ? 0x0000FFFF : 0x00000000) |
+				((y & 0x18) == 0x08 ? 0x0000FF00 : 0x00000000) |
+				((y & 0x18) == 0x10 ? 0x00FF0000 : 0x00000000);
+			++pPixelData;
+		}
+		pRowData += stagingImageLayout.rowPitch;
+	}
+	*/
 	VkOffset3D copyOffset = { 0, 0, 0 };
 
+	VkImageSubresourceRange subresourceRange = 
+		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, 6);
 
 	VkImageCopy imageCopyRegion = {};
 	imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -521,10 +586,9 @@ void VulkanCubeMap::loadFromTexture(
 	imageCopyRegion.srcSubresource.layerCount = 6;
 	imageCopyRegion.srcSubresource.mipLevel = 0;
 	imageCopyRegion.srcOffset = copyOffset;// VkOffset3D{ textures->width, textures->height, 1 };
+	
 	imageCopyRegion.extent = imageExtent;
-
-
-	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, 6);
+	
 
 	VkCommandBuffer copyCmd = device.GetTransferCommandBuffer();
 
@@ -565,8 +629,9 @@ void VulkanCubeMap::loadFromTexture(
 
 	//GenerateMipMaps(device, cubeMap->width, cubeMap->height, 6, mipLevels);
 
-	// Create a defaultsampler
-	textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f, true, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+	textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
+		VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f, true, mipLevels, true, 8,
+		VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
 	textureImageView = CreateImageView(device, vmaImage, VK_IMAGE_VIEW_TYPE_CUBE, format, VK_IMAGE_ASPECT_COLOR_BIT,
 		VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },

@@ -103,6 +103,7 @@ Terrain::~Terrain() {
 
 void Terrain::CleanUp()
 {
+	renderer->pipelineManager.DeleteManagedPipeline(mvp);
 
 	//for (auto item : quadHandles) {
 	//	terrainQuads->destroy(item.get());

@@ -55,6 +55,19 @@ std::shared_ptr<ManagedVulkanPipeline> VulkanPipeline::CreateManagedPipeline() {
 	return mvp;
 }
 
+void VulkanPipeline::DeleteManagedPipeline(std::shared_ptr<ManagedVulkanPipeline> pipe) {
+	auto mvp = std::find(pipes.begin(), pipes.end(), pipe);
+	if (mvp != pipes.end()) {
+		vkDestroyPipelineLayout(device.device, (*mvp)->layout, nullptr);
+
+		for (auto pipe = (*mvp)->pipelines->begin(); pipe != (*mvp)->pipelines->end(); pipe++) {
+			vkDestroyPipeline(device.device, *pipe, nullptr);
+		}
+
+		pipes.erase(mvp);
+	}
+}
+
 void VulkanPipeline::BuildPipelineLayout(std::shared_ptr<ManagedVulkanPipeline> mvp) {
 	if (vkCreatePipelineLayout(device.device, &mvp->pco.pipelineLayoutInfo, nullptr, &mvp->layout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");

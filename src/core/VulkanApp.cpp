@@ -18,7 +18,7 @@ VulkanApp::VulkanApp()
 
 	scene = std::make_shared<Scene>();
 	vulkanRenderer = std::make_shared<VulkanRenderer>(useValidationLayers, scene);
-	
+
 	vulkanRenderer->InitVulkanRenderer(window->getWindowContext());
 	vulkanRenderer->CreateSemaphores();
 	scene->PrepareScene(resourceManager, vulkanRenderer, imgui_nodeGraph_terrain.GetGraph());
@@ -50,7 +50,7 @@ void VulkanApp::clean() {
 }
 
 void VulkanApp::mainLoop() {
-	
+
 	while (!window->CheckForWindowClose()) {
 		timeManager->StartFrameTimer();
 
@@ -67,7 +67,7 @@ void VulkanApp::mainLoop() {
 		BuildImgui();
 
 		vulkanRenderer->RenderFrame();
-		
+
 		Input::inputDirector.ResetReleasedInput();
 		timeManager->EndFrameTimer();
 		//Log::Debug << "main loop breaker. Break me if you want to stop after every frame!\n";
@@ -107,26 +107,26 @@ void  VulkanApp::PrepareImGui()
 {
 	//Creates a descriptor pool for imgui
 	{	VkDescriptorPoolSize pool_size[11] =
-		{
-			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-		};
-		VkDescriptorPoolCreateInfo pool_info = {};
-		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-		pool_info.maxSets = 1000 * 11;
-		pool_info.poolSizeCount = 11;
-		pool_info.pPoolSizes = pool_size;
-		VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanRenderer->device.device, &pool_info, VK_NULL_HANDLE, &imgui_descriptor_pool));
+	{
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+	};
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	pool_info.maxSets = 1000 * 11;
+	pool_info.poolSizeCount = 11;
+	pool_info.pPoolSizes = pool_size;
+	VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanRenderer->device.device, &pool_info, VK_NULL_HANDLE, &imgui_descriptor_pool));
 	}
 
 	ImGui_ImplGlfwVulkan_Init_Data init_data = {};
@@ -137,7 +137,7 @@ void  VulkanApp::PrepareImGui()
 	init_data.pipeline_cache = VK_NULL_HANDLE;
 	init_data.descriptor_pool = imgui_descriptor_pool;
 	init_data.check_vk_result = imgui_check_vk_result;
-	
+
 	ImGui_ImplGlfwVulkan_Init(window->getWindowContext(), false, &init_data);
 
 	VkCommandBuffer fontUploader = vulkanRenderer->device.createCommandBuffer(vulkanRenderer->device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
@@ -146,30 +146,34 @@ void  VulkanApp::PrepareImGui()
 }
 
 void VulkanApp::DebugOverlay(bool* show_debug_overlay) {
+
+	static bool verbose = false;
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	if (!ImGui::Begin("Debug Stats", show_debug_overlay, ImVec2(0, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
 	{
-		static bool verbose = false;
-		ImGui::SetNextWindowPos(ImVec2(0, 0));
-		if (!ImGui::Begin("Debug Stats", show_debug_overlay, ImVec2(0, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
-		{
-			ImGui::End();
-			return;
-		}
-		ImGui::Text("FPS %.3f", ImGui::GetIO().Framerate);
-		ImGui::Text("DeltaT: %f(s)", timeManager->GetDeltaTime());
-		if (ImGui::Button("Toggle Verbose")) {
-			verbose = !verbose;
-		}
-		if (verbose) ImGui::Text("Run Time: %f(s)", timeManager->GetRunningTime());
-		if (verbose) ImGui::Text("Last frame time%f(s)", timeManager->GetPreviousFrameTime());
-		if (verbose) ImGui::Text("Last frame time%f(s)", timeManager->GetPreviousFrameTime());
-		ImGui::Separator();
-		ImGui::Text("Mouse Position: (%.1f,%.1f)", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
 		ImGui::End();
+		return;
 	}
+	ImGui::Text("FPS %.3f", ImGui::GetIO().Framerate);
+	ImGui::Text("DeltaT: %f(s)", timeManager->GetDeltaTime());
+	if (ImGui::Button("Toggle Verbose")) {
+		verbose = !verbose;
+	}
+	if (verbose) ImGui::Text("Run Time: %f(s)", timeManager->GetRunningTime());
+	if (verbose) ImGui::Text("Last frame time%f(s)", timeManager->GetPreviousFrameTime());
+	if (verbose) ImGui::Text("Last frame time%f(s)", timeManager->GetPreviousFrameTime());
+	ImGui::Separator();
+	ImGui::Text("Mouse Position: (%.1f,%.1f)", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
+	ImGui::End();
+
 }
 
 void VulkanApp::CameraWindow(bool* show_camera_window) {
-	ImGui::Begin("Camera Window", show_camera_window);
+	if (!ImGui::Begin("Camera Window", show_camera_window))
+	{
+		ImGui::End();
+		return;
+	};
 	ImGui::Text("Camera");
 	ImGui::DragFloat3("Pos", &scene->GetCamera()->Position.x, 2);
 	ImGui::DragFloat3("Rot", &scene->GetCamera()->Front.x, 2);
@@ -200,7 +204,7 @@ void VulkanApp::BuildImgui() {
 
 		scene->UpdateSceneGUI();
 
-		if(show_log_window){
+		if (show_log_window) {
 			appLog.Draw("Example: Log", &show_log_window);
 		}
 
@@ -287,7 +291,7 @@ void VulkanApp::HandleInputs() {
 		}
 
 		if (Input::GetKeyDown(Input::KeyCode::F10)) {
-			vulkanRenderer->SaveScreenshot("VulkanScreenshot.png");
+			vulkanRenderer->SaveScreenshotNextFrame();
 		}
 	}
 
@@ -305,7 +309,7 @@ void VulkanApp::HandleInputs() {
 
 void VulkanApp::SetMouseControl(bool value) {
 	mouseControlEnabled = value;
-	if(mouseControlEnabled)
+	if (mouseControlEnabled)
 		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	else
 		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
