@@ -53,7 +53,7 @@ public:
 	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat FindDepthFormat();
 
-	bool SaveScreenshot(const std::string filename);
+	void SaveScreenshotNextFrame();
 	void SetWireframe(bool wireframe);
 
 	VulkanDevice device;
@@ -79,11 +79,13 @@ private:
 
 	uint32_t frameIndex; //which of the swapchain images the app is rendering to
 	bool wireframe = false; //whether or not to use the wireframe pipeline for the scene.
-
+	bool saveScreenshot = false;
 
 	VkClearColorValue clearColor = {{ 0.2f, 0.3f, 0.3f, 1.0f }};
 	VkClearDepthStencilValue depthClearColor = { 0.0f, 0 };
 
 	std::array<VkClearValue, 2> GetFramebufferClearValues();
+
+	void SaveScreenshot();
 };
 
