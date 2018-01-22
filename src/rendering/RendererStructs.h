@@ -7,6 +7,8 @@
 
 #include "../resources/Texture.h"
 
+#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+
 /* Common uniform buffers */
 
 //Global info buffer
@@ -15,6 +17,18 @@ struct GlobalVariableUniformBuffer {
 	glm::mat4 proj;
 	glm::vec3 cameraDir;
 	float time;
+};
+
+struct VmaBuffer {
+	VkBuffer buffer = VK_NULL_HANDLE;
+	VmaAllocation allocation = VK_NULL_HANDLE;
+	VmaAllocationInfo allocationInfo;
+};
+
+struct VmaImage {
+	VkImage image = VK_NULL_HANDLE;
+	VmaAllocation allocation = VK_NULL_HANDLE;
+	VmaAllocationInfo allocationInfo;
 };
 
 //model specific data (position, normal matrix)

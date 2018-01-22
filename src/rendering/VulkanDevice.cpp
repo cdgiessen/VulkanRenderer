@@ -180,7 +180,7 @@ void VulkanDevice::DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* al
 	vmaDestroyBuffer(allocator, *buffer, *allocation);
 }
 
-void VulkanDevice::CreateImage2D(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation) {
+void VulkanDevice::CreateImage2D(VkImageCreateInfo imageInfo, VmaImage& image) {
 
 	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
 		| VK_IMAGE_USAGE_TRANSFER_SRC_BIT
@@ -189,19 +189,19 @@ void VulkanDevice::CreateImage2D(VkImageCreateInfo imageInfo, VkImage* image, Vm
 	VmaAllocationCreateInfo imageAllocCreateInfo = {};
 	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 	
-	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &imageAllocCreateInfo, image, allocation, nullptr));
+	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
 }
 
-void VulkanDevice::CreateDepthImage(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation) {
+void VulkanDevice::CreateDepthImage(VkImageCreateInfo imageInfo, VmaImage& image) {
 	imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
 	VmaAllocationCreateInfo imageAllocCreateInfo = {};
 	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &imageAllocCreateInfo, image, allocation, nullptr));
+	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
 }
 
-void VulkanDevice::CreateStagingImage2D(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, VmaAllocationInfo* allocInfo) {
+void VulkanDevice::CreateStagingImage2D(VkImageCreateInfo imageInfo, VmaImage& image) {
 
 	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
@@ -209,12 +209,12 @@ void VulkanDevice::CreateStagingImage2D(VkImageCreateInfo imageInfo, VkImage* im
 	stagingImageAllocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 	stagingImageAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &stagingImageAllocCreateInfo, image, allocation, allocInfo));
+	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &stagingImageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
 
 }
 
-void VulkanDevice::DestroyVmaAllocatedImage(VkImage* image, VmaAllocation* allocation) {
-	vmaDestroyImage(allocator, *image, *allocation);
+void VulkanDevice::DestroyVmaAllocatedImage(VmaImage& image) {
+	vmaDestroyImage(allocator, image.image, image.allocation);
 }
 
 /**

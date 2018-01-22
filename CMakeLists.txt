@@ -10,9 +10,6 @@ find_package(Vulkan REQUIRED)
 
 find_package(glm REQUIRED)
 
-#set(${GLFW_ROOT} "/GLFW")
-
-#find_package(glfw REQUIRED)
 if(UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
 endif(UNIX)
@@ -35,6 +32,7 @@ src/gui/TerGenNodeGraph.cpp
 src/gui/ProcTerrainNodeGraph.cpp
 
 src/rendering/VulkanDevice.cpp
+src/rendering/VulkanDescriptor.cpp
 src/rendering/VulkanLargeBuffer.cpp
 src/rendering/VulkanPipeline.cpp
 src/rendering/VulkanRenderer.cpp
@@ -117,6 +115,7 @@ if(GLM_FOUND)
 endif(GLM_FOUND)
 
 if(MSVC)
+	add_compile_options("/permissive-")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")	
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} /MDd")

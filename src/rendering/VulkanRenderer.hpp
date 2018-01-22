@@ -13,6 +13,7 @@
 #include "VulkanShader.hpp"
 #include "VulkanSwapChain.hpp"
 #include "VulkanTexture.hpp"
+#include "VulkanDescriptor.hpp"
 
 class Scene;
 
@@ -66,6 +67,9 @@ public:
 
 	std::shared_ptr<Scene> scene;
 private:
+
+	VmaBuffer globalVariableBuffer;
+	VmaBuffer lightsInfoBuffer;
 
 	//uint32_t frameIndex = 1; // which frame of the swapchain it is on
 

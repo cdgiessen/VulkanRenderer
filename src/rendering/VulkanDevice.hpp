@@ -15,6 +15,7 @@
 
 #include "VulkanBuffer.hpp"
 #include "VulkanTools.h"
+#include "RendererStructs.h"
 
 const std::vector<const char*> VALIDATION_LAYERS = {
 	"VK_LAYER_LUNARG_standard_validation"
@@ -81,12 +82,12 @@ public:
 
 	void DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation);
 
-	void CreateImage2D(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation);
-	void CreateDepthImage(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation);
-	void CreateStagingImage2D(VkImageCreateInfo imageInfo, VkImage* image, VmaAllocation* allocation, VmaAllocationInfo* allocInfo);
+	void CreateImage2D(VkImageCreateInfo imageInfo, VmaImage& image);
+	void CreateDepthImage(VkImageCreateInfo imageInfo, VmaImage& image);
+	void CreateStagingImage2D(VkImageCreateInfo imageInfo, VmaImage& image);
 
 
-	void DestroyVmaAllocatedImage(VkImage* image, VmaAllocation* allocation);
+	void DestroyVmaAllocatedImage(VmaImage& image);
 
 	VkCommandBuffer GetTransferCommandBuffer();
 

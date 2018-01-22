@@ -15,7 +15,7 @@ void VulkanTexture::updateDescriptor()
 }
 
 void VulkanTexture::destroy(VulkanDevice &device) {
-	device.DestroyVmaAllocatedImage(&vmaImage, &vmaImageAlloc);
+	device.DestroyVmaAllocatedImage(image);
 
 	if(textureImageView != VK_NULL_HANDLE)
 		vkDestroyImageView(device.device, textureImageView, nullptr);
@@ -164,8 +164,7 @@ void VulkanTexture2D::loadFromTexture(
 	int mipMapLevelsToGen,
 	bool wrapBorder)
 {
-	VkImage stagingImage = VK_NULL_HANDLE;
-	VmaAllocation stagingAlloc = VK_NULL_HANDLE;
+	VmaImage stagingImage;
 
 	this->texture = texture;
 	int maxMipMapLevelsPossible = (int)floor(log2(std::max(texture->width, texture->height))) + 1;
@@ -215,18 +214,18 @@ void VulkanTexture2D::loadFromTexture(
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT	);
 
 	VmaAllocationInfo stagingImageAllocInfo = {};
-	device.CreateStagingImage2D(stagingImageCreateInfo, &stagingImage, &stagingAlloc, &stagingImageAllocInfo);
+	device.CreateStagingImage2D(stagingImageCreateInfo, stagingImage);
 	
 	VkSubresourceLayout sub;
 
 	const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
-	vkGetImageSubresourceLayout(device.device, stagingImage, &imSub, &sub);
+	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 
 	int offset = 0;
 	int texOff = 0;
 	for (int i = 0; i < texture->layerCount; i++) {
 		for (int r = 0; r < texture->height; r++) {
-			char* stagingPointer = (char*)stagingImageAllocInfo.pMappedData;
+			char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
 			memcpy(stagingPointer + offset,
 				texture->pixels + texOff,
 				texture->width * 4);
@@ -237,7 +236,7 @@ void VulkanTexture2D::loadFromTexture(
 	
 	//memcpy(stagingImageAllocInfo.pMappedData, texture->pixels, texture->texImageSize);
 	
-	device.CreateImage2D(imageCreateInfo, &vmaImage, &vmaImageAlloc);
+	device.CreateImage2D(imageCreateInfo, image);
 
 	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels); {};
 
@@ -245,14 +244,14 @@ void VulkanTexture2D::loadFromTexture(
 
 	setImageLayout(
 		copyCmd,
-		vmaImage,
+		image.image,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		subresourceRange);
 
 	setImageLayout(
 		copyCmd,
-		stagingImage,
+		stagingImage.image,
 		VK_IMAGE_LAYOUT_PREINITIALIZED,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		subresourceRange);
@@ -281,16 +280,16 @@ void VulkanTexture2D::loadFromTexture(
 
 	vkCmdCopyImage(
 		copyCmd,
-		stagingImage, 
+		stagingImage.image, 
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		vmaImage, 
+		image.image, 
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1, &imageCopy);
 
 	
 	setImageLayout(
 		copyCmd,
-		vmaImage,
+		image.image,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		subresourceRange);
@@ -299,10 +298,10 @@ void VulkanTexture2D::loadFromTexture(
 
 	device.SubmitTransferCommandBuffer();
 
-	device.DestroyVmaAllocatedImage(&stagingImage, &stagingAlloc);
+	device.DestroyVmaAllocatedImage(stagingImage);
 
 
-	GenerateMipMaps(device, vmaImage, texture->width, texture->height, 1, 1, mipLevels);
+	GenerateMipMaps(device, image.image, texture->width, texture->height, 1, 1, mipLevels);
 
 	// With mip mapping and anisotropic filtering
 	if (device.physical_device_features.samplerAnisotropy)
@@ -329,7 +328,7 @@ void VulkanTexture2D::loadFromTexture(
 				true, mipLevels, false, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 	}
 	
-	textureImageView = CreateImageView(device, vmaImage, VK_IMAGE_VIEW_TYPE_2D, format, VK_IMAGE_ASPECT_COLOR_BIT,
+	textureImageView = CreateImageView(device, image.image, VK_IMAGE_VIEW_TYPE_2D, format, VK_IMAGE_ASPECT_COLOR_BIT,
 		VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
 		(useStaging) ? mipLevels : 1, 1);
 
@@ -351,7 +350,7 @@ void VulkanTexture2D::loadFromTexture(
 	//// Linear tiling usually won't support mip maps
 	//// Only set mip map count if optimal tiling is used
 	//viewCreateInfo.subresourceRange.levelCount = (useStaging) ? mipLevels : 1;
-	//viewCreateInfo.image = vmaImage;
+	//viewCreateInfo.image = image.image;
 	//VK_CHECK_RESULT(vkCreateImageView(device.device, &viewCreateInfo, nullptr, &textureImageView));
 
 }
@@ -366,8 +365,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	bool genMipMaps,
 	int mipMapLevelsToGen)
 {
-	VkImage stagingImage = VK_NULL_HANDLE;
-	VmaAllocation stagingAlloc = VK_NULL_HANDLE;
+	VmaImage stagingImage;
 
 	this->textures = textures;
 	int mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
@@ -401,18 +399,18 @@ void VulkanTexture2DArray::loadTextureArray(
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
 	VmaAllocationInfo stagingImageAllocInfo = {};
-	device.CreateStagingImage2D(stagingImageCreateInfo, &stagingImage, &stagingAlloc, &stagingImageAllocInfo);
+	device.CreateStagingImage2D(stagingImageCreateInfo, stagingImage);
 	
 	VkSubresourceLayout sub;
 
 	const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
-	vkGetImageSubresourceLayout(device.device, stagingImage, &imSub, &sub);
+	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 
 	int offset = 0;
 	int texOff = 0;
 	for (int i = 0; i < textures->layerCount; i++) {
 		for (int r = 0; r < textures->height; r++) {
-			char* stagingPointer = (char*)stagingImageAllocInfo.pMappedData;
+			char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
 			memcpy(stagingPointer + offset,
 				textures->pixels + texOff,
 				textures->width * 4);
@@ -420,7 +418,7 @@ void VulkanTexture2DArray::loadTextureArray(
 			texOff += textures->width * 4;
 		}
 	}
-	device.CreateImage2D(imageCreateInfo, &vmaImage, &vmaImageAlloc);
+	device.CreateImage2D(imageCreateInfo, image);
 
 	
 	VkOffset3D copyOffset = { 0, 0, 0 };
@@ -447,30 +445,30 @@ void VulkanTexture2DArray::loadTextureArray(
 
 	setImageLayout(
 		copyCmd,
-		vmaImage,
+		image.image,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		subresourceRange);
 
 	setImageLayout(
 		copyCmd,
-		stagingImage,
+		stagingImage.image,
 		VK_IMAGE_LAYOUT_PREINITIALIZED,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		subresourceRange);
 
 	vkCmdCopyImage(
 		copyCmd,
-		stagingImage,
+		stagingImage.image,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		vmaImage,
+		image.image,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		static_cast<uint32_t>(1),
 		&imageCopyRegion);
 
 	setImageLayout(
 		copyCmd,
-		vmaImage,
+		image.image,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		subresourceRange);
@@ -478,15 +476,15 @@ void VulkanTexture2DArray::loadTextureArray(
 	this->textureImageLayout = imageLayout;
 	device.SubmitTransferCommandBuffer();
 
-	device.DestroyVmaAllocatedImage(&stagingImage, &stagingAlloc);
+	device.DestroyVmaAllocatedImage(stagingImage);
 
-	GenerateMipMaps(device, vmaImage, textures->width, textures->height, 1, textures->layerCount, mipLevels);
+	GenerateMipMaps(device, image.image, textures->width, textures->height, 1, textures->layerCount, mipLevels);
 
 	textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR,
 		VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, mipLevels,
 		true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
-	textureImageView = CreateImageView(device, vmaImage, VK_IMAGE_VIEW_TYPE_2D_ARRAY, format, 
+	textureImageView = CreateImageView(device, image.image, VK_IMAGE_VIEW_TYPE_2D_ARRAY, format, 
 		VK_IMAGE_ASPECT_COLOR_BIT, 
 		VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
 		mipLevels, textures->layerCount);
@@ -502,7 +500,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	//viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 	//viewCreateInfo.subresourceRange.layerCount = textures->layerCount;
 	//viewCreateInfo.subresourceRange.levelCount = mipLevels;
-	//viewCreateInfo.image = vmaImage;
+	//viewCreateInfo.image = image.image;
 	//VK_CHECK_RESULT(vkCreateImageView(device.device, &viewCreateInfo, nullptr, &textureImageView));
 }
 	
@@ -520,8 +518,7 @@ void VulkanCubeMap::loadFromTexture(
 	this->cubeMap = cubeMap;
 	int mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
 	
-	VkImage stagingImage = VK_NULL_HANDLE;
-	VmaAllocation stagingAlloc = VK_NULL_HANDLE;
+	VmaImage stagingImage;
 
 	VkExtent3D imageExtent = { cubeMap->width, cubeMap->height, 1 };
 
@@ -541,18 +538,18 @@ void VulkanCubeMap::loadFromTexture(
 
 	VmaAllocationInfo stagingImageAllocInfo = {};
 	
-	device.CreateStagingImage2D(stagingImageCreateInfo, &stagingImage, &stagingAlloc, &stagingImageAllocInfo);
+	device.CreateStagingImage2D(stagingImageCreateInfo, stagingImage);
 	
 	VkSubresourceLayout sub;
 
 	const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
-	vkGetImageSubresourceLayout(device.device, stagingImage, &imSub, &sub);
+	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 	
 	int offset = 0;
 	int texOff = 0;
 	for (int i = 0; i < 6; i++) {
 		for (int r = 0; r < cubeMap->height; r++) {
-			char* stagingPointer = (char*)stagingImageAllocInfo.pMappedData;
+			char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
 			memcpy(stagingPointer + offset,
 				cubeMap->pixels + texOff,
 				cubeMap->width * 4);
@@ -577,7 +574,7 @@ void VulkanCubeMap::loadFromTexture(
 		| VK_IMAGE_USAGE_SAMPLED_BIT);
 	imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
-	device.CreateImage2D(imageCreateInfo, &vmaImage, &vmaImageAlloc);
+	device.CreateImage2D(imageCreateInfo, image);
 
 	/*VkImageSubresource stagingImageSubresource = {};
 	stagingImageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -629,30 +626,30 @@ void VulkanCubeMap::loadFromTexture(
 
 	setImageLayout(
 		copyCmd,
-		vmaImage,
+		image.image,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		subresourceRange);
 
 	setImageLayout(
 		copyCmd,
-		stagingImage,
+		stagingImage.image,
 		VK_IMAGE_LAYOUT_PREINITIALIZED,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		subresourceRange);
 
 	vkCmdCopyImage(
 		copyCmd,
-		stagingImage,
+		stagingImage.image,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		vmaImage,
+		image.image,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		static_cast<uint32_t>(1),
 		&imageCopyRegion);
 
 	setImageLayout(
 		copyCmd,
-		vmaImage,
+		image.image,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		subresourceRange);
@@ -660,7 +657,7 @@ void VulkanCubeMap::loadFromTexture(
 	this->textureImageLayout = imageLayout;
 	device.SubmitTransferCommandBuffer();
 
-	device.DestroyVmaAllocatedImage(&stagingImage, &stagingAlloc);
+	device.DestroyVmaAllocatedImage(stagingImage);
 
 	//GenerateMipMaps(device, cubeMap->width, cubeMap->height, 6, mipLevels);
 
@@ -668,7 +665,7 @@ void VulkanCubeMap::loadFromTexture(
 		VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f, true, mipLevels, true, 8,
 		VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
-	textureImageView = CreateImageView(device, vmaImage, VK_IMAGE_VIEW_TYPE_CUBE, format, VK_IMAGE_ASPECT_COLOR_BIT,
+	textureImageView = CreateImageView(device, image.image, VK_IMAGE_VIEW_TYPE_CUBE, format, VK_IMAGE_ASPECT_COLOR_BIT,
 		VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
 		mipLevels, 6);
 
@@ -682,7 +679,7 @@ void VulkanCubeMap::loadFromTexture(
 	//viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 	//viewCreateInfo.subresourceRange.layerCount = 6;
 	//viewCreateInfo.subresourceRange.levelCount = mipLevels;
-	//viewCreateInfo.image = vmaImage;
+	//viewCreateInfo.image = image.image;
 	//VK_CHECK_RESULT(vkCreateImageView(device.device, &viewCreateInfo, nullptr, &textureImageView));
 	
 }
@@ -698,21 +695,21 @@ void VulkanTextureDepthBuffer::CreateDepthImage(VulkanDevice& device, VkFormat d
 		VkExtent3D{ (uint32_t)width, (uint32_t)height, (uint32_t)1 }, 
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-	device.CreateDepthImage(imageInfo, &vmaImage, &vmaImageAlloc);
+	device.CreateDepthImage(imageInfo, image);
 
-	textureImageView = VulkanTexture::CreateImageView(device, vmaImage, VK_IMAGE_VIEW_TYPE_2D, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+	textureImageView = VulkanTexture::CreateImageView(device, image.image, VK_IMAGE_VIEW_TYPE_2D, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
 		VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A }, 1, 1);
 
 	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
 	VkCommandBuffer copyBuf = device.createCommandBuffer(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
-	setImageLayout(copyBuf, vmaImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, subresourceRange);
+	setImageLayout(copyBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, subresourceRange);
 
 	device.flushCommandBuffer(copyBuf, device.graphics_queue, true);
 }
 	
-VulkanTextureManager::VulkanTextureManager(VulkanDevice & device) : device(device)
+VulkanTextureManager::VulkanTextureManager(VulkanDevice& device) : device(device)
 {
 }
 
