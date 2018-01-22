@@ -103,7 +103,7 @@ uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, Vk
 	throw std::runtime_error("failed to find suitable memory type!");
 }
 
-std::string errorString(VkResult errorCode)
+std::string errorString(const VkResult errorCode)
 {
 	switch (errorCode)
 	{

@@ -4,6 +4,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include <iostream>
+
 //#define VMA_IMPLEMENTATION
 //#include <vk_mem_alloc.h>
 
@@ -33,15 +35,15 @@ void setImageLayout(VkCommandBuffer cmdbuffer, VkImage image, VkImageAspectFlags
 	VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
 /** @brief Returns an error code as a string */
-std::string errorString(VkResult errorCode);
+std::string errorString(const VkResult errorCode);
 
 #define VK_CHECK_RESULT(f)																										\
 {																																\
 	VkResult res = (f);																											\
 	if (res != VK_SUCCESS)																										\
 	{																															\
-		Log::Debug << "Fatal : VkResult is \"" << errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n";	\
-		Log::Error << "Fatal : VkResult is \"" << errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n";	\
+		std::cout << "Fatal : VkResult is \"" << errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n";	\
+		std::cerr << "Fatal : VkResult is \"" << errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n";	\
 		assert(res == VK_SUCCESS);																								\
 	}																															\
 }
