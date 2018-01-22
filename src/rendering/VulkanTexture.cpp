@@ -216,7 +216,26 @@ void VulkanTexture2D::loadFromTexture(
 
 	VmaAllocationInfo stagingImageAllocInfo = {};
 	device.CreateStagingImage2D(stagingImageCreateInfo, &stagingImage, &stagingAlloc, &stagingImageAllocInfo);
-	memcpy(stagingImageAllocInfo.pMappedData, texture->pixels, texture->texImageSize);
+	
+	VkSubresourceLayout sub;
+
+	const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+	vkGetImageSubresourceLayout(device.device, stagingImage, &imSub, &sub);
+
+	int offset = 0;
+	int texOff = 0;
+	for (int i = 0; i < texture->layerCount; i++) {
+		for (int r = 0; r < texture->height; r++) {
+			char* stagingPointer = (char*)stagingImageAllocInfo.pMappedData;
+			memcpy(stagingPointer + offset,
+				texture->pixels + texOff,
+				texture->width * 4);
+			offset += sub.rowPitch;
+			texOff += texture->width * 4;
+		}
+	}
+	
+	//memcpy(stagingImageAllocInfo.pMappedData, texture->pixels, texture->texImageSize);
 	
 	device.CreateImage2D(imageCreateInfo, &vmaImage, &vmaImageAlloc);
 
@@ -383,8 +402,24 @@ void VulkanTexture2DArray::loadTextureArray(
 
 	VmaAllocationInfo stagingImageAllocInfo = {};
 	device.CreateStagingImage2D(stagingImageCreateInfo, &stagingImage, &stagingAlloc, &stagingImageAllocInfo);
-	memcpy(stagingImageAllocInfo.pMappedData, textures->pixels, textures->texImageSize);
+	
+	VkSubresourceLayout sub;
 
+	const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+	vkGetImageSubresourceLayout(device.device, stagingImage, &imSub, &sub);
+
+	int offset = 0;
+	int texOff = 0;
+	for (int i = 0; i < textures->layerCount; i++) {
+		for (int r = 0; r < textures->height; r++) {
+			char* stagingPointer = (char*)stagingImageAllocInfo.pMappedData;
+			memcpy(stagingPointer + offset,
+				textures->pixels + texOff,
+				textures->width * 4);
+			offset += sub.rowPitch;
+			texOff += textures->width * 4;
+		}
+	}
 	device.CreateImage2D(imageCreateInfo, &vmaImage, &vmaImageAlloc);
 
 	

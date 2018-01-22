@@ -14,8 +14,7 @@ TextureManager::~TextureManager()
 
 
 std::shared_ptr<Texture> TextureManager::loadTextureFromFile(std::string filename, int imgType) {
-	std::shared_ptr<Texture> tex;
-	tex = std::make_shared<Texture>();
+	std::shared_ptr<Texture> tex = std::make_shared<Texture>();
 
 	std::ifstream filestream(filename.c_str());
 	if (filestream.fail()) {
@@ -53,16 +52,12 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromPixelData(int width, int
 		return nullptr;
 	}
 	
-	std::shared_ptr<Texture> tex;
-	tex = std::make_shared<Texture>();
+	std::shared_ptr<Texture> tex = std::make_shared<Texture>();
 
-	int imgWidth = width;
-	int imgHeight = height;
+	tex->width = static_cast<uint32_t>(width);
+	tex->height = static_cast<uint32_t>(height);
 
-	tex->width = static_cast<uint32_t>(imgWidth);
-	tex->height = static_cast<uint32_t>(imgHeight);
-
-	tex->texImageSize = imgWidth * imgHeight * 4;
+	tex->texImageSize = width * height * 4;
 
 	textureHandles.push_back(tex);
 

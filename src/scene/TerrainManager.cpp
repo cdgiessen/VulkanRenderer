@@ -29,9 +29,6 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 	VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera) {
 	this->renderer = renderer;
 
-	//free resources then delete all created terrains/waters
-	CleanUpTerrain();
-
 	int numCells = 64;
 	int logicalWidth = 64;// (int)numCells * glm::pow(2.0, terrainMaxLevels);
 	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
@@ -75,7 +72,7 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 	VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager) {
 	this->renderer = renderer;
 	if (recreateTerrain) {
-
+		CleanUpTerrain();
 		GenerateTerrain(resourceMan, renderer, globalVariableBuffer, lightsInfoBuffer, camera);
 	}
 
@@ -138,7 +135,7 @@ void TerrainManager::UpdateTerrainGUI() {
 	ImGui::SliderInt("Max Subdivision", &terrainMaxLevels, 0, 10);
 	ImGui::SliderInt("Grid Width", &terrainGridDimentions, 1, 10);
 	ImGui::SliderFloat("Height Scale", &terrainHeightScale, 1, 1000);
-	ImGui::SliderInt("Image Resolution", &sourceImageResolution, 1, 2048);
+	ImGui::SliderInt("Image Resolution", &sourceImageResolution, 32, 1024);
 
 	if (ImGui::Button("Recreate Terrain", ImVec2(130, 20))) {
 		recreateTerrain = true;

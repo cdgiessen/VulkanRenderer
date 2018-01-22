@@ -120,8 +120,6 @@ void Terrain::CleanUp()
 	//quadHandles.clear();
 	//PrevQuadHandles.clear();
 
-	//fastTerrainGraph->~TerGenNodeGraph();
-
 	//cleanup model buffers
 	vertexBuffer.cleanBuffer();
 	indexBuffer.cleanBuffer();
@@ -216,18 +214,17 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3
 }
 
 RGBA_pixel*  Terrain::LoadSplatMapFromGenerator() {
-	//terrainSplatMap = std::make_shared<Texture>();
 	fastTerrainUser->BuildOutputImage(noisePosition, (float)noiseSize.x);
 
 	float* pixData = fastTerrainUser->GetOutputGreyscaleImage();
-	RGBA_pixel* imageData = (RGBA_pixel*)malloc(sizeof(RGBA_pixel)*sourceImageResolution*sourceImageResolution);
+	RGBA_pixel* imageData = (RGBA_pixel*)malloc(4*sourceImageResolution*sourceImageResolution);
 
 	if (imageData == nullptr) {
 		Log::Error << "failed to create splatmap image" << "\n";
 		return nullptr;
 	}
 	for (int i = 0; i < sourceImageResolution * sourceImageResolution; i++ ) {
-		glm::vec4 col = splatmapTextureGradient.SampleGradient((pixData[i] + 1)/2);
+		glm::vec4 col = splatmapTextureGradient.SampleGradient(((pixData[i]) + 1.0f)/2.0f);
 		imageData[i] = RGBA_pixel((stbi_uc)(col.x * 255), (stbi_uc)(col.y * 255), (stbi_uc)(col.z * 255), (stbi_uc)(col.w * 255));
 	}
 

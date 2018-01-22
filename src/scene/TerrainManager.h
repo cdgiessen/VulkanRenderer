@@ -57,7 +57,7 @@ private:
 	float terrainHeightScale = 100.0f;
 	int terrainMaxLevels = 2;
 	int terrainGridDimentions = 1;
-	int sourceImageResolution = 128;
+	int sourceImageResolution = 100;
 	SimpleTimer terrainUpdateTimer;
 
 	int maxNumQuads = 1; //maximum quads managed by this

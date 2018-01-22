@@ -55,6 +55,23 @@ public:
 		bool wrapBorder = true);
 };
 
+class VulkanTexture2D1Bit : public VulkanTexture {
+public:
+	std::shared_ptr<Texture> texture;
+
+	void loadFromTexture(
+		VulkanDevice &device,
+		std::shared_ptr<Texture> texture,
+		VkFormat format,
+		VkQueue copyQueue,
+		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
+		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		bool forceLinear = false,
+		bool genMipMaps = false,
+		int mipMapLevelsToGen = 1,
+		bool wrapBorder = true);
+};
+
 class VulkanTexture2DArray : public VulkanTexture {
 public:
 	std::shared_ptr<TextureArray> textures;
