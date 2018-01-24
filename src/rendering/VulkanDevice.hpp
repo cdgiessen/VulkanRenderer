@@ -73,14 +73,20 @@ public:
 
 	void CreateVulkanAllocator();
 
-	void CreateUniformBuffer(VulkanBuffer& buffer, VmaAllocation* allocation, VkDeviceSize bufferSize);
-	void CreateStagingUniformBuffer(VulkanBuffer& buffer, VmaAllocation* allocation, VkDeviceSize bufferSize);
+	void VmaMapMemory(VmaBuffer& buffer, void* pData);
+	void VmaUnmapMemory(VmaBuffer& buffer);
+
+	void VmaMapAndCopy(VmaBuffer& buffer, VkDeviceSize size, void* pData);
+
+	void CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
+	void CreateStagingUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
 
 	void CreateMeshBufferVertex(VkBuffer* buffer, VmaAllocation* allocation, VkDeviceSize bufferSize);
 	void CreateMeshBufferIndex(VkBuffer* buffer, VmaAllocation* allocation, VkDeviceSize bufferSize);
 	void CreateMeshStagingBuffer(VkBuffer* buffer, VmaAllocation* allocation, void* data, VkDeviceSize bufferSize);
 
 	void DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation);
+	void DestroyVmaAllocatedBuffer(VmaBuffer& buffer);
 
 	void CreateImage2D(VkImageCreateInfo imageInfo, VmaImage& image);
 	void CreateDepthImage(VkImageCreateInfo imageInfo, VmaImage& image);

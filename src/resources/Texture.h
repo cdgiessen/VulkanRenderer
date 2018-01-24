@@ -56,7 +56,7 @@ class CubeMap {
 public:
 
 	uint32_t width = 0, height = 0;
-	uint32_t layerCount = 1;
+	uint32_t layerCount = 6;
 	VkDeviceSize texImageSize = 0;
 	VkDeviceSize texImageSizePerTex = 0;
 

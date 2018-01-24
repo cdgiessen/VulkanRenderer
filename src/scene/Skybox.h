@@ -29,17 +29,16 @@ public:
 
 	std::shared_ptr<ManagedVulkanPipeline> mvp;
 
-	VkDescriptorSetLayout descriptorSetLayout;
-	VkDescriptorPool descriptorPool;
-	VkDescriptorSet descriptorSet;
+	std::shared_ptr<VulkanDescriptor> descriptor;
+	DescriptorSet m_descriptorSet;
 
 	VulkanModel model;
 
 	std::shared_ptr<CubeMap> skyboxCubeMap;
 	VulkanCubeMap vulkanCubeMap;
 	
-	SkyboxUniformBuffer skyboxUniform;
-	VulkanBuffer skyboxUniformBuffer;
+	//SkyboxUniformBuffer skyboxUniform;
+	//VulkanBuffer skyboxUniformBuffer;
 
 
 	void InitSkybox(std::shared_ptr<VulkanRenderer> renderer);
@@ -56,6 +55,5 @@ public:
 	//Builds a secondary command buffer for the skybox and returns the buffer
 	VkCommandBuffer BuildSecondaryCommandBuffer(VkCommandBuffer secondaryCommandBuffer, VkCommandBufferInheritanceInfo inheritanceInfo);
 
-private:
 
 };

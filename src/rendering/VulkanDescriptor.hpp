@@ -9,18 +9,32 @@
 
 #include "VulkanDevice.hpp"
 
-struct DescriptorResource {
+class DescriptorPoolSize {
+public:
+	DescriptorPoolSize(VkDescriptorType type, uint32_t count);
+
+
+	VkDescriptorPoolSize GetPoolSize();
+	
+	VkDescriptorType type;
+	uint32_t count;
+};
+
+class DescriptorResource {
+public:
 	std::variant<VkDescriptorBufferInfo, VkDescriptorImageInfo> info;
 	VkDescriptorType type;
 
-	DescriptorResource(VkDescriptorType type, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
-	DescriptorResource(VkDescriptorType type, VkSampler sampler, VkImageView imageView, VkImageLayout layout);
+	DescriptorResource(VkDescriptorType type);
+
+	void FillResource(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
+	void FillResource(VkSampler sampler, VkImageView imageView, VkImageLayout layout);
 
 };
 
-class Descriptor {
+class DescriptorUse {
 public:
-	Descriptor(uint32_t bindPoint, uint32_t count, DescriptorResource resource);
+	DescriptorUse(uint32_t bindPoint, uint32_t count, DescriptorResource resource);
 
 	VkWriteDescriptorSet GetWriteDescriptorSet(VkDescriptorSet set);
 
@@ -31,22 +45,33 @@ private:
 	DescriptorResource resource;
 };
 
+class DescriptorSet {
+public:
+	VkDescriptorSet set;
+
+	void BindDescriptorSet(VkCommandBuffer cmdBuf, VkPipelineLayout layout);
+};
+
 class VulkanDescriptor {
 public:
 	VulkanDescriptor(VulkanDevice& device);
+	
+	void SetupLayout(std::vector<VkDescriptorSetLayoutBinding> bindings);
+	void SetupPool(std::vector<DescriptorPoolSize> poolSizes);
+	
+	void CleanUpResources();
 
-	void SetupLayout();
-	void SetupPool();
-	void SetupDescriptorSet(std::vector < std::shared_ptr<Descriptor>> descriptors);
+	static VkDescriptorSetLayoutBinding CreateBinding(VkDescriptorType type, VkShaderStageFlags stages, uint32_t binding, uint32_t descriptorCount);
 
-
-	void BindDescriptorSet(VkCommandBuffer cmdBuf, VkPipelineLayout layout);
+	DescriptorSet CreateDescriptorSet();
+	void UpdateDescriptorSet(DescriptorSet set, std::vector<DescriptorUse> descriptors);
+	
+	VkDescriptorSetLayout GetLayout();
 
 private:
-	VulkanDevice & device;
-
-	VkDescriptorPool pool;
+	VulkanDevice& device;
+	
 	VkDescriptorSetLayout layout;
-	VkDescriptorSet set;
+	VkDescriptorPool pool;
 };
 

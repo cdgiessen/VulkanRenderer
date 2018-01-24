@@ -107,9 +107,11 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 		obj->UpdateUniformBuffer((float)timeManager->GetRunningTime());
 	}
 
-	skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
+	//skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
 	//if(!Input::GetKey(GLFW_KEY_V))
 	terrainManager->UpdateTerrains(resourceMan, renderer, globalVariableBuffer, lightsInfoBuffer, camera, timeManager);
+
+	renderer->UpdateGlobalRenderResources(cbo, pointLights);
 }
 
 void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
@@ -124,7 +126,7 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
 
 	//skybox
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->layout, 0, 1, &skybox->descriptorSet, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->layout, 0, 1, &skybox->m_descriptorSet.set, 0, nullptr);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->pipelines->at(0));
 
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &skybox->model.vmaBufferVertex, offsets);

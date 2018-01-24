@@ -8,6 +8,8 @@
 
 #include <vulkan/vulkan.h>
 
+//#include "VulkanDescriptor.hpp"
+
 
 /**
 * @brief Encapsulates access to a Vulkan buffer backed up by device memory
@@ -22,6 +24,7 @@ public:
 	VkBuffer buffer = VK_NULL_HANDLE;
 	VkDeviceMemory bufferMemory = VK_NULL_HANDLE;
 
+	//DescriptorResource resource;
 	VkDescriptorBufferInfo descriptor;
 	VkDeviceSize size = 0;
 	VkDeviceSize alignment = 0;
@@ -31,6 +34,10 @@ public:
 	VkBufferUsageFlags usageFlags;
 	/** @brief Memory propertys flags to be filled by external source at buffer creation (to query at some later point) */
 	VkMemoryPropertyFlags memoryPropertyFlags;
+
+	//VulkanBuffer() : resource(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+	//
+	//}
 
 	void cleanBuffer() {
 		if (buffer)
@@ -94,6 +101,7 @@ public:
 		descriptor.offset = offset;
 		descriptor.buffer = buffer;
 		descriptor.range = size;
+		//resource.FillResource(buffer, offset, size);
 	}
 
 	/**

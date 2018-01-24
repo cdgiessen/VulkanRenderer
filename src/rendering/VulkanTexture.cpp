@@ -6,9 +6,13 @@
 
 #include <algorithm>
 
+VulkanTexture::VulkanTexture() : resource(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+
+}
 
 void VulkanTexture::updateDescriptor()
 {
+	resource.FillResource(textureSampler, textureImageView, textureImageLayout);
 	descriptor.sampler = textureSampler;
 	descriptor.imageView = textureImageView;
 	descriptor.imageLayout = textureImageLayout;
@@ -152,6 +156,21 @@ VkImageView VulkanTexture::CreateImageView(VulkanDevice& device, VkImage image, 
 
 }
 
+void AlignedMemcpy(int layers, int height, int width, int src_row_width, int dst_row_width, char* src, char* dst ) {
+	int offset = 0;
+	int texOff = 0;
+	for (int i = 0; i < layers; i++) {
+		for (int r = 0; r < height; r++) {
+			memcpy(dst + offset,
+				src + texOff,
+				width * 4);
+			offset += dst_row_width;
+			texOff += src_row_width;
+		}
+	}
+}
+
+
 void VulkanTexture2D::loadFromTexture(
 	VulkanDevice &device,
 	std::shared_ptr<Texture> texture,
@@ -221,20 +240,8 @@ void VulkanTexture2D::loadFromTexture(
 	const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
 	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 
-	int offset = 0;
-	int texOff = 0;
-	for (int i = 0; i < texture->layerCount; i++) {
-		for (int r = 0; r < texture->height; r++) {
-			char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-			memcpy(stagingPointer + offset,
-				texture->pixels + texOff,
-				texture->width * 4);
-			offset += sub.rowPitch;
-			texOff += texture->width * 4;
-		}
-	}
-	
-	//memcpy(stagingImageAllocInfo.pMappedData, texture->pixels, texture->texImageSize);
+	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
+	AlignedMemcpy(texture->layerCount, texture->height, texture->width, texture->width * 4, sub.rowPitch, (char*)texture->pixels, stagingPointer);
 	
 	device.CreateImage2D(imageCreateInfo, image);
 
@@ -406,18 +413,9 @@ void VulkanTexture2DArray::loadTextureArray(
 	const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
 	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 
-	int offset = 0;
-	int texOff = 0;
-	for (int i = 0; i < textures->layerCount; i++) {
-		for (int r = 0; r < textures->height; r++) {
-			char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-			memcpy(stagingPointer + offset,
-				textures->pixels + texOff,
-				textures->width * 4);
-			offset += sub.rowPitch;
-			texOff += textures->width * 4;
-		}
-	}
+	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
+	AlignedMemcpy(textures->layerCount, textures->height, textures->width, textures->width * 4, sub.rowPitch, (char*)textures->pixels, stagingPointer);
+
 	device.CreateImage2D(imageCreateInfo, image);
 
 	
@@ -545,19 +543,8 @@ void VulkanCubeMap::loadFromTexture(
 	const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
 	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 	
-	int offset = 0;
-	int texOff = 0;
-	for (int i = 0; i < 6; i++) {
-		for (int r = 0; r < cubeMap->height; r++) {
-			char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-			memcpy(stagingPointer + offset,
-				cubeMap->pixels + texOff,
-				cubeMap->width * 4);
-			offset += sub.rowPitch;
-			texOff += cubeMap->width * 4;
-		}
-	}
-
+	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
+	AlignedMemcpy(6, cubeMap->height, cubeMap->width, cubeMap->width * 4, sub.rowPitch, (char*)cubeMap->pixels, stagingPointer);
 
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo(
 		VK_IMAGE_TYPE_2D,

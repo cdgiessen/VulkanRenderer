@@ -217,13 +217,11 @@ namespace NewNodeGraph {
 	}
 
 	bool OutputNode::ResetInputLink(int index) {
-		if (index == 0)
-			return input_output.ResetInputNode();
+		return input_output.ResetInputNode();
 	}
 
 	void OutputNode::SetValue(const int index, float value) {
-		if(index == 0)
-			input_output.SetValue(value);
+		input_output.SetValue(value);
 	}
 
 	void OutputNode::SaveToJson(nlohmann::json & json)

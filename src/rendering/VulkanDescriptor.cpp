@@ -4,43 +4,59 @@
 #include "../rendering/VulkanInitializers.hpp"
 #include <vulkan/vulkan.h>
 
-DescriptorResource::DescriptorResource( VkDescriptorType type,
+
+DescriptorPoolSize::DescriptorPoolSize(VkDescriptorType type, uint32_t count) : type(type), count(count) {
+};
+
+VkDescriptorPoolSize DescriptorPoolSize::GetPoolSize() {
+	return initializers::descriptorPoolSize(type, count);
+};
+
+DescriptorResource::DescriptorResource(VkDescriptorType type) : type(type) {
+
+}
+void DescriptorResource::FillResource(
 	VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
-	: type(type)
 {
 	VkDescriptorBufferInfo bufferInfo;
 	bufferInfo.buffer = buffer;
 	bufferInfo.offset = offset;
 	bufferInfo.range = range;
+	info = bufferInfo;
 }
 
-DescriptorResource::DescriptorResource(VkDescriptorType type,
+void DescriptorResource::FillResource(
 	VkSampler sampler, VkImageView imageView, VkImageLayout layout)
-	: type(type)
 {
-	VkDescriptorImageInfo imageInfo;
-	imageInfo.imageLayout = layout;
-	imageInfo.imageView = imageView;
-	imageInfo.sampler = sampler;
-	info = imageInfo;
-
+	info = initializers::descriptorImageInfo(sampler, imageView, layout);
 }
 
-Descriptor::Descriptor(uint32_t bindPoint, uint32_t count, DescriptorResource resource)
+DescriptorUse::DescriptorUse(uint32_t bindPoint, uint32_t count, DescriptorResource resource)
 	: bindPoint(bindPoint), count(count), resource(resource)
 {
 
 }
 
 
-VkWriteDescriptorSet Descriptor::GetWriteDescriptorSet(VkDescriptorSet set) {
+VkWriteDescriptorSet DescriptorUse::GetWriteDescriptorSet(VkDescriptorSet set) {
+	VkWriteDescriptorSet writeDescriptorSet{};
+	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSet.dstSet = set;
+	writeDescriptorSet.descriptorType = resource.type;
+	writeDescriptorSet.dstBinding = bindPoint;
+	writeDescriptorSet.descriptorCount = count;
+	
 	if (resource.info.index() == 0)
-		return initializers::writeDescriptorSet(set, resource.type, bindPoint, std::get_if<VkDescriptorBufferInfo>(&resource.info), count);
+		writeDescriptorSet.pBufferInfo = std::get_if<VkDescriptorBufferInfo>(&resource.info);
 	else
-		return initializers::writeDescriptorSet(set, resource.type, bindPoint, std::get_if<VkDescriptorImageInfo>(&resource.info), count);
+		writeDescriptorSet.pImageInfo = std::get_if<VkDescriptorImageInfo>(&resource.info);
+	
+	return writeDescriptorSet;
 }
 
-
+void DescriptorSet::BindDescriptorSet(VkCommandBuffer cmdBuf, VkPipelineLayout layout) {
+	vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &set, 0, nullptr);
+}
 
 VulkanDescriptor::VulkanDescriptor(VulkanDevice& device) : device(device) {
 
@@ -48,20 +64,13 @@ VulkanDescriptor::VulkanDescriptor(VulkanDevice& device) : device(device) {
 
 }
 
-
-VkDescriptorSetLayoutBinding CreateBinding(VkDescriptorType type, VkShaderStageFlags stages, uint32_t binding, uint32_t descriptorCount) {
-
-	return initializers::descriptorSetLayoutBinding(type, stages, binding, descriptorCount);
+void VulkanDescriptor::CleanUpResources() {
+	vkDestroyDescriptorSetLayout(device.device, layout, nullptr);
+	vkDestroyDescriptorPool(device.device, pool, nullptr);
 }
 
-void VulkanDescriptor::SetupLayout()
+void VulkanDescriptor::SetupLayout(std::vector<VkDescriptorSetLayoutBinding> bindings)
 {
-	std::vector<VkDescriptorSetLayoutBinding> bindings;
-	bindings.push_back(CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,	VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1));
-	bindings.push_back(CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1, 1));
-	bindings.push_back(CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
-	bindings.push_back(CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1));
-
 	VkDescriptorSetLayoutCreateInfo layoutInfo =
 		initializers::descriptorSetLayoutCreateInfo(bindings);
 
@@ -72,21 +81,15 @@ void VulkanDescriptor::SetupLayout()
 
 }
 
-void VulkanDescriptor::SetupPool() {
+void VulkanDescriptor::SetupPool(std::vector<DescriptorPoolSize> poolSizes) {
 
-
-	// setup pool
-	std::vector<VkDescriptorPoolSize> poolSizes;
-	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-
-	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-
-	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-
-	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	std::vector<VkDescriptorPoolSize> poolMembers;
+	for (auto member : poolSizes) {
+		poolMembers.push_back(member.GetPoolSize());
+	}
 
 	VkDescriptorPoolCreateInfo poolInfo = initializers::descriptorPoolCreateInfo(
-		static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), 1);
+		static_cast<uint32_t>(poolMembers.size()), poolMembers.data(), 1);
 
 	if (vkCreateDescriptorPool(device.device, &poolInfo, nullptr,
 		&pool) != VK_SUCCESS)
@@ -95,27 +98,39 @@ void VulkanDescriptor::SetupPool() {
 	}
 }
 
-void VulkanDescriptor::SetupDescriptorSet(std::vector<std::shared_ptr<Descriptor>> descriptors) {
 
-	// setup descriptor set
+VkDescriptorSetLayoutBinding VulkanDescriptor::CreateBinding(VkDescriptorType type, VkShaderStageFlags stages, uint32_t binding, uint32_t descriptorCount) {
+
+	return initializers::descriptorSetLayoutBinding(type, stages, binding, descriptorCount);
+}
+
+DescriptorSet VulkanDescriptor::CreateDescriptorSet() {
+	DescriptorSet set;
 	VkDescriptorSetLayout layouts[] = { layout };
 	VkDescriptorSetAllocateInfo allocInfo =
 		initializers::descriptorSetAllocateInfo(pool, layouts, 1);
 
-	if (vkAllocateDescriptorSets(device.device, &allocInfo,	&set) != VK_SUCCESS)
+	if (vkAllocateDescriptorSets(device.device, &allocInfo,	&(set.set)) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate descriptor set!");
 	}
 
+	return set;
+}
+
+void VulkanDescriptor::UpdateDescriptorSet(DescriptorSet set, std::vector<DescriptorUse> descriptors) {
+
 	std::vector<VkWriteDescriptorSet> writes;
-	for (auto des : descriptors) {
-		writes.push_back(des->GetWriteDescriptorSet(set));
+	for (int i = 0; i < descriptors.size(); i++) {
+		//VkWriteDescriptorSet w = descriptors.at(i).GetWriteDescriptorSet(set.set);
+		writes.push_back(descriptors.at(i).GetWriteDescriptorSet(set.set));
 	}
 
 	vkUpdateDescriptorSets(device.device,
 		static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+
 }
 
-void VulkanDescriptor::BindDescriptorSet(VkCommandBuffer cmdBuf, VkPipelineLayout layout) {
-	vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &set, 0, nullptr);
+VkDescriptorSetLayout VulkanDescriptor::GetLayout() {
+	return layout;
 }

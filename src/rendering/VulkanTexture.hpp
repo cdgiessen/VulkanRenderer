@@ -13,13 +13,7 @@
 
 class VulkanTexture {
 public:
-	VmaImage image;
-
-	VkImageView textureImageView = VK_NULL_HANDLE;
-	VkSampler textureSampler = VK_NULL_HANDLE;
-	VkImageLayout textureImageLayout;
-
-	VkDescriptorImageInfo descriptor;
+	VulkanTexture();
 
 	void updateDescriptor();
 
@@ -36,6 +30,17 @@ public:
 		VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 				
 	static VkImageView CreateImageView(VulkanDevice& device, VkImage image, VkImageViewType viewType, VkFormat format, VkImageAspectFlags aspectFlags, VkComponentMapping components, int mipLevels, int layers);
+	
+	
+	VmaImage image;
+
+	VkImageView textureImageView = VK_NULL_HANDLE;
+	VkSampler textureSampler = VK_NULL_HANDLE;
+	VkImageLayout textureImageLayout;
+
+	VkDescriptorImageInfo descriptor;
+	DescriptorResource resource;
+
 };
 
 

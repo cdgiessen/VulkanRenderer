@@ -28,6 +28,7 @@ public:
 	~VulkanRenderer();
 
 	void InitVulkanRenderer(GLFWwindow* window);
+	void UpdateGlobalRenderResources(GlobalVariableUniformBuffer globalData, std::vector<PointLight> lightData);
 	void RenderFrame();
 	void CleanVulkanResources();
 
@@ -51,6 +52,13 @@ public:
 	void PrepareFrame();
 	void SubmitFrame();
 
+	void PrepareResources();
+
+	std::shared_ptr<VulkanDescriptor> GetVulkanDescriptor();
+	std::vector<VkDescriptorSetLayoutBinding> GetGloablBindings();
+	std::vector<DescriptorPoolSize> GetGlobalPoolSize();
+	std::vector<DescriptorUse> GetGlobalDescriptorUses();
+
 	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat FindDepthFormat();
 
@@ -69,7 +77,9 @@ public:
 private:
 
 	VmaBuffer globalVariableBuffer;
+	DescriptorResource globalVariableBufResource;
 	VmaBuffer lightsInfoBuffer;
+	DescriptorResource lightsResource;
 
 	//uint32_t frameIndex = 1; // which frame of the swapchain it is on
 
@@ -80,6 +90,8 @@ private:
 
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
+
+	std::vector<std::shared_ptr<VulkanDescriptor>> descriptors;
 
 	uint32_t frameIndex; //which of the swapchain images the app is rendering to
 	bool wireframe = false; //whether or not to use the wireframe pipeline for the scene.

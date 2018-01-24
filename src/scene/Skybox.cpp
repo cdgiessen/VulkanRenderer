@@ -14,17 +14,13 @@ void Skybox::CleanUp() {
 	model.destroy(renderer->device);
 	vulkanCubeMap.destroy(renderer->device);
 
-	skyboxUniformBuffer.cleanBuffer();
-
-	vkDestroyDescriptorSetLayout(renderer->device.device, descriptorSetLayout, nullptr);
-	vkDestroyDescriptorPool(renderer->device.device, descriptorPool, nullptr);
-
+	//skyboxUniformBuffer.cleanBuffer();
 }
 
 void Skybox::InitSkybox(std::shared_ptr<VulkanRenderer> renderer) {
 	this->renderer = renderer;
 
-	SetupUniformBuffer();
+	//SetupUniformBuffer();
 	SetupCubeMapImage();
 	SetupDescriptor();
 
@@ -37,9 +33,9 @@ void Skybox::InitSkybox(std::shared_ptr<VulkanRenderer> renderer) {
 }
 
 void Skybox::SetupUniformBuffer() {
-	renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-		(VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), 
-		&skyboxUniformBuffer, sizeof(SkyboxUniformBuffer));
+	//renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+	//	(VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), 
+	//	&skyboxUniformBuffer, sizeof(SkyboxUniformBuffer));
 }
 
 void Skybox::SetupCubeMapImage() {
@@ -48,6 +44,23 @@ void Skybox::SetupCubeMapImage() {
 }
 
 void Skybox::SetupDescriptor() {
+	descriptor = renderer->GetVulkanDescriptor();
+
+	auto m_bindings = renderer->GetGloablBindings();
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
+	descriptor->SetupLayout(m_bindings);
+
+	auto poolSizes = renderer->GetGlobalPoolSize();
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	descriptor->SetupPool(poolSizes);
+
+	m_descriptorSet = descriptor->CreateDescriptorSet();
+
+	auto writes = renderer->GetGlobalDescriptorUses();
+	writes.push_back(DescriptorUse(1, 1, vulkanCubeMap.resource));
+	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
+
+	/*
 	VkDescriptorSetLayoutBinding skyboxUniformLayoutBinding 
 		= initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1);
 	VkDescriptorSetLayoutBinding skyboxSamplerLayoutBinding 
@@ -59,8 +72,9 @@ void Skybox::SetupDescriptor() {
 	if (vkCreateDescriptorSetLayout(renderer->device.device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor set layout!");
 	}
+	*/
 
-	std::vector<VkDescriptorPoolSize> poolSizes;
+	/*std::vector<VkDescriptorPoolSize> poolSizes;
 	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
 	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 
@@ -70,7 +84,7 @@ void Skybox::SetupDescriptor() {
 	if (vkCreateDescriptorPool(renderer->device.device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool!");
 	}
-
+	
 	VkDescriptorSetLayout layouts[] = { descriptorSetLayout };
 	VkDescriptorSetAllocateInfo allocInfo = initializers::descriptorSetAllocateInfo(descriptorPool, layouts, 1);
 
@@ -86,7 +100,7 @@ void Skybox::SetupDescriptor() {
 	descriptorWrites.push_back(initializers::writeDescriptorSet(
 		descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &vulkanCubeMap.descriptor, 1));
 
-	vkUpdateDescriptorSets(renderer->device.device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	vkUpdateDescriptorSets(renderer->device.device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);*/
 }
 
 void Skybox::SetupPipeline()
@@ -109,7 +123,9 @@ void Skybox::SetupPipeline()
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
 	pipeMan.SetColorBlending(mvp, 1, &mvp->pco.colorBlendAttachment);
-	pipeMan.SetDescriptorSetLayout(mvp, { &descriptorSetLayout }, 1);
+
+	VkDescriptorSetLayout layout = descriptor->GetLayout();
+	pipeMan.SetDescriptorSetLayout(mvp, &layout, 1);
 
 	pipeMan.BuildPipelineLayout(mvp);
 	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
@@ -119,13 +135,13 @@ void Skybox::SetupPipeline()
 }
 
 void Skybox::UpdateUniform(glm::mat4 proj, glm::mat4 view) {
-	SkyboxUniformBuffer sbo = {};
-	sbo.proj = proj;
-	sbo.view = glm::mat4(glm::mat3(view));
-
-	skyboxUniformBuffer.map(renderer->device.device);
-	skyboxUniformBuffer.copyTo(&sbo, sizeof(sbo));
-	skyboxUniformBuffer.unmap();
+	//SkyboxUniformBuffer sbo = {};
+	//sbo.proj = proj;
+	//sbo.view = glm::mat4(glm::mat3(view));
+	//
+	//skyboxUniformBuffer.map(renderer->device.device);
+	//skyboxUniformBuffer.copyTo(&sbo, sizeof(sbo));
+	//skyboxUniformBuffer.unmap();
 };
 
 //VkCommandBuffer Skybox::BuildSecondaryCommandBuffer(VkCommandBuffer secondaryCommandBuffer, 

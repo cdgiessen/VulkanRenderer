@@ -9,7 +9,8 @@
 #include "../core/Logger.h"
 
 VulkanRenderer::VulkanRenderer(bool validationLayer, std::shared_ptr<Scene> scene) 
-	: device(validationLayer), vulkanSwapChain(device), shaderManager(device), pipelineManager(device), scene(scene), textureManager(device)
+	: device(validationLayer), vulkanSwapChain(device), shaderManager(device), pipelineManager(device), scene(scene), textureManager(device),
+	globalVariableBufResource(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER), lightsResource(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 {
 }
 
@@ -37,6 +38,22 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 	CreateCommandBuffers();
 
 	PrepareDMACommandBuffer();
+
+	PrepareResources();
+}
+
+void VulkanRenderer::UpdateGlobalRenderResources(GlobalVariableUniformBuffer globalData, std::vector<PointLight> lightData){
+	//void* data;
+	//device.VmaMapMemory(globalVariableBuffer, &data);
+	//memcpy(data, &globalData, sizeof(GlobalVariableUniformBuffer));
+	//device.VmaUnmapMemory(globalVariableBuffer);
+	//
+	//device.VmaMapMemory(lightsInfoBuffer, &data);
+	//memcpy(data, lightData.data(), sizeof(PointLight) * lightData.size());
+	//device.VmaUnmapMemory(lightsInfoBuffer);
+
+	device.VmaMapAndCopy(globalVariableBuffer, sizeof(GlobalVariableUniformBuffer), &globalData);
+	device.VmaMapAndCopy(lightsInfoBuffer, sizeof(PointLight) * lightData.size(), lightData.data());
 }
 
 void VulkanRenderer::RenderFrame() {
@@ -48,6 +65,12 @@ void VulkanRenderer::RenderFrame() {
 }
 
 void VulkanRenderer::CleanVulkanResources() {
+	device.DestroyVmaAllocatedBuffer(globalVariableBuffer);
+	device.DestroyVmaAllocatedBuffer(lightsInfoBuffer);
+
+	for (auto descriptor : descriptors)
+		descriptor->CleanUpResources();
+
 	depthBuffer.destroy(device);
 
 	vkDestroyRenderPass(device.device, renderPass, nullptr);
@@ -354,6 +377,44 @@ void VulkanRenderer::SubmitFrame()
 	}
 
 	vkQueueWaitIdle(device.present_queue);
+}
+
+void VulkanRenderer::PrepareResources() {
+	device.CreateUniformBuffer(globalVariableBuffer, sizeof(GlobalVariableUniformBuffer));
+	globalVariableBufResource.FillResource(globalVariableBuffer.buffer, 0, sizeof(GlobalVariableUniformBuffer));
+
+	device.CreateUniformBuffer(lightsInfoBuffer, sizeof(PointLight) * 5);
+	lightsResource.FillResource(lightsInfoBuffer.buffer, 0, sizeof(PointLight)*5);
+
+
+}
+
+std::shared_ptr<VulkanDescriptor> VulkanRenderer::GetVulkanDescriptor() {
+	std::shared_ptr<VulkanDescriptor> descriptor = std::make_shared<VulkanDescriptor>(device);
+	descriptors.push_back(descriptor);
+	return descriptor;
+
+}
+
+std::vector<VkDescriptorSetLayoutBinding> VulkanRenderer::GetGloablBindings() {
+	std::vector<VkDescriptorSetLayoutBinding> bindings;
+	bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
+
+	return bindings;
+}
+
+std::vector<DescriptorPoolSize> VulkanRenderer::GetGlobalPoolSize() {
+	std::vector<DescriptorPoolSize> poolSizes;
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+
+	return poolSizes;
+}
+
+std::vector<DescriptorUse> VulkanRenderer::GetGlobalDescriptorUses() {
+	std::vector<DescriptorUse> writes;
+	writes.push_back(DescriptorUse(0, 1, globalVariableBufResource));
+
+	return writes;
 }
 
 void InsertImageMemoryBarrier(

@@ -111,21 +111,36 @@ void VulkanDevice::CreateVulkanAllocator()
 	
 	VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &allocator));
 
+}
+
+void VulkanDevice::VmaMapMemory(VmaBuffer& buffer, void* pData) {
+	vmaMapMemory(allocator, buffer.allocation, &pData);
 
 }
 
-void VulkanDevice::CreateUniformBuffer(VulkanBuffer& buffer, VmaAllocation* allocation, VkDeviceSize bufferSize) {
+void VulkanDevice::VmaUnmapMemory(VmaBuffer& buffer) {
+	vmaUnmapMemory(allocator, buffer.allocation);
+}
+
+void VulkanDevice::VmaMapAndCopy(VmaBuffer& buffer, VkDeviceSize size, void* srcData) {
+	void* dstData = 0;
+	vmaMapMemory(allocator, buffer.allocation, &dstData);
+	memcpy(dstData, srcData, size);
+	vmaUnmapMemory(allocator, buffer.allocation);
+}
+
+void VulkanDevice::CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize) {
 	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 	bufferInfo.size = bufferSize;
-	bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+	bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	
 	VmaAllocationCreateInfo allocInfo = {};
-	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 	
-	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, allocation, nullptr));
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
 }
 
-void VulkanDevice::CreateStagingUniformBuffer(VulkanBuffer& buffer, VmaAllocation* allocation, VkDeviceSize bufferSize) {
+void VulkanDevice::CreateStagingUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize) {
 	VkBufferCreateInfo bufferInfo = initializers::bufferCreateInfo();
 	bufferInfo.size = bufferSize;
 	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -133,7 +148,7 @@ void VulkanDevice::CreateStagingUniformBuffer(VulkanBuffer& buffer, VmaAllocatio
 	VmaAllocationCreateInfo allocInfo = {};
 	allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
-	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, allocation, nullptr));
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
 }
 
 
@@ -178,6 +193,10 @@ void VulkanDevice::CreateMeshStagingBuffer(VkBuffer* buffer, VmaAllocation* allo
 
 void VulkanDevice::DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation) {
 	vmaDestroyBuffer(allocator, *buffer, *allocation);
+}
+
+void VulkanDevice::DestroyVmaAllocatedBuffer(VmaBuffer& buffer) {
+	vmaDestroyBuffer(allocator, buffer.buffer, buffer.allocation);
 }
 
 void VulkanDevice::CreateImage2D(VkImageCreateInfo imageInfo, VmaImage& image) {
