@@ -1,5 +1,9 @@
 #include "VulkanPipeline.hpp"
 
+#include "VulkanInitializers.hpp"
+#include "VulkanDevice.hpp"
+#include "VulkanTools.h"
+
 #include "../resources/Mesh.h"
 
 VulkanPipeline::VulkanPipeline(const VulkanDevice &device) :device(device) {

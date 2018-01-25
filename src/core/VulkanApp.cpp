@@ -17,10 +17,11 @@ VulkanApp::VulkanApp()
 	resourceManager = std::make_shared<ResourceManager>();
 
 	scene = std::make_shared<Scene>();
-	vulkanRenderer = std::make_shared<VulkanRenderer>(useValidationLayers, scene);
 
+	vulkanRenderer = std::make_shared<VulkanRenderer>(useValidationLayers, scene);
 	vulkanRenderer->InitVulkanRenderer(window->getWindowContext());
 	vulkanRenderer->CreateSemaphores();
+
 	scene->PrepareScene(resourceManager, vulkanRenderer, imgui_nodeGraph_terrain.GetGraph());
 
 	PrepareImGui();

@@ -15,14 +15,14 @@ InstancedSceneObject::~InstancedSceneObject()
 }
 
 
-void InstancedSceneObject::InitInstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting)
+void InstancedSceneObject::InitInstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer)
 {
 	this->renderer = renderer;
 
 	SetupUniformBuffer();
 	SetupImage();
 	SetupModel();
-	SetupDescriptor(global, lighting);
+	SetupDescriptor();
 
 	VulkanPipeline &pipeMan = renderer->pipelineManager;
 	mvp = pipeMan.CreateManagedPipeline();
@@ -38,12 +38,10 @@ void InstancedSceneObject::CleanUp()
 	vulkanModel.destroy(renderer->device);
 	vulkanTexture.destroy(renderer->device);
 
-	uniformBuffer.cleanBuffer();
-	vkDestroyBuffer(renderer->device.device, instanceBuffer.buffer, nullptr);
-	vkFreeMemory(renderer->device.device, instanceBuffer.memory, nullptr);
-
-	vkDestroyDescriptorSetLayout(renderer->device.device, descriptorSetLayout, nullptr);
-	vkDestroyDescriptorPool(renderer->device.device, descriptorPool, nullptr);
+	uniformBuffer.CleanBuffer(renderer->device);
+	instanceBuffer.CleanBuffer(renderer->device);
+	//vkDestroyBuffer(renderer->device.device, instanceBuffer.buffer, nullptr);
+	//vkFreeMemory(renderer->device.device, instanceBuffer.memory, nullptr);
 }
 
 void InstancedSceneObject::LoadModel(std::string filename) {
@@ -56,7 +54,8 @@ void InstancedSceneObject::LoadModel(std::shared_ptr<Mesh> mesh) {
 }
 
 void InstancedSceneObject::SetupUniformBuffer() {
-	renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &uniformBuffer, sizeof(ModelBufferObject));
+	uniformBuffer.CreateUniformBuffer(renderer->device, sizeof(ModelBufferObject));
+	//renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &uniformBuffer, sizeof(ModelBufferObject));
 
 	ModelBufferObject ubo = {};
 	ubo.model = glm::mat4();
@@ -64,9 +63,13 @@ void InstancedSceneObject::SetupUniformBuffer() {
 	//ubo.model = glm::rotate(ubo.model, time / 2.0f, glm::vec3(0.5, 1, 0));
 	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 		
-	VK_CHECK_RESULT(uniformBuffer.map(renderer->device.device));
-	uniformBuffer.copyTo(&ubo, sizeof(ModelBufferObject));
-	uniformBuffer.unmap();
+	uniformBuffer.CopyToBuffer(renderer->device, &ubo, sizeof(ModelBufferObject));
+
+	//VK_CHECK_RESULT(uniformBuffer.map(renderer->device.device));
+	//uniformBuffer.copyTo(&ubo, sizeof(ModelBufferObject));
+	//uniformBuffer.unmap();
+
+	instanceBuffer.CreateUniformBuffer(renderer->device, sizeof(InstanceData) * maxInstanceCount);
 }
 
 void InstancedSceneObject::SetupImage() {
@@ -77,50 +80,74 @@ void InstancedSceneObject::SetupModel() {
 	vulkanModel.loadFromMesh(mesh, renderer->device, renderer->device.graphics_queue);
 }
 
-void InstancedSceneObject::SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting) {
-	//setup layout
-	VkDescriptorSetLayoutBinding cboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1);
-	VkDescriptorSetLayoutBinding uboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1, 1);
-	VkDescriptorSetLayoutBinding lboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1);
-	VkDescriptorSetLayoutBinding samplerLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1);
+void InstancedSceneObject::SetupDescriptor() {
+	descriptor = renderer->GetVulkanDescriptor();
 
-	std::vector<VkDescriptorSetLayoutBinding> bindings = { cboLayoutBinding, uboLayoutBinding, lboLayoutBinding, samplerLayoutBinding };
-	VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
+	auto m_bindings = renderer->GetGloablBindings();
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1));
+	descriptor->SetupLayout(m_bindings);
 
-	if (vkCreateDescriptorSetLayout(renderer->device.device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create descriptor set layout!");
-	}
+	auto poolSizes = renderer->GetGlobalPoolSize();
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	descriptor->SetupPool(poolSizes);
 
-	//setup pool
-	std::vector<VkDescriptorPoolSize> poolSizes;
-	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	m_descriptorSet = descriptor->CreateDescriptorSet();
 
-	VkDescriptorPoolCreateInfo poolInfo = initializers::descriptorPoolCreateInfo(static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), 1);
+	auto writes = renderer->GetGlobalDescriptorUses();
+	writes.push_back(DescriptorUse(1, 1, uniformBuffer.resource));
+	writes.push_back(renderer->GetLightingDescriptorUses(2));
+	writes.push_back(DescriptorUse(3, 1, vulkanTexture.resource));
+	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
 
-	if (vkCreateDescriptorPool(renderer->device.device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create descriptor pool!");
-	}
+
+
+	////setup layout
+	//VkDescriptorSetLayoutBinding cboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1);
+	//VkDescriptorSetLayoutBinding uboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1, 1);
+	//VkDescriptorSetLayoutBinding lboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1);
+	//VkDescriptorSetLayoutBinding samplerLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1);
+	//
+	//std::vector<VkDescriptorSetLayoutBinding> bindings = { cboLayoutBinding, uboLayoutBinding, lboLayoutBinding, samplerLayoutBinding };
+	//VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
+	//
+	//if (vkCreateDescriptorSetLayout(renderer->device.device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+	//	throw std::runtime_error("failed to create descriptor set layout!");
+	//}
+	//
+	////setup pool
+	//std::vector<VkDescriptorPoolSize> poolSizes;
+	//poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	//poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	//poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	//poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+
+	//VkDescriptorPoolCreateInfo poolInfo = initializers::descriptorPoolCreateInfo(static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), 1);
+	//
+	//if (vkCreateDescriptorPool(renderer->device.device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+	//	throw std::runtime_error("failed to create descriptor pool!");
+	//}
 
 	//setup descriptor set
-	VkDescriptorSetLayout layouts[] = { descriptorSetLayout };
-	VkDescriptorSetAllocateInfo allocInfo = initializers::descriptorSetAllocateInfo(descriptorPool, layouts, 1);
+	//VkDescriptorSetLayout layouts[] = { descriptorSetLayout };
+	//VkDescriptorSetAllocateInfo allocInfo = initializers::descriptorSetAllocateInfo(descriptorPool, layouts, 1);
+	//
+	//if (vkAllocateDescriptorSets(renderer->device.device, &allocInfo, &descriptorSet) != VK_SUCCESS) {
+	//	throw std::runtime_error("failed to allocate descriptor set!");
+	//}
 
-	if (vkAllocateDescriptorSets(renderer->device.device, &allocInfo, &descriptorSet) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate descriptor set!");
-	}
-
-	uniformBuffer.setupDescriptor();
-
-	std::vector<VkWriteDescriptorSet> descriptorWrites;
-	descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &global.descriptor, 1));
-	descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &uniformBuffer.descriptor, 1));
-	descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lighting.descriptor, 1));
-	descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &vulkanTexture.descriptor, 1));
-
-	vkUpdateDescriptorSets(renderer->device.device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	//uniformBuffer.setupDescriptor();
+	//
+	//std::vector<VkWriteDescriptorSet> descriptorWrites;
+	//descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &global.descriptor, 1));
+	//descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &uniformBuffer.descriptor, 1));
+	//descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lighting.descriptor, 1));
+	//descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &vulkanTexture.descriptor, 1));
+	//
+	//vkUpdateDescriptorSets(renderer->device.device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
 void InstancedSceneObject::SetupPipeline()
@@ -141,7 +168,9 @@ void InstancedSceneObject::SetupPipeline()
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
 	pipeMan.SetColorBlending(mvp, 1, &mvp->pco.colorBlendAttachment);
-	pipeMan.SetDescriptorSetLayout(mvp, { &descriptorSetLayout }, 1);
+
+	VkDescriptorSetLayout layout = descriptor->GetLayout();
+	pipeMan.SetDescriptorSetLayout(mvp, &layout , 1);
 
 
 
@@ -213,53 +242,60 @@ void InstancedSceneObject::AddInstances(std::vector<glm::vec3> positions) {
 		instancesData.push_back(id);
 	}
 
-	instanceBuffer.size = instancesData.size() * sizeof(InstanceData);
+	size_t instanceBufferSize = instancesData.size() * sizeof(InstanceData);
 
 	// Staging
 	// Instanced data is static, copy to device local memory 
 	// This results in better performance
 
-	struct {
-		VkDeviceMemory memory;
-		VkBuffer buffer;
-	} stagingBuffer;
+	//struct {
+	//	VkDeviceMemory memory;
+	//	VkBuffer buffer;
+	//} stagingBuffer;
 
-	VK_CHECK_RESULT(renderer->device.createBuffer(
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		instanceBuffer.size,
-		&stagingBuffer.buffer,
-		&stagingBuffer.memory,
-		instancesData.data()));
+	VulkanBufferUniform stagingBuffer;
+	stagingBuffer.CreateStagingUniformBuffer(renderer->device, instancesData.data(), instanceBufferSize);
 
-	VK_CHECK_RESULT(renderer->device.createBuffer(
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		instanceBuffer.size,
-		&instanceBuffer.buffer,
-		&instanceBuffer.memory));
+	//VK_CHECK_RESULT(renderer->device.createBuffer(
+	//	VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+	//	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+	//	instanceBuffer.size,
+	//	&stagingBuffer.buffer,
+	//	&stagingBuffer.memory,
+	//	instancesData.data()));
+
+	//VK_CHECK_RESULT(renderer->device.createBuffer(
+	//	VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+	//	VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+	//	instanceBuffer.size,
+	//	&instanceBuffer.buffer,
+	//	&instanceBuffer.memory));
 
 	// Copy to staging buffer
-	VkCommandBuffer copyCmd = renderer->device.createCommandBuffer(renderer->device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	//VkCommandBuffer copyCmd = renderer->device.createCommandBuffer(renderer->device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	auto copyCmd = renderer->device.GetTransferCommandBuffer();
 
 	VkBufferCopy copyRegion = {};
-	copyRegion.size = instanceBuffer.size;
+	copyRegion.size = instanceBufferSize;
 	vkCmdCopyBuffer(
 		copyCmd,
-		stagingBuffer.buffer,
-		instanceBuffer.buffer,
+		stagingBuffer.buffer.buffer,
+		instanceBuffer.buffer.buffer,
 		1,
 		&copyRegion);
 
-	renderer->device.flushCommandBuffer(copyCmd, renderer->device.graphics_queue, true);
-
-	instanceBuffer.descriptor.range = instanceBuffer.size;
-	instanceBuffer.descriptor.buffer = instanceBuffer.buffer;
-	instanceBuffer.descriptor.offset = 0;
+	renderer->device.SubmitTransferCommandBuffer();
+	//renderer->device.flushCommandBuffer(copyCmd, renderer->device.graphics_queue, true);
+	
+	instanceBuffer.resource.FillResource(instanceBuffer.buffer.buffer, 0, instanceBufferSize);
+	//instanceBuffer.descriptor.range = instanceBuffer.size;
+	//instanceBuffer.descriptor.buffer = instanceBuffer.buffer;
+	//instanceBuffer.descriptor.offset = 0;
 
 	// Destroy staging resources
-	vkDestroyBuffer(renderer->device.device, stagingBuffer.buffer, nullptr);
-	vkFreeMemory(renderer->device.device, stagingBuffer.memory, nullptr);
+	//vkDestroyBuffer(renderer->device.device, stagingBuffer.buffer, nullptr);
+	//vkFreeMemory(renderer->device.device, stagingBuffer.memory, nullptr);
+	stagingBuffer.CleanBuffer(renderer->device);
 }
 
 void InstancedSceneObject::UpdateUniformBuffer()
@@ -281,14 +317,16 @@ void InstancedSceneObject::WriteToCommandBuffer(VkCommandBuffer commandBuffer, b
 	VkDeviceSize offsets[] = { 0 };
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(0));
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 0, 1, &descriptorSet, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 0, 1, &m_descriptorSet.set, 0, nullptr);
 
+	
+	//vulkanModel.BindModel(commandBuffer);
 	// Binding point 0 : Mesh vertex buffer
-	vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &vulkanModel.vmaBufferVertex, offsets);
+	vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &vulkanModel.vmaVertices.buffer.buffer, offsets);
 	// Binding point 1 : Instance data buffer
-	vkCmdBindVertexBuffers(commandBuffer, INSTANCE_BUFFER_BIND_ID, 1, &instanceBuffer.buffer, offsets);
+	vkCmdBindVertexBuffers(commandBuffer, INSTANCE_BUFFER_BIND_ID, 1, &instanceBuffer.buffer.buffer, offsets);
 
-	vkCmdBindIndexBuffer(commandBuffer, vulkanModel.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(commandBuffer, vulkanModel.vmaIndicies.buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(vulkanModel.indexCount), 16, 0, 0, 0);
 
 }

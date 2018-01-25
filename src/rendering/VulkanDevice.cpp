@@ -113,8 +113,8 @@ void VulkanDevice::CreateVulkanAllocator()
 
 }
 
-void VulkanDevice::VmaMapMemory(VmaBuffer& buffer, void* pData) {
-	vmaMapMemory(allocator, buffer.allocation, &pData);
+void VulkanDevice::VmaMapMemory(VmaBuffer& buffer, void** pData) {
+	vmaMapMemory(allocator, buffer.allocation, pData);
 
 }
 
@@ -122,17 +122,22 @@ void VulkanDevice::VmaUnmapMemory(VmaBuffer& buffer) {
 	vmaUnmapMemory(allocator, buffer.allocation);
 }
 
-void VulkanDevice::VmaMapAndCopy(VmaBuffer& buffer, VkDeviceSize size, void* srcData) {
-	void* dstData = 0;
-	vmaMapMemory(allocator, buffer.allocation, &dstData);
-	memcpy(dstData, srcData, size);
-	vmaUnmapMemory(allocator, buffer.allocation);
+void VulkanDevice::CreateUniformBufferMapped(VmaBuffer& buffer, VkDeviceSize bufferSize) {
+	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+	bufferInfo.size = bufferSize;
+	bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+	VmaAllocationCreateInfo allocInfo = {};
+	allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+	allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+	
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
 }
 
 void VulkanDevice::CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize) {
 	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 	bufferInfo.size = bufferSize;
-	bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 	
 	VmaAllocationCreateInfo allocInfo = {};
 	allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
@@ -140,20 +145,21 @@ void VulkanDevice::CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSiz
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
 }
 
-void VulkanDevice::CreateStagingUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize) {
+void VulkanDevice::CreateStagingUniformBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize) {
 	VkBufferCreateInfo bufferInfo = initializers::bufferCreateInfo();
 	bufferInfo.size = bufferSize;
 	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
 	VmaAllocationCreateInfo allocInfo = {};
 	allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+	allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+
+	memcpy(buffer.allocationInfo.pMappedData, data, bufferSize);
 }
 
-
-
-void VulkanDevice::CreateMeshBufferVertex(VkBuffer* buffer, VmaAllocation* allocation, VkDeviceSize bufferSize) {
+void VulkanDevice::CreateMeshBufferVertex(VmaBuffer& buffer, VkDeviceSize bufferSize) {
 	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 	bufferInfo.size = bufferSize;
 	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -161,10 +167,10 @@ void VulkanDevice::CreateMeshBufferVertex(VkBuffer* buffer, VmaAllocation* alloc
 	VmaAllocationCreateInfo allocInfo = {};
 	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, buffer, allocation, nullptr));
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
 }
 
-void VulkanDevice::CreateMeshBufferIndex(VkBuffer* buffer, VmaAllocation* allocation, VkDeviceSize bufferSize) {
+void VulkanDevice::CreateMeshBufferIndex(VmaBuffer& buffer, VkDeviceSize bufferSize) {
 	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 	bufferInfo.size = bufferSize;
 	bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -172,10 +178,10 @@ void VulkanDevice::CreateMeshBufferIndex(VkBuffer* buffer, VmaAllocation* alloca
 	VmaAllocationCreateInfo allocInfo = {};
 	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, buffer, allocation, nullptr));
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
 }
 
-void VulkanDevice::CreateMeshStagingBuffer(VkBuffer* buffer, VmaAllocation* allocation, void* data, VkDeviceSize bufferSize) {
+void VulkanDevice::CreateMeshStagingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize) {
 	VkBufferCreateInfo bufferInfo = initializers::bufferCreateInfo();
 	bufferInfo.size = bufferSize;
 	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -183,12 +189,10 @@ void VulkanDevice::CreateMeshStagingBuffer(VkBuffer* buffer, VmaAllocation* allo
 	VmaAllocationCreateInfo allocCreateInfo = {};
 	allocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 	allocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-	
-	VmaAllocationInfo allocInfo = {};
 
-	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocCreateInfo, buffer, allocation, &allocInfo));
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocCreateInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
 
-	memcpy(allocInfo.pMappedData, data, bufferSize);
+	memcpy(buffer.allocationInfo.pMappedData, data, bufferSize);
 }
 
 void VulkanDevice::DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation) {
@@ -248,45 +252,45 @@ void VulkanDevice::DestroyVmaAllocatedImage(VmaImage& image) {
 *
 * @return VK_SUCCESS if buffer handle and memory have been created and (optionally passed) data has been copied
 */
-VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, VkBuffer *buffer, VkDeviceMemory *memory, void *data)
-{
-	// Create the buffer handle
-	VkBufferCreateInfo bufferCreateInfo = initializers::bufferCreateInfo(usageFlags, size);
-	bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	VK_CHECK_RESULT(vkCreateBuffer(device, &bufferCreateInfo, nullptr, buffer));
-
-	// Create the memory backing up the buffer handle
-	VkMemoryRequirements memReqs;
-	VkMemoryAllocateInfo memAlloc = initializers::memoryAllocateInfo();
-	vkGetBufferMemoryRequirements(device, *buffer, &memReqs);
-	memAlloc.allocationSize = memReqs.size;
-	// Find a memory type index that fits the properties of the buffer
-	memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
-	VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, memory));
-
-	// If a pointer to the buffer data has been passed, map the buffer and copy over the data
-	if (data != nullptr)
-	{
-		void *mapped;
-		VK_CHECK_RESULT(vkMapMemory(device, *memory, 0, size, 0, &mapped));
-		memcpy(mapped, data, size);
-		// If host coherency hasn't been requested, do a manual flush to make writes visible
-		if ((memoryPropertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
-		{
-			VkMappedMemoryRange mappedRange = initializers::mappedMemoryRange();
-			mappedRange.memory = *memory;
-			mappedRange.offset = 0;
-			mappedRange.size = size;
-			vkFlushMappedMemoryRanges(device, 1, &mappedRange);
-		}
-		vkUnmapMemory(device, *memory);
-	}
-
-	// Attach the memory to the buffer object
-	VK_CHECK_RESULT(vkBindBufferMemory(device, *buffer, *memory, 0));
-
-	return VK_SUCCESS;
-}
+//VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, VkBuffer *buffer, VkDeviceMemory *memory, void *data)
+//{
+//	// Create the buffer handle
+//	VkBufferCreateInfo bufferCreateInfo = initializers::bufferCreateInfo(usageFlags, size);
+//	bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+//	VK_CHECK_RESULT(vkCreateBuffer(device, &bufferCreateInfo, nullptr, buffer));
+//
+//	// Create the memory backing up the buffer handle
+//	VkMemoryRequirements memReqs;
+//	VkMemoryAllocateInfo memAlloc = initializers::memoryAllocateInfo();
+//	vkGetBufferMemoryRequirements(device, *buffer, &memReqs);
+//	memAlloc.allocationSize = memReqs.size;
+//	// Find a memory type index that fits the properties of the buffer
+//	memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
+//	VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, memory));
+//
+//	// If a pointer to the buffer data has been passed, map the buffer and copy over the data
+//	if (data != nullptr)
+//	{
+//		void *mapped;
+//		VK_CHECK_RESULT(vkMapMemory(device, *memory, 0, size, 0, &mapped));
+//		memcpy(mapped, data, size);
+//		// If host coherency hasn't been requested, do a manual flush to make writes visible
+//		if ((memoryPropertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
+//		{
+//			VkMappedMemoryRange mappedRange = initializers::mappedMemoryRange();
+//			mappedRange.memory = *memory;
+//			mappedRange.offset = 0;
+//			mappedRange.size = size;
+//			vkFlushMappedMemoryRanges(device, 1, &mappedRange);
+//		}
+//		vkUnmapMemory(device, *memory);
+//	}
+//
+//	// Attach the memory to the buffer object
+//	VK_CHECK_RESULT(vkBindBufferMemory(device, *buffer, *memory, 0));
+//
+//	return VK_SUCCESS;
+//}
 
 /**
 * Create a buffer on the device
@@ -299,43 +303,43 @@ VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPrope
 *
 * @return VK_SUCCESS if buffer handle and memory have been created and (optionally passed) data has been copied
 */
-VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VulkanBuffer *buffer, VkDeviceSize size, void *data)
-{
-	buffer->device = device;
-
-	// Create the buffer handle
-	VkBufferCreateInfo bufferCreateInfo = initializers::bufferCreateInfo(usageFlags, size);
-	VK_CHECK_RESULT(vkCreateBuffer(device, &bufferCreateInfo, nullptr, &buffer->buffer));
-
-	// Create the memory backing up the buffer handle
-	VkMemoryRequirements memReqs;
-	vkGetBufferMemoryRequirements(device, buffer->buffer, &memReqs);
-
-	VkMemoryAllocateInfo memAlloc = initializers::memoryAllocateInfo();
-	memAlloc.allocationSize = memReqs.size;
-	// Find a memory type index that fits the properties of the buffer
-	memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
-	VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &buffer->bufferMemory));
-
-	buffer->alignment = memReqs.alignment;
-	buffer->size = memAlloc.allocationSize;
-	buffer->usageFlags = usageFlags;
-	buffer->memoryPropertyFlags = memoryPropertyFlags;
-
-	// If a pointer to the buffer data has been passed, map the buffer and copy over the data
-	if (data != nullptr)
-	{
-		VK_CHECK_RESULT(buffer->map(device));
-		memcpy(buffer->mapped, data, size);
-		buffer->unmap();
-	}
-
-	// Initialize a default descriptor that covers the whole buffer size
-	buffer->setupDescriptor();
-
-	// Attach the memory to the buffer object
-	return buffer->bind();
-}
+//VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VulkanBuffer *buffer, VkDeviceSize size, void *data)
+//{
+//	buffer->device = device;
+//
+//	// Create the buffer handle
+//	VkBufferCreateInfo bufferCreateInfo = initializers::bufferCreateInfo(usageFlags, size);
+//	VK_CHECK_RESULT(vkCreateBuffer(device, &bufferCreateInfo, nullptr, &buffer->buffer));
+//
+//	// Create the memory backing up the buffer handle
+//	VkMemoryRequirements memReqs;
+//	vkGetBufferMemoryRequirements(device, buffer->buffer, &memReqs);
+//
+//	VkMemoryAllocateInfo memAlloc = initializers::memoryAllocateInfo();
+//	memAlloc.allocationSize = memReqs.size;
+//	// Find a memory type index that fits the properties of the buffer
+//	memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
+//	VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &buffer->bufferMemory));
+//
+//	buffer->alignment = memReqs.alignment;
+//	buffer->size = memAlloc.allocationSize;
+//	buffer->usageFlags = usageFlags;
+//	buffer->memoryPropertyFlags = memoryPropertyFlags;
+//
+//	// If a pointer to the buffer data has been passed, map the buffer and copy over the data
+//	if (data != nullptr)
+//	{
+//		VK_CHECK_RESULT(buffer->map(device));
+//		memcpy(buffer->mapped, data, size);
+//		buffer->unmap();
+//	}
+//
+//	// Initialize a default descriptor that covers the whole buffer size
+//	buffer->setupDescriptor();
+//
+//	// Attach the memory to the buffer object
+//	return buffer->bind();
+//}
 
 /**
 * Get the index of a memory type that has all the requested property bits set

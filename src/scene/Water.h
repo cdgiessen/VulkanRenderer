@@ -4,6 +4,7 @@
 #include "../rendering/VulkanRenderer.hpp"
 #include "../rendering/VulkanModel.hpp"
 #include "../rendering/VulkanTexture.hpp"
+#include "../rendering/VulkanDescriptor.hpp"
 
 #include "../resources/Mesh.h"
 #include "../resources/Texture.h"
@@ -20,9 +21,8 @@ public:
 
 	std::shared_ptr<ManagedVulkanPipeline> mvp;
 
-	VkDescriptorSetLayout descriptorSetLayout;
-	VkDescriptorPool descriptorPool;
-	VkDescriptorSet descriptorSet;
+	std::shared_ptr<VulkanDescriptor> descriptor;
+	DescriptorSet m_descriptorSet;
 
 	std::shared_ptr<Mesh> WaterMesh;
 	VulkanModel WaterModel;
@@ -31,25 +31,25 @@ public:
 	VulkanTexture2D WaterVulkanTexture;
 
 	ModelBufferObject modelUniformObject;
-	VulkanBuffer modelUniformBuffer;
+	VulkanBufferUniform modelUniformBuffer;
 
 	std::vector<VkCommandBuffer> commandBuffers;
 
 	Water(int numCells, float posX, float posY, float sizeX, float sizeY);
 	~Water();
 
-	void InitWater(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting);
-	void ReinitWater(std::shared_ptr<VulkanRenderer> renderer);
+	void InitWater(std::shared_ptr<VulkanRenderer> renderer);
 	void CleanUp();
-	void UpdateUniformBuffer(float time, glm::mat4 view);
+	
+	//void UpdateUniformBuffer(float time, glm::mat4 view);
 
 	void SetupUniformBuffer();
 	void SetupImage();
 	void SetupModel();
 	void SetupPipeline();
 
-	void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
+	void SetupDescriptor();
 
-	void BuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass);
-	void RebuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass);
+	//void BuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass);
+	//void RebuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass);
 };

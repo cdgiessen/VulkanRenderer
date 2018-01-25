@@ -9,8 +9,7 @@
 #include "../core/Logger.h"
 
 VulkanRenderer::VulkanRenderer(bool validationLayer, std::shared_ptr<Scene> scene) 
-	: device(validationLayer), vulkanSwapChain(device), shaderManager(device), pipelineManager(device), scene(scene), textureManager(device),
-	globalVariableBufResource(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER), lightsResource(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+	: device(validationLayer), vulkanSwapChain(device), shaderManager(device), pipelineManager(device), scene(scene), textureManager(device)
 {
 }
 
@@ -51,9 +50,8 @@ void VulkanRenderer::UpdateGlobalRenderResources(GlobalVariableUniformBuffer glo
 	//device.VmaMapMemory(lightsInfoBuffer, &data);
 	//memcpy(data, lightData.data(), sizeof(PointLight) * lightData.size());
 	//device.VmaUnmapMemory(lightsInfoBuffer);
-
-	device.VmaMapAndCopy(globalVariableBuffer, sizeof(GlobalVariableUniformBuffer), &globalData);
-	device.VmaMapAndCopy(lightsInfoBuffer, sizeof(PointLight) * lightData.size(), lightData.data());
+	globalVariableBuffer.CopyToBuffer(device, &globalData, sizeof(GlobalVariableUniformBuffer));
+	pointLightsBuffer.CopyToBuffer(device, lightData.data(), lightData.size());
 }
 
 void VulkanRenderer::RenderFrame() {
@@ -65,8 +63,8 @@ void VulkanRenderer::RenderFrame() {
 }
 
 void VulkanRenderer::CleanVulkanResources() {
-	device.DestroyVmaAllocatedBuffer(globalVariableBuffer);
-	device.DestroyVmaAllocatedBuffer(lightsInfoBuffer);
+	globalVariableBuffer.CleanBuffer(device);
+	pointLightsBuffer.CleanBuffer(device);
 
 	for (auto descriptor : descriptors)
 		descriptor->CleanUpResources();
@@ -380,12 +378,8 @@ void VulkanRenderer::SubmitFrame()
 }
 
 void VulkanRenderer::PrepareResources() {
-	device.CreateUniformBuffer(globalVariableBuffer, sizeof(GlobalVariableUniformBuffer));
-	globalVariableBufResource.FillResource(globalVariableBuffer.buffer, 0, sizeof(GlobalVariableUniformBuffer));
-
-	device.CreateUniformBuffer(lightsInfoBuffer, sizeof(PointLight) * 5);
-	lightsResource.FillResource(lightsInfoBuffer.buffer, 0, sizeof(PointLight)*5);
-
+	globalVariableBuffer.CreateUniformBuffer(device, sizeof(GlobalVariableUniformBuffer));
+	pointLightsBuffer.CreateUniformBuffer(device, sizeof(PointLight) * 5);
 
 }
 
@@ -398,23 +392,29 @@ std::shared_ptr<VulkanDescriptor> VulkanRenderer::GetVulkanDescriptor() {
 
 std::vector<VkDescriptorSetLayoutBinding> VulkanRenderer::GetGloablBindings() {
 	std::vector<VkDescriptorSetLayoutBinding> bindings;
-	bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
+	bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 0, 1));
 
 	return bindings;
 }
 
-std::vector<DescriptorPoolSize> VulkanRenderer::GetGlobalPoolSize() {
+std::vector<DescriptorPoolSize> VulkanRenderer::GetGlobalPoolSize(int poolSize) {
 	std::vector<DescriptorPoolSize> poolSizes;
-	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, poolSize));
 
 	return poolSizes;
 }
 
 std::vector<DescriptorUse> VulkanRenderer::GetGlobalDescriptorUses() {
 	std::vector<DescriptorUse> writes;
-	writes.push_back(DescriptorUse(0, 1, globalVariableBufResource));
+	DescriptorUse use = DescriptorUse(0, 1, globalVariableBuffer.resource);
+	writes.push_back(use);
 
 	return writes;
+}
+
+DescriptorUse VulkanRenderer::GetLightingDescriptorUses(uint32_t binding) {
+	DescriptorUse use = DescriptorUse(binding, 1, pointLightsBuffer.resource);
+	return use;
 }
 
 void InsertImageMemoryBarrier(

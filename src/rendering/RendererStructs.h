@@ -19,18 +19,6 @@ struct GlobalVariableUniformBuffer {
 	float time;
 };
 
-struct VmaBuffer {
-	VkBuffer buffer = VK_NULL_HANDLE;
-	VmaAllocation allocation = VK_NULL_HANDLE;
-	VmaAllocationInfo allocationInfo;
-};
-
-struct VmaImage {
-	VkImage image = VK_NULL_HANDLE;
-	VmaAllocation allocation = VK_NULL_HANDLE;
-	VmaAllocationInfo allocationInfo;
-};
-
 //model specific data (position, normal matrix)
 struct ModelBufferObject {
 	glm::mat4 model;

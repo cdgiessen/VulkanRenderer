@@ -22,11 +22,9 @@ public:
 	TerrainManager(NewNodeGraph::TerGenNodeGraph& nodeGraph);
 	~TerrainManager();
 
-	void GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
-		VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera);
+	void GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera);
 
-	void UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
-		VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager);
+	void UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager);
 
 	void RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe);
 

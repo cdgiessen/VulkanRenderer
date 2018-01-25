@@ -60,7 +60,7 @@ public:
 
 struct TerrainQuadData {
 	TerrainQuad terrainQuad;
-	VkDescriptorSet descriptorSet;
+	DescriptorSet descriptorSet;
 	VkDeviceMemory vertexOffset;
 	VkDeviceMemory indexOffset;
 	TerrainMeshVertices vertices;
@@ -102,14 +102,10 @@ public:
 
 	std::shared_ptr<ManagedVulkanPipeline> mvp;
 
-	VkDescriptorSetLayout descriptorSetLayout;
-	VkDescriptorPool descriptorPool;
+	std::shared_ptr<VulkanDescriptor> descriptor;
 
-	VulkanBuffer vertexBuffer;
-	VulkanBuffer indexBuffer;
-
-	VkBuffer vmaBufferVertex;
-	VkBuffer vmaBufferIndex;
+	VulkanBufferVertex vertexBuffer;
+	VulkanBufferIndex indexBuffer;
 
 	std::shared_ptr<Texture> terrainSplatMap;
 	VulkanTexture2D terrainVulkanSplatMap;
@@ -117,7 +113,7 @@ public:
 	std::shared_ptr<TextureArray> terrainTextureArray;
 	VulkanTexture2DArray terrainVulkanTextureArray;
 
-	VulkanBuffer modelUniformBuffer;
+	VulkanBufferUniform modelUniformBuffer;
 
 	std::shared_ptr<Texture> maillerFace;
 	std::unique_ptr<NewNodeGraph::TerGenGraphUser> fastTerrainUser;
@@ -134,9 +130,9 @@ public:
 		glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
 	~Terrain();
 
-	void InitTerrain(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting, glm::vec3 cameraPos);
+	void InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos);
 
-	void UpdateTerrain(glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	void UpdateTerrain(glm::vec3 viewerPos);
 	void DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], std::shared_ptr<Terrain> curTerrain, bool wireframe);
 	void BuildCommandBuffer(std::shared_ptr<Terrain> curTerrain, bool ifWireframe);
 	void CleanUp();
@@ -147,11 +143,11 @@ public:
 private:
 
 	std::shared_ptr<TerrainQuadData> InitTerrainQuad(std::shared_ptr<TerrainQuadData> q, glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,
-		int level, VulkanBuffer &gbo, VulkanBuffer &lbo);
+		int level);
 	std::shared_ptr<TerrainQuadData> InitTerrainQuadFromParent(std::shared_ptr<TerrainQuadData> parent, std::shared_ptr<TerrainQuadData> q, Corner_Enum corner,
-		glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, VulkanBuffer &gbo, VulkanBuffer &lbo, glm::i32vec2 subDivPos);
+		glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, glm::i32vec2 subDivPos);
 
-	bool UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	bool UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3 viewerPos);
 
 	void SetupMeshbuffers();
 	void SetupUniformBuffer();
@@ -161,13 +157,13 @@ private:
 
 	void SetupDescriptorLayoutAndPool();
 
-	void UpdateModelBuffer(VulkanBuffer &gbo, VulkanBuffer &lbo);
+	void UpdateModelBuffer();
 
 	void UploadMeshBuffer();
 	void UpdateMeshBuffer();
 
 	void UpdateUniformBuffer(float time);
-	void SubdivideTerrain(std::shared_ptr<TerrainQuadData> quad, glm::vec3 viewerPos, VulkanBuffer &gbo, VulkanBuffer &lbo);
+	void SubdivideTerrain(std::shared_ptr<TerrainQuadData> quad, glm::vec3 viewerPos);
 	void UnSubdivide(std::shared_ptr<TerrainQuadData> quad);
 	void RecursiveUnSubdivide(std::shared_ptr<TerrainQuadData> quad);
 

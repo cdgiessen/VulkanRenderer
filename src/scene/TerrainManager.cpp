@@ -25,8 +25,7 @@ TerrainManager::~TerrainManager()
 	Log::Debug << "terrain manager deleted\n";
 }
 
-void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
-	VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera) {
+void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera) {
 	this->renderer = renderer;
 
 	int numCells = 64;
@@ -49,7 +48,7 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 
 	//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	for (auto ter : terrains) {
-		ter->InitTerrain(renderer, globalVariableBuffer, lightsInfoBuffer, camera->Position);
+		ter->InitTerrain(renderer, camera->Position);
 	}
 	//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
 	
@@ -59,7 +58,7 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 				(64, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth);
 			
 			water->WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
-			water->InitWater(renderer, globalVariableBuffer, lightsInfoBuffer);
+			water->InitWater(renderer);
 			
 			waters.push_back(water);
 		}
@@ -68,23 +67,18 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 	recreateTerrain = false;
 }
 
-void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer globalVariableBuffer,
-	VulkanBuffer lightsInfoBuffer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager) {
+void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager) {
 	this->renderer = renderer;
 	if (recreateTerrain) {
 		CleanUpTerrain();
-		GenerateTerrain(resourceMan, renderer, globalVariableBuffer, lightsInfoBuffer, camera);
-	}
-
-	for (auto water : waters) {
-		water->UpdateUniformBuffer((float)timeManager->GetRunningTime(), camera->GetViewMatrix());
+		GenerateTerrain(resourceMan, renderer, camera);
 	}
 
 	for (auto ter : terrains) {
 		terrainUpdateTimer.StartTimer();
 		//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-		ter->UpdateTerrain(camera->Position, globalVariableBuffer, lightsInfoBuffer);
+		ter->UpdateTerrain(camera->Position);
 
 		//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
 		terrainUpdateTimer.EndTimer();
@@ -105,11 +99,13 @@ void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe
 	//water
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->mvp->pipelines->at(1) : waters.at(0)->mvp->pipelines->at(0));
 	//vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->wireframe : waters.at(0)->seascapePipeline);
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &waters.at(0)->WaterModel.vmaBufferVertex, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, waters.at(0)->WaterModel.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
+	
+	waters.at(0)->WaterModel.BindModel(commandBuffer);
+	//vkCmdBindVertexBuffers(commandBuffer, 0, 1, &waters.at(0)->WaterModel.vmaBufferVertex, offsets);
+	//vkCmdBindIndexBuffer(commandBuffer, waters.at(0)->WaterModel.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
 
 	for (auto water : waters) {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, water->mvp->layout, 0, 1, &water->descriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, water->mvp->layout, 0, 1, &water->m_descriptorSet.set, 0, nullptr);
 
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(water->WaterModel.indexCount), 1, 0, 0, 0);
 	}

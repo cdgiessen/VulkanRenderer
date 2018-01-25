@@ -8,7 +8,10 @@
 
 #include <vulkan/vulkan.h>
 
-//#include "VulkanDescriptor.hpp"
+#include "VulkanDevice.hpp"
+#include "VulkanDescriptor.hpp"
+
+
 
 
 /**
@@ -17,8 +20,55 @@
 */
 
 class VulkanBuffer {
+public:
+	VulkanBuffer();
+
+	void CleanBuffer(VulkanDevice& device);
+
+	void Map(VulkanDevice& device, void** pData);
+	void Unmap(VulkanDevice& device);
+
+	void CopyToBuffer(VulkanDevice& device, void* pData, VkDeviceSize size);
+
+	VmaBuffer buffer;
+	DescriptorResource resource;
+
+protected:
+	void SetupResource();
+
+	VkDeviceSize m_size;
+};
+
+class VulkanBufferUniform : public VulkanBuffer {
+public:
+	VulkanBufferUniform();
+	void CreateUniformBuffer(VulkanDevice& device, VkDeviceSize size);
+	void CreateStagingUniformBuffer(VulkanDevice& device, void* pData, VkDeviceSize size);
+
+};
+
+class VulkanBufferVertex : public VulkanBuffer {
+public:
+	VulkanBufferVertex();
+	void CreateVertexBuffer(VulkanDevice& device, uint32_t count);
+	void CreateStagingVertexBuffer(VulkanDevice& device, void* pData, uint32_t count);
+
+	void BindVertexBuffer(VkCommandBuffer cmdBuf);
+};
+
+class VulkanBufferIndex : public VulkanBuffer {
+public:
+	VulkanBufferIndex();
+	void CreateIndexBuffer(VulkanDevice& device, uint32_t count);
+	void CreateStagingIndexBuffer(VulkanDevice& device, void* pData, uint32_t count);
+
+	void BindIndexBuffer(VkCommandBuffer cmdBuf);
+
+};
 
 
+
+class VulkanBadBuffer {
 public:
 	VkDevice device;
 	VkBuffer buffer = VK_NULL_HANDLE;
@@ -34,10 +84,6 @@ public:
 	VkBufferUsageFlags usageFlags;
 	/** @brief Memory propertys flags to be filled by external source at buffer creation (to query at some later point) */
 	VkMemoryPropertyFlags memoryPropertyFlags;
-
-	//VulkanBuffer() : resource(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-	//
-	//}
 
 	void cleanBuffer() {
 		if (buffer)
@@ -101,7 +147,6 @@ public:
 		descriptor.offset = offset;
 		descriptor.buffer = buffer;
 		descriptor.range = size;
-		//resource.FillResource(buffer, offset, size);
 	}
 
 	/**

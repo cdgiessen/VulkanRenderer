@@ -2,14 +2,9 @@
 
 #include <vulkan/vulkan.h>
 #include "VulkanDevice.hpp"
-#include "RendererStructs.h"
 #include "VulkanDescriptor.hpp"
 
 #include "../resources/Texture.h"
-
-#include "../../third-party/stb_image/stb_image.h"
-
-#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 class VulkanTexture {
 public:

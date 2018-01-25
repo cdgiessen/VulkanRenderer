@@ -28,8 +28,6 @@ public:
 	void UpdateSceneGUI();
 	void CleanUpScene();
 
-	void CreateUniformBuffers();
-
 	std::shared_ptr<Camera> GetCamera();
 
 	bool drawNormals = false;
@@ -38,8 +36,6 @@ private:
 
 	std::shared_ptr<VulkanRenderer> renderer;
 
-	VulkanBuffer globalVariableBuffer;
-	VulkanBuffer lightsInfoBuffer;
 	std::vector<PointLight> pointLights;
 
 	std::vector<std::shared_ptr<GameObject>> gameObjects;

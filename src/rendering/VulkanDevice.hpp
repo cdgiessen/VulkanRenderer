@@ -11,19 +11,27 @@
 
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
-#include "../resources/Texture.h"
-
-#include "VulkanBuffer.hpp"
 #include "VulkanTools.h"
-#include "RendererStructs.h"
 
 const std::vector<const char*> VALIDATION_LAYERS = {
 	"VK_LAYER_LUNARG_standard_validation"
-	
+
 };
 
 const std::vector<const char*> DEVICE_EXTENSIONS = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
+struct VmaBuffer {
+	VkBuffer buffer = VK_NULL_HANDLE;
+	VmaAllocation allocation = VK_NULL_HANDLE;
+	VmaAllocationInfo allocationInfo;
+};
+
+struct VmaImage {
+	VkImage image = VK_NULL_HANDLE;
+	VmaAllocation allocation = VK_NULL_HANDLE;
+	VmaAllocationInfo allocationInfo;
 };
 
 class VulkanDevice {
@@ -73,17 +81,16 @@ public:
 
 	void CreateVulkanAllocator();
 
-	void VmaMapMemory(VmaBuffer& buffer, void* pData);
+	void VmaMapMemory(VmaBuffer& buffer, void** pData);
 	void VmaUnmapMemory(VmaBuffer& buffer);
 
-	void VmaMapAndCopy(VmaBuffer& buffer, VkDeviceSize size, void* pData);
+	void CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize); 
+	void CreateUniformBufferMapped(VmaBuffer& buffer, VkDeviceSize bufferSize);
+	void CreateStagingUniformBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
 
-	void CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
-	void CreateStagingUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
-
-	void CreateMeshBufferVertex(VkBuffer* buffer, VmaAllocation* allocation, VkDeviceSize bufferSize);
-	void CreateMeshBufferIndex(VkBuffer* buffer, VmaAllocation* allocation, VkDeviceSize bufferSize);
-	void CreateMeshStagingBuffer(VkBuffer* buffer, VmaAllocation* allocation, void* data, VkDeviceSize bufferSize);
+	void CreateMeshBufferVertex(VmaBuffer& buffer, VkDeviceSize bufferSize);
+	void CreateMeshBufferIndex(VmaBuffer& buffer, VkDeviceSize bufferSize);
+	void CreateMeshStagingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
 
 	void DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation);
 	void DestroyVmaAllocatedBuffer(VmaBuffer& buffer);
@@ -112,7 +119,7 @@ public:
 	*
 	* @return VK_SUCCESS if buffer handle and memory have been created and (optionally passed) data has been copied
 	*/
-	VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, VkBuffer *buffer, VkDeviceMemory *memory, void *data = nullptr);
+	//VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, VkBuffer *buffer, VkDeviceMemory *memory, void *data = nullptr);
 
 	/**
 	* Create a buffer on the device
@@ -125,7 +132,7 @@ public:
 	*
 	* @return VK_SUCCESS if buffer handle and memory have been created and (optionally passed) data has been copied
 	*/
-	VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VulkanBuffer *buffer, VkDeviceSize size, void *data = nullptr);
+	//VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VulkanBuffer *buffer, VkDeviceSize size, void *data = nullptr);
 
 	/**
 	* Get the index of a memory type that has all the requested property bits set

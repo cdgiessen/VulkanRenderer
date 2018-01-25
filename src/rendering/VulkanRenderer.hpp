@@ -7,8 +7,10 @@
 
 #include "VulkanTools.h"
 #include "RendererStructs.h"
-#include "VulkanDevice.hpp"
 #include "VulkanInitializers.hpp"
+
+#include "VulkanDevice.hpp"
+#include "VulkanBuffer.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanShader.hpp"
 #include "VulkanSwapChain.hpp"
@@ -56,8 +58,9 @@ public:
 
 	std::shared_ptr<VulkanDescriptor> GetVulkanDescriptor();
 	std::vector<VkDescriptorSetLayoutBinding> GetGloablBindings();
-	std::vector<DescriptorPoolSize> GetGlobalPoolSize();
+	std::vector<DescriptorPoolSize> GetGlobalPoolSize(int poolSize = 1);
 	std::vector<DescriptorUse> GetGlobalDescriptorUses();
+	DescriptorUse GetLightingDescriptorUses(uint32_t binding);
 
 	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat FindDepthFormat();
@@ -74,12 +77,10 @@ public:
 	VulkanTextureManager textureManager;
 
 	std::shared_ptr<Scene> scene;
-private:
 
-	VmaBuffer globalVariableBuffer;
-	DescriptorResource globalVariableBufResource;
-	VmaBuffer lightsInfoBuffer;
-	DescriptorResource lightsResource;
+private:
+	VulkanBufferUniform globalVariableBuffer;
+	VulkanBufferUniform pointLightsBuffer;
 
 	//uint32_t frameIndex = 1; // which frame of the swapchain it is on
 

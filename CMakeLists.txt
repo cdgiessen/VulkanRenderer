@@ -31,10 +31,11 @@ src/gui/NodeGraph.cpp
 src/gui/TerGenNodeGraph.cpp
 src/gui/ProcTerrainNodeGraph.cpp
 
+src/rendering/VulkanBuffer.cpp
 src/rendering/VulkanDevice.cpp
 src/rendering/VulkanDescriptor.cpp
-src/rendering/VulkanLargeBuffer.cpp
 src/rendering/VulkanPipeline.cpp
+src/rendering/VulkanModel.cpp
 src/rendering/VulkanRenderer.cpp
 src/rendering/VulkanShader.cpp
 src/rendering/VulkanSwapChain.cpp

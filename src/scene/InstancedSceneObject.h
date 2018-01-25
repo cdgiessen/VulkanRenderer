@@ -25,19 +25,19 @@ public:
 		float scale;
 	};
 	// Contains the instanced data
-	struct InstanceBuffer {
-		VkBuffer buffer = VK_NULL_HANDLE;
-		VkDeviceMemory memory = VK_NULL_HANDLE;
-		size_t size = 0;
-		VkDescriptorBufferInfo descriptor;
-	} instanceBuffer;
+	//struct InstanceBuffer {
+	//	VkBuffer buffer = VK_NULL_HANDLE;
+	//	VkDeviceMemory memory = VK_NULL_HANDLE;
+	//	size_t size = 0;
+	//	VkDescriptorBufferInfo descriptor;
+	//} instanceBuffer;
 
 
 
 	InstancedSceneObject();
 	~InstancedSceneObject();
 
-	void InitInstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting);
+	void InitInstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer);
 	void CleanUp();
 	void UpdateUniformBuffer();
 
@@ -49,7 +49,7 @@ public:
 	void SetupModel();
 	void SetupPipeline();
 
-	void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
+	void SetupDescriptor();
 
 	void AddInstances(std::vector<glm::vec3> positions);
 	//void InstancedSceneObject::RemoveInstance(std::vector<glm::vec3> positions);
@@ -60,9 +60,12 @@ public:
 
 	std::shared_ptr<ManagedVulkanPipeline> mvp;
 
-	VkDescriptorSetLayout descriptorSetLayout;
-	VkDescriptorPool descriptorPool;
-	VkDescriptorSet descriptorSet;
+	std::shared_ptr<VulkanDescriptor> descriptor;
+	DescriptorSet m_descriptorSet;
+
+	//VkDescriptorSetLayout descriptorSetLayout;
+	//VkDescriptorPool descriptorPool;
+	//VkDescriptorSet descriptorSet;
 
 	std::shared_ptr<Mesh> mesh;
 	VulkanModel vulkanModel;
@@ -73,6 +76,10 @@ public:
 	std::vector<InstanceData> instancesData;
 	std::vector<glm::vec3> modelPositions;
 	std::vector<ModelBufferObject> modelUniforms;
-	VulkanBuffer uniformBuffer;
-	int instanceCount;
+
+	VulkanBufferUniform uniformBuffer;
+	VulkanBufferUniform instanceBuffer;
+
+	int instanceCount = 0;
+	int maxInstanceCount = 256;
 };

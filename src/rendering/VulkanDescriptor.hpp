@@ -7,7 +7,8 @@
 
 #include <vulkan/vulkan.h>
 
-#include "VulkanDevice.hpp"
+// foward declarations
+class VulkanDevice;
 
 class DescriptorPoolSize {
 public:
@@ -57,7 +58,7 @@ public:
 	VulkanDescriptor(VulkanDevice& device);
 	
 	void SetupLayout(std::vector<VkDescriptorSetLayoutBinding> bindings);
-	void SetupPool(std::vector<DescriptorPoolSize> poolSizes);
+	void SetupPool(std::vector<DescriptorPoolSize> poolSizes, int maxSets = 1);
 	
 	void CleanUpResources();
 
@@ -65,7 +66,8 @@ public:
 
 	DescriptorSet CreateDescriptorSet();
 	void UpdateDescriptorSet(DescriptorSet set, std::vector<DescriptorUse> descriptors);
-	
+	void FreeDescriptorSet(DescriptorSet set);
+
 	VkDescriptorSetLayout GetLayout();
 
 private:

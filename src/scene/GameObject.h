@@ -10,6 +10,7 @@
 #include "../rendering/VulkanModel.hpp"
 #include "../rendering/VulkanRenderer.hpp"
 #include "../rendering/VulkanTexture.hpp"
+#include "../rendering/VulkanDescriptor.hpp"
 
 #include "../resources/Mesh.h"
 #include "../resources/Texture.h"
@@ -24,9 +25,8 @@ class GameObject
 
     std::shared_ptr<ManagedVulkanPipeline> mvp;
 
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkDescriptorPool descriptorPool;
-    VkDescriptorSet descriptorSet;
+	std::shared_ptr<VulkanDescriptor> descriptor;
+	DescriptorSet m_descriptorSet;
 
     std::shared_ptr<Mesh> gameObjectMesh;
     VulkanModel gameObjectModel;
@@ -35,9 +35,9 @@ class GameObject
     VulkanTexture2D gameObjectVulkanTexture;
 
     ModelBufferObject modelUniformObject;
-    VulkanBuffer modelUniformBuffer;
+    VulkanBufferUniform modelUniformBuffer;
 
-    void InitGameObject(std::shared_ptr<VulkanRenderer> renderer, VulkanBuffer &global, VulkanBuffer &lighting);
+    void InitGameObject(std::shared_ptr<VulkanRenderer> renderer);
     void CleanUp();
     void UpdateUniformBuffer(float time);
 
@@ -49,7 +49,7 @@ class GameObject
     void SetupModel();
     void SetupPipeline();
 
-    void SetupDescriptor(VulkanBuffer &global, VulkanBuffer &lighting);
+    void SetupDescriptor();
 
 	void Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNormals);
 };

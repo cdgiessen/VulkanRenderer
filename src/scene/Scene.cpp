@@ -17,7 +17,6 @@ Scene::~Scene()
 
 void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, NewNodeGraph::TerGenNodeGraph& graph) {
 	this->renderer = renderer;
-	renderer->PrepareDMACommandBuffer();
 
 	camera = std::make_shared< Camera>(glm::vec3(-2, 2, 0), glm::vec3(0, 1, 0), 0, -45);
 
@@ -28,12 +27,6 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	pointLights[3] = PointLight(glm::vec4(50, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 	pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 
-	CreateUniformBuffers();
-
-	//Setup buffer descriptors
-	globalVariableBuffer.setupDescriptor();
-	lightsInfoBuffer.setupDescriptor();
-
 	skybox = std::make_shared< Skybox>();
 	skybox->skyboxCubeMap = resourceMan->texManager.loadCubeMapFromFile("assets/Textures/Skybox/Skybox2", ".png");
 	skybox->model.loadFromMesh(createCube(), renderer->device, renderer->device.graphics_queue);
@@ -43,17 +36,17 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	cubeObject->LoadModel(createCube());
 	cubeObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/ColorGradientCube.png");
 	//cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
-	cubeObject->InitGameObject(renderer, globalVariableBuffer, lightsInfoBuffer);
+	cubeObject->InitGameObject(renderer);
 	gameObjects.push_back(cubeObject);
 
 
 	terrainManager = std::make_shared<TerrainManager>(graph);
-	terrainManager->GenerateTerrain(resourceMan, renderer, globalVariableBuffer, lightsInfoBuffer, camera);
+	terrainManager->GenerateTerrain(resourceMan, renderer, camera);
 
 	treesInstanced = std::make_shared<InstancedSceneObject>();
 	treesInstanced->LoadModel(createCube());
 	treesInstanced->texture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/grass.jpg");
-	treesInstanced->InitInstancedSceneObject(renderer, globalVariableBuffer, lightsInfoBuffer);
+	treesInstanced->InitInstancedSceneObject(renderer);
 	treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(20,0,10), glm::vec3(10,0,40), glm::vec3(10,0,-40), glm::vec3(100,0,40) });
 
 	rocksInstanced = std::make_shared<InstancedSceneObject>();
@@ -62,25 +55,6 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	//std::shared_ptr< gltf2::Asset> tree_test = std::make_shared<gltf2::Asset>();
 	//*tree_test = gltf2::load("Resources/Assets/tree_test.gltf");
 
-}
-
-void Scene::CreateUniformBuffers() {
-	renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, renderer->device.uniformBufferMemPropertyFlags,
-		&globalVariableBuffer, sizeof(GlobalVariableUniformBuffer));
-	renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, renderer->device.uniformBufferMemPropertyFlags,
-		&lightsInfoBuffer, sizeof(PointLight) * pointLights.size());
-
-	for (int i = 0; i < pointLights.size(); i++)
-	{
-		PointLight lbo;
-		lbo.lightPos = pointLights[i].lightPos;
-		lbo.color = pointLights[i].color; 
-		lbo.attenuation = pointLights[i].attenuation;
-
-		lightsInfoBuffer.map(renderer->device.device, sizeof(PointLight), i * sizeof(PointLight));
-		lightsInfoBuffer.copyTo(&lbo, sizeof(lbo));
-		lightsInfoBuffer.unmap();
-	}
 }
 
 void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<TimeManager> timeManager) {
@@ -98,10 +72,6 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 	cbo.proj[1][1] *= -1;
 	cbo.cameraDir = camera->Front;
 	cbo.time = (float)timeManager->GetRunningTime();
-
-	globalVariableBuffer.map(renderer->device.device);
-	globalVariableBuffer.copyTo(&cbo, sizeof(cbo));
-	globalVariableBuffer.unmap();
 	
 	for (auto obj : gameObjects) {
 		obj->UpdateUniformBuffer((float)timeManager->GetRunningTime());
@@ -109,7 +79,7 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 
 	//skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
 	//if(!Input::GetKey(GLFW_KEY_V))
-	terrainManager->UpdateTerrains(resourceMan, renderer, globalVariableBuffer, lightsInfoBuffer, camera, timeManager);
+	terrainManager->UpdateTerrains(resourceMan, renderer, camera, timeManager);
 
 	renderer->UpdateGlobalRenderResources(cbo, pointLights);
 }
@@ -129,8 +99,9 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->layout, 0, 1, &skybox->m_descriptorSet.set, 0, nullptr);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->pipelines->at(0));
 
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &skybox->model.vmaBufferVertex, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, skybox->model.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
+	skybox->model.BindModel(commandBuffer);
+	//vkCmdBindVertexBuffers(commandBuffer, 0, 1, &skybox->model.vmaBufferVertex, offsets);
+	//vkCmdBindIndexBuffer(commandBuffer, skybox->model.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(skybox->model.indexCount), 1, 0, 0, 0);
 
 }
@@ -148,10 +119,6 @@ void Scene::CleanUpScene() {
 
 	terrainManager->CleanUpTerrain();
 	treesInstanced->CleanUp();
-
-	globalVariableBuffer.cleanBuffer();
-	lightsInfoBuffer.cleanBuffer();
-
 
 }
 

@@ -1,8 +1,11 @@
 #include "VulkanTexture.hpp"
+
 #include "VulkanTools.h"
 #include "VulkanInitializers.hpp"
 
 #include "../core/Logger.h"
+
+#include "../../third-party/stb_image/stb_image.h"
 
 #include <algorithm>
 

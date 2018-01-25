@@ -1,9 +1,7 @@
 #include "VulkanDescriptor.hpp"
 
-
+#include "VulkanDevice.hpp"
 #include "../rendering/VulkanInitializers.hpp"
-#include <vulkan/vulkan.h>
-
 
 DescriptorPoolSize::DescriptorPoolSize(VkDescriptorType type, uint32_t count) : type(type), count(count) {
 };
@@ -81,7 +79,7 @@ void VulkanDescriptor::SetupLayout(std::vector<VkDescriptorSetLayoutBinding> bin
 
 }
 
-void VulkanDescriptor::SetupPool(std::vector<DescriptorPoolSize> poolSizes) {
+void VulkanDescriptor::SetupPool(std::vector<DescriptorPoolSize> poolSizes, int maxSets) {
 
 	std::vector<VkDescriptorPoolSize> poolMembers;
 	for (auto member : poolSizes) {
@@ -89,7 +87,9 @@ void VulkanDescriptor::SetupPool(std::vector<DescriptorPoolSize> poolSizes) {
 	}
 
 	VkDescriptorPoolCreateInfo poolInfo = initializers::descriptorPoolCreateInfo(
-		static_cast<uint32_t>(poolMembers.size()), poolMembers.data(), 1);
+		static_cast<uint32_t>(poolMembers.size()), poolMembers.data(), maxSets);
+
+	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
 	if (vkCreateDescriptorPool(device.device, &poolInfo, nullptr,
 		&pool) != VK_SUCCESS)
@@ -129,6 +129,11 @@ void VulkanDescriptor::UpdateDescriptorSet(DescriptorSet set, std::vector<Descri
 	vkUpdateDescriptorSets(device.device,
 		static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
+}
+
+void VulkanDescriptor::FreeDescriptorSet(DescriptorSet set) {
+
+	vkFreeDescriptorSets(device.device, pool, 1, &set.set);
 }
 
 VkDescriptorSetLayout VulkanDescriptor::GetLayout() {
