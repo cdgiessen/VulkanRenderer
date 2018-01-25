@@ -33,7 +33,7 @@ public:
 	VkSampler textureSampler = VK_NULL_HANDLE;
 	VkImageLayout textureImageLayout;
 
-	VkDescriptorImageInfo descriptor;
+	//VkDescriptorImageInfo descriptor;
 	DescriptorResource resource;
 
 };

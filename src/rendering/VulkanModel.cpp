@@ -44,8 +44,8 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device,
 	VulkanBufferVertex vertexStagingBuffer;
 	VulkanBufferIndex indexStagingBuffer;
 
-	vertexStagingBuffer.CreateStagingVertexBuffer(device, vertexBuffer.data(), (uint32_t)vertexBuffer.size());
-	indexStagingBuffer.CreateStagingIndexBuffer(device, indexBuffer.data(), (uint32_t)indexBuffer.size());
+	vertexStagingBuffer.CreateStagingVertexBuffer(device, vertexBuffer.data(), (uint32_t)vertexCount);
+	indexStagingBuffer.CreateStagingIndexBuffer(device, indexBuffer.data(), (uint32_t)indexCount);
 
 	VkCommandBuffer copyCmd = device.GetTransferCommandBuffer();
 

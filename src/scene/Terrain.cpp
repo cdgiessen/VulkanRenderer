@@ -237,8 +237,8 @@ void Terrain::SetupMeshbuffers() {
 
 	// Create device local target buffers
 	// Vertex buffer
-	vertexBuffer.CreateVertexBuffer(renderer->device, vBufferSize);
-	indexBuffer.CreateIndexBuffer(renderer->device, iBufferSize);
+	vertexBuffer.CreateVertexBuffer(renderer->device, maxNumQuads * vertCount);
+	indexBuffer.CreateIndexBuffer(renderer->device, maxNumQuads * indCount);
 
 	//VK_CHECK_RESULT(renderer->device.createBuffer(
 	//	VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -414,6 +414,8 @@ void Terrain::UpdateModelBuffer() {
 		//if (vkAllocateDescriptorSets(renderer->device.device, &allocInfoTerrain, &(*it)->descriptorSet) != VK_SUCCESS) {
 		//	throw std::runtime_error("failed to allocate descriptor set!");
 		//}
+
+		modelUniformBuffer.resource.FillResource(modelUniformBuffer.buffer.buffer, (it - quadHandles.begin()) * sizeof(ModelBufferObject), sizeof(ModelBufferObject));
 		(*it)->descriptorSet = descriptor->CreateDescriptorSet();
 
 		auto writes = renderer->GetGlobalDescriptorUses();
@@ -530,8 +532,8 @@ void Terrain::UpdateMeshBuffer() {
 		VulkanBufferVertex vertexStaging;
 		VulkanBufferIndex indexStaging;
 
-		vertexStaging.CreateStagingVertexBuffer(renderer->device, verts.data(), quadHandles.size() * vertCount);
-		indexStaging.CreateStagingIndexBuffer(renderer->device, inds.data(), quadHandles.size() * indCount);
+		vertexStaging.CreateStagingVertexBuffer(renderer->device, verts.data(), verts.size() * vertCount);
+		indexStaging.CreateStagingIndexBuffer(renderer->device, inds.data(), inds.size() * indCount);
 
 		//VkBuffer vmaStagingBufVertex = VK_NULL_HANDLE;
 		//VkBuffer vmaStagingBufIndex = VK_NULL_HANDLE;

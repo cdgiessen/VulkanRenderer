@@ -69,7 +69,8 @@ void InstancedSceneObject::SetupUniformBuffer() {
 	//uniformBuffer.copyTo(&ubo, sizeof(ModelBufferObject));
 	//uniformBuffer.unmap();
 
-	instanceBuffer.CreateUniformBuffer(renderer->device, sizeof(InstanceData) * maxInstanceCount);
+	instanceBuffer.CreateVertexBuffer(renderer->device, sizeof(InstanceData) * maxInstanceCount);
+
 }
 
 void InstancedSceneObject::SetupImage() {

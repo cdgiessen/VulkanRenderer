@@ -51,7 +51,7 @@ void VulkanRenderer::UpdateGlobalRenderResources(GlobalVariableUniformBuffer glo
 	//memcpy(data, lightData.data(), sizeof(PointLight) * lightData.size());
 	//device.VmaUnmapMemory(lightsInfoBuffer);
 	globalVariableBuffer.CopyToBuffer(device, &globalData, sizeof(GlobalVariableUniformBuffer));
-	pointLightsBuffer.CopyToBuffer(device, lightData.data(), lightData.size());
+	pointLightsBuffer.CopyToBuffer(device, lightData.data(), lightData.size()*sizeof(PointLight));
 }
 
 void VulkanRenderer::RenderFrame() {

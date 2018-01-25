@@ -16,9 +16,9 @@ VulkanTexture::VulkanTexture() : resource(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMP
 void VulkanTexture::updateDescriptor()
 {
 	resource.FillResource(textureSampler, textureImageView, textureImageLayout);
-	descriptor.sampler = textureSampler;
-	descriptor.imageView = textureImageView;
-	descriptor.imageLayout = textureImageLayout;
+	//descriptor.sampler = textureSampler;
+	//descriptor.imageView = textureImageView;
+	//descriptor.imageLayout = textureImageLayout;
 }
 
 void VulkanTexture::destroy(VulkanDevice &device) {

@@ -78,7 +78,7 @@ public:
 	std::vector<ModelBufferObject> modelUniforms;
 
 	VulkanBufferUniform uniformBuffer;
-	VulkanBufferUniform instanceBuffer;
+	VulkanBufferVertex instanceBuffer;
 
 	int instanceCount = 0;
 	int maxInstanceCount = 256;

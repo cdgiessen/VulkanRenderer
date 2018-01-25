@@ -50,14 +50,14 @@ VulkanBufferVertex::VulkanBufferVertex() {
 	 
 void VulkanBufferVertex::CreateVertexBuffer(VulkanDevice& device, uint32_t count) {
 
-	VkDeviceSize size = count * 12;
+	VkDeviceSize size = count * 12 * sizeof(float);
 	m_size = size;
 	device.CreateMeshBufferVertex(buffer, size);
 	SetupResource();
 }
 
 void VulkanBufferVertex::CreateStagingVertexBuffer(VulkanDevice& device, void* pData, uint32_t count) {
-	VkDeviceSize size = count * sizeof(float);
+	VkDeviceSize size = count * 12 * sizeof(float);
 	m_size = size;
 	device.CreateMeshStagingBuffer(buffer, pData, size);
 	SetupResource();
@@ -76,7 +76,7 @@ void VulkanBufferIndex::CreateIndexBuffer(VulkanDevice& device, uint32_t count) 
 	m_size = sizeof(int) * count;
 	device.CreateMeshBufferIndex(buffer, sizeof(int) * count);
 	SetupResource();
-}
+} 
 
 void VulkanBufferIndex::CreateStagingIndexBuffer(VulkanDevice& device, void* pData, uint32_t count) {
 	m_size = sizeof(int) * count;
