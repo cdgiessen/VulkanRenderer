@@ -59,16 +59,29 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 
 void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<TimeManager> timeManager) {
 	if (walkOnGround) {
-		camera->Position.y = terrainManager->GetTerrainHeightAtLocation(camera->Position.x, camera->Position.z) + 2.0f;
-		if (camera->Position.y < 2) //for over water
-			camera->Position.y = 2;
+		float groundHeight = terrainManager->GetTerrainHeightAtLocation(camera->Position.x, camera->Position.z) + 2.0f;
+		float height = camera->Position.y;
+		if (Input::GetKeyDown(Input::KeyCode::SPACE)) {
+			verticalVelocity += 0.15;
+		}
+		verticalVelocity += gravity*timeManager->GetDeltaTime();
+		height += verticalVelocity;
+		camera->Position.y = height;
+		if (camera->Position.y < groundHeight) { //for over land
+			camera->Position.y = groundHeight;
+			verticalVelocity = 0;
+		}
+		else if (camera->Position.y < heightOfGround) {//for over water
+			camera->Position.y = heightOfGround;
+			verticalVelocity = 0;
+		}
 	}
 
 	glm::mat4 deptheReverser = glm::mat4(1, 0, 0, 0,	0, 1, 0, 0,		0, 0, -1, 0,	0, 0, 1, 1);
 
 	GlobalVariableUniformBuffer cbo = {};
 	cbo.view = camera->GetViewMatrix();
-	cbo.proj = deptheReverser * glm::perspective(glm::radians(45.0f), renderer->vulkanSwapChain.swapChainExtent.width / (float)renderer->vulkanSwapChain.swapChainExtent.height, 0.05f, 100000.0f);
+	cbo.proj = deptheReverser * glm::perspective(glm::radians(45.0f), renderer->vulkanSwapChain.swapChainExtent.width / (float)renderer->vulkanSwapChain.swapChainExtent.height, 0.05f, 10000000.0f);
 	cbo.proj[1][1] *= -1;
 	cbo.cameraDir = camera->Front;
 	cbo.time = (float)timeManager->GetRunningTime();

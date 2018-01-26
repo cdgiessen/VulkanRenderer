@@ -5,6 +5,10 @@ VulkanBuffer::VulkanBuffer()
 	: resource(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
 }
 
+VulkanBuffer::VulkanBuffer(VkDescriptorType type)
+	: resource(type) {
+}
+
 void VulkanBuffer::CleanBuffer(VulkanDevice& device) {
 	device.DestroyVmaAllocatedBuffer(buffer);
 }
@@ -42,6 +46,16 @@ void VulkanBufferUniform::CreateStagingUniformBuffer(VulkanDevice& device, void*
 	m_size = size;
 	device.CreateStagingUniformBuffer(buffer, pData, size);
 	SetupResource();
+}
+
+VulkanBufferUniformDynamic::VulkanBufferUniformDynamic() :
+	VulkanBuffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+
+}
+
+void VulkanBufferUniformDynamic::CreateDynamicUniformBuffer(VulkanDevice& device, uint32_t count, VkDeviceSize size) {
+	m_size = count*size;
+	device.CreateDynamicUniformBuffer(buffer, count, size);
 }
 
 VulkanBufferVertex::VulkanBufferVertex() {

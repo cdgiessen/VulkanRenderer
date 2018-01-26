@@ -253,10 +253,12 @@ void VulkanApp::HandleInputs() {
 			scene->GetCamera()->ProcessKeyboard(Camera_Movement::LEFT, (float)timeManager->GetDeltaTime());
 		if (Input::GetKey(Input::KeyCode::D))
 			scene->GetCamera()->ProcessKeyboard(Camera_Movement::RIGHT, (float)timeManager->GetDeltaTime());
-		if (Input::GetKey(Input::KeyCode::SPACE))
-			scene->GetCamera()->ProcessKeyboard(Camera_Movement::UP, (float)timeManager->GetDeltaTime());
-		if (Input::GetKey(Input::KeyCode::LEFT_SHIFT))
-			scene->GetCamera()->ProcessKeyboard(Camera_Movement::DOWN, (float)timeManager->GetDeltaTime());
+		if (!scene->walkOnGround) {
+			if (Input::GetKey(Input::KeyCode::SPACE))
+				scene->GetCamera()->ProcessKeyboard(Camera_Movement::UP, (float)timeManager->GetDeltaTime());
+			if (Input::GetKey(Input::KeyCode::LEFT_SHIFT))
+				scene->GetCamera()->ProcessKeyboard(Camera_Movement::DOWN, (float)timeManager->GetDeltaTime());
+		}
 
 		//if (Input::GetKeyDown(Input::KeyCode::0)) {
 		//	//appLog.AddLog("ZERO WAS HIT REPEAT ZERO WAS HIT\n");

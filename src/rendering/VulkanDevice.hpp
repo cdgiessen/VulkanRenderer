@@ -88,6 +88,8 @@ public:
 	void CreateUniformBufferMapped(VmaBuffer& buffer, VkDeviceSize bufferSize);
 	void CreateStagingUniformBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
 
+	void CreateDynamicUniformBuffer(VmaBuffer& buffer, uint32_t count, VkDeviceSize sizeOfData);
+
 	void CreateMeshBufferVertex(VmaBuffer& buffer, VkDeviceSize bufferSize);
 	void CreateMeshBufferIndex(VmaBuffer& buffer, VkDeviceSize bufferSize);
 	void CreateMeshStagingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);

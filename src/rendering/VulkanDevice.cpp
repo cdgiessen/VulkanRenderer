@@ -159,6 +159,25 @@ void VulkanDevice::CreateStagingUniformBuffer(VmaBuffer& buffer, void* data, VkD
 	memcpy(buffer.allocationInfo.pMappedData, data, bufferSize);
 }
 
+void VulkanDevice::CreateDynamicUniformBuffer(VmaBuffer& buffer, uint32_t count, VkDeviceSize sizeOfData) {
+	size_t minUboAlignment = physical_device_properties.limits.minUniformBufferOffsetAlignment;
+	size_t dynamicAlignment = sizeof(sizeOfData);
+	if (minUboAlignment > 0) {
+		dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+	}
+
+	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+	bufferInfo.size = count * dynamicAlignment;
+	bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+	VmaAllocationCreateInfo allocInfo = {};
+	allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+
+
+}
+
 void VulkanDevice::CreateMeshBufferVertex(VmaBuffer& buffer, VkDeviceSize bufferSize) {
 	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 	bufferInfo.size = bufferSize;

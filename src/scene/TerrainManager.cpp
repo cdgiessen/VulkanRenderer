@@ -127,7 +127,7 @@ void TerrainManager::UpdateTerrainGUI() {
 	
 	ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
 	ImGui::Begin("Debug Info", &show_terrain_manager_window);
-	ImGui::SliderFloat("Width", &terrainWidth, 1, 10000);
+	ImGui::SliderFloat("Width", &terrainWidth, 100, 1000000);
 	ImGui::SliderInt("Max Subdivision", &terrainMaxLevels, 0, 10);
 	ImGui::SliderInt("Grid Width", &terrainGridDimentions, 1, 10);
 	ImGui::SliderFloat("Height Scale", &terrainHeightScale, 1, 1000);

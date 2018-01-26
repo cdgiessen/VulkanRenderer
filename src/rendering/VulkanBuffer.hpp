@@ -22,6 +22,7 @@
 class VulkanBuffer {
 public:
 	VulkanBuffer();
+	VulkanBuffer(VkDescriptorType type);
 
 	void CleanBuffer(VulkanDevice& device);
 
@@ -44,6 +45,13 @@ public:
 	VulkanBufferUniform();
 	void CreateUniformBuffer(VulkanDevice& device, VkDeviceSize size);
 	void CreateStagingUniformBuffer(VulkanDevice& device, void* pData, VkDeviceSize size);
+
+
+};
+class VulkanBufferUniformDynamic : public VulkanBuffer {
+public:
+	VulkanBufferUniformDynamic();
+	void CreateDynamicUniformBuffer(VulkanDevice& device, uint32_t count, VkDeviceSize size);
 
 };
 

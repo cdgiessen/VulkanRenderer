@@ -47,6 +47,10 @@ private:
 
 	std::shared_ptr<Camera> camera;
 
+	float verticalVelocity = 0;
+	float gravity = -0.25f;
+	float heightOfGround = 1.4f;
+
 	//TODO: gltf2 integration
 	//std::vector<std::shared_ptr<gltf2::Asset>> assets;
 
