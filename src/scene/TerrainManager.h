@@ -53,9 +53,9 @@ private:
 	bool recreateTerrain = false;
 	float terrainWidth = 1000;
 	float terrainHeightScale = 100.0f;
-	int terrainMaxLevels = 2;
+	int terrainMaxLevels = 4;
 	int terrainGridDimentions = 1;
-	int sourceImageResolution = 100;
+	int sourceImageResolution = 256;
 	SimpleTimer terrainUpdateTimer;
 
 	int maxNumQuads = 1; //maximum quads managed by this

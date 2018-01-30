@@ -159,7 +159,7 @@ void VulkanDevice::CreateStagingUniformBuffer(VmaBuffer& buffer, void* data, VkD
 	memcpy(buffer.allocationInfo.pMappedData, data, bufferSize);
 }
 
-void VulkanDevice::CreateDynamicUniformBuffer(VmaBuffer& buffer, uint32_t count, VkDeviceSize sizeOfData) {
+void VulkanDevice::CreateDynamicUniformBuffer		(VmaBuffer& buffer, uint32_t count, VkDeviceSize sizeOfData) {
 	size_t minUboAlignment = physical_device_properties.limits.minUniformBufferOffsetAlignment;
 	size_t dynamicAlignment = sizeof(sizeOfData);
 	if (minUboAlignment > 0) {

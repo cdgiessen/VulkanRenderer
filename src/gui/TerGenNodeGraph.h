@@ -6,8 +6,6 @@
 
 #include <glm/glm.hpp>
 
-#include "../../third-party/json/json.hpp"
-
 #include "../../third-party/ImGui/imgui.h"
 
 #include "../../third-party/FastNoiseSIMD/FastNoiseSIMD.h"
@@ -85,8 +83,6 @@ namespace NewNodeGraph {
 		bool SetInputNode(std::shared_ptr<INode> node);
 		bool ResetInputNode();
 
-		std::string GetJsonStringRep() const;
-
 	private:
 		LinkType linkType = LinkType::None;
 		T data;
@@ -105,8 +101,6 @@ namespace NewNodeGraph {
 		virtual glm::vec2	GetValue(const int x, const int y, const int z, glm::vec2 dummy) const = 0;
 		virtual glm::vec3	GetValue(const int x, const int y, const int z, glm::vec3 dummy) const = 0;
 		virtual glm::vec4	GetValue(const int x, const int y, const int z, glm::vec4 dummy) const = 0;
-
-		virtual void SaveToJson(nlohmann::json& json) = 0;
 
 		virtual bool SetInputLink(int index, std::shared_ptr<INode> node) = 0;
 		virtual bool ResetInputLink(int index) =0;
@@ -150,8 +144,6 @@ namespace NewNodeGraph {
 		virtual void SetValue(const int index, glm::vec3 value);
 		virtual void SetValue(const int index, glm::vec4 value);
 
-		virtual void SaveToJson(nlohmann::json& json);
-
 	private:
 		LinkType outputType;
 		T outputValue;
@@ -169,7 +161,7 @@ namespace NewNodeGraph {
 
 		void SetValue(const int index, float value) override;
 
-		void SaveToJson(nlohmann::json& json) override;
+		
 	private:
 		Link<float> input_output; //lol well some names are just confusing aren't they?
 	};
@@ -187,7 +179,7 @@ namespace NewNodeGraph {
 
 		void SetValue(const int index, float value) override;
 
-		void SaveToJson(nlohmann::json& json) override;
+		
 	private:
 		Link<float> value;
 	};
@@ -205,7 +197,7 @@ namespace NewNodeGraph {
 
 		void SetValue(const int index, int value) override;
 
-		void SaveToJson(nlohmann::json& json) override;
+		
 	private:
 		Link<int> value;
 	};
@@ -222,7 +214,7 @@ namespace NewNodeGraph {
 
 		void SetValue(const int index, float value) override;
 
-		void SaveToJson(nlohmann::json& json) override;
+		
 	protected:
 		Link<float> input_a;
 		Link<float> input_b;
@@ -275,7 +267,7 @@ namespace NewNodeGraph {
 
 		void SetValue(const int index, float value) override;
 
-		void SaveToJson(nlohmann::json& json) override;
+		
 	private:
 		Link<float> input_a;
 		Link<float> input_b;
@@ -296,7 +288,7 @@ namespace NewNodeGraph {
 
 		void SetValue(const int index, float value) override;
 
-		void SaveToJson(nlohmann::json& json) override;
+		
 	private:
 		Link<float> input;
 		Link<float> lowerBound;
@@ -320,7 +312,7 @@ namespace NewNodeGraph {
 		void SetValue(const int index, float value) override;
 		void SetValue(const int index, int value) override;
 
-		void SaveToJson(nlohmann::json& json) override;
+		
 	protected:
 		Link<int> input_octaveCount;
 		Link<float> input_persistance;
@@ -380,10 +372,6 @@ namespace NewNodeGraph {
 		bool DeleteNode(std::shared_ptr<INode> node);
 
 		void BuildNoiseGraph();
-
-		nlohmann::json  SaveGraphToJson();
-		void LoadGraphFromJson(nlohmann::json inputjson);
-
 		const std::shared_ptr<OutputNode> GetOutputNode() const;
 
 		int GetNextID();

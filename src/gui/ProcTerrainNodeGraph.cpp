@@ -1,6 +1,6 @@
 #include "ProcTerrainNodeGraph.h"
 
-//#include "../../third-party/noc/noc_file_dialog.h"
+#include "../../third-party/noc/noc_file_dialog.h"
 
 #include "../core/CoreTools.h"
 
@@ -8,15 +8,15 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+template <typename Enumeration>
+auto as_integer(Enumeration const value) -> typename std::underlying_type<Enumeration>::type
+{
+	return static_cast<typename std::underlying_type<Enumeration>::type>(value);
+}
+
 ProcTerrainNodeGraph::ProcTerrainNodeGraph()
 {
-	float initialVvalue = -0.5f;
-	outputNode = std::make_shared<OutputNode>(curGraph);
-	outputNode->id = curID++;
-	outputNode->internal_node = curGraph.GetOutputNode();
-	outputNode->inputSlots.at(0).value.value = initialVvalue;
-	outputNode->internal_node->SetValue(0, initialVvalue);
-	nodes.push_back(outputNode);
+	ResetOutputNode();
 }
 
 
@@ -60,9 +60,18 @@ void ProcTerrainNodeGraph::ResetGraph(){
 	while(nodes.size() > 0){
 		DeleteNode(nodes.at(0));
 	}
+	nodes.clear();
+}
+
+void ProcTerrainNodeGraph::ResetOutputNode() {
+
+	outputNode.reset();
 	outputNode = std::make_shared<OutputNode>(curGraph);
+	
 	outputNode->id = curID++;
+	outputNode->type = NodeType::Output;
 	outputNode->internal_node = curGraph.GetOutputNode();
+	outputNode->internal_node->SetValue(0, -0.5f);
 	nodes.push_back(outputNode);
 }
 
@@ -137,14 +146,15 @@ void ProcTerrainNodeGraph::DrawButtonBar() {
 	ImGui::SameLine();
 	if (ImGui::Button("Reset graph")) {
 		ResetGraph();
+		ResetOutputNode();
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Save graph")) {
-		
+		SaveGraphFromFile();
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Load graph")) {
-		
+		LoadGraphFromFile();
 	}
 
 	ImGui::EndGroup();
@@ -156,24 +166,24 @@ void ProcTerrainNodeGraph::DrawNodeButtons() {
 	ImGui::BeginChild("node buttons", ImVec2(120, 0.0f), true);
 
 	ImGui::Text("Noise Sources");
-	if (ImGui::Button("Perlin", ImVec2(-1.0f, 0.0f)))		{ AddNode(NodeType::Perlin); }
-	if (ImGui::Button("Simplex", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::Simplex); }
-	if (ImGui::Button("Value", ImVec2(-1.0f, 0.0f)))		{ AddNode(NodeType::ValueNoise); }
-	if (ImGui::Button("Voronoi", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::Voroni); }
-	if (ImGui::Button("Cellular", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::CellNoise); }
+	if (ImGui::Button("Perlin", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Perlin, startingNodePos); }
+	if (ImGui::Button("Simplex", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Simplex, startingNodePos); }
+	if (ImGui::Button("Value", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::ValueNoise, startingNodePos); }
+	if (ImGui::Button("Voronoi", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Voroni, startingNodePos); }
+	if (ImGui::Button("Cellular", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::CellNoise, startingNodePos); }
 	ImGui::Separator();
 	ImGui::Text("Modifiers");
-	if (ImGui::Button("Constant Int", ImVec2(-1.0f, 0.0f)))		{ AddNode(NodeType::ConstantInt); }
-	if (ImGui::Button("Constant Float", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::ConstantFloat); }
-	if (ImGui::Button("Add", ImVec2(-1.0f, 0.0f)))				{ AddNode(NodeType::Addition); }
-	if (ImGui::Button("Subtract", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Subtraction); }
-	if (ImGui::Button("Multiply", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Multiplication); }
-	if (ImGui::Button("Divide", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Division); }
-	if (ImGui::Button("Power", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Power); }
-	if (ImGui::Button("Max", ImVec2(-1.0f, 0.0f)))				{ AddNode(NodeType::Max); }
-	if (ImGui::Button("Min", ImVec2(-1.0f, 0.0f)))				{ AddNode(NodeType::Min); }
-	if (ImGui::Button("Blend", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Blend); }
-	if (ImGui::Button("Clamp", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Clamp); }
+	if (ImGui::Button("Constant Int", ImVec2(-1.0f, 0.0f)))		{ AddNode(NodeType::ConstantInt, startingNodePos); }
+	if (ImGui::Button("Constant Float", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::ConstantFloat, startingNodePos); }
+	if (ImGui::Button("Add", ImVec2(-1.0f, 0.0f)))				{ AddNode(NodeType::Addition, startingNodePos); }
+	if (ImGui::Button("Subtract", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Subtraction, startingNodePos); }
+	if (ImGui::Button("Multiply", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Multiplication, startingNodePos); }
+	if (ImGui::Button("Divide", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Division, startingNodePos); }
+	if (ImGui::Button("Power", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Power, startingNodePos); }
+	if (ImGui::Button("Max", ImVec2(-1.0f, 0.0f)))				{ AddNode(NodeType::Max, startingNodePos); }
+	if (ImGui::Button("Min", ImVec2(-1.0f, 0.0f)))				{ AddNode(NodeType::Min, startingNodePos); }
+	if (ImGui::Button("Blend", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Blend, startingNodePos); }
+	if (ImGui::Button("Clamp", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Clamp, startingNodePos); }
 
 	ImGui::EndChild();
 	ImGui::PopStyleVar();
@@ -475,18 +485,75 @@ void ProcTerrainNodeGraph::DrawConnections(ImDrawList*  imDrawList) {
 
 void ProcTerrainNodeGraph::SaveGraphFromFile()
 {
-	//const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_SAVE, NULL, GetExecutableFilePath().c_str(), NULL);
+	nlohmann::json j;
 
+	j["numNodes"] = nodes.size();
+	
+	for (auto node : nodes) {
+		nlohmann::json nodeJson;
+		nodeJson["id"] = std::to_string(node->id);
+		nodeJson["nodeType"] = as_integer(node->type);
+		nodeJson["winPos"] = std::to_string(node->pos.x) + "," + std::to_string(node->pos.y);
+		nodeJson["numSlots"] = node->inputSlots.size();
+
+		for (auto slot : node->inputSlots)
+		{
+			nlohmann::json slotJson;
+			slotJson["slotName"] = slot.name;
+			slotJson["slotType"] = as_integer(slot.conType);
+			if (slot.connection == nullptr) {
+				slotJson["hasConnection"] = false;
+			
+				if (slot.value.type == ConnectionType::Int) slotJson["value"] = std::get<int>(slot.value.value);
+				else if (slot.value.type == ConnectionType::Float) slotJson["value"] = std::get<float>(slot.value.value);
+
+				else if (slot.value.type == ConnectionType::Vec2) {
+					glm::vec2 vec2 = std::get<glm::vec2>(slot.value.value);
+					slotJson["value"] = { vec2.x, vec2.y };
+				}
+				else if (slot.value.type == ConnectionType::Vec3 || slot.value.type == ConnectionType::Color) {
+					glm::vec3 vec3 = std::get<glm::vec3>(slot.value.value);
+					slotJson["value"] = { vec3.x, vec3.y, vec3.z };
+				}
+				else if (slot.value.type == ConnectionType::Vec4) {
+					glm::vec4 vec4 = std::get<glm::vec4>(slot.value.value);
+					slotJson["value"] = { vec4.x, vec4.y, vec4.z, vec4.w };
+				}
+				
+			}
+			else {
+				slotJson["hasConnection"] = true;
+				slotJson["value"] = slot.connection->input->id;
+			}
+			
+		
+			nodeJson[std::to_string(slot.slotNum)] = slotJson;
+		}
+
+		j[std::to_string(node->id)] = nodeJson;
+	}
+
+	const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_SAVE, NULL, GetExecutableFilePath().c_str(), NULL);
+	std::ofstream outFile(filename);
+	outFile << std::setw(4) << j;
 }
 
 void ProcTerrainNodeGraph::LoadGraphFromFile()
 {
-
-	//const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, NULL, GetExecutableFilePath().c_str(), NULL);
-
+	ResetGraph();
+	const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, NULL, GetExecutableFilePath().c_str(), NULL);
+	std::ifstream i(filename);
+	nlohmann::json j;
+	i >> j;
+	nodes.reserve(j["numNodes"]);
+	int nodeId = 0;
+	for (int i = 0; i < nodes.size(); i++)
+	{
+		
+	}
 }
 
-void ProcTerrainNodeGraph::AddNode(NodeType nodeType)
+void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position)
 {
 	std::shared_ptr<Node> newNode;
 
@@ -509,8 +576,9 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType)
 	case(NodeType::ConstantInt): newNode = std::make_shared<ConstantIntNode>(curGraph); break;
 	case(NodeType::ConstantFloat): newNode = std::make_shared<ConstantFloatNode>(curGraph); break;
 	}
-	
 	newNode->id = curID++;
+	newNode->type = nodeType;
+	newNode->pos = position;
 	nodes.push_back(newNode);
 
 }
@@ -685,7 +753,7 @@ void Node::AddInputSlot(ConnectionType type, std::string name, int defaultValue,
 
 OutputNode::OutputNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("Output", ConnectionType::Float)
 {
-	AddInputSlot(ConnectionType::Float, "Out");
+	AddInputSlot(ConnectionType::Float, "Out", -0.5f);
 }
 
 BlendNode::BlendNode(NewNodeGraph::TerGenNodeGraph& graph) : Node("Blend", ConnectionType::Float)
@@ -758,7 +826,7 @@ MinNode::MinNode(NewNodeGraph::TerGenNodeGraph& graph) : MathNode("Min")
 NoiseNode::NoiseNode(std::string name) : Node(name, ConnectionType::Float)
 {
 	AddInputSlot(ConnectionType::Int, "Octaves", 1, 0.1f, 0.0f, 10.0f);
-	AddInputSlot(ConnectionType::Float, "Persistance", 0.5f, 0.01f, 0.0f, 1.0f);
+	AddInputSlot(ConnectionType::Float, "Persistence", 0.5f, 0.01f, 0.0f, 1.0f);
 	AddInputSlot(ConnectionType::Float, "Frequency", 0.15f,0.01f, 0.0f, 1.0f);
 }
 

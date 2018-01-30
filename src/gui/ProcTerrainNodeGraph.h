@@ -15,6 +15,10 @@
 
 #include "../../third-party/ImGui/imgui.h"
 
+#include "../../third-party/json/json.hpp"
+
+
+
 enum class ConnectionType
 {
 	Null,
@@ -100,28 +104,6 @@ public:
 
 };
 
-class Node {
-public:
-	Node(std::string name, ConnectionType outputType);
-
-	void SetInternalLink(int index, std::shared_ptr<NewNodeGraph::INode> inode);
-
-	std::string name;
-	ImVec2 pos = ImVec2(200,150);
-	ImVec2 size = ImVec2(100, 100);
-	int id;
-
-	std::vector<InputConnectionSlot> inputSlots;
-	OutputConnectionSlot outputSlot;
-
-	void AddInputSlot(ConnectionType type, std::string name);
-	void AddInputSlot(ConnectionType type, std::string name, float defaultValue, float sliderStepSize, float lowerBound, float upperBound);
-	void AddInputSlot(ConnectionType type, std::string name, int defaultValue, float sliderStepSize, float lowerBound, float upperBound);
-
-	std::shared_ptr<NewNodeGraph::INode> internal_node;
-	//void Draw(ImDrawList*  imDrawList, ImVec2 offset);
-};
-
 enum class NodeType {
 	Output,
 	Addition,
@@ -140,6 +122,29 @@ enum class NodeType {
 	Voroni,
 	ConstantInt,
 	ConstantFloat,
+};
+
+class Node {
+public:
+	Node(std::string name, ConnectionType outputType);
+
+	void SetInternalLink(int index, std::shared_ptr<NewNodeGraph::INode> inode);
+
+	std::string name;
+	ImVec2 pos = ImVec2(200,150);
+	ImVec2 size = ImVec2(100, 100);
+	int id;
+	NodeType type;
+
+	std::vector<InputConnectionSlot> inputSlots;
+	OutputConnectionSlot outputSlot;
+
+	void AddInputSlot(ConnectionType type, std::string name);
+	void AddInputSlot(ConnectionType type, std::string name, float defaultValue, float sliderStepSize, float lowerBound, float upperBound);
+	void AddInputSlot(ConnectionType type, std::string name, int defaultValue, float sliderStepSize, float lowerBound, float upperBound);
+
+	std::shared_ptr<NewNodeGraph::INode> internal_node;
+	//void Draw(ImDrawList*  imDrawList, ImVec2 offset);
 };
 
 class OutputNode		: public Node { public: OutputNode(NewNodeGraph::TerGenNodeGraph& graph); };
@@ -235,14 +240,16 @@ private:
 	void DeleteNode(std::shared_ptr<Node> node);
 	void DeleteConnection(std::shared_ptr<Connection> con);
 	void ResetGraph();
+	void ResetOutputNode();
 
 	HoveredSlotInfo GetHoveredSlot();
 
-	void AddNode(NodeType nodeType);
+	void AddNode(NodeType nodeType, ImVec2 position);
 	
 	const ImVec2 windowPadding = ImVec2(8.0f, 8.0f);
 	ImVec2 windowPos = ImVec2(0, 0);
 	ImVec2 graphOffset = ImVec2(0,0);
+	ImVec2 startingNodePos = ImVec2(200, 150);
 
 	bool window_open;
 	int curID = 0;
