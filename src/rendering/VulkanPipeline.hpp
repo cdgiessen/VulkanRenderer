@@ -86,7 +86,9 @@ public:
 
 	void SetColorBlending(std::shared_ptr<ManagedVulkanPipeline> pco, uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState *attachments); 
 
-	void SetDescriptorSetLayout(std::shared_ptr<ManagedVulkanPipeline> pco, VkDescriptorSetLayout* descriptorSetlayouts, uint32_t descritorSetLayoutCount);
+	void SetDescriptorSetLayout(std::shared_ptr<ManagedVulkanPipeline> pco, std::vector<VkDescriptorSetLayout>& descriptorSetlayouts);
+
+	void SetModelPushConstant(std::shared_ptr<ManagedVulkanPipeline> pco, VkPushConstantRange& pushConstantRange);
 
 	void SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> pco, uint32_t dynamicStateCount, VkDynamicState* pDynamicStates, VkPipelineDynamicStateCreateFlags flags);
 private:

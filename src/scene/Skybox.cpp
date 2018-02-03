@@ -46,18 +46,18 @@ void Skybox::SetupCubeMapImage() {
 void Skybox::SetupDescriptor() {
 	descriptor = renderer->GetVulkanDescriptor();
 
-	auto m_bindings = renderer->GetGloablBindings();
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
+	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
 	descriptor->SetupLayout(m_bindings);
 
-	auto poolSizes = renderer->GetGlobalPoolSize();
+	std::vector<DescriptorPoolSize> poolSizes;
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	descriptor->SetupPool(poolSizes);
 
 	m_descriptorSet = descriptor->CreateDescriptorSet();
 
-	auto writes = renderer->GetGlobalDescriptorUses();
-	writes.push_back(DescriptorUse(1, 1, vulkanCubeMap.resource));
+	std::vector<DescriptorUse> writes;
+	writes.push_back(DescriptorUse(2, 1, vulkanCubeMap.resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
 
 	/*
@@ -124,8 +124,10 @@ void Skybox::SetupPipeline()
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
 	pipeMan.SetColorBlending(mvp, 1, &mvp->pco.colorBlendAttachment);
 
-	VkDescriptorSetLayout layout = descriptor->GetLayout();
-	pipeMan.SetDescriptorSetLayout(mvp, &layout, 1);
+	std::vector<VkDescriptorSetLayout> layouts;
+	renderer->AddGlobalLayouts(layouts);
+	layouts.push_back(descriptor->GetLayout());
+	pipeMan.SetDescriptorSetLayout(mvp, layouts);
 
 	pipeMan.BuildPipelineLayout(mvp);
 	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);

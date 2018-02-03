@@ -105,7 +105,7 @@ void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe
 	//vkCmdBindIndexBuffer(commandBuffer, waters.at(0)->WaterModel.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
 
 	for (auto water : waters) {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, water->mvp->layout, 0, 1, &water->m_descriptorSet.set, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, water->mvp->layout, 2, 1, &water->m_descriptorSet.set, 0, nullptr);
 
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(water->WaterModel.indexCount), 1, 0, 0, 0);
 	}

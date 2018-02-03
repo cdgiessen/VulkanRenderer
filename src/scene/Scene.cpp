@@ -109,7 +109,7 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
 
 	//skybox
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->layout, 0, 1, &skybox->m_descriptorSet.set, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->layout, 2, 1, &skybox->m_descriptorSet.set, 0, nullptr);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->pipelines->at(0));
 
 	skybox->model.BindModel(commandBuffer);

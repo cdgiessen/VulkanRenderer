@@ -136,12 +136,12 @@ add_custom_command(TARGET VulkanApp POST_BUILD        # Adds a post-build event 
 endif(WIN32)
 
 # copy settings.json
-add_custom_command(TARGET VulkanApp POST_BUILD
+add_custom_command(TARGET VulkanApp PRE_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different
 		${PROJECT_SOURCE_DIR}/settings.json $<TARGET_FILE_DIR:VulkanApp>/settings.json)
 
 
 # copy files over
-add_custom_command(TARGET VulkanApp POST_BUILD
+add_custom_command(TARGET VulkanApp PRE_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets)

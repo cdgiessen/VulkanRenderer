@@ -3,6 +3,7 @@
 #include "VulkanInitializers.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanTools.h"
+#include "RendererStructs.h"
 
 #include "../resources/Mesh.h"
 
@@ -252,7 +253,12 @@ void VulkanPipeline::SetColorBlending(std::shared_ptr<ManagedVulkanPipeline> mvp
 	mvp->pco.colorBlending.blendConstants[3] = 0.0f;
 }
 
-void VulkanPipeline::SetDescriptorSetLayout(std::shared_ptr<ManagedVulkanPipeline> mvp, VkDescriptorSetLayout* descriptorSetlayouts, uint32_t descritorSetLayoutCount)
+void VulkanPipeline::SetDescriptorSetLayout(std::shared_ptr<ManagedVulkanPipeline> mvp, std::vector<VkDescriptorSetLayout>& descriptorSetlayouts)
 {
-	mvp->pco.pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(descriptorSetlayouts, descritorSetLayoutCount);
+	mvp->pco.pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(descriptorSetlayouts.data(), descriptorSetlayouts.size());
+}
+
+void VulkanPipeline::SetModelPushConstant(std::shared_ptr<ManagedVulkanPipeline> mvp, VkPushConstantRange& pushConstantRange) {
+	mvp->pco.pipelineLayoutInfo.pushConstantRangeCount = 1;
+	mvp->pco.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 }

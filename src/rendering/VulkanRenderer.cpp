@@ -65,6 +65,8 @@ void VulkanRenderer::RenderFrame() {
 void VulkanRenderer::CleanVulkanResources() {
 	globalVariableBuffer.CleanBuffer(device);
 	pointLightsBuffer.CleanBuffer(device);
+	vkDestroyPipelineLayout(device.device, globalDescriptorLayout, nullptr);
+	vkDestroyPipelineLayout(device.device, pointLightDescriptorLayout, nullptr);
 
 	for (auto descriptor : descriptors)
 		descriptor->CleanUpResources();
@@ -236,6 +238,9 @@ void VulkanRenderer::BuildCommandBuffers() {
 		vkCmdBeginRenderPass(commandBuffers[frameIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		VkDeviceSize offsets[] = { 0 };
 
+		vkCmdBindDescriptorSets(commandBuffers[frameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, globalDescriptorLayout, 0, 1, &globalDescriptorSet.set, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffers[frameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pointLightDescriptorLayout, 1, 1, &pointLightDescriptorSet.set, 0, nullptr);
+
 		scene->RenderScene(commandBuffers[frameIndex], wireframe);
 
 		//Imgui rendering
@@ -381,6 +386,9 @@ void VulkanRenderer::PrepareResources() {
 	globalVariableBuffer.CreateUniformBuffer(device, sizeof(GlobalVariableUniformBuffer));
 	pointLightsBuffer.CreateUniformBuffer(device, sizeof(PointLight) * 5);
 
+	SetupGlobalDescriptorSet();
+	SetupLightingDescriptorSet();
+
 }
 
 std::shared_ptr<VulkanDescriptor> VulkanRenderer::GetVulkanDescriptor() {
@@ -390,32 +398,82 @@ std::shared_ptr<VulkanDescriptor> VulkanRenderer::GetVulkanDescriptor() {
 
 }
 
-std::vector<VkDescriptorSetLayoutBinding> VulkanRenderer::GetGloablBindings() {
-	std::vector<VkDescriptorSetLayoutBinding> bindings;
-	bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 0, 1));
-
-	return bindings;
+void VulkanRenderer::AddGlobalLayouts(std::vector<VkDescriptorSetLayout>& layouts) {
+	layouts.push_back(globalDescriptor->GetLayout());
+	layouts.push_back(pointLightDescriptor->GetLayout());
 }
 
-std::vector<DescriptorPoolSize> VulkanRenderer::GetGlobalPoolSize(int poolSize) {
+//std::vector<DescriptorPoolSize> VulkanRenderer::GetGlobalPoolSize(int poolSize) {
+//	std::vector<DescriptorPoolSize> poolSizes;
+//	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, poolSize));
+//
+//	return poolSizes;
+//}
+
+void VulkanRenderer::SetupGlobalDescriptorSet() {
+	globalDescriptor = GetVulkanDescriptor();
+
+	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 0, 1));
+	globalDescriptor->SetupLayout(m_bindings);
+
 	std::vector<DescriptorPoolSize> poolSizes;
-	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, poolSize));
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	globalDescriptor->SetupPool(poolSizes);
 
-	return poolSizes;
-}
-
-std::vector<DescriptorUse> VulkanRenderer::GetGlobalDescriptorUses() {
+	globalDescriptorSet = globalDescriptor->CreateDescriptorSet();
+	
 	std::vector<DescriptorUse> writes;
-	DescriptorUse use = DescriptorUse(0, 1, globalVariableBuffer.resource);
-	writes.push_back(use);
+	writes.push_back(DescriptorUse(0, 1, globalVariableBuffer.resource));
+	globalDescriptor->UpdateDescriptorSet(globalDescriptorSet, writes);
 
-	return writes;
+	auto desLayout = globalDescriptor->GetLayout();
+	auto pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(&desLayout, 1);
+
+	if (vkCreatePipelineLayout(device.device, &pipelineLayoutInfo, nullptr, &globalDescriptorLayout) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create pipeline layout!");
+	}
 }
 
-DescriptorUse VulkanRenderer::GetLightingDescriptorUses(uint32_t binding) {
-	DescriptorUse use = DescriptorUse(binding, 1, pointLightsBuffer.resource);
-	return use;
+void VulkanRenderer::SetupLightingDescriptorSet() {
+	pointLightDescriptor = GetVulkanDescriptor();
+
+	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
+	pointLightDescriptor->SetupLayout(m_bindings);
+
+	std::vector<DescriptorPoolSize> poolSizes;
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	pointLightDescriptor->SetupPool(poolSizes);
+
+	pointLightDescriptorSet = pointLightDescriptor->CreateDescriptorSet();
+
+	std::vector<DescriptorUse> writes;
+	writes.push_back(DescriptorUse(1, 1, pointLightsBuffer.resource));
+	pointLightDescriptor->UpdateDescriptorSet(pointLightDescriptorSet, writes);
+
+	std::vector<VkDescriptorSetLayout> layouts;
+	AddGlobalLayouts(layouts);
+	
+	auto pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(layouts.data(), 2);
+
+	if (vkCreatePipelineLayout(device.device, &pipelineLayoutInfo, nullptr, &pointLightDescriptorLayout) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create pipeline layout!");
+	}
 }
+
+//std::vector<DescriptorUse> VulkanRenderer::GetGlobalDescriptorUses() {
+//	std::vector<DescriptorUse> writes;
+//	DescriptorUse use = DescriptorUse(0, 1, globalVariableBuffer.resource);
+//	writes.push_back(use);
+//
+//	return writes;
+//}
+//
+//DescriptorUse VulkanRenderer::GetLightingDescriptorUses(uint32_t binding) {
+//	DescriptorUse use = DescriptorUse(binding, 1, pointLightsBuffer.resource);
+//	return use;
+//}
 
 void InsertImageMemoryBarrier(
 	VkCommandBuffer cmdbuffer,

@@ -3,7 +3,7 @@
 #include "../../third-party/noc/noc_file_dialog.h"
 
 #include "../core/CoreTools.h"
-
+#include "../core/Logger.h"
 #include "../core/Input.h"
 
 #include <glm/gtc/type_ptr.hpp>
@@ -35,6 +35,7 @@ void ProcTerrainNodeGraph::BuildTerGenNodeGraph() {
 void ProcTerrainNodeGraph::DeleteNode(std::shared_ptr<Node> node) {
 	auto found = std::find(nodes.begin(), nodes.end(), node);
 	if (found != nodes.end()) {
+
 		for (auto slot : (*found)->inputSlots) 
 			DeleteConnection(slot.connection);
 		for(auto con : (*found)->outputSlot.connections)
@@ -44,10 +45,12 @@ void ProcTerrainNodeGraph::DeleteNode(std::shared_ptr<Node> node) {
 		nodes.erase(found);
 	}
 }
+
 void ProcTerrainNodeGraph::DeleteConnection(std::shared_ptr<Connection> con) {
 	auto found = std::find(connections.begin(), connections.end(), con);
 	if (found != connections.end()) {
-		(*found)->input.reset(); 
+		(*found)->input.reset();
+		(*found)->output->internal_node->ResetInputLink(0);
 		(*found)->output.reset();
 		connections.erase(found);
 	}
@@ -485,80 +488,105 @@ void ProcTerrainNodeGraph::DrawConnections(ImDrawList*  imDrawList) {
 
 void ProcTerrainNodeGraph::SaveGraphFromFile()
 {
-	nlohmann::json j;
-
-	j["numNodes"] = nodes.size();
-	
-	for (auto node : nodes) {
-		nlohmann::json nodeJson;
-		nodeJson["id"] = std::to_string(node->id);
-		nodeJson["nodeType"] = as_integer(node->type);
-		nodeJson["winPos"] = std::to_string(node->pos.x) + "," + std::to_string(node->pos.y);
-		nodeJson["numSlots"] = node->inputSlots.size();
-
-		for (auto slot : node->inputSlots)
-		{
-			nlohmann::json slotJson;
-			slotJson["slotName"] = slot.name;
-			slotJson["slotType"] = as_integer(slot.conType);
-			if (slot.connection == nullptr) {
-				slotJson["hasConnection"] = false;
-			
-				if (slot.value.type == ConnectionType::Int) slotJson["value"] = std::get<int>(slot.value.value);
-				else if (slot.value.type == ConnectionType::Float) slotJson["value"] = std::get<float>(slot.value.value);
-
-				else if (slot.value.type == ConnectionType::Vec2) {
-					glm::vec2 vec2 = std::get<glm::vec2>(slot.value.value);
-					slotJson["value"] = { vec2.x, vec2.y };
-				}
-				else if (slot.value.type == ConnectionType::Vec3 || slot.value.type == ConnectionType::Color) {
-					glm::vec3 vec3 = std::get<glm::vec3>(slot.value.value);
-					slotJson["value"] = { vec3.x, vec3.y, vec3.z };
-				}
-				else if (slot.value.type == ConnectionType::Vec4) {
-					glm::vec4 vec4 = std::get<glm::vec4>(slot.value.value);
-					slotJson["value"] = { vec4.x, vec4.y, vec4.z, vec4.w };
-				}
-				
-			}
-			else {
-				slotJson["hasConnection"] = true;
-				slotJson["value"] = slot.connection->input->id;
-			}
-			
-		
-			nodeJson[std::to_string(slot.slotNum)] = slotJson;
-		}
-
-		j[std::to_string(node->id)] = nodeJson;
-	}
-
 	const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_SAVE, NULL, GetExecutableFilePath().c_str(), NULL);
-	std::ofstream outFile(filename);
-	outFile << std::setw(4) << j;
+	if (filename != NULL) {
+
+		nlohmann::json j;
+
+		j["numNodes"] = nodes.size();
+
+		int curNodeIndex = 0;
+		for (auto node : nodes) {
+			nlohmann::json nodeJson;
+			nodeJson["id"] = node->id;
+			nodeJson["nodeType"] = as_integer(node->type);
+			nodeJson["winPosX"] = node->pos.x;
+			nodeJson["winPosY"] = node->pos.y;
+			nodeJson["numSlots"] = node->inputSlots.size();
+
+			for (auto slot : node->inputSlots)
+			{
+				nlohmann::json slotJson;
+				slotJson["slotName"] = slot.name;
+				slotJson["slotType"] = as_integer(slot.conType);
+				if (slot.connection == nullptr) {
+					slotJson["hasConnection"] = false;
+
+					if (slot.value.type == ConnectionType::Int) slotJson["value"] = std::get<int>(slot.value.value);
+					else if (slot.value.type == ConnectionType::Float) slotJson["value"] = std::get<float>(slot.value.value);
+
+					else if (slot.value.type == ConnectionType::Vec2) {
+						glm::vec2 vec2 = std::get<glm::vec2>(slot.value.value);
+						slotJson["value"] = { vec2.x, vec2.y };
+					}
+					else if (slot.value.type == ConnectionType::Vec3 || slot.value.type == ConnectionType::Color) {
+						glm::vec3 vec3 = std::get<glm::vec3>(slot.value.value);
+						slotJson["value"] = { vec3.x, vec3.y, vec3.z };
+					}
+					else if (slot.value.type == ConnectionType::Vec4) {
+						glm::vec4 vec4 = std::get<glm::vec4>(slot.value.value);
+						slotJson["value"] = { vec4.x, vec4.y, vec4.z, vec4.w };
+					}
+
+				}
+				else {
+					slotJson["hasConnection"] = true;
+					slotJson["value"] = slot.connection->input->id;
+				}
+
+
+				nodeJson[std::to_string(slot.slotNum)] = slotJson;
+			}
+
+			j[std::to_string(curNodeIndex)] = nodeJson;
+			curNodeIndex++;
+		}
+	
+		std::ofstream outFile(filename);
+		outFile << std::setw(4) << j;
+		outFile.close();
+	}
+	else {
+		Log::Debug << "User didn't specify file, Aborting save\n";
+	}
 }
 
 void ProcTerrainNodeGraph::LoadGraphFromFile()
 {
-	ResetGraph();
 	const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, NULL, GetExecutableFilePath().c_str(), NULL);
-	std::ifstream i(filename);
-	nlohmann::json j;
-	i >> j;
-	nodes.reserve(j["numNodes"]);
-	int nodeId = 0;
-	for (int i = 0; i < nodes.size(); i++)
-	{
-		
+	if (filename != NULL) {
+		ResetGraph();
+				
+		std::ifstream inFile(filename);
+		nlohmann::json j;
+		inFile >> j;
+		inFile.close();
+
+		int numNodes = j["numNodes"];
+		nodes.reserve(numNodes);
+		int curNodeIndex = 0;
+		for (int i = 0; i < numNodes; i++)
+		{
+			std::string curIndex(std::to_string(curNodeIndex));
+			ImVec2 pos = ImVec2(j[curIndex]["winPosX"], j[curIndex]["winPosY"]);
+			
+			AddNode(j[curIndex]["nodeType"], pos, j[curIndex]["id"]);
+		}
+	}
+	else {
+		Log::Debug << "user didn't specify file, Aborting load\n";
 	}
 }
 
-void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position)
+void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 {
 	std::shared_ptr<Node> newNode;
 
 	switch (nodeType) {
-	case(NodeType::Output): newNode = std::make_shared<OutputNode>(curGraph); break;
+	case(NodeType::Output): 
+		ResetOutputNode();
+		newNode = outputNode;
+		break;
 	case(NodeType::Addition): newNode = std::make_shared<AdditionNode>(curGraph); break;
 	case(NodeType::Subtraction): newNode = std::make_shared<SubtractionNode>(curGraph); break;
 	case(NodeType::Multiplication): newNode = std::make_shared<MultiplicationNode>(curGraph); break;
@@ -576,7 +604,12 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position)
 	case(NodeType::ConstantInt): newNode = std::make_shared<ConstantIntNode>(curGraph); break;
 	case(NodeType::ConstantFloat): newNode = std::make_shared<ConstantFloatNode>(curGraph); break;
 	}
-	newNode->id = curID++;
+	if (id >= 0)
+		newNode->id = id;
+	else
+		newNode->id = curID;
+	curID++;
+
 	newNode->type = nodeType;
 	newNode->pos = position;
 	nodes.push_back(newNode);

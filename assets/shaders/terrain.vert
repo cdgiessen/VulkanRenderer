@@ -2,7 +2,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 //Global information
-layout(binding = 0) uniform CameraUniformBuffer {
+layout(set = 0, binding = 0) uniform CameraUniformBuffer {
 	mat4 view;
 	mat4 proj;
 	vec3 cameraPos;
@@ -10,7 +10,7 @@ layout(binding = 0) uniform CameraUniformBuffer {
 } cbo;
 
 //per model information
-layout(binding = 1) uniform UniformBufferObject {
+layout(set = 2, binding = 2) uniform UniformBufferObject {
     mat4 model;
 	mat4 normal;
 } ubo;

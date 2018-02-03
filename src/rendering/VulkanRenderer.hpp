@@ -57,10 +57,10 @@ public:
 	void PrepareResources();
 
 	std::shared_ptr<VulkanDescriptor> GetVulkanDescriptor();
-	std::vector<VkDescriptorSetLayoutBinding> GetGloablBindings();
-	std::vector<DescriptorPoolSize> GetGlobalPoolSize(int poolSize = 1);
-	std::vector<DescriptorUse> GetGlobalDescriptorUses();
-	DescriptorUse GetLightingDescriptorUses(uint32_t binding);
+	void VulkanRenderer::AddGlobalLayouts(std::vector<VkDescriptorSetLayout>& layouts);
+	//std::vector<DescriptorPoolSize> GetGlobalPoolSize(int poolSize = 1);
+	//std::vector<DescriptorUse> GetGlobalDescriptorUses();
+	//DescriptorUse GetLightingDescriptorUses(uint32_t binding);
 
 	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat FindDepthFormat();
@@ -79,8 +79,20 @@ public:
 	std::shared_ptr<Scene> scene;
 
 private:
+
+	void SetupGlobalDescriptorSet();
+	void SetupLightingDescriptorSet();
+
 	VulkanBufferUniform globalVariableBuffer;
 	VulkanBufferUniform pointLightsBuffer;
+
+	std::shared_ptr<VulkanDescriptor> globalDescriptor;
+	DescriptorSet globalDescriptorSet;
+	std::shared_ptr<VulkanDescriptor> pointLightDescriptor;
+	DescriptorSet pointLightDescriptorSet;
+
+	VkPipelineLayout globalDescriptorLayout;
+	VkPipelineLayout pointLightDescriptorLayout;
 
 	VulkanBufferUniformDynamic entityPositions;
 

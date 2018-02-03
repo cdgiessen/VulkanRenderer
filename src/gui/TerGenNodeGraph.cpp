@@ -644,7 +644,8 @@ namespace NewNodeGraph {
 		auto found = std::find(nodes.begin(), nodes.end(), node);
 		if (found != nodes.end()) {
 
-
+			
+			found->reset();
 			nodes.erase(found);
 		}
 		return true;

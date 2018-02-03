@@ -4,7 +4,7 @@
 #extension GL_ARB_shading_language_420pack : enable
 
 //Global information
-layout(binding = 0) uniform GlobalUniformBuffer {
+layout(set = 0, binding = 0) uniform GlobalUniformBuffer {
 	mat4 view;
 	mat4 proj;
 	vec3 cameraPos;

@@ -19,6 +19,7 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromFile(std::string filenam
 	std::ifstream filestream(filename.c_str());
 	if (filestream.fail()) {
 		Log::Debug << "Could not load texture from " << filename << "File not found! \n";
+		throw std::runtime_error("failed to load texture image!");
 		return std::shared_ptr<Texture>(nullptr);
 	}
 	int texWidth, texHeight, texChannels;
@@ -34,7 +35,7 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromFile(std::string filenam
 	tex->height = static_cast<uint32_t>(texHeight);
 
 	textureHandles.push_back(tex);
-
+	filestream.close();
 	return tex;
 }
 

@@ -10,7 +10,7 @@ void GameObject::InitGameObject(std::shared_ptr<VulkanRenderer> renderer)
 {
     this->renderer = renderer;
 
-    SetupUniformBuffer();
+    //SetupUniformBuffer();
     SetupImage();
     SetupModel();
     SetupDescriptor();
@@ -29,7 +29,7 @@ void GameObject::CleanUp()
     gameObjectModel.destroy(renderer->device);
     gameObjectVulkanTexture.destroy(renderer->device);
 
-    modelUniformBuffer.CleanBuffer(renderer->device);
+    //modelUniformBuffer.CleanBuffer(renderer->device);
 }
 
 void GameObject::LoadModel(std::string filename)
@@ -43,14 +43,14 @@ void GameObject::LoadModel(std::shared_ptr<Mesh> mesh)
     this->gameObjectMesh = mesh;
 }
 
-void GameObject::SetupUniformBuffer()
-{
-	modelUniformBuffer.CreateUniformBuffer(renderer->device, sizeof(ModelBufferObject));
-    //renderer->device.createBuffer(
-    //    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-    //    (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
-    //    &modelUniformBuffer, sizeof(ModelBufferObject));
-}
+//void GameObject::SetupUniformBuffer()
+//{
+//	modelUniformBuffer.CreateUniformBuffer(renderer->device, sizeof(ModelBufferObject));
+//    //renderer->device.createBuffer(
+//    //    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+//    //    (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
+//    //    &modelUniformBuffer, sizeof(ModelBufferObject));
+//}
 
 void GameObject::SetupImage()
 {
@@ -72,23 +72,17 @@ void GameObject::SetupDescriptor()
 {
 	descriptor = renderer->GetVulkanDescriptor();
 
-	auto m_bindings = renderer->GetGloablBindings();
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1, 1));
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
+	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1));
 	descriptor->SetupLayout(m_bindings);
 
-	auto poolSizes = renderer->GetGlobalPoolSize();
-	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	std::vector<DescriptorPoolSize> poolSizes;
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	descriptor->SetupPool(poolSizes);
 
 	m_descriptorSet = descriptor->CreateDescriptorSet();
 
-	auto writes = renderer->GetGlobalDescriptorUses();
-	writes.push_back(DescriptorUse(1, 1, modelUniformBuffer.resource));
-	writes.push_back(renderer->GetLightingDescriptorUses(2));
+	std::vector<DescriptorUse> writes;
 	writes.push_back(DescriptorUse(3, 1, gameObjectVulkanTexture.resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
 
@@ -163,8 +157,18 @@ void GameObject::SetupPipeline()
         VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
     pipeMan.SetColorBlending(mvp, 1, &mvp->pco.colorBlendAttachment);
 
-	VkDescriptorSetLayout layout = descriptor->GetLayout();
-    pipeMan.SetDescriptorSetLayout(mvp, &layout, 1);
+
+	std::vector<VkDescriptorSetLayout> layouts;
+	renderer->AddGlobalLayouts(layouts);
+	layouts.push_back(descriptor->GetLayout());
+    pipeMan.SetDescriptorSetLayout(mvp, layouts);
+	
+	VkPushConstantRange pushConstantRange = {};
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(ModelPushConstant);
+	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	
+	pipeMan.SetModelPushConstant(mvp, pushConstantRange);
 
     pipeMan.BuildPipelineLayout(mvp);
     pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
@@ -186,18 +190,20 @@ void GameObject::SetupPipeline()
                               "assets/shaders/normalVecDebug.geom.spv"));
 
     pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
-    pipeMan.CleanShaderResources(mvp);
+	    pipeMan.CleanShaderResources(mvp);
 }
 
 void GameObject::UpdateUniformBuffer(float time)
 {
-    ModelBufferObject ubo = {};
-    ubo.model = glm::mat4();
+	modelPushConstant = {};
+	modelPushConstant.model = glm::mat4();
     // ubo.model = glm::translate(ubo.model, glm::vec3(50, 0, 0));
-    ubo.model = glm::rotate(ubo.model, time / 2.0f, glm::vec3(0.5, 1, 0));
-    ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
+	modelPushConstant.model = glm::rotate(modelPushConstant.model, time / 2.0f, glm::vec3(0.5, 1, 0));
+	modelPushConstant.normal = glm::transpose(glm::inverse(glm::mat3(modelPushConstant.model)));
 
-	modelUniformBuffer.CopyToBuffer(renderer->device, &ubo, sizeof(ModelBufferObject));
+
+
+	//modelUniformBuffer.CopyToBuffer(renderer->device, &ubo, sizeof(ModelBufferObject));
     //modelUniformBuffer.Map(renderer->device, );
     //modelUniformBuffer.copyTo(&ubo, sizeof(ubo));
     //modelUniformBuffer.Unmap();
@@ -214,7 +220,15 @@ void GameObject::Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNo
 	//vkCmdBindVertexBuffers(commandBuffer, 0, 1, &gameObjectModel.vmaBufferVertex, offsets);
 	//vkCmdBindIndexBuffer(commandBuffer, gameObjectModel.vmaIndicies.buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 	
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 0, 1, &m_descriptorSet.set, 0, nullptr);
+	vkCmdPushConstants(
+		commandBuffer,
+		mvp->layout,
+		VK_SHADER_STAGE_VERTEX_BIT,
+		0,
+		sizeof(ModelPushConstant),
+		&modelPushConstant);
+
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &m_descriptorSet.set, 0, nullptr);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
 	gameObjectModel.BindModel(commandBuffer);
 

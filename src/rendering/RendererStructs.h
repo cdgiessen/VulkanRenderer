@@ -28,6 +28,11 @@ struct ModelBufferObject {
 	glm::mat4 paddingTwo;
 };
 
+struct ModelPushConstant {
+	glm::mat4 model;
+	glm::mat4 normal;
+};
+
 struct ModelInfo {
 	std::string name;
 

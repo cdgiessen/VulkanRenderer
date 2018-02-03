@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(binding = 0) uniform CameraUniformBuffer {
+layout(set = 0, binding = 0) uniform CameraUniformBuffer {
 	mat4 view;
 	mat4 proj;
 	vec3 cameraDir;
@@ -17,12 +17,12 @@ struct PointLight {
 #define lightCount 5
 
 //Lighting information
-layout(binding = 2) uniform PointLightsBuffer {
+layout(set = 1, binding = 1) uniform PointLightsBuffer {
 	PointLight lights[lightCount];
 } plb;
 
 //texture sampling
-layout(binding = 3) uniform sampler2D waterTex;
+layout(set = 2, binding = 3) uniform sampler2D waterTex;
 
 layout(location = 0) in vec3 inFragPos;
 layout(location = 1) in vec3 inNormal;

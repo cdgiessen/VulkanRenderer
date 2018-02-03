@@ -9,7 +9,7 @@ struct PointLight {
 
 #define lightCount 5
 
-layout(binding = 0) uniform CameraUniformBuffer {
+layout(set = 0, binding = 0) uniform CameraUniformBuffer {
 	mat4 view;
 	mat4 proj;
 	vec3 cameraDir;
@@ -17,13 +17,13 @@ layout(binding = 0) uniform CameraUniformBuffer {
 } cbo;
 
 //Lighting information
-layout(binding = 2) uniform PointLightsBuffer {
+layout(set = 1, binding = 1) uniform PointLightsBuffer {
 	PointLight lights[lightCount];
 } plb;
 
 //texture sampling
-layout(binding = 3) uniform sampler2D texSplatMap;
-layout(binding = 4) uniform sampler2DArray texArray;
+layout(set = 2, binding = 3) uniform sampler2D texSplatMap;
+layout(set = 2, binding = 4) uniform sampler2DArray texArray;
 
 layout(location = 0) in vec3 inNormal;
 layout(location = 1) in vec2 inTexCoord;

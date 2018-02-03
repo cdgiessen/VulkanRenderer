@@ -7,7 +7,7 @@ layout(location = 2) in vec2 inTexCoord;
 layout(location = 3) in vec4 inColor;
 
 //Global information
-layout(binding = 0) uniform CameraUniformBuffer {
+layout(set = 0, binding = 0) uniform CameraUniformBuffer {
 	mat4 view;
 	mat4 proj;
 	vec3 cameraPos;
@@ -15,10 +15,11 @@ layout(binding = 0) uniform CameraUniformBuffer {
 } cbo;
 
 //per model information
-layout(binding = 1) uniform UniformBufferObject {
+layout(push_constant) uniform PER_OBJECT
+{
     mat4 model;
-	mat4 normal;
-} ubo;
+    mat4 normal;
+} obj;
 
 layout(location = 0) out VS_OUT {
     vec3 normal;
@@ -30,7 +31,7 @@ out gl_PerVertex {
 
 void main()
 {
-    gl_Position = cbo.proj * cbo.view * ubo.model * vec4(inPosition, 1.0);
-    mat3 normalMatrix = mat3(transpose(inverse(cbo.view * ubo.model)));
+    gl_Position = cbo.proj * cbo.view * obj.model * vec4(inPosition, 1.0);
+    mat3 normalMatrix = mat3(transpose(inverse(cbo.view * obj.model)));
     vs_out.normal = normalize(vec3(cbo.proj * vec4(normalMatrix * inNormal, 1.0)));
 }

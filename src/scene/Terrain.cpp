@@ -313,15 +313,13 @@ void Terrain::SetupDescriptorLayoutAndPool()
 {
 	descriptor = renderer->GetVulkanDescriptor();
 
-	auto m_bindings = renderer->GetGloablBindings();
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1, 1));
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
+	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 2, 1));
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1));
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4, 1));
 	descriptor->SetupLayout(m_bindings);
 
-	auto poolSizes = renderer->GetGlobalPoolSize(maxNumQuads);
-	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 * maxNumQuads));
+	std::vector<DescriptorPoolSize> poolSizes;
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 * maxNumQuads));
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 * maxNumQuads));
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 * maxNumQuads));
@@ -383,8 +381,10 @@ void Terrain::SetupPipeline()
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
 	pipeMan.SetColorBlending(mvp, 1, &mvp->pco.colorBlendAttachment);
 
-	VkDescriptorSetLayout layout = descriptor->GetLayout();
-	pipeMan.SetDescriptorSetLayout(mvp, &layout, 1);
+	std::vector<VkDescriptorSetLayout> layouts;
+	renderer->AddGlobalLayouts(layouts);
+	layouts.push_back(descriptor->GetLayout());
+	pipeMan.SetDescriptorSetLayout(mvp, layouts);
 
 	pipeMan.BuildPipelineLayout(mvp);
 	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
@@ -393,12 +393,12 @@ void Terrain::SetupPipeline()
 	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
 
 	pipeMan.CleanShaderResources(mvp);
-	pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.vert.spv"));
-	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.frag.spv"));
-	pipeMan.SetGeometryShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.geom.spv"));
-	
-	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
-	pipeMan.CleanShaderResources(mvp);
+	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.vert.spv"));
+	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.frag.spv"));
+	//pipeMan.SetGeometryShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.geom.spv"));
+	//
+	//pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
+	//pipeMan.CleanShaderResources(mvp);
 
 	
 }
@@ -418,9 +418,8 @@ void Terrain::UpdateModelBuffer() {
 		modelUniformBuffer.resource.FillResource(modelUniformBuffer.buffer.buffer, (it - quadHandles.begin()) * sizeof(ModelBufferObject), sizeof(ModelBufferObject));
 		(*it)->descriptorSet = descriptor->CreateDescriptorSet();
 
-		auto writes = renderer->GetGlobalDescriptorUses();
-		writes.push_back(DescriptorUse(1, 1, modelUniformBuffer.resource));
-		writes.push_back(renderer->GetLightingDescriptorUses(2));
+		std::vector<DescriptorUse> writes;
+		writes.push_back(DescriptorUse(2, 1, modelUniformBuffer.resource));
 		writes.push_back(DescriptorUse(3, 1, terrainVulkanSplatMap.resource));
 		writes.push_back(DescriptorUse(4, 1, terrainVulkanTextureArray.resource));
 		descriptor->UpdateDescriptorSet((*it)->descriptorSet, writes);
@@ -595,9 +594,8 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuad(std::shared_ptr<Terrai
 		(VkDeviceSize)((quadHandles.size() - 1) * sizeof(ModelBufferObject)), (VkDeviceSize)sizeof(ModelBufferObject));
 	q->descriptorSet = descriptor->CreateDescriptorSet();
 
-	auto writes = renderer->GetGlobalDescriptorUses();
-	writes.push_back(DescriptorUse(1, 1, modelUniformBuffer.resource));
-	writes.push_back(renderer->GetLightingDescriptorUses(2));
+	std::vector<DescriptorUse> writes;
+	writes.push_back(DescriptorUse(2, 1, modelUniformBuffer.resource));
 	writes.push_back(DescriptorUse(3, 1, terrainVulkanSplatMap.resource));
 	writes.push_back(DescriptorUse(4, 1, terrainVulkanTextureArray.resource));
 	descriptor->UpdateDescriptorSet(q->descriptorSet, writes);
@@ -651,9 +649,8 @@ std::shared_ptr<TerrainQuadData> Terrain::InitTerrainQuadFromParent(std::shared_
 
 	q->descriptorSet = descriptor->CreateDescriptorSet();
 
-	auto writes = renderer->GetGlobalDescriptorUses();
-	writes.push_back(DescriptorUse(1, 1, modelUniformBuffer.resource));
-	writes.push_back(renderer->GetLightingDescriptorUses(2));
+	std::vector<DescriptorUse> writes;
+	writes.push_back(DescriptorUse(2, 1, modelUniformBuffer.resource));
 	writes.push_back(DescriptorUse(3, 1, terrainVulkanSplatMap.resource));
 	writes.push_back(DescriptorUse(4, 1, terrainVulkanTextureArray.resource));
 	descriptor->UpdateDescriptorSet(q->descriptorSet, writes);
@@ -810,10 +807,10 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], std:
 	drawTimer.StartTimer();
 	for (int i = 0; i < quadHandles.size(); ++i) {
 		if (!quadHandles[i]->terrainQuad.isSubdivided) {
+			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &quadHandles[i]->descriptorSet.set, 0, nullptr);
 			vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
 			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vertexBuffer.buffer.buffer, &vertexOffsettings[i]);
 			vkCmdBindIndexBuffer(cmdBuff, indexBuffer.buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
-			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 0, 1, &quadHandles[i]->descriptorSet.set, 0, nullptr);
 
 
 			vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);

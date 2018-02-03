@@ -84,23 +84,20 @@ void InstancedSceneObject::SetupModel() {
 void InstancedSceneObject::SetupDescriptor() {
 	descriptor = renderer->GetVulkanDescriptor();
 
-	auto m_bindings = renderer->GetGloablBindings();
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1, 1));
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
+	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 2, 1));
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1));
 	descriptor->SetupLayout(m_bindings);
 
-	auto poolSizes = renderer->GetGlobalPoolSize();
-	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	std::vector<DescriptorPoolSize> poolSizes;
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	descriptor->SetupPool(poolSizes);
 
 	m_descriptorSet = descriptor->CreateDescriptorSet();
 
-	auto writes = renderer->GetGlobalDescriptorUses();
-	writes.push_back(DescriptorUse(1, 1, uniformBuffer.resource));
-	writes.push_back(renderer->GetLightingDescriptorUses(2));
+	std::vector<DescriptorUse> writes;
+	writes.push_back(DescriptorUse(2, 1, uniformBuffer.resource));
 	writes.push_back(DescriptorUse(3, 1, vulkanTexture.resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
 
@@ -170,8 +167,10 @@ void InstancedSceneObject::SetupPipeline()
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
 	pipeMan.SetColorBlending(mvp, 1, &mvp->pco.colorBlendAttachment);
 
-	VkDescriptorSetLayout layout = descriptor->GetLayout();
-	pipeMan.SetDescriptorSetLayout(mvp, &layout , 1);
+	std::vector<VkDescriptorSetLayout> layouts;
+	renderer->AddGlobalLayouts(layouts);
+	layouts.push_back(descriptor->GetLayout());
+	pipeMan.SetDescriptorSetLayout(mvp, layouts); 
 
 
 
@@ -213,12 +212,12 @@ void InstancedSceneObject::SetupPipeline()
 	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
 
 	pipeMan.CleanShaderResources(mvp);
-	pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.vert.spv"));
-	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.frag.spv"));
-	pipeMan.SetGeometryShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.geom.spv"));
-	
-	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
-	pipeMan.CleanShaderResources(mvp);
+	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.vert.spv"));
+	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.frag.spv"));
+	//pipeMan.SetGeometryShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.geom.spv"));
+	//
+	//pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
+	//pipeMan.CleanShaderResources(mvp);
 	
 }
 
@@ -318,7 +317,7 @@ void InstancedSceneObject::WriteToCommandBuffer(VkCommandBuffer commandBuffer, b
 	VkDeviceSize offsets[] = { 0 };
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(0));
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 0, 1, &m_descriptorSet.set, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &m_descriptorSet.set, 0, nullptr);
 
 	
 	//vulkanModel.BindModel(commandBuffer);
