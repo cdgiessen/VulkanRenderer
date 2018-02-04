@@ -42,7 +42,6 @@ struct ManagedVulkanPipeline {
 	PipelineCreationObject pco;
 	VkPipelineLayout layout;
 	std::unique_ptr<std::vector<VkPipeline>> pipelines;
-	std::unique_ptr<std::function<void(void)>> ObjectCallBackFunction;
 };
 
 class VulkanPipeline
@@ -53,7 +52,6 @@ public:
 	void CleanUp();
 
 	void InitPipelineCache();
-	void ReInitPipelines();
 
 	std::shared_ptr<ManagedVulkanPipeline> CreateManagedPipeline();
 	void DeleteManagedPipeline(std::shared_ptr<ManagedVulkanPipeline> pipe);
@@ -90,7 +88,7 @@ public:
 
 	void SetModelPushConstant(std::shared_ptr<ManagedVulkanPipeline> pco, VkPushConstantRange& pushConstantRange);
 
-	void SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> pco, uint32_t dynamicStateCount, VkDynamicState* pDynamicStates, VkPipelineDynamicStateCreateFlags flags);
+	void SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> pco, std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateFlags flags = 0);
 private:
 	const VulkanDevice &device;
 	VkPipelineCache pipeCache;

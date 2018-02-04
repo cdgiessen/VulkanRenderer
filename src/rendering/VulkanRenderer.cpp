@@ -97,8 +97,6 @@ void VulkanRenderer::RecreateSwapChain() {
 	CreateDepthResources();
 	vulkanSwapChain.CreateFramebuffers(depthBuffer.textureImageView, renderPass);
 
-	pipelineManager.ReInitPipelines();
-
 	//frameIndex = 1; //cause it needs it to be synced back to zero (yes I know it says one, thats intended, build command buffers uses the "next" frame index since it has to sync with the swapchain so it starts at one....)
 	ReBuildCommandBuffers();
 }
@@ -236,10 +234,17 @@ void VulkanRenderer::BuildCommandBuffers() {
 			initializers::renderPassBeginInfo(renderPass, vulkanSwapChain.swapChainFramebuffers[frameIndex], { 0, 0 }, vulkanSwapChain.swapChainExtent, GetFramebufferClearValues());
 
 		vkCmdBeginRenderPass(commandBuffers[frameIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		VkDeviceSize offsets[] = { 0 };
 
 		vkCmdBindDescriptorSets(commandBuffers[frameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, globalDescriptorLayout, 0, 1, &globalDescriptorSet.set, 0, nullptr);
 		vkCmdBindDescriptorSets(commandBuffers[frameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pointLightDescriptorLayout, 1, 1, &pointLightDescriptorSet.set, 0, nullptr);
+		
+		VkViewport viewport = initializers::viewport((float)vulkanSwapChain.swapChainExtent.width, (float)vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f);
+		vkCmdSetViewport(commandBuffers[frameIndex], 0, 1, &viewport);
+
+		VkRect2D scissor = initializers::rect2D((float)vulkanSwapChain.swapChainExtent.width, (float)vulkanSwapChain.swapChainExtent.height, 0, 0);
+		vkCmdSetScissor(commandBuffers[frameIndex], 0, 1, &scissor);
+		
+		VkDeviceSize offsets[] = { 0 };
 
 		scene->RenderScene(commandBuffers[frameIndex], wireframe);
 

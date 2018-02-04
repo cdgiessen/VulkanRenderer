@@ -26,20 +26,6 @@ void VulkanPipeline::InitPipelineCache() {
 	}
 }
 
-void VulkanPipeline::ReInitPipelines() {
-	for (auto manPipe : pipes) {
-		vkDestroyPipelineLayout(device.device, manPipe->layout, nullptr);
-
-		for (auto it = manPipe->pipelines->begin(); it != manPipe->pipelines->end(); it++) {
-			vkDestroyPipeline(device.device, (*it), nullptr);
-		}
-
-		manPipe->pipelines->clear();
-		manPipe->pco = PipelineCreationObject();
-		(*(manPipe->ObjectCallBackFunction).get())();
-	}
-}
-
 void VulkanPipeline::CleanUp() {
 	for (auto manPipe : pipes){
 		vkDestroyPipelineLayout(device.device, manPipe->layout, nullptr);
@@ -105,6 +91,8 @@ void VulkanPipeline::BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> mvp, V
 	mvp->pco.pipelineInfo.pMultisampleState = &mvp->pco.multisampling;
 	mvp->pco.pipelineInfo.pDepthStencilState = &mvp->pco.depthStencil;
 	mvp->pco.pipelineInfo.pColorBlendState = &mvp->pco.colorBlending;
+	mvp->pco.pipelineInfo.pDynamicState = &mvp->pco.dynamicState;
+
 
 	mvp->pco.pipelineInfo.subpass = 0; //which subpass in the renderpass this pipeline gets used
 	mvp->pco.pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -177,12 +165,12 @@ void VulkanPipeline::SetInputAssembly(std::shared_ptr<ManagedVulkanPipeline> mvp
 	mvp->pco.inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo(topology, flag, primitiveRestart);
 }
 
-void VulkanPipeline::SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> mvp, uint32_t dynamicStateCount, VkDynamicState* pDynamicStates, VkPipelineDynamicStateCreateFlags flags) {
+void VulkanPipeline::SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> mvp, std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateFlags flags) {
 	mvp->pco.dynamicState = VkPipelineDynamicStateCreateInfo();
 	mvp->pco.dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 	mvp->pco.dynamicState.flags = flags;
-	mvp->pco.dynamicState.dynamicStateCount = dynamicStateCount;
-	mvp->pco.dynamicState.pDynamicStates = pDynamicStates;
+	mvp->pco.dynamicState.dynamicStateCount = dynamicStates.size();
+	mvp->pco.dynamicState.pDynamicStates = dynamicStates.data();
 }
 
 void VulkanPipeline::SetViewport(std::shared_ptr<ManagedVulkanPipeline> mvp, float width, float height, float minDepth, float maxDepth, float x, float y)

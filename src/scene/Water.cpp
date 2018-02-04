@@ -20,10 +20,6 @@ void Water::InitWater(std::shared_ptr<VulkanRenderer> renderer)
 	SetupImage();
 	SetupModel();
 	SetupDescriptor();
-
-	VulkanPipeline &pipeMan = renderer->pipelineManager;
-	mvp = pipeMan.CreateManagedPipeline();
-	mvp->ObjectCallBackFunction = std::make_unique<std::function<void(void)>>(std::bind(&Water::SetupPipeline, this));
 	SetupPipeline();
 }
 
@@ -132,6 +128,7 @@ void Water::SetupDescriptor()
 void Water::SetupPipeline()
 {
 	VulkanPipeline &pipeMan = renderer->pipelineManager;
+	mvp = pipeMan.CreateManagedPipeline();
 
 	pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/water.vert.spv"));
 	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
@@ -150,6 +147,13 @@ void Water::SetupPipeline()
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
 	pipeMan.SetColorBlending(mvp, 1, &mvp->pco.colorBlendAttachment); 
 	
+	std::vector<VkDynamicState> dynamicStateEnables = {
+		VK_DYNAMIC_STATE_VIEWPORT,
+		VK_DYNAMIC_STATE_SCISSOR,
+	};
+
+	pipeMan.SetDynamicState(mvp, dynamicStateEnables);
+
 	std::vector<VkDescriptorSetLayout> layouts;
 	renderer->AddGlobalLayouts(layouts);
 	layouts.push_back(descriptor->GetLayout());

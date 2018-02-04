@@ -14,11 +14,6 @@ void GameObject::InitGameObject(std::shared_ptr<VulkanRenderer> renderer)
     SetupImage();
     SetupModel();
     SetupDescriptor();
-
-    VulkanPipeline &pipeMan = renderer->pipelineManager;
-    mvp = pipeMan.CreateManagedPipeline();
-    mvp->ObjectCallBackFunction = std::make_unique<std::function<void(void)>>( std::bind(&GameObject::SetupPipeline, this));
-
     SetupPipeline();
 }
 
@@ -85,46 +80,13 @@ void GameObject::SetupDescriptor()
 	std::vector<DescriptorUse> writes;
 	writes.push_back(DescriptorUse(3, 1, gameObjectVulkanTexture.resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
-
-    //// setup descriptor set
-    //VkDescriptorSetLayout layouts[] = {descriptorSetLayout};
-    //VkDescriptorSetAllocateInfo allocInfo =
-    //    initializers::descriptorSetAllocateInfo(descriptorPool, layouts, 1);
-
-    //if (vkAllocateDescriptorSets(renderer->device.device, &allocInfo,
-    //                             &descriptorSet) != VK_SUCCESS)
-    //{
-    //    throw std::runtime_error("failed to allocate descriptor set!");
-    //}
-
-    //modelUniformBuffer.setupDescriptor();
-
-    //std::vector<VkWriteDescriptorSet> descriptorWrites;
-    //descriptorWrites.push_back(initializers::writeDescriptorSet(
-    //    descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &global.descriptor,
-    //    1));
-
-    //descriptorWrites.push_back(initializers::writeDescriptorSet(
-    //    descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
-    //    &modelUniformBuffer.descriptor, 1));
-
-    //descriptorWrites.push_back(initializers::writeDescriptorSet(
-    //    descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2,
-    //    &lighting.descriptor, 1));
-
-    //descriptorWrites.push_back(initializers::writeDescriptorSet(
-    //    descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3,
-    //    &gameObjectVulkanTexture.descriptor, 1));
-
-    //vkUpdateDescriptorSets(renderer->device.device,
-    //                       static_cast<uint32_t>(descriptorWrites.size()),
-    //                       descriptorWrites.data(), 0, nullptr);
 }
 
 void GameObject::SetupPipeline()
 {
 
     VulkanPipeline &pipeMan = renderer->pipelineManager;
+	mvp = pipeMan.CreateManagedPipeline();
 
     pipeMan.SetVertexShader(
         mvp, loadShaderModule(renderer->device.device,
@@ -156,6 +118,13 @@ void GameObject::SetupPipeline()
         VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR, VK_BLEND_OP_ADD,
         VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
     pipeMan.SetColorBlending(mvp, 1, &mvp->pco.colorBlendAttachment);
+
+	std::vector<VkDynamicState> dynamicStateEnables = {
+		VK_DYNAMIC_STATE_VIEWPORT,
+		VK_DYNAMIC_STATE_SCISSOR,
+	};
+
+	pipeMan.SetDynamicState(mvp, dynamicStateEnables);
 
 
 	std::vector<VkDescriptorSetLayout> layouts;

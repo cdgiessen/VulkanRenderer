@@ -143,10 +143,6 @@ void Terrain::InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 ca
 	SetupImage();
 	SetupModel();
 	SetupDescriptorLayoutAndPool();
-
-	VulkanPipeline &pipeMan = renderer->pipelineManager;
-	mvp = pipeMan.CreateManagedPipeline();
-	mvp->ObjectCallBackFunction = std::make_unique<std::function<void(void)>>(std::bind(&Terrain::SetupPipeline, this));
 	SetupPipeline();
 
 	//std::shared_ptr<TerrainQuadData> q = std::make_shared<TerrainQuadData>(terrainQuads->allocate());
@@ -365,6 +361,7 @@ void Terrain::SetupDescriptorLayoutAndPool()
 void Terrain::SetupPipeline()
 {
 	VulkanPipeline &pipeMan = renderer->pipelineManager;
+	mvp = pipeMan.CreateManagedPipeline();
 
 	pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/terrain.vert.spv"));
 	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/terrain.frag.spv"));
@@ -380,6 +377,13 @@ void Terrain::SetupPipeline()
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
 	pipeMan.SetColorBlending(mvp, 1, &mvp->pco.colorBlendAttachment);
+
+	std::vector<VkDynamicState> dynamicStateEnables = {
+		VK_DYNAMIC_STATE_VIEWPORT,
+		VK_DYNAMIC_STATE_SCISSOR,
+	};
+
+	pipeMan.SetDynamicState(mvp, dynamicStateEnables);
 
 	std::vector<VkDescriptorSetLayout> layouts;
 	renderer->AddGlobalLayouts(layouts);

@@ -23,11 +23,6 @@ void Skybox::InitSkybox(std::shared_ptr<VulkanRenderer> renderer) {
 	//SetupUniformBuffer();
 	SetupCubeMapImage();
 	SetupDescriptor();
-
-	VulkanPipeline &pipeMan = renderer->pipelineManager;
-	mvp = pipeMan.CreateManagedPipeline();
-	mvp->ObjectCallBackFunction = std::make_unique<std::function<void(void)>>(std::bind(&Skybox::SetupPipeline, this));
-
 	SetupPipeline();
 
 }
@@ -59,53 +54,12 @@ void Skybox::SetupDescriptor() {
 	std::vector<DescriptorUse> writes;
 	writes.push_back(DescriptorUse(2, 1, vulkanCubeMap.resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
-
-	/*
-	VkDescriptorSetLayoutBinding skyboxUniformLayoutBinding 
-		= initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1);
-	VkDescriptorSetLayoutBinding skyboxSamplerLayoutBinding 
-		= initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1);
-
-	std::vector<VkDescriptorSetLayoutBinding> bindings = { skyboxUniformLayoutBinding, skyboxSamplerLayoutBinding };
-	VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
-
-	if (vkCreateDescriptorSetLayout(renderer->device.device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create descriptor set layout!");
-	}
-	*/
-
-	/*std::vector<VkDescriptorPoolSize> poolSizes;
-	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-	poolSizes.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
-
-	VkDescriptorPoolCreateInfo poolInfo = initializers::descriptorPoolCreateInfo(static_cast<uint32_t>(poolSizes.size()),
-		poolSizes.data(), 1);
-
-	if (vkCreateDescriptorPool(renderer->device.device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create descriptor pool!");
-	}
-	
-	VkDescriptorSetLayout layouts[] = { descriptorSetLayout };
-	VkDescriptorSetAllocateInfo allocInfo = initializers::descriptorSetAllocateInfo(descriptorPool, layouts, 1);
-
-	if (vkAllocateDescriptorSets(renderer->device.device, &allocInfo, &descriptorSet) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate descriptor set!");
-	}
-
-	skyboxUniformBuffer.setupDescriptor();
-
-	std::vector<VkWriteDescriptorSet> descriptorWrites;
-	descriptorWrites.push_back(initializers::writeDescriptorSet(
-		descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &skyboxUniformBuffer.descriptor, 1));
-	descriptorWrites.push_back(initializers::writeDescriptorSet(
-		descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &vulkanCubeMap.descriptor, 1));
-
-	vkUpdateDescriptorSets(renderer->device.device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);*/
 }
 
 void Skybox::SetupPipeline()
 {
 	VulkanPipeline &pipeMan = renderer->pipelineManager;
+	mvp = pipeMan.CreateManagedPipeline();
 
 	pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/skybox.vert.spv"));
 	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/skybox.frag.spv"));
@@ -123,6 +77,13 @@ void Skybox::SetupPipeline()
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
 	pipeMan.SetColorBlending(mvp, 1, &mvp->pco.colorBlendAttachment);
+
+	std::vector<VkDynamicState> dynamicStateEnables = {
+		VK_DYNAMIC_STATE_VIEWPORT,
+		VK_DYNAMIC_STATE_SCISSOR,
+	};
+
+	pipeMan.SetDynamicState(mvp, dynamicStateEnables);
 
 	std::vector<VkDescriptorSetLayout> layouts;
 	renderer->AddGlobalLayouts(layouts);

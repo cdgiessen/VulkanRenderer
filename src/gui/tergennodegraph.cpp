@@ -156,14 +156,6 @@ namespace NewNodeGraph {
 		return true;
 	}
 
-	template<typename T>
-	std::string Link<T>::GetJsonStringRep() const
-	{
-
-	}
-
-
-
 	INode::~INode() {
 
 	}
@@ -179,11 +171,6 @@ namespace NewNodeGraph {
 	template<typename T>
 	LinkType Node<T>::GetNodeType() const {
 		return outputType;
-	}
-
-	template<typename T>
-	void Node<T>::SaveToJson(nlohmann::json & json)
-	{
 	}
 
 	//template<typename T> T			Node<T>::GetValue(const int x, const int y, const int z, T dummy)		const { return dummy; }
@@ -224,13 +211,6 @@ namespace NewNodeGraph {
 		input_output.SetValue(value);
 	}
 
-	void OutputNode::SaveToJson(nlohmann::json & json)
-	{
-		nlohmann::json j;
-
-		j[std::to_string(ID)] = { {} };
-	}
-
 	ConstantFloatNode::ConstantFloatNode(float value) : Node<float>(LinkType::Float), value(LinkType::Float, value) {};
 	ConstantFloatNode::~ConstantFloatNode() { /*Log::Debug << "Constant float Deleted" << "\n"; */ }
 
@@ -255,11 +235,6 @@ namespace NewNodeGraph {
 		this->value.SetValue(value);
 	}
 
-	void ConstantFloatNode::SaveToJson(nlohmann::json & json)
-	{
-		// TODO : fill out json
-	}
-
 	ConstantIntNode::ConstantIntNode(int value) : Node<int>(LinkType::Float), value(LinkType::Int, value) {};
 	ConstantIntNode::~ConstantIntNode() { /*Log::Debug << "Coanstant int Deleted" << "\n"; */}
 
@@ -282,11 +257,6 @@ namespace NewNodeGraph {
 
 	bool ConstantIntNode::ResetInputLink(int index) {
 		return value.ResetInputNode();
-	}
-
-	void ConstantIntNode::SaveToJson(nlohmann::json & json)
-	{
-		// TODO : fill out json
 	}
 
 	MathNode::MathNode() : Node<float>(LinkType::Float), input_a(LinkType::Float), input_b(LinkType::Float) {}
@@ -320,12 +290,6 @@ namespace NewNodeGraph {
 			input_a.SetValue(value);
 		else if(index == 1)
 			input_b.SetValue(value);
-	}
-
-
-	void MathNode::SaveToJson(nlohmann::json & json)
-	{
-		// TODO : fill out json
 	}
 	
 	float AdditionNode::GetValue(const int x, const int y, const int z, float dummy)const	{ return input_a.GetValue(x, y, z) + input_b.GetValue(x, y, z); }
@@ -386,11 +350,6 @@ namespace NewNodeGraph {
 		//	input_blendAmount.SetValue(value);
 	}
 
-	void BlendNode::SaveToJson(nlohmann::json & json)
-	{
-		// TODO : fill out json
-	}
-
 	ClampNode::ClampNode() : Node<float>(LinkType::Float), input(LinkType::Float), lowerBound(LinkType::Float), upperBound(LinkType::Float) {} 
 
 
@@ -433,11 +392,6 @@ namespace NewNodeGraph {
 		else if (index == 2)
 			upperBound.SetValue(value);
 
-	}
-
-	void ClampNode::SaveToJson(nlohmann::json & json)
-	{
-		// TODO : fill out json
 	}
 
 
@@ -517,11 +471,6 @@ namespace NewNodeGraph {
 			input_frequency.SetValue(value);
 	}
 
-
-	void NoiseSourceNode::SaveToJson(nlohmann::json & json)
-	{
-		// TODO : fill out json
-	}
 
 	bool ValueFractalNoiseNode::GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) {
 		CleanNoiseSet();
@@ -695,7 +644,8 @@ namespace NewNodeGraph {
 		auto found = std::find(nodes.begin(), nodes.end(), node);
 		if (found != nodes.end()) {
 
-
+			
+			found->reset();
 			nodes.erase(found);
 		}
 		return true;
@@ -745,19 +695,4 @@ namespace NewNodeGraph {
 
 		outputNode->SetInputLink(0, nSource1);
 	}
-
-	nlohmann::json TerGenNodeGraph::SaveGraphToJson()
-	{
-		nlohmann::json outjson;
-
-
-
-		return outjson;
-	}
-
-	void TerGenNodeGraph::LoadGraphFromJson(nlohmann::json inputjson)
-	{
-
-	}
-
 }
