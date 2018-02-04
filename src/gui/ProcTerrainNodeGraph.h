@@ -245,6 +245,8 @@ private:
 	HoveredSlotInfo GetHoveredSlot();
 
 	void AddNode(NodeType nodeType, ImVec2 position, int id = -1);
+
+	std::shared_ptr<Node> GetNodeById(int id);
 	
 	const ImVec2 windowPadding = ImVec2(8.0f, 8.0f);
 	ImVec2 windowPos = ImVec2(0, 0);

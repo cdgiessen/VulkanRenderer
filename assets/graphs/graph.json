@@ -1,0 +1,16 @@
+{
+  "0": {
+    "0": {
+      "hasConnection": false,
+      "slotName": "Out",
+      "slotType": 1,
+      "value": -0.5
+    },
+    "id": 0,
+    "nodeType": 0,
+    "numSlots": 1,
+    "winPosX": 200.0,
+    "winPosY": 150.0
+  },
+  "numNodes": 1
+}

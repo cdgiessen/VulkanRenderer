@@ -10,6 +10,7 @@
 #include <vulkan/vulkan.h>
 
 #include <glm/common.hpp>
+#include <vector>
 
 #include "../../third-party/stb_image/stb_image.h"
 
@@ -25,16 +26,15 @@ struct RGBA_pixel {
 };
 
 
+
 class Texture {
 public:
 	uint32_t width = 0, height = 0;
-	uint32_t layerCount = 1;
 	VkDeviceSize texImageSize = 0;
 
-	stbi_uc* pixels = 0;
+	std::vector<RGBA_pixel> pixels;
 
-	Texture();
-	~Texture();
+	Texture(uint32_t width, uint32_t height);
 
 };
 
@@ -45,11 +45,9 @@ public:
 	VkDeviceSize texImageSize = 0;
 	VkDeviceSize texImageSizePerTex = 0;
 
-	stbi_uc* pixels = 0;
+	std::vector<RGBA_pixel> pixels;
 
-	TextureArray();
-	~TextureArray();
-
+	TextureArray(uint32_t width, uint32_t height, uint32_t layerCount = 1);
 };
 
 class CubeMap {
@@ -60,7 +58,8 @@ public:
 	VkDeviceSize texImageSize = 0;
 	VkDeviceSize texImageSizePerTex = 0;
 
-	~CubeMap();
+	std::vector<RGBA_pixel> pixels;
 
-	stbi_uc* pixels = 0;
+	CubeMap(uint32_t width, uint32_t height);
+
 };

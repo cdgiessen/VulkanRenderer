@@ -244,7 +244,7 @@ void VulkanTexture2D::loadFromTexture(
 	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 
 	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-	AlignedMemcpy(texture->layerCount, texture->height, texture->width, texture->width * 4, sub.rowPitch, (char*)texture->pixels, stagingPointer);
+	AlignedMemcpy(1, texture->height, texture->width, texture->width * 4, sub.rowPitch, (char*)texture->pixels.data(), stagingPointer);
 	
 	device.CreateImage2D(imageCreateInfo, image);
 
@@ -417,7 +417,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 
 	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-	AlignedMemcpy(textures->layerCount, textures->height, textures->width, textures->width * 4, sub.rowPitch, (char*)textures->pixels, stagingPointer);
+	AlignedMemcpy(textures->layerCount, textures->height, textures->width, textures->width * 4, sub.rowPitch, (char*)textures->pixels.data(), stagingPointer);
 
 	device.CreateImage2D(imageCreateInfo, image);
 
@@ -547,7 +547,7 @@ void VulkanCubeMap::loadFromTexture(
 	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 	
 	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-	AlignedMemcpy(6, cubeMap->height, cubeMap->width, cubeMap->width * 4, sub.rowPitch, (char*)cubeMap->pixels, stagingPointer);
+	AlignedMemcpy(6, cubeMap->height, cubeMap->width, cubeMap->width * 4, sub.rowPitch, (char*)cubeMap->pixels.data(), stagingPointer);
 
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo(
 		VK_IMAGE_TYPE_2D,

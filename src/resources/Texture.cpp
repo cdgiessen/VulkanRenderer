@@ -2,45 +2,26 @@
 
 #include "../core/Logger.h"
 
-Texture::Texture() {
-
+Texture::Texture(uint32_t width, uint32_t height)
+	:width(width), height(height)
+{
+	pixels.resize(width*height);
+	texImageSize = width * height * 4;
 };
 
-Texture::~Texture() {
-	if (pixels) {
-		free(pixels);
-		pixels = 0;
-	}
-	else {
-		Log::Error << "Failed to free pixels, is there a null pointer?" << "\n";
-		//throw std::runtime_error("failed to free texture image!");
-	}
-};
-
-
-TextureArray::TextureArray() {
-
+TextureArray::TextureArray(uint32_t width, uint32_t height, uint32_t layerCount)
+	:width(width), height(height), layerCount(layerCount)
+{
+	pixels.resize(width*height*layerCount);
+	texImageSize = width * height * layerCount * 4;
+	texImageSizePerTex = width * height * 4;
 }
 
-TextureArray::~TextureArray() {
-	if (pixels) {
-		free(pixels);
-		pixels = 0;
-	}
-	else {
-		Log::Error << "Failed to free pixels, is there a null pointer?" << "\n";
-		//throw std::runtime_error("failed to free texture image!");
-	}
+CubeMap::CubeMap(uint32_t width, uint32_t height) :
+	width(width), height(height)
+{
+	pixels.resize(width*height*6);
+	texImageSize = width * height * 6 * 4;
+	texImageSizePerTex = width * height * 4;
 }
 
-
-CubeMap::~CubeMap() {
-	if (pixels) {
-		free(pixels);
-		pixels = 0;
-	}
-	else {
-		Log::Error << "Failed to free pixels, is there a null pointer?" << "\n";
-		//throw std::runtime_error("failed to free texture image!");
-	}
-}

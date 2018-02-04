@@ -4,6 +4,7 @@
 
 #include "CoreTools.h"
 #include "VulkanApp.h"
+#include "Logger.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../../third-party/stb_image/stb_image.h"
@@ -21,7 +22,8 @@ int main(int argc, char* argv[]) {
 	}
 	catch (const std::runtime_error& e) {
 		std::cerr << e.what() << std::endl;
-		
+		Log::Error << std::string(e.what()) << "\n";
+
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;

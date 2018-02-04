@@ -29,20 +29,24 @@ NewNodeGraph::TerGenNodeGraph& ProcTerrainNodeGraph::GetGraph() {
 }
 
 void ProcTerrainNodeGraph::BuildTerGenNodeGraph() {
-	
+
 }
 
 void ProcTerrainNodeGraph::DeleteNode(std::shared_ptr<Node> node) {
 	auto found = std::find(nodes.begin(), nodes.end(), node);
 	if (found != nodes.end()) {
 
-		for (auto slot : (*found)->inputSlots) 
-			DeleteConnection(slot.connection);
-		for(auto con : (*found)->outputSlot.connections)
+		for (auto slot : (*found)->inputSlots)
+			if (slot.hasConnection)
+				DeleteConnection(slot.connection);
+		for (auto con : (*found)->outputSlot.connections)
 			DeleteConnection(con);
 
 		curGraph.DeleteNode((*found)->internal_node);
 		nodes.erase(found);
+	}
+	else {
+		Log::Error << "Couldn't find node to delete! Does it actually exist?\n";
 	}
 }
 
@@ -54,26 +58,32 @@ void ProcTerrainNodeGraph::DeleteConnection(std::shared_ptr<Connection> con) {
 		(*found)->output.reset();
 		connections.erase(found);
 	}
+	else {
+		Log::Error << "Couldn't find connection to delete! Does it actually exist?\n";
+	}
 }
 
-void ProcTerrainNodeGraph::ResetGraph(){
-	while(connections.size() > 0){
-		DeleteConnection(connections.at(0));
-	}
-	while(nodes.size() > 0){
+void ProcTerrainNodeGraph::ResetGraph() {
+	while (nodes.size() > 0) {
 		DeleteNode(nodes.at(0));
 	}
+	while (connections.size() > 0) {
+		DeleteConnection(connections.at(0));
+	}
+	connections.clear();
 	nodes.clear();
+
 }
 
 void ProcTerrainNodeGraph::ResetOutputNode() {
 
 	outputNode.reset();
 	outputNode = std::make_shared<OutputNode>(curGraph);
-	
+
 	outputNode->id = curID++;
 	outputNode->type = NodeType::Output;
 	outputNode->internal_node = curGraph.GetOutputNode();
+	outputNode->internal_node->ResetInputLink(0);
 	outputNode->internal_node->SetValue(0, -0.5f);
 	nodes.push_back(outputNode);
 }
@@ -169,24 +179,24 @@ void ProcTerrainNodeGraph::DrawNodeButtons() {
 	ImGui::BeginChild("node buttons", ImVec2(120, 0.0f), true);
 
 	ImGui::Text("Noise Sources");
-	if (ImGui::Button("Perlin", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Perlin, startingNodePos); }
-	if (ImGui::Button("Simplex", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Simplex, startingNodePos); }
-	if (ImGui::Button("Value", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::ValueNoise, startingNodePos); }
-	if (ImGui::Button("Voronoi", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Voroni, startingNodePos); }
-	if (ImGui::Button("Cellular", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::CellNoise, startingNodePos); }
+	if (ImGui::Button("Perlin", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Perlin, startingNodePos); }
+	if (ImGui::Button("Simplex", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Simplex, startingNodePos); }
+	if (ImGui::Button("Value", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ValueNoise, startingNodePos); }
+	if (ImGui::Button("Voronoi", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Voroni, startingNodePos); }
+	if (ImGui::Button("Cellular", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::CellNoise, startingNodePos); }
 	ImGui::Separator();
 	ImGui::Text("Modifiers");
-	if (ImGui::Button("Constant Int", ImVec2(-1.0f, 0.0f)))		{ AddNode(NodeType::ConstantInt, startingNodePos); }
-	if (ImGui::Button("Constant Float", ImVec2(-1.0f, 0.0f)))	{ AddNode(NodeType::ConstantFloat, startingNodePos); }
-	if (ImGui::Button("Add", ImVec2(-1.0f, 0.0f)))				{ AddNode(NodeType::Addition, startingNodePos); }
-	if (ImGui::Button("Subtract", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Subtraction, startingNodePos); }
-	if (ImGui::Button("Multiply", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Multiplication, startingNodePos); }
-	if (ImGui::Button("Divide", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Division, startingNodePos); }
-	if (ImGui::Button("Power", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Power, startingNodePos); }
-	if (ImGui::Button("Max", ImVec2(-1.0f, 0.0f)))				{ AddNode(NodeType::Max, startingNodePos); }
-	if (ImGui::Button("Min", ImVec2(-1.0f, 0.0f)))				{ AddNode(NodeType::Min, startingNodePos); }
-	if (ImGui::Button("Blend", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Blend, startingNodePos); }
-	if (ImGui::Button("Clamp", ImVec2(-1.0f, 0.0f)))			{ AddNode(NodeType::Clamp, startingNodePos); }
+	if (ImGui::Button("Constant Int", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ConstantInt, startingNodePos); }
+	if (ImGui::Button("Constant Float", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ConstantFloat, startingNodePos); }
+	if (ImGui::Button("Add", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Addition, startingNodePos); }
+	if (ImGui::Button("Subtract", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Subtraction, startingNodePos); }
+	if (ImGui::Button("Multiply", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Multiplication, startingNodePos); }
+	if (ImGui::Button("Divide", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Division, startingNodePos); }
+	if (ImGui::Button("Power", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Power, startingNodePos); }
+	if (ImGui::Button("Max", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Max, startingNodePos); }
+	if (ImGui::Button("Min", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Min, startingNodePos); }
+	if (ImGui::Button("Blend", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Blend, startingNodePos); }
+	if (ImGui::Button("Clamp", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Clamp, startingNodePos); }
 
 	ImGui::EndChild();
 	ImGui::PopStyleVar();
@@ -238,7 +248,7 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 		bool open_context_menu = false;
 
 		ImGui::PushID(node->id);
-		
+
 		// Display node contents first
 		imDrawList->ChannelsSetCurrent(1); // Foreground
 		bool old_any_active = ImGui::IsAnyItemActive();
@@ -253,7 +263,7 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 
 		ImGui::SetCursorScreenPos(windowPos + textPos);
 		ImGui::Text("%s", node->name.c_str());
-		
+
 		//ImGui::SliderFloat("##value", &node->Value, 0.0f, 1.0f, "Alpha %.2f");
 		//float dummy_color[3] = { node->Pos.x / ImGui::GetWindowWidth(), node->Pos.y / ImGui::GetWindowHeight(), fmodf((float)node->ID * 0.5f, 1.0f) };
 		//ImGui::ColorEdit3("##color", &dummy_color[0]);
@@ -276,7 +286,7 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 
 		bool node_moving_active = false;
 
-		if (ImGui::IsItemActive() )
+		if (ImGui::IsItemActive())
 			node_moving_active = true;
 
 		ImU32 node_bg_color = (node_hovered_in_scene == node->id) ? ImColor(75, 75, 75) : ImColor(60, 60, 60);
@@ -308,9 +318,9 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 		}
 
 		node->outputSlot.Draw(imDrawList, *this, *node);
-	
+
 		/*if (ImGui::BeginPopupContextItem("output context menu"))
-		{ 
+		{
 			if (ImGui::Selectable("Reset Outputs")) {
 				if (node->outputSlot.connections.size() > 0)
 					for(auto con : node->outputSlot.connections)
@@ -323,9 +333,9 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 		{
 			node->inputSlots[i].Draw(imDrawList, *this, *node);
 		}
-//		for (auto slot : node->inputSlots) {
-//			slot.Draw(imDrawList, *this, *node);
-//		}
+		//		for (auto slot : node->inputSlots) {
+		//			slot.Draw(imDrawList, *this, *node);
+		//		}
 
 		if (node_widgets_active || node_moving_active) {
 
@@ -382,7 +392,7 @@ void ProcTerrainNodeGraph::DrawPossibleConnection(ImDrawList* imDrawList) {
 
 		imDrawList->ChannelsSetCurrent(0); // Background
 
-		startPos = windowPos + posCon.slot.node->pos 
+		startPos = windowPos + posCon.slot.node->pos
 			+ PossibleConnection::GetActiveSlotPosition(posCon.slot);
 
 		DrawHermite(imDrawList, startPos, ImGui::GetIO().MousePos, 12);
@@ -414,7 +424,7 @@ void ProcTerrainNodeGraph::DrawPossibleConnection(ImDrawList* imDrawList) {
 					incomingSlot.node);
 
 				//Delete old connection if exists
-				if (incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection != nullptr) 
+				if (incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection != nullptr)
 					DeleteConnection(incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection);
 
 				incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection = newConnection;
@@ -430,7 +440,7 @@ void ProcTerrainNodeGraph::DrawPossibleConnection(ImDrawList* imDrawList) {
 				posCon.isActive = false;
 				posCon.slot = HoveredSlotInfo();
 				posCon.state = PossibleConnection::State::Default;
-				
+
 			}
 		}
 		else if (ImGui::IsMouseClicked(1))
@@ -511,7 +521,6 @@ void ProcTerrainNodeGraph::SaveGraphFromFile()
 				slotJson["slotType"] = as_integer(slot.conType);
 				if (slot.connection == nullptr) {
 					slotJson["hasConnection"] = false;
-
 					if (slot.value.type == ConnectionType::Int) slotJson["value"] = std::get<int>(slot.value.value);
 					else if (slot.value.type == ConnectionType::Float) slotJson["value"] = std::get<float>(slot.value.value);
 
@@ -541,7 +550,7 @@ void ProcTerrainNodeGraph::SaveGraphFromFile()
 			j[std::to_string(curNodeIndex)] = nodeJson;
 			curNodeIndex++;
 		}
-	
+
 		std::ofstream outFile(filename);
 		outFile << std::setw(4) << j;
 		outFile.close();
@@ -554,39 +563,121 @@ void ProcTerrainNodeGraph::SaveGraphFromFile()
 void ProcTerrainNodeGraph::LoadGraphFromFile()
 {
 	const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, NULL, GetExecutableFilePath().c_str(), NULL);
-	if (filename != NULL) {
-		ResetGraph();
-				
-		std::ifstream inFile(filename);
-		nlohmann::json j;
-		inFile >> j;
-		inFile.close();
+	if (filename == NULL) {
+		Log::Debug << "User didn't specify file, Aborting load\n";
+		return;
+	}
+	std::ifstream inFile(filename);
+	nlohmann::json j;
 
-		int numNodes = j["numNodes"];
-		nodes.reserve(numNodes);
-		int curNodeIndex = 0;
-		for (int i = 0; i < numNodes; i++)
-		{
-			std::string curIndex(std::to_string(curNodeIndex));
-			ImVec2 pos = ImVec2(j[curIndex]["winPosX"], j[curIndex]["winPosY"]);
-			
-			AddNode(j[curIndex]["nodeType"], pos, j[curIndex]["id"]);
+	if (inFile.peek() == std::ifstream::traits_type::eof()) {
+		Log::Error << "Opened graph is empty! Did something go wrong?\n";
+		return;
+	}
+
+	inFile >> j;
+	inFile.close();
+
+	ResetGraph();
+
+	int numNodes = j["numNodes"];
+	nodes.reserve(numNodes);
+	for (int i = 0; i < numNodes; i++)
+	{
+		std::string curIndex(std::to_string(i));
+		ImVec2 pos = ImVec2(j[curIndex]["winPosX"], j[curIndex]["winPosY"]);
+		int type = j[curIndex]["nodeType"];
+		AddNode(static_cast<NodeType>(type), pos, j[curIndex]["id"]);
+	}
+
+	for (int i = 0; i < numNodes; i++) {
+		std::string curIndex(std::to_string(i));
+		auto node = GetNodeById(j[curIndex]["id"]);
+		for (int slot = 0; slot < node->inputSlots.size(); slot++) {
+			std::string curSlotIndex(std::to_string(slot));
+
+			bool hasCon = j[curIndex][curSlotIndex]["hasConnection"];
+			if (hasCon) {
+				int conIndex = j[curIndex][curSlotIndex]["value"];
+
+				auto outGoingNode = GetNodeById(conIndex);
+				if (outGoingNode == nullptr) {
+					Log::Error << "Couldn't find node by id in graph loading!\n";
+				}
+
+				int slotType = j[curIndex][curSlotIndex]["slotType"];
+				std::shared_ptr<Connection> newConnection = std::make_shared<Connection>(
+					static_cast<ConnectionType>(slotType),
+					outGoingNode,
+					node);
+
+				node->inputSlots[slot].connection = newConnection;
+				outGoingNode->outputSlot.connections.push_back(newConnection);
+
+				newConnection->startPosRelNode = outGoingNode->outputSlot.pos;
+				newConnection->endPosRelNode = node->inputSlots[slot].pos;
+
+				node->SetInternalLink(slot, outGoingNode->internal_node);
+
+				connections.push_back(newConnection);
+
+			}
+			else {
+				int slotType = j[curIndex][curSlotIndex]["slotType"];
+				ConnectionType type = static_cast<ConnectionType>(slotType);
+
+				if (type == ConnectionType::Int) {
+					int valInt = j[curIndex][curSlotIndex]["value"];
+					node->inputSlots[slot].value.value = valInt;
+				}
+				if (type == ConnectionType::Float) {
+					float valFloat = j[curIndex][curSlotIndex]["value"];
+					node->inputSlots[slot].value.value = valFloat;
+				}
+				//if (type == ConnectionType::Vec2) {
+				//	node->inputSlots[slot].value.value = j[curIndex][curSlotIndex]["value"];
+				//}
+				//if (type == ConnectionType::Vec3 || type == ConnectionType::Color) {
+				//	node->inputSlots[slot].value.value = j[curIndex][curSlotIndex]["value"];
+				//}
+				//if (type == ConnectionType::Vec) {
+				//	node->inputSlots[slot].value.value = j[curIndex][curSlotIndex]["value"];
+				//}
+
+
+			}
+
 		}
 	}
-	else {
-		Log::Debug << "user didn't specify file, Aborting load\n";
-	}
+
 }
 
 void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 {
+	if (nodeType == NodeType::Output) {
+
+		outputNode.reset();
+		outputNode = std::make_shared<OutputNode>(curGraph);
+
+		if (id >= 0)
+			outputNode->id = id;
+		else
+			outputNode->id = curID;
+		curID++;
+
+		outputNode->type = NodeType::Output;
+		outputNode->pos = position;
+		outputNode->internal_node = curGraph.GetOutputNode();
+		outputNode->internal_node->ResetInputLink(0);
+		outputNode->internal_node->SetValue(0, -0.5f);
+		nodes.push_back(outputNode);
+		return;
+	}
+
 	std::shared_ptr<Node> newNode;
 
+
 	switch (nodeType) {
-	case(NodeType::Output): 
-		ResetOutputNode();
-		newNode = outputNode;
-		break;
 	case(NodeType::Addition): newNode = std::make_shared<AdditionNode>(curGraph); break;
 	case(NodeType::Subtraction): newNode = std::make_shared<SubtractionNode>(curGraph); break;
 	case(NodeType::Multiplication): newNode = std::make_shared<MultiplicationNode>(curGraph); break;
@@ -616,11 +707,20 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 
 }
 
-ConnectionSlot::ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type): slotNum(slotNum), conType(type), pos(pos)
+std::shared_ptr<Node> ProcTerrainNodeGraph::GetNodeById(int id) {
+	for (auto node : nodes) {
+		if (id == node->id) {
+			return node;
+		}
+	}
+	return nullptr;
+}
+
+ConnectionSlot::ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type) : slotNum(slotNum), conType(type), pos(pos)
 {
 }
 
-ConnectionSlot::ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name) 
+ConnectionSlot::ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name)
 	: slotNum(slotNum), conType(type), pos(pos), name(name)
 {
 }
@@ -640,44 +740,44 @@ ConnectionType ConnectionSlot::GetType() {
 	return conType;
 }
 
-InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name) 
-: ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound) 
+InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name)
+	: ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound)
 {
 	switch (value.type) {
-		case(ConnectionType::Int): value.value = 0; break;
-		case(ConnectionType::Float): value.value = 0.0f;  break;
-		case(ConnectionType::Color): value.value = glm::vec3(0); break;
-		case(ConnectionType::Vec2): value.value = glm::vec2(0); break;
-		case(ConnectionType::Vec3): value.value = glm::vec3(0); break;
-		case(ConnectionType::Vec4): value.value = glm::vec4(0); break;
+	case(ConnectionType::Int): value.value = 0; break;
+	case(ConnectionType::Float): value.value = 0.0f;  break;
+	case(ConnectionType::Color): value.value = glm::vec3(0); break;
+	case(ConnectionType::Vec2): value.value = glm::vec2(0); break;
+	case(ConnectionType::Vec3): value.value = glm::vec3(0); break;
+	case(ConnectionType::Vec4): value.value = glm::vec4(0); break;
 	}
 }
 
 InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name,
-float defaultVal, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float upperBound = 0.0f) 
-: ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound) 
+	float defaultVal, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float upperBound = 0.0f)
+	: ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound)
 {
 	switch (type) {
-		case(ConnectionType::Int): value.value = 0; break;
-		case(ConnectionType::Float): value.value = defaultVal;  break;
-		case(ConnectionType::Color): value.value = glm::vec3(0); break;
-		case(ConnectionType::Vec2): value.value = glm::vec2(0); break;
-		case(ConnectionType::Vec3): value.value = glm::vec3(0); break;
-		case(ConnectionType::Vec4): value.value = glm::vec4(0); break;
+	case(ConnectionType::Int): value.value = 0; break;
+	case(ConnectionType::Float): value.value = defaultVal;  break;
+	case(ConnectionType::Color): value.value = glm::vec3(0); break;
+	case(ConnectionType::Vec2): value.value = glm::vec2(0); break;
+	case(ConnectionType::Vec3): value.value = glm::vec3(0); break;
+	case(ConnectionType::Vec4): value.value = glm::vec4(0); break;
 	}
 }
 
 InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name,
-int defaultVal, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float upperBound = 0.0f) 
-: ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound) 
+	int defaultVal, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float upperBound = 0.0f)
+	: ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound)
 {
 	switch (type) {
-		case(ConnectionType::Int): value.value = defaultVal; break;
-		case(ConnectionType::Float): value.value = 0.0f;  break;
-		case(ConnectionType::Color): value.value = glm::vec3(0); break;
-		case(ConnectionType::Vec2): value.value = glm::vec2(0); break;
-		case(ConnectionType::Vec3): value.value = glm::vec3(0); break;
-		case(ConnectionType::Vec4): value.value = glm::vec4(0); break;
+	case(ConnectionType::Int): value.value = defaultVal; break;
+	case(ConnectionType::Float): value.value = 0.0f;  break;
+	case(ConnectionType::Color): value.value = glm::vec3(0); break;
+	case(ConnectionType::Vec2): value.value = glm::vec2(0); break;
+	case(ConnectionType::Vec3): value.value = glm::vec3(0); break;
+	case(ConnectionType::Vec4): value.value = glm::vec4(0); break;
 	}
 }
 
@@ -742,7 +842,7 @@ void InputConnectionSlot::Draw(ImDrawList* imDrawList, const ProcTerrainNodeGrap
 	imDrawList->AddCircleFilled(relPos + pos, nodeSlotRadius, conColor);
 }
 
-OutputConnectionSlot::OutputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type): ConnectionSlot(slotNum, pos, type)
+OutputConnectionSlot::OutputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type) : ConnectionSlot(slotNum, pos, type)
 {
 }
 
@@ -774,7 +874,7 @@ void Node::AddInputSlot(ConnectionType type, std::string name)
 {
 	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40 + (float)inputSlots.size() * 15), type, name));
 }
-void Node::AddInputSlot(ConnectionType type, std::string name,  float defaultValue, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float upperBound = 0.0f)
+void Node::AddInputSlot(ConnectionType type, std::string name, float defaultValue, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float upperBound = 0.0f)
 {
 	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40 + (float)inputSlots.size() * 15), type, name, defaultValue, sliderStepSize, lowerBound, upperBound));
 }
@@ -860,7 +960,7 @@ NoiseNode::NoiseNode(std::string name) : Node(name, ConnectionType::Float)
 {
 	AddInputSlot(ConnectionType::Int, "Octaves", 1, 0.1f, 0.0f, 10.0f);
 	AddInputSlot(ConnectionType::Float, "Persistence", 0.5f, 0.01f, 0.0f, 1.0f);
-	AddInputSlot(ConnectionType::Float, "Frequency", 0.15f,0.01f, 0.0f, 1.0f);
+	AddInputSlot(ConnectionType::Float, "Frequency", 0.15f, 0.01f, 0.0f, 1.0f);
 }
 
 SimplexNode::SimplexNode(NewNodeGraph::TerGenNodeGraph& graph) : NoiseNode("Simplex")

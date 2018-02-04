@@ -103,7 +103,6 @@ Terrain::~Terrain() {
 
 void Terrain::CleanUp()
 {
-	renderer->pipelineManager.DeleteManagedPipeline(mvp);
 
 	//for (auto item : quadHandles) {
 	//	terrainQuads->destroy(item.get());
@@ -967,9 +966,9 @@ void GenerateTerrainFromTexture(Texture& tex, TerrainMeshVertices& verts, Terrai
 	//myGraph.BuildOutputImage(terrainQuad.logicalPos, (float) (1.0/glm::pow(2.0,terrainQuad.level)));
 
 	std::vector<float> px(tex.height * tex.width);
-	for (int i = 0; i < px.size(); i++) {
-		px.at(i) = (*(tex.pixels + i)) / 256.0f;
-	}
+	//for (int i = 0; i < px.size(); i++) {
+	//	px.at(i) = (*(tex.pixels.data() + i)) / 256.0f;
+	//}
 
 	NewNodeGraph::TEMPTerGenNodeGraph myGraph = NewNodeGraph::TEMPTerGenNodeGraph(&px, 284);
 
