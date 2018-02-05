@@ -57,7 +57,7 @@ public:
 	void PrepareResources();
 
 	std::shared_ptr<VulkanDescriptor> GetVulkanDescriptor();
-	void VulkanRenderer::AddGlobalLayouts(std::vector<VkDescriptorSetLayout>& layouts);
+	void AddGlobalLayouts(std::vector<VkDescriptorSetLayout>& layouts);
 	//std::vector<DescriptorPoolSize> GetGlobalPoolSize(int poolSize = 1);
 	//std::vector<DescriptorUse> GetGlobalDescriptorUses();
 	//DescriptorUse GetLightingDescriptorUses(uint32_t binding);
