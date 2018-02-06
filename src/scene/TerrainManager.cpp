@@ -17,6 +17,26 @@ TerrainManager::TerrainManager(NewNodeGraph::TerGenNodeGraph& nodeGraph): nodeGr
 
 	//terrainQuadPool = std::make_shared<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>>();
 	//nodeGraph.BuildNoiseGraph();
+
+
+
+
+}
+
+void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer) {
+	terrainTextureArray = resourceMan->texManager.loadTextureArrayFromFile("assets/Textures/TerrainTextures/", terrainTextureFileNames);
+	terrainVulkanTextureArray.loadTextureArray(renderer->device, terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
+	
+	WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
+	WaterVulkanTexture.loadFromTexture(renderer->device, WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
+
+}
+
+void TerrainManager::CleanUpResources() {
+	terrainVulkanTextureArray.destroy(renderer->device);
+	WaterVulkanTexture.destroy(renderer->device);
+
+	WaterModel.destroy(renderer->device);
 }
 
 
@@ -28,8 +48,6 @@ TerrainManager::~TerrainManager()
 void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera) {
 	this->renderer = renderer;
 
-	int numCells = 64;
-	int logicalWidth = 64;// (int)numCells * glm::pow(2.0, terrainMaxLevels);
 	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < terrainGridDimentions; j++) {
 			
@@ -39,7 +57,7 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 				glm::i32vec2(i * logicalWidth, j * logicalWidth), //noise position
 				glm::i32vec2(logicalWidth, logicalWidth)); //noiseSize 
 
-			terrain->terrainTextureArray = resourceMan->texManager.loadTextureArrayFromFile("assets/Textures/TerrainTextures/", terrainTextureFileNames);
+			//terrain->terrainTextureArray = resourceMan->texManager.loadTextureArrayFromFile("assets/Textures/TerrainTextures/", terrainTextureFileNames);
 			terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(sourceImageResolution, sourceImageResolution, terrain->LoadSplatMapFromGenerator());
 
 			terrains.push_back(terrain);
@@ -48,17 +66,21 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 
 	//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	for (auto ter : terrains) {
-		ter->InitTerrain(renderer, camera->Position);
+		ter->InitTerrain(renderer, camera->Position, &terrainVulkanTextureArray);
 	}
 	//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
 	
+	WaterMesh = createFlatPlane(numCells, glm::vec3(terrainWidth, 0, terrainWidth));
+	WaterModel.loadFromMesh(WaterMesh, renderer->device, renderer->device.graphics_queue);
+
+
 	for (int i = 0; i < terrainGridDimentions; i++) {
 		for (int j = 0; j < terrainGridDimentions; j++) {
 			auto water = std::make_shared< Water>
 				(64, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth);
 			
-			water->WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
-			water->InitWater(renderer);
+			//WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
+			water->InitWater(renderer, WaterVulkanTexture);
 			
 			waters.push_back(water);
 		}
@@ -100,14 +122,14 @@ void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->mvp->pipelines->at(1) : waters.at(0)->mvp->pipelines->at(0));
 	//vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->wireframe : waters.at(0)->seascapePipeline);
 	
-	waters.at(0)->WaterModel.BindModel(commandBuffer);
+	WaterModel.BindModel(commandBuffer);
 	//vkCmdBindVertexBuffers(commandBuffer, 0, 1, &waters.at(0)->WaterModel.vmaBufferVertex, offsets);
 	//vkCmdBindIndexBuffer(commandBuffer, waters.at(0)->WaterModel.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
 
 	for (auto water : waters) {
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, water->mvp->layout, 2, 1, &water->m_descriptorSet.set, 0, nullptr);
 
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(water->WaterModel.indexCount), 1, 0, 0, 0);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(WaterModel.indexCount), 1, 0, 0, 0);
 	}
 }
 

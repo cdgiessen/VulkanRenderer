@@ -41,6 +41,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 
 
 	terrainManager = std::make_shared<TerrainManager>(graph);
+	terrainManager->SetupResources(resourceMan, renderer);
 	terrainManager->GenerateTerrain(resourceMan, renderer, camera);
 
 	treesInstanced = std::make_shared<InstancedSceneObject>();
@@ -130,6 +131,7 @@ void Scene::CleanUpScene() {
 		obj->CleanUp();
 	}
 
+	terrainManager->CleanUpResources();
 	terrainManager->CleanUpTerrain();
 	treesInstanced->CleanUp();
 
