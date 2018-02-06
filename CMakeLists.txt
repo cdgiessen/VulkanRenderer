@@ -12,6 +12,15 @@ find_package(glm REQUIRED)
 
 if(UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
+
+	find_package(PkgConfig REQUIRED)
+	pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+	# Setup CMake to use GTK+, tell the compiler where to look for headers
+	# and to the linker where to look for libraries
+	include_directories(${GTK3_INCLUDE_DIRS})
+	link_directories(${GTK3_LIBRARY_DIRS})
+	# Add other flags to the compiler
+	add_definitions(${GTK3_CFLAGS_OTHER})
 endif(UNIX)
 
 add_executable(VulkanApp 
@@ -114,6 +123,12 @@ if(GLM_FOUND)
 	target_include_directories(VulkanApp PUBLIC third-party)
 	include_directories(third-party/glm)
 endif(GLM_FOUND)
+
+#gtk
+if(UNIX)
+	# Link the target to the GTK+ libraries
+	TARGET_LINK_LIBRARIES(VulkanApp ${GTK3_LIBRARIES})
+endif(UNIX)
 
 if(MSVC)
 	add_compile_options("/permissive-")

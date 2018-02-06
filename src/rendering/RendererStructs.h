@@ -7,7 +7,7 @@
 
 #include "../resources/Texture.h"
 
-#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 /* Common uniform buffers */
 

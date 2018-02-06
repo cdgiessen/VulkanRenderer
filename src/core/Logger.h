@@ -14,21 +14,14 @@ namespace Log {
 
 		std::ofstream fileOut;
 		std::ostream consoleOut;
-
-		template<typename T>
-		Log& operator << (T& stream) {
-			consoleOut << stream;
-			fileOut << stream;
-			return *this;
-		}
-
-		Log& operator << (int stream) {
-			consoleOut << stream;
-			fileOut << stream;
-			return *this;
-		}
-
 	};
+
+	template<typename T>
+	Log& operator << (Log& log, T const& stream) {
+		log.consoleOut << stream;
+		log.fileOut << stream;
+		return log;
+	}
 
 	extern Log Error;
 	extern Log Debug;

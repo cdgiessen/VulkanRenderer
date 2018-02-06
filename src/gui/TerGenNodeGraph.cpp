@@ -1,5 +1,7 @@
 #include "TerGenNodeGraph.h"
 
+#include <algorithm>
+
 namespace NewNodeGraph {
 
 	static float BilinearImageSample2D(const NoiseImage2D& noiseImage, const float x, const float z) {
