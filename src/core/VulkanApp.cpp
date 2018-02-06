@@ -179,7 +179,8 @@ void VulkanApp::CameraWindow(bool* show_camera_window) {
 	ImGui::DragFloat3("Pos", &scene->GetCamera()->Position.x, 2);
 	ImGui::DragFloat3("Rot", &scene->GetCamera()->Front.x, 2);
 	ImGui::Text("Camera Movement Speed");
-	ImGui::SliderFloat("", &scene->GetCamera()->MovementSpeed, 0.1f, 100.0f);
+	//ImGui::Text(std::to_string(scene->GetCamera()->MovementSpeed).c_str());
+	//ImGui::SliderFloat("##camMovSpeed", &(scene->GetCamera()->MovementSpeed), 0.1f, 100.0f);
 	//ImGui::ColorEdit3("clear color", (float*)&clear_color);
 	//if (ImGui::Button("Test Window")) show_test_window ^= 1;
 	//if (ImGui::Button("Another Window")) show_another_window ^= 1;

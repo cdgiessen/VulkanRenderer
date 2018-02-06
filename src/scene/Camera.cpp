@@ -70,7 +70,7 @@ void Camera::ChangeCameraSpeed(Camera_Movement direction, float deltaTime) {
 		MovementSpeed += 3 * MovementSpeed * deltaTime;
 	if (direction == Camera_Movement::DOWN)
 		MovementSpeed -= 3 * MovementSpeed * deltaTime;
-	if (MovementSpeed <= 0) {
+	if (MovementSpeed <= 0.2) {
 		MovementSpeed = 0.2f;
 	}
 }
