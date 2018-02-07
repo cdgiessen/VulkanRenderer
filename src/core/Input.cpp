@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <GLFW/glfw3.h>
 
+#include <glm/fwd.hpp>
+
 
 //External facing access to buttons. 
 namespace Input {
@@ -48,6 +50,16 @@ namespace Input {
 		return inputDirector.GetMouseScrollY();
 	}
 
+	void SetTextInputMode() {
+		inputDirector.SetTextInputMode();
+	}
+	void ResetTextInputMode() {
+		inputDirector.ResetTextInputMode();
+	}
+	bool GetTextInputMode() {
+		return inputDirector.GetTextInputMode();
+	}
+
 	InputDirector::InputDirector() :
 		mousePosition(glm::vec2(0, 0)), mousePositionPrevious(glm::vec2(0, 0)), 
 		mouseChangeInPosition(glm::vec2(0, 0)), mouseScroll(glm::vec2(0, 0)) 
@@ -86,6 +98,15 @@ namespace Input {
 	}
 	float InputDirector::GetMouseScrollY() {
 		return mouseScroll.y;
+	}
+	void InputDirector::SetTextInputMode() {
+		textInputMode = true;
+	}
+	void InputDirector::ResetTextInputMode() {
+		textInputMode = false;
+	}
+	bool InputDirector::GetTextInputMode() {
+		return textInputMode;
 	}
 
 	void InputDirector::UpdateInputs() {

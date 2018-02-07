@@ -53,6 +53,7 @@ public:
 	void CleanUp();
 
 	void InitPipelineCache();
+	VkPipelineCache GetPipelineCache();
 
 	std::shared_ptr<ManagedVulkanPipeline> CreateManagedPipeline();
 	void DeleteManagedPipeline(std::shared_ptr<ManagedVulkanPipeline> pipe);

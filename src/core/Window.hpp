@@ -4,7 +4,7 @@
 #include <vector>
 #include <set>
 #include <vulkan/vulkan.hpp>
-#include <glm/glm.hpp>
+#include <glm/vec2.hpp>
 #include <GLFW/glfw3.h>
 
   
@@ -44,6 +44,7 @@ protected:
 	//
 
 	static void KeyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
+	static void CharInputHandler(GLFWwindow* window, uint32_t codePoint);
 	static void MouseButtonHandler(GLFWwindow* window, int button, int action, int mods);
 	static void MouseMoveHandler(GLFWwindow* window, double posx, double posy);
 	static void MouseScrollHandler(GLFWwindow* window, double xoffset, double yoffset);

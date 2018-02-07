@@ -4,6 +4,8 @@
 
 #include "../../third-party/json/json.hpp"
 
+#include <glm/glm.hpp>
+
 VulkanApp::VulkanApp()
 {
 	ReadSettings();
@@ -127,7 +129,7 @@ void  VulkanApp::PrepareImGui()
 	pool_info.maxSets = 1000 * 11;
 	pool_info.poolSizeCount = 11;
 	pool_info.pPoolSizes = pool_size;
-	VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanRenderer->device.device, &pool_info, VK_NULL_HANDLE, &imgui_descriptor_pool));
+		VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanRenderer->device.device, &pool_info, VK_NULL_HANDLE, &imgui_descriptor_pool));
 	}
 
 	ImGui_ImplGlfwVulkan_Init_Data init_data = {};
@@ -135,7 +137,7 @@ void  VulkanApp::PrepareImGui()
 	init_data.gpu = vulkanRenderer->device.physical_device;
 	init_data.device = vulkanRenderer->device.device;
 	init_data.render_pass = vulkanRenderer->renderPass;
-	init_data.pipeline_cache = VK_NULL_HANDLE;
+	init_data.pipeline_cache = vulkanRenderer->pipelineManager.GetPipelineCache();
 	init_data.descriptor_pool = imgui_descriptor_pool;
 	init_data.check_vk_result = imgui_check_vk_result;
 
@@ -243,8 +245,7 @@ void VulkanApp::CleanUpImgui() {
 void VulkanApp::HandleInputs() {
 	//Log::Debug << camera->Position.x << " " << camera->Position.y << " " << camera->Position.z << "\n";
 
-	if (!userInputtingText) {
-
+	if (!Input::GetTextInputMode()) {
 
 		if (Input::GetKey(Input::KeyCode::W))
 			scene->GetCamera()->ProcessKeyboard(Camera_Movement::FORWARD, (float)timeManager->GetDeltaTime());
@@ -260,10 +261,6 @@ void VulkanApp::HandleInputs() {
 			if (Input::GetKey(Input::KeyCode::LEFT_SHIFT))
 				scene->GetCamera()->ProcessKeyboard(Camera_Movement::DOWN, (float)timeManager->GetDeltaTime());
 		}
-
-		//if (Input::GetKeyDown(Input::KeyCode::0)) {
-		//	//appLog.AddLog("ZERO WAS HIT REPEAT ZERO WAS HIT\n");
-		//}
 
 		if (Input::GetKeyDown(Input::KeyCode::ESCAPE))
 			window->SetWindowToClose();
@@ -281,22 +278,27 @@ void VulkanApp::HandleInputs() {
 		if (Input::GetKeyDown(Input::KeyCode::X)) {
 			wireframe = !wireframe;
 			vulkanRenderer->SetWireframe(wireframe);
-			//DebugLog::log.GetLog() << "wireframe toggled" << "\n";
 			Log::Debug << "wireframe toggled" << "\n";
 		}
 
 		if (Input::GetKeyDown(Input::KeyCode::F)) {
 			scene->walkOnGround = !scene->walkOnGround;
-			//Log::Debug << "flight mode toggled " << "\n";
+			Log::Debug << "flight mode toggled " << "\n";
 		}
 
 		if (Input::GetKeyDown(Input::KeyCode::H)) {
+			Log::Debug << "gui visibility toggled " << "\n";
 			showGui = !showGui;
 		}
 
 		if (Input::GetKeyDown(Input::KeyCode::F10)) {
+			Log::Debug << "screenshot taken " << "\n";
 			vulkanRenderer->SaveScreenshotNextFrame();
 		}
+	}
+	else {
+		if (Input::GetKeyDown(Input::KeyCode::ESCAPE))
+			Input::ResetTextInputMode();
 	}
 
 	if (mouseControlEnabled) {

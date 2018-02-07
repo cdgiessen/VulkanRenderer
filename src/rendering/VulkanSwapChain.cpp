@@ -3,6 +3,8 @@
 
 #include "../core/Logger.h"
 
+#include <limits>
+
 VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device) : device(device) {
 
 }

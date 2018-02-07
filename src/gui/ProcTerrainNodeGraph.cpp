@@ -307,28 +307,25 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 			memset(name, '\0', 32);
 			//name[0] = '\0';
 			node->name.copy(name, 31);
+			node->hasTextInput = true;
+			Input::SetTextInputMode();
 			if (ImGui::InputText("##edit", name, sizeof(char) * 32)) {
 				name[31] = '\0';
 				node->name.replace(node->name.begin(), node->name.end(), name);
 			}
 			else {
-
 			}
 			ImGui::EndPopup();
+		}
+		else {
+			if (node->hasTextInput) {
+				Input::ResetTextInputMode();
+				node->hasTextInput = false;
+			}
 		}
 
 		node->outputSlot.Draw(imDrawList, *this, *node);
 
-		/*if (ImGui::BeginPopupContextItem("output context menu"))
-		{
-			if (ImGui::Selectable("Reset Outputs")) {
-				if (node->outputSlot.connections.size() > 0)
-					for(auto con : node->outputSlot.connections)
-						DeleteConnection(con);
-			}
-			ImGui::EndPopup();
-		}
-*/
 		for (int i = 0; i < node->inputSlots.size(); i++)
 		{
 			node->inputSlots[i].Draw(imDrawList, *this, *node);

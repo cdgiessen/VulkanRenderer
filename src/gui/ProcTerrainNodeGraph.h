@@ -145,6 +145,8 @@ public:
 
 	std::shared_ptr<NewNodeGraph::INode> internal_node;
 	//void Draw(ImDrawList*  imDrawList, ImVec2 offset);
+
+	bool hasTextInput = false;
 };
 
 class OutputNode		: public Node { public: OutputNode(NewNodeGraph::TerGenNodeGraph& graph); };

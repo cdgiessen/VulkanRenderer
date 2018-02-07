@@ -57,6 +57,7 @@ void Window::prepareWindow() {
 	glfwSetWindowCloseCallback(window, CloseHandler);
 
 	glfwSetKeyCallback(window, KeyboardHandler);
+	glfwSetCharCallback(window, CharInputHandler);
 	glfwSetMouseButtonCallback(window, MouseButtonHandler);
 	glfwSetCursorPosCallback(window, MouseMoveHandler);
 	glfwSetScrollCallback(window, MouseScrollHandler);
@@ -97,7 +98,11 @@ VkSurfaceKHR createWindowSurface(const vk::Instance& instance, GLFWwindow* windo
 void Window::KeyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	Input::inputDirector.keyEvent(key, scancode, action, mods);
 	ImGui_ImplGlfwVulkan_KeyCallback(window, key, scancode, action, mods);
-	ImGui_ImplGlfwVulkan_CharCallback(window, static_cast<unsigned int>(key));
+}
+
+void Window::CharInputHandler(GLFWwindow* window, uint32_t codePoint) {
+
+	ImGui_ImplGlfwVulkan_CharCallback(window, codePoint);
 }
 
 void Window::MouseButtonHandler(GLFWwindow* window, int button, int action, int mods) {
@@ -111,6 +116,7 @@ void Window::MouseMoveHandler(GLFWwindow* window, double posx, double posy) {
 
 void Window::MouseScrollHandler(GLFWwindow* window, double xoffset, double yoffset) {
 	Input::inputDirector.mouseScrollEvent(xoffset, yoffset);
+	ImGui_ImplGlfwVulkan_ScrollCallback(window, xoffset, yoffset);
 }
 
 void Window::CloseHandler(GLFWwindow* window) {

@@ -69,7 +69,8 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 		ter->InitTerrain(renderer, camera->Position, &terrainVulkanTextureArray);
 	}
 	//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
-	
+	WaterMesh.reset();
+	WaterModel.destroy(renderer->device); 
 	WaterMesh = createFlatPlane(numCells, glm::vec3(terrainWidth, 0, terrainWidth));
 	WaterModel.loadFromMesh(WaterMesh, renderer->device, renderer->device.graphics_queue);
 
