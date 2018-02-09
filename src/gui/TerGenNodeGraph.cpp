@@ -42,8 +42,6 @@ namespace NewNodeGraph {
 		}
 	}
 
-	//No allocation constructor, meant for images that are externally created (FastNoiseSIMD)
-	NoiseImage2D::NoiseImage2D() : width(0) {}
 
 	//Preallocates based on width, mainly meant for output images
 	NoiseImage2D::NoiseImage2D(int width) : width(width) {
@@ -175,14 +173,21 @@ namespace NewNodeGraph {
 		return outputType;
 	}
 
-	//template<typename T> T			Node<T>::GetValue(const int x, const int y, const int z, T dummy)		const { return dummy; }
+	//template<typename T> T			Node<T>::GetValue(const int x, const int y, const int z, T dummy)		
+		const { return dummy; }
 
-	template<typename T> float		Node<T>::GetValue(const int x, const int y, const int z, float dummy)		const { return -1.1f; }
-	template<typename T> int		Node<T>::GetValue(const int x, const int y, const int z, int dummy)			const { return -2; }
-	template<typename T> double		Node<T>::GetValue(const int x, const int y, const int z, double dummy)		const { return -3.1; }
-	template<typename T> glm::vec2	Node<T>::GetValue(const int x, const int y, const int z, glm::vec2 dummy)	const { return glm::vec2(0, -1); }
-	template<typename T> glm::vec3	Node<T>::GetValue(const int x, const int y, const int z, glm::vec3 dummy)	const { return glm::vec3(0, -1, -2); }
-	template<typename T> glm::vec4	Node<T>::GetValue(const int x, const int y, const int z, glm::vec4 dummy)	const { return glm::vec4(0, -1, -2, -3); }
+	template<typename T> float		Node<T>::GetValue(const int x, const int y, const int z, float dummy)		
+		const { return -1.1f; }
+	template<typename T> int		Node<T>::GetValue(const int x, const int y, const int z, int dummy)			
+		const { return -2; }
+	template<typename T> double		Node<T>::GetValue(const int x, const int y, const int z, double dummy)		
+		const { return -3.1; }
+	template<typename T> glm::vec2	Node<T>::GetValue(const int x, const int y, const int z, glm::vec2 dummy)	
+		const { return glm::vec2(0, -1); }
+	template<typename T> glm::vec3	Node<T>::GetValue(const int x, const int y, const int z, glm::vec3 dummy)	
+	const { return glm::vec3(0, -1, -2); }
+	template<typename T> glm::vec4	Node<T>::GetValue(const int x, const int y, const int z, glm::vec4 dummy)	
+		const { return glm::vec4(0, -1, -2, -3); }
 
 	template<typename T> void Node<T>::SetValue(const int index, float value)	{};
 	template<typename T> void Node<T>::SetValue(const int index, int value)		{};
@@ -294,16 +299,33 @@ namespace NewNodeGraph {
 			input_b.SetValue(value);
 	}
 	
-	float AdditionNode::GetValue(const int x, const int y, const int z, float dummy)const	{ return input_a.GetValue(x, y, z) + input_b.GetValue(x, y, z); }
-	float SubtractNode::GetValue(const int x, const int y, const int z, float dummy)const	{ return input_a.GetValue(x, y, z) - input_b.GetValue(x, y, z); }
-	float MultiplyNode::GetValue(const int x, const int y, const int z, float dummy)const	{ return input_a.GetValue(x, y, z) * input_b.GetValue(x, y, z); }
-	float DivideNode::GetValue(const int x, const int y, const int z, float dummy)	const	{ return input_a.GetValue(x, y, z) / input_b.GetValue(x, y, z); }
-	float PowerNode::GetValue(const int x, const int y, const int z, float dummy)	const	{ return glm::pow(input_a.GetValue(x, y, z), input_b.GetValue(x, y, z)); }
-	float MaxNode::GetValue(const int x, const int y, const int z, float dummy)		const	{ return glm::max(input_a.GetValue(x, y, z), input_b.GetValue(x, y, z)); }
-	float MinNode::GetValue(const int x, const int y, const int z, float dummy)		const	{ return glm::min(input_a.GetValue(x, y, z), input_b.GetValue(x, y, z)); }
+	float AdditionNode::GetValue(const int x, const int y, const int z, float dummy)const	
+		{ return input_a.GetValue(x, y, z) + input_b.GetValue(x, y, z); }
+
+	float SubtractNode::GetValue(const int x, const int y, const int z, float dummy)const	
+		{ return input_a.GetValue(x, y, z) - input_b.GetValue(x, y, z); }
+
+	float MultiplyNode::GetValue(const int x, const int y, const int z, float dummy)const	
+		{ return input_a.GetValue(x, y, z) * input_b.GetValue(x, y, z); }
+
+	float DivideNode::GetValue(const int x, const int y, const int z, float dummy)	const	
+		{ return input_a.GetValue(x, y, z) / input_b.GetValue(x, y, z); }
+
+	float PowerNode::GetValue(const int x, const int y, const int z, float dummy)	const	
+		{ return glm::pow(input_a.GetValue(x, y, z), input_b.GetValue(x, y, z)); }
+
+	float MaxNode::GetValue(const int x, const int y, const int z, float dummy)		const	
+		{ return glm::max(input_a.GetValue(x, y, z), input_b.GetValue(x, y, z)); }
+
+	float MinNode::GetValue(const int x, const int y, const int z, float dummy)		const	
+		{ return glm::min(input_a.GetValue(x, y, z), input_b.GetValue(x, y, z)); }
 
 
-	BlendNode::BlendNode() : Node<float>(LinkType::Float), input_a(LinkType::Float), input_b(LinkType::Float), input_cutoff(LinkType::Float)  {} //input_blendAmount(LinkType::Float)
+	BlendNode::BlendNode() : 
+		Node<float>(LinkType::Float), 
+		input_a(LinkType::Float), 
+		input_b(LinkType::Float), 
+		input_cutoff(LinkType::Float)  {} //input_blendAmount(LinkType::Float)
 
 
 	BlendNode::~BlendNode() {}
@@ -352,7 +374,11 @@ namespace NewNodeGraph {
 		//	input_blendAmount.SetValue(value);
 	}
 
-	ClampNode::ClampNode() : Node<float>(LinkType::Float), input(LinkType::Float), lowerBound(LinkType::Float), upperBound(LinkType::Float) {} 
+	ClampNode::ClampNode() : 
+		Node<float>(LinkType::Float), 
+		input(LinkType::Float), 
+		lowerBound(LinkType::Float), 
+		upperBound(LinkType::Float) {} 
 
 
 	ClampNode::~ClampNode() {}
@@ -417,7 +443,8 @@ namespace NewNodeGraph {
 			return val;
 			//Log::Debug << val << "\n";
 		}
-		return -1.1f; //not in bounds. shouldn't happen but who knows (fortunately -1 is a very valid value, but its easy to tell if things went awry if everythign is -1
+		return -1.1f; //not in bounds. shouldn't happen but who knows 
+		//(fortunately -1 is a very valid value, but its easy to tell if things went awry if everythign is -1
 	}
 
 	bool NoiseSourceNode::GenerateNoiseSet(int seed, int numCells, glm::ivec2 pos, float scaleModifier) {
@@ -667,7 +694,8 @@ namespace NewNodeGraph {
 		this->scale = scale;
 		
 		for (auto noise : sourceGraph.GetNoiseSources()) {
-			noise->GenerateNoiseSet(seed, cellsWide, glm::ivec2(pos.x * (cellsWide)/scale, pos.y * (cellsWide) / scale), scale / (cellsWide));
+			noise->GenerateNoiseSet(seed, cellsWide, g
+				lm::ivec2(pos.x * (cellsWide)/scale, pos.y * (cellsWide) / scale), scale / (cellsWide));
 		}
 
 		for (int i = 0; i < cellsWide; i++)	{

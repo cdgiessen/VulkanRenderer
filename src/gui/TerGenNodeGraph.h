@@ -407,6 +407,7 @@ namespace NewNodeGraph {
 		int cellsWide;
 
 		NoiseImage2D outputImage;
+		
 	};
 
 	class TEMPTerGenNodeGraph
@@ -429,7 +430,8 @@ namespace NewNodeGraph {
 			int realY = (int)glm::clamp(y * (float)(cellsWide), 0.0f, (float)cellsWide - 1);
 			int realZ = (int)glm::clamp(z * (float)(cellsWide), 0.0f, (float)cellsWide - 1);
 
-			int realXPlus1 = (int)glm::clamp(x * (float)(cellsWide)+1, 0.0f, (float)cellsWide - 1); //make sure its not greater than the image size
+			//make sure its not greater than the image size
+			int realXPlus1 = (int)glm::clamp(x * (float)(cellsWide)+1, 0.0f, (float)cellsWide - 1); 
 			int realYPlus1 = (int)glm::clamp(y * (float)(cellsWide)+1, 0.0f, (float)cellsWide - 1);
 			int realZPlus1 = (int)glm::clamp(z * (float)(cellsWide)+1, 0.0f, (float)cellsWide - 1);
 

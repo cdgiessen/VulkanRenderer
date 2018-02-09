@@ -39,6 +39,7 @@ src/gui/ImGuiImpl.cpp
 src/gui/NodeGraph.cpp
 src/gui/TerGenNodeGraph.cpp
 src/gui/ProcTerrainNodeGraph.cpp
+src/gui/TextureViewer.cpp
 
 src/rendering/VulkanBuffer.cpp
 src/rendering/VulkanDevice.cpp

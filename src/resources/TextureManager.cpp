@@ -3,6 +3,9 @@
 #include <cstring>
 
 #include "../core/Logger.h"
+#include "../../third-party/stb_image/stb_image.h"
+#include "../../third-party/stb_image/stb_image_write.h"
+
 
 TextureManager::TextureManager()
 {
