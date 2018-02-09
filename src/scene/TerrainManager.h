@@ -22,6 +22,9 @@ public:
 	TerrainManager(NewNodeGraph::TerGenNodeGraph& nodeGraph);
 	~TerrainManager();
 
+	void SetupResources(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer);
+	void CleanUpResources();
+
 	void GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera);
 
 	void UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager);
@@ -48,6 +51,15 @@ private:
 	std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> terrainQuadPool;
 
 	std::vector<std::shared_ptr<Water>> waters;
+
+	std::shared_ptr<Mesh> WaterMesh;
+	VulkanModel WaterModel;
+
+	std::shared_ptr<TextureArray> terrainTextureArray;
+	VulkanTexture2DArray terrainVulkanTextureArray;
+
+	std::shared_ptr<Texture> WaterTexture;
+	VulkanTexture2D WaterVulkanTexture;
 	
 	bool show_terrain_manager_window = true;
 	bool recreateTerrain = false;
@@ -57,6 +69,8 @@ private:
 	int terrainGridDimentions = 1;
 	int sourceImageResolution = 256;
 	SimpleTimer terrainUpdateTimer;
+	int numCells = 64;
+	int logicalWidth = 64;// (int)numCells * glm::pow(2.0, terrainMaxLevels);
 
 	int maxNumQuads = 1; //maximum quads managed by this
 

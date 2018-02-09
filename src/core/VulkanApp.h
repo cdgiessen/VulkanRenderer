@@ -16,11 +16,6 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 //#define GLM_FORCE_LEFT_HANDED	
-#include <glm/fwd.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-  
-  
 
 #include "../../third-party/ImGui/imgui.h"
 
@@ -62,7 +57,7 @@ private:
 	std::shared_ptr<VulkanRenderer> vulkanRenderer;
 
 	//Input stuff
-	bool mouseControlEnabled;
+	bool mouseControlEnabled = true;
 	bool wireframe = false;
 	bool showGui = true;
 	void SetMouseControl(bool value);
@@ -87,7 +82,6 @@ private:
 	int screenHeight = 600;
 
 	bool useValidationLayers = true;
-	bool userInputtingText = false;
 
 };
 

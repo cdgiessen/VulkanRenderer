@@ -6,21 +6,32 @@ set(CMAKE_CXX_STANDARD 17)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
+set(GLFW_DIR "third-party/glfw-3.2.1")
+
+set(GLFW_BUILD_SHARED_LIBS OFF CACHE INTERNAL "Build shared libraries")
+set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "Build the GLFW example programs")
+set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "Build the GLFW test programs")
+set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation")
+set(GLFW_INSTALL OFF CACHE INTERNAL "Generate installation target")
+
+add_subdirectory(third-party/glfw-3.2.1)
+
+include(cotire)
+
 find_package(Vulkan REQUIRED)
 
 find_package(glm REQUIRED)
 
+#gtk include for linux
 if(UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
 
 	find_package(PkgConfig REQUIRED)
 	pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
-	# Setup CMake to use GTK+, tell the compiler where to look for headers
-	# and to the linker where to look for libraries
+
 	include_directories(${GTK3_INCLUDE_DIRS})
 	link_directories(${GTK3_LIBRARY_DIRS})
-	# Add other flags to the compiler
-	add_definitions(${GTK3_CFLAGS_OTHER})
+	add_definitions(${GTK3_CFLAGS_OTHER}) 
 endif(UNIX)
 
 add_executable(VulkanApp 
@@ -80,39 +91,6 @@ third-party/FastNoiseSIMD/FastNoiseSIMD_sse2.cpp
 third-party/FastNoiseSIMD/FastNoiseSIMD_sse41.cpp
 )
 
-
-
-#set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-#set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-#set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-
-#add_subdirectory(third-party/glfw-3.2.1)
-
-#add_subdirectory(third-party/glm)
-
-set(GLFW_DIR "third-party/glfw-3.2.1")
-
-set(GLFW_BUILD_SHARED_LIBS OFF CACHE INTERNAL "Build shared libraries")
-set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "Build the GLFW example programs")
-set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "Build the GLFW test programs")
-set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation")
-set(GLFW_INSTALL OFF CACHE INTERNAL "Generate installation target")
-
-add_subdirectory(third-party/glfw-3.2.1)
-
-target_link_libraries(VulkanApp "glfw" "${GLFW_LIBRARY}")
-target_link_libraries(VulkanApp glfw)
-target_include_directories(VulkanApp PUBLIC "${GLFW_DIR}/include")
-
-#glfw
-if(GLFW_FOUND)
-	#target_link_libraries(VulkanApp ${GLFW_LIBRARIES})
-	#target_include_directories(VulkanApp PUBLIC ${GLFW_INCLUDE_DIR})
-	target_link_libraries(VulkanApp "${GLFW_LIBRARIES}")
-	target_include_directories(VulkanApp PRIVATE "${GLFW_DIR}/include")
-endif(GLFW_FOUND)
-
-
 #vulkan
 if(VULKAN_FOUND)
 	target_include_directories(VulkanApp PRIVATE ${Vulkan_INCLUDE_DIRS})
@@ -127,9 +105,22 @@ endif(GLM_FOUND)
 
 #gtk
 if(UNIX)
-	# Link the target to the GTK+ libraries
-	TARGET_LINK_LIBRARIES(VulkanApp ${GTK3_LIBRARIES})
+	target_link_libraries(VulkanApp ${GTK3_LIBRARIES})
 endif(UNIX)
+
+cotire(VulkanApp)
+
+
+
+#glfw
+target_link_libraries(VulkanApp "glfw" "${GLFW_LIBRARY}")
+target_link_libraries(VulkanApp glfw)
+target_include_directories(VulkanApp PUBLIC "${GLFW_DIR}/include")
+
+if(GLFW_FOUND)
+	target_link_libraries(VulkanApp "${GLFW_LIBRARIES}")
+	target_include_directories(VulkanApp PUBLIC "${GLFW_DIR}/include")
+endif(GLFW_FOUND)
 
 if(MSVC)
 	add_compile_options("/permissive-")

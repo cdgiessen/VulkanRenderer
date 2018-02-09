@@ -28,6 +28,7 @@ public:
 	// Eular Angles
 	float Yaw = -90.0f;
 	float Pitch = 0.0f;
+	
 	// Camera options
 	float MovementSpeed = 20.0f;
 	float MouseSensitivity = 0.3f;

@@ -1,7 +1,7 @@
 #pragma once
 
 //Input wrapper around GLFW, so the input isn't being driven by the vulkanapp class
-#include <glm/glm.hpp>
+#include <glm/vec2.hpp>
 
 #include <array>
 
@@ -147,6 +147,10 @@ namespace Input {
 	float GetMouseScrollX();
 	float GetMouseScrollY();
 
+	void SetTextInputMode();
+	void ResetTextInputMode();
+	bool GetTextInputMode();
+
 	class InputDirector {
 	public:
 		InputDirector();
@@ -162,6 +166,10 @@ namespace Input {
 		glm::vec2 GetMouseChangeInPosition();
 		float GetMouseScrollX();
 		float GetMouseScrollY();
+
+		void SetTextInputMode();
+		void ResetTextInputMode();
+		bool GetTextInputMode();
 
 		void keyEvent(int key, int scancode, int action, int mods);
 		void mouseButtonEvent(int button, int action, int mods);
@@ -181,6 +189,7 @@ namespace Input {
 		std::array<bool, 15> mouseButtonsUp = { { false } };
 
 		bool firstMouse = true; //on start
+		bool textInputMode = false;
 		glm::vec2 mousePosition;
 		glm::vec2 mousePositionPrevious;
 		glm::vec2 mouseChangeInPosition;

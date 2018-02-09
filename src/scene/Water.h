@@ -24,12 +24,6 @@ public:
 	std::shared_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;
 
-	std::shared_ptr<Mesh> WaterMesh;
-	VulkanModel WaterModel;
-
-	std::shared_ptr<Texture> WaterTexture;
-	VulkanTexture2D WaterVulkanTexture;
-
 	ModelBufferObject modelUniformObject;
 	VulkanBufferUniform modelUniformBuffer;
 
@@ -38,7 +32,7 @@ public:
 	Water(int numCells, float posX, float posY, float sizeX, float sizeY);
 	~Water();
 
-	void InitWater(std::shared_ptr<VulkanRenderer> renderer);
+	void InitWater(std::shared_ptr<VulkanRenderer> renderer, VulkanTexture2D& WaterVulkanTexture);
 	void CleanUp();
 	
 	//void UpdateUniformBuffer(float time, glm::mat4 view);
@@ -48,7 +42,7 @@ public:
 	void SetupModel();
 	void SetupPipeline();
 
-	void SetupDescriptor();
+	void SetupDescriptor(VulkanTexture2D& WaterVulkanTexture);
 
 	//void BuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass);
 	//void RebuildCommandBuffer(std::shared_ptr<VulkanSwapChain> swapChain, std::shared_ptr<VkRenderPass> renderPass);

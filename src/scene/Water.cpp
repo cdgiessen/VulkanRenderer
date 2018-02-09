@@ -4,7 +4,7 @@
 
 Water::Water(int numCells, float posX, float posY, float sizeX, float sizeY) : numCells(numCells), pos(glm::vec3(posX, 0, posY)), size(glm::vec3(sizeX, 0, sizeY))
 {
-	WaterMesh = createFlatPlane(numCells, size);
+	//WaterMesh = createFlatPlane(numCells, size);
 }
 
 Water::~Water() {
@@ -12,14 +12,14 @@ Water::~Water() {
 }
 
 
-void Water::InitWater(std::shared_ptr<VulkanRenderer> renderer)
+void Water::InitWater(std::shared_ptr<VulkanRenderer> renderer, VulkanTexture2D& WaterVulkanTexture)
 {
 	this->renderer = renderer;
 
 	SetupUniformBuffer();
-	SetupImage();
-	SetupModel();
-	SetupDescriptor();
+	//SetupImage();
+	//SetupModel();
+	SetupDescriptor(WaterVulkanTexture);
 	SetupPipeline();
 }
 
@@ -27,8 +27,8 @@ void Water::CleanUp()
 {
 	renderer->pipelineManager.DeleteManagedPipeline(mvp);
 
-	WaterModel.destroy(renderer->device);
-	WaterVulkanTexture.destroy(renderer->device);
+	//WaterModel.destroy(renderer->device);
+	//WaterVulkanTexture.destroy(renderer->device);
 
 	modelUniformBuffer.CleanBuffer(renderer->device);
 }
@@ -47,15 +47,15 @@ void Water::SetupUniformBuffer()
 
 void Water::SetupImage()
 {
-	WaterVulkanTexture.loadFromTexture(renderer->device, WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
+	//WaterVulkanTexture.loadFromTexture(renderer->device, WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
 }
 
 void Water::SetupModel()
 {
-	WaterModel.loadFromMesh(WaterMesh, renderer->device, renderer->device.graphics_queue);
+	//WaterModel.loadFromMesh(WaterMesh, renderer->device, renderer->device.graphics_queue);
 }
 
-void Water::SetupDescriptor()
+void Water::SetupDescriptor(VulkanTexture2D& WaterVulkanTexture)
 {
 	descriptor = renderer->GetVulkanDescriptor();
 
@@ -75,54 +75,6 @@ void Water::SetupDescriptor()
 	writes.push_back(DescriptorUse(2, 1, modelUniformBuffer.resource));
 	writes.push_back(DescriptorUse(3, 1, WaterVulkanTexture.resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
-
-
-	////layout
-	//VkDescriptorSetLayoutBinding cboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1);
-	//VkDescriptorSetLayoutBinding uboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1, 1);
-	//VkDescriptorSetLayoutBinding lboLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1);
-	//VkDescriptorSetLayoutBinding samplerLayoutBinding = initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1);
-
-	//std::vector<VkDescriptorSetLayoutBinding> bindings = { cboLayoutBinding, uboLayoutBinding, lboLayoutBinding, samplerLayoutBinding };
-	//VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo(bindings);
-
-	//if (vkCreateDescriptorSetLayout(renderer->device.device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
-	//	throw std::runtime_error("failed to create descriptor set layout!");
-	//}
-
-	////Pool
-	//std::vector<VkDescriptorPoolSize> poolSizesWater;
-	//poolSizesWater.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-	//poolSizesWater.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-	//poolSizesWater.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-	//poolSizesWater.push_back(initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
-
-	//VkDescriptorPoolCreateInfo poolInfoWater =
-	//	initializers::descriptorPoolCreateInfo(
-	//		static_cast<uint32_t>(poolSizesWater.size()),
-	//		poolSizesWater.data(),
-	//		1);
-
-	//if (vkCreateDescriptorPool(renderer->device.device, &poolInfoWater, nullptr, &descriptorPool) != VK_SUCCESS) {
-	//	throw std::runtime_error("failed to create descriptor pool!");
-	//}
-
-	////Descriptor set
-	//VkDescriptorSetLayout layouts[] = { descriptorSetLayout };
-	//VkDescriptorSetAllocateInfo allocInfoWater = initializers::descriptorSetAllocateInfo(descriptorPool, layouts, 1);
-
-	//if (vkAllocateDescriptorSets(renderer->device.device, &allocInfoWater, &descriptorSet) != VK_SUCCESS) {
-	//	throw std::runtime_error("failed to allocate descriptor set!");
-	//}
-	//modelUniformBuffer.setupDescriptor();
-
-	//std::vector<VkWriteDescriptorSet> descriptorWrites;
-	//descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &global.descriptor, 1));
-	//descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &modelUniformBuffer.descriptor, 1));
-	//descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &lighting.descriptor, 1));
-	//descriptorWrites.push_back(initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &WaterVulkanTexture.descriptor, 1));
-
-	//vkUpdateDescriptorSets(renderer->device.device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
 void Water::SetupPipeline()

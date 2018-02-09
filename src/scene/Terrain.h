@@ -18,7 +18,7 @@
 #include "../core/MemoryPool.h"
 #include "../core/CoreTools.h"
 
-#include "TerrainGenerator.h"
+//#include "TerrainGenerator.h"
 #include "../gui/TerGenNodeGraph.h"
 
 const int SplatMapSize = 1024;
@@ -110,12 +110,15 @@ public:
 	std::shared_ptr<Texture> terrainSplatMap;
 	VulkanTexture2D terrainVulkanSplatMap;
 
-	std::shared_ptr<TextureArray> terrainTextureArray;
-	VulkanTexture2DArray terrainVulkanTextureArray;
+	//std::shared_ptr<TextureArray> terrainTextureArray;
+	//VulkanTexture2DArray terrainVulkanTextureArray;
+	VulkanTexture2DArray* terrainVulkanTextureArray;
+
 
 	VulkanBufferUniform modelUniformBuffer;
 
-	std::shared_ptr<Texture> maillerFace;
+	//std::shared_ptr<Texture> maillerFace;
+	
 	std::unique_ptr<NewNodeGraph::TerGenGraphUser> fastTerrainUser;
 	//std::shared_ptr<NewNodeGraph::TerGenNodeGraph> fastTerrainGraph;
 
@@ -130,7 +133,7 @@ public:
 		glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
 	~Terrain();
 
-	void InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos);
+	void InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos, VulkanTexture2DArray* terrainVulkanTextureArray);
 
 	void UpdateTerrain(glm::vec3 viewerPos);
 	void DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], std::shared_ptr<Terrain> curTerrain, bool wireframe);
@@ -175,8 +178,8 @@ void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenGraphUser& fastGraph, Ter
 	TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);
 
 //not used as it depends on previous terrains, which is great for runtime but not for first generation (since it has dependence on its parents mesh being ready)
-void GenerateTerrainFromExisting(TerrainGenerator& terrainGenerator, NewNodeGraph::TerGenGraphUser& fastGraph, TerrainMeshVertices& parentVerts, TerrainMeshIndices& parentIndices,
-	TerrainMeshVertices& verts, TerrainMeshIndices& indices, Corner_Enum corner, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels);
+//void GenerateTerrainFromExisting(TerrainGenerator& terrainGenerator, NewNodeGraph::TerGenGraphUser& fastGraph, TerrainMeshVertices& parentVerts, TerrainMeshIndices& parentIndices,
+//	TerrainMeshVertices& verts, TerrainMeshIndices& indices, Corner_Enum corner, TerrainQuad terrainQuad, float heightScale, int maxSubDivLevels);
 
 //Uses input texture to generate terrain from
 void GenerateTerrainFromTexture(Texture& tex, TerrainMeshVertices& verts, TerrainMeshIndices& indices, TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);
