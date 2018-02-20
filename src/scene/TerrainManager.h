@@ -10,7 +10,8 @@
 #include "../rendering/VulkanRenderer.hpp"
 #include "../resources/ResourceManager.h"
 
-#include "../gui/TerGenNodeGraph.h"
+//#include "../gui/TerGenNodeGraph.h"
+#include "../gui/InternalGraph.h"
 
 #include "Camera.h"
 #include "Terrain.h"
@@ -19,7 +20,7 @@
 class TerrainManager
 {
 public:
-	TerrainManager(NewNodeGraph::TerGenNodeGraph& nodeGraph);
+	TerrainManager(InternalGraph::GraphPrototype& protoGraph);
 	~TerrainManager();
 
 	void SetupResources(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer);
@@ -43,7 +44,8 @@ public:
 	void RecreateTerrain();
 
 private:
-	NewNodeGraph::TerGenNodeGraph& nodeGraph;
+	InternalGraph::GraphPrototype& protoGraph;
+	//NewNodeGraph::TerGenNodeGraph& nodeGraph;
 
 	std::shared_ptr<VulkanRenderer> renderer;
 

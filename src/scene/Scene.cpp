@@ -15,7 +15,7 @@ Scene::~Scene()
 	Log::Debug << "scene deleted\n";
 }
 
-void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, NewNodeGraph::TerGenNodeGraph& graph) {
+void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, InternalGraph::GraphPrototype& graph) {
 	this->renderer = renderer;
 
 	camera = std::make_shared< Camera>(glm::vec3(-2, 2, 0), glm::vec3(0, 1, 0), 0, -45);
@@ -63,9 +63,9 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 		float groundHeight = terrainManager->GetTerrainHeightAtLocation(camera->Position.x, camera->Position.z) + 2.0f;
 		float height = camera->Position.y;
 		if (Input::GetKeyDown(Input::KeyCode::SPACE)) {
-			verticalVelocity += 0.15;
+			verticalVelocity += 0.15f;
 		}
-		verticalVelocity += gravity*timeManager->GetDeltaTime();
+		verticalVelocity += (float)gravity*timeManager->GetDeltaTime();
 		height += verticalVelocity;
 		camera->Position.y = height;
 		if (camera->Position.y < groundHeight) { //for over land

@@ -12,6 +12,9 @@
 #define VMA_IMPLEMENTATION
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
 int main(int argc, char* argv[]) {
 
 	SetExecutableFilePath(argv[0]);

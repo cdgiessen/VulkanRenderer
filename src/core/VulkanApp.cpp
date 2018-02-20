@@ -1,10 +1,26 @@
 #include "VulkanApp.h"
 
-#include "../rendering/VulkanInitializers.hpp"
+#include <fstream>
+#include <stdexcept>
+#include <algorithm>
+#include <chrono>
+#include <vector>
+#include <cstring>
+#include <string>
+#include <array>
+#include <set>
+
+#include <vulkan/vulkan.h>
+
+#include <glm/glm.hpp>
+
+#include <GLFW/glfw3.h>
+
+#include "../../third-party/ImGui/imgui.h"
 
 #include "../../third-party/json/json.hpp"
 
-#include <glm/glm.hpp>
+#include "../rendering/VulkanInitializers.hpp"
 
 VulkanApp::VulkanApp()
 {
@@ -108,6 +124,8 @@ static void imgui_check_vk_result(VkResult err)
 
 void  VulkanApp::PrepareImGui()
 {
+	ImGui_ImplGlfwVulkan_Init_Data init_data = {};
+
 	//Creates a descriptor pool for imgui
 	{	VkDescriptorPoolSize pool_size[11] =
 	{
@@ -129,16 +147,16 @@ void  VulkanApp::PrepareImGui()
 	pool_info.maxSets = 1000 * 11;
 	pool_info.poolSizeCount = 11;
 	pool_info.pPoolSizes = pool_size;
-		VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanRenderer->device.device, &pool_info, VK_NULL_HANDLE, &imgui_descriptor_pool));
+		VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanRenderer->device.device, &pool_info, VK_NULL_HANDLE, &init_data.descriptor_pool));
 	}
 
-	ImGui_ImplGlfwVulkan_Init_Data init_data = {};
+	//ImGui_ImplGlfwVulkan_Init_Data init_data = {};
 	init_data.allocator = VK_NULL_HANDLE;
 	init_data.gpu = vulkanRenderer->device.physical_device;
 	init_data.device = vulkanRenderer->device.device;
 	init_data.render_pass = vulkanRenderer->renderPass;
 	init_data.pipeline_cache = vulkanRenderer->pipelineManager.GetPipelineCache();
-	init_data.descriptor_pool = imgui_descriptor_pool;
+	//init_data.descriptor_pool = imgui_descriptor_pool;
 	init_data.check_vk_result = imgui_check_vk_result;
 
 	ImGui_ImplGlfwVulkan_Init(window->getWindowContext(), false, &init_data);
@@ -239,7 +257,7 @@ void VulkanApp::BuildImgui() {
 //Release associated resources and shutdown imgui
 void VulkanApp::CleanUpImgui() {
 	ImGui_ImplGlfwVulkan_Shutdown();
-	vkDestroyDescriptorPool(vulkanRenderer->device.device, imgui_descriptor_pool, VK_NULL_HANDLE);
+	//vkDestroyDescriptorPool(vulkanRenderer->device.device, imgui_descriptor_pool, VK_NULL_HANDLE);
 }
 
 void VulkanApp::HandleInputs() {
