@@ -142,7 +142,7 @@ public:
 	void BuildCommandBuffer(std::shared_ptr<Terrain> curTerrain, bool ifWireframe);
 	void CleanUp();
 
-	RGBA_pixel* LoadSplatMapFromGenerator();
+	std::vector<RGBA_pixel>* LoadSplatMapFromGenerator();
 
 	float GetHeightAtLocation(float x, float z);
 private:

@@ -204,20 +204,23 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3
 	return shouldUpdateBuffers;
 }
 
-RGBA_pixel*  Terrain::LoadSplatMapFromGenerator() {
+std::vector<RGBA_pixel>*  Terrain::LoadSplatMapFromGenerator() {
 	//fastGraphUser.BuildOutputImage(noisePosition, (float)noiseSize.x);
 
-	float* pixData = fastGraphUser.GetGraphSourceImage();
-	RGBA_pixel* imageData = (RGBA_pixel*)malloc(4*sourceImageResolution*sourceImageResolution);
+	InternalGraph::NoiseImage2D pixData = fastGraphUser.GetGraphSourceImage();
+	std::vector<RGBA_pixel>* imageData = new std::vector<RGBA_pixel>(sourceImageResolution * sourceImageResolution);
 
 	if (imageData == nullptr) {
 		Log::Error << "failed to create splatmap image" << "\n";
 		return nullptr;
 	}
-	for (int i = 0; i < sourceImageResolution * sourceImageResolution; i++ ) {
-		glm::vec4 col = splatmapTextureGradient.SampleGradient(((pixData[i]) + 1.0f)/2.0f);
-		imageData[i] = RGBA_pixel((stbi_uc)(col.x * 255), (stbi_uc)(col.y * 255), (stbi_uc)(col.z * 255), (stbi_uc)(col.w * 255));
+	for (int i = 0; i < pixData.GetImageWidth()*pixData.GetImageWidth(); i++) {
+		glm::vec4 col = splatmapTextureGradient.SampleGradient(((pixData.GetImageData()[i]) + 1.0f)/2.0f);
+		(*imageData)[i] = RGBA_pixel((stbi_uc)(col.x * 255), (stbi_uc)(col.y * 255), (stbi_uc)(col.z * 255), (stbi_uc)(col.w * 255));
 	}
+	//for (int i = 0; i < sourceImageResolution * sourceImageResolution; i++ ) {
+	//	imageData[i] = RGBA_pixel((stbi_uc)(col.x * 255), (stbi_uc)(col.y * 255), (stbi_uc)(col.z * 255), (stbi_uc)(col.w * 255));
+	//}
 
 	return imageData;
 }
@@ -870,8 +873,8 @@ void GenerateNewTerrainSubdivision(InternalGraph::GraphUser& graphUser, TerrainM
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 3] = normal.x;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 4] = normal.y;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 5] = normal.z;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 6] = uvV;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 7] = uvU;
+			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 6] = uvU;
+			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 7] = uvV;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 8] = 0;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 9] = 0;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 10] = 0;

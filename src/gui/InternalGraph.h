@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <variant>
+#include <optional>
 #include <memory>
 
 #include "../../third-party/FastNoiseSIMD/FastNoiseSIMD.h"
@@ -11,8 +12,18 @@
 
 namespace InternalGraph {
 
-	typedef std::variant<float, int, glm::vec2, glm::vec3, glm::vec4> LinkTypeVariants;
+	typedef std::variant<int, float, glm::vec2, glm::vec3, glm::vec4> LinkTypeVariants;
 	typedef int NodeID;
+
+	class Node;
+
+	struct NodeHandle {
+		NodeID id = -1;
+		Node* handle;
+	};
+
+	//Convinience typedef of the map of nodes
+	typedef std::map<NodeID, Node> NodeMap;
 
 
 	class NoiseImage2D {
@@ -21,9 +32,6 @@ namespace InternalGraph {
 
 		NoiseImage2D(int width);
 		~NoiseImage2D();
-
-		//resize underlying vector to appropriate size
-		void PrepareImage();
 
 		//size, in pixels, of the image;
 		const int GetSize() const;
@@ -44,11 +52,13 @@ namespace InternalGraph {
 		void SetPixelValue(int x, int z, float value);
 
 		float* GetImageData();
-		void SetImageData(float* data);
+		void SetImageData(int width, float* data);
 
 	private:
-		int width;
-		float* image;
+		int width = 0;
+		float* image = nullptr;
+		bool isExternallyAllocated = false;
+		std::vector<float> data;
 	};
 
 	static float BilinearImageSample2D(const NoiseImage2D& noiseImage, const float x, const float z);
@@ -89,37 +99,45 @@ namespace InternalGraph {
 
 	};
 
-	class Node;
-
-	struct NodeHandle {
-		NodeID id = -1;
-		Node* handle;
-	};
-
-	template<typename T>
 	class InputLink {
 	public:
+		InputLink();
+		InputLink(float in);
+		InputLink(int in);
+		InputLink(glm::vec2 in);
+		InputLink(glm::vec3 in);
+		InputLink(glm::vec4 in);
 
 		void SetInputNode(NodeID id);
 		void ResetInputNode();
+		NodeID GetInputNode();
+
+		bool HasInputNode();
+
 		void SetInputNodePointer(Node* node);
 		void ResetInputNodePointer();
 
-		void SetDataValue(T data);
+		void SetDataValue(LinkTypeVariants data);
 
-		T GetValue(const int x, const int z, T dummy);
+		LinkTypeVariants GetValue();
+		LinkTypeVariants GetValue(const int x, const int z);
 
 	private:
-		bool hasInputNode;
+		bool hasInputNode = false;
 		NodeHandle handle;
-		T value;
+		LinkTypeVariants value;
 	};
 
-	//Defines all the possible input link types. This is so templates can be used and the input links can be put in a vector for easy storage
-	typedef std::variant < InputLink<float>, InputLink<int>, InputLink < glm::vec2>, InputLink<glm::vec3>, InputLink<glm::vec4>> InputLinkTypeVariant;
+	struct NoiseSourceInfo {
+		int seed;
+		int cellsWide;
+		float scale;
+		glm::i32vec2 pos;
 
-	//Convinience typedef of the map of nodes
-	typedef std::map<NodeID, Node> NodeMap;
+		NoiseSourceInfo(int seed, int cellsWide, float scale, glm::i32vec2 pos) :
+			seed(seed), cellsWide(cellsWide), scale(scale), pos(pos)
+		{ }
+	};
 
 	class Node {
 	public:
@@ -127,31 +145,34 @@ namespace InternalGraph {
 
 		LinkType GetOutputType();
 
-		template<typename T>
-		void SetLinkValue(const int index, const T data);
+		void SetLinkValue(const int index, const LinkTypeVariants data);
 
 		void SetLinkInput(const int index, const NodeID id);
 
 		void ResetLinkInput(const int index);
 
-		template<typename T>
-		T GetValue(const int x, const int z, T dummy);
+		LinkTypeVariants GetValue(const int x, const int z);
 
 		void SetID(NodeID);
 		NodeID GetID();
 
 		void SetIsNoiseNode(bool val);
 
-		void SetupNodeForComputation(NodeMap& map);
+		void SetupInputLinks(NodeMap* map);
+		void SetupNodeForComputation(NoiseSourceInfo info);
+		void CleanUp();
 
+		std::vector <InputLink> inputLinks;
+	
 	private:
 		NodeID id = -1;
 		NodeType nodeType = NodeType::None;
 
-		std::vector <InputLinkTypeVariant> inputLinks;
 		LinkType outputType = LinkType::None;
 
 		bool isNoiseNode = false;
+		NoiseImage2D noiseImage;
+		FastNoiseSIMD* myNoise;
 	};
 
 
@@ -184,26 +205,14 @@ namespace InternalGraph {
 		GraphUser(const GraphPrototype& graph, int seed, int cellsWide, glm::i32vec2 pos, float scale);
 
 		float SampleGraph(const float x, const float z);
-		float* GetGraphSourceImage();
+		NoiseImage2D& GetGraphSourceImage();
 
 	private:
 		NodeMap nodeMap;
+		Node* outputNode;
 
-		int seed;
-		glm::i32vec2 pos;
-		float scale;
-		int cellsWide;
+		NoiseSourceInfo info;
 
 		NoiseImage2D outputImage;
 	};
-
-	template<typename T>
-	void Node::SetLinkValue(const int index, const T data) {
-		//inputLinks.at(index).SetDataValue(data);
-	}
-
-	template<typename T>
-	T Node::GetValue(const int x, const int z, T dummy) {
-
-	}
 }

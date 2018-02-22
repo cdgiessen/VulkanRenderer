@@ -58,8 +58,9 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 				glm::i32vec2(logicalWidth, logicalWidth)); //noiseSize 
 
 			//terrain->terrainTextureArray = resourceMan->texManager.loadTextureArrayFromFile("assets/Textures/TerrainTextures/", terrainTextureFileNames);
-			terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(sourceImageResolution, sourceImageResolution, terrain->LoadSplatMapFromGenerator());
-
+			std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
+			terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(sourceImageResolution, sourceImageResolution, imgData);
+			delete(imgData);
 			terrains.push_back(terrain);
 		}
 	}

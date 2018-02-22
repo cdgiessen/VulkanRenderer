@@ -47,7 +47,7 @@ class ProcTerrainNodeGraph;
 
 class Connection {
 public:
-	Connection(ConnectionType conType, std::shared_ptr<Node> input, std::shared_ptr<Node> output);
+	Connection(ConnectionType conType, std::shared_ptr<Node> input, std::shared_ptr<Node> output, int output_slot_id);
 
 	ConnectionType conType;
 
@@ -57,6 +57,7 @@ public:
 	std::shared_ptr<Node> input;
 	std::shared_ptr<Node> output;
 	
+	int output_slot_id = -1;
 };
 
 class ConnectionSlot {
@@ -64,12 +65,13 @@ public:
 	ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type);
 	ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name);
 
-	virtual int Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) =0;
+	virtual int Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) =0;
 	bool IsHoveredOver(ImVec2 parentPos) const;
 	ConnectionType GetType();
 
 	int slotNum;
 	ImVec2 pos;
+	ImVec2 varyingPos = ImVec2(0,0);
 	float nodeSlotRadius = 5.0f;
 	ImColor slotColor = ImColor(150, 150, 150);
 
@@ -87,7 +89,7 @@ public:
 	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name, 
 		int defaultVal, float sliderStepSize, float lowerBound, float upperBound);
 
-	int Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) override;
+	int Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) override;
 
 	bool hasConnection = false;
 	std::shared_ptr<Connection> connection;
@@ -100,7 +102,7 @@ class OutputConnectionSlot : public ConnectionSlot {
 public:
 	OutputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type);
 
-	int Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) override;
+	int Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) override;
 
 	std::vector<std::shared_ptr<Connection>> connections;
 
@@ -251,11 +253,10 @@ private:
 
 	void AddNode(NodeType nodeType, ImVec2 position, int id = -1);
 
-	void SetNodeInternalLinkByID(std::shared_ptr<Node> node, int index, InternalGraph::NodeID id);
-	void ResetNodeInternalLinkByID(std::shared_ptr<Node> node, int index);
+	void SetNodeInternalLinkByID(InternalGraph::NodeID internalNodeID, int index, InternalGraph::NodeID id);
+	void ResetNodeInternalLinkByID(InternalGraph::NodeID internalNodeID, int index);
 
-	template<typename T>
-	void SetNodeInternalValueByID(std::shared_ptr<Node> node, int index, T val);
+	void SetNodeInternalValueByID(InternalGraph::NodeID internalNodeID, int index, InternalGraph::LinkTypeVariants val);
 
 	std::shared_ptr<Node> GetNodeById(int id);
 	

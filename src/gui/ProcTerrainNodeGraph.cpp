@@ -37,10 +37,13 @@ void ProcTerrainNodeGraph::DeleteNode(std::shared_ptr<Node> node) {
 	if (found != nodes.end()) {
 
 		for (auto slot : (*found)->inputSlots)
-			if (slot.hasConnection)
+			if (slot.hasConnection) {
+				ResetNodeInternalLinkByID((*found)->internalNodeID, slot.slotNum);
 				DeleteConnection(slot.connection);
-		for (auto con : (*found)->outputSlot.connections)
+			}
+		for (auto con : (*found)->outputSlot.connections) {
 			DeleteConnection(con);
+		}
 
 		protoGraph.DeleteNode((*found)->internalNodeID);
 		nodes.erase(found);
@@ -53,9 +56,11 @@ void ProcTerrainNodeGraph::DeleteNode(std::shared_ptr<Node> node) {
 void ProcTerrainNodeGraph::DeleteConnection(std::shared_ptr<Connection> con) {
 	auto found = std::find(connections.begin(), connections.end(), con);
 	if (found != connections.end()) {
+
+		ResetNodeInternalLinkByID((*found)->output->internalNodeID, (*found)->output_slot_id);
+
 		(*found)->input.reset();
-		auto intNodeRef = protoGraph.GetNodeByID((*found)->output->internalNodeID);
-		intNodeRef.ResetLinkInput(0);
+
 		//(*found)->output->internal_node->ResetInputLink(0);
 		(*found)->output.reset();
 		connections.erase(found);
@@ -85,9 +90,8 @@ void ProcTerrainNodeGraph::ResetOutputNode() {
 	outputNode->id = curID++;
 	outputNode->type = NodeType::Output;
 	outputNode->internalNodeID = protoGraph.GetOutputNodeID();
-	auto& node = protoGraph.GetNodeByID(outputNode->internalNodeID);
-	node.ResetLinkInput(0);
-	node.SetLinkValue<float>(0, -0.5f);
+	SetNodeInternalValueByID(outputNode->internalNodeID, 0, -0.5f);
+	ResetNodeInternalLinkByID(outputNode->internalNodeID, 0);
 	nodes.push_back(outputNode);
 }
 
@@ -353,6 +357,9 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 	}
 
 	while (nodesToDelete.size() > 0) {
+		if (nodesToDelete.at(0)->hasTextInput) {
+			Input::ResetTextInputMode();
+		}
 		DeleteNode(nodesToDelete.at(0));
 		nodesToDelete.erase(nodesToDelete.begin());
 	}
@@ -378,9 +385,8 @@ void ProcTerrainNodeGraph::DrawPossibleConnection(ImDrawList* imDrawList) {
 				posCon.state = PossibleConnection::State::Dragging;
 
 				if (!info.isOutput && (info.node->inputSlots[info.inputSlotNum].connection != nullptr)) {
-					auto& nodeRef = protoGraph.GetNodeByID(posCon.slot.node->internalNodeID);
-					nodeRef.ResetLinkInput(posCon.slot.inputSlotNum);
 					DeleteConnection(info.node->inputSlots[info.inputSlotNum].connection);
+					ResetNodeInternalLinkByID(posCon.slot.node->internalNodeID, posCon.slot.inputSlotNum);
 				}
 			}
 		}
@@ -422,15 +428,19 @@ void ProcTerrainNodeGraph::DrawPossibleConnection(ImDrawList* imDrawList) {
 					incomingSlot = posCon.slot;
 				}
 
+				//Delete old connection if exists
+				if (incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection != nullptr) {
+					
+					ResetNodeInternalLinkByID(incomingSlot.node->internalNodeID, incomingSlot.inputSlotNum);
+					DeleteConnection(incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection);
+				}
+				
 				newConnection = std::make_shared<Connection>(
 					PossibleConnection::GetActiveSlotType(posCon.slot),
 					outgoingSlot.node,
-					incomingSlot.node);
-
-				//Delete old connection if exists
-				if (incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection != nullptr)
-					DeleteConnection(incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection);
-
+					incomingSlot.node,
+					incomingSlot.inputSlotNum);
+				
 				incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection = newConnection;
 				outgoingSlot.node->outputSlot.connections.push_back(newConnection);
 
@@ -438,7 +448,7 @@ void ProcTerrainNodeGraph::DrawPossibleConnection(ImDrawList* imDrawList) {
 				newConnection->endPosRelNode = PossibleConnection::GetActiveSlotPosition(incomingSlot);
 
 				//incomingSlot.node->SetInternalLink(incomingSlot.inputSlotNum, outgoingSlot.node->internalNodeID);
-				SetNodeInternalLinkByID(incomingSlot.node, incomingSlot.inputSlotNum, outgoingSlot.node->internalNodeID);
+				SetNodeInternalLinkByID(incomingSlot.node->internalNodeID, incomingSlot.inputSlotNum, outgoingSlot.node->internalNodeID);
 				connections.push_back(newConnection);
 
 				posCon.isActive = false;
@@ -449,7 +459,11 @@ void ProcTerrainNodeGraph::DrawPossibleConnection(ImDrawList* imDrawList) {
 		}
 		else if (ImGui::IsMouseClicked(1))
 		{
-			ResetNodeInternalLinkByID(posCon.slot.node, posCon.slot.inputSlotNum);
+			if (posCon.slot.isOutput) {
+			}
+			else {
+				ResetNodeInternalLinkByID(posCon.slot.node->internalNodeID, posCon.slot.inputSlotNum);
+			}
 			//posCon.slot.node->internal_node->ResetInputLink(posCon.slot.inputSlotNum);
 			posCon.isActive = false;
 			posCon.slot = HoveredSlotInfo();
@@ -614,7 +628,8 @@ void ProcTerrainNodeGraph::LoadGraphFromFile()
 				std::shared_ptr<Connection> newConnection = std::make_shared<Connection>(
 					static_cast<ConnectionType>(slotType),
 					outGoingNode,
-					node);
+					node,
+					slot);
 
 				node->inputSlots[slot].connection = newConnection;
 				outGoingNode->outputSlot.connections.push_back(newConnection);
@@ -623,7 +638,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile()
 				newConnection->endPosRelNode = node->inputSlots[slot].pos;
 
 				//node->SetInternalLink(slot, outGoingNode->internal_node);
-				SetNodeInternalLinkByID(node, slot, outGoingNode->internalNodeID);
+				SetNodeInternalLinkByID(node->internalNodeID, slot, outGoingNode->internalNodeID);
 				
 				connections.push_back(newConnection);
 
@@ -674,12 +689,8 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 		outputNode->type = NodeType::Output;
 		outputNode->pos = position;
 		outputNode->internalNodeID = protoGraph.GetNextID();
-		auto& ref = protoGraph.GetNodeByID(outputNode->internalNodeID);
-		ref.ResetLinkInput(0);
-		ref.SetLinkValue(0, -0.5f);
-		//outputNode->internal_node = curGraph.GetOutputNode();
-		//outputNode->internal_node->ResetInputLink(0);
-		//outputNode->internal_node->SetValue(0, -0.5f);
+		SetNodeInternalValueByID(outputNode->internalNodeID, 0, -0.5f);
+		ResetNodeInternalLinkByID(outputNode->internalNodeID, 0);
 		nodes.push_back(outputNode);
 		return;
 	}
@@ -738,7 +749,7 @@ ConnectionSlot::ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std
 bool ConnectionSlot::IsHoveredOver(ImVec2 parentPos) const
 {
 	ImVec2 mousePos = ImGui::GetIO().MousePos;
-	ImVec2 conPos = parentPos + pos;
+	ImVec2 conPos = parentPos + pos + varyingPos;
 
 	float xd = mousePos.x - conPos.x;
 	float yd = mousePos.y - conPos.y;
@@ -791,7 +802,7 @@ InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType
 	}
 }
 
-int InputConnectionSlot::Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) {
+int InputConnectionSlot::Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) {
 
 	ImVec2 relPos = ImVec2(graph.windowPos.x + parentNode.pos.x, graph.windowPos.y + parentNode.pos.y);
 	ImVec2 currentPos = relPos + pos + ImVec2(0, verticalOffset);
@@ -818,29 +829,27 @@ int InputConnectionSlot::Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph
 	switch (value.type) {
 	case(ConnectionType::Int):
 		ImGui::DragInt(std::string("##int" + uniqueID).c_str(), &(std::get<int>(value.value)), sliderStepSize, lowerBound, upperBound);
-		
-		//SetNodeInternalValueByID(parentNode)
-		//parentNode.internal_node->SetValue(slotNum, std::get<int>(value.value));
+		graph.SetNodeInternalValueByID(parentNode.internalNodeID, slotNum, value.value);
 		break;
 	case(ConnectionType::Float):
 		ImGui::DragFloat(std::string("##float" + uniqueID).c_str(), &(std::get<float>(value.value)), sliderStepSize, lowerBound, upperBound);
-		//parentNode.internal_node->SetValue(slotNum, std::get<float>(value.value));
+		graph.SetNodeInternalValueByID(parentNode.internalNodeID, slotNum, value.value);
 		break;
 	case(ConnectionType::Color):
 		ImGui::DragFloat3(std::string("##color" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec3>(value.value)), sliderStepSize, lowerBound, upperBound);
-		//parentNode.internal_node->SetValue(slotNum, std::get<glm::vec3>(value.value));
+		graph.SetNodeInternalValueByID(parentNode.internalNodeID, slotNum, value.value);
 		break;
 	case(ConnectionType::Vec2):
 		ImGui::DragFloat2(std::string("##vec2" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec2>(value.value)), sliderStepSize, lowerBound, upperBound);
-		//parentNode.internal_node->SetValue(slotNum, std::get<glm::vec2>(value.value));
+		graph.SetNodeInternalValueByID(parentNode.internalNodeID, slotNum, value.value);
 		break;
 	case(ConnectionType::Vec3):
 		ImGui::DragFloat3(std::string("##vec3" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec3>(value.value)), sliderStepSize, lowerBound, upperBound);
-		//parentNode.internal_node->SetValue(slotNum, std::get<glm::vec3>(value.value));
+		graph.SetNodeInternalValueByID(parentNode.internalNodeID, slotNum, value.value);
 		break;
 	case(ConnectionType::Vec4):
 		ImGui::DragFloat4(std::string("##vec4" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec4>(value.value)), sliderStepSize, lowerBound, upperBound);
-		//parentNode.internal_node->SetValue(slotNum, std::get<glm::vec4>(value.value));
+		graph.SetNodeInternalValueByID(parentNode.internalNodeID, slotNum, value.value);
 		break;
 	}
 	ImGui::PopItemWidth();
@@ -855,6 +864,8 @@ int InputConnectionSlot::Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph
 
 	imDrawList->AddCircleFilled(currentPos, nodeSlotRadius, conColor);
 
+	varyingPos = ImVec2(0, verticalOffset);
+
 	return slotHeight;
 }
 
@@ -862,7 +873,7 @@ OutputConnectionSlot::OutputConnectionSlot(int slotNum, ImVec2 pos, ConnectionTy
 {
 }
 
-int OutputConnectionSlot::Draw(ImDrawList* imDrawList, const  ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) {
+int OutputConnectionSlot::Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) {
 	slotColor = ImColor(150, 150, 150);
 	ImVec2 relPos = ImVec2(graph.windowPos.x + parentNode.pos.x, graph.windowPos.y + parentNode.pos.y);
 	if (IsHoveredOver(relPos))
@@ -872,8 +883,8 @@ int OutputConnectionSlot::Draw(ImDrawList* imDrawList, const  ProcTerrainNodeGra
 	return 0;
 }
 
-Connection::Connection(ConnectionType conType, std::shared_ptr<Node> input, std::shared_ptr<Node> output)
-	: conType(conType), input(input), output(output)
+Connection::Connection(ConnectionType conType, std::shared_ptr<Node> input, std::shared_ptr<Node> output, int output_slot_id)
+	: conType(conType), input(input), output(output), output_slot_id(output_slot_id)
 {
 }
 
@@ -883,20 +894,16 @@ Node::Node(std::string name, ConnectionType outputType) : name(name), outputSlot
 
 }
 
-void ProcTerrainNodeGraph::SetNodeInternalLinkByID(std::shared_ptr<Node> node, int index, InternalGraph::NodeID id) {
-	auto& ref = protoGraph.GetNodeByID(node->internalNodeID);
-	ref.SetLinkInput(index, id);
+void ProcTerrainNodeGraph::SetNodeInternalLinkByID(InternalGraph::NodeID internalNodeID, int index, InternalGraph::NodeID id) {
+	protoGraph.GetNodeByID(internalNodeID).SetLinkInput(index, id);
 }
 
-void ProcTerrainNodeGraph::ResetNodeInternalLinkByID(std::shared_ptr<Node> node, int index) {
-	auto& ref = protoGraph.GetNodeByID(node->internalNodeID);
-	ref.ResetLinkInput(index);
+void ProcTerrainNodeGraph::ResetNodeInternalLinkByID(InternalGraph::NodeID internalNodeID, int index) {
+	protoGraph.GetNodeByID(internalNodeID).ResetLinkInput(index);
 }
 
-template<typename T>
-void ProcTerrainNodeGraph::SetNodeInternalValueByID(std::shared_ptr<Node> node, int index, T val) {
-	auto& ref = protoGraph.GetNodeByID(node->internalNodeID);
-	ref.SetLinkValue(index, val);
+void ProcTerrainNodeGraph::SetNodeInternalValueByID(InternalGraph::NodeID internalNodeID, int index, InternalGraph::LinkTypeVariants val) {
+	protoGraph.GetNodeByID(internalNodeID).SetLinkValue(index, val);
 }
 //void Node::SetInternalLink(int index, InternalGraph::NodeID id) {
 //	->SetInputLink(index, id);
@@ -927,7 +934,7 @@ BlendNode::BlendNode(InternalGraph::GraphPrototype& graph) : Node("Blend", Conne
 	AddInputSlot(ConnectionType::Float, "B", 1.0f, 0.01f, 0.0f, 0.0f);
 	AddInputSlot(ConnectionType::Float, "Factor", 0.5f, 0.005f, 0.0f, 1.0f);
 	//internal_node = std::make_shared<NewNodeGraph::BlendNode>();
-	graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Blend));
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Blend));
 }
 
 ClampNode::ClampNode(InternalGraph::GraphPrototype& graph) : Node("Clamp", ConnectionType::Float)
@@ -936,7 +943,7 @@ ClampNode::ClampNode(InternalGraph::GraphPrototype& graph) : Node("Clamp", Conne
 	AddInputSlot(ConnectionType::Float, "lower", 0.0f, 0.005f, 0.0f, 0.0f);
 	AddInputSlot(ConnectionType::Float, "upper", 1.0f, 0.005f, 0.0f, 0.0f);
 	//internal_node = std::make_shared<NewNodeGraph::ClampNode>();
-	graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Clamp));
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Clamp));
 }
 
 MathNode::MathNode(std::string name) : Node(name, ConnectionType::Float)
@@ -948,86 +955,86 @@ MathNode::MathNode(std::string name) : Node(name, ConnectionType::Float)
 AdditionNode::AdditionNode(InternalGraph::GraphPrototype& graph) : MathNode("Addition")
 {
 	//internal_node = std::make_shared<NewNodeGraph::AdditionNode>();
-	graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Addition));
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Addition));
 }
 
 SubtractionNode::SubtractionNode(InternalGraph::GraphPrototype& graph) : MathNode("Subtraction")
 {
 	//internal_node = std::make_shared<NewNodeGraph::SubtractNode>();
-	graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Subtraction));
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Subtraction));
 }
 
 MultiplicationNode::MultiplicationNode(InternalGraph::GraphPrototype& graph) : MathNode("Multiplication")
 {
 	//internal_node = std::make_shared<NewNodeGraph::MultiplyNode>();
-	graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Multiplication));
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Multiplication));
 }
 
 DivisionNode::DivisionNode(InternalGraph::GraphPrototype& graph) : MathNode("Division")
 {
 	//internal_node = std::make_shared<NewNodeGraph::DivideNode>();
-	graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Division));
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Division));
 }
 
 PowerNode::PowerNode(InternalGraph::GraphPrototype& graph) : MathNode("Power")
 {
 	//internal_node = std::make_shared<NewNodeGraph::PowerNode>();
-	graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Power));
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Power));
 }
 
 MaxNode::MaxNode(InternalGraph::GraphPrototype& graph) : MathNode("Max")
 {
 	//internal_node = std::make_shared<NewNodeGraph::MaxNode>();
-	graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Max));
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Max));
 }
 
 MinNode::MinNode(InternalGraph::GraphPrototype& graph) : MathNode("Min")
 {
 	//internal_node = std::make_shared<NewNodeGraph::MinNode>();
-	graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Min));
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Min));
 }
 
 
 NoiseNode::NoiseNode(std::string name) : Node(name, ConnectionType::Float)
 {
-	AddInputSlot(ConnectionType::Int, "Octaves", 1, 0.1f, 0.0f, 10.0f);
+	AddInputSlot(ConnectionType::Int, "Octaves", 3, 0.1f, 0.0f, 10.0f);
 	AddInputSlot(ConnectionType::Float, "Persistence", 0.5f, 0.01f, 0.0f, 1.0f);
-	AddInputSlot(ConnectionType::Float, "Frequency", 0.15f, 0.01f, 0.0f, 1.0f);
+	AddInputSlot(ConnectionType::Float, "Frequency", 0.015f, 0.001f, 0.0f, 1.0f);
 }
 
 SimplexNode::SimplexNode(InternalGraph::GraphPrototype& graph) : NoiseNode("Simplex")
 {
 	//internal_node_noise = std::make_shared<NewNodeGraph::SimplexFractalNoiseNode>();
 	//internal_node = internal_node_noise;
-	graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::SimplexFractalNoise));
+	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::SimplexFractalNoise));
 }
 
 PerlinNode::PerlinNode(InternalGraph::GraphPrototype& graph) : NoiseNode("Perlin")
 {
 	//internal_node_noise = std::make_shared<NewNodeGraph::PerlinFractalNoiseNode>();
 	//internal_node = internal_node_noise;
-	graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::PerlinFractalNoise));
+	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::PerlinFractalNoise));
 }
 
 VoroniNode::VoroniNode(InternalGraph::GraphPrototype& graph) : NoiseNode("Voroni")
 {
 	//internal_node_noise = std::make_shared<NewNodeGraph::VoironiFractalNoiseNode>();
 	//internal_node = internal_node_noise;
-	graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::VoroniFractalNoise));
+	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::VoroniFractalNoise));
 }
 
 ValueNoiseNode::ValueNoiseNode(InternalGraph::GraphPrototype& graph) : NoiseNode("ValueNoise")
 {
 	//internal_node_noise = std::make_shared<NewNodeGraph::ValueFractalNoiseNode>();
 	//internal_node = internal_node_noise;
-	graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::ValueFractalNoise));
+	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::ValueFractalNoise));
 }
 
 CellNoiseNode::CellNoiseNode(InternalGraph::GraphPrototype& graph) : NoiseNode("CellNoise")
 {
 	//internal_node_noise = std::make_shared<NewNodeGraph::CellularNoiseNode>();
 	//internal_node = internal_node_noise;
-	graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::CellularNoise));
+	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::CellularNoise));
 }
 
 
@@ -1035,14 +1042,14 @@ ConstantIntNode::ConstantIntNode(InternalGraph::GraphPrototype& graph) : Node("C
 {
 	AddInputSlot(ConnectionType::Int, "Value", 0.0f, 0.1f, 0.0f, 0.0f);
 	//internal_node = std::make_shared<NewNodeGraph::ConstantIntNode>(1);
-	graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::ConstantInt));
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::ConstantInt));
 }
 
 ConstantFloatNode::ConstantFloatNode(InternalGraph::GraphPrototype& graph) : Node("ConstantFloat", ConnectionType::Float)
 {
 	AddInputSlot(ConnectionType::Float, "Value", 0.0f, 0.01f, 0.0f, 0.0f);
 	//internal_node = std::make_shared<NewNodeGraph::ConstantFloatNode>(1.0f);
-	graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::ConstantFloat));
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::ConstantFloat));
 }
 
 PossibleConnection::PossibleConnection() : state(State::Default), slot()

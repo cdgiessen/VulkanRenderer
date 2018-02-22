@@ -91,7 +91,7 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromGreyscalePixelData(int w
 	return tex;
 }
 
-std::shared_ptr<Texture> TextureManager::loadTextureFromRGBAPixelData(int width, int height, RGBA_pixel* in_pixels) {
+std::shared_ptr<Texture> TextureManager::loadTextureFromRGBAPixelData(int width, int height, std::vector<RGBA_pixel>* in_pixels) {
 	if (width < 0 || height < 0) {
 		Log::Error << "Can't have negative dimentions!\n";
 		return errorImage;
@@ -103,8 +103,8 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromRGBAPixelData(int width,
 	}
 
 	std::shared_ptr<Texture> tex = std::make_shared<Texture>(width, height);
-	
-	std::memcpy(tex->pixels.data(), in_pixels, tex->texImageSize);	
+	tex->pixels = *in_pixels;
+	//std::memcpy(tex->pixels.data(), in_pixels->data(), tex->texImageSize);	
 
 	return tex;
 }
