@@ -214,9 +214,11 @@ std::vector<RGBA_pixel>*  Terrain::LoadSplatMapFromGenerator() {
 		Log::Error << "failed to create splatmap image" << "\n";
 		return nullptr;
 	}
-	for (int i = 0; i < pixData.GetImageWidth()*pixData.GetImageWidth(); i++) {
-		glm::vec4 col = splatmapTextureGradient.SampleGradient(((pixData.GetImageData()[i]) + 1.0f)/2.0f);
-		(*imageData)[i] = RGBA_pixel((stbi_uc)(col.x * 255), (stbi_uc)(col.y * 255), (stbi_uc)(col.z * 255), (stbi_uc)(col.w * 255));
+	for (int i = 0; i < pixData.GetImageWidth(); i++) {
+		for (int j = 0; j < pixData.GetImageWidth(); j++) {
+			glm::vec4 col = splatmapTextureGradient.SampleGradient(((pixData.GetImageData()[i * pixData.GetImageWidth() + (pixData.GetImageWidth() - j - 1)]) + 1.0f) / 2.0f);
+			(*imageData)[(pixData.GetImageWidth() - j - 1) * pixData.GetImageWidth() + i] = RGBA_pixel((stbi_uc)(col.x * 255), (stbi_uc)(col.y * 255), (stbi_uc)(col.z * 255), (stbi_uc)(col.w * 255));
+		}
 	}
 	//for (int i = 0; i < sourceImageResolution * sourceImageResolution; i++ ) {
 	//	imageData[i] = RGBA_pixel((stbi_uc)(col.x * 255), (stbi_uc)(col.y * 255), (stbi_uc)(col.z * 255), (stbi_uc)(col.w * 255));

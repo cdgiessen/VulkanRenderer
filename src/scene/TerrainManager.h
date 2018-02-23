@@ -72,7 +72,7 @@ private:
 	int sourceImageResolution = 256;
 	SimpleTimer terrainUpdateTimer;
 	int numCells = 64;
-	int logicalWidth = 64;// (int)numCells * glm::pow(2.0, terrainMaxLevels);
+	int logicalWidth = 16;// (int)numCells * glm::pow(2.0, terrainMaxLevels);
 
 	int maxNumQuads = 1; //maximum quads managed by this
 

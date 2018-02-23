@@ -644,8 +644,9 @@ namespace InternalGraph {
 
 	GraphUser::GraphUser(const GraphPrototype& graph, 
 		int seed, int cellsWide, glm::i32vec2 pos, float scale):
-	info(seed, cellsWide, scale, pos)
+	info(seed, cellsWide, scale/ (float)cellsWide, pos)
 	{
+		//glm::ivec2(pos.x * (cellsWide) / scale, pos.y * (cellsWide) / scale), scale / (cellsWide)
 
 		//NoiseSourceInfo info = NoiseSourceInfo(seed, cellsWide, scale, pos);
 		this->nodeMap = graph.GetNodeMap();

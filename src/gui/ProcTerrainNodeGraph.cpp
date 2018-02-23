@@ -998,8 +998,8 @@ MinNode::MinNode(InternalGraph::GraphPrototype& graph) : MathNode("Min")
 NoiseNode::NoiseNode(std::string name) : Node(name, ConnectionType::Float)
 {
 	AddInputSlot(ConnectionType::Int, "Octaves", 3, 0.1f, 0.0f, 10.0f);
+	AddInputSlot(ConnectionType::Float, "Frequency", 0.15f, 0.001f, 0.0f, 1.0f);
 	AddInputSlot(ConnectionType::Float, "Persistence", 0.5f, 0.01f, 0.0f, 1.0f);
-	AddInputSlot(ConnectionType::Float, "Frequency", 0.015f, 0.001f, 0.0f, 1.0f);
 }
 
 SimplexNode::SimplexNode(InternalGraph::GraphPrototype& graph) : NoiseNode("Simplex")
