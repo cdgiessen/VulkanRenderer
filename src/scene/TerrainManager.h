@@ -50,7 +50,7 @@ private:
 	std::shared_ptr<VulkanRenderer> renderer;
 
 	std::vector<std::shared_ptr<Terrain>> terrains;
-	std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> terrainQuadPool;
+	std::shared_ptr<MemoryPool<TerrainQuadData>> terrainQuadPool;
 
 	std::vector<std::shared_ptr<Water>> waters;
 

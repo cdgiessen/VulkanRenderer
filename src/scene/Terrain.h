@@ -130,7 +130,7 @@ public:
 
 	std::vector<std::thread *> terrainGenerationWorkers;
 
-	Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> pool, InternalGraph::GraphPrototype& protoGraph,
+	Terrain(std::shared_ptr<MemoryPool<TerrainQuadData>> pool, InternalGraph::GraphPrototype& protoGraph,
 		int numCells, int maxLevels, float heightScale, int sourceImageResolution,
 		glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
 	~Terrain();
