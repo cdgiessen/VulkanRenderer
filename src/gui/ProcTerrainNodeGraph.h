@@ -91,7 +91,6 @@ public:
 
 	int Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) override;
 
-	bool hasConnection = false;
 	std::shared_ptr<Connection> connection;
 	SlotValueHolder value;
 	float sliderStepSize = 0.1f, lowerBound = 0.0f, upperBound = 1.0f;

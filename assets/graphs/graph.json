@@ -2,13 +2,24 @@
   "0": {
     "0": {
       "hasConnection": false,
-      "slotName": "Out",
+      "slotName": "HeightMap",
       "slotType": 1,
       "value": -0.5
     },
+    "1": {
+      "hasConnection": false,
+      "slotName": "Splatmap",
+      "slotType": 6,
+      "value": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
     "id": 0,
     "nodeType": 0,
-    "numSlots": 1,
+    "numSlots": 2,
     "winPosX": 200.0,
     "winPosY": 150.0
   },

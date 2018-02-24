@@ -152,6 +152,7 @@ namespace InternalGraph {
 	public:
 		Node(NodeType type = NodeType::None);
 
+		NodeType GetNodeType();
 		LinkType GetOutputType();
 
 		void SetLinkValue(const int index, const LinkTypeVariants data);
@@ -162,8 +163,8 @@ namespace InternalGraph {
 
 		LinkTypeVariants GetValue(const int x, const int z);
 
-		float GetHeightMapValue(const int x, const int z);
-		glm::vec4 GetSplatMapValue(const int x, const int z);
+		LinkTypeVariants GetHeightMapValue(const int x, const int z);
+		LinkTypeVariants GetSplatMapValue(const int x, const int z);
 
 		void SetID(NodeID);
 		NodeID GetID();
@@ -202,8 +203,11 @@ namespace InternalGraph {
 		NodeID GetNextID();
 
 		NodeID GetOutputNodeID() const;
+		void SetOutputNodeID(NodeID id);
 
 		NodeMap GetNodeMap() const; //to copy
+
+		void ResetGraph();
 
 	private:
 		NodeID nodeIDCounter = 0;

@@ -37,7 +37,7 @@ void ProcTerrainNodeGraph::DeleteNode(std::shared_ptr<Node> node) {
 	if (found != nodes.end()) {
 
 		for (auto slot : (*found)->inputSlots)
-			if (slot.hasConnection) {
+			if (slot.connection != nullptr) {
 				ResetNodeInternalLinkByID((*found)->internalNodeID, slot.slotNum);
 				DeleteConnection(slot.connection);
 			}
@@ -59,10 +59,10 @@ void ProcTerrainNodeGraph::DeleteConnection(std::shared_ptr<Connection> con) {
 
 		ResetNodeInternalLinkByID((*found)->output->internalNodeID, (*found)->output_slot_id);
 
-		(*found)->input.reset();
+		//(*found)->input.reset();
 
 		//(*found)->output->internal_node->ResetInputLink(0);
-		(*found)->output.reset();
+		//(*found)->output.reset();
 		connections.erase(found);
 	}
 	else {
@@ -79,7 +79,8 @@ void ProcTerrainNodeGraph::ResetGraph() {
 	}
 	connections.clear();
 	nodes.clear();
-
+	protoGraph.ResetGraph();
+	curID = 0;
 }
 
 void ProcTerrainNodeGraph::ResetOutputNode() {
@@ -89,7 +90,7 @@ void ProcTerrainNodeGraph::ResetOutputNode() {
 
 	outputNode->id = curID++;
 	outputNode->type = NodeType::Output;
-	outputNode->internalNodeID = protoGraph.GetOutputNodeID();
+	outputNode->internalNodeID = protoGraph.AddNode(InternalGraph::NodeType::Output);
 	SetNodeInternalValueByID(outputNode->internalNodeID, 0, -0.5f);
 	ResetNodeInternalLinkByID(outputNode->internalNodeID, 0);
 	nodes.push_back(outputNode);
@@ -553,11 +554,11 @@ void ProcTerrainNodeGraph::SaveGraphFromFile()
 						glm::vec2 vec2 = std::get<glm::vec2>(slot.value.value);
 						slotJson["value"] = { vec2.x, vec2.y };
 					}
-					else if (slot.value.type == ConnectionType::Vec3 || slot.value.type == ConnectionType::Color) {
+					else if (slot.value.type == ConnectionType::Vec3) {
 						glm::vec3 vec3 = std::get<glm::vec3>(slot.value.value);
 						slotJson["value"] = { vec3.x, vec3.y, vec3.z };
 					}
-					else if (slot.value.type == ConnectionType::Vec4) {
+					else if (slot.value.type == ConnectionType::Vec4 || slot.value.type == ConnectionType::Color) {
 						glm::vec4 vec4 = std::get<glm::vec4>(slot.value.value);
 						slotJson["value"] = { vec4.x, vec4.y, vec4.z, vec4.w };
 					}
@@ -694,7 +695,7 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 
 		outputNode->type = NodeType::Output;
 		outputNode->pos = position;
-		outputNode->internalNodeID = protoGraph.GetNextID();
+		outputNode->internalNodeID = protoGraph.AddNode(InternalGraph::NodeType::Output);
 		SetNodeInternalValueByID(outputNode->internalNodeID, 0, -0.5f);
 		ResetNodeInternalLinkByID(outputNode->internalNodeID, 0);
 		nodes.push_back(outputNode);
@@ -845,7 +846,7 @@ int InputConnectionSlot::Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& grap
 
 	ImColor conColor = ImColor(150, 150, 150);
 
-	if (hasConnection)
+	if (connection != nullptr)
 		conColor = ImColor(220, 220, 0);
 
 	if (IsHoveredOver(currentPos))
@@ -865,7 +866,8 @@ int OutputConnectionSlot::Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& gra
 	ImVec2 relPos = ImVec2(graph.windowPos.x + parentNode.pos.x, graph.windowPos.y + parentNode.pos.y);
 	if (IsHoveredOver(relPos))
 		slotColor = ImColor(200, 200, 200);
-
+	if (connections.size() > 0)
+		slotColor = ImColor(220, 220, 0);
 	imDrawList->AddCircleFilled(relPos + pos, nodeSlotRadius, slotColor);
 	return 0;
 }

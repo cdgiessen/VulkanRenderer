@@ -325,21 +325,21 @@ namespace InternalGraph {
 		inputLinks.at(index).SetDataValue(data);
 	}
 
-	float Node::GetHeightMapValue(const int x, const int z) {
-		return std::get<float>(inputLinks.at(0).GetValue(x, z));
+	LinkTypeVariants Node::GetHeightMapValue(const int x, const int z) {
+		return inputLinks.at(0).GetValue(x,z);
 	}
 
-	glm::vec4 Node::GetSplatMapValue(const int x, const int z) {
-		return std::get<glm::vec4>(inputLinks.at(1).GetValue(x, z));
+	LinkTypeVariants Node::GetSplatMapValue(const int x, const int z) {
+		return inputLinks.at(1).GetValue(x, z);
 	}
 
 	LinkTypeVariants Node::GetValue(const int x, const int z) {
 		LinkTypeVariants retVal;
-
+		//LinkTypeVariants reA, reB;
 		float a, b, c, d, alpha;
 		float value, lower, upper;
 
-		auto val = (inputLinks.at(0).GetValue(x, z));
+		auto val = (inputLinks.at(0));
 
 		switch (nodeType)
 		{
@@ -521,7 +521,6 @@ namespace InternalGraph {
 			switch (outputType)
 			{
 			case InternalGraph::LinkType::Float:
-				break;
 				a = std::get<float>(inputLinks.at(0).GetValue(x, z));
 				b = std::get<float>(inputLinks.at(1).GetValue(x, z));
 				alpha = std::get<float>(inputLinks.at(2).GetValue(x, z));
@@ -535,7 +534,6 @@ namespace InternalGraph {
 			switch (outputType)
 			{
 			case InternalGraph::LinkType::Float:
-				break;
 				value = std::get<float>(inputLinks.at(0).GetValue(x, z));
 				lower = std::get<float>(inputLinks.at(1).GetValue(x, z));
 				upper = std::get<float>(inputLinks.at(2).GetValue(x, z));
@@ -582,6 +580,10 @@ namespace InternalGraph {
 		default:
 			break;
 		}
+	}
+
+	NodeType Node::GetNodeType() {
+		return nodeType;
 	}
 
 	LinkType Node::GetOutputType() {
@@ -670,17 +672,25 @@ namespace InternalGraph {
 	}
 
 	GraphPrototype::GraphPrototype() {
-		Node outputNode(NodeType::Output);
-		outputNodeID = AddNode(outputNode);
+		//Node outputNode(NodeType::Output);
+		//outputNodeID = AddNode(outputNode);
 
 	}
 	GraphPrototype::~GraphPrototype() {
 	}
 
+	void GraphPrototype::ResetGraph() {
+		nodeMap.clear();
+		nodeIDCounter = 0;
+		outputNodeID = 0;
+	}
+
 	NodeID GraphPrototype::AddNode(Node node) {
 		node.SetID(GetNextID());
 		nodeMap[node.GetID()] = node;
-
+		if (node.GetNodeType() == NodeType::Output) {
+			outputNodeID = node.GetID();
+		}
 		return node.GetID();
 	}
 	NodeID GraphPrototype::AddNoiseNoide(Node node) {
@@ -710,6 +720,10 @@ namespace InternalGraph {
 
 	NodeID GraphPrototype::GetOutputNodeID() const {
 		return outputNodeID;
+	}
+
+	void GraphPrototype::SetOutputNodeID(NodeID id) {
+		outputNodeID = id;
 	}
 
 	NodeMap GraphPrototype::GetNodeMap() const {
@@ -747,9 +761,8 @@ namespace InternalGraph {
 		{
 			for (int z = 0; z < cellsWide; z++)
 			{
-				LinkTypeVariants val = outputNode->GetHeightMapValue(x, z);
-				float f_val = std::get<float>(val);
-				outputHeightMap.SetPixelValue(x, z, f_val);
+				float val = std::get<float>(outputNode->GetHeightMapValue(x, z));
+				outputHeightMap.SetPixelValue(x, z, val);
 			}
 		}
 
@@ -759,7 +772,7 @@ namespace InternalGraph {
 		{
 			for (int z = 0; z < cellsWide; z++)
 			{
-				glm::vec4 val = outputNode->GetSplatMapValue(x, z);
+				glm::vec4 val = std::get<glm::vec4>(outputNode->GetSplatMapValue(x, z));
 				RGBA_pixel pixel = RGBA_pixel((stbi_uc)(val.x * 255), (stbi_uc)(val.y * 255), (stbi_uc)(val.z * 255), (stbi_uc)(val.w * 255));
 				
 				outputSplatmap.SetPixelValue(x, z, pixel);
