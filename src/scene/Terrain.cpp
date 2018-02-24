@@ -206,25 +206,28 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3
 
 std::vector<RGBA_pixel>*  Terrain::LoadSplatMapFromGenerator() {
 	//fastGraphUser.BuildOutputImage(noisePosition, (float)noiseSize.x);
+	auto& thing = fastGraphUser.GetSplatMap();
+	return thing.GetImageVectorData();
 
-	InternalGraph::NoiseImage2D pixData = fastGraphUser.GetGraphSourceImage();
-	std::vector<RGBA_pixel>* imageData = new std::vector<RGBA_pixel>(sourceImageResolution * sourceImageResolution);
 
-	if (imageData == nullptr) {
-		Log::Error << "failed to create splatmap image" << "\n";
-		return nullptr;
-	}
-	for (int i = 0; i < pixData.GetImageWidth(); i++) {
-		for (int j = 0; j < pixData.GetImageWidth(); j++) {
-			glm::vec4 col = splatmapTextureGradient.SampleGradient(((pixData.GetImageData()[i * pixData.GetImageWidth() + (pixData.GetImageWidth() - j - 1)]) + 1.0f) / 2.0f);
-			(*imageData)[(pixData.GetImageWidth() - j - 1) * pixData.GetImageWidth() + i] = RGBA_pixel((stbi_uc)(col.x * 255), (stbi_uc)(col.y * 255), (stbi_uc)(col.z * 255), (stbi_uc)(col.w * 255));
-		}
-	}
-	//for (int i = 0; i < sourceImageResolution * sourceImageResolution; i++ ) {
-	//	imageData[i] = RGBA_pixel((stbi_uc)(col.x * 255), (stbi_uc)(col.y * 255), (stbi_uc)(col.z * 255), (stbi_uc)(col.w * 255));
+	//InternalGraph::NoiseImage2D<float> pixData = fastGraphUser.GetHeightMap();
+	//std::vector<RGBA_pixel>* imageData = new std::vector<RGBA_pixel>(sourceImageResolution * sourceImageResolution);
+	//
+	//if (imageData == nullptr) {
+	//	Log::Error << "failed to create splatmap image" << "\n";
+	//	return nullptr;
 	//}
-
-	return imageData;
+	//for (int i = 0; i < pixData.GetImageWidth(); i++) {
+	//	for (int j = 0; j < pixData.GetImageWidth(); j++) {
+	//		glm::vec4 col = splatmapTextureGradient.SampleGradient(((pixData.GetImageData()[i * pixData.GetImageWidth() + (pixData.GetImageWidth() - j - 1)]) + 1.0f) / 2.0f);
+	//		(*imageData)[(pixData.GetImageWidth() - j - 1) * pixData.GetImageWidth() + i] = RGBA_pixel((stbi_uc)(col.x * 255), (stbi_uc)(col.y * 255), (stbi_uc)(col.z * 255), (stbi_uc)(col.w * 255));
+	//	}
+	//}
+	////for (int i = 0; i < sourceImageResolution * sourceImageResolution; i++ ) {
+	////	imageData[i] = RGBA_pixel((stbi_uc)(col.x * 255), (stbi_uc)(col.y * 255), (stbi_uc)(col.z * 255), (stbi_uc)(col.w * 255));
+	////}
+	//
+	//return imageData;
 }
 
 void Terrain::SetupMeshbuffers() {
@@ -777,7 +780,7 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], std:
 
 float Terrain::GetHeightAtLocation(float x, float z) {
 
-	return fastGraphUser.SampleGraph(x, z) * heightScale;
+	return fastGraphUser.SampleHeightMap(x, z) * heightScale;
 }
 
 /*
@@ -870,7 +873,7 @@ void GenerateNewTerrainSubdivision(InternalGraph::GraphUser& graphUser, TerrainM
 			float uvV = (float)j / ((1 << terrainQuad.level) * (float)(numCells)) + (float)terrainQuad.subDivPos.y / (float)(1 << terrainQuad.level);
 
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 0] = (float)i *(xSize) / (float)numCells;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 1] = (float)graphUser.SampleGraph(uvU, uvV) * heightScale;
+			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 1] = (float)graphUser.SampleHeightMap(uvU, uvV) * heightScale;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 2] = (float)j * (zSize) / (float)numCells;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 3] = normal.x;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 4] = normal.y;

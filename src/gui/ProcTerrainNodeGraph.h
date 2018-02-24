@@ -71,7 +71,6 @@ public:
 
 	int slotNum;
 	ImVec2 pos;
-	ImVec2 varyingPos = ImVec2(0,0);
 	float nodeSlotRadius = 5.0f;
 	ImColor slotColor = ImColor(150, 150, 150);
 
@@ -84,10 +83,11 @@ public:
 class InputConnectionSlot : public ConnectionSlot {
 public:
 	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name);
-	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name, 
-		float defaultVal, float sliderStepSize, float lowerBound, float upperBound);
-	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name, 
-		int defaultVal, float sliderStepSize, float lowerBound, float upperBound);
+	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name,
+		std::variant<int, float, glm::vec2, glm::vec3, glm::vec4> defaultValue);
+	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name,
+		std::variant<int, float, glm::vec2, glm::vec3, glm::vec4> defaultValue,
+		float sliderStepSize, float lowerBound, float upperBound);
 
 	int Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) override;
 
@@ -124,8 +124,10 @@ enum class NodeType {
 	CellNoise,
 	ValueNoise,
 	Voroni,
+	WhiteNoise,
 	ConstantInt,
 	ConstantFloat,
+	ColorCreator,
 };
 
 class Node {
@@ -146,6 +148,9 @@ public:
 	void AddInputSlot(ConnectionType type, std::string name);
 	void AddInputSlot(ConnectionType type, std::string name, float defaultValue, float sliderStepSize, float lowerBound, float upperBound);
 	void AddInputSlot(ConnectionType type, std::string name, int defaultValue, float sliderStepSize, float lowerBound, float upperBound);
+	void AddInputSlot(ConnectionType type, std::string name, glm::vec2 defaultValue);
+	void AddInputSlot(ConnectionType type, std::string name, glm::vec3 defaultValue);
+	void AddInputSlot(ConnectionType type, std::string name, glm::vec4 defaultValue);
 
 	InternalGraph::NodeID internalNodeID;
 	//std::shared_ptr<NewNodeGraph::INode> internal_node;
@@ -180,8 +185,12 @@ class SimplexNode		: public NoiseNode { public: SimplexNode(InternalGraph::Graph
 class CellNoiseNode		: public NoiseNode { public: CellNoiseNode(InternalGraph::GraphPrototype& graph); };
 class ValueNoiseNode	: public NoiseNode { public: ValueNoiseNode(InternalGraph::GraphPrototype& graph); };
 class VoroniNode		: public NoiseNode { public: VoroniNode(InternalGraph::GraphPrototype& graph); };
+class WhiteNoiseNode	: public NoiseNode { public: WhiteNoiseNode(InternalGraph::GraphPrototype& graph); };
+
 class ConstantIntNode	: public Node { public: ConstantIntNode(InternalGraph::GraphPrototype& graph); };
 class ConstantFloatNode : public Node { public: ConstantFloatNode(InternalGraph::GraphPrototype& graph); };
+
+class ColorCreator : public Node { public: ColorCreator(InternalGraph::GraphPrototype& graph); };
 
 
 struct HoveredSlotInfo {

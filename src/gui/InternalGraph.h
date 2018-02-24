@@ -8,6 +8,8 @@
 
 #include "../../third-party/FastNoiseSIMD/FastNoiseSIMD.h"
 
+#include "../resources/Texture.h"
+
 #include <glm/glm.hpp>
 
 namespace InternalGraph {
@@ -25,7 +27,7 @@ namespace InternalGraph {
 	//Convinience typedef of the map of nodes
 	typedef std::map<NodeID, Node> NodeMap;
 
-
+	template<typename T>
 	class NoiseImage2D {
 	public:
 		NoiseImage2D();
@@ -44,24 +46,31 @@ namespace InternalGraph {
 		const size_t GetSizeBytes() const;
 
 		//No error look
-		const float LookUp(int x, int z) const;
+		const T LookUp(int x, int z) const;
 
 		//Error checked sample, returns -1 if fails
-		const float BoundedLookUp(int x, int z) const;
+		const T BoundedLookUp(int x, int z) const;
 
-		void SetPixelValue(int x, int z, float value);
+		void SetPixelValue(int x, int z, T value);
 
-		float* GetImageData();
-		void SetImageData(int width, float* data);
+		T* GetImageData();
+		std::vector<T>* GetImageVectorData();
+		void SetImageData(int width, T* data);
 
 	private:
 		int width = 0;
-		float* image = nullptr;
+		T* image = nullptr;
 		bool isExternallyAllocated = false;
-		std::vector<float> data;
+		std::vector<T> data;
 	};
 
-	static float BilinearImageSample2D(const NoiseImage2D& noiseImage, const float x, const float z);
+	template<typename T>
+	std::vector<T>* NoiseImage2D<T>::GetImageVectorData() {
+		return &data;
+	}
+
+	template<typename T>
+	static float BilinearImageSample2D(const NoiseImage2D<T>& noiseImage, const float x, const float z);
 
 	enum class LinkType {
 		None, //ErrorType or just no output, like an outputNode....
@@ -94,9 +103,9 @@ namespace InternalGraph {
 		WhiteNoise,
 		CellularNoise,
 		CubicFractalNoise,
-		VoroniFractalNoise
+		VoroniFractalNoise,
 
-
+		ColorCreator,
 	};
 
 	class InputLink {
@@ -153,6 +162,9 @@ namespace InternalGraph {
 
 		LinkTypeVariants GetValue(const int x, const int z);
 
+		float GetHeightMapValue(const int x, const int z);
+		glm::vec4 GetSplatMapValue(const int x, const int z);
+
 		void SetID(NodeID);
 		NodeID GetID();
 
@@ -171,7 +183,7 @@ namespace InternalGraph {
 		LinkType outputType = LinkType::None;
 
 		bool isNoiseNode = false;
-		NoiseImage2D noiseImage;
+		NoiseImage2D<float> noiseImage;
 		FastNoiseSIMD* myNoise;
 	};
 
@@ -204,8 +216,10 @@ namespace InternalGraph {
 	public:
 		GraphUser(const GraphPrototype& graph, int seed, int cellsWide, glm::i32vec2 pos, float scale);
 
-		float SampleGraph(const float x, const float z);
-		NoiseImage2D& GetGraphSourceImage();
+		float SampleHeightMap(const float x, const float z);
+		NoiseImage2D<float>& GetHeightMap();
+
+		NoiseImage2D<RGBA_pixel>& GetSplatMap();
 
 	private:
 		NodeMap nodeMap;
@@ -213,6 +227,7 @@ namespace InternalGraph {
 
 		NoiseSourceInfo info;
 
-		NoiseImage2D outputImage;
+		NoiseImage2D<float> outputHeightMap;
+		NoiseImage2D<RGBA_pixel> outputSplatmap;
 	};
 }

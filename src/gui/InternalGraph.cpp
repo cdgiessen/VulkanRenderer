@@ -5,7 +5,8 @@
 
 namespace InternalGraph {
 
-	static float BilinearImageSample2D(const NoiseImage2D& noiseImage, const float x, const float z) {
+	template<typename T>
+	static float BilinearImageSample2D(const NoiseImage2D<T>& noiseImage, const float x, const float z) {
 		int cellScale = noiseImage.GetImageWidth() - 1; // cellsWide - 1;
 
 		float xScaled = x * (float)cellScale;
@@ -44,12 +45,14 @@ namespace InternalGraph {
 	}
 
 	//No allocation constructor, meant for images that are externally created (FastNoiseSIMD)
-	NoiseImage2D::NoiseImage2D() : width(0), isExternallyAllocated(true) {}
+	template<typename T>
+	NoiseImage2D<T>::NoiseImage2D() : width(0), isExternallyAllocated(true) {}
 
 	//Preallocates based on width, mainly meant for output images
-	NoiseImage2D::NoiseImage2D(int width) : width(width), isExternallyAllocated(false) {
+	template<typename T>
+	NoiseImage2D<T>::NoiseImage2D(int width) : width(width), isExternallyAllocated(false) {
 		
-		data = std::vector<float>(width*width);
+		data = std::vector<T>(width*width);
 		/*
 		image = (float*)malloc(GetSizeBytes());
 		for (int i = 0; i < width; i++)
@@ -61,50 +64,58 @@ namespace InternalGraph {
 		}*/
 	}
 
-	NoiseImage2D::~NoiseImage2D() {
+	template<typename T>
+	NoiseImage2D<T>::~NoiseImage2D() {
 		if (!isExternallyAllocated && image != nullptr)
 			free(image);
 		//Log::Error << "Was this image already freed?\n";
 	}
 
-
-	float* NoiseImage2D::GetImageData() {
+	template<typename T>
+	T* NoiseImage2D<T>::GetImageData() {
 		if (isExternallyAllocated)
 			return image;
 		else
 			return data.data();
 	}
 
-	void NoiseImage2D::SetImageData(int width, float* data) {
+	template<typename T>
+	void NoiseImage2D<T>::SetImageData(int width, T* data) {
 		this->width = width;
 		image = data;
 	}
 
-	const int NoiseImage2D::GetSize() const {
+	template<typename T>
+	const int NoiseImage2D<T>::GetSize() const {
 		return width * width;
 	}
 
-	const size_t NoiseImage2D::GetSizeBytes() const {
+	template<typename T>
+	const size_t NoiseImage2D<T>::GetSizeBytes() const {
 		return GetSize() * 4;
 	}
 
-	const int NoiseImage2D::GetImageWidth() const {
+	template<typename T>
+	const int NoiseImage2D<T>::GetImageWidth() const {
 		return width;
 	}
 
 	//Changes the width then frees and allocates new image 
-	void NoiseImage2D::SetWidth(int width) {
+	template<typename T>
+	void NoiseImage2D<T>::SetWidth(int width) {
 		this->width = width;
 	}
 
-	const float NoiseImage2D::LookUp(int x, int z) const {
+	template<typename T>
+	const T NoiseImage2D<T>::LookUp(int x, int z) const {
 		if(isExternallyAllocated)
 			return image[x * width + z];
 		else 
 			return data[x * width + z];
 	}
 
-	const float NoiseImage2D::BoundedLookUp(int x, int z) const {
+	template<typename T>
+	const T NoiseImage2D<T>::BoundedLookUp(int x, int z) const {
 		if (x >= 0 && x < width && z >= 0 && z < width){
 			if (isExternallyAllocated)
 				return image[x * width + z];
@@ -116,7 +127,8 @@ namespace InternalGraph {
 		return -1;
 	}
 
-	void NoiseImage2D::SetPixelValue(int x, int z, float value) {
+	template<typename T>
+	void NoiseImage2D<T>::SetPixelValue(int x, int z, T value) {
 		
 		
 		if (x >= 0 && x < width && z >= 0 && z < width)
@@ -182,13 +194,39 @@ namespace InternalGraph {
 		}
 	}
 
+	void AddNodeInputLinks(std::vector<InputLink>& links, std::vector<LinkType> types) {
+		for (auto t : types) {
+			switch (t) {
+			case LinkType::Float:
+				links.push_back(0.0f);
+				break;
+			case LinkType::Int:
+				links.push_back(0);
+				break;
+			case LinkType::Vec2:
+				links.push_back(glm::vec2(0));
+				break;
+			case LinkType::Vec3:
+				links.push_back(glm::vec3(0));
+				break;
+			case LinkType::Vec4:
+				links.push_back(glm::vec4(0));
+				break;
+			default:
+				break;
+			}
+		}
+
+	}
+
 	Node::Node(NodeType in_type) : nodeType(in_type){
 		outputType = LinkType::Float;
 
 		switch (nodeType)
 		{
 		case InternalGraph::NodeType::Output:
-			inputLinks.push_back(InputLink(0.0f));
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Float, LinkType::Vec4 });
 			break;
 
 		case InternalGraph::NodeType::Addition:
@@ -196,13 +234,22 @@ namespace InternalGraph {
 		case InternalGraph::NodeType::Multiplication:
 		case InternalGraph::NodeType::Division:
 		case InternalGraph::NodeType::Power:
-			inputLinks.push_back(InputLink(0.0f));
-			inputLinks.push_back(InputLink(0.0f));
+		case InternalGraph::NodeType::Max:
+		case InternalGraph::NodeType::Min:
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Float, LinkType::Float });
+
+			//inputLinks.push_back(InputLink(0.0f));
+			//inputLinks.push_back(InputLink(0.0f));
 			break;
 
 		case InternalGraph::NodeType::Blend:
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Float, LinkType::Float, LinkType::Float });
 			break;
 		case InternalGraph::NodeType::Clamp:
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Float, LinkType::Float, LinkType::Float }); 
 			break;
 
 		case InternalGraph::NodeType::ConstantInt:
@@ -214,61 +261,59 @@ namespace InternalGraph {
 			break;
 
 		case InternalGraph::NodeType::ValueFractalNoise:
-			inputLinks.push_back(InputLink(0));
-			inputLinks.push_back(InputLink(0.0f));
-			inputLinks.push_back(InputLink(0.0f));
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Int, LinkType::Float, LinkType::Float });
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 			break;
 
 		case InternalGraph::NodeType::SimplexFractalNoise:
-			inputLinks.push_back(InputLink(0));
-			inputLinks.push_back(InputLink(0.0f));
-			inputLinks.push_back(InputLink(0.0f));
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Int, LinkType::Float, LinkType::Float });
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 			break;
 
 		case InternalGraph::NodeType::PerlinFractalNoise:
-			inputLinks.push_back(InputLink(0));
-			inputLinks.push_back(InputLink(0.0f));
-			inputLinks.push_back(InputLink(0.0f));
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Int, LinkType::Float, LinkType::Float });
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 			break;
 
 		case InternalGraph::NodeType::WhiteNoise:
-			inputLinks.push_back(InputLink(0));
-			inputLinks.push_back(InputLink(0.0f));
-			inputLinks.push_back(InputLink(0.0f));
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Int, LinkType::Float, LinkType::Float });
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 			break;
 
 		case InternalGraph::NodeType::CellularNoise:
-			inputLinks.push_back(InputLink(0));
-			inputLinks.push_back(InputLink(0.0f));
-			inputLinks.push_back(InputLink(0.0f));
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Int, LinkType::Float, LinkType::Float });
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 			break;
 
 		case InternalGraph::NodeType::CubicFractalNoise:
-			inputLinks.push_back(InputLink(0));
-			inputLinks.push_back(InputLink(0.0f));
-			inputLinks.push_back(InputLink(0.0f));
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Int, LinkType::Float, LinkType::Float });
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 			break;
 
 		case InternalGraph::NodeType::VoroniFractalNoise:
-			inputLinks.push_back(InputLink(0));
-			inputLinks.push_back(InputLink(0.0f));
-			inputLinks.push_back(InputLink(0.0f));
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Int, LinkType::Float, LinkType::Float });
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 			break;
+
+		case NodeType::ColorCreator:
+			outputType = LinkType::Vec4;
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Float, LinkType::Float, LinkType::Float, LinkType::Float });
 		default:
 			break;
 		}
@@ -280,14 +325,25 @@ namespace InternalGraph {
 		inputLinks.at(index).SetDataValue(data);
 	}
 
+	float Node::GetHeightMapValue(const int x, const int z) {
+		return std::get<float>(inputLinks.at(0).GetValue(x, z));
+	}
+
+	glm::vec4 Node::GetSplatMapValue(const int x, const int z) {
+		return std::get<glm::vec4>(inputLinks.at(1).GetValue(x, z));
+	}
+
 	LinkTypeVariants Node::GetValue(const int x, const int z) {
 		LinkTypeVariants retVal;
+
+		float a, b, c, d, alpha;
+		float value, lower, upper;
+
+		auto val = (inputLinks.at(0).GetValue(x, z));
+
 		switch (nodeType)
 		{
 		case InternalGraph::NodeType::None:
-			break;
-		case InternalGraph::NodeType::Output:
-			return inputLinks.at(0).GetValue(x, z);
 			break;
 
 		case InternalGraph::NodeType::Addition:
@@ -462,12 +518,32 @@ namespace InternalGraph {
 			}
 			break;
 		case InternalGraph::NodeType::Blend:
-
-
+			switch (outputType)
+			{
+			case InternalGraph::LinkType::Float:
+				break;
+				a = std::get<float>(inputLinks.at(0).GetValue(x, z));
+				b = std::get<float>(inputLinks.at(1).GetValue(x, z));
+				alpha = std::get<float>(inputLinks.at(2).GetValue(x, z));
+				retVal = alpha * b + (1 - alpha) * a;
+				return retVal;
+			default:
+				break;
+			}
 			break;
 		case InternalGraph::NodeType::Clamp:
-
-
+			switch (outputType)
+			{
+			case InternalGraph::LinkType::Float:
+				break;
+				value = std::get<float>(inputLinks.at(0).GetValue(x, z));
+				lower = std::get<float>(inputLinks.at(1).GetValue(x, z));
+				upper = std::get<float>(inputLinks.at(2).GetValue(x, z));
+				retVal = glm::clamp(value, lower, upper);
+				return retVal;
+			default:
+				break;
+			}
 			break;
 		case InternalGraph::NodeType::ConstantInt:
 			return inputLinks.at(0).GetValue(x, z);
@@ -487,10 +563,22 @@ namespace InternalGraph {
 		case InternalGraph::NodeType::VoroniFractalNoise:
 
 			retVal = noiseImage.BoundedLookUp(x, z);
-			return std::get<float>(retVal);
+			return retVal;
 			//Log::Debug << val << "\n";
 			
 			break;
+
+		case NodeType::ColorCreator:
+			
+			a = std::get<float>(inputLinks.at(0).GetValue(x, z));
+			b = std::get<float>(inputLinks.at(1).GetValue(x, z));
+			c = std::get<float>(inputLinks.at(2).GetValue(x, z));
+			d = std::get<float>(inputLinks.at(3).GetValue(x, z));
+			
+			retVal = glm::vec4(a, b, c, d);
+
+			return retVal;
+
 		default:
 			break;
 		}
@@ -532,9 +620,7 @@ namespace InternalGraph {
 	void Node::SetupNodeForComputation(NoiseSourceInfo info) {
 		if (isNoiseNode) {
 			noiseImage.SetWidth(info.cellsWide);
-			NoiseImage2D n = NoiseImage2D(info.cellsWide);
-			float* fptr;
-			int index = 0;
+
 			myNoise->SetFractalOctaves(std::get<int>(inputLinks.at(0).GetValue()));
 			myNoise->SetFrequency(std::get<float>(inputLinks.at(1).GetValue()));
 			myNoise->SetFractalGain(std::get<float>(inputLinks.at(2).GetValue()));
@@ -546,18 +632,7 @@ namespace InternalGraph {
 				break;
 
 			case InternalGraph::NodeType::SimplexFractalNoise:
-				fptr = myNoise->GetSimplexFractalSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale);
-				noiseImage.SetImageData(info.cellsWide, fptr);
-				
-				index = 0;
-				for (int i = 0; i < info.cellsWide; i++)
-				{
-					for (int j = 0; j < info.cellsWide; j++)
-					{
-						n.SetPixelValue(i, j, fptr[index++]);
-					}
-				}
-				
+				noiseImage.SetImageData(info.cellsWide, myNoise->GetSimplexFractalSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
 				break;
 
 			case InternalGraph::NodeType::PerlinFractalNoise:
@@ -667,27 +742,46 @@ namespace InternalGraph {
 
 		outputNode = &nodeMap[graph.GetOutputNodeID()];
 		
-		outputImage = NoiseImage2D(cellsWide);
+		outputHeightMap = NoiseImage2D<float>(cellsWide);
 		for (int x = 0; x < cellsWide; x++)
 		{
 			for (int z = 0; z < cellsWide; z++)
 			{
-				LinkTypeVariants val = outputNode->GetValue(x, z);
+				LinkTypeVariants val = outputNode->GetHeightMapValue(x, z);
 				float f_val = std::get<float>(val);
-				outputImage.SetPixelValue(x, z, f_val);
+				outputHeightMap.SetPixelValue(x, z, f_val);
 			}
 		}
+
+		outputSplatmap = NoiseImage2D<RGBA_pixel>(cellsWide);
+
+		for (int x = 0; x < cellsWide; x++)
+		{
+			for (int z = 0; z < cellsWide; z++)
+			{
+				glm::vec4 val = outputNode->GetSplatMapValue(x, z);
+				RGBA_pixel pixel = RGBA_pixel((stbi_uc)(val.x * 255), (stbi_uc)(val.y * 255), (stbi_uc)(val.z * 255), (stbi_uc)(val.w * 255));
+				
+				outputSplatmap.SetPixelValue(x, z, pixel);
+			}
+		}
+		
 
 		for (auto node : nodeMap) {
 			node.second.CleanUp();
 		}
 	}
 
-	float GraphUser::SampleGraph(const float x, const float z) {
-		return BilinearImageSample2D(outputImage, x, z);
+	float GraphUser::SampleHeightMap(const float x, const float z) {
+		return BilinearImageSample2D(outputHeightMap, x, z);
 	}
-	NoiseImage2D& GraphUser::GetGraphSourceImage() {
-		return outputImage;
+	NoiseImage2D<float>& GraphUser::GetHeightMap() {
+		return outputHeightMap;
+
+	}
+
+	NoiseImage2D<RGBA_pixel>& GraphUser::GetSplatMap() {
+		return outputSplatmap;
 
 	}
 

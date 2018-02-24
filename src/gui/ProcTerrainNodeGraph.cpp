@@ -191,6 +191,7 @@ void ProcTerrainNodeGraph::DrawNodeButtons() {
 	if (ImGui::Button("Value", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ValueNoise, startingNodePos); }
 	if (ImGui::Button("Voronoi", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Voroni, startingNodePos); }
 	if (ImGui::Button("Cellular", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::CellNoise, startingNodePos); }
+	if (ImGui::Button("White", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::WhiteNoise, startingNodePos); }
 	ImGui::Separator();
 	ImGui::Text("Modifiers");
 	if (ImGui::Button("Constant Int", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ConstantInt, startingNodePos); }
@@ -204,6 +205,11 @@ void ProcTerrainNodeGraph::DrawNodeButtons() {
 	if (ImGui::Button("Min", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Min, startingNodePos); }
 	if (ImGui::Button("Blend", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Blend, startingNodePos); }
 	if (ImGui::Button("Clamp", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Clamp, startingNodePos); }
+
+	ImGui::Separator();
+	ImGui::Text("Colors");
+	if (ImGui::Button("Color Creator", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ColorCreator, startingNodePos); }
+
 
 	ImGui::EndChild();
 	ImGui::PopStyleVar();
@@ -335,7 +341,7 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 
 		node->outputSlot.Draw(imDrawList, *this, *node, 0);
 
-		int verticalOffset = 0;
+		int verticalOffset = 40;
 		for (int i = 0; i < node->inputSlots.size(); i++)
 		{
 			verticalOffset += node->inputSlots[i].Draw(imDrawList, *this, *node, verticalOffset);
@@ -712,9 +718,11 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 	case(NodeType::Simplex): newNode = std::make_shared<SimplexNode>(protoGraph); break;
 	case(NodeType::CellNoise): newNode = std::make_shared<CellNoiseNode>(protoGraph); break;
 	case(NodeType::ValueNoise): newNode = std::make_shared<ValueNoiseNode>(protoGraph); break;
+	case(NodeType::WhiteNoise): newNode = std::make_shared<WhiteNoiseNode>(protoGraph); break;
 	case(NodeType::Voroni): newNode = std::make_shared<VoroniNode>(protoGraph); break;
 	case(NodeType::ConstantInt): newNode = std::make_shared<ConstantIntNode>(protoGraph); break;
 	case(NodeType::ConstantFloat): newNode = std::make_shared<ConstantFloatNode>(protoGraph); break;
+	case(NodeType::ColorCreator): newNode = std::make_shared<ColorCreator>(protoGraph); break;
 	}
 	if (id >= 0)
 		newNode->id = id;
@@ -749,7 +757,7 @@ ConnectionSlot::ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std
 bool ConnectionSlot::IsHoveredOver(ImVec2 parentPos) const
 {
 	ImVec2 mousePos = ImGui::GetIO().MousePos;
-	ImVec2 conPos = parentPos + pos + varyingPos;
+	ImVec2 conPos = parentPos + pos;
 
 	float xd = mousePos.x - conPos.x;
 	float yd = mousePos.y - conPos.y;
@@ -767,7 +775,7 @@ InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType
 	switch (value.type) {
 	case(ConnectionType::Int): value.value = 0; break;
 	case(ConnectionType::Float): value.value = 0.0f;  break;
-	case(ConnectionType::Color): value.value = glm::vec3(0); break;
+	case(ConnectionType::Color): value.value = glm::vec4(0); break;
 	case(ConnectionType::Vec2): value.value = glm::vec2(0); break;
 	case(ConnectionType::Vec3): value.value = glm::vec3(0); break;
 	case(ConnectionType::Vec4): value.value = glm::vec4(0); break;
@@ -775,38 +783,24 @@ InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType
 }
 
 InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name,
-	float defaultVal, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float upperBound = 0.0f)
-	: ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound)
-{
-	switch (type) {
-	case(ConnectionType::Int): value.value = 0; break;
-	case(ConnectionType::Float): value.value = defaultVal;  break;
-	case(ConnectionType::Color): value.value = glm::vec3(0); break;
-	case(ConnectionType::Vec2): value.value = glm::vec2(0); break;
-	case(ConnectionType::Vec3): value.value = glm::vec3(0); break;
-	case(ConnectionType::Vec4): value.value = glm::vec4(0); break;
-	}
+	std::variant<int, float, glm::vec2, glm::vec3, glm::vec4> defaultValue)
+	: ConnectionSlot(slotNum, pos, type, name), value(type) {
+	value.value = defaultValue;
 }
 
 InputConnectionSlot::InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name,
-	int defaultVal, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float upperBound = 0.0f)
+	std::variant<int, float, glm::vec2, glm::vec3, glm::vec4> defaultValue, float sliderStepSize, float lowerBound = 0.0f, float upperBound = 0.0f)
 	: ConnectionSlot(slotNum, pos, type, name), value(type), sliderStepSize(sliderStepSize), lowerBound(lowerBound), upperBound(upperBound)
 {
-	switch (type) {
-	case(ConnectionType::Int): value.value = defaultVal; break;
-	case(ConnectionType::Float): value.value = 0.0f;  break;
-	case(ConnectionType::Color): value.value = glm::vec3(0); break;
-	case(ConnectionType::Vec2): value.value = glm::vec2(0); break;
-	case(ConnectionType::Vec3): value.value = glm::vec3(0); break;
-	case(ConnectionType::Vec4): value.value = glm::vec4(0); break;
-	}
+	value.value = defaultValue;
 }
 
 int InputConnectionSlot::Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) {
 
 	ImVec2 relPos = ImVec2(graph.windowPos.x + parentNode.pos.x, graph.windowPos.y + parentNode.pos.y);
-	ImVec2 currentPos = relPos + pos + ImVec2(0, verticalOffset);
-	int slotHeight = 15;
+	pos = ImVec2(0, verticalOffset);
+	ImVec2 currentPos = relPos + pos;
+	int slotHeight = 35;
 
 	ImGui::SetCursorScreenPos(currentPos + ImVec2(10, -nodeSlotRadius));
 	ImGui::Text("%s", name.c_str());
@@ -821,37 +815,32 @@ int InputConnectionSlot::Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& grap
 	//}
 
 	ImVec2 slotNameSize = ImGui::CalcTextSize(name.c_str());
-	ImGui::SetCursorScreenPos(currentPos + ImVec2(10 + slotNameSize.x, -nodeSlotRadius));
+	ImGui::SetCursorScreenPos(currentPos + ImVec2(5, -nodeSlotRadius + 15));
 	//ImGui::InvisibleButton("slot value", slotNameSize);
 
-	ImGui::PushItemWidth(parentNode.size.x - slotNameSize.x);
+	ImGui::PushItemWidth(parentNode.size.x - 10);
 	std::string uniqueID = (std::to_string(parentNode.id * 100 + slotNum));
 	switch (value.type) {
 	case(ConnectionType::Int):
 		ImGui::DragInt(std::string("##int" + uniqueID).c_str(), &(std::get<int>(value.value)), sliderStepSize, lowerBound, upperBound);
-		graph.SetNodeInternalValueByID(parentNode.internalNodeID, slotNum, value.value);
 		break;
 	case(ConnectionType::Float):
 		ImGui::DragFloat(std::string("##float" + uniqueID).c_str(), &(std::get<float>(value.value)), sliderStepSize, lowerBound, upperBound);
-		graph.SetNodeInternalValueByID(parentNode.internalNodeID, slotNum, value.value);
-		break;
-	case(ConnectionType::Color):
-		ImGui::DragFloat3(std::string("##color" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec3>(value.value)), sliderStepSize, lowerBound, upperBound);
-		graph.SetNodeInternalValueByID(parentNode.internalNodeID, slotNum, value.value);
 		break;
 	case(ConnectionType::Vec2):
 		ImGui::DragFloat2(std::string("##vec2" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec2>(value.value)), sliderStepSize, lowerBound, upperBound);
-		graph.SetNodeInternalValueByID(parentNode.internalNodeID, slotNum, value.value);
 		break;
 	case(ConnectionType::Vec3):
 		ImGui::DragFloat3(std::string("##vec3" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec3>(value.value)), sliderStepSize, lowerBound, upperBound);
-		graph.SetNodeInternalValueByID(parentNode.internalNodeID, slotNum, value.value);
 		break;
 	case(ConnectionType::Vec4):
 		ImGui::DragFloat4(std::string("##vec4" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec4>(value.value)), sliderStepSize, lowerBound, upperBound);
-		graph.SetNodeInternalValueByID(parentNode.internalNodeID, slotNum, value.value);
+		break;
+	case(ConnectionType::Color):
+		ImGui::DragFloat4(std::string("##color" + uniqueID).c_str(), glm::value_ptr(std::get<glm::vec4>(value.value)), sliderStepSize, lowerBound, upperBound);
 		break;
 	}
+	graph.SetNodeInternalValueByID(parentNode.internalNodeID, slotNum, value.value);
 	ImGui::PopItemWidth();
 
 	ImColor conColor = ImColor(150, 150, 150);
@@ -863,8 +852,6 @@ int InputConnectionSlot::Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& grap
 		conColor = ImColor(200, 200, 200);
 
 	imDrawList->AddCircleFilled(currentPos, nodeSlotRadius, conColor);
-
-	varyingPos = ImVec2(0, verticalOffset);
 
 	return slotHeight;
 }
@@ -923,9 +910,25 @@ void Node::AddInputSlot(ConnectionType type, std::string name, int defaultValue,
 	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40), type, name, defaultValue, sliderStepSize, lowerBound, upperBound));
 }
 
+void Node::AddInputSlot(ConnectionType type, std::string name, glm::vec2 defaultValue)
+{
+	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40), type, name, defaultValue));
+}
+
+void Node::AddInputSlot(ConnectionType type, std::string name, glm::vec3 defaultValue)
+{
+	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40), type, name, defaultValue));
+}
+
+void Node::AddInputSlot(ConnectionType type, std::string name, glm::vec4 defaultValue)
+{
+	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40), type, name, defaultValue));
+}
+
 OutputNode::OutputNode(InternalGraph::GraphPrototype& graph) : Node("Output", ConnectionType::Float)
 {
-	AddInputSlot(ConnectionType::Float, "Out", -0.5f);
+	AddInputSlot(ConnectionType::Float, "HeightMap", -0.5f);
+	AddInputSlot(ConnectionType::Color, "Splatmap", glm::vec4(0));
 }
 
 BlendNode::BlendNode(InternalGraph::GraphPrototype& graph) : Node("Blend", ConnectionType::Float)
@@ -1037,6 +1040,12 @@ CellNoiseNode::CellNoiseNode(InternalGraph::GraphPrototype& graph) : NoiseNode("
 	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::CellularNoise));
 }
 
+WhiteNoiseNode::WhiteNoiseNode(InternalGraph::GraphPrototype& graph) : NoiseNode("WhiteNoise")
+{
+	//internal_node_noise = std::make_shared<NewNodeGraph::CellularNoiseNode>();
+	//internal_node = internal_node_noise;
+	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::WhiteNoise));
+}
 
 ConstantIntNode::ConstantIntNode(InternalGraph::GraphPrototype& graph) : Node("ConstantInt", ConnectionType::Int)
 {
@@ -1050,6 +1059,15 @@ ConstantFloatNode::ConstantFloatNode(InternalGraph::GraphPrototype& graph) : Nod
 	AddInputSlot(ConnectionType::Float, "Value", 0.0f, 0.01f, 0.0f, 0.0f);
 	//internal_node = std::make_shared<NewNodeGraph::ConstantFloatNode>(1.0f);
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::ConstantFloat));
+}
+
+ColorCreator::ColorCreator(InternalGraph::GraphPrototype& graph) : Node("ColorCreator", ConnectionType::Color)
+{
+	AddInputSlot(ConnectionType::Float, "Red", 0.0f, 0.01f, 0.0f, 1.0f);
+	AddInputSlot(ConnectionType::Float, "Blue", 0.0f, 0.01f, 0.0f, 1.0f);
+	AddInputSlot(ConnectionType::Float, "Green", 0.0f, 0.01f, 0.0f, 1.0f);
+	AddInputSlot(ConnectionType::Float, "Alpha", 0.0f, 0.01f, 0.0f, 1.0f);
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::ColorCreator));
 }
 
 PossibleConnection::PossibleConnection() : state(State::Default), slot()
