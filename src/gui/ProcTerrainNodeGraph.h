@@ -13,6 +13,8 @@
 
 #include "TerGenNodeGraph.h"
 
+#include "InternalGraph.h"
+
 #include "../../third-party/ImGui/imgui.h"
 
 #include "../../third-party/json/json.hpp"
@@ -45,7 +47,7 @@ class ProcTerrainNodeGraph;
 
 class Connection {
 public:
-	Connection(ConnectionType conType, std::shared_ptr<Node> input, std::shared_ptr<Node> output);
+	Connection(ConnectionType conType, std::shared_ptr<Node> input, std::shared_ptr<Node> output, int output_slot_id);
 
 	ConnectionType conType;
 
@@ -55,6 +57,7 @@ public:
 	std::shared_ptr<Node> input;
 	std::shared_ptr<Node> output;
 	
+	int output_slot_id = -1;
 };
 
 class ConnectionSlot {
@@ -62,7 +65,7 @@ public:
 	ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type);
 	ConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name);
 
-	virtual void Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph& graph, const Node& parentNode) =0;
+	virtual int Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) =0;
 	bool IsHoveredOver(ImVec2 parentPos) const;
 	ConnectionType GetType();
 
@@ -80,12 +83,13 @@ public:
 class InputConnectionSlot : public ConnectionSlot {
 public:
 	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name);
-	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name, 
-		float defaultVal, float sliderStepSize, float lowerBound, float upperBound);
-	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name, 
-		int defaultVal, float sliderStepSize, float lowerBound, float upperBound);
+	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name,
+		std::variant<int, float, glm::vec2, glm::vec3, glm::vec4> defaultValue);
+	InputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type, std::string name,
+		std::variant<int, float, glm::vec2, glm::vec3, glm::vec4> defaultValue,
+		float sliderStepSize, float lowerBound, float upperBound);
 
-	void Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph& graph, const Node& parentNode) override;
+	int Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) override;
 
 	bool hasConnection = false;
 	std::shared_ptr<Connection> connection;
@@ -98,7 +102,7 @@ class OutputConnectionSlot : public ConnectionSlot {
 public:
 	OutputConnectionSlot(int slotNum, ImVec2 pos, ConnectionType type);
 
-	void Draw(ImDrawList* imDrawList, const ProcTerrainNodeGraph& graph, const Node& parentNode) override;
+	int Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) override;
 
 	std::vector<std::shared_ptr<Connection>> connections;
 
@@ -120,15 +124,17 @@ enum class NodeType {
 	CellNoise,
 	ValueNoise,
 	Voroni,
+	WhiteNoise,
 	ConstantInt,
 	ConstantFloat,
+	ColorCreator,
 };
 
 class Node {
 public:
 	Node(std::string name, ConnectionType outputType);
 
-	void SetInternalLink(int index, std::shared_ptr<NewNodeGraph::INode> inode);
+	//void SetInternalLink(int index, std::shared_ptr<NewNodeGraph::INode> inode);
 
 	std::string name;
 	ImVec2 pos = ImVec2(200,150);
@@ -142,41 +148,49 @@ public:
 	void AddInputSlot(ConnectionType type, std::string name);
 	void AddInputSlot(ConnectionType type, std::string name, float defaultValue, float sliderStepSize, float lowerBound, float upperBound);
 	void AddInputSlot(ConnectionType type, std::string name, int defaultValue, float sliderStepSize, float lowerBound, float upperBound);
+	void AddInputSlot(ConnectionType type, std::string name, glm::vec2 defaultValue);
+	void AddInputSlot(ConnectionType type, std::string name, glm::vec3 defaultValue);
+	void AddInputSlot(ConnectionType type, std::string name, glm::vec4 defaultValue);
 
-	std::shared_ptr<NewNodeGraph::INode> internal_node;
+	InternalGraph::NodeID internalNodeID;
+	//std::shared_ptr<NewNodeGraph::INode> internal_node;
 	//void Draw(ImDrawList*  imDrawList, ImVec2 offset);
 
 	bool hasTextInput = false;
 };
 
-class OutputNode		: public Node { public: OutputNode(NewNodeGraph::TerGenNodeGraph& graph); };
+class OutputNode		: public Node { public: OutputNode(InternalGraph::GraphPrototype& graph); };
 
 class MathNode			: public Node { public: MathNode(std::string name); };
 
-class AdditionNode		: public MathNode { public: AdditionNode(NewNodeGraph::TerGenNodeGraph& graph); };
-class SubtractionNode	: public MathNode { public: SubtractionNode(NewNodeGraph::TerGenNodeGraph& graph); };
-class MultiplicationNode: public MathNode { public: MultiplicationNode(NewNodeGraph::TerGenNodeGraph& graph); };
-class DivisionNode		: public MathNode { public: DivisionNode(NewNodeGraph::TerGenNodeGraph& graph); };
-class PowerNode			: public MathNode { public: PowerNode(NewNodeGraph::TerGenNodeGraph& graph); };
-class MaxNode			: public MathNode { public: MaxNode(NewNodeGraph::TerGenNodeGraph& graph); };
-class MinNode			: public MathNode { public: MinNode(NewNodeGraph::TerGenNodeGraph& graph); };
+class AdditionNode		: public MathNode { public: AdditionNode(InternalGraph::GraphPrototype& graph); };
+class SubtractionNode	: public MathNode { public: SubtractionNode(InternalGraph::GraphPrototype& graph); };
+class MultiplicationNode: public MathNode { public: MultiplicationNode(InternalGraph::GraphPrototype& graph); };
+class DivisionNode		: public MathNode { public: DivisionNode(InternalGraph::GraphPrototype& graph); };
+class PowerNode			: public MathNode { public: PowerNode(InternalGraph::GraphPrototype& graph); };
+class MaxNode			: public MathNode { public: MaxNode(InternalGraph::GraphPrototype& graph); };
+class MinNode			: public MathNode { public: MinNode(InternalGraph::GraphPrototype& graph); };
 
 
 
-class BlendNode			: public Node { public: BlendNode(NewNodeGraph::TerGenNodeGraph& graph); };
-class ClampNode			: public Node { public: ClampNode(NewNodeGraph::TerGenNodeGraph& graph); };
+class BlendNode			: public Node { public: BlendNode(InternalGraph::GraphPrototype& graph); };
+class ClampNode			: public Node { public: ClampNode(InternalGraph::GraphPrototype& graph); };
 
 class NoiseNode			: public Node { public: NoiseNode(std::string name);
-	std::shared_ptr<NewNodeGraph::NoiseSourceNode> internal_node_noise;
+	//std::shared_ptr<NewNodeGraph::NoiseSourceNode> internal_node_noise;
 };
 
-class PerlinNode		: public NoiseNode { public: PerlinNode(NewNodeGraph::TerGenNodeGraph& graph); };
-class SimplexNode		: public NoiseNode { public: SimplexNode(NewNodeGraph::TerGenNodeGraph& graph); };
-class CellNoiseNode		: public NoiseNode { public: CellNoiseNode(NewNodeGraph::TerGenNodeGraph& graph); };
-class ValueNoiseNode	: public NoiseNode { public: ValueNoiseNode(NewNodeGraph::TerGenNodeGraph& graph); };
-class VoroniNode		: public NoiseNode { public: VoroniNode(NewNodeGraph::TerGenNodeGraph& graph); };
-class ConstantIntNode	: public Node { public: ConstantIntNode(NewNodeGraph::TerGenNodeGraph& graph); };
-class ConstantFloatNode : public Node { public: ConstantFloatNode(NewNodeGraph::TerGenNodeGraph& graph); };
+class PerlinNode		: public NoiseNode { public: PerlinNode(InternalGraph::GraphPrototype& graph); };
+class SimplexNode		: public NoiseNode { public: SimplexNode(InternalGraph::GraphPrototype& graph); };
+class CellNoiseNode		: public NoiseNode { public: CellNoiseNode(InternalGraph::GraphPrototype& graph); };
+class ValueNoiseNode	: public NoiseNode { public: ValueNoiseNode(InternalGraph::GraphPrototype& graph); };
+class VoroniNode		: public NoiseNode { public: VoroniNode(InternalGraph::GraphPrototype& graph); };
+class WhiteNoiseNode	: public NoiseNode { public: WhiteNoiseNode(InternalGraph::GraphPrototype& graph); };
+
+class ConstantIntNode	: public Node { public: ConstantIntNode(InternalGraph::GraphPrototype& graph); };
+class ConstantFloatNode : public Node { public: ConstantFloatNode(InternalGraph::GraphPrototype& graph); };
+
+class ColorCreator : public Node { public: ColorCreator(InternalGraph::GraphPrototype& graph); };
 
 
 struct HoveredSlotInfo {
@@ -217,7 +231,7 @@ public:
 
 	void Draw();
 
-	NewNodeGraph::TerGenNodeGraph& GetGraph();
+	InternalGraph::GraphPrototype& GetGraph();
 
 private:
 	friend class Node;
@@ -248,6 +262,11 @@ private:
 
 	void AddNode(NodeType nodeType, ImVec2 position, int id = -1);
 
+	void SetNodeInternalLinkByID(InternalGraph::NodeID internalNodeID, int index, InternalGraph::NodeID id);
+	void ResetNodeInternalLinkByID(InternalGraph::NodeID internalNodeID, int index);
+
+	void SetNodeInternalValueByID(InternalGraph::NodeID internalNodeID, int index, InternalGraph::LinkTypeVariants val);
+
 	std::shared_ptr<Node> GetNodeById(int id);
 	
 	const ImVec2 windowPadding = ImVec2(8.0f, 8.0f);
@@ -259,7 +278,8 @@ private:
 	int curID = 0;
 	PossibleConnection posCon;
 
-	NewNodeGraph::TerGenNodeGraph curGraph;
+	//NewNodeGraph::TerGenNodeGraph curGraph;
+	InternalGraph::GraphPrototype protoGraph;
 
 	std::vector<std::shared_ptr<Node>> nodes;
 	std::vector<std::shared_ptr<Connection>> connections;

@@ -22,7 +22,7 @@ public:
 	Scene();
 	~Scene();
 
-	void PrepareScene(std::shared_ptr<ResourceManager> resourceMan,  std::shared_ptr<VulkanRenderer> renderer, NewNodeGraph::TerGenNodeGraph& graph);
+	void PrepareScene(std::shared_ptr<ResourceManager> resourceMan,  std::shared_ptr<VulkanRenderer> renderer, InternalGraph::GraphPrototype& graph);
 	void UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<TimeManager> timeManager);
 	void RenderScene(VkCommandBuffer commandBuffer, bool wireframe);
 	void UpdateSceneGUI();

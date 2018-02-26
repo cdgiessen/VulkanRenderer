@@ -1,23 +1,12 @@
 #pragma once
 
-#include <fstream>
-#include <stdexcept>
-#include <algorithm>
-#include <chrono>
-#include <vector>
-#include <cstring>
-#include <string>
-#include <array>
-#include <set>
-
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include <memory>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 //#define GLM_FORCE_LEFT_HANDED	
 
-#include "../../third-party/ImGui/imgui.h"
+//#include <vulkan/vulkan.h>
 
 #include "Window.hpp"
 #include "Input.h"
@@ -73,7 +62,7 @@ private:
 	void CameraWindow(bool* show_camera_overlay);
 
 	//ImGui resources
-	VkDescriptorPool imgui_descriptor_pool;
+	//VkDescriptorPool imgui_descriptor_pool;
 	ProcTerrainNodeGraph imgui_nodeGraph_terrain;
 	SimpleTimer imGuiTimer;
 	Log::Logger appLog;

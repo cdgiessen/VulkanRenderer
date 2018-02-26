@@ -802,6 +802,7 @@ void ImGui_ImplGlfwVulkan_Shutdown()
 {
 	ImGui_ImplGlfwVulkan_InvalidateDeviceObjects();
 	ImGui::Shutdown();
+	vkDestroyDescriptorPool(g_Device, g_DescriptorPool, VK_NULL_HANDLE);
 }
 
 void ImGui_ImplGlfwVulkan_NewFrame()

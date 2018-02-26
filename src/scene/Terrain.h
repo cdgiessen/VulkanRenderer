@@ -19,7 +19,8 @@
 #include "../core/CoreTools.h"
 
 //#include "TerrainGenerator.h"
-#include "../gui/TerGenNodeGraph.h"
+//#include "../gui/TerGenNodeGraph.h"
+#include "../gui/InternalGraph.h"
 
 const int SplatMapSize = 1024;
 const int NumCells = 32;
@@ -119,7 +120,8 @@ public:
 
 	//std::shared_ptr<Texture> maillerFace;
 	
-	std::unique_ptr<NewNodeGraph::TerGenGraphUser> fastTerrainUser;
+	InternalGraph::GraphUser fastGraphUser;
+	//std::unique_ptr<NewNodeGraph::TerGenGraphUser> fastTerrainUser;
 	//std::shared_ptr<NewNodeGraph::TerGenNodeGraph> fastTerrainGraph;
 
 	Gradient splatmapTextureGradient;
@@ -128,7 +130,7 @@ public:
 
 	std::vector<std::thread *> terrainGenerationWorkers;
 
-	Terrain(std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> pool, NewNodeGraph::TerGenNodeGraph& sourceGraph,
+	Terrain(std::shared_ptr<MemoryPool<TerrainQuadData>> pool, InternalGraph::GraphPrototype& protoGraph,
 		int numCells, int maxLevels, float heightScale, int sourceImageResolution,
 		glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
 	~Terrain();
@@ -140,7 +142,7 @@ public:
 	void BuildCommandBuffer(std::shared_ptr<Terrain> curTerrain, bool ifWireframe);
 	void CleanUp();
 
-	RGBA_pixel* LoadSplatMapFromGenerator();
+	std::vector<RGBA_pixel>* LoadSplatMapFromGenerator();
 
 	float GetHeightAtLocation(float x, float z);
 private:
@@ -174,7 +176,7 @@ private:
 
 
 //Create a mesh chunk for rendering using fastgraph as the input data
-void GenerateNewTerrainSubdivision(NewNodeGraph::TerGenGraphUser& fastGraph, TerrainMeshVertices& verts, TerrainMeshIndices& indices,
+void GenerateNewTerrainSubdivision(InternalGraph::GraphUser& graphUser, TerrainMeshVertices& verts, TerrainMeshIndices& indices,
 	TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);
 
 //not used as it depends on previous terrains, which is great for runtime but not for first generation (since it has dependence on its parents mesh being ready)

@@ -25,7 +25,7 @@ public:
 	std::shared_ptr<Texture> loadTextureFromFileGreyOnly(std::string filename);
 	//void loadFromNoiseUtilImage(utils::Image* image);
 	std::shared_ptr<Texture> loadTextureFromGreyscalePixelData(int width, int height, float* pixels);
-	std::shared_ptr<Texture> loadTextureFromRGBAPixelData(int width, int height, RGBA_pixel* pixels);
+	std::shared_ptr<Texture> loadTextureFromRGBAPixelData(int width, int height, std::vector<RGBA_pixel>* pixels);
 
 	std::shared_ptr<TextureArray> loadTextureArrayFromFile(std::string path, std::vector<std::string> filenames);
 
