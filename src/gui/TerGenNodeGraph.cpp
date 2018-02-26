@@ -173,8 +173,8 @@ namespace NewNodeGraph {
 		return outputType;
 	}
 
-	//template<typename T> T			Node<T>::GetValue(const int x, const int y, const int z, T dummy)		
-		const { return dummy; }
+	//template<typename T> T		Node<T>::GetValue(const int x, const int y, const int z, T dummy)		
+		//const { return dummy; }
 
 	template<typename T> float		Node<T>::GetValue(const int x, const int y, const int z, float dummy)		
 		const { return -1.1f; }
@@ -694,8 +694,8 @@ namespace NewNodeGraph {
 		this->scale = scale;
 		
 		for (auto noise : sourceGraph.GetNoiseSources()) {
-			noise->GenerateNoiseSet(seed, cellsWide, g
-				lm::ivec2(pos.x * (cellsWide)/scale, pos.y * (cellsWide) / scale), scale / (cellsWide));
+			noise->GenerateNoiseSet(seed, cellsWide, 
+			glm::ivec2(pos.x * (cellsWide)/scale, pos.y * (cellsWide) / scale), scale / (cellsWide));
 		}
 
 		for (int i = 0; i < cellsWide; i++)	{

@@ -11,7 +11,7 @@
 
 class TextureHandle {
 	std::unique_ptr<Texture> tex;
-}
+};
 
 
 

@@ -22,7 +22,7 @@ find_package(Vulkan REQUIRED)
 
 find_package(glm REQUIRED)
 
-#gtk include for linux
+#gtk - include for linux
 if(UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
 
@@ -50,7 +50,6 @@ src/gui/ImGuiImpl.cpp
 src/gui/NodeGraph.cpp
 src/gui/TerGenNodeGraph.cpp
 src/gui/ProcTerrainNodeGraph.cpp
-src/gui/TextureViewer.cpp
 
 src/rendering/VulkanBuffer.cpp
 src/rendering/VulkanDevice.cpp
@@ -108,7 +107,6 @@ if(UNIX)
 	target_link_libraries(VulkanApp ${GTK3_LIBRARIES})
 endif(UNIX)
 
-cotire(VulkanApp)
 
 
 
@@ -121,6 +119,8 @@ if(GLFW_FOUND)
 	target_link_libraries(VulkanApp "${GLFW_LIBRARIES}")
 	target_include_directories(VulkanApp PUBLIC "${GLFW_DIR}/include")
 endif(GLFW_FOUND)
+
+cotire(VulkanApp)
 
 if(MSVC)
 	add_compile_options("/permissive-")
