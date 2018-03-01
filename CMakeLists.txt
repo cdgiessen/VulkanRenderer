@@ -1,29 +1,18 @@
 cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
 
-project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
-
 set(CMAKE_CXX_STANDARD 17)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
 
-set(GLFW_DIR "third-party/glfw-3.2.1")
+#list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-set(GLFW_BUILD_SHARED_LIBS OFF CACHE INTERNAL "Build shared libraries")
-set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "Build the GLFW example programs")
-set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "Build the GLFW test programs")
-set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation")
-set(GLFW_INSTALL OFF CACHE INTERNAL "Generate installation target")
+#include(cotire)
 
-add_subdirectory(third-party/glfw-3.2.1)
-
-include(cotire)
-
-find_package(Vulkan REQUIRED)
+find_package(glfw3 REQUIRED)
 
 find_package(glm REQUIRED)
 
-#set(GLFW_ROOT_DIR "C:/GLFW")
-#find_package(glfw REQUIRED)
+find_package(Vulkan REQUIRED)
 
 #gtk include for linux
 if(UNIX)
@@ -94,17 +83,19 @@ third-party/FastNoiseSIMD/FastNoiseSIMD_sse2.cpp
 third-party/FastNoiseSIMD/FastNoiseSIMD_sse41.cpp
 )
 
+#glm
+#include_directories(glm)
+target_include_directories(VulkanApp PUBLIC glm)
+
+#glfw
+target_include_directories(VulkanApp PUBLIC glfw)
+target_link_libraries(VulkanApp PRIVATE glfw)
+
 #vulkan
 if(VULKAN_FOUND)
 	target_include_directories(VulkanApp PRIVATE ${Vulkan_INCLUDE_DIRS})
-	target_link_libraries(VulkanApp ${Vulkan_LIBRARIES})
+	target_link_libraries(VulkanApp PRIVATE ${Vulkan_LIBRARIES})
 endif (VULKAN_FOUND)
-
-#glm
-if(GLM_FOUND)
-	target_include_directories(VulkanApp PUBLIC third-party)
-	include_directories(third-party/glm)
-endif(GLM_FOUND)
 
 #gtk
 if(UNIX)
@@ -114,18 +105,6 @@ endif(UNIX)
 #set_target_properties(VulkanApp PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
 #cotire(VulkanApp)
 
-
-
-#glfw
-target_link_libraries(VulkanApp "glfw" "${GLFW_LIBRARY}")
-target_link_libraries(VulkanApp glfw)
-target_include_directories(VulkanApp PUBLIC "${GLFW_DIR}/include")
-
-if(GLFW_FOUND)
-	target_link_libraries(VulkanApp "${GLFW_LIBRARIES}")
-	target_include_directories(VulkanApp PUBLIC "${GLFW_INCLUDE_DIRS}")
-endif(GLFW_FOUND)
-
 if(MSVC)
 	add_compile_options("/permissive-")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")	
@@ -133,18 +112,13 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
 endif(MSVC)
 
-if(WIN32)
-add_custom_command(TARGET VulkanApp POST_BUILD        # Adds a post-build event to VulkanApp
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
-        "${PROJECT_BINARY_DIR}/third-party/glfw-3.2.1/src/glfw3.dll"      # <--this is in-file
-"${PROJECT_BINARY_DIR}")										# <--this is out-file pat
-else (UNIX)
+if (UNIX)
 add_custom_command(TARGET VulkanApp POST_BUILD        # Adds a post-build event to VulkanApp
     COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
         "${PROJECT_BINARY_DIR}/third-party/glfw-3.2.1/src/libglfw.so"      # <--this is in-file
  "${PROJECT_BINARY_DIR}")										# <--this is out-file path
 
-endif(WIN32)
+endif(UNIX)
 
 # copy settings.json
 add_custom_command(TARGET VulkanApp PRE_BUILD

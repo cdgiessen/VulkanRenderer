@@ -32,6 +32,7 @@ public:
 
 	std::shared_ptr<CubeMap> loadCubeMapFromFile(std::string filename, std::string fileExt);
 
+	void DrawTextureViewer();
 
 private:
 	std::vector<std::shared_ptr<Texture>> textureHandles;
@@ -41,4 +42,7 @@ private:
 
 	std::shared_ptr<Texture> errorImage;
 	std::vector<RGBA_pixel> errorImageData;
+
+	bool drawWindow;
+	int selectedTexture;
 };

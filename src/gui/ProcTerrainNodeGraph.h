@@ -127,6 +127,7 @@ enum class NodeType {
 	ConstantInt,
 	ConstantFloat,
 	ColorCreator,
+	MonoGradient,
 };
 
 class Node {
@@ -190,7 +191,7 @@ class ConstantIntNode	: public Node { public: ConstantIntNode(InternalGraph::Gra
 class ConstantFloatNode : public Node { public: ConstantFloatNode(InternalGraph::GraphPrototype& graph); };
 
 class ColorCreator : public Node { public: ColorCreator(InternalGraph::GraphPrototype& graph); };
-
+class MonoGradient : public Node { public: MonoGradient(InternalGraph::GraphPrototype& graph); };
 
 struct HoveredSlotInfo {
 	std::shared_ptr<Node> node;

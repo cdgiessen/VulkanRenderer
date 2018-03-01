@@ -106,6 +106,7 @@ namespace InternalGraph {
 		VoroniFractalNoise,
 
 		ColorCreator,
+		MonoGradient,
 	};
 
 	class InputLink {
@@ -144,7 +145,7 @@ namespace InternalGraph {
 		glm::i32vec2 pos;
 
 		NoiseSourceInfo(int seed, int cellsWide, float scale, glm::i32vec2 pos) :
-			seed(seed), cellsWide(cellsWide), scale(scale), pos(pos)
+			seed(seed), cellsWide(cellsWide), scale(scale / (float)(cellsWide)), pos(pos)
 		{ }
 	};
 

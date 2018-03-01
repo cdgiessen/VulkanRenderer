@@ -5,7 +5,8 @@
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
 
-InstancedSceneObject::InstancedSceneObject()
+
+InstancedSceneObject::InstancedSceneObject(int maxInstances) : maxInstanceCount(maxInstances)
 {
 }
 
@@ -54,7 +55,7 @@ void InstancedSceneObject::SetupUniformBuffer() {
 
 	ModelBufferObject ubo = {};
 	ubo.model = glm::mat4();
-	ubo.model = glm::translate(ubo.model, glm::vec3(50, 0, 0));
+	ubo.model = glm::translate(ubo.model, glm::vec3(0, 0, 0));
 	//ubo.model = glm::rotate(ubo.model, time / 2.0f, glm::vec3(0.5, 1, 0));
 	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 		
@@ -179,6 +180,37 @@ void InstancedSceneObject::SetupPipeline()
 	
 }
 
+void InstancedSceneObject::AddInstance(InstanceData data) {
+
+	instancesData.push_back(data);
+
+}
+
+void InstancedSceneObject::UploadInstances() {
+	size_t instanceBufferSize = instancesData.size() * sizeof(InstanceData);
+
+	VulkanBufferUniform stagingBuffer;
+	stagingBuffer.CreateStagingUniformBuffer(renderer->device, instancesData.data(), instanceBufferSize);
+
+	auto copyCmd = renderer->device.GetTransferCommandBuffer();
+
+	VkBufferCopy copyRegion = {};
+	copyRegion.size = instanceBufferSize;
+	vkCmdCopyBuffer(
+		copyCmd,
+		stagingBuffer.buffer.buffer,
+		instanceBuffer.buffer.buffer,
+		1,
+		&copyRegion);
+
+	renderer->device.SubmitTransferCommandBuffer();
+
+	instanceBuffer.resource.FillResource(instanceBuffer.buffer.buffer, 0, instanceBufferSize);
+
+	// Destroy staging resources
+	stagingBuffer.CleanBuffer(renderer->device);
+}
+
 void InstancedSceneObject::AddInstances(std::vector<glm::vec3> positions) {
 	//for (auto it = positions.begin(); it != positions.end(); it++) {
 	//	ModelBufferObject ubo = {};
@@ -200,60 +232,7 @@ void InstancedSceneObject::AddInstances(std::vector<glm::vec3> positions) {
 		instancesData.push_back(id);
 	}
 
-	size_t instanceBufferSize = instancesData.size() * sizeof(InstanceData);
-
-	// Staging
-	// Instanced data is static, copy to device local memory 
-	// This results in better performance
-
-	//struct {
-	//	VkDeviceMemory memory;
-	//	VkBuffer buffer;
-	//} stagingBuffer;
-
-	VulkanBufferUniform stagingBuffer;
-	stagingBuffer.CreateStagingUniformBuffer(renderer->device, instancesData.data(), instanceBufferSize);
-
-	//VK_CHECK_RESULT(renderer->device.createBuffer(
-	//	VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-	//	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-	//	instanceBuffer.size,
-	//	&stagingBuffer.buffer,
-	//	&stagingBuffer.memory,
-	//	instancesData.data()));
-
-	//VK_CHECK_RESULT(renderer->device.createBuffer(
-	//	VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-	//	VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-	//	instanceBuffer.size,
-	//	&instanceBuffer.buffer,
-	//	&instanceBuffer.memory));
-
-	// Copy to staging buffer
-	//VkCommandBuffer copyCmd = renderer->device.createCommandBuffer(renderer->device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-	auto copyCmd = renderer->device.GetTransferCommandBuffer();
-
-	VkBufferCopy copyRegion = {};
-	copyRegion.size = instanceBufferSize;
-	vkCmdCopyBuffer(
-		copyCmd,
-		stagingBuffer.buffer.buffer,
-		instanceBuffer.buffer.buffer,
-		1,
-		&copyRegion);
-
-	renderer->device.SubmitTransferCommandBuffer();
-	//renderer->device.flushCommandBuffer(copyCmd, renderer->device.graphics_queue, true);
-	
-	instanceBuffer.resource.FillResource(instanceBuffer.buffer.buffer, 0, instanceBufferSize);
-	//instanceBuffer.descriptor.range = instanceBuffer.size;
-	//instanceBuffer.descriptor.buffer = instanceBuffer.buffer;
-	//instanceBuffer.descriptor.offset = 0;
-
-	// Destroy staging resources
-	//vkDestroyBuffer(renderer->device.device, stagingBuffer.buffer, nullptr);
-	//vkFreeMemory(renderer->device.device, stagingBuffer.memory, nullptr);
-	stagingBuffer.CleanBuffer(renderer->device);
+	UploadInstances();
 }
 
 void InstancedSceneObject::UpdateUniformBuffer()

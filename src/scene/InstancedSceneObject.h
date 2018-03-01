@@ -34,7 +34,7 @@ public:
 
 
 
-	InstancedSceneObject();
+	InstancedSceneObject(int maxInstances = 256);
 	~InstancedSceneObject();
 
 	void InitInstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer);
@@ -51,8 +51,12 @@ public:
 
 	void SetupDescriptor();
 
+	void AddInstance(InstanceData data);
+
 	void AddInstances(std::vector<glm::vec3> positions);
-	//void InstancedSceneObject::RemoveInstance(std::vector<glm::vec3> positions);
+	//void RemoveInstance(std::vector<glm::vec3> positions);
+
+	void UploadInstances();
 
 	void WriteToCommandBuffer(VkCommandBuffer commandBuffer, bool wireframe);
 

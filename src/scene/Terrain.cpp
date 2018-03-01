@@ -41,7 +41,9 @@ Terrain::Terrain(
 	InternalGraph::GraphPrototype& protoGraph,
 	int numCells, int maxLevels, float heightScale, int sourceImageResolution,
 	glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize)
-	: maxLevels(maxLevels), heightScale(heightScale), position(pos), size(size), noisePosition(noisePosition), noiseSize(noiseSize),
+	
+	: maxLevels(maxLevels), heightScale(heightScale), position(pos), size(size), 
+	noisePosition(noisePosition), noiseSize(noiseSize),
 	sourceImageResolution(sourceImageResolution),
 	fastGraphUser(protoGraph, 1337, sourceImageResolution, noisePosition, noiseSize.x)
 	
@@ -737,7 +739,7 @@ void Terrain::UpdateUniformBuffer(float time)
 }
 
 
-void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], std::shared_ptr<Terrain> curTerrain, bool ifWireframe) {
+void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], bool ifWireframe) {
 
 	//vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, 0 ? wireframe : pipeline);
 	//DrawTerrainQuad(curTerrain->rootQuad, cmdBuff, cmdBuffIndex, offsets);

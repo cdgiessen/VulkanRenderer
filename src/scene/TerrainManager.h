@@ -1,6 +1,8 @@
 #pragma once
 
-
+#include <thread>
+#include <vector>
+#include <memory>
   
   
 #include "../core/CoreTools.h"
@@ -16,6 +18,26 @@
 #include "Camera.h"
 #include "Terrain.h"
 #include "Water.h"
+
+#include "InstancedSceneObject.h"
+
+
+class TerrainChunk {
+public:
+	glm::vec2 position;
+	glm::vec2 size;
+	glm::i32vec2 noisePosition;
+	glm::i32vec2 noiseSize;
+	int sourceImageResolution;
+
+	std::shared_ptr<Terrain> terrain;
+
+	TerrainChunk();
+
+	void UpdateChunk(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager);
+	
+	void RenderChunk(VkCommandBuffer commandBuffer, bool wireframe);
+};
 
 class TerrainManager
 {
@@ -52,6 +74,8 @@ private:
 	std::vector<std::shared_ptr<Terrain>> terrains;
 	std::shared_ptr<MemoryPool<TerrainQuadData>> terrainQuadPool;
 
+	std::unique_ptr<InstancedSceneObject> instancedWaters;
+
 	std::vector<std::shared_ptr<Water>> waters;
 
 	std::shared_ptr<Mesh> WaterMesh;
@@ -72,7 +96,7 @@ private:
 	int sourceImageResolution = 256;
 	SimpleTimer terrainUpdateTimer;
 	int numCells = 64;
-	int logicalWidth = 16;// (int)numCells * glm::pow(2.0, terrainMaxLevels);
+	int logicalWidth = 256;// (int)numCells * glm::pow(2.0, terrainMaxLevels);
 
 	int maxNumQuads = 1; //maximum quads managed by this
 

@@ -5,6 +5,32 @@
 
 #include "../core/Logger.h"
 
+
+TerrainChunk::TerrainChunk() {
+
+}
+
+void TerrainChunk::UpdateChunk(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager) {
+
+}
+
+void TerrainChunk::RenderChunk(VkCommandBuffer commandBuffer, bool wireframe) {
+	VkDeviceSize offsets[] = { 0 };
+
+	terrain->DrawTerrain(commandBuffer, offsets, wireframe);
+	
+}
+
+
+
+
+
+
+
+
+
+
+
 TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph): protoGraph(protoGraph)
 {
 	if (terrainMaxLevels < 0) {
@@ -19,24 +45,28 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph): proto
 	//nodeGraph.BuildNoiseGraph();
 
 
-
-
 }
 
 void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer) {
 	terrainTextureArray = resourceMan->texManager.loadTextureArrayFromFile("assets/Textures/TerrainTextures/", terrainTextureFileNames);
 	terrainVulkanTextureArray.loadTextureArray(renderer->device, terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
 	
-	WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
-	WaterVulkanTexture.loadFromTexture(renderer->device, WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
+	//WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
+	//WaterVulkanTexture.loadFromTexture(renderer->device, WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
 
+	instancedWaters = std::make_unique<InstancedSceneObject>();
+	instancedWaters->LoadModel(createFlatPlane(numCells, glm::vec3(terrainWidth, 0, terrainWidth)));
+	instancedWaters->texture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
+	instancedWaters->InitInstancedSceneObject(renderer);
 }
 
 void TerrainManager::CleanUpResources() {
 	terrainVulkanTextureArray.destroy(renderer->device);
-	WaterVulkanTexture.destroy(renderer->device);
+	
+	instancedWaters->CleanUp();
+	//WaterVulkanTexture.destroy(renderer->device);
 
-	WaterModel.destroy(renderer->device);
+	//	WaterModel.destroy(renderer->device);
 }
 
 
@@ -54,8 +84,8 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 			auto terrain = std::make_shared<Terrain>(terrainQuadPool, protoGraph, numCells, terrainMaxLevels, terrainHeightScale, sourceImageResolution,
 				glm::vec2((i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2), //position
 				glm::vec2(terrainWidth, terrainWidth), //size
-				glm::i32vec2(i * logicalWidth, j * logicalWidth), //noise position
-				glm::i32vec2(logicalWidth, logicalWidth)); //noiseSize 
+				glm::i32vec2(i * sourceImageResolution, j * sourceImageResolution), //noise position
+				glm::i32vec2(sourceImageResolution, sourceImageResolution)); //noiseSize 
 
 			std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
 			terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(sourceImageResolution, sourceImageResolution, imgData);
@@ -69,24 +99,38 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 		ter->InitTerrain(renderer, camera->Position, &terrainVulkanTextureArray);
 	}
 	//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
-	WaterMesh.reset();
-	WaterModel.destroy(renderer->device); 
-	WaterMesh = createFlatPlane(numCells, glm::vec3(terrainWidth, 0, terrainWidth));
-	WaterModel.loadFromMesh(WaterMesh, renderer->device, renderer->device.graphics_queue);
+	
+	//WaterMesh.reset();
+	//WaterModel.destroy(renderer->device); 
+	//WaterMesh = createFlatPlane(numCells, glm::vec3(terrainWidth, 0, terrainWidth));
+	//WaterModel.loadFromMesh(WaterMesh, renderer->device, renderer->device.graphics_queue);
 
+	instancedWaters->CleanUp();
+	instancedWaters.release();
+	instancedWaters = std::make_unique<InstancedSceneObject>();
+	instancedWaters->LoadModel(createFlatPlane(numCells, glm::vec3(terrainWidth, 0, terrainWidth)));
+	instancedWaters->texture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
+	instancedWaters->InitInstancedSceneObject(renderer);
 
 	for (int i = 0; i < terrainGridDimentions; i++) {
 		for (int j = 0; j < terrainGridDimentions; j++) {
-			auto water = std::make_shared< Water>
-				(64, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth);
+			InstancedSceneObject::InstanceData id;
+			id.pos = glm::vec3((i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, 
+				0, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2);
+			id.scale = 1;
+			id.rot = glm::vec3(0, 0, 0);
+			instancedWaters->AddInstance(id);
 			
-			//WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
-			water->InitWater(renderer, WaterVulkanTexture);
-			
-			waters.push_back(water);
+			//auto water = std::make_shared< Water>
+			//	(64, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth);
+			//
+			////WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
+			//water->InitWater(renderer, WaterVulkanTexture);
+			//
+			//waters.push_back(water);
 		}
 	}
-
+	instancedWaters->UploadInstances();
 	recreateTerrain = false;
 }
 
@@ -116,22 +160,24 @@ void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe
 	VkDeviceSize offsets[] = { 0 };
 	
 	for (auto ter : terrains) {
-		ter->DrawTerrain(commandBuffer, offsets, ter, wireframe);
+		ter->DrawTerrain(commandBuffer, offsets, wireframe);
 	}
+
+	instancedWaters->WriteToCommandBuffer(commandBuffer, wireframe);
 
 	//water
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->mvp->pipelines->at(1) : waters.at(0)->mvp->pipelines->at(0));
-	//vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->wireframe : waters.at(0)->seascapePipeline);
-	
-	WaterModel.BindModel(commandBuffer);
-	//vkCmdBindVertexBuffers(commandBuffer, 0, 1, &waters.at(0)->WaterModel.vmaBufferVertex, offsets);
-	//vkCmdBindIndexBuffer(commandBuffer, waters.at(0)->WaterModel.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
+	//vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->mvp->pipelines->at(1) : waters.at(0)->mvp->pipelines->at(0));
+	////vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->wireframe : waters.at(0)->seascapePipeline);
+	//
+	//WaterModel.BindModel(commandBuffer);
+	////vkCmdBindVertexBuffers(commandBuffer, 0, 1, &waters.at(0)->WaterModel.vmaBufferVertex, offsets);
+	////vkCmdBindIndexBuffer(commandBuffer, waters.at(0)->WaterModel.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
 
-	for (auto water : waters) {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, water->mvp->layout, 2, 1, &water->m_descriptorSet.set, 0, nullptr);
+	//for (auto water : waters) {
+	//	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, water->mvp->layout, 2, 1, &water->m_descriptorSet.set, 0, nullptr);
 
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(WaterModel.indexCount), 1, 0, 0, 0);
-	}
+	//	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(WaterModel.indexCount), 1, 0, 0, 0);
+	//}
 }
 
 float TerrainManager::GetTerrainHeightAtLocation(float x, float z) {

@@ -35,10 +35,10 @@ namespace InternalGraph {
 		else {
 
 			return (
-				UL * (realXPlus1 - xScaled)	* (realZPlus1 - zScaled)
-				+ DL * (xScaled - realX)	* (realZPlus1 - zScaled)
+				  UL * (realXPlus1 - xScaled)	* (realZPlus1 - zScaled)
+				+ DL * (xScaled - realX)		* (realZPlus1 - zScaled)
 				+ UR * (realXPlus1 - xScaled)	* (zScaled - realZ)
-				+ DR * (xScaled - realX)	* (zScaled - realZ)
+				+ DR * (xScaled - realX)		* (zScaled - realZ)
 				)
 				/ ((realXPlus1 - realX) * (realZPlus1 - realZ));
 		}
@@ -314,6 +314,14 @@ namespace InternalGraph {
 			outputType = LinkType::Vec4;
 			AddNodeInputLinks(inputLinks,
 				{ LinkType::Float, LinkType::Float, LinkType::Float, LinkType::Float });
+			break;
+
+		case NodeType::MonoGradient:
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Float, LinkType::Float, LinkType::Float, LinkType::Float, LinkType::Float });
+
+			break;
+		
 		default:
 			break;
 		}
@@ -337,7 +345,7 @@ namespace InternalGraph {
 		LinkTypeVariants retVal;
 		//LinkTypeVariants reA, reB;
 		float a, b, c, d, alpha;
-		float value, lower, upper;
+		float value, lower, upper, smooth;
 
 		auto val = (inputLinks.at(0));
 
@@ -576,6 +584,20 @@ namespace InternalGraph {
 			retVal = glm::vec4(a, b, c, d);
 
 			return retVal;
+			break;
+
+		case NodeType::MonoGradient:
+			value = std::get<float>(inputLinks.at(0).GetValue(x, z));
+			lower = std::get<float>(inputLinks.at(1).GetValue(x, z));
+			upper = std::get<float>(inputLinks.at(2).GetValue(x, z));
+			smooth = std::get<float>(inputLinks.at(3).GetValue(x, z));
+			//value = glm::clamp(value, lower, upper);
+			retVal = lower + value * (upper - lower);
+			//retVal = ((upper - value) + (value - lower)) / (upper - lower);
+
+			return retVal;
+
+			break;
 
 		default:
 			break;
@@ -733,7 +755,7 @@ namespace InternalGraph {
 
 	GraphUser::GraphUser(const GraphPrototype& graph, 
 		int seed, int cellsWide, glm::i32vec2 pos, float scale):
-	info(seed, cellsWide, scale/ (float)cellsWide, pos)
+	info(seed, cellsWide, scale, pos)
 	{
 		//glm::ivec2(pos.x * (cellsWide) / scale, pos.y * (cellsWide) / scale), scale / (cellsWide)
 
@@ -775,7 +797,7 @@ namespace InternalGraph {
 				glm::vec4 val = std::get<glm::vec4>(outputNode->GetSplatMapValue(x, z));
 				RGBA_pixel pixel = RGBA_pixel((stbi_uc)(val.x * 255), (stbi_uc)(val.y * 255), (stbi_uc)(val.z * 255), (stbi_uc)(val.w * 255));
 				
-				outputSplatmap.SetPixelValue(x, z, pixel);
+				outputSplatmap.SetPixelValue(z, x, pixel);
 			}
 		}
 		

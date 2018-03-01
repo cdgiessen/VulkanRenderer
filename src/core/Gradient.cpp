@@ -58,6 +58,9 @@ glm::vec4 Gradient::LinearInterpolate(float pos, Gradient_ControlPoint start, Gr
 	float endPos = end.position - pos;
 	float posStart = pos - start.position;
 
-	return glm::vec4(	(start.color.x*endPos + end.color.x*posStart) / range, (start.color.y*endPos + end.color.y*posStart) / range, 
-						(start.color.z*endPos + end.color.z*posStart) / range, (start.color.w*endPos + end.color.w*posStart) / range);
+	return glm::vec4(	
+		(start.color.x*endPos + end.color.x*posStart) / range, 
+		(start.color.y*endPos + end.color.y*posStart) / range, 				
+		(start.color.z*endPos + end.color.z*posStart) / range, 
+		(start.color.w*endPos + end.color.w*posStart) / range);
 }

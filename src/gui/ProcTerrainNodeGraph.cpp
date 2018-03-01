@@ -210,6 +210,7 @@ void ProcTerrainNodeGraph::DrawNodeButtons() {
 	ImGui::Separator();
 	ImGui::Text("Colors");
 	if (ImGui::Button("Color Creator", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ColorCreator, startingNodePos); }
+	if (ImGui::Button("MonoGradient ", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::MonoGradient, startingNodePos); }
 
 
 	ImGui::EndChild();
@@ -303,6 +304,7 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 		if (ImGui::IsItemActive())
 			node_moving_active = true;
 
+		//background
 		ImU32 node_bg_color = (node_hovered_in_scene == node->id) ? ImColor(75, 75, 75) : ImColor(60, 60, 60);
 		imDrawList->AddRectFilled(windowPos + node->pos, windowPos + node->pos + node->size, node_bg_color, 4.0f);
 
@@ -347,6 +349,7 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 		{
 			verticalOffset += node->inputSlots[i].Draw(imDrawList, *this, *node, verticalOffset);
 		}
+		node->size = ImVec2(node->size.x, verticalOffset);
 		//		for (auto slot : node->inputSlots) {
 		//			slot.Draw(imDrawList, *this, *node);
 		//		}
@@ -392,8 +395,8 @@ void ProcTerrainNodeGraph::DrawPossibleConnection(ImDrawList* imDrawList) {
 				posCon.state = PossibleConnection::State::Dragging;
 
 				if (!info.isOutput && (info.node->inputSlots[info.inputSlotNum].connection != nullptr)) {
-					DeleteConnection(info.node->inputSlots[info.inputSlotNum].connection);
 					ResetNodeInternalLinkByID(posCon.slot.node->internalNodeID, posCon.slot.inputSlotNum);
+					DeleteConnection(info.node->inputSlots[info.inputSlotNum].connection);
 				}
 			}
 		}
@@ -515,6 +518,7 @@ void ProcTerrainNodeGraph::DrawHermite(ImDrawList* imDrawList, ImVec2 p1, ImVec2
 
 void ProcTerrainNodeGraph::DrawConnections(ImDrawList*  imDrawList) {
 	for (auto con : connections) {
+		con->endPosRelNode = con->output->inputSlots.at(con->output_slot_id).pos;
 		ImVec2 start = windowPos + con->input->pos + con->startPosRelNode;
 		ImVec2 end = windowPos + con->output->pos + con->endPosRelNode;
 
@@ -724,6 +728,7 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 	case(NodeType::ConstantInt): newNode = std::make_shared<ConstantIntNode>(protoGraph); break;
 	case(NodeType::ConstantFloat): newNode = std::make_shared<ConstantFloatNode>(protoGraph); break;
 	case(NodeType::ColorCreator): newNode = std::make_shared<ColorCreator>(protoGraph); break;
+	case(NodeType::MonoGradient): newNode = std::make_shared<MonoGradient >(protoGraph); break;
 	}
 	if (id >= 0)
 		newNode->id = id;
@@ -847,9 +852,9 @@ int InputConnectionSlot::Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& grap
 	ImColor conColor = ImColor(150, 150, 150);
 
 	if (connection != nullptr)
-		conColor = ImColor(220, 220, 0);
+		conColor = ImColor(210, 210, 0);
 
-	if (IsHoveredOver(currentPos))
+	if (IsHoveredOver(relPos))
 		conColor = ImColor(200, 200, 200);
 
 	imDrawList->AddCircleFilled(currentPos, nodeSlotRadius, conColor);
@@ -867,7 +872,7 @@ int OutputConnectionSlot::Draw(ImDrawList* imDrawList, ProcTerrainNodeGraph& gra
 	if (IsHoveredOver(relPos))
 		slotColor = ImColor(200, 200, 200);
 	if (connections.size() > 0)
-		slotColor = ImColor(220, 220, 0);
+		slotColor = ImColor(210, 210, 0);
 	imDrawList->AddCircleFilled(relPos + pos, nodeSlotRadius, slotColor);
 	return 0;
 }
@@ -1070,6 +1075,15 @@ ColorCreator::ColorCreator(InternalGraph::GraphPrototype& graph) : Node("ColorCr
 	AddInputSlot(ConnectionType::Float, "Green", 0.0f, 0.01f, 0.0f, 1.0f);
 	AddInputSlot(ConnectionType::Float, "Alpha", 0.0f, 0.01f, 0.0f, 1.0f);
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::ColorCreator));
+}
+
+MonoGradient::MonoGradient(InternalGraph::GraphPrototype& graph) : Node("MonoGradient", ConnectionType::Float)
+{
+	AddInputSlot(ConnectionType::Float, "input", 0.0f, 0.01f, 0.0f, 1.0f);
+	AddInputSlot(ConnectionType::Float, "lower bound", 0.0f, 0.01f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "upper bound", 1.0f, 0.01f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "blend factor", 0.0f, 0.01f, 0.0f, 1.0f);
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::MonoGradient));
 }
 
 PossibleConnection::PossibleConnection() : state(State::Default), slot()

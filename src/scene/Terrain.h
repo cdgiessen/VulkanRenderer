@@ -138,7 +138,7 @@ public:
 	void InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos, VulkanTexture2DArray* terrainVulkanTextureArray);
 
 	void UpdateTerrain(glm::vec3 viewerPos);
-	void DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], std::shared_ptr<Terrain> curTerrain, bool wireframe);
+	void DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], bool wireframe);
 	void BuildCommandBuffer(std::shared_ptr<Terrain> curTerrain, bool ifWireframe);
 	void CleanUp();
 
