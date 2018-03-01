@@ -7,12 +7,11 @@
 #include <vector>
 #include <memory>
 
-#include "../../third-party/stb_image/stb_image.h"
-#include "../../third-party/stb_image/stb_image_write.h"
-
-
 #include "Texture.h"
 
+class TextureHandle {
+	std::unique_ptr<Texture> tex;
+};
 
 
 
