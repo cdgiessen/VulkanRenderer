@@ -606,7 +606,10 @@ void VulkanDevice::setupDebugCallback() {
 
 
 void VulkanDevice::createSurface(VkSurfaceKHR &surface) {
-	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+	//VK_CHECK_RESULT(glfwCreateWindowSurface(instance, window, nullptr, &surface));
+	VkResult res = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+	if (res != VK_SUCCESS) {
+		Log::Error << errorString(res) << "\n";
 		throw std::runtime_error("failed to create window surface!");
 	}
 }

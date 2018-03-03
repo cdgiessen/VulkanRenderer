@@ -7,7 +7,7 @@
 #include "../../third-party/stb_image/stb_image_write.h"
 
 
-#include "../third-party/ImGui/imgui.h"
+#include "../../third-party/ImGui/imgui.h"
 
 TextureManager::TextureManager()
 {

@@ -7,6 +7,8 @@
 #include "../../third-party/ImGui/imgui.h"
 #include "../gui/ImGuiImpl.h"
 
+#include "Logger.h"
+
 std::set<std::string> getRequiredInstanceExtensions() {
 	std::set<std::string> result;
 	uint32_t count = 0;
@@ -30,6 +32,7 @@ Window::Window() {
 
 void Window::createWindow(const glm::uvec2& size, const glm::ivec2& position) {
 	glfwInit();
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	window = glfwCreateWindow(size.x, size.y, "Vulkan Renderer", NULL, NULL);
 	if (position != glm::ivec2{ INT_MIN, INT_MIN }) {
 		glfwSetWindowPos(window, position.x, position.y);
@@ -55,6 +58,7 @@ void Window::prepareWindow() {
 	glfwSetFramebufferSizeCallback(window, FramebufferSizeHandler);
 	glfwSetWindowSizeCallback(window, WindowResizeHandler);
 	glfwSetWindowCloseCallback(window, CloseHandler);
+	glfwSetErrorCallback(ErrorHandler);
 
 	glfwSetKeyCallback(window, KeyboardHandler);
 	glfwSetCharCallback(window, CharInputHandler);
@@ -93,6 +97,12 @@ VkSurfaceKHR createWindowSurface(const vk::Instance& instance, GLFWwindow* windo
 	VkSurfaceKHR rawSurface;
 	vk::Result result = static_cast<vk::Result>(glfwCreateWindowSurface((VkInstance)instance, window, reinterpret_cast<const VkAllocationCallbacks*>(allocator), &rawSurface));
 	return vk::createResultValue(result, rawSurface, "vk::CommandBuffer::begin");
+}
+
+void Window::ErrorHandler(int error, const char* description)
+{
+    Log::Error << description << "\n";
+	puts(description);
 }
 
 void Window::KeyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods) {

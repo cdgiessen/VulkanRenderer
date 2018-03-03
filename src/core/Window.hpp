@@ -42,6 +42,7 @@ protected:
 	//
 	// Event handlers are called by the GLFW callback mechanism and should not be called directly
 	//
+	static void ErrorHandler(int error, const char* description);
 
 	static void KeyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static void CharInputHandler(GLFWwindow* window, uint32_t codePoint);

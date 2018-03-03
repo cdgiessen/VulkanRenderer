@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
 
+include(CMakeToolsHelpers OPTIONAL)
+
 set(CMAKE_CXX_STANDARD 17)
 
 project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
@@ -99,7 +101,7 @@ endif (VULKAN_FOUND)
 
 #gtk
 if(UNIX)
-	target_link_libraries(VulkanApp ${GTK3_LIBRARIES})
+	target_link_libraries(VulkanApp PRIVATE ${GTK3_LIBRARIES})
 endif(UNIX)
 
 #set_target_properties(VulkanApp PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
