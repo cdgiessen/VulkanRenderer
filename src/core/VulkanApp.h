@@ -60,6 +60,7 @@ private:
 
 	void DebugOverlay(bool* show_debug_overlay);
 	void CameraWindow(bool* show_camera_overlay);
+	void ControlsWindow(bool* show_controls_window);
 
 	//ImGui resources
 	//VkDescriptorPool imgui_descriptor_pool;

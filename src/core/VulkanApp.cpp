@@ -190,6 +190,8 @@ void VulkanApp::DebugOverlay(bool* show_debug_overlay) {
 }
 
 void VulkanApp::CameraWindow(bool* show_camera_window) {
+	ImGui::SetNextWindowPos(ImVec2(0, 100), ImGuiSetCond_FirstUseEver);
+
 	if (!ImGui::Begin("Camera Window", show_camera_window))
 	{
 		ImGui::End();
@@ -202,6 +204,25 @@ void VulkanApp::CameraWindow(bool* show_camera_window) {
 	ImGui::Text(std::to_string(scene->GetCamera()->MovementSpeed).c_str());
 	ImGui::SliderFloat("##camMovSpeed", &(scene->GetCamera()->MovementSpeed), 0.1f, 100.0f);
 	ImGui::End();
+}
+
+void VulkanApp::ControlsWindow(bool* show_controls_window) {
+	ImGui::SetNextWindowPos(ImVec2(0, 250), ImGuiSetCond_FirstUseEver);
+	if (ImGui::Begin("Controls", show_controls_window)) {
+		ImGui::Text("Horizontal Movement: WASD");
+		ImGui::Text("Vertical Movement: Space/Shift");
+		ImGui::Text("Looking: Mouse");
+		ImGui::Text("Change Move Speed: E/Q");
+		ImGui::Text("Unlock Mouse: Enter");
+		ImGui::Text("Show Wireframe: X");
+		//ImGui::Text("Show Normals: N");
+		ImGui::Text("Toggle Flying: F");
+		ImGui::Text("Screenshot: F10 - EXPERIMENTAL!");
+		ImGui::Text("Hide Gui: H");
+		ImGui::Text("Exit: Escape");
+	}
+	ImGui::End();
+
 }
 
 // Build imGui windows and elements
@@ -219,6 +240,7 @@ void VulkanApp::BuildImgui() {
 
 		if (show_debug_overlay) DebugOverlay(&show_debug_overlay);
 		if (show_camera_window) CameraWindow(&show_camera_window);
+		if(show_controls_list) ControlsWindow(&show_controls_list);
 
 
 		scene->UpdateSceneGUI();
@@ -231,21 +253,6 @@ void VulkanApp::BuildImgui() {
 
 		imgui_nodeGraph_terrain.Draw();
 
-		if (show_controls_list) {
-			ImGui::Begin("Controls", &show_controls_list);
-			ImGui::Text("Horizontal Movement: WASD");
-			ImGui::Text("Vertical Movement: Space/Shift");
-			ImGui::Text("Looking: Mouse");
-			ImGui::Text("Change Move Speed: E/Q");
-			ImGui::Text("Unlock Mouse: Enter");
-			ImGui::Text("Show Wireframe: X");
-			//ImGui::Text("Show Normals: N");
-			ImGui::Text("Toggle Flying: F");
-			ImGui::Text("Screenshot: F10 - EXPERIMENTAL!");
-			ImGui::Text("Hide Gui: H");
-			ImGui::Text("Exit: Escape");
-			ImGui::End();
-		}
 	}
 	imGuiTimer.EndTimer();
 	//Log::Debug << imGuiTimer.GetElapsedTimeNanoSeconds() << "\n";

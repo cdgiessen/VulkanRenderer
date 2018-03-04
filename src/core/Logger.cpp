@@ -32,6 +32,9 @@ namespace Log {
 	void Logger::Draw(const char* title, bool* p_open)
 	{
 		ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiSetCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(0, 450), ImGuiSetCond_FirstUseEver);
+		ImGui::SetNextWindowCollapsed(true, ImGuiSetCond_FirstUseEver);
+
 		ImGui::Begin(title, p_open);
 		if (ImGui::Button("Clear")) Clear();
 		ImGui::SameLine();

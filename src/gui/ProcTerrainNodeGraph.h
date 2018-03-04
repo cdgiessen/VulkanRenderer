@@ -109,6 +109,7 @@ public:
 
 enum class NodeType {
 	Output,
+
 	Addition,
 	Subtraction,
 	Multiplication,
@@ -118,14 +119,18 @@ enum class NodeType {
 	Min,
 	Blend,
 	Clamp,
+
 	Perlin,
 	Simplex,
 	CellNoise,
 	ValueNoise,
 	Voroni,
 	WhiteNoise,
+
 	ConstantInt,
 	ConstantFloat,
+	Invert,
+
 	ColorCreator,
 	MonoGradient,
 };
@@ -189,6 +194,9 @@ class WhiteNoiseNode	: public NoiseNode { public: WhiteNoiseNode(InternalGraph::
 
 class ConstantIntNode	: public Node { public: ConstantIntNode(InternalGraph::GraphPrototype& graph); };
 class ConstantFloatNode : public Node { public: ConstantFloatNode(InternalGraph::GraphPrototype& graph); };
+
+class InvertNode : public Node { public: InvertNode(InternalGraph::GraphPrototype& graph); };
+
 
 class ColorCreator : public Node { public: ColorCreator(InternalGraph::GraphPrototype& graph); };
 class MonoGradient : public Node { public: MonoGradient(InternalGraph::GraphPrototype& graph); };

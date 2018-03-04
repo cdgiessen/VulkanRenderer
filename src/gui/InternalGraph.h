@@ -97,6 +97,8 @@ namespace InternalGraph {
 		ConstantInt,
 		ConstantFloat,
 
+		Invert,
+
 		ValueFractalNoise,
 		SimplexFractalNoise,
 		PerlinFractalNoise,

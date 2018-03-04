@@ -24,11 +24,10 @@ layout(set = 1, binding = 1) uniform PointLightsBuffer {
 //texture sampling
 layout(set = 2, binding = 3) uniform sampler2D waterTex;
 
-layout(location = 0) in vec3 inFragPos;
-layout(location = 1) in vec3 inNormal;
-layout(location = 2) in vec2 inTexCoord;
-layout(location = 3) in vec4 inColor;
-layout(location = 4) in float inTime;
+layout(location = 0) in vec3 inNormal;
+layout(location = 1) in vec2 inTexCoord;
+layout(location = 2) in vec4 inColor;
+layout(location = 3) in vec3 inFragPos;
 
 layout(location = 0) out vec4 outColor;
 
@@ -37,7 +36,7 @@ vec4 causticsSampler(vec2 uv, float timeIn) {
 	#define MAX_ITER 5
 	
 
-	float time = timeIn * .5+23.0;
+	float time = cbo.time * .5+23.0;
     vec2 p = mod(uv*TAU, TAU)-250.0;
 	vec2 i = vec2(p);
 	float c = 1.0;
@@ -59,6 +58,7 @@ vec4 causticsSampler(vec2 uv, float timeIn) {
 }
 
 void main() {
+	float inTime = cbo.time;
 	vec4 texSample1 = texture(waterTex, vec2(inTexCoord.x + cos(inTime/5.0f + 2.0f)/7.0f, inTexCoord.y + cos(inTime/6.0f)/7.5f+ 1.0f));
 	vec4 texSample2 = texture(waterTex, vec2(inTexCoord.x + 0.1f + sin(inTime/5.0f+ 0.5f)/8.0f, inTexCoord.y + 0.1f + sin(inTime/4.0f+ 1.5f)/6.0f));
 	vec4 texSample3 = texture(waterTex, vec2(inTexCoord.x , inTexCoord.y + sin(inTime/4.5f)/10.0f));

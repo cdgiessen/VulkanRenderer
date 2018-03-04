@@ -9,9 +9,7 @@
 
 #include "Texture.h"
 
-class TextureHandle {
-	std::unique_ptr<Texture> tex;
-};
+
 
 
 
@@ -35,6 +33,8 @@ public:
 
 private:
 	std::vector<std::shared_ptr<Texture>> textureHandles;
+
+	std::vector<std::shared_ptr<Texture>> terrainTextureHandles;
 
 	std::shared_ptr<Texture> loadTextureFromFile(std::string filename, int imgType);
 	//std::shared_ptr<Texture> loadTextureFromPixelData(int width, int height); //doesn't copy pixels, but it sets up everthing else

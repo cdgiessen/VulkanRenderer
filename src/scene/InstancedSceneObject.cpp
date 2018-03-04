@@ -49,6 +49,14 @@ void InstancedSceneObject::LoadModel(std::shared_ptr<Mesh> mesh) {
 	this->mesh = mesh;
 }
 
+void InstancedSceneObject::LoadTexture(std::shared_ptr<Texture> tex) {
+	this->texture = tex; 
+}
+
+void InstancedSceneObject::SetFragmentShaderToUse(VkShaderModule shaderModule) {
+	fragShaderModule = shaderModule;
+}
+
 void InstancedSceneObject::SetupUniformBuffer() {
 	uniformBuffer.CreateUniformBuffer(renderer->device, sizeof(ModelBufferObject));
 	//renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &uniformBuffer, sizeof(ModelBufferObject));
@@ -105,7 +113,7 @@ void InstancedSceneObject::SetupPipeline()
 	mvp = pipeMan.CreateManagedPipeline();
 
 	pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/instancedSceneObject.vert.spv"));
-	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/instancedSceneObject.frag.spv"));
+	pipeMan.SetFragmentShader(mvp, fragShaderModule);
 	//pipeMan.SetVertexInput(mvp, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width, (float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);

@@ -12,7 +12,6 @@
 #include "../rendering/VulkanRenderer.hpp"
 #include "../resources/ResourceManager.h"
 
-//#include "../gui/TerGenNodeGraph.h"
 #include "../gui/InternalGraph.h"
 
 #include "Camera.h"
@@ -96,7 +95,6 @@ private:
 	int sourceImageResolution = 256;
 	SimpleTimer terrainUpdateTimer;
 	int numCells = 64;
-	int logicalWidth = 256;// (int)numCells * glm::pow(2.0, terrainMaxLevels);
 
 	int maxNumQuads = 1; //maximum quads managed by this
 

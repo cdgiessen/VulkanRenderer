@@ -226,7 +226,7 @@ namespace InternalGraph {
 		{
 		case InternalGraph::NodeType::Output:
 			AddNodeInputLinks(inputLinks,
-				{ LinkType::Float, LinkType::Vec4 });
+				{ LinkType::Float, LinkType::Vec4, LinkType::Int, LinkType::Int, LinkType::Int, LinkType::Int });
 			break;
 
 		case InternalGraph::NodeType::Addition:
@@ -257,6 +257,9 @@ namespace InternalGraph {
 			inputLinks.push_back(InputLink(0));
 			break;
 		case InternalGraph::NodeType::ConstantFloat:
+			inputLinks.push_back(InputLink(0.0f));
+			break;
+		case InternalGraph::NodeType::Invert:
 			inputLinks.push_back(InputLink(0.0f));
 			break;
 
@@ -557,6 +560,13 @@ namespace InternalGraph {
 			break;
 		case InternalGraph::NodeType::ConstantFloat:
 			return inputLinks.at(0).GetValue(x, z);
+
+			break;
+
+		case InternalGraph::NodeType::Invert:
+			value = std::get<float>(inputLinks.at(0).GetValue(x, z));
+			retVal = 1 - value;
+			return retVal;
 
 			break;
 

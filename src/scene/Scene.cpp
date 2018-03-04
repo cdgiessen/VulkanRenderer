@@ -45,8 +45,9 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	terrainManager->GenerateTerrain(resourceMan, renderer, camera);
 
 	treesInstanced = std::make_shared<InstancedSceneObject>();
+	treesInstanced->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/instancedSceneObject.frag.spv"));
 	treesInstanced->LoadModel(createCube());
-	treesInstanced->texture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/grass.jpg");
+	treesInstanced->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/grass.jpg"));
 	treesInstanced->InitInstancedSceneObject(renderer);
 	treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(20,0,10), glm::vec3(10,0,40), glm::vec3(10,0,-40), glm::vec3(100,0,40) });
 

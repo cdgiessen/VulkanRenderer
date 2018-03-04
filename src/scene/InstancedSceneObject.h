@@ -41,8 +41,11 @@ public:
 	void CleanUp();
 	void UpdateUniformBuffer();
 
+	void LoadTexture(std::shared_ptr<Texture> tex);
 	void LoadModel(std::string fileName);
 	void LoadModel(std::shared_ptr<Mesh> mesh);
+
+	void SetFragmentShaderToUse(VkShaderModule shaderModule);
 
 	void SetupUniformBuffer();
 	void SetupImage();
@@ -59,6 +62,7 @@ public:
 	void UploadInstances();
 
 	void WriteToCommandBuffer(VkCommandBuffer commandBuffer, bool wireframe);
+private:
 
 	std::shared_ptr<VulkanRenderer> renderer;
 
@@ -86,4 +90,6 @@ public:
 
 	int instanceCount = 0;
 	int maxInstanceCount = 256;
+
+	VkShaderModule fragShaderModule;
 };

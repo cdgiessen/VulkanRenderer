@@ -99,7 +99,7 @@ void ProcTerrainNodeGraph::ResetOutputNode() {
 void ProcTerrainNodeGraph::Draw() {
 
 	ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiSetCond_FirstUseEver);
-	ImGui::SetNextWindowPos(ImVec2(0, 300), ImGuiSetCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(425, 0), ImGuiSetCond_FirstUseEver);
 
 
 	if (ImGui::Begin("Node Graph", &window_open, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar)) {
@@ -197,6 +197,7 @@ void ProcTerrainNodeGraph::DrawNodeButtons() {
 	ImGui::Text("Modifiers");
 	if (ImGui::Button("Constant Int", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ConstantInt, startingNodePos); }
 	if (ImGui::Button("Constant Float", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ConstantFloat, startingNodePos); }
+	if (ImGui::Button("Inverter", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Invert, startingNodePos); }
 	if (ImGui::Button("Add", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Addition, startingNodePos); }
 	if (ImGui::Button("Subtract", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Subtraction, startingNodePos); }
 	if (ImGui::Button("Multiply", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Multiplication, startingNodePos); }
@@ -727,6 +728,7 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 	case(NodeType::Voroni): newNode = std::make_shared<VoroniNode>(protoGraph); break;
 	case(NodeType::ConstantInt): newNode = std::make_shared<ConstantIntNode>(protoGraph); break;
 	case(NodeType::ConstantFloat): newNode = std::make_shared<ConstantFloatNode>(protoGraph); break;
+	case(NodeType::Invert): newNode = std::make_shared<InvertNode>(protoGraph); break;
 	case(NodeType::ColorCreator): newNode = std::make_shared<ColorCreator>(protoGraph); break;
 	case(NodeType::MonoGradient): newNode = std::make_shared<MonoGradient >(protoGraph); break;
 	}
@@ -936,6 +938,11 @@ OutputNode::OutputNode(InternalGraph::GraphPrototype& graph) : Node("Output", Co
 {
 	AddInputSlot(ConnectionType::Float, "HeightMap", -0.5f);
 	AddInputSlot(ConnectionType::Color, "Splatmap", glm::vec4(0));
+
+	AddInputSlot(ConnectionType::Int, "Texture 1", 0);
+	AddInputSlot(ConnectionType::Int, "Texture 2", 1);
+	AddInputSlot(ConnectionType::Int, "Texture 3", 2);
+	AddInputSlot(ConnectionType::Int, "Texture 4", 3);
 }
 
 BlendNode::BlendNode(InternalGraph::GraphPrototype& graph) : Node("Blend", ConnectionType::Float)
@@ -1066,6 +1073,13 @@ ConstantFloatNode::ConstantFloatNode(InternalGraph::GraphPrototype& graph) : Nod
 	AddInputSlot(ConnectionType::Float, "Value", 0.0f, 0.01f, 0.0f, 0.0f);
 	//internal_node = std::make_shared<NewNodeGraph::ConstantFloatNode>(1.0f);
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::ConstantFloat));
+}
+
+InvertNode::InvertNode(InternalGraph::GraphPrototype& graph) : Node("Inverter", ConnectionType::Float)
+{
+	AddInputSlot(ConnectionType::Float, "Value", 0.0f, 0.01f, 0.0f, 0.0f);
+	//internal_node = std::make_shared<NewNodeGraph::ConstantFloatNode>(1.0f);
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Invert));
 }
 
 ColorCreator::ColorCreator(InternalGraph::GraphPrototype& graph) : Node("ColorCreator", ConnectionType::Color)

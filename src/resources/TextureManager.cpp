@@ -25,7 +25,7 @@ TextureManager::TextureManager()
 		for (int j = 0; j < 8; j++)
 		{
 			if ((i + j) % 2 == 0) {
-				std::memcpy(&errorImage->pixels[(i * 8 + j) * 8], pink.data(), 64);
+				std::memcpy(&errorImage->pixels[(i * 8 + j) * 8], pink.data(), 64); 
 			}
 		}
 	}
@@ -191,7 +191,7 @@ std::shared_ptr<CubeMap> TextureManager::loadCubeMapFromFile(std::string filenam
 void TextureManager::DrawTextureViewer() {
 
 	ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiSetCond_FirstUseEver);
-	ImGui::SetNextWindowPos(ImVec2(300, 0), ImGuiSetCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(0, 475), ImGuiSetCond_FirstUseEver);
 
 
 	if(	ImGui::Begin("Textures", &drawWindow, ImGuiWindowFlags_MenuBar))
@@ -213,7 +213,7 @@ void TextureManager::DrawTextureViewer() {
 
 		// left
 		ImGui::BeginChild("left pane", ImVec2(150, 0), true);
-		for (int i = 0; i < textureHandles.size(); i++)
+		for (int i = 0; i < terrainTextureHandles.size(); i++)
 		{
 			char label[128];
 			//lable = textureHandles.at(i).

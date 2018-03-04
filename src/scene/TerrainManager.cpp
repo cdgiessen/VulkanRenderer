@@ -55,8 +55,9 @@ void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan
 	//WaterVulkanTexture.loadFromTexture(renderer->device, WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
 
 	instancedWaters = std::make_unique<InstancedSceneObject>();
+	instancedWaters->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
 	instancedWaters->LoadModel(createFlatPlane(numCells, glm::vec3(terrainWidth, 0, terrainWidth)));
-	instancedWaters->texture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
+	instancedWaters->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg"));
 	instancedWaters->InitInstancedSceneObject(renderer);
 }
 
@@ -108,8 +109,9 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 	instancedWaters->CleanUp();
 	instancedWaters.release();
 	instancedWaters = std::make_unique<InstancedSceneObject>();
+	instancedWaters->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
 	instancedWaters->LoadModel(createFlatPlane(numCells, glm::vec3(terrainWidth, 0, terrainWidth)));
-	instancedWaters->texture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
+	instancedWaters->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg"));
 	instancedWaters->InitInstancedSceneObject(renderer);
 
 	for (int i = 0; i < terrainGridDimentions; i++) {
@@ -194,7 +196,8 @@ float TerrainManager::GetTerrainHeightAtLocation(float x, float z) {
 
 void TerrainManager::UpdateTerrainGUI() {
 	
-	ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(200, 220), ImGuiSetCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(220, 0), ImGuiSetCond_FirstUseEver);
 	ImGui::Begin("Debug Info", &show_terrain_manager_window);
 	ImGui::SliderFloat("Width", &terrainWidth, 100, 10000);
 	ImGui::SliderInt("Max Subdivision", &terrainMaxLevels, 0, 10);
