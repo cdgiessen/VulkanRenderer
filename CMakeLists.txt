@@ -41,8 +41,6 @@ src/core/TimeManager.cpp
 src/core/Window.cpp
 
 src/gui/ImGuiImpl.cpp
-src/gui/NodeGraph.cpp
-src/gui/TerGenNodeGraph.cpp
 src/gui/ProcTerrainNodeGraph.cpp
 src/gui/InternalGraph.cpp
 
@@ -69,7 +67,6 @@ src/scene/InstancedSceneObject.cpp
 src/scene/Scene.cpp
 src/scene/Skybox.cpp
 src/scene/Terrain.cpp
-src/scene/TerrainGenerator.cpp
 src/scene/TerrainManager.cpp
 src/scene/Water.cpp
 
@@ -86,7 +83,6 @@ third-party/FastNoiseSIMD/FastNoiseSIMD_sse41.cpp
 )
 
 #glm
-#include_directories(glm)
 target_include_directories(VulkanApp PUBLIC glm)
 
 #glfw

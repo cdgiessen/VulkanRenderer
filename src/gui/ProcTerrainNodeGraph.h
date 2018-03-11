@@ -11,8 +11,6 @@
 #include <variant>
 #include <stdint.h>
 
-#include "TerGenNodeGraph.h"
-
 #include "InternalGraph.h"
 
 #include "../../third-party/ImGui/imgui.h"

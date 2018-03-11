@@ -934,7 +934,7 @@ void GenerateNewTerrainSubdivision(InternalGraph::GraphUser& graphUser, TerrainM
 		}
 	}
 
-	RecalculateNormals(numCells, verts, indices);
+	//RecalculateNormals(numCells, verts, indices);
 
 }
 
