@@ -43,11 +43,6 @@ VulkanApp::VulkanApp()
 	scene->PrepareScene(resourceManager, vulkanRenderer, imgui_nodeGraph_terrain.GetGraph());
 
 	PrepareImGui();
-
-	mainLoop();
-
-	clean();
-
 }
 
 
@@ -248,8 +243,6 @@ void VulkanApp::BuildImgui() {
 		if (show_log_window) {
 			appLog.Draw("Example: Log", &show_log_window);
 		}
-
-		resourceManager->texManager.DrawTextureViewer();
 
 		imgui_nodeGraph_terrain.Draw();
 

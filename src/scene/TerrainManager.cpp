@@ -1,12 +1,20 @@
 #include "TerrainManager.h"
 
 #include "../../third-party/ImGui/imgui.h"
-#include "../gui/ImGuiImpl.h"
 
 #include "../core/Logger.h"
 
 
-TerrainChunk::TerrainChunk() {
+
+
+
+
+
+
+
+TerrainChunk::TerrainChunk(TerrainCoordinateData coordData) :
+	coordinates(coordData)
+{
 
 }
 
@@ -18,7 +26,7 @@ void TerrainChunk::RenderChunk(VkCommandBuffer commandBuffer, bool wireframe) {
 	VkDeviceSize offsets[] = { 0 };
 
 	terrain->DrawTerrain(commandBuffer, offsets, wireframe);
-	
+
 }
 
 
@@ -30,14 +38,13 @@ void TerrainChunk::RenderChunk(VkCommandBuffer commandBuffer, bool wireframe) {
 
 
 
-
-TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph): protoGraph(protoGraph)
+TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph) : protoGraph(protoGraph)
 {
-	if (terrainMaxLevels < 0) {
+	if (settings.maxLevels < 0) {
 		maxNumQuads = 1;
 	}
 	else {
-		maxNumQuads = 1 + 16 + 50 * terrainMaxLevels; //with current quad density this is the average upper bound
+		maxNumQuads = 1 + 16 + 50 * settings.maxLevels; //with current quad density this is the average upper bound
 											   //maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads
 	}
 
@@ -48,22 +55,29 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph): proto
 }
 
 void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer) {
+	for (auto item : terrainTextureFileNames) {
+			terrainTextureHandles.push_back(
+				TerrainTextureNamedHandle(
+					item, 
+					resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TerrainTextures/" + item)));
+	}
+	
 	terrainTextureArray = resourceMan->texManager.loadTextureArrayFromFile("assets/Textures/TerrainTextures/", terrainTextureFileNames);
 	terrainVulkanTextureArray.loadTextureArray(renderer->device, terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
-	
+
 	//WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
 	//WaterVulkanTexture.loadFromTexture(renderer->device, WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
 
 	instancedWaters = std::make_unique<InstancedSceneObject>();
 	instancedWaters->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
-	instancedWaters->LoadModel(createFlatPlane(numCells, glm::vec3(terrainWidth, 0, terrainWidth)));
+	instancedWaters->LoadModel(createFlatPlane(settings.numCells, glm::vec3(settings.width, 0, settings.width)));
 	instancedWaters->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg"));
 	instancedWaters->InitInstancedSceneObject(renderer);
 }
 
 void TerrainManager::CleanUpResources() {
 	terrainVulkanTextureArray.destroy(renderer->device);
-	
+
 	instancedWaters->CleanUp();
 	//WaterVulkanTexture.destroy(renderer->device);
 
@@ -79,17 +93,21 @@ TerrainManager::~TerrainManager()
 void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera) {
 	this->renderer = renderer;
 
-	for (int i = 0; i < terrainGridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
-		for (int j = 0; j < terrainGridDimentions; j++) {
+	for (int i = 0; i < settings.gridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
+		for (int j = 0; j < settings.gridDimentions; j++) {
 			
-			auto terrain = std::make_shared<Terrain>(terrainQuadPool, protoGraph, numCells, terrainMaxLevels, terrainHeightScale, sourceImageResolution,
-				glm::vec2((i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2), //position
-				glm::vec2(terrainWidth, terrainWidth), //size
-				glm::i32vec2(i * sourceImageResolution, j * sourceImageResolution), //noise position
-				glm::i32vec2(sourceImageResolution, sourceImageResolution)); //noiseSize 
+			TerrainCoordinateData coord = TerrainCoordinateData(
+				glm::vec2((i - settings.gridDimentions / 2) * settings.width - settings.width / 2, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2), //position
+				glm::vec2(settings.width, settings.width), //size
+				glm::i32vec2(i*settings.sourceImageResolution, j*settings.sourceImageResolution), //noise position
+				glm::vec2(1.0 / (float)settings.sourceImageResolution, 1.0f / (float)settings.sourceImageResolution),//noiseSize 
+				settings.sourceImageResolution + 1);
+
+
+			auto terrain = std::make_shared<Terrain>(terrainQuadPool, protoGraph, settings.numCells, settings.maxLevels, settings.heightScale, coord);
 
 			std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
-			terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(sourceImageResolution, sourceImageResolution, imgData);
+			terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(settings.sourceImageResolution, settings.sourceImageResolution, imgData);
 			//delete(imgData);
 			terrains.push_back(terrain);
 		}
@@ -100,31 +118,31 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 		ter->InitTerrain(renderer, camera->Position, &terrainVulkanTextureArray);
 	}
 	//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
-	
+
 	//WaterMesh.reset();
 	//WaterModel.destroy(renderer->device); 
-	//WaterMesh = createFlatPlane(numCells, glm::vec3(terrainWidth, 0, terrainWidth));
+	//WaterMesh = createFlatPlane(settings.numCells, glm::vec3(settings.width, 0, settings.width));
 	//WaterModel.loadFromMesh(WaterMesh, renderer->device, renderer->device.graphics_queue);
 
 	instancedWaters->CleanUp();
 	instancedWaters.release();
 	instancedWaters = std::make_unique<InstancedSceneObject>();
 	instancedWaters->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
-	instancedWaters->LoadModel(createFlatPlane(numCells, glm::vec3(terrainWidth, 0, terrainWidth)));
+	instancedWaters->LoadModel(createFlatPlane(settings.numCells, glm::vec3(settings.width, 0, settings.width)));
 	instancedWaters->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg"));
 	instancedWaters->InitInstancedSceneObject(renderer);
 
-	for (int i = 0; i < terrainGridDimentions; i++) {
-		for (int j = 0; j < terrainGridDimentions; j++) {
+	for (int i = 0; i < settings.gridDimentions; i++) {
+		for (int j = 0; j < settings.gridDimentions; j++) {
 			InstancedSceneObject::InstanceData id;
-			id.pos = glm::vec3((i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, 
-				0, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2);
+			id.pos = glm::vec3((i - settings.gridDimentions / 2) * settings.width - settings.width / 2,
+				0, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2);
 			id.scale = 1;
 			id.rot = glm::vec3(0, 0, 0);
 			instancedWaters->AddInstance(id);
-			
+
 			//auto water = std::make_shared< Water>
-			//	(64, (i - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, (j - terrainGridDimentions / 2) * terrainWidth - terrainWidth / 2, terrainWidth, terrainWidth);
+			//	(64, (i - settings.gridDimentions / 2) * settings.width - settings.width / 2, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2, settings.width, settings.width);
 			//
 			////WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
 			//water->InitWater(renderer, WaterVulkanTexture);
@@ -160,7 +178,7 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 
 void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe) {
 	VkDeviceSize offsets[] = { 0 };
-	
+
 	for (auto ter : terrains) {
 		ter->DrawTerrain(commandBuffer, offsets, wireframe);
 	}
@@ -182,44 +200,105 @@ void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe
 	//}
 }
 
+//TODO : Reimplement getting height at terrain location
 float TerrainManager::GetTerrainHeightAtLocation(float x, float z) {
-	for (auto terrain : terrains)
-	{
-		glm::vec2 pos = terrain->position;
-		glm::vec2 size = terrain->size;
-		if (pos.x <= x && pos.x + size.x >= x && pos.y <= z && pos.y + size.y >= z) {
-			return terrain->GetHeightAtLocation((x - pos.x)/ terrainWidth, (z - pos.y)/ terrainWidth);
-		}
-	}
+	//for (auto terrain : terrains)
+	//{
+	//	glm::vec2 pos = terrain->position;
+	//	glm::vec2 size = terrain->size;
+	//	if (pos.x <= x && pos.x + size.x >= x && pos.y <= z && pos.y + size.y >= z) {
+	//		return terrain->GetHeightAtLocation((x - pos.x)/ settings.width, (z - pos.y)/ settings.width);
+	//	}
+	//}
 	return 0;
 }
 
 void TerrainManager::UpdateTerrainGUI() {
-	
+
 	ImGui::SetNextWindowSize(ImVec2(200, 220), ImGuiSetCond_FirstUseEver);
 	ImGui::SetNextWindowPos(ImVec2(220, 0), ImGuiSetCond_FirstUseEver);
-	ImGui::Begin("Debug Info", &show_terrain_manager_window);
-	ImGui::SliderFloat("Width", &terrainWidth, 100, 10000);
-	ImGui::SliderInt("Max Subdivision", &terrainMaxLevels, 0, 10);
-	ImGui::SliderInt("Grid Width", &terrainGridDimentions, 1, 10);
-	ImGui::SliderFloat("Height Scale", &terrainHeightScale, 1, 1000);
-	ImGui::SliderInt("Image Resolution", &sourceImageResolution, 32, 2048);
+	if (ImGui::Begin("Debug Info", &settings.show_terrain_manager_window)) {
+		ImGui::SliderFloat("Width", &settings.width, 100, 10000);
+		ImGui::SliderInt("Max Subdivision", &settings.maxLevels, 0, 10);
+		ImGui::SliderInt("Grid Width", &settings.gridDimentions, 1, 10);
+		ImGui::SliderFloat("Height Scale", &settings.heightScale, 1, 1000);
+		ImGui::SliderInt("Image Resolution", &settings.sourceImageResolution, 32, 2048);
 
-	if (ImGui::Button("Recreate Terrain", ImVec2(130, 20))) {
-		recreateTerrain = true;
-	}
+		if (ImGui::Button("Recreate Terrain", ImVec2(130, 20))) {
+			recreateTerrain = true;
+		}
 
-	ImGui::Text("All terrains update Time: %u(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
-	for (auto ter : terrains)
-	{
-		ImGui::Text("Terrain Draw Time: %u(uS)", ter->drawTimer.GetElapsedTimeMicroSeconds());
-		ImGui::Text("Terrain Quad Count %d", ter->numQuads);
+		ImGui::Text("All terrains update Time: %u(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
+		for (auto ter : terrains)
+		{
+			ImGui::Text("Terrain Draw Time: %u(uS)", ter->drawTimer.GetElapsedTimeMicroSeconds());
+			ImGui::Text("Terrain Quad Count %d", ter->numQuads);
+		}
 	}
 	ImGui::End();
-	
+
 }
 
-void TerrainManager::RecreateTerrain(){
+void TerrainManager::DrawTerrainTextureViewer() {
+
+	ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiSetCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(0, 475), ImGuiSetCond_FirstUseEver);
+
+
+	if (ImGui::Begin("Textures", &drawWindow, ImGuiWindowFlags_MenuBar))
+	{
+
+		if (ImGui::BeginMenuBar())
+		{
+			if (ImGui::BeginMenu("File"))
+			{
+				if (ImGui::MenuItem("Open Texture")) {
+
+				}
+				if (ImGui::MenuItem("Close"))
+					drawWindow = false;
+				ImGui::EndMenu();
+			}
+			ImGui::EndMenuBar();
+		}
+
+		// left
+		ImGui::BeginChild("left pane", ImVec2(150, 0), true);
+		for (int i = 0; i < terrainTextureHandles.size(); i++)
+		{
+			char label[128];
+			//lable = textureHandles.at(i).
+			sprintf(label, "%s", terrainTextureHandles[i].name.c_str());
+			if (ImGui::Selectable(label, selectedTexture == i))
+				selectedTexture = i;
+		}
+
+		ImGui::EndChild();
+
+		ImGui::SameLine();
+
+		ImGui::BeginGroup();
+		ImGui::BeginChild("item view", ImVec2(0, -ImGui::GetItemsLineHeightWithSpacing())); // Leave room for 1 line below us
+		ImGui::Text("MyObject: %d", selectedTexture);
+		ImGui::Separator();
+
+
+		ImGui::TextWrapped("TODO: Add texture preview");
+
+		ImGui::EndChild();
+
+		ImGui::BeginChild("buttons");
+		if (ImGui::Button("PlaceHolder")) {}
+		ImGui::EndChild();
+
+		ImGui::EndGroup();
+
+	}
+	ImGui::End();
+
+}
+
+void TerrainManager::RecreateTerrain() {
 	recreateTerrain = true;
 }
 
@@ -246,7 +325,7 @@ VkCommandBuffer TerrainManager::CreateTerrainMeshUpdateCommandBuffer(VkCommandPo
 	VkCommandBuffer cmdBuffer;
 	VK_CHECK_RESULT(vkAllocateCommandBuffers(renderer->device.device, &cmdBufAllocateInfo, &cmdBuffer));
 
-	
+
 	VkCommandBufferBeginInfo cmdBufInfo = initializers::commandBufferBeginInfo();
 	VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
 

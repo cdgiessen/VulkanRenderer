@@ -24,11 +24,34 @@ int main(int argc, char* argv[]) {
 		vkApp = std::make_shared<VulkanApp>();
 	}
 	catch (const std::runtime_error& e) {
-		std::cerr << e.what() << std::endl;
-		Log::Error << std::string(e.what()) << "\n";
-
+		Log::Error << "ENGINE FAILED TO INITIALIZE\n" << std::string(e.what()) << "\n";
 		return EXIT_FAILURE;
 	}
+
+	try {
+		vkApp->mainLoop();
+	}
+	catch (const std::runtime_error& e) {
+		Log::Error << "ENGINE FAILED IN MAIN LOOP\n" << std::string(e.what()) << "\n";
+		return EXIT_FAILURE;
+	}
+	try {
+		vkApp->clean();
+	} 
+	catch (const std::runtime_error& e) {
+		Log::Error << "ENGINE FAILED TO CLEAN RESOURCES\n" << std::string(e.what()) << "\n";
+		return EXIT_FAILURE;
+	}
+
+	try {
+		vkApp.reset();
+	}
+	catch (const std::runtime_error& e) {
+		Log::Error << "ENGINE FAILED TO DESCRUCT\n" << std::string(e.what()) << "\n";
+		return EXIT_FAILURE;
+	}
+
+
 	return EXIT_SUCCESS;
 
 }

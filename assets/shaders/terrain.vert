@@ -10,10 +10,16 @@ layout(set = 0, binding = 0) uniform CameraUniformBuffer {
 } cbo;
 
 //per model information
-layout(set = 2, binding = 2) uniform UniformBufferObject {
+//layout(set = 2, binding = 2) uniform UniformBufferObject {
+//    mat4 model;
+//	mat4 normal;
+//} ubo;
+
+layout(push_constant) uniform PER_OBJECT
+{
     mat4 model;
-	mat4 normal;
-} ubo;
+    mat4 normal;
+} obj;
 
 
 
@@ -36,9 +42,8 @@ void main() {
 	outTexCoord = inTexCoord;
 	outColor = inColor;
 
-    gl_Position = cbo.proj * cbo.view * ubo.model * vec4(inPosition, 1.0);
+    gl_Position = cbo.proj * cbo.view * obj.model * vec4(inPosition, 1.0);
 
-	outNormal = (ubo.normal * vec4(inNormal,1.0f)).xyz;
-	outFragPos = (ubo.model * vec4(inPosition, 1.0)).xyz;		
-	outTime = cbo.time;
+	outNormal = (obj.normal * vec4(inNormal,1.0f)).xyz;
+	outFragPos = (obj.model * vec4(inPosition, 1.0)).xyz;		
 }

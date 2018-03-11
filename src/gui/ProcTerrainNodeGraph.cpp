@@ -211,8 +211,8 @@ void ProcTerrainNodeGraph::DrawNodeButtons() {
 	ImGui::Separator();
 	ImGui::Text("Colors");
 	if (ImGui::Button("Color Creator", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ColorCreator, startingNodePos); }
-	if (ImGui::Button("MonoGradient ", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::MonoGradient, startingNodePos); }
-
+	if (ImGui::Button("MonoGradient", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::MonoGradient, startingNodePos); }
+	if (ImGui::Button("Texture Index", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::TextureIndex, startingNodePos);}
 
 	ImGui::EndChild();
 	ImGui::PopStyleVar();
@@ -729,6 +729,7 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 	case(NodeType::ConstantInt): newNode = std::make_shared<ConstantIntNode>(protoGraph); break;
 	case(NodeType::ConstantFloat): newNode = std::make_shared<ConstantFloatNode>(protoGraph); break;
 	case(NodeType::Invert): newNode = std::make_shared<InvertNode>(protoGraph); break;
+	case(NodeType::TextureIndex): newNode = std::make_shared<TextureIndexNode >(protoGraph); break;
 	case(NodeType::ColorCreator): newNode = std::make_shared<ColorCreator>(protoGraph); break;
 	case(NodeType::MonoGradient): newNode = std::make_shared<MonoGradient >(protoGraph); break;
 	}
@@ -950,7 +951,6 @@ BlendNode::BlendNode(InternalGraph::GraphPrototype& graph) : Node("Blend", Conne
 	AddInputSlot(ConnectionType::Float, "A", 0.0f, 0.01f, 0.0f, 0.0f);
 	AddInputSlot(ConnectionType::Float, "B", 1.0f, 0.01f, 0.0f, 0.0f);
 	AddInputSlot(ConnectionType::Float, "Factor", 0.5f, 0.005f, 0.0f, 1.0f);
-	//internal_node = std::make_shared<NewNodeGraph::BlendNode>();
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Blend));
 }
 
@@ -959,7 +959,6 @@ ClampNode::ClampNode(InternalGraph::GraphPrototype& graph) : Node("Clamp", Conne
 	AddInputSlot(ConnectionType::Float, "input", 0.0f, 0.01f, 0.0f, 0.0f);
 	AddInputSlot(ConnectionType::Float, "lower", 0.0f, 0.005f, 0.0f, 0.0f);
 	AddInputSlot(ConnectionType::Float, "upper", 1.0f, 0.005f, 0.0f, 0.0f);
-	//internal_node = std::make_shared<NewNodeGraph::ClampNode>();
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Clamp));
 }
 
@@ -971,115 +970,99 @@ MathNode::MathNode(std::string name) : Node(name, ConnectionType::Float)
 
 AdditionNode::AdditionNode(InternalGraph::GraphPrototype& graph) : MathNode("Addition")
 {
-	//internal_node = std::make_shared<NewNodeGraph::AdditionNode>();
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Addition));
 }
 
 SubtractionNode::SubtractionNode(InternalGraph::GraphPrototype& graph) : MathNode("Subtraction")
 {
-	//internal_node = std::make_shared<NewNodeGraph::SubtractNode>();
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Subtraction));
 }
 
 MultiplicationNode::MultiplicationNode(InternalGraph::GraphPrototype& graph) : MathNode("Multiplication")
 {
-	//internal_node = std::make_shared<NewNodeGraph::MultiplyNode>();
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Multiplication));
 }
 
 DivisionNode::DivisionNode(InternalGraph::GraphPrototype& graph) : MathNode("Division")
 {
-	//internal_node = std::make_shared<NewNodeGraph::DivideNode>();
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Division));
 }
 
 PowerNode::PowerNode(InternalGraph::GraphPrototype& graph) : MathNode("Power")
 {
-	//internal_node = std::make_shared<NewNodeGraph::PowerNode>();
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Power));
 }
 
 MaxNode::MaxNode(InternalGraph::GraphPrototype& graph) : MathNode("Max")
 {
-	//internal_node = std::make_shared<NewNodeGraph::MaxNode>();
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Max));
 }
 
 MinNode::MinNode(InternalGraph::GraphPrototype& graph) : MathNode("Min")
 {
-	//internal_node = std::make_shared<NewNodeGraph::MinNode>();
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Min));
 }
 
 
 NoiseNode::NoiseNode(std::string name) : Node(name, ConnectionType::Float)
 {
-	AddInputSlot(ConnectionType::Int, "Octaves", 3, 0.1f, 0.0f, 10.0f);
-	AddInputSlot(ConnectionType::Float, "Frequency", 0.15f, 0.001f, 0.0f, 1.0f);
+	AddInputSlot(ConnectionType::Int, "Octaves", 5, 0.1f, 0.0f, 10.0f);
+	AddInputSlot(ConnectionType::Float, "Frequency", 2.0f, 0.001f, 0.0f, 10.0f);
 	AddInputSlot(ConnectionType::Float, "Persistence", 0.5f, 0.01f, 0.0f, 1.0f);
 }
 
 SimplexNode::SimplexNode(InternalGraph::GraphPrototype& graph) : NoiseNode("Simplex")
 {
-	//internal_node_noise = std::make_shared<NewNodeGraph::SimplexFractalNoiseNode>();
-	//internal_node = internal_node_noise;
 	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::SimplexFractalNoise));
 }
 
 PerlinNode::PerlinNode(InternalGraph::GraphPrototype& graph) : NoiseNode("Perlin")
 {
-	//internal_node_noise = std::make_shared<NewNodeGraph::PerlinFractalNoiseNode>();
-	//internal_node = internal_node_noise;
 	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::PerlinFractalNoise));
 }
 
 VoroniNode::VoroniNode(InternalGraph::GraphPrototype& graph) : NoiseNode("Voroni")
 {
-	//internal_node_noise = std::make_shared<NewNodeGraph::VoironiFractalNoiseNode>();
-	//internal_node = internal_node_noise;
 	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::VoroniFractalNoise));
 }
 
 ValueNoiseNode::ValueNoiseNode(InternalGraph::GraphPrototype& graph) : NoiseNode("ValueNoise")
 {
-	//internal_node_noise = std::make_shared<NewNodeGraph::ValueFractalNoiseNode>();
-	//internal_node = internal_node_noise;
 	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::ValueFractalNoise));
 }
 
 CellNoiseNode::CellNoiseNode(InternalGraph::GraphPrototype& graph) : NoiseNode("CellNoise")
 {
-	//internal_node_noise = std::make_shared<NewNodeGraph::CellularNoiseNode>();
-	//internal_node = internal_node_noise;
 	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::CellularNoise));
 }
 
 WhiteNoiseNode::WhiteNoiseNode(InternalGraph::GraphPrototype& graph) : NoiseNode("WhiteNoise")
 {
-	//internal_node_noise = std::make_shared<NewNodeGraph::CellularNoiseNode>();
-	//internal_node = internal_node_noise;
 	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::WhiteNoise));
 }
 
 ConstantIntNode::ConstantIntNode(InternalGraph::GraphPrototype& graph) : Node("ConstantInt", ConnectionType::Int)
 {
 	AddInputSlot(ConnectionType::Int, "Value", 0.0f, 0.1f, 0.0f, 0.0f);
-	//internal_node = std::make_shared<NewNodeGraph::ConstantIntNode>(1);
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::ConstantInt));
 }
 
 ConstantFloatNode::ConstantFloatNode(InternalGraph::GraphPrototype& graph) : Node("ConstantFloat", ConnectionType::Float)
 {
 	AddInputSlot(ConnectionType::Float, "Value", 0.0f, 0.01f, 0.0f, 0.0f);
-	//internal_node = std::make_shared<NewNodeGraph::ConstantFloatNode>(1.0f);
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::ConstantFloat));
 }
 
 InvertNode::InvertNode(InternalGraph::GraphPrototype& graph) : Node("Inverter", ConnectionType::Float)
 {
 	AddInputSlot(ConnectionType::Float, "Value", 0.0f, 0.01f, 0.0f, 0.0f);
-	//internal_node = std::make_shared<NewNodeGraph::ConstantFloatNode>(1.0f);
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Invert));
+}
+
+TextureIndexNode::TextureIndexNode(InternalGraph::GraphPrototype& graph) : Node("Texture Index", ConnectionType::Int)
+{
+	AddInputSlot(ConnectionType::Int, "Index", 0, 0.1f, 0.0f, 255.0f);
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::TextureIndex));
 }
 
 ColorCreator::ColorCreator(InternalGraph::GraphPrototype& graph) : Node("ColorCreator", ConnectionType::Color)

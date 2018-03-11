@@ -7,8 +7,6 @@
 #include "../../third-party/stb_image/stb_image_write.h"
 
 
-#include "../../third-party/ImGui/imgui.h"
-
 TextureManager::TextureManager()
 {
 	errorImage = std::make_shared<Texture>(64,64);
@@ -187,62 +185,3 @@ std::shared_ptr<CubeMap> TextureManager::loadCubeMapFromFile(std::string filenam
 
 	return cubeMap;
 };
-
-void TextureManager::DrawTextureViewer() {
-
-	ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiSetCond_FirstUseEver);
-	ImGui::SetNextWindowPos(ImVec2(0, 475), ImGuiSetCond_FirstUseEver);
-
-
-	if(	ImGui::Begin("Textures", &drawWindow, ImGuiWindowFlags_MenuBar))
-	{
-
-		if (ImGui::BeginMenuBar())
-		{
-			if (ImGui::BeginMenu("File"))
-			{
-				if (ImGui::MenuItem("Open Texture")) {
-
-				}
-				if (ImGui::MenuItem("Close")) 
-					drawWindow	= false;
-				ImGui::EndMenu();
-			}
-			ImGui::EndMenuBar();
-		}
-
-		// left
-		ImGui::BeginChild("left pane", ImVec2(150, 0), true);
-		for (int i = 0; i < terrainTextureHandles.size(); i++)
-		{
-			char label[128];
-			//lable = textureHandles.at(i).
-			sprintf(label, "MyObject %d", i);
-			if (ImGui::Selectable(label, selectedTexture == i))
-				selectedTexture = i;
-		}
-
-		ImGui::EndChild();
-
-		ImGui::SameLine();
-
-		ImGui::BeginGroup();
-		ImGui::BeginChild("item view", ImVec2(0, -ImGui::GetItemsLineHeightWithSpacing())); // Leave room for 1 line below us
-		ImGui::Text("MyObject: %d", selectedTexture);
-		ImGui::Separator();
-		
-
-		ImGui::TextWrapped("TODO: Add texture preview");
-		
-		ImGui::EndChild();
-		
-		ImGui::BeginChild("buttons");
-		if (ImGui::Button("PlaceHolder")) {}
-		ImGui::EndChild();
-		
-		ImGui::EndGroup();
-
-	}
-	ImGui::End();
-
-}

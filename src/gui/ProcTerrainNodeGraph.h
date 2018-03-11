@@ -130,6 +130,7 @@ enum class NodeType {
 	ConstantInt,
 	ConstantFloat,
 	Invert,
+	TextureIndex,
 
 	ColorCreator,
 	MonoGradient,
@@ -178,24 +179,24 @@ class MinNode			: public MathNode { public: MinNode(InternalGraph::GraphPrototyp
 
 
 
-class BlendNode			: public Node { public: BlendNode(InternalGraph::GraphPrototype& graph); };
-class ClampNode			: public Node { public: ClampNode(InternalGraph::GraphPrototype& graph); };
+class BlendNode	: public Node { public: BlendNode(InternalGraph::GraphPrototype& graph); };
+class ClampNode	: public Node { public: ClampNode(InternalGraph::GraphPrototype& graph); };
 
-class NoiseNode			: public Node { public: NoiseNode(std::string name);
+class NoiseNode	: public Node { public: NoiseNode(std::string name);
 	//std::shared_ptr<NewNodeGraph::NoiseSourceNode> internal_node_noise;
 };
 
-class PerlinNode		: public NoiseNode { public: PerlinNode(InternalGraph::GraphPrototype& graph); };
-class SimplexNode		: public NoiseNode { public: SimplexNode(InternalGraph::GraphPrototype& graph); };
-class CellNoiseNode		: public NoiseNode { public: CellNoiseNode(InternalGraph::GraphPrototype& graph); };
-class ValueNoiseNode	: public NoiseNode { public: ValueNoiseNode(InternalGraph::GraphPrototype& graph); };
-class VoroniNode		: public NoiseNode { public: VoroniNode(InternalGraph::GraphPrototype& graph); };
-class WhiteNoiseNode	: public NoiseNode { public: WhiteNoiseNode(InternalGraph::GraphPrototype& graph); };
+class PerlinNode	: public NoiseNode { public: PerlinNode(InternalGraph::GraphPrototype& graph); };
+class SimplexNode	: public NoiseNode { public: SimplexNode(InternalGraph::GraphPrototype& graph); };
+class CellNoiseNode	: public NoiseNode { public: CellNoiseNode(InternalGraph::GraphPrototype& graph); };
+class ValueNoiseNode: public NoiseNode { public: ValueNoiseNode(InternalGraph::GraphPrototype& graph); };
+class VoroniNode	: public NoiseNode { public: VoroniNode(InternalGraph::GraphPrototype& graph); };
+class WhiteNoiseNode: public NoiseNode { public: WhiteNoiseNode(InternalGraph::GraphPrototype& graph); };
 
 class ConstantIntNode	: public Node { public: ConstantIntNode(InternalGraph::GraphPrototype& graph); };
 class ConstantFloatNode : public Node { public: ConstantFloatNode(InternalGraph::GraphPrototype& graph); };
-
-class InvertNode : public Node { public: InvertNode(InternalGraph::GraphPrototype& graph); };
+class TextureIndexNode	: public Node { public: TextureIndexNode(InternalGraph::GraphPrototype& graph); };
+class InvertNode		: public Node { public: InvertNode(InternalGraph::GraphPrototype& graph); };
 
 
 class ColorCreator : public Node { public: ColorCreator(InternalGraph::GraphPrototype& graph); };

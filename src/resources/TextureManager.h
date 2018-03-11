@@ -29,19 +29,12 @@ public:
 
 	std::shared_ptr<CubeMap> loadCubeMapFromFile(std::string filename, std::string fileExt);
 
-	void DrawTextureViewer();
-
 private:
 	std::vector<std::shared_ptr<Texture>> textureHandles;
-
-	std::vector<std::shared_ptr<Texture>> terrainTextureHandles;
 
 	std::shared_ptr<Texture> loadTextureFromFile(std::string filename, int imgType);
 	//std::shared_ptr<Texture> loadTextureFromPixelData(int width, int height); //doesn't copy pixels, but it sets up everthing else
 
 	std::shared_ptr<Texture> errorImage;
 	std::vector<RGBA_pixel> errorImageData;
-
-	bool drawWindow;
-	int selectedTexture;
 };

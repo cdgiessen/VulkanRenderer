@@ -39,13 +39,11 @@ TerrainQuadData::~TerrainQuadData()
 Terrain::Terrain(
 	std::shared_ptr<MemoryPool<TerrainQuadData>> pool,
 	InternalGraph::GraphPrototype& protoGraph,
-	int numCells, int maxLevels, float heightScale, int sourceImageResolution,
-	glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize)
+	int numCells, int maxLevels, float heightScale, 
+	TerrainCoordinateData coords)
 	
-	: maxLevels(maxLevels), heightScale(heightScale), position(pos), size(size), 
-	noisePosition(noisePosition), noiseSize(noiseSize),
-	sourceImageResolution(sourceImageResolution),
-	fastGraphUser(protoGraph, 1337, sourceImageResolution, noisePosition, noiseSize.x)
+	: maxLevels(maxLevels), heightScale(heightScale), coordinateData(coords),
+	fastGraphUser(protoGraph, 1337, coords.sourceImageResolution, coords.noisePos, coords.noiseSize.x)
 	
 {
 	
@@ -145,7 +143,7 @@ void Terrain::InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 ca
 	//std::shared_ptr<TerrainQuadData> q = std::make_shared<TerrainQuadData>(terrainQuads->allocate());
 	std::shared_ptr<TerrainQuadData> q = std::make_shared<TerrainQuadData>();
 	quadHandles.push_back(q);
-	rootQuad = InitTerrainQuad(q, position, size, noisePosition, noiseSize, 0);
+	rootQuad = InitTerrainQuad(q, coordinateData.pos, coordinateData.size, coordinateData.noisePos, coordinateData.noiseSize, 0);
 
 	UpdateTerrainQuad(rootQuad, cameraPos);
 
@@ -390,6 +388,13 @@ void Terrain::SetupPipeline()
 	layouts.push_back(descriptor->GetLayout());
 	pipeMan.SetDescriptorSetLayout(mvp, layouts);
 
+	VkPushConstantRange pushConstantRange = {};
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(ModelPushConstant);
+	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+	pipeMan.SetModelPushConstant(mvp, pushConstantRange);
+
 	pipeMan.BuildPipelineLayout(mvp);
 	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
 
@@ -397,12 +402,13 @@ void Terrain::SetupPipeline()
 	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
 
 	pipeMan.CleanShaderResources(mvp);
-	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.vert.spv"));
-	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.frag.spv"));
-	//pipeMan.SetGeometryShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.geom.spv"));
-	//
-	//pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
-	//pipeMan.CleanShaderResources(mvp);
+	
+	pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.vert.spv"));
+	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.frag.spv"));
+	pipeMan.SetGeometryShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.geom.spv"));
+	
+	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
+	pipeMan.CleanShaderResources(mvp);
 
 	
 }
@@ -761,6 +767,15 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], bool
 	drawTimer.StartTimer();
 	for (int i = 0; i < quadHandles.size(); ++i) {
 		if (!quadHandles[i]->terrainQuad.isSubdivided) {
+
+			vkCmdPushConstants(
+				cmdBuff,
+				mvp->layout,
+				VK_SHADER_STAGE_VERTEX_BIT,
+				0,
+				sizeof(ModelPushConstant),
+				&quadHandles[i]->terrainQuad.modelUniformObject);
+
 			vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &quadHandles[i]->descriptorSet.set, 0, nullptr);
 			vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
 			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vertexBuffer.buffer.buffer, &vertexOffsettings[i]);
@@ -770,7 +785,7 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], bool
 			vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
 
 			//Vertex normals (yay geometry shaders!)
-			//vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, debugNormals);
+			//vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(2));
 			//vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
 		}	
 	}
@@ -869,13 +884,28 @@ void GenerateNewTerrainSubdivision(InternalGraph::GraphUser& graphUser, TerrainM
 			//float hD = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j + 1)*(zSize) / (float)numCells + zLoc)*heightScale;
 			//float hU = terrainGenerator->SampleHeight((float)i *(xSize) / (float)numCells + (xLoc), 0, (float)(j - 1)*(zSize) / (float)numCells + zLoc)*heightScale;
 			//glm::vec3 normal = glm::normalize(glm::vec3(hR - hL, 2 * xSize / ((float)numCells), hU - hD));
-			glm::vec3 normal = glm::vec3(0, 1, 0);
+			//glm::vec3 normal = glm::vec3(0, 1, 0);
 
 			float uvU = (float)i / ((1 << terrainQuad.level) * (float)(numCells)) + (float)terrainQuad.subDivPos.x / (float)(1 << terrainQuad.level);
 			float uvV = (float)j / ((1 << terrainQuad.level) * (float)(numCells)) + (float)terrainQuad.subDivPos.y / (float)(1 << terrainQuad.level);
 
+			float uvUminus = glm::clamp((float)(i - 1) / ((1 << terrainQuad.level) * (float)(numCells)) + (float)terrainQuad.subDivPos.x / (float)(1 << terrainQuad.level), 0.0f , 1.0f);
+			float uvUplus = glm::clamp((float)(i + 1) / ((1 << terrainQuad.level) * (float)(numCells)) + (float)terrainQuad.subDivPos.x / (float)(1 << terrainQuad.level), 0.0f, 1.0f);
+			float uvVminus = glm::clamp((float)(j - 1) / ((1 << terrainQuad.level) * (float)(numCells)) + (float)terrainQuad.subDivPos.y / (float)(1 << terrainQuad.level), 0.0f, 1.0f);
+			float uvVplus = glm::clamp((float)(j + 1) / ((1 << terrainQuad.level) * (float)(numCells)) + (float)terrainQuad.subDivPos.y / (float)(1 << terrainQuad.level), 0.0f, 1.0f);
+
+			float outHeight = graphUser.SampleHeightMap(uvU, uvV);
+			float outHeightUM = graphUser.SampleHeightMap(uvUminus, uvV);
+			float outHeightUP = graphUser.SampleHeightMap(uvUplus, uvV) ;
+			float outHeightVM = graphUser.SampleHeightMap(uvU, uvVminus);
+			float outHeightVP = graphUser.SampleHeightMap(uvU, uvVplus) ;
+
+			glm::vec3 normal = glm::normalize(glm::vec3((outHeightUM - outHeightUP),
+				((uvUplus - uvUminus) + (uvVplus - uvVminus))*2,
+				(outHeightVM - outHeightVP)));
+
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 0] = (float)i *(xSize) / (float)numCells;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 1] = (float)graphUser.SampleHeightMap(uvU, uvV) * heightScale;
+			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 1] = outHeight * heightScale;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 2] = (float)j * (zSize) / (float)numCells;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 3] = normal.x;
 			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 4] = normal.y;
@@ -906,7 +936,6 @@ void GenerateNewTerrainSubdivision(InternalGraph::GraphUser& graphUser, TerrainM
 
 	RecalculateNormals(numCells, verts, indices);
 
-	//fastGraph.~TerGenNodeGraph();
 }
 
 //void GenerateTerrainFromTexture(Texture& tex, TerrainMeshVertices& verts, TerrainMeshIndices& indices, TerrainQuad terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels) {

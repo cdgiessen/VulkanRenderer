@@ -123,6 +123,7 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 
 void Scene::UpdateSceneGUI(){
 	terrainManager->UpdateTerrainGUI();
+	terrainManager->DrawTerrainTextureViewer();
 }
 
 void Scene::CleanUpScene() {

@@ -22,7 +22,6 @@
 //#include "../gui/TerGenNodeGraph.h"
 #include "../gui/InternalGraph.h"
 
-const int SplatMapSize = 1024;
 const int NumCells = 32;
 const int vertCount = (NumCells + 1) * (NumCells + 1);
 const int indCount = NumCells * NumCells * 6;
@@ -36,6 +35,19 @@ enum class Corner_Enum {
 	uL = 1,
 	dR = 2,
 	dL = 3
+};
+
+struct TerrainCoordinateData {
+	glm::vec2 pos;
+	glm::vec2 size;
+	glm::i32vec2 noisePos;
+	glm::vec2 noiseSize;
+	int sourceImageResolution;
+
+	TerrainCoordinateData(glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePos, glm::vec2 noiseSize, int imageRes)
+		: pos(pos), size(size), noisePos(noisePos), noiseSize(noiseSize), sourceImageResolution(imageRes) {
+
+	}
 };
 
 class TerrainQuad {
@@ -92,11 +104,7 @@ public:
 	int maxNumQuads;
 	int numQuads = 0;
 
-	glm::vec2 position;
-	glm::vec2 size;
-	glm::i32vec2 noisePosition;
-	glm::i32vec2 noiseSize;
-	int sourceImageResolution;
+	TerrainCoordinateData coordinateData;
 	float heightScale = 100;
 
 	std::shared_ptr<VulkanRenderer> renderer;
@@ -131,8 +139,7 @@ public:
 	std::vector<std::thread *> terrainGenerationWorkers;
 
 	Terrain(std::shared_ptr<MemoryPool<TerrainQuadData>> pool, InternalGraph::GraphPrototype& protoGraph,
-		int numCells, int maxLevels, float heightScale, int sourceImageResolution,
-		glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePosition, glm::i32vec2 noiseSize);
+		int numCells, int maxLevels, float heightScale,	TerrainCoordinateData coordinateData);
 	~Terrain();
 
 	void InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos, VulkanTexture2DArray* terrainVulkanTextureArray);
