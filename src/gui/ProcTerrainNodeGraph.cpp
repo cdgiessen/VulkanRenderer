@@ -667,15 +667,21 @@ void ProcTerrainNodeGraph::LoadGraphFromFile()
 					float valFloat = j[curIndex][curSlotIndex]["value"];
 					node->inputSlots[slot].value.value = valFloat;
 				}
-				//if (type == ConnectionType::Vec2) {
-				//	node->inputSlots[slot].value.value = j[curIndex][curSlotIndex]["value"];
-				//}
-				//if (type == ConnectionType::Vec3 || type == ConnectionType::Color) {
-				//	node->inputSlots[slot].value.value = j[curIndex][curSlotIndex]["value"];
-				//}
-				//if (type == ConnectionType::Vec) {
-				//	node->inputSlots[slot].value.value = j[curIndex][curSlotIndex]["value"];
-				//}
+				if (type == ConnectionType::Vec2) {
+					float arr[2];
+					arr[0] = j[curIndex][curSlotIndex]["value"];
+					node->inputSlots[slot].value.value = glm::make_vec2(arr);
+				}
+				if (type == ConnectionType::Vec3) {
+					float arr[3];
+					arr[0] = j[curIndex][curSlotIndex]["value"];
+					node->inputSlots[slot].value.value = glm::make_vec3(arr);
+				}
+				if (type == ConnectionType::Vec4 || type == ConnectionType::Color) {
+					float arr[4];
+					arr[0] = j[curIndex][curSlotIndex]["value"];
+					node->inputSlots[slot].value.value = glm::make_vec4(arr);
+				}
 
 
 			}
