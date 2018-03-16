@@ -149,9 +149,9 @@ void Scene::DrawSkySettingsGui() {
 	if (ImGui::Begin("Sky editor", &sunSettings.show_skyEditor)) {
 		ImGui::Checkbox("Sun motion", &sunSettings.autoMove);
 		ImGui::DragFloat("Sun Move Speed", &sunSettings.moveSpeed, 0.0001f, 0.0f, 0.0f, "%.5f");
-		ImGui::DragFloat("Sun Intensity", &sunSettings.intensity, 0.0f, 1.0f);
-		ImGui::DragFloat("Sun Horizontal", &sunSettings.horizontalAngle, 0.001f, 0.0f, 0.0f, "%.5f");
-		ImGui::DragFloat("Sun Vertical", &sunSettings.verticalAngle, 0.001f, 0.0f, 0.0f, "%.5f");
+		ImGui::SliderFloat("Sun Intensity", &sunSettings.intensity, 0.0f, 1.0f);
+		ImGui::DragFloat("Sun Horizontal", &sunSettings.horizontalAngle, 0.01f, 0.0f, 0.0f, "%.5f");
+		ImGui::DragFloat("Sun Vertical", &sunSettings.verticalAngle, 0.01f, 0.0f, 0.0f, "%.5f");
 		ImGui::SliderFloat3("Sun Color", ((float*)glm::value_ptr(sunSettings.color)), 0.0f, 1.0f);
 	}
 	ImGui::End();
