@@ -24,6 +24,9 @@ layout(set = 0, binding = 0) uniform CameraUniformBuffer {
 	mat4 proj;
 	vec3 cameraDir;
 	float time;
+	vec3 sunDir;
+	float sunIntensity;
+	vec3 sunColor;
 } cbo;
 
 //Lighting information

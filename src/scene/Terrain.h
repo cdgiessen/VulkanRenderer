@@ -18,11 +18,9 @@
 #include "../core/MemoryPool.h"
 #include "../core/CoreTools.h"
 
-//#include "TerrainGenerator.h"
-//#include "../gui/TerGenNodeGraph.h"
 #include "../gui/InternalGraph.h"
 
-const int NumCells = 32;
+const int NumCells = 64;
 const int vertCount = (NumCells + 1) * (NumCells + 1);
 const int indCount = NumCells * NumCells * 6;
 const int vertElementCount = 12;

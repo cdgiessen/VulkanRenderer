@@ -658,7 +658,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile()
 			else {
 				int slotType = j[curIndex][curSlotIndex]["slotType"];
 				ConnectionType type = static_cast<ConnectionType>(slotType);
-
+				
 				if (type == ConnectionType::Int) {
 					int valInt = j[curIndex][curSlotIndex]["value"];
 					node->inputSlots[slot].value.value = valInt;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/vec3.hpp>
+
 #include "../rendering/VulkanRenderer.hpp"
 
 #include "../resources/ResourceManager.h"
@@ -15,6 +17,18 @@
 #include "InstancedSceneObject.h"
 
 //#include <gltf2\glTF2.hpp>
+
+struct SunSettings {
+	bool show_skyEditor = true;
+	bool autoMove = false;
+	float moveSpeed = 0.0002f;
+	float intensity = 1.0f;
+	float horizontalAngle = 0.0f;
+	float verticalAngle = 1.5f;
+
+	glm::vec3 dir = glm::vec3(0, 60, 25);
+	glm::vec3 color = glm::vec3(1.0f, 0.98f, 0.9f);
+};
 
 class Scene
 {
@@ -50,6 +64,10 @@ private:
 	float verticalVelocity = 0;
 	float gravity = -0.25f;
 	float heightOfGround = 1.4f;
+
+	SunSettings sunSettings;
+	void UpdateSunData();
+	void DrawSkySettingsGui();
 
 	//TODO: gltf2 integration
 	//std::vector<std::shared_ptr<gltf2::Asset>> assets;

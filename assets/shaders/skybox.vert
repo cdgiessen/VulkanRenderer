@@ -9,6 +9,9 @@ layout(set = 0, binding = 0) uniform GlobalUniformBuffer {
 	mat4 proj;
 	vec3 cameraPos;
 	float time;
+	vec3 sunDir;
+	float sunIntensity;
+	vec3 sunColor;
 } gub;
 
 

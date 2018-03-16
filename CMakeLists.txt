@@ -125,6 +125,6 @@ add_custom_command(TARGET VulkanApp PRE_BUILD
 
 
 # copy files over
-add_custom_command(TARGET VulkanApp PRE_BUILD
+add_custom_command(TARGET VulkanApp POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets)

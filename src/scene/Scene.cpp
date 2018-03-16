@@ -1,5 +1,9 @@
 #include "Scene.h"
 
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+
 #include "../core/Input.h"
 #include "../core/Logger.h"
 
@@ -78,15 +82,6 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 			verticalVelocity = 0;
 		}
 	}
-
-	glm::mat4 deptheReverser = glm::mat4(1, 0, 0, 0,	0, 1, 0, 0,		0, 0, -1, 0,	0, 0, 1, 1);
-
-	GlobalVariableUniformBuffer cbo = {};
-	cbo.view = camera->GetViewMatrix();
-	cbo.proj = deptheReverser * glm::perspective(glm::radians(45.0f), renderer->vulkanSwapChain.swapChainExtent.width / (float)renderer->vulkanSwapChain.swapChainExtent.height, 0.05f, 10000000.0f);
-	cbo.proj[1][1] *= -1;
-	cbo.cameraDir = camera->Front;
-	cbo.time = (float)timeManager->GetRunningTime();
 	
 	for (auto obj : gameObjects) {
 		obj->UpdateUniformBuffer((float)timeManager->GetRunningTime());
@@ -95,6 +90,20 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 	//skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
 	//if(!Input::GetKey(GLFW_KEY_V))
 	terrainManager->UpdateTerrains(resourceMan, renderer, camera, timeManager);
+
+	UpdateSunData();
+
+	GlobalVariableUniformBuffer cbo = {};
+	cbo.view = camera->GetViewMatrix();
+	cbo.proj = depthReverserMatrix * glm::perspective(glm::radians(45.0f), 
+		renderer->vulkanSwapChain.swapChainExtent.width / (float)renderer->vulkanSwapChain.swapChainExtent.height, 
+		0.05f, 10000000.0f);
+	cbo.proj[1][1] *= -1;
+	cbo.cameraDir = camera->Front;
+	cbo.time = (float)timeManager->GetRunningTime();
+	cbo.sunDir = sunSettings.dir;
+	cbo.sunIntensity = sunSettings.intensity;
+	cbo.sunColor = sunSettings.color;
 
 	renderer->UpdateGlobalRenderResources(cbo, pointLights);
 }
@@ -121,9 +130,38 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 
 }
 
+void Scene::UpdateSunData() {
+	if (sunSettings.autoMove) {
+		sunSettings.horizontalAngle += sunSettings.moveSpeed;
+	}
+
+	float X = glm::cos(sunSettings.horizontalAngle) * glm::cos(sunSettings.verticalAngle);
+	float Z = glm::sin(sunSettings.horizontalAngle) * glm::cos(sunSettings.verticalAngle);
+	float Y = glm::sin(sunSettings.verticalAngle);
+	sunSettings.dir = glm::vec3(X, Y, Z);
+
+}
+
+void Scene::DrawSkySettingsGui() {
+	ImGui::SetNextWindowPos(ImVec2(0, 675), ImGuiSetCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(356, 180), ImGuiSetCond_FirstUseEver);
+
+	if (ImGui::Begin("Sky editor", &sunSettings.show_skyEditor)) {
+		ImGui::Checkbox("Sun motion", &sunSettings.autoMove);
+		ImGui::DragFloat("Sun Move Speed", &sunSettings.moveSpeed, 0.0001f, 0.0f, 0.0f, "%.5f");
+		ImGui::DragFloat("Sun Intensity", &sunSettings.intensity, 0.0f, 1.0f);
+		ImGui::DragFloat("Sun Horizontal", &sunSettings.horizontalAngle, 0.001f, 0.0f, 0.0f, "%.5f");
+		ImGui::DragFloat("Sun Vertical", &sunSettings.verticalAngle, 0.001f, 0.0f, 0.0f, "%.5f");
+		ImGui::SliderFloat3("Sun Color", ((float*)glm::value_ptr(sunSettings.color)), 0.0f, 1.0f);
+	}
+	ImGui::End();
+}
+
 void Scene::UpdateSceneGUI(){
 	terrainManager->UpdateTerrainGUI();
 	terrainManager->DrawTerrainTextureViewer();
+
+	DrawSkySettingsGui();
 }
 
 void Scene::CleanUpScene() {

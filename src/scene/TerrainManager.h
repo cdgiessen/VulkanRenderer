@@ -104,6 +104,7 @@ private:
 	VulkanTexture2D WaterVulkanTexture;
 	
 	bool recreateTerrain = false;
+	float nextTerrainWidth = 1000;
 	GeneralSettings settings;
 	SimpleTimer terrainUpdateTimer;
 

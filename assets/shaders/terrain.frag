@@ -14,6 +14,10 @@ layout(set = 0, binding = 0) uniform CameraUniformBuffer {
 	mat4 proj;
 	vec3 cameraDir;
 	float time;
+	vec3 sunDir;
+	float sunIntensity;
+	vec3 sunColor;
+
 } cbo;
 
 //Lighting information
@@ -64,12 +68,12 @@ void main() {
 		pointLightContrib += (diffuse + specular);
 	}
 
-	vec3 dirLight = normalize(vec3(0, 60, 25));
+	vec3 dirLight = normalize(cbo.sunDir);
 	vec3 dirHalfway = normalize(dirLight + viewVec);
 	vec3 dirReflect = reflect(-dirLight, normalVec);
-	vec3 dirDiffuse = max(dot(normalVec, dirLight), 0.0f)* vec3(0.9f);
-	vec3 dirSpecular = pow(max(dot(viewVec, dirReflect), 0.0), 1.0f)* vec3(0.2f);
-	vec3 dirContrib = (dirDiffuse + dirSpecular)* vec3(1.0f);
+	vec3 dirDiffuse = max(dot(normalVec, dirLight), 0.0f)* vec3(1.0f);
+	vec3 dirSpecular = pow(max(dot(viewVec, dirReflect), 0.0), 16.0f)* vec3(0.75f);
+	vec3 dirContrib = (dirDiffuse + dirSpecular)* vec3(cbo.sunIntensity)* cbo.sunColor;
 
 	//float belowWaterLevelDarkening = clamp(inFragPos.y, -1, 0);
 	//outColor = (vec4(0,0,0,0) + inColor) * vec4((pointLightContrib + dirContrib), 1.0f);

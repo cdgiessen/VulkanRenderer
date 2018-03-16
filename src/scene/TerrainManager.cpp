@@ -92,6 +92,7 @@ TerrainManager::~TerrainManager()
 
 void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera) {
 	this->renderer = renderer;
+	settings.width = nextTerrainWidth;
 
 	for (int i = 0; i < settings.gridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < settings.gridDimentions; j++) {
@@ -107,7 +108,7 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 			auto terrain = std::make_shared<Terrain>(terrainQuadPool, protoGraph, settings.numCells, settings.maxLevels, settings.heightScale, coord);
 
 			std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
-			terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(settings.sourceImageResolution, settings.sourceImageResolution, imgData);
+			terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(settings.sourceImageResolution + 1, settings.sourceImageResolution + 1, imgData);
 			//delete(imgData);
 			terrains.push_back(terrain);
 		}
@@ -202,14 +203,14 @@ void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe
 
 //TODO : Reimplement getting height at terrain location
 float TerrainManager::GetTerrainHeightAtLocation(float x, float z) {
-	//for (auto terrain : terrains)
-	//{
-	//	glm::vec2 pos = terrain->position;
-	//	glm::vec2 size = terrain->size;
-	//	if (pos.x <= x && pos.x + size.x >= x && pos.y <= z && pos.y + size.y >= z) {
-	//		return terrain->GetHeightAtLocation((x - pos.x)/ settings.width, (z - pos.y)/ settings.width);
-	//	}
-	//}
+	for (auto terrain : terrains)
+	{
+		glm::vec2 pos = terrain->coordinateData.pos;
+		glm::vec2 size = terrain->coordinateData.size;
+		if (pos.x <= x && pos.x + size.x >= x && pos.y <= z && pos.y + size.y >= z) {
+			return terrain->GetHeightAtLocation((x - pos.x)/ settings.width, (z - pos.y)/ settings.width);
+		}
+	}
 	return 0;
 }
 
@@ -218,7 +219,7 @@ void TerrainManager::UpdateTerrainGUI() {
 	ImGui::SetNextWindowSize(ImVec2(200, 220), ImGuiSetCond_FirstUseEver);
 	ImGui::SetNextWindowPos(ImVec2(220, 0), ImGuiSetCond_FirstUseEver);
 	if (ImGui::Begin("Debug Info", &settings.show_terrain_manager_window)) {
-		ImGui::SliderFloat("Width", &settings.width, 100, 10000);
+		ImGui::SliderFloat("Width", &nextTerrainWidth, 100, 10000);
 		ImGui::SliderInt("Max Subdivision", &settings.maxLevels, 0, 10);
 		ImGui::SliderInt("Grid Width", &settings.gridDimentions, 1, 10);
 		ImGui::SliderFloat("Height Scale", &settings.heightScale, 1, 1000);

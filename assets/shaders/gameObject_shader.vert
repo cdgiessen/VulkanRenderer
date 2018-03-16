@@ -7,6 +7,9 @@ layout(set = 0, binding = 0) uniform CameraUniformBuffer {
 	mat4 proj;
 	vec3 cameraPos;
 	float time;
+	vec3 sunDir;
+	float sunIntensity;
+	vec3 sunColor;
 } cbo;
 
 layout(push_constant) uniform PER_OBJECT

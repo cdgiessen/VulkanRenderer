@@ -17,6 +17,9 @@ struct GlobalVariableUniformBuffer {
 	glm::mat4 proj;
 	glm::vec3 cameraDir;
 	float time;
+	glm::vec3 sunDir;
+	float sunIntensity;
+	glm::vec3 sunColor;
 };
 
 //model specific data (position, normal matrix)
@@ -111,3 +114,5 @@ struct PBRMaterialInfo {
 
 	PBRMaterial mat;
 };
+
+const glm::mat4 depthReverserMatrix = glm::mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1);
