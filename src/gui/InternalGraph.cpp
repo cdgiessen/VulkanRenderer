@@ -263,11 +263,15 @@ namespace InternalGraph {
 
 		case InternalGraph::NodeType::Blend:
 			AddNodeInputLinks(inputLinks,
-				{ LinkType::Float, LinkType::Float, LinkType::Float });
+				{ LinkType::Float, LinkType::Float, LinkType::Float, LinkType::Float, LinkType::Float  });
 			break;
 		case InternalGraph::NodeType::Clamp:
 			AddNodeInputLinks(inputLinks,
 				{ LinkType::Float, LinkType::Float, LinkType::Float }); 
+			break;
+		case InternalGraph::NodeType::Selector:
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Float, LinkType::Float, LinkType::Float,  LinkType::Float,  LinkType::Float }); 
 			break;
 
 		case InternalGraph::NodeType::ConstantInt:
@@ -374,6 +378,7 @@ namespace InternalGraph {
 		float value, lower, upper, smooth;
 
 		auto val = (inputLinks.at(0));
+
 
 		switch (nodeType)
 		{
@@ -577,6 +582,29 @@ namespace InternalGraph {
 				break;
 			}
 			break;
+
+		case InternalGraph::NodeType::Selector:
+			value = std::get<float>(inputLinks.at(0).GetValue(x, z));
+			a = std::get<float>(inputLinks.at(1).GetValue(x, z));
+			b = std::get<float>(inputLinks.at(2).GetValue(x, z));
+			lower = std::get<float>(inputLinks.at(3).GetValue(x, z));
+			smooth = std::get<float>(inputLinks.at(4).GetValue(x, z));
+			
+			if(smooth == 0){
+				if (value < lower)
+					return a;
+				else 
+					return b;
+			}
+			if(value < lower - smooth/2.0f){
+				return a;
+			} else if (value < lower + smooth/2.0f){
+				
+				return ( (value - (lower - smooth/2.0f) ) /smooth) * b 
+				+ (1 - ( (value - (lower - smooth/2.0f) ) /smooth) ) * a;
+			}
+			return b;
+		break;
 		case InternalGraph::NodeType::ConstantInt:
 			return inputLinks.at(0).GetValue(x, z);
 

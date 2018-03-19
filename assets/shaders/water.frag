@@ -60,6 +60,17 @@ vec4 causticsSampler(vec2 uv, float timeIn) {
 
 }
 
+vec3 DirPhongLighting(vec3 view, vec3 dir, vec3 normal, vec3 color, float intensity) {
+	vec3 light = normalize(dir);
+	vec3 halfway = normalize(light + view);
+	vec3 reflect = reflect(-light, normal);
+	vec3 diffuse = max(dot(normal, light), 0.0f)* vec3(0.8f);
+	vec3 specular = pow(max(dot(view, reflect), 0.0), 16.0f)* vec3(0.15f);
+	vec3 contrib = (diffuse + specular)* vec3(intensity) * color;
+
+	return contrib;
+}
+
 void main() {
 	float inTime = cbo.time;
 	vec4 texSample1 = texture(waterTex, vec2(inTexCoord.x + cos(inTime/5.0f + 2.0f)/7.0f, inTexCoord.y + cos(inTime/6.0f)/7.5f+ 1.0f));
@@ -92,12 +103,7 @@ void main() {
 		pointLightContrib += (diffuse + specular);
 	}
 
-	vec3 dirLight = normalize(cbo.sunDir);
-	vec3 dirHalfway = normalize(dirLight + viewVec);
-	vec3 dirReflect = reflect(-dirLight, normalVec);
-	vec3 dirDiffuse = max(dot(normalVec, dirLight), 0.0f)* vec3(1.0f);
-	vec3 dirSpecular = pow(max(dot(viewVec, dirReflect), 0.0), 16.0f)* vec3(0.75f);
-	vec3 dirContrib = (dirDiffuse + dirSpecular)* vec3(cbo.sunIntensity)* cbo.sunColor;
+	vec3 dirContrib = DirPhongLighting(viewVec, cbo.sunDir, normalVec, cbo.sunColor, cbo.sunIntensity);
 
     outColor = texColor * vec4((pointLightContrib + dirContrib), 1.0f) * inColor;
 	//outColor = texColor * vec4(pointLightContrib * inColor, 1.0f);

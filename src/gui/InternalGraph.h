@@ -109,6 +109,7 @@ namespace InternalGraph {
 
 		ColorCreator,
 		MonoGradient,
+		Selector,
 	};
 
 	class InputLink {

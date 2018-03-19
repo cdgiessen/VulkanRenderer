@@ -207,6 +207,7 @@ void ProcTerrainNodeGraph::DrawNodeButtons() {
 	if (ImGui::Button("Min", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Min, startingNodePos); }
 	if (ImGui::Button("Blend", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Blend, startingNodePos); }
 	if (ImGui::Button("Clamp", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Clamp, startingNodePos); }
+	if (ImGui::Button("Selector", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Selector, startingNodePos); }
 
 	ImGui::Separator();
 	ImGui::Text("Colors");
@@ -726,6 +727,7 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 	case(NodeType::Min): newNode = std::make_shared<MinNode>(protoGraph); break;
 	case(NodeType::Blend): newNode = std::make_shared<BlendNode>(protoGraph); break;
 	case(NodeType::Clamp): newNode = std::make_shared<ClampNode>(protoGraph); break;
+	case(NodeType::Selector): newNode = std::make_shared<SelectorNode>(protoGraph); break;
 	case(NodeType::Perlin): newNode = std::make_shared<PerlinNode>(protoGraph); break;
 	case(NodeType::Simplex): newNode = std::make_shared<SimplexNode>(protoGraph); break;
 	case(NodeType::CellNoise): newNode = std::make_shared<CellNoiseNode>(protoGraph); break;
@@ -966,6 +968,17 @@ ClampNode::ClampNode(InternalGraph::GraphPrototype& graph) : Node("Clamp", Conne
 	AddInputSlot(ConnectionType::Float, "lower", 0.0f, 0.005f, 0.0f, 0.0f);
 	AddInputSlot(ConnectionType::Float, "upper", 1.0f, 0.005f, 0.0f, 0.0f);
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Clamp));
+}
+
+SelectorNode::SelectorNode(InternalGraph::GraphPrototype& graph) : Node("Selector", ConnectionType::Float)
+{
+	AddInputSlot(ConnectionType::Float, "value", 0.0f, 0.01f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "a", 0.0f, 0.005f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "b", 1.0f, 0.005f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "cutoff", 0.5f, 0.005f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "smoothing range", 0.05f, 0.005f, 0.0f, 0.0f);
+
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Selector));
 }
 
 MathNode::MathNode(std::string name) : Node(name, ConnectionType::Float)

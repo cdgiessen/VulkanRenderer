@@ -117,6 +117,7 @@ enum class NodeType {
 	Min,
 	Blend,
 	Clamp,
+	Selector,
 
 	Perlin,
 	Simplex,
@@ -179,6 +180,7 @@ class MinNode			: public MathNode { public: MinNode(InternalGraph::GraphPrototyp
 
 class BlendNode	: public Node { public: BlendNode(InternalGraph::GraphPrototype& graph); };
 class ClampNode	: public Node { public: ClampNode(InternalGraph::GraphPrototype& graph); };
+class SelectorNode : public Node {public: SelectorNode(InternalGraph::GraphPrototype& graph);};
 
 class NoiseNode	: public Node { public: NoiseNode(std::string name);
 	//std::shared_ptr<NewNodeGraph::NoiseSourceNode> internal_node_noise;
