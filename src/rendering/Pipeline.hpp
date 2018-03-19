@@ -67,30 +67,44 @@ public:
 	void SetTesselationShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule tess);
 	void CleanShaderResources(std::shared_ptr<ManagedVulkanPipeline> pco); //destroys the shader modules after pipeline creation is finished
 
-	void SetVertexInput(std::shared_ptr<ManagedVulkanPipeline> pco, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescriptions);
+	void SetVertexInput(std::shared_ptr<ManagedVulkanPipeline> pco, 
+		std::vector<VkVertexInputBindingDescription> bindingDescription, 
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions);
 
-	void SetInputAssembly(std::shared_ptr<ManagedVulkanPipeline> pco, VkPrimitiveTopology topology, VkPipelineInputAssemblyStateCreateFlags flag, VkBool32 primitiveRestart);
+	void SetInputAssembly(std::shared_ptr<ManagedVulkanPipeline> pco, VkPrimitiveTopology topology, 
+		VkPipelineInputAssemblyStateCreateFlags flag, VkBool32 primitiveRestart);
 
 	void SetViewport(std::shared_ptr<ManagedVulkanPipeline> pco, float width, float height, float minDepth, float maxDepth, float x, float y);
 	void SetScissor(std::shared_ptr<ManagedVulkanPipeline> pco, uint32_t width, uint32_t height, uint32_t offsetX, uint32_t offsetY);
 
-	void SetViewportState(std::shared_ptr<ManagedVulkanPipeline> pco, uint32_t viewportCount, uint32_t scissorCount, VkPipelineViewportStateCreateFlags flags);
+	void SetViewportState(std::shared_ptr<ManagedVulkanPipeline> pco, 
+	uint32_t viewportCount, uint32_t scissorCount, 
+	VkPipelineViewportStateCreateFlags flags);
 
-	void SetRasterizer(std::shared_ptr<ManagedVulkanPipeline> pco, VkPolygonMode polygonMode, VkCullModeFlagBits cullModeFlagBits, VkFrontFace frontFace, VkBool32 depthClampEnable, VkBool32 rasterizerDiscardEnable, float lineWidth, VkBool32 depthBiasEnable);
+	void SetRasterizer(std::shared_ptr<ManagedVulkanPipeline> pco, 
+		VkPolygonMode polygonMode, VkCullModeFlagBits cullModeFlagBits, 
+		VkFrontFace frontFace, VkBool32 depthClampEnable, 
+		VkBool32 rasterizerDiscardEnable, float lineWidth, VkBool32 depthBiasEnable);
 
 	void SetMultisampling(std::shared_ptr<ManagedVulkanPipeline> pco, VkSampleCountFlagBits sampleCountFlags);
 
-	void SetDepthStencil(std::shared_ptr<ManagedVulkanPipeline> pco, VkBool32 depthTestEnable, VkBool32 depthWriteEnable, VkCompareOp depthCompareOp, VkBool32 depthBoundsTestEnable, VkBool32 stencilTestEnable);
+	void SetDepthStencil(std::shared_ptr<ManagedVulkanPipeline> pco, VkBool32 depthTestEnable, 
+		VkBool32 depthWriteEnable, VkCompareOp depthCompareOp, VkBool32 depthBoundsTestEnable, VkBool32 stencilTestEnable);
 
-	void SetColorBlendingAttachment(std::shared_ptr<ManagedVulkanPipeline> pco, VkBool32 blendEnable, VkColorComponentFlags colorWriteMask, VkBlendOp colorBlendOp, VkBlendFactor srcColorBlendFactor, VkBlendFactor dstColorBlendFactor, VkBlendOp alphaBlendOp, VkBlendFactor srcAlphaBlendFactor, VkBlendFactor dstAlphaBlendFactor);
+	void SetColorBlendingAttachment(std::shared_ptr<ManagedVulkanPipeline> pco, VkBool32 blendEnable, VkColorComponentFlags colorWriteMask, 
+		VkBlendOp colorBlendOp,	VkBlendFactor srcColorBlendFactor, VkBlendFactor dstColorBlendFactor, 
+		VkBlendOp alphaBlendOp, VkBlendFactor srcAlphaBlendFactor, VkBlendFactor dstAlphaBlendFactor);
 
-	void SetColorBlending(std::shared_ptr<ManagedVulkanPipeline> pco, uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState *attachments); 
+	void SetColorBlending(std::shared_ptr<ManagedVulkanPipeline> pco, 
+		uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState *attachments); 
 
 	void SetDescriptorSetLayout(std::shared_ptr<ManagedVulkanPipeline> pco, std::vector<VkDescriptorSetLayout>& descriptorSetlayouts);
 
 	void SetModelPushConstant(std::shared_ptr<ManagedVulkanPipeline> pco, VkPushConstantRange& pushConstantRange);
 
-	void SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> pco, std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateFlags flags = 0);
+	void SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> pco, 
+		std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateFlags flags = 0);
+
 private:
 	const VulkanDevice &device;
 	VkPipelineCache pipeCache;

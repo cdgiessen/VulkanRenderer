@@ -1,10 +1,10 @@
 #pragma once
  
 
-#include "../rendering/VulkanRenderer.hpp"
-#include "../rendering/VulkanModel.hpp"
-#include "../rendering/VulkanTexture.hpp"
-#include "../rendering/VulkanDescriptor.hpp"
+#include "../rendering/Renderer.hpp"
+#include "../rendering/Model.hpp"
+#include "../rendering/Texture.hpp"
+#include "../rendering/Descriptor.hpp"
 
 #include "../resources/Mesh.h"
 #include "../resources/Texture.h"

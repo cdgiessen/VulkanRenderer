@@ -9,7 +9,8 @@
 #include "../core/TimeManager.h"
 #include "../core/MemoryPool.h"
 
-#include "../rendering/VulkanRenderer.hpp"
+#include "../rendering/Renderer.hpp"
+
 #include "../resources/ResourceManager.h"
 
 #include "../gui/InternalGraph.h"

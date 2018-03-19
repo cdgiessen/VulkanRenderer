@@ -9,8 +9,8 @@
 
 #include <GLFW/glfw3.h>
 
-#include "VulkanInitializers.hpp"
-#include "VulkanDevice.hpp"
+#include "Initializers.hpp"
+#include "Device.hpp"
 
 struct SwapChainSupportDetails
 {

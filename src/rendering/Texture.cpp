@@ -1,7 +1,7 @@
-#include "VulkanTexture.hpp"
+#include "Texture.hpp"
 
-#include "VulkanTools.h"
-#include "VulkanInitializers.hpp"
+#include "RenderTools.h"
+#include "Initializers.hpp"
 
 #include "../core/Logger.h"
 

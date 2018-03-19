@@ -1,4 +1,4 @@
-#include "VulkanTools.h"
+#include "RenderTools.h"
 
 #include <fstream>
 #include <stdexcept>
@@ -9,7 +9,7 @@
 #include <set>
 
 #include "../core/CoreTools.h"
-#include "VulkanInitializers.hpp"
+#include "Initializers.hpp"
 
 VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath) {
 	auto shaderCode = readFile(codePath);

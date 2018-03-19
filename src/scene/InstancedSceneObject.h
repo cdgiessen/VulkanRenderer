@@ -6,9 +6,9 @@
 #include <glm/common.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "../rendering/VulkanRenderer.hpp"
-#include "../rendering/VulkanModel.hpp"
-#include "../rendering/VulkanTexture.hpp"
+#include "../rendering/Renderer.hpp"
+#include "../rendering/Model.hpp"
+#include "../rendering/Texture.hpp"
 
 #include "../resources/Mesh.h"
 #include "../resources/Texture.h"
@@ -46,6 +46,8 @@ public:
 	void LoadModel(std::shared_ptr<Mesh> mesh);
 
 	void SetFragmentShaderToUse(VkShaderModule shaderModule);
+	void SetCullMode(VkCullModeFlagBits cullMode);
+	void SetBlendMode(VkBool32 blendEnable);
 
 	void SetupUniformBuffer();
 	void SetupImage();
@@ -92,4 +94,6 @@ private:
 	int maxInstanceCount = 256;
 
 	VkShaderModule fragShaderModule;
+	VkCullModeFlagBits cullModeFlagBits = VK_CULL_MODE_BACK_BIT;
+	VkBool32 enableBlending = VK_FALSE;
 };

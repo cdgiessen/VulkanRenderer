@@ -5,17 +5,17 @@
 #include <string>
 #include <vulkan/vulkan.h>
 
-#include "VulkanTools.h"
+#include "RenderTools.h"
 #include "RendererStructs.h"
-#include "VulkanInitializers.hpp"
+#include "Initializers.hpp"
 
-#include "VulkanDevice.hpp"
-#include "VulkanBuffer.hpp"
-#include "VulkanPipeline.hpp"
-#include "VulkanShader.hpp"
-#include "VulkanSwapChain.hpp"
-#include "VulkanTexture.hpp"
-#include "VulkanDescriptor.hpp"
+#include "Device.hpp"
+#include "Buffer.hpp"
+#include "Pipeline.hpp"
+#include "Shader.hpp"
+#include "SwapChain.hpp"
+#include "Texture.hpp"
+#include "Descriptor.hpp"
 
 class Scene;
 

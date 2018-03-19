@@ -1,7 +1,7 @@
-#include "VulkanDevice.hpp"
-#include "VulkanInitializers.hpp"
+#include "Device.hpp"
+#include "Initializers.hpp"
 
-#include "VulkanSwapChain.hpp"
+#include "SwapChain.hpp"
 
 #include "../core/Logger.h"
 

@@ -44,16 +44,16 @@ src/gui/ImGuiImpl.cpp
 src/gui/ProcTerrainNodeGraph.cpp
 src/gui/InternalGraph.cpp
 
-src/rendering/VulkanBuffer.cpp
-src/rendering/VulkanDevice.cpp
-src/rendering/VulkanDescriptor.cpp
-src/rendering/VulkanPipeline.cpp
-src/rendering/VulkanModel.cpp
-src/rendering/VulkanRenderer.cpp
-src/rendering/VulkanShader.cpp
-src/rendering/VulkanSwapChain.cpp
-src/rendering/VulkanTexture.cpp
-src/rendering/VulkanTools.cpp
+src/rendering/Buffer.cpp
+src/rendering/Device.cpp
+src/rendering/Descriptor.cpp
+src/rendering/Pipeline.cpp
+src/rendering/Model.cpp
+src/rendering/Renderer.cpp
+src/rendering/Shader.cpp
+src/rendering/SwapChain.cpp
+src/rendering/Texture.cpp
+src/rendering/RenderTools.cpp
 
 src/resources/Mesh.cpp
 src/resources/MeshManager.cpp

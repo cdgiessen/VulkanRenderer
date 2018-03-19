@@ -1,8 +1,8 @@
-#include "VulkanPipeline.hpp"
+#include "Pipeline.hpp"
 
-#include "VulkanInitializers.hpp"
-#include "VulkanDevice.hpp"
-#include "VulkanTools.h"
+#include "Initializers.hpp"
+#include "Device.hpp"
+#include "RenderTools.h"
 #include "RendererStructs.h"
 
 #include "../resources/Mesh.h"
@@ -164,12 +164,15 @@ void VulkanPipeline::SetVertexInput(std::shared_ptr<ManagedVulkanPipeline> mvp,
  
 }
 
-void VulkanPipeline::SetInputAssembly(std::shared_ptr<ManagedVulkanPipeline> mvp, VkPrimitiveTopology topology, VkPipelineInputAssemblyStateCreateFlags flag, VkBool32 primitiveRestart)
+void VulkanPipeline::SetInputAssembly(std::shared_ptr<ManagedVulkanPipeline> mvp, 
+	VkPrimitiveTopology topology, VkPipelineInputAssemblyStateCreateFlags flag, VkBool32 primitiveRestart)
 {
 	mvp->pco.inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo(topology, flag, primitiveRestart);
 }
 
-void VulkanPipeline::SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> mvp, std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateFlags flags) {
+void VulkanPipeline::SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> mvp, 
+	std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateFlags flags) 
+{
 	mvp->pco.dynamicState = VkPipelineDynamicStateCreateInfo();
 	mvp->pco.dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 	mvp->pco.dynamicState.flags = flags;
@@ -177,7 +180,8 @@ void VulkanPipeline::SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> mvp,
 	mvp->pco.dynamicState.pDynamicStates = dynamicStates.data();
 }
 
-void VulkanPipeline::SetViewport(std::shared_ptr<ManagedVulkanPipeline> mvp, float width, float height, float minDepth, float maxDepth, float x, float y)
+void VulkanPipeline::SetViewport(std::shared_ptr<ManagedVulkanPipeline> mvp, 
+	float width, float height, float minDepth, float maxDepth, float x, float y)
 {
 	mvp->pco.viewport = initializers::viewport(width, height, minDepth, maxDepth);
 	mvp->pco.viewport.x = 0.0f;
@@ -190,15 +194,17 @@ void VulkanPipeline::SetScissor(std::shared_ptr<ManagedVulkanPipeline> mvp, uint
 }
 
 //Currently only supports one viewport or scissor
-void VulkanPipeline::SetViewportState(std::shared_ptr<ManagedVulkanPipeline> mvp, uint32_t viewportCount, uint32_t scissorCount, VkPipelineViewportStateCreateFlags flags)
+void VulkanPipeline::SetViewportState(std::shared_ptr<ManagedVulkanPipeline> mvp, uint32_t viewportCount, uint32_t scissorCount, 
+	VkPipelineViewportStateCreateFlags flags)
 { 
 	mvp->pco.viewportState = initializers::pipelineViewportStateCreateInfo(1, 1);
 	mvp->pco.viewportState.pViewports = &mvp->pco.viewport;
 	mvp->pco.viewportState.pScissors = &mvp->pco.scissor;
 }
 
-void VulkanPipeline::SetRasterizer(std::shared_ptr<ManagedVulkanPipeline> mvp, VkPolygonMode polygonMode, VkCullModeFlagBits cullModeFlagBits, VkFrontFace frontFace, 
-		VkBool32 depthClampEnable, VkBool32 rasterizerDiscardEnable, float lineWidth, VkBool32 depthBiasEnable)
+void VulkanPipeline::SetRasterizer(std::shared_ptr<ManagedVulkanPipeline> mvp, VkPolygonMode polygonMode, 
+	VkCullModeFlagBits cullModeFlagBits, VkFrontFace frontFace, 
+	VkBool32 depthClampEnable, VkBool32 rasterizerDiscardEnable, float lineWidth, VkBool32 depthBiasEnable)
 {
 	mvp->pco.rasterizer = initializers::pipelineRasterizationStateCreateInfo( polygonMode, cullModeFlagBits, frontFace);
 	mvp->pco.rasterizer.depthClampEnable = depthClampEnable;
@@ -214,15 +220,19 @@ void VulkanPipeline::SetMultisampling(std::shared_ptr<ManagedVulkanPipeline> mvp
 	mvp->pco.multisampling.sampleShadingEnable = VK_FALSE;
 }
 
-void VulkanPipeline::SetDepthStencil(std::shared_ptr<ManagedVulkanPipeline> mvp, VkBool32 depthTestEnable, VkBool32 depthWriteEnable, VkCompareOp depthCompareOp, VkBool32 depthBoundsTestEnable, VkBool32 stencilTestEnable)
+void VulkanPipeline::SetDepthStencil(std::shared_ptr<ManagedVulkanPipeline> mvp, 
+	VkBool32 depthTestEnable, VkBool32 depthWriteEnable, VkCompareOp depthCompareOp, 
+	VkBool32 depthBoundsTestEnable, VkBool32 stencilTestEnable)
 {
 	mvp->pco.depthStencil = initializers::pipelineDepthStencilStateCreateInfo(depthTestEnable, depthWriteEnable, depthCompareOp);
 	mvp->pco.depthStencil.depthBoundsTestEnable = depthBoundsTestEnable;
 	mvp->pco.depthStencil.stencilTestEnable = stencilTestEnable;
 }
 
-void VulkanPipeline::SetColorBlendingAttachment(std::shared_ptr<ManagedVulkanPipeline> mvp, VkBool32 blendEnable, VkColorComponentFlags colorWriteMask, 
-	VkBlendOp colorBlendOp, VkBlendFactor srcColorBlendFactor, VkBlendFactor dstColorBlendFactor, VkBlendOp alphaBlendOp, VkBlendFactor srcAlphaBlendFactor, VkBlendFactor dstAlphaBlendFactor)
+void VulkanPipeline::SetColorBlendingAttachment(std::shared_ptr<ManagedVulkanPipeline> mvp, 
+		VkBool32 blendEnable, VkColorComponentFlags colorWriteMask, 
+	VkBlendOp colorBlendOp, VkBlendFactor srcColorBlendFactor, VkBlendFactor dstColorBlendFactor, 
+	VkBlendOp alphaBlendOp, VkBlendFactor srcAlphaBlendFactor, VkBlendFactor dstAlphaBlendFactor)
 {
 	mvp->pco.colorBlendAttachment = initializers::pipelineColorBlendAttachmentState(colorWriteMask, blendEnable);
 	mvp->pco.colorBlendAttachment.colorBlendOp = colorBlendOp;

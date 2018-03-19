@@ -9,9 +9,9 @@
 #include <vulkan/vulkan.h>
 
 
-#include "../rendering/VulkanRenderer.hpp"
-#include "../rendering/VulkanModel.hpp"
-#include "../rendering/VulkanTexture.hpp"
+#include "../rendering/Renderer.hpp"
+#include "../rendering/Model.hpp"
+#include "../rendering/Texture.hpp"
 
 #include "../resources/Texture.h"
 #include "../core/Gradient.h"

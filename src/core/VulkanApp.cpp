@@ -20,7 +20,7 @@
 
 #include "../../third-party/json/json.hpp"
 
-#include "../rendering/VulkanInitializers.hpp"
+#include "../rendering/Initializers.hpp"
 
 VulkanApp::VulkanApp()
 {

@@ -1,4 +1,4 @@
-#include "VulkanModel.hpp"
+#include "Model.hpp"
 
 
 bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device, VkQueue copyQueue) {

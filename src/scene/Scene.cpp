@@ -22,6 +22,8 @@ Scene::~Scene()
 void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, InternalGraph::GraphPrototype& graph) {
 	this->renderer = renderer;
 
+	
+
 	camera = std::make_shared< Camera>(glm::vec3(-2, 2, 0), glm::vec3(0, 1, 0), 0, -45);
 
 	pointLights.resize(5);
@@ -50,6 +52,8 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 
 	treesInstanced = std::make_shared<InstancedSceneObject>();
 	treesInstanced->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/instancedSceneObject.frag.spv"));
+	treesInstanced->SetBlendMode(VK_FALSE);
+	treesInstanced->SetCullMode(VK_CULL_MODE_BACK_BIT);
 	treesInstanced->LoadModel(createCube());
 	treesInstanced->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/grass.jpg"));
 	treesInstanced->InitInstancedSceneObject(renderer);

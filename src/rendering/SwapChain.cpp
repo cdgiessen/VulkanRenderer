@@ -1,5 +1,5 @@
-#include "VulkanSwapChain.hpp"
-#include "VulkanTools.h"
+#include "SwapChain.hpp"
+#include "RenderTools.h"
 
 #include "../core/Logger.h"
 

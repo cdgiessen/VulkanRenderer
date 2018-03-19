@@ -5,9 +5,9 @@
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 #include "RendererStructs.h"
-#include "VulkanTools.h"
-#include "VulkanDevice.hpp"
-#include "VulkanBuffer.hpp"
+#include "RenderTools.h"
+#include "Device.hpp"
+#include "Buffer.hpp"
 
 #include "../resources/Mesh.h"
 #include "../core/CoreTools.h"

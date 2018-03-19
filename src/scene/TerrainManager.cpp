@@ -63,13 +63,16 @@ void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan
 	}
 	
 	terrainTextureArray = resourceMan->texManager.loadTextureArrayFromFile("assets/Textures/TerrainTextures/", terrainTextureFileNames);
-	terrainVulkanTextureArray.loadTextureArray(renderer->device, terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
+	terrainVulkanTextureArray.loadTextureArray(renderer->device, terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, 
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
 
 	//WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
 	//WaterVulkanTexture.loadFromTexture(renderer->device, WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
 
 	instancedWaters = std::make_unique<InstancedSceneObject>();
 	instancedWaters->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
+	instancedWaters->SetBlendMode(VK_TRUE);
+	instancedWaters->SetCullMode(VK_CULL_MODE_NONE);
 	instancedWaters->LoadModel(createFlatPlane(settings.numCells, glm::vec3(settings.width, 0, settings.width)));
 	instancedWaters->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg"));
 	instancedWaters->InitInstancedSceneObject(renderer);
@@ -128,6 +131,8 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 	instancedWaters->CleanUp();
 	instancedWaters.release();
 	instancedWaters = std::make_unique<InstancedSceneObject>();
+	instancedWaters->SetBlendMode(VK_TRUE);
+	instancedWaters->SetCullMode(VK_CULL_MODE_NONE);
 	instancedWaters->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
 	instancedWaters->LoadModel(createFlatPlane(settings.numCells, glm::vec3(settings.width, 0, settings.width)));
 	instancedWaters->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg"));

@@ -1,4 +1,4 @@
-#include "VulkanRenderer.hpp"
+#include "Renderer.hpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../../third-party/stb_image/stb_image_write.h"

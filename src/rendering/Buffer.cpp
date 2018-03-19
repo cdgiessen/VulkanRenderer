@@ -1,4 +1,4 @@
-#include "VulkanBuffer.hpp"
+#include "Buffer.hpp"
 
 
 VulkanBuffer::VulkanBuffer()

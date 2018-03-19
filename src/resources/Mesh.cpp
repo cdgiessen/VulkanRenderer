@@ -5,6 +5,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../../third-party/tinyobjloader/tiny_obj_loader.h"
 
+#include "../rendering/Initializers.hpp"
+
 //#include <assimp/Importer.hpp>
 //#include <assimp/scene.h>
 //#include <assimp/postprocess.h>

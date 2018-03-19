@@ -16,7 +16,7 @@
 
 #include "../resources/ResourceManager.h"
 
-#include "../rendering/VulkanRenderer.hpp"
+#include "../rendering/Renderer.hpp"
 
 #include "../scene/Scene.h"
 

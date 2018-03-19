@@ -1,9 +1,9 @@
-#include "VulkanShader.hpp"
+#include "Shader.hpp"
 
 #include "../core/CoreTools.h"
 #include "../core/Logger.h"
-#include "VulkanInitializers.hpp"
-#include "VulkanTools.h"
+#include "Initializers.hpp"
+#include "RenderTools.h"
 
 
 VulkanShader::VulkanShader(const VulkanDevice &device) : device(device)

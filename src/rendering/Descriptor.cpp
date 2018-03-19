@@ -1,7 +1,7 @@
-#include "VulkanDescriptor.hpp"
+#include "Descriptor.hpp"
 
-#include "VulkanDevice.hpp"
-#include "../rendering/VulkanInitializers.hpp"
+#include "Device.hpp"
+#include "../rendering/Initializers.hpp"
 
 DescriptorPoolSize::DescriptorPoolSize(VkDescriptorType type, uint32_t count) : type(type), count(count) {
 };

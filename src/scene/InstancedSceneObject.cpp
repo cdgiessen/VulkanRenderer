@@ -57,6 +57,14 @@ void InstancedSceneObject::SetFragmentShaderToUse(VkShaderModule shaderModule) {
 	fragShaderModule = shaderModule;
 }
 
+void InstancedSceneObject::SetCullMode(VkCullModeFlagBits cullMode){
+	cullModeFlagBits = cullMode;
+}
+
+void InstancedSceneObject::SetBlendMode(VkBool32 blendEnable){
+	enableBlending = blendEnable;
+}
+
 void InstancedSceneObject::SetupUniformBuffer() {
 	uniformBuffer.CreateUniformBuffer(renderer->device, sizeof(ModelBufferObject));
 	//renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &uniformBuffer, sizeof(ModelBufferObject));
@@ -119,12 +127,14 @@ void InstancedSceneObject::SetupPipeline()
 	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width, (float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
 	pipeMan.SetScissor(mvp, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);
 	pipeMan.SetViewportState(mvp, 1, 1, 0);
-	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_FILL, cullModeFlagBits,
+		VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 	pipeMan.SetMultisampling(mvp, VK_SAMPLE_COUNT_1_BIT);
 	pipeMan.SetDepthStencil(mvp, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
-	pipeMan.SetColorBlendingAttachment(mvp, VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+	pipeMan.SetColorBlendingAttachment(mvp, enableBlending, 
+		VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
 		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
-		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
+		VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
 	pipeMan.SetColorBlending(mvp, 1, &mvp->pco.colorBlendAttachment);
 
 	std::vector<VkDynamicState> dynamicStateEnables = {
@@ -261,7 +271,7 @@ void InstancedSceneObject::UpdateUniformBuffer()
 void InstancedSceneObject::WriteToCommandBuffer(VkCommandBuffer commandBuffer, bool wireframe) {
 	VkDeviceSize offsets[] = { 0 };
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(0));
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &m_descriptorSet.set, 0, nullptr);
 
 	
