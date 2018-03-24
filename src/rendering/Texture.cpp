@@ -1,13 +1,15 @@
 #include "Texture.hpp"
 
+#include <algorithm>
+
+#include "../../third-party/stb_image/stb_image.h"
+
 #include "RenderTools.h"
 #include "Initializers.hpp"
 
 #include "../core/Logger.h"
 
-#include "../../third-party/stb_image/stb_image.h"
 
-#include <algorithm>
 
 VulkanTexture::VulkanTexture() : resource(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
 
@@ -159,7 +161,7 @@ VkImageView VulkanTexture::CreateImageView(VulkanDevice& device, VkImage image, 
 
 }
 
-void AlignedMemcpy(int layers, int height, int width, int src_row_width, int dst_row_width, char* src, char* dst ) {
+void AlignedTextureMemcpy(int layers, int height, int width, int src_row_width, int dst_row_width, char* src, char* dst ) {
 	int offset = 0;
 	int texOff = 0;
 	for (int i = 0; i < layers; i++) {
@@ -244,7 +246,7 @@ void VulkanTexture2D::loadFromTexture(
 	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 
 	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-	AlignedMemcpy(1, texture->height, texture->width, texture->width * 4, sub.rowPitch, (char*)texture->pixels.data(), stagingPointer);
+	AlignedTextureMemcpy(1, texture->height, texture->width, texture->width * 4, sub.rowPitch, (char*)texture->pixels.data(), stagingPointer);
 	
 	device.CreateImage2D(imageCreateInfo, image);
 
@@ -417,7 +419,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 
 	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-	AlignedMemcpy(textures->layerCount, textures->height, textures->width, textures->width * 4, sub.rowPitch, (char*)textures->pixels.data(), stagingPointer);
+	AlignedTextureMemcpy(textures->layerCount, textures->height, textures->width, textures->width * 4, sub.rowPitch, (char*)textures->pixels.data(), stagingPointer);
 
 	device.CreateImage2D(imageCreateInfo, image);
 
@@ -547,7 +549,7 @@ void VulkanCubeMap::loadFromTexture(
 	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 	
 	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-	AlignedMemcpy(6, cubeMap->height, cubeMap->width, cubeMap->width * 4, sub.rowPitch, (char*)cubeMap->pixels.data(), stagingPointer);
+	AlignedTextureMemcpy(6, cubeMap->height, cubeMap->width, cubeMap->width * 4, sub.rowPitch, (char*)cubeMap->pixels.data(), stagingPointer);
 
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo(
 		VK_IMAGE_TYPE_2D,

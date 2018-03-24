@@ -24,10 +24,29 @@ void VulkanBuffer::SetupResource() {
 	resource.FillResource(buffer.buffer, 0, m_size);
 }
 
+void AlignedMemcpy(uint8_t bytes, VkDeviceSize destMemAlignment, void* src, void* dst ) {
+	int src_offset = 0;
+	int dest_offset = 0;
+	for (int i = 0; i < bytes; i++) {
+	
+		memcpy(dst + dest_offset,
+			src + src_offset,
+			sizeof(bytes));
+		src_offset += 1;
+		dest_offset += destMemAlignment;
+	
+	}
+}
+
 void VulkanBuffer::CopyToBuffer(VulkanDevice& device, void* pData, VkDeviceSize size)
 {
 	void* mapped;
 	this->Map(device, &mapped);
+
+	//VkDeviceSize bufAlignment = device.physical_device_properties.limits.minUniformBufferOffsetAlignment;
+
+	//AlignedMemcpy((size_t)size, bufAlignment, pData, mapped);
+
 	memcpy(mapped, pData, (size_t)size);
 	this->Unmap(device);
 }

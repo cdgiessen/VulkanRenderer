@@ -41,7 +41,6 @@ public:
 	VkDevice device;
 	VkInstance instance;
 	VkDebugReportCallbackEXT callback;
-	VkDevice graphics_device; //logical device
 	
 	//VDeleter<VkSurfaceKHR> window_surface{ instance, vkDestroySurfaceKHR };
 

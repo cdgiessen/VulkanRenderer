@@ -67,15 +67,15 @@ Terrain::Terrain(
 	//fastTerrainGraph = std::make_shared<NewNodeGraph::TerGenNodeGraph> (1337, sourceImageResolution, noisePosition, noiseSize.x);
 	//fastTerrainGraph->BuildNoiseGraph();
 
-	splatmapTextureGradient.SetFrontColor(glm::vec4(1, 0, 0, 0));
+	//splatmapTextureGradient.SetFrontColor(glm::vec4(1, 0, 0, 0));
+	
+	//splatmapTextureGradient.AddControlPoint(0.5f, glm::vec4(1, 0, 0, 0));
+	//splatmapTextureGradient.AddControlPoint(0.6f, glm::vec4(0, 1, 0, 0));
+	//splatmapTextureGradient.AddControlPoint(0.65f, glm::vec4(0, 1, 0, 0));
+	//splatmapTextureGradient.AddControlPoint(0.7f, glm::vec4(0, 0, 1, 0));
+	//splatmapTextureGradient.AddControlPoint(0.8f, glm::vec4(0, 0, 1, 0));
 
-	splatmapTextureGradient.AddControlPoint(0.5f, glm::vec4(1, 0, 0, 0));
-	splatmapTextureGradient.AddControlPoint(0.6f, glm::vec4(0, 1, 0, 0));
-	splatmapTextureGradient.AddControlPoint(0.65f, glm::vec4(0, 1, 0, 0));
-	splatmapTextureGradient.AddControlPoint(0.7f, glm::vec4(0, 0, 1, 0));
-	splatmapTextureGradient.AddControlPoint(0.8f, glm::vec4(0, 0, 1, 0));
-
-	splatmapTextureGradient.SetBackColor(glm::vec4(0, 0, 0, 1));
+	//splatmapTextureGradient.SetBackColor(glm::vec4(0, 0, 0, 1));
 
 	//TerrainQuad* test = terrainQuadPool->allocate();
 	//test->init(posX, posY, sizeX, sizeY, 0, meshVertexPool->allocate(), meshIndexPool->allocate());
@@ -205,10 +205,7 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuadData> quad, glm::vec3
 }
 
 std::vector<RGBA_pixel>*  Terrain::LoadSplatMapFromGenerator() {
-	//fastGraphUser.BuildOutputImage(noisePosition, (float)noiseSize.x);
-	auto& thing = fastGraphUser.GetSplatMap();
-	return thing.GetImageVectorData();
-
+	return fastGraphUser.GetSplatMap().GetImageVectorData();
 
 	//InternalGraph::NoiseImage2D<float> pixData = fastGraphUser.GetHeightMap();
 	//std::vector<RGBA_pixel>* imageData = new std::vector<RGBA_pixel>(sourceImageResolution * sourceImageResolution);
