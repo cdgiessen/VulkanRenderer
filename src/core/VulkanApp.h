@@ -4,9 +4,6 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-//#define GLM_FORCE_LEFT_HANDED	
-
-//#include <vulkan/vulkan.h>
 
 #include "Window.hpp"
 #include "Input.h"
@@ -54,7 +51,6 @@ private:
 	void ReadSettings();
 
 	//ImGUI functions
-	void PrepareImGui();
 	void BuildImgui();
 	void CleanUpImgui();
 
@@ -63,7 +59,6 @@ private:
 	void ControlsWindow(bool* show_controls_window);
 
 	//ImGui resources
-	//VkDescriptorPool imgui_descriptor_pool;
 	ProcTerrainNodeGraph imgui_nodeGraph_terrain;
 	SimpleTimer imGuiTimer;
 	Log::Logger appLog;

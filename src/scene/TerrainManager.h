@@ -89,7 +89,7 @@ private:
 	std::mutex chunk_mutex;
 
 	std::vector<std::shared_ptr<Terrain>> terrains;
-	std::shared_ptr<MemoryPool<TerrainQuadData>> terrainQuadPool;
+	std::shared_ptr<MemoryPool<TerrainQuad>> terrainQuadPool;
 
 	std::unique_ptr<InstancedSceneObject> instancedWaters;
 

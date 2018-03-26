@@ -10,8 +10,6 @@
 #include <array>
 #include <set>
 
-#include <vulkan/vulkan.h>
-
 #include <glm/glm.hpp>
 
 #include <GLFW/glfw3.h>
@@ -42,7 +40,7 @@ VulkanApp::VulkanApp()
 
 	scene->PrepareScene(resourceManager, vulkanRenderer, imgui_nodeGraph_terrain.GetGraph());
 
-	PrepareImGui();
+	PrepareImGui(window, vulkanRenderer);
 }
 
 
@@ -107,58 +105,6 @@ void VulkanApp::RecreateSwapChain() {
 	vkDeviceWaitIdle(vulkanRenderer->device.device);
 
 	vulkanRenderer->RecreateSwapChain();
-}
-
-static void imgui_check_vk_result(VkResult err)
-{
-	if (err == 0) return;
-	printf("VkResult %d\n", err);
-	if (err < 0)
-		abort();
-}
-
-void  VulkanApp::PrepareImGui()
-{
-	ImGui_ImplGlfwVulkan_Init_Data init_data = {};
-
-	//Creates a descriptor pool for imgui
-	{	VkDescriptorPoolSize pool_size[11] =
-	{
-		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-	};
-	VkDescriptorPoolCreateInfo pool_info = {};
-	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-	pool_info.maxSets = 1000 * 11;
-	pool_info.poolSizeCount = 11;
-	pool_info.pPoolSizes = pool_size;
-		VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanRenderer->device.device, &pool_info, VK_NULL_HANDLE, &init_data.descriptor_pool));
-	}
-
-	//ImGui_ImplGlfwVulkan_Init_Data init_data = {};
-	init_data.allocator = VK_NULL_HANDLE;
-	init_data.gpu = vulkanRenderer->device.physical_device;
-	init_data.device = vulkanRenderer->device.device;
-	init_data.render_pass = vulkanRenderer->renderPass;
-	init_data.pipeline_cache = vulkanRenderer->pipelineManager.GetPipelineCache();
-	//init_data.descriptor_pool = imgui_descriptor_pool;
-	init_data.check_vk_result = imgui_check_vk_result;
-
-	ImGui_ImplGlfwVulkan_Init(window->getWindowContext(), false, &init_data);
-
-	VkCommandBuffer fontUploader = vulkanRenderer->device.createCommandBuffer(vulkanRenderer->device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-	ImGui_ImplGlfwVulkan_CreateFontsTexture(fontUploader);
-	vulkanRenderer->device.flushCommandBuffer(fontUploader, vulkanRenderer->device.graphics_queue, true);
 }
 
 void VulkanApp::DebugOverlay(bool* show_debug_overlay) {

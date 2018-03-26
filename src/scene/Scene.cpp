@@ -68,6 +68,8 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 }
 
 void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<TimeManager> timeManager) {
+
+
 	if (walkOnGround) {
 		float groundHeight = terrainManager->GetTerrainHeightAtLocation(camera->Position.x, camera->Position.z) + 2.0f;
 		float height = camera->Position.y;

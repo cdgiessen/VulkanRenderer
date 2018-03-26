@@ -7,9 +7,12 @@
 // If you are new to ImGui, see examples/README.txt and documentation at the top of imgui.cpp.
 // https://github.com/ocornut/imgui
 
-
+#include <memory>
 #include <vulkan/vulkan.h>
 
+//forward declarations
+class Window;
+class VulkanRenderer;
 struct GLFWwindow;
 
 #define IMGUI_VK_QUEUED_FRAMES 2
@@ -44,3 +47,4 @@ void        ImGui_ImplGlfwVulkan_ScrollCallback(GLFWwindow* window, double xoffs
 void        ImGui_ImplGlfwVulkan_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void        ImGui_ImplGlfwVulkan_CharCallback(GLFWwindow* window, unsigned int c);
 
+void PrepareImGui(std::shared_ptr<Window> window, std::shared_ptr<VulkanRenderer> vulkanRenderer);

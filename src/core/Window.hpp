@@ -1,17 +1,10 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <set>
-#include <vulkan/vulkan.hpp>
+#include <memory>
+
 #include <glm/vec2.hpp>
 #include <GLFW/glfw3.h>
 
-  
-  
-
-std::set<std::string> getRequiredInstanceExtensions();
-VkSurfaceKHR createWindowSurface(const vk::Instance& instance, GLFWwindow* window, const vk::AllocationCallbacks* pAllocator = nullptr);
 
 struct Destroyer {
 

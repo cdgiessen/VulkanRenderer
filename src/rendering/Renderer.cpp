@@ -42,14 +42,6 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 }
 
 void VulkanRenderer::UpdateGlobalRenderResources(GlobalVariableUniformBuffer globalData, std::vector<PointLight> lightData){
-	//void* data;
-	//device.VmaMapMemory(globalVariableBuffer, &data);
-	//memcpy(data, &globalData, sizeof(GlobalVariableUniformBuffer));
-	//device.VmaUnmapMemory(globalVariableBuffer);
-	//
-	//device.VmaMapMemory(lightsInfoBuffer, &data);
-	//memcpy(data, lightData.data(), sizeof(PointLight) * lightData.size());
-	//device.VmaUnmapMemory(lightsInfoBuffer);
 	globalVariableBuffer.CopyToBuffer(device, &globalData, sizeof(GlobalVariableUniformBuffer));
 	pointLightsBuffer.CopyToBuffer(device, lightData.data(), lightData.size()*sizeof(PointLight));
 }
@@ -177,11 +169,6 @@ void VulkanRenderer::CreateDepthResources() {
 	depthFormat = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
 
 	depthBuffer.CreateDepthImage(device, depthFormat, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
-
-	//CreateImage(vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-	//depthImageView = createImageView(device.device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-	//TransitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-
 }
 
 VkFormat VulkanRenderer::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {

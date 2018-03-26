@@ -21,6 +21,9 @@
 
 #include "ImGuiImpl.h"
 
+#include "../core/Window.hpp"
+#include "../rendering/Renderer.hpp"
+
 // GLFW Data
 static GLFWwindow*  g_Window = NULL;
 static double       g_Time = 0.0f;
@@ -859,3 +862,46 @@ void ImGui_ImplGlfwVulkan_Render(VkCommandBuffer command_buffer)
 	g_FrameIndex = (g_FrameIndex + 1) % IMGUI_VK_QUEUED_FRAMES;
 }
 
+
+void PrepareImGui(std::shared_ptr<Window> window, std::shared_ptr<VulkanRenderer> vulkanRenderer)
+{
+	ImGui_ImplGlfwVulkan_Init_Data init_data = {};
+
+	uint32_t maxSets = 1000;
+
+	//Creates a descriptor pool for imgui
+	std::vector<VkDescriptorPoolSize> pool_size =
+	{
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, maxSets },
+	{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maxSets },
+	{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, maxSets },
+	{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, maxSets },
+	{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, maxSets },
+	{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, maxSets },
+	{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxSets },
+	{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxSets },
+	{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, maxSets },
+	{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, maxSets },
+	{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, maxSets }
+	};
+	VkDescriptorPoolCreateInfo pool_info = initializers::descriptorPoolCreateInfo(pool_size, maxSets * 11);
+	VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanRenderer->device.device, &pool_info, VK_NULL_HANDLE, &init_data.descriptor_pool));
+
+	init_data.allocator = VK_NULL_HANDLE;
+	init_data.gpu = vulkanRenderer->device.physical_device;
+	init_data.device = vulkanRenderer->device.device;
+	init_data.render_pass = vulkanRenderer->renderPass;
+	init_data.pipeline_cache = vulkanRenderer->pipelineManager.GetPipelineCache();
+	init_data.check_vk_result = [](VkResult err) {
+		if (err == 0) return;
+		printf("VkResult %d\n", err);
+		if (err < 0)
+			abort();
+	};
+
+	ImGui_ImplGlfwVulkan_Init(window->getWindowContext(), false, &init_data);
+
+	VkCommandBuffer fontUploader = vulkanRenderer->device.createCommandBuffer(vulkanRenderer->device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	ImGui_ImplGlfwVulkan_CreateFontsTexture(fontUploader);
+	vulkanRenderer->device.flushCommandBuffer(fontUploader, vulkanRenderer->device.graphics_queue, true);
+}
