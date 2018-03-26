@@ -65,6 +65,7 @@ void Window::prepareWindow() {
 	glfwSetMouseButtonCallback(window, MouseButtonHandler);
 	glfwSetCursorPosCallback(window, MouseMoveHandler);
 	glfwSetScrollCallback(window, MouseScrollHandler);
+	glfwSetJoystickCallback(JoystickConfigurationChangeHandler);
 }
 
 void Window::destroyWindow() {
@@ -127,6 +128,18 @@ void Window::MouseMoveHandler(GLFWwindow* window, double posx, double posy) {
 void Window::MouseScrollHandler(GLFWwindow* window, double xoffset, double yoffset) {
 	Input::inputDirector.mouseScrollEvent(xoffset, yoffset);
 	ImGui_ImplGlfwVulkan_ScrollCallback(window, xoffset, yoffset);
+}
+
+void Window::JoystickConfigurationChangeHandler(int joy, int event)
+{
+	if (event == GLFW_CONNECTED)
+	{
+		Input::inputDirector.ConnectJoystick(joy);
+	}
+	else if (event == GLFW_DISCONNECTED)
+	{
+		Input::inputDirector.DisconnectJoystick(joy);
+	}
 }
 
 void Window::CloseHandler(GLFWwindow* window) {

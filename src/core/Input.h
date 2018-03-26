@@ -4,7 +4,7 @@
 #include <glm/vec2.hpp>
 
 #include <array>
-
+#include <vector>
 
 namespace Input {
 
@@ -147,6 +147,8 @@ namespace Input {
 	float GetMouseScrollX();
 	float GetMouseScrollY();
 
+
+
 	void SetTextInputMode();
 	void ResetTextInputMode();
 	bool GetTextInputMode();
@@ -176,10 +178,33 @@ namespace Input {
 		void mouseMoveEvent(double xoffset, double yoffset);
 		void mouseScrollEvent(double xoffset, double yoffset);
 
+		void ConnectJoystick(int index);
+		void DisconnectJoystick(int index);
+
 		void ResetReleasedInput();
 		void UpdateInputs();
 
 	private:
+
+		//contains joystick info, such as if it's connected, how many axes and buttons there are, and pointers to the data of the axes and buttons
+		struct JoystickData {
+			void Connect();
+			void Disconnect();
+			bool IsConnected();
+
+			float GetAxis(int index);
+			bool GetButton(int index);
+
+			int joystickIndex = -1; //which joystick it is;
+
+			bool connected = false;
+			int axesCount = 0; // how many input axes there are
+			const float* axes = nullptr; // glfw managed pointer to array of axes, range from -1.0 to 1.0
+			int buttonCount = 0; // how many buttons there are
+			const unsigned char* buttons = nullptr; // glfw managed pointer to array of chars which are either true or false
+
+		};
+
 		std::array<bool, 1024> keys = { { false } };
 		std::array<bool, 1024> keysDown = { { false } };
 		std::array<bool, 1024> keysUp = { { false } };
@@ -188,12 +213,14 @@ namespace Input {
 		std::array<bool, 15> mouseButtonsDown = { { false } };
 		std::array<bool, 15> mouseButtonsUp = { { false } };
 
-		bool firstMouse = true; //on start
 		bool textInputMode = false;
 		glm::vec2 mousePosition;
 		glm::vec2 mousePositionPrevious;
 		glm::vec2 mouseChangeInPosition;
 		glm::vec2 mouseScroll;
+
+
+		std::array<JoystickData, 16> joystickData;
 
 	};
 

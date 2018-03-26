@@ -29,8 +29,8 @@ void AlignedMemcpy(uint8_t bytes, VkDeviceSize destMemAlignment, void* src, void
 	int dest_offset = 0;
 	for (int i = 0; i < bytes; i++) {
 	
-		memcpy(dst + dest_offset,
-			src + src_offset,
+		memcpy((char*)dst + dest_offset,
+			(char*)src + src_offset,
 			sizeof(bytes));
 		src_offset += 1;
 		dest_offset += destMemAlignment;

@@ -49,7 +49,7 @@ protected:
 	static void MouseButtonHandler(GLFWwindow* window, int button, int action, int mods);
 	static void MouseMoveHandler(GLFWwindow* window, double posx, double posy);
 	static void MouseScrollHandler(GLFWwindow* window, double xoffset, double yoffset);
-
+	static void JoystickConfigurationChangeHandler(int joy, int event);
 	static void FramebufferSizeHandler(GLFWwindow* window, int width, int height);
 	static void WindowResizeHandler(GLFWwindow* window, int width, int height);
 	static void CloseHandler(GLFWwindow* window);
