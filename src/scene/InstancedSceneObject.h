@@ -23,8 +23,8 @@ public:
 		glm::vec3 pos;
 		glm::vec3 rot;
 		float scale;
-		float dummy1;
-		float dummy2;
+		float dummy1;//Alignment fix
+		float dummy2;//Alignment fix
 	};
 	// Contains the instanced data
 	//struct InstanceBuffer {

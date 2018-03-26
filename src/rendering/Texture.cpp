@@ -161,7 +161,11 @@ VkImageView VulkanTexture::CreateImageView(VulkanDevice& device, VkImage image, 
 
 }
 
-void AlignedTextureMemcpy(int layers, int height, int width, int src_row_width, int dst_row_width, char* src, char* dst ) {
+void AlignedTextureMemcpy(int layers, int dst_layer_width, 
+	int height, int width, 
+	int src_row_width, int dst_row_width, 
+	char* src, char* dst ) {
+	
 	int offset = 0;
 	int texOff = 0;
 	for (int i = 0; i < layers; i++) {
@@ -171,6 +175,9 @@ void AlignedTextureMemcpy(int layers, int height, int width, int src_row_width, 
 				width * 4);
 			offset += dst_row_width;
 			texOff += src_row_width;
+		}
+		if(texOff < dst_layer_width * i){
+			texOff = dst_layer_width * i;
 		}
 	}
 }
@@ -246,7 +253,7 @@ void VulkanTexture2D::loadFromTexture(
 	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 
 	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-	AlignedTextureMemcpy(1, texture->height, texture->width, texture->width * 4, sub.rowPitch, (char*)texture->pixels.data(), stagingPointer);
+	AlignedTextureMemcpy(1, 0, texture->height, texture->width, texture->width * 4, sub.rowPitch, (char*)texture->pixels.data(), stagingPointer);
 	
 	device.CreateImage2D(imageCreateInfo, image);
 
@@ -382,7 +389,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	this->textures = textures;
 	int mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
 
-	VkExtent3D imageExtent = { textures->width, textures->height, 1 };
+	VkExtent3D imageExtent = { textures->width, textures->height, 1};
 
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo(
 		VK_IMAGE_TYPE_2D,
@@ -419,12 +426,15 @@ void VulkanTexture2DArray::loadTextureArray(
 	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 
 	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-	AlignedTextureMemcpy(textures->layerCount, textures->height, textures->width, textures->width * 4, sub.rowPitch, (char*)textures->pixels.data(), stagingPointer);
+	AlignedTextureMemcpy(textures->layerCount, sub.arrayPitch, textures->height, textures->width, 
+		textures->width * 4, sub.rowPitch, 
+		(char*)textures->pixels.data(), stagingPointer);
 
 	device.CreateImage2D(imageCreateInfo, image);
 
 	
-	VkOffset3D copyOffset = { 0, 0, 0 };
+	VkOffset3D dstCopyOffset = { 0, 0, 0 };
+	VkOffset3D srcCopyOffset = { 0, 0, 0 };
 
 	
 	VkImageCopy imageCopyRegion = {};
@@ -432,13 +442,13 @@ void VulkanTexture2DArray::loadTextureArray(
 	imageCopyRegion.dstSubresource.baseArrayLayer = 0;
 	imageCopyRegion.dstSubresource.layerCount = textures->layerCount;
 	imageCopyRegion.dstSubresource.mipLevel = 0;
-	imageCopyRegion.dstOffset = copyOffset;// VkOffset3D{ textures->width, textures->height, 1 };
+	imageCopyRegion.dstOffset = dstCopyOffset;
 
 	imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	imageCopyRegion.srcSubresource.baseArrayLayer = 0;
 	imageCopyRegion.srcSubresource.layerCount = textures->layerCount;
 	imageCopyRegion.srcSubresource.mipLevel = 0;
-	imageCopyRegion.srcOffset = copyOffset;// VkOffset3D{ textures->width, textures->height, 1 };
+	imageCopyRegion.srcOffset = srcCopyOffset;
 	imageCopyRegion.extent = imageExtent;
 	
 	
@@ -549,7 +559,7 @@ void VulkanCubeMap::loadFromTexture(
 	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
 	
 	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-	AlignedTextureMemcpy(6, cubeMap->height, cubeMap->width, cubeMap->width * 4, sub.rowPitch, (char*)cubeMap->pixels.data(), stagingPointer);
+	AlignedTextureMemcpy(6, 0, cubeMap->height, cubeMap->width, cubeMap->width * 4, sub.rowPitch, (char*)cubeMap->pixels.data(), stagingPointer);
 
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo(
 		VK_IMAGE_TYPE_2D,
