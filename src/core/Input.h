@@ -135,6 +135,8 @@ namespace Input {
 
 	};
 
+	void SetupJoysticks();
+
 	bool GetKey(KeyCode code);
 	bool GetKeyDown(KeyCode code);
 	bool GetKeyUp(KeyCode code);
@@ -147,7 +149,13 @@ namespace Input {
 	float GetMouseScrollX();
 	float GetMouseScrollY();
 
+	void ConnectJoystick(int index);
+	void DisconnectJoystick(int index);
 
+	bool IsJoystickConnected(int index);
+
+	float GetControllerAxis(int controllerID, int axis);
+	bool GetControllerButton(int controllerID, int button);
 
 	void SetTextInputMode();
 	void ResetTextInputMode();
@@ -156,6 +164,7 @@ namespace Input {
 	class InputDirector {
 	public:
 		InputDirector();
+		void SetupJoysticks(); //find controllers already plugged in
 
 		bool GetKey(KeyCode code);
 		bool GetKeyDown(KeyCode code);
@@ -181,6 +190,13 @@ namespace Input {
 		void ConnectJoystick(int index);
 		void DisconnectJoystick(int index);
 
+		bool IsJoystickConnected(int index);
+
+		std::vector<int> GetConnectedJoysticks();
+
+		float GetControllerAxis(int id, int axis);
+		bool GetControllerButton(int id, int button);
+
 		void ResetReleasedInput();
 		void UpdateInputs();
 
@@ -188,6 +204,7 @@ namespace Input {
 
 		//contains joystick info, such as if it's connected, how many axes and buttons there are, and pointers to the data of the axes and buttons
 		struct JoystickData {
+			
 			void Connect();
 			void Disconnect();
 			bool IsConnected();

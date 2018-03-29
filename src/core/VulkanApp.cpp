@@ -27,8 +27,9 @@ VulkanApp::VulkanApp()
 	timeManager = std::make_shared<TimeManager>();
 
 	window = std::make_shared<Window>();
-	window->createWindow(glm::uvec2(screenWidth, screenHeight));
+	window->createWindow(isFullscreen, glm::uvec2(screenWidth, screenHeight));
 	SetMouseControl(true);
+	Input::SetupJoysticks();
 
 	resourceManager = std::make_shared<ResourceManager>();
 
@@ -99,6 +100,8 @@ void VulkanApp::ReadSettings() {
 	screenHeight = settings["initial-screen-size"]["height"];
 
 	useValidationLayers = settings["use-validation-layers"];
+
+	isFullscreen = settings["fullscreen"];
 }
 
 void VulkanApp::RecreateSwapChain() {
@@ -158,8 +161,9 @@ void VulkanApp::ControlsWindow(bool* show_controls_window) {
 		ImGui::Text("Show Wireframe: X");
 		//ImGui::Text("Show Normals: N");
 		ImGui::Text("Toggle Flying: F");
-		ImGui::Text("Screenshot: F10 - EXPERIMENTAL!");
 		ImGui::Text("Hide Gui: H");
+		//ImGui::Text("Toggle Fullscreen: G");
+		ImGui::Text("Screenshot: F10 - EXPERIMENTAL!");
 		ImGui::Text("Exit: Escape");
 	}
 	ImGui::End();
@@ -172,25 +176,49 @@ void VulkanApp::BuildImgui() {
 	imGuiTimer.StartTimer();
 
 	ImGui_ImplGlfwVulkan_NewFrame();
-	if (showGui) {
+	if (panels.showGui) {
 
-		bool show_camera_window = true;
-		bool show_log_window = true;
-		bool show_debug_overlay = true;
-		bool show_controls_list = true;
-
-		if (show_debug_overlay) DebugOverlay(&show_debug_overlay);
-		if (show_camera_window) CameraWindow(&show_camera_window);
-		if(show_controls_list) ControlsWindow(&show_controls_list);
+		if (panels.debug_overlay) DebugOverlay(&panels.debug_overlay);
+		if (panels.camera_controls) CameraWindow(&panels.camera_controls);
+		if(panels.controls_list) ControlsWindow(&panels.controls_list);
 
 
 		scene->UpdateSceneGUI();
 
-		if (show_log_window) {
-			appLog.Draw("Example: Log", &show_log_window);
+		if (panels.log) {
+			appLog.Draw("Example: Log", &panels.log);
 		}
 
 		imgui_nodeGraph_terrain.Draw();
+
+		bool open = true;
+
+		if (ImGui::Begin("Controller View", &open)) {
+
+			auto joys =	Input::inputDirector.GetConnectedJoysticks();
+
+			for (int i = 0; i < 16; i++) {
+				if (Input::IsJoystickConnected(i)) {
+
+					ImGui::BeginGroup();
+					for (int j = 0; j < 6; j++) {
+						ImGui::Text("%f", Input::GetControllerAxis(i, j));
+					}
+					ImGui::EndGroup();
+					ImGui::SameLine();
+					ImGui::BeginGroup();
+					for (int j = 0; j < 14; j++) {
+						Input::GetControllerButton(i, j) ?
+							ImGui::Text("true") :
+							ImGui::Text("false");
+					}
+					ImGui::EndGroup();
+				}
+
+			}
+
+		}
+		ImGui::End();
 
 	}
 	imGuiTimer.EndTimer();
@@ -208,21 +236,34 @@ void VulkanApp::CleanUpImgui() {
 void VulkanApp::HandleInputs() {
 	//Log::Debug << camera->Position.x << " " << camera->Position.y << " " << camera->Position.z << "\n";
 
+	double deltaTime = (float)timeManager->GetDeltaTime();
+
 	if (!Input::GetTextInputMode()) {
 
+		if (Input::IsJoystickConnected(0)) {
+			scene->GetCamera()->ProcessJoystickMove(Input::GetControllerAxis(0, 1), Input::GetControllerAxis(0, 0), 
+				(Input::GetControllerAxis(0, 4) + 1)/2.0, (Input::GetControllerAxis(0, 5) + 1)/2.0, deltaTime);
+			scene->GetCamera()->ProcessJoystickLook(Input::GetControllerAxis(0, 2), Input::GetControllerAxis(0, 3), deltaTime);
+
+			if (Input::GetControllerButton(0, 5))
+				scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::UP, deltaTime);
+			if (Input::GetControllerButton(0, 4))
+				scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::DOWN, deltaTime);
+		}
+
 		if (Input::GetKey(Input::KeyCode::W))
-			scene->GetCamera()->ProcessKeyboard(Camera_Movement::FORWARD, (float)timeManager->GetDeltaTime());
+			scene->GetCamera()->ProcessKeyboard(Camera_Movement::FORWARD, deltaTime);
 		if (Input::GetKey(Input::KeyCode::S))
-			scene->GetCamera()->ProcessKeyboard(Camera_Movement::BACKWARD, (float)timeManager->GetDeltaTime());
+			scene->GetCamera()->ProcessKeyboard(Camera_Movement::BACKWARD, deltaTime);
 		if (Input::GetKey(Input::KeyCode::A))
-			scene->GetCamera()->ProcessKeyboard(Camera_Movement::LEFT, (float)timeManager->GetDeltaTime());
+			scene->GetCamera()->ProcessKeyboard(Camera_Movement::LEFT, deltaTime);
 		if (Input::GetKey(Input::KeyCode::D))
-			scene->GetCamera()->ProcessKeyboard(Camera_Movement::RIGHT, (float)timeManager->GetDeltaTime());
+			scene->GetCamera()->ProcessKeyboard(Camera_Movement::RIGHT, deltaTime);
 		if (!scene->walkOnGround) {
 			if (Input::GetKey(Input::KeyCode::SPACE))
-				scene->GetCamera()->ProcessKeyboard(Camera_Movement::UP, (float)timeManager->GetDeltaTime());
+				scene->GetCamera()->ProcessKeyboard(Camera_Movement::UP, deltaTime);
 			if (Input::GetKey(Input::KeyCode::LEFT_SHIFT))
-				scene->GetCamera()->ProcessKeyboard(Camera_Movement::DOWN, (float)timeManager->GetDeltaTime());
+				scene->GetCamera()->ProcessKeyboard(Camera_Movement::DOWN, deltaTime);
 		}
 
 		if (Input::GetKeyDown(Input::KeyCode::ESCAPE))
@@ -231,9 +272,9 @@ void VulkanApp::HandleInputs() {
 			SetMouseControl(!mouseControlEnabled);
 
 		if (Input::GetKey(Input::KeyCode::E))
-			scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::UP, (float)timeManager->GetDeltaTime());
+			scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::UP, deltaTime);
 		if (Input::GetKey(Input::KeyCode::Q))
-			scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::DOWN, (float)timeManager->GetDeltaTime());
+			scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::DOWN, deltaTime);
 
 		if (Input::GetKeyDown(Input::KeyCode::N))
 			scene->drawNormals = !scene->drawNormals;
@@ -251,7 +292,7 @@ void VulkanApp::HandleInputs() {
 
 		if (Input::GetKeyDown(Input::KeyCode::H)) {
 			Log::Debug << "gui visibility toggled " << "\n";
-			showGui = !showGui;
+			panels.showGui = !panels.showGui;
 		}
 
 		if (Input::GetKeyDown(Input::KeyCode::F10)) {

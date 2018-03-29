@@ -20,6 +20,15 @@
 #include "../gui/ImGuiImpl.h"
 #include "../gui/ProcTerrainNodeGraph.h"
 
+struct ImGUI_PanelSettings {
+	bool showGui = true;
+	bool camera_controls = true;
+	bool log = true;
+	bool debug_overlay = true;
+	bool controls_list = true;
+};
+
+
 class VulkanApp
 {
 public:
@@ -45,8 +54,9 @@ private:
 	//Input stuff
 	bool mouseControlEnabled = true;
 	bool wireframe = false;
-	bool showGui = true;
 	void SetMouseControl(bool value);
+	
+	ImGUI_PanelSettings panels;
 
 	void ReadSettings();
 
@@ -65,6 +75,7 @@ private:
 
 	int screenWidth = 800;
 	int screenHeight = 600;
+	bool isFullscreen = false;
 
 	bool useValidationLayers = true;
 

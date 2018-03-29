@@ -69,10 +69,24 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 
 void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<TimeManager> timeManager) {
 
-
 	if (walkOnGround) {
 		float groundHeight = terrainManager->GetTerrainHeightAtLocation(camera->Position.x, camera->Position.z) + 2.0f;
 		float height = camera->Position.y;
+	
+		if (pressedControllerJumpButton && !releasedControllerJumpButton) {
+			if (Input::IsJoystickConnected(0) && Input::GetControllerButton(0, 0)) {
+				pressedControllerJumpButton = false;
+				releasedControllerJumpButton = true;
+				verticalVelocity += 0.15f;
+			}
+		}
+		if (Input::IsJoystickConnected(0) && Input::GetControllerButton(0, 0)) {
+			pressedControllerJumpButton = true;
+		}
+		if (Input::IsJoystickConnected(0) && !Input::GetControllerButton(0, 0)) {
+			releasedControllerJumpButton = false;
+		}
+		
 		if (Input::GetKeyDown(Input::KeyCode::SPACE)) {
 			verticalVelocity += 0.15f;
 		}
@@ -112,6 +126,7 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 	cbo.sunColor = sunSettings.color;
 
 	renderer->UpdateGlobalRenderResources(cbo, pointLights);
+
 }
 
 void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {

@@ -34,6 +34,10 @@ public:
 	float MouseSensitivity = 0.3f;
 	float Zoom = 45.0f;
 
+	// Joystick
+	float joystickMoveAccel = 1.0f;
+	float joystickLookAccel = 1.75f;
+
 	// Constructor with vectors
 	Camera(glm::vec3 position, glm::vec3 up, float pitch, float yaw);
 
@@ -45,6 +49,10 @@ public:
 
 	// Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
 	void ProcessKeyboard(Camera_Movement direction, float deltaTime);
+
+	void ProcessJoystickMove(float x, float y, float zL, float zR, float deltaTime);
+	void ProcessJoystickLook(float x, float y, float deltaTime);
+
 
 	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
 	void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true);

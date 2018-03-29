@@ -29,14 +29,35 @@ void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime)
 // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
 void Camera::ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch)
 {
-	xoffset *= MouseSensitivity;
-	yoffset *= MouseSensitivity;
-
-	Yaw += xoffset;
-	Pitch += yoffset;
+	Yaw += xoffset * MouseSensitivity;
+	Pitch += yoffset * MouseSensitivity;
 
 	// Make sure that when pitch is out of bounds, screen doesn't get flipped
 	if (constrainPitch)
+	{
+		if (Pitch > 89.0f)
+			Pitch = 89.0f;
+		if (Pitch < -89.0f)
+			Pitch = -89.0f;
+	}
+
+	// Update Front, Right and Up Vectors using the updated Eular angles
+	updateCameraVectors();
+}
+
+void Camera::ProcessJoystickMove(float x, float y, float zL, float zR, float deltaTime) {
+	float velocity = MovementSpeed * deltaTime * joystickMoveAccel;
+	Position += Front * x * velocity;
+	Position += Right * y * velocity;
+	Position -= Up * zL * velocity;
+	Position += Up * zR * velocity;
+}
+
+void Camera::ProcessJoystickLook(float x, float y, float deltaTime) {
+	Yaw += x * joystickLookAccel;
+	Pitch += y * joystickLookAccel;
+
+	if (true /*constrainPitch*/)
 	{
 		if (Pitch > 89.0f)
 			Pitch = 89.0f;

@@ -18,6 +18,10 @@ namespace Input {
 
 	InputDirector inputDirector;
 
+	void SetupJoysticks() {
+		inputDirector.SetupJoysticks();
+	}
+
 	bool GetKey(KeyCode code) {
 		return inputDirector.GetKey(code);
 	}
@@ -62,30 +66,52 @@ namespace Input {
 		return inputDirector.GetTextInputMode();
 	}
 
+	void ConnectJoystick(int index) {
+		inputDirector.ConnectJoystick(index);
+	}
+	void DisconnectJoystick(int index) {
+		inputDirector.DisconnectJoystick(index);
+	}
+
+	bool IsJoystickConnected(int index) {
+		return inputDirector.IsJoystickConnected(index);
+	}
+
+	float GetControllerAxis(int controllerID, int axis) {
+		return inputDirector.GetControllerAxis(controllerID, axis);
+	}
+	bool GetControllerButton(int controllerID, int button) {
+		return inputDirector.GetControllerButton(controllerID, button);
+	}
+
+
 	InputDirector::InputDirector() :
 		mousePosition(glm::vec2(0, 0)), mousePositionPrevious(glm::vec2(0, 0)),
 		mouseChangeInPosition(glm::vec2(0, 0)), mouseScroll(glm::vec2(0, 0))
 	{
+	}
+
+	void InputDirector::SetupJoysticks() {
 		for (int i = 0; i < 16; i++) {
 			joystickData[i].joystickIndex = i;
 			if (glfwJoystickPresent(i)) {
-				joystickData[i].Connect();
-				joystickData[i].axes = glfwGetJoystickAxes(i, &joystickData[i].axesCount);
-				joystickData[i].buttons = glfwGetJoystickButtons(i, &joystickData[i].buttonCount);
+				joystickData[i].connected = true;
+				joystickData[i].axes = glfwGetJoystickAxes(i, &(joystickData[i].axesCount));
+				joystickData[i].buttons = glfwGetJoystickButtons(i, &(joystickData[i].buttonCount));
 
 			}
 		}
 	}
 
 	void InputDirector::JoystickData::Connect() {
-		connected = true;
 
 		if (glfwJoystickPresent(joystickIndex)) {
-			
+			connected = true;
 			axes = glfwGetJoystickAxes(joystickIndex, &axesCount);
 			buttons = glfwGetJoystickButtons(joystickIndex, &buttonCount);
-
 		}
+		else 
+			Disconnect();
 	}
 
 	void InputDirector::JoystickData::Disconnect() {
@@ -97,6 +123,16 @@ namespace Input {
 
 	bool InputDirector::JoystickData::IsConnected() {
 		return connected;
+	}
+
+	std::vector<int> InputDirector::GetConnectedJoysticks() {
+		std::vector<int> joys;
+
+		for (auto possible : joystickData)
+			if (possible.IsConnected())
+				joys.push_back(possible.joystickIndex);
+
+		return joys;
 	}
 
 	float InputDirector::JoystickData::GetAxis(int index) {
@@ -159,24 +195,56 @@ namespace Input {
 	}
 
 	void InputDirector::ConnectJoystick(int index) {
-		if (index >= 0 && index < 16) {
-			joystickData[index].Connect();
-		}			
+		if (index >= 0 && index < 16) 
+			joystickData[index].Connect();	
 		else
 			Log::Error << "Tried to connect joystick that is out of bounds!\n";
 	}
 
 	void InputDirector::DisconnectJoystick(int index) {
-		if (index >= 0 && index < 16) {
+		if (index >= 0 && index < 16) 
 			joystickData[index].Disconnect();
-		}
 		else
 			Log::Error << "Tried to disconnect joystick that is out of bounds!\n";
 	}
 
+	bool InputDirector::IsJoystickConnected(int index) {
+		if (index >= 0 && index < 16)
+			return joystickData[index].IsConnected();
+		else
+			Log::Error << "Tried to test if an out of range joystick is connected!\n";
+	}
+
+	float InputDirector::GetControllerAxis(int id, int axis) {
+		if (id >= 0 && id < 16) 
+			return joystickData[id].GetAxis(axis);
+		else
+			Log::Error << "Tried to access joystick axis that is out of bounds!\n";
+	}
+
+	bool InputDirector::GetControllerButton(int id, int button) {
+		if (id >= 0 && id < 16)
+			return joystickData[id].GetButton(button);
+		else
+			Log::Error << "Tried to access joystick button that is out of bounds!\n";
+	}
+
+
 	void InputDirector::UpdateInputs() {
 		glfwPollEvents();
+		for (int i = 0; i < 16; i++) {
+			if (glfwJoystickPresent(i)) {
+				joystickData[i].connected = true;
+				joystickData[i].axes = glfwGetJoystickAxes(i, &(joystickData[i].axesCount));
+				joystickData[i].buttons = glfwGetJoystickButtons(i, &(joystickData[i].buttonCount));
 
+			}
+			else {
+				joystickData[i].connected = false;
+				joystickData[i].axes = nullptr;
+				joystickData[i].buttons = nullptr;
+			}
+		}
 	}
 
 	void InputDirector::ResetReleasedInput() {

@@ -41,7 +41,7 @@ vec3 DirPhongLighting(vec3 view, vec3 dir, vec3 normal, vec3 color, float intens
 	vec3 halfway = normalize(light + view);
 	vec3 reflect = reflect(-light, normal);
 	vec3 diffuse = max(dot(normal, light), 0.0f)* vec3(0.8f);
-	vec3 specular = pow(max(dot(view, reflect), 0.0), 16.0f)* vec3(0.15f);
+	vec3 specular = pow(max(dot(view, reflect), 0.0), 2.0f)* vec3(0.05f);
 	vec3 contrib = (diffuse + specular)* vec3(intensity) * color;
 
 	return contrib;

@@ -975,7 +975,8 @@ SelectorNode::SelectorNode(InternalGraph::GraphPrototype& graph) : Node("Selecto
 	AddInputSlot(ConnectionType::Float, "value", 0.0f, 0.01f, 0.0f, 0.0f);
 	AddInputSlot(ConnectionType::Float, "a", 0.0f, 0.005f, 0.0f, 0.0f);
 	AddInputSlot(ConnectionType::Float, "b", 1.0f, 0.005f, 0.0f, 0.0f);
-	AddInputSlot(ConnectionType::Float, "cutoff", 0.5f, 0.005f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "bottom", 0.5f, 0.005f, 0.0f, 0.0f);
+	AddInputSlot(ConnectionType::Float, "top", 0.75f, 0.005f, 0.0f, 0.0f);
 	AddInputSlot(ConnectionType::Float, "smoothing range", 0.05f, 0.005f, 0.0f, 0.0f);
 
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Selector));

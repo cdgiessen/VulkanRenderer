@@ -19,10 +19,9 @@ class Window {
 public:
 	Window();                                                                                                                                                                                            
 
-	void createWindow(const glm::uvec2& size, const glm::ivec2& position = { 0, 0 });
+	void createWindow(bool isFullscreen, const glm::uvec2& size, const glm::ivec2& position = { 0, 0 });
 	void showWindow(bool show = true);
 	void setSizeLimits(const glm::uvec2& minSize, const glm::uvec2& maxSize = {});
-	void prepareWindow();
 	void destroyWindow();
 
 	GLFWwindow* getWindowContext();

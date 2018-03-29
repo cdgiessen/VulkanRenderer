@@ -72,6 +72,7 @@ private:
 	//TODO: gltf2 integration
 	//std::vector<std::shared_ptr<gltf2::Asset>> assets;
 
-	//glm::mat4 reverseDepth = glm::mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1); //reverses the clip plane to be from [1,0] instead of [0,1], to help with z fighting isseus
+	bool pressedControllerJumpButton = false;
+	bool releasedControllerJumpButton = false;
 };
 

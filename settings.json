@@ -4,9 +4,9 @@
     "height": 900
   },
 
-  "use-validation-layers": true
+  "use-validation-layers": true,
 
-
+  "fullscreen":  false
 
 
 }

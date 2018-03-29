@@ -18,14 +18,42 @@ Window::Window() {
 	});
 }
 
-void Window::createWindow(const glm::uvec2& size, const glm::ivec2& position) {
+void Window::createWindow(bool isFullscreen, const glm::uvec2& size, const glm::ivec2& position) {
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	window = glfwCreateWindow(size.x, size.y, "Vulkan Renderer", NULL, NULL);
-	if (position != glm::ivec2{ INT_MIN, INT_MIN }) {
-		glfwSetWindowPos(window, position.x, position.y);
+	if (isFullscreen) {
+		GLFWmonitor* primary = glfwGetPrimaryMonitor();
+		const GLFWvidmode* mode = glfwGetVideoMode(primary);
+		
+		window = glfwCreateWindow(mode->width, mode->height, "Vulkan Renderer", primary, NULL);
+
+		Log::Debug << "Monitor Width " << mode->width << "\n";
+		Log::Debug << "Monitor Height " << mode->height << "\n";
+
 	}
-	prepareWindow();
+	else {
+		window = glfwCreateWindow(size.x, size.y, "Vulkan Renderer", NULL, NULL);
+		if (position != glm::ivec2{ INT_MIN, INT_MIN }) {
+			glfwSetWindowPos(window, position.x, position.y);
+		}
+
+	}
+
+	//Prepare window
+	glfwSetWindowUserPointer(window, this);
+	glfwSetFramebufferSizeCallback(window, FramebufferSizeHandler);
+	glfwSetWindowSizeCallback(window, WindowResizeHandler);
+	glfwSetWindowCloseCallback(window, CloseHandler);
+	glfwSetErrorCallback(ErrorHandler);
+
+	//Set input callbacks
+	glfwSetKeyCallback(window, KeyboardHandler);
+	glfwSetCharCallback(window, CharInputHandler);
+	glfwSetMouseButtonCallback(window, MouseButtonHandler);
+	glfwSetCursorPosCallback(window, MouseMoveHandler);
+	glfwSetScrollCallback(window, MouseScrollHandler);
+	glfwSetJoystickCallback(JoystickConfigurationChangeHandler);
+
 }
 
 void Window::setSizeLimits(const glm::uvec2& minSize, const glm::uvec2& maxSize) {
@@ -39,21 +67,6 @@ void Window::showWindow(bool show) {
 	else {
 		glfwHideWindow(window);
 	}
-}
-
-void Window::prepareWindow() {
-	glfwSetWindowUserPointer(window, this);
-	glfwSetFramebufferSizeCallback(window, FramebufferSizeHandler);
-	glfwSetWindowSizeCallback(window, WindowResizeHandler);
-	glfwSetWindowCloseCallback(window, CloseHandler);
-	glfwSetErrorCallback(ErrorHandler);
-
-	glfwSetKeyCallback(window, KeyboardHandler);
-	glfwSetCharCallback(window, CharInputHandler);
-	glfwSetMouseButtonCallback(window, MouseButtonHandler);
-	glfwSetCursorPosCallback(window, MouseMoveHandler);
-	glfwSetScrollCallback(window, MouseScrollHandler);
-	glfwSetJoystickCallback(JoystickConfigurationChangeHandler);
 }
 
 void Window::destroyWindow() {
@@ -116,11 +129,13 @@ void Window::JoystickConfigurationChangeHandler(int joy, int event)
 {
 	if (event == GLFW_CONNECTED)
 	{
-		Input::inputDirector.ConnectJoystick(joy);
+		Log::Debug << "Controller " << joy << " Connected \n";
+		Input::ConnectJoystick(joy);
 	}
 	else if (event == GLFW_DISCONNECTED)
 	{
-		Input::inputDirector.DisconnectJoystick(joy);
+		Log::Debug << "Controller " << joy << " Disconnected \n";
+		Input::DisconnectJoystick(joy);
 	}
 }
 

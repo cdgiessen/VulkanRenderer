@@ -271,7 +271,7 @@ namespace InternalGraph {
 			break;
 		case InternalGraph::NodeType::Selector:
 			AddNodeInputLinks(inputLinks,
-				{ LinkType::Float, LinkType::Float, LinkType::Float,  LinkType::Float,  LinkType::Float }); 
+				{ LinkType::Float, LinkType::Float, LinkType::Float,  LinkType::Float,  LinkType::Float, LinkType::Float });
 			break;
 
 		case InternalGraph::NodeType::ConstantInt:
@@ -364,7 +364,7 @@ namespace InternalGraph {
 	}
 
 	LinkTypeVariants Node::GetHeightMapValue(const int x, const int z) {
-		return inputLinks.at(0).GetValue(x,z);
+		return std::get<float>(inputLinks.at(0).GetValue(x,z)) * 2 - 1;
 	}
 
 	LinkTypeVariants Node::GetSplatMapValue(const int x, const int z) {
@@ -588,22 +588,31 @@ namespace InternalGraph {
 			a = std::get<float>(inputLinks.at(1).GetValue(x, z));
 			b = std::get<float>(inputLinks.at(2).GetValue(x, z));
 			lower = std::get<float>(inputLinks.at(3).GetValue(x, z));
-			smooth = std::get<float>(inputLinks.at(4).GetValue(x, z));
+			upper = std::get<float>(inputLinks.at(4).GetValue(x, z));
+			smooth = std::get<float>(inputLinks.at(5).GetValue(x, z));
 			
 			if(smooth == 0){
-				if (value < lower)
+				if (value < lower && value > upper)
 					return a;
 				else 
 					return b;
 			}
 			if(value < lower - smooth/2.0f){
 				return a;
-			} else if (value < lower + smooth/2.0f){
-				
-				return ( (value - (lower - smooth/2.0f) ) /smooth) * b 
-				+ (1 - ( (value - (lower - smooth/2.0f) ) /smooth) ) * a;
 			}
-			return b;
+			else if (value >= lower - smooth / 2.0f && value < lower + smooth / 2.0f) {
+				return ((value - (lower - smooth / 2.0f)) / smooth) * b
+					+ (1 - ((value - (lower - smooth / 2.0f)) / smooth)) * a;
+			}
+			else if (value >= lower + smooth / 2.0f && value <= upper - smooth / 2.0f) {
+				return b;
+
+			} else if (value > upper - smooth / 2.0f  && value <= upper + smooth / 2.0f ) {
+				return ( ((upper + smooth/2.0f) - value) /smooth) * b
+				+ (1 - ( ((upper + smooth/2.0f) - value) /smooth) ) * a;
+
+			} else if (value > upper + smooth / 2.0f)
+				return a;
 		break;
 		case InternalGraph::NodeType::ConstantInt:
 			return inputLinks.at(0).GetValue(x, z);
@@ -634,7 +643,7 @@ namespace InternalGraph {
 		case InternalGraph::NodeType::CubicFractalNoise:
 		case InternalGraph::NodeType::VoroniFractalNoise:
 
-			retVal = noiseImage.BoundedLookUp(x, z);
+			retVal = (noiseImage.BoundedLookUp(x, z) + 1.0f)/2.0f;
 			return retVal;
 			//Log::Debug << val << "\n";
 			
@@ -860,7 +869,7 @@ namespace InternalGraph {
 		{
 			for (int z = 0; z < cellsWide; z++)
 			{
-				glm::vec4 val = std::get<glm::vec4>(outputNode->GetSplatMapValue(x, z));
+				glm::vec4 val = glm::normalize(std::get<glm::vec4>(outputNode->GetSplatMapValue(x, z)));
 				RGBA_pixel pixel = RGBA_pixel((stbi_uc)(val.x * 255), (stbi_uc)(val.y * 255), (stbi_uc)(val.z * 255), (stbi_uc)(val.w * 255));
 				
 				outputSplatmap.SetPixelValue(z, x, pixel);
