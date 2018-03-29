@@ -36,7 +36,7 @@ public:
 
 	// Joystick
 	float joystickMoveAccel = 1.0f;
-	float joystickLookAccel = 1.75f;
+	float joystickLookAccel = 60.0f;
 
 	// Constructor with vectors
 	Camera(glm::vec3 position, glm::vec3 up, float pitch, float yaw);

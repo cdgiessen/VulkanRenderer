@@ -54,8 +54,8 @@ void Camera::ProcessJoystickMove(float x, float y, float zL, float zR, float del
 }
 
 void Camera::ProcessJoystickLook(float x, float y, float deltaTime) {
-	Yaw += x * joystickLookAccel;
-	Pitch += y * joystickLookAccel;
+	Yaw += x * joystickLookAccel*deltaTime;
+	Pitch += y * joystickLookAccel*deltaTime;
 
 	if (true /*constrainPitch*/)
 	{
