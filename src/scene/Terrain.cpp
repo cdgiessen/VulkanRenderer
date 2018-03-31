@@ -116,7 +116,7 @@ void Terrain::InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 ca
 
 	std::shared_ptr<TerrainQuad> q = std::make_shared<TerrainQuad>();
 	quadHandles.push_back(q);
-	rootQuad = InitTerrainQuad(q, coordinateData.pos, coordinateData.size, coordinateData.noisePos, coordinateData.noiseSize, 0);
+	rootQuad = InitTerrainQuad(q, Corner_Enum::uR, coordinateData.pos, coordinateData.size, coordinateData.noisePos, coordinateData.noiseSize, 0, glm::i32vec2(0,0));
 
 	UpdateTerrainQuad(rootQuad, cameraPos);
 
@@ -449,49 +449,15 @@ void Terrain::UpdateMeshBuffer() {
 	//Log::Debug << "Execute buffer copies: " << gpuTransferTime.GetElapsedTimeMicroSeconds() << "\n";
 }
 
-
-//used for root quad
-std::shared_ptr<TerrainQuad> Terrain::InitTerrainQuad(std::shared_ptr<TerrainQuad> quad, glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, 
-	int level) {
-	numQuads++;
-	
-	quad->init(position, size, logicalPos, logicalSize, level, glm::i32vec2(0,0), 0);
-
-	//SimpleTimer terrainQuadCreateTime;
-	
-	//GenerateNewTerrainSubdivision(fastGraphUser, *quad, Corner_Enum::uR, heightScale, maxLevels);
-
-	std::thread* worker = new std::thread(GenerateNewTerrainSubdivision, fastGraphUser, quad, Corner_Enum::uR, heightScale, maxLevels);
-	terrainGenerationWorkers.push_back(worker);
-	
-	//terrainQuadCreateTime.EndTimer();
-	//Log::Debug << "Original " << terrainQuadCreateTime.GetElapsedTimeMicroSeconds() << "\n";
-
-	//std::vector<VkDescriptorSetLayout> layouts;
-	//layouts.resize(maxNumQuads);
-	//std::fill(layouts.begin(), layouts.end(), descriptorSetLayout);
-
-	modelUniformBuffer.resource.FillResource(modelUniformBuffer.buffer.buffer, 
-		(VkDeviceSize)((quadHandles.size() - 1) * sizeof(ModelBufferObject)), (VkDeviceSize)sizeof(ModelBufferObject));
-	quad->descriptorSet = descriptor->CreateDescriptorSet();
-
-	std::vector<DescriptorUse> writes;
-	writes.push_back(DescriptorUse(2, 1, modelUniformBuffer.resource));
-	writes.push_back(DescriptorUse(3, 1, terrainVulkanSplatMap.resource));
-	writes.push_back(DescriptorUse(4, 1, terrainVulkanTextureArray->resource));
-	descriptor->UpdateDescriptorSet(quad->descriptorSet, writes);
-
-	return quad;
-}
-
-std::shared_ptr<TerrainQuad> Terrain::InitTerrainQuadFromParent(std::shared_ptr<TerrainQuad> parent, std::shared_ptr<TerrainQuad> quad, Corner_Enum corner, glm::vec2 position, glm::vec2 size,
+std::shared_ptr<TerrainQuad> Terrain::InitTerrainQuad( std::shared_ptr<TerrainQuad> quad, 
+	Corner_Enum corner, glm::vec2 position, glm::vec2 size,
 	glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, glm::i32vec2 subDivPos) {
 	
 	quad->init(position, size, logicalPos, logicalSize, level, subDivPos, 0);
 
 	//SimpleTimer terrainQuadCreateTime;
 
-	std::thread *worker = new std::thread(GenerateNewTerrainSubdivision, fastGraphUser, quad, corner, heightScale, maxLevels);
+	std::thread* worker = new std::thread(GenerateTerrainChunk, std::ref(fastGraphUser), quad, corner, heightScale, maxLevels);
 	terrainGenerationWorkers.push_back(worker);
 
 	//GenerateNewTerrainSubdivision(fastGraphUser, quad->vertices, quad->indices, quad->terrainQuad, corner, heightScale, maxLevels);
@@ -534,16 +500,16 @@ void Terrain::SubdivideTerrain(std::shared_ptr<TerrainQuad> quad, glm::vec3 view
 	quadHandles.push_back(qDR);
 	quadHandles.push_back(qDL);
 
-	quad->subQuads.UpRight = InitTerrainQuadFromParent(quad, qUR, Corner_Enum::uR, glm::vec2(new_pos.x, new_pos.y), new_size, 
+	quad->subQuads.UpRight = InitTerrainQuad(qUR, Corner_Enum::uR, glm::vec2(new_pos.x, new_pos.y), new_size, 
 		glm::i32vec2(new_lpos.x, new_lpos.y), new_lsize, quad->level + 1,  glm::i32vec2(quad->subDivPos.x * 2, quad->subDivPos.y * 2));
 
-	quad->subQuads.UpLeft = InitTerrainQuadFromParent(quad, qUL, Corner_Enum::uL, glm::vec2(new_pos.x, new_pos.y + new_size.y), new_size, 
+	quad->subQuads.UpLeft = InitTerrainQuad(qUL, Corner_Enum::uL, glm::vec2(new_pos.x, new_pos.y + new_size.y), new_size, 
 		glm::i32vec2(new_lpos.x, new_lpos.y + new_lsize.y), new_lsize, quad->level + 1, glm::i32vec2(quad->subDivPos.x * 2, quad->subDivPos.y * 2 + 1));
 
-	quad->subQuads.DownRight = InitTerrainQuadFromParent(quad, qDR, Corner_Enum::dR, glm::vec2(new_pos.x + new_size.x, new_pos.y), new_size, 
+	quad->subQuads.DownRight = InitTerrainQuad(qDR, Corner_Enum::dR, glm::vec2(new_pos.x + new_size.x, new_pos.y), new_size, 
 		glm::i32vec2(new_lpos.x + new_lsize.x, new_lpos.y), new_lsize, quad->level + 1, glm::i32vec2(quad->subDivPos.x * 2 + 1, quad->subDivPos.y * 2));
 
-	quad->subQuads.DownLeft = InitTerrainQuadFromParent(quad, qDL, Corner_Enum::dL, glm::vec2(new_pos.x + new_size.x, new_pos.y + new_size.y), new_size, 
+	quad->subQuads.DownLeft = InitTerrainQuad(qDL, Corner_Enum::dL, glm::vec2(new_pos.x + new_size.x, new_pos.y + new_size.y), new_size, 
 		glm::i32vec2(new_lpos.x + new_lsize.x, new_lpos.y + new_lsize.y), new_lsize, quad->level + 1,  glm::i32vec2(quad->subDivPos.x * 2 + 1, quad->subDivPos.y * 2 + 1));
 
 	UpdateTerrainQuad(quad->subQuads.UpRight, viewerPos);
@@ -692,7 +658,7 @@ void RecalculateNormals(int numCells, TerrainMeshVertices& verts, TerrainMeshInd
 	}
 }
 
-void GenerateNewTerrainSubdivision(InternalGraph::GraphUser& graphUser, std::shared_ptr<TerrainQuad> quad,
+void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, std::shared_ptr<TerrainQuad> quad,
 	Corner_Enum corner, float heightScale, int maxSubDivLevels) {
 
 	TerrainMeshVertices& verts = quad->vertices;

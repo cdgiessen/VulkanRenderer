@@ -148,10 +148,11 @@ public:
 	float GetHeightAtLocation(float x, float z);
 private:
 
-	std::shared_ptr<TerrainQuad> InitTerrainQuad(std::shared_ptr<TerrainQuad> quad, glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,
-		int level);
-	std::shared_ptr<TerrainQuad> InitTerrainQuadFromParent(std::shared_ptr<TerrainQuad> parent, std::shared_ptr<TerrainQuad> quad, Corner_Enum corner,
-		glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, glm::i32vec2 subDivPos);
+	std::shared_ptr<TerrainQuad> InitTerrainQuad(
+		std::shared_ptr<TerrainQuad> quad, Corner_Enum corner,
+		
+		glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, 
+		glm::i32vec2 subDivPos);
 
 	bool UpdateTerrainQuad(std::shared_ptr<TerrainQuad> quad, glm::vec3 viewerPos);
 
@@ -177,4 +178,4 @@ private:
 
 
 //Create a mesh chunk for rendering using fastgraph as the input data
-void GenerateNewTerrainSubdivision(InternalGraph::GraphUser& graphUser, std::shared_ptr<TerrainQuad> terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);
+void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, std::shared_ptr<TerrainQuad> terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);
