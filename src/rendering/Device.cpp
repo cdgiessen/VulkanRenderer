@@ -83,12 +83,16 @@ void TransferQueue::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &buf;
 
+	VkFence fence;
+	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo();
+	VK_CHECK_RESULT(vkCreateFence(device, &fenceInfo, nullptr, &fence))
+
 	transferLock.lock();
-	vkQueueSubmit(transfer_queue, 1, &submitInfo, nullptr);
+	vkQueueSubmit(transfer_queue, 1, &submitInfo, fence);
 	transferLock.unlock();
 
-	vkQueueWaitIdle(transfer_queue);
-
+	vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+	vkDestroyFence(device, fence, nullptr);
 	vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &buf);
 }
 

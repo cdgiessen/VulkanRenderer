@@ -96,7 +96,7 @@ TerrainManager::~TerrainManager()
 
 std::shared_ptr<Terrain> AsyncTerrainCreation(
 	std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, VulkanTexture2DArray* terrainVulkanTextureArray,
-	std::shared_ptr<MemoryPool<TerrainQuad>> pool, std::shared_ptr<MemoryPool<TerrainQuad>> protoGraph, 
+	std::shared_ptr<MemoryPool<TerrainQuad>> pool, InternalGraph::GraphPrototype& protoGraph,
 	int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord) {
 	
 	auto terrain = std::make_shared<Terrain>(pool, protoGraph, numCells, maxLevels, heightScale, coord);
