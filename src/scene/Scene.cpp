@@ -33,7 +33,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	pointLights[3] = PointLight(glm::vec4(50, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 	pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 
-	skybox = std::make_shared< Skybox>();
+	skybox = std::make_shared<Skybox>();
 	skybox->skyboxCubeMap = resourceMan->texManager.loadCubeMapFromFile("assets/Textures/Skybox/Skybox2", ".png");
 	skybox->model.loadFromMesh(createCube(), renderer->device, renderer->device.GetTransferCommandBuffer());
 	skybox->InitSkybox(renderer);

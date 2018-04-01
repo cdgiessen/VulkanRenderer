@@ -10,11 +10,11 @@
 TransferQueue::TransferQueue(VkDevice device, VkCommandPool transfer_queue_command_pool, VkQueue transfer_queue, uint32_t transferFamily):
 	device(device), transfer_queue_command_pool(transfer_queue_command_pool), transfer_queue(transfer_queue){
 
-	vkGetDeviceQueue(device, transferFamily, 0, &transfer_queue);
+	//vkGetDeviceQueue(device, transferFamily, 0, &transfer_queue);
 }
 
 TransferQueue::~TransferQueue() {
-	vkDestroyCommandPool(device, transfer_queue_command_pool, nullptr);
+	//vkDestroyCommandPool(device, transfer_queue_command_pool, nullptr);
 }
 
 VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
@@ -931,7 +931,7 @@ void VulkanDevice::createCommandPools() {
 	{
 		VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
 		cmd_pool_info.queueFamilyIndex = familyIndices.transferFamily;
-		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
 
 		if (vkCreateCommandPool(device, &cmd_pool_info, nullptr, &transfer_queue_command_pool) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create graphics command pool!");

@@ -35,6 +35,10 @@ enum class Corner_Enum {
 	dL = 3
 };
 
+struct TerrainPushConstant {
+	glm::mat4 model;
+};
+
 struct TerrainCoordinateData {
 	glm::vec2 pos;
 	glm::vec2 size;
@@ -42,38 +46,30 @@ struct TerrainCoordinateData {
 	glm::vec2 noiseSize;
 	int sourceImageResolution;
 
-	TerrainCoordinateData(glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePos, glm::vec2 noiseSize, int imageRes)
+	TerrainCoordinateData(glm::vec2 pos, glm::vec2 size, 
+		glm::i32vec2 noisePos, glm::vec2 noiseSize, int imageRes)
 		: pos(pos), size(size), noisePos(noisePos), noiseSize(noiseSize), sourceImageResolution(imageRes) {
 
 	}
 };
 
 struct TerrainQuad {
+	TerrainQuad(glm::vec2 pos, glm::vec2 size, 
+		glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, 
+		int level, glm::i32vec2 subDivPos, float centerHeightValue);
+	~TerrainQuad();
+
+	static float GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos);
+	
 	glm::vec2 pos; //position of corner
 	glm::vec2 size; //width and length
 	glm::i32vec2 logicalPos; //where in the proc-gen space it is (for noise images)
 	glm::i32vec2 logicalSize; //how wide the area is.
 	glm::i32vec2 subDivPos; //where in the subdivision grid it is (for splatmap)
-	int level; //how deep the quad is
+	int level = 0; //how deep the quad is
 	float heightValAtCenter = 0;
-	bool isSubdivided;
+	bool isSubdivided = false;
 
-	//false until the mesh is generated
-	bool isFinishedGeneratingTerrain = false;
-
-	//false until the mesh is uploaded
-	bool isReadyToRender = false;
-
-	ModelBufferObject modelUniformObject;
-
-	TerrainQuad();
-	~TerrainQuad();
-
-	//puts the position, size, and level into the class
-	void init(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, glm::i32vec2 subDivPos, float centerHeightValue);
-
-	VkDeviceMemory vertexOffset;
-	VkDeviceMemory indexOffset;
 	TerrainMeshVertices vertices;
 	TerrainMeshIndices indices;
 
@@ -100,7 +96,7 @@ public:
 	std::shared_ptr<TerrainQuad> rootQuad;
 	int maxLevels;
 	int maxNumQuads;
-	int numQuads = 0;
+	int numQuads = 1;
 
 	TerrainCoordinateData coordinateData;
 	float heightScale = 100;
@@ -119,7 +115,7 @@ public:
 	std::shared_ptr<Texture> terrainSplatMap;
 	VulkanTexture2D terrainVulkanSplatMap;
 
-	VulkanBufferUniform modelUniformBuffer;
+	TerrainPushConstant modelMatrixData;
 
 	//std::shared_ptr<Texture> maillerFace;
 	
@@ -147,11 +143,8 @@ public:
 	float GetHeightAtLocation(float x, float z);
 private:
 
-	std::shared_ptr<TerrainQuad> InitTerrainQuad(
-		std::shared_ptr<TerrainQuad> quad, Corner_Enum corner,
-		
-		glm::vec2 position, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, 
-		glm::i32vec2 subDivPos);
+	void InitTerrainQuad(
+		std::shared_ptr<TerrainQuad> quad, Corner_Enum corner, glm::vec3 viewerPos);
 
 	bool UpdateTerrainQuad(std::shared_ptr<TerrainQuad> quad, glm::vec3 viewerPos);
 
@@ -162,17 +155,12 @@ private:
 
 	void SetupDescriptorSets(VulkanTexture2DArray* terrainVulkanTextureArray);
 
-	//void UpdateModelBuffer();
-
 	void UpdateMeshBuffer();
 
-	void UpdateUniformBuffer(float time);
 	void SubdivideTerrain(std::shared_ptr<TerrainQuad> quad, glm::vec3 viewerPos);
 	void UnSubdivide(std::shared_ptr<TerrainQuad> quad);
-	void RecursiveUnSubdivide(std::shared_ptr<TerrainQuad> quad);
-
 };
 
 
 //Create a mesh chunk for rendering using fastgraph as the input data
-void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, std::shared_ptr<TerrainQuad> terrainQuad, Corner_Enum corner, float heightScale, int maxSubDivLevels);
+void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, std::shared_ptr<TerrainQuad> terrainQuad, Corner_Enum corner, float heightScale, float widthScale, int maxSubDivLevels);
