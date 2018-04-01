@@ -35,7 +35,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 
 	skybox = std::make_shared< Skybox>();
 	skybox->skyboxCubeMap = resourceMan->texManager.loadCubeMapFromFile("assets/Textures/Skybox/Skybox2", ".png");
-	skybox->model.loadFromMesh(createCube(), renderer->device, renderer->device.graphics_queue);
+	skybox->model.loadFromMesh(createCube(), renderer->device, renderer->device.GetTransferCommandBuffer());
 	skybox->InitSkybox(renderer);
 
 	std::shared_ptr<GameObject> cubeObject = std::make_shared<GameObject>();

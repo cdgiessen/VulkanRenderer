@@ -32,7 +32,7 @@ public:
 	};
 	std::vector<ModelPart> parts;
 
-	bool loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device, VkQueue copyQueue);
+	bool loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device, VkCommandBuffer transferBuf);
 
 	/**
 	* Loads a 3D model from a file into Vulkan buffers

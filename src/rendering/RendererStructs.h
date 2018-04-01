@@ -9,9 +9,12 @@
 
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
+/* Synchronization */
+
+typedef std::shared_ptr<bool> ReadyFlag;
+
 /* Common uniform buffers */
 
-//Global info buffer
 struct GlobalVariableUniformBuffer {
 	glm::mat4 view;
 	glm::mat4 proj;
@@ -22,7 +25,6 @@ struct GlobalVariableUniformBuffer {
 	glm::vec3 sunColor;
 };
 
-//model specific data (position, normal matrix)
 struct ModelBufferObject {
 	glm::mat4 model;
 	glm::mat4 normal;
@@ -42,7 +44,8 @@ struct ModelInfo {
 	ModelBufferObject mbo;
 };
 
-//Lighting struct
+/* Lighting */
+
 struct PointLight {
 	glm::vec4 lightPos = glm::vec4(50.0f, 25.0f, 50.0f, 1.0f);
 	glm::vec4 color = glm::vec4(1.0, 1.0, 1.0f, 1.0f);
@@ -90,6 +93,8 @@ struct SpotLightInfo {
 	std::string name;
 	SpotLight dl;
 };
+
+/* Materials */
 
 struct PBRMaterial {
 	glm::vec4 baseColor;

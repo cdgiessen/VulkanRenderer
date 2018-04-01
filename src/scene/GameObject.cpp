@@ -49,17 +49,17 @@ void GameObject::LoadModel(std::shared_ptr<Mesh> mesh)
 
 void GameObject::SetupImage()
 {
+
     gameObjectVulkanTexture.loadFromTexture(
         renderer->device, gameObjectTexture, VK_FORMAT_R8G8B8A8_UNORM,
-        renderer->device.graphics_queue,
+        renderer->device.GetTransferCommandBuffer(),
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
 }
 
 void GameObject::SetupModel()
 {
-    gameObjectModel.loadFromMesh(gameObjectMesh, renderer->device,
-                                 renderer->device.graphics_queue);
+    gameObjectModel.loadFromMesh(gameObjectMesh, renderer->device, renderer->device.GetTransferCommandBuffer());
 
 }
 

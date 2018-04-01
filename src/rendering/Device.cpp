@@ -2,8 +2,100 @@
 #include "Initializers.hpp"
 
 #include "SwapChain.hpp"
+#include "RendererStructs.h"
 
 #include "../core/Logger.h"
+
+
+TransferQueue::TransferQueue(VkDevice device, VkCommandPool transfer_queue_command_pool, VkQueue transfer_queue, uint32_t transferFamily):
+	device(device), transfer_queue_command_pool(transfer_queue_command_pool), transfer_queue(transfer_queue){
+
+	vkGetDeviceQueue(device, transferFamily, 0, &transfer_queue);
+}
+
+TransferQueue::~TransferQueue() {
+	vkDestroyCommandPool(device, transfer_queue_command_pool, nullptr);
+}
+
+VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
+	VkCommandBuffer buf;
+	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+
+	vkAllocateCommandBuffers(device, &allocInfo, &buf);
+
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+
+	vkBeginCommandBuffer(buf, &beginInfo);
+	return buf;
+}
+
+void WaitForSubmissionFinish(VkDevice device, VkCommandPool transfer_queue_command_pool, VkCommandBuffer buf, VkFence fence, std::vector<ReadyFlag> readySignal) {
+
+	vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+	if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
+		for (auto& sig : readySignal)
+			*sig = true;		
+	}
+	else if (vkGetFenceStatus(device, fence) == VK_NOT_READY) {
+		Log::Error << "Transfer exeeded maximum fence timeout! Is too much stuff happening?\n";
+		vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+		if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
+			for (auto& sig : readySignal)
+				*sig = true;
+		}
+	}
+	else if (vkGetFenceStatus(device, fence) == VK_ERROR_DEVICE_LOST){
+		Log::Error << "AAAAAAAAAAAHHHHHHHHHHHHH EVERYTHING IS ONE FIRE\n";
+		throw std::runtime_error("Fence lost device!\n");
+	}
+
+
+	vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &buf);
+	vkDestroyFence(device, fence, nullptr);
+}
+
+void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<ReadyFlag> readySignal) {
+	vkEndCommandBuffer(buf);
+
+	VkSubmitInfo submitInfo = initializers::submitInfo();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &buf;
+
+	VkFence fence;
+	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo();
+	VK_CHECK_RESULT(vkCreateFence(device, &fenceInfo, nullptr, &fence))
+
+	transferLock.lock();
+	vkQueueSubmit(transfer_queue, 1, &submitInfo, fence);
+	transferLock.unlock();
+
+	std::thread submissionCompletion = std::thread(WaitForSubmissionFinish, device, transfer_queue_command_pool, buf, fence, readySignal);
+	submissionCompletion.detach();
+}
+
+void TransferQueue::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
+	vkEndCommandBuffer(buf);
+
+	VkSubmitInfo submitInfo = initializers::submitInfo();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &buf;
+
+	transferLock.lock();
+	vkQueueSubmit(transfer_queue, 1, &submitInfo, nullptr);
+	transferLock.unlock();
+
+	vkQueueWaitIdle(transfer_queue);
+
+	vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &buf);
+}
+
+
+
+
+
 
 VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(validationLayers)
 {
@@ -21,16 +113,26 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debugCallback(VkDebugReportFlagsEXT
 	return VK_FALSE;
 }
 
-void VulkanDevice::initVulkanDevice(VkSurfaceKHR &surface)
+void VulkanDevice::InitVulkanDevice(VkSurfaceKHR &surface)
 {
 	createInstance("My Vulkan App");
 	setupDebugCallback();
 	createSurface(surface);
 	pickPhysicalDevice(surface);
-	//findQueueFamilies();
-	createLogicalDevice(surface);
-	createCommandPools(surface);
+	FindQueueFamilies(surface);
+
+	createLogicalDevice();
+	createCommandPools();
 	CreateVulkanAllocator();
+
+	//when the hardware doesn't have a separate transfer queue ( can't do asynchronous submissions)
+	if (familyIndices.graphicsFamily != familyIndices.transferFamily) {
+		transferQueue = std::make_unique<TransferQueue>(device, transfer_queue_command_pool, transfer_queue, familyIndices.transferFamily);
+		separateTransferQueue = true;
+	}
+	else
+		separateTransferQueue = false;
+	
 }
 
 void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
@@ -47,7 +149,8 @@ void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
 }
 
 bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) {
-	QueueFamilyIndices indices = findQueueFamilies(device, surface);
+
+	QueueFamilyIndices indices = FindQueueFamilies(device, surface);
 
 	bool extensionsSupported = checkDeviceExtensionSupport(device);
 
@@ -504,29 +607,52 @@ void VulkanDevice::flushCommandBuffer(VkCommandPool commandPool, VkCommandBuffer
 }
 
 VkCommandBuffer VulkanDevice::GetTransferCommandBuffer() {
-	if (!isDmaCmdBufWritable)
-		CreateTransferCommandBuffer();
-	return dmaCmdBuf;
-}
+	if (separateTransferQueue) {
+		return transferQueue->GetTransferCommandBuffer();
+	} else {
 
-void VulkanDevice::CreateTransferCommandBuffer() {
-	if (!isDmaCmdBufWritable) {
+		if (!isDmaCmdBufWritable) {
+			VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
-		VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+			vkAllocateCommandBuffers(device, &allocInfo, &dmaCmdBuf);
 
-		vkAllocateCommandBuffers(device, &allocInfo, &dmaCmdBuf);
+			VkCommandBufferBeginInfo beginInfo = {};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-		VkCommandBufferBeginInfo beginInfo = {};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-		
-		vkBeginCommandBuffer(dmaCmdBuf, &beginInfo);
-		isDmaCmdBufWritable = true;
+			vkBeginCommandBuffer(dmaCmdBuf, &beginInfo);
+			isDmaCmdBufWritable = true;
+			return dmaCmdBuf;
+		}
+		else {
+			return dmaCmdBuf;
+		}
 	}
 }
 
-void VulkanDevice::SubmitTransferCommandBuffer() {
+void VulkanDevice::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
+	if (separateTransferQueue) {
+		transferQueue->SubmitTransferCommandBufferAndWait(buf);
+	} else
 	if (isDmaCmdBufWritable) {
+		vkEndCommandBuffer(dmaCmdBuf);
+
+		VkSubmitInfo submitInfo = initializers::submitInfo();
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &dmaCmdBuf;
+
+		vkQueueSubmit(transfer_queue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(transfer_queue);
+
+		vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &dmaCmdBuf);
+		isDmaCmdBufWritable = false;
+	}
+}
+
+void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<ReadyFlag> readySignal) {
+	if (separateTransferQueue) {
+		transferQueue->SubmitTransferCommandBuffer(buf, readySignal);
+	} else if (isDmaCmdBufWritable) {
 		vkEndCommandBuffer(dmaCmdBuf);
 
 		VkSubmitInfo submitInfo = initializers::submitInfo();
@@ -656,12 +782,76 @@ VkPhysicalDeviceFeatures VulkanDevice::QueryDeviceFeatures() {
 	return deviceFeatures;
 }
 
+void VulkanDevice::FindQueueFamilies(VkSurfaceKHR windowSurface) {
+	familyIndices = FindQueueFamilies(physical_device, windowSurface);
+}
 
-void VulkanDevice::createLogicalDevice(VkSurfaceKHR &surface) {
-	QueueFamilyIndices indices = findQueueFamilies(physical_device, surface);
+QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice physDevice, VkSurfaceKHR windowSurface) {
+	QueueFamilyIndices indices;
 
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(physDevice, &queueFamilyCount, nullptr);
+
+	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(physDevice, &queueFamilyCount, queueFamilies.data());
+
+	//finds a transfer only queue
+	int i = 0;
+	for (const auto& queueFamily : queueFamilies) {
+		if (queueFamily.queueCount > 0
+			&& (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
+			&& ((queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0)
+			&& ((queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) == 0)) {
+
+			indices.transferFamily = i;
+		}
+		i++;
+	}
+
+	//finds graphics, present, and optionally a compute queue
+	i = 0;
+	for (const auto& queueFamily : queueFamilies) {
+		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+			indices.graphicsFamily = i;
+		}
+
+		VkBool32 presentSupport = false;
+		vkGetPhysicalDeviceSurfaceSupportKHR(physDevice, i, windowSurface, &presentSupport);
+
+		if (queueFamily.queueCount > 0 && presentSupport) {
+			indices.presentFamily = i;
+		}
+
+		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+			indices.computeFamily = i;
+		}
+
+		if (indices.isComplete()) {
+			break;
+		}
+
+		i++;
+	}
+
+	//make sure that they are set since they might get used
+	if (indices.transferFamily == -1) {
+		indices.transferFamily = 0;
+	}
+	if (indices.computeFamily == -1) {
+		indices.computeFamily = 0;
+	}
+
+	return indices;
+}
+
+const QueueFamilyIndices VulkanDevice::GetFamilyIndices() const {
+	return familyIndices;
+}
+
+void VulkanDevice::createLogicalDevice() {
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<int> uniqueQueueFamilies = { indices.graphicsFamily, indices.presentFamily, indices.computeFamily, indices.transferFamily };
+	std::set<int> uniqueQueueFamilies = 
+	{ familyIndices.graphicsFamily, familyIndices.presentFamily, familyIndices.computeFamily, familyIndices.transferFamily };
 
 	float queuePriority = 1.0f;
 	for (int queueFamily : uniqueQueueFamilies) {
@@ -698,23 +888,22 @@ void VulkanDevice::createLogicalDevice(VkSurfaceKHR &surface) {
 		throw std::runtime_error("failed to create logical device!");
 	}
 
-	vkGetDeviceQueue(device, indices.graphicsFamily, 0, &graphics_queue);
-	vkGetDeviceQueue(device, indices.presentFamily, 0, &present_queue);
-	vkGetDeviceQueue(device, indices.computeFamily, 0, &compute_queue);
-	vkGetDeviceQueue(device, indices.transferFamily, 0, &transfer_queue);
+	vkGetDeviceQueue(device, familyIndices.graphicsFamily, 0, &graphics_queue);
+	vkGetDeviceQueue(device, familyIndices.presentFamily, 0, &present_queue);
+	vkGetDeviceQueue(device, familyIndices.computeFamily, 0, &compute_queue);
+	vkGetDeviceQueue(device, familyIndices.transferFamily, 0, &transfer_queue);
 
 	vkGetPhysicalDeviceFeatures(physical_device, &physical_device_features);
 	vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
 	vkGetPhysicalDeviceMemoryProperties(physical_device, &memoryProperties);
 }
 
-void VulkanDevice::createCommandPools(VkSurfaceKHR &surface) {
-	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physical_device, surface);
+void VulkanDevice::createCommandPools() {
 
 	// graphics_queue_command_pool
 	{
 		VkCommandPoolCreateInfo pool_info = initializers::commandPoolCreateInfo();
-		pool_info.queueFamilyIndex = queueFamilyIndices.graphicsFamily;
+		pool_info.queueFamilyIndex = familyIndices.graphicsFamily;
 		pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
 							 // hint the command pool will rerecord buffers by VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
 							 // allow buffers to be rerecorded individually by VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
@@ -726,7 +915,7 @@ void VulkanDevice::createCommandPools(VkSurfaceKHR &surface) {
 	// compute_queue_command_pool
 	{
 		VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
-		cmd_pool_info.queueFamilyIndex = queueFamilyIndices.computeFamily;
+		cmd_pool_info.queueFamilyIndex = familyIndices.computeFamily;
 		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 		if (vkCreateCommandPool(device, &cmd_pool_info, nullptr, &compute_queue_command_pool) != VK_SUCCESS) {
@@ -737,7 +926,7 @@ void VulkanDevice::createCommandPools(VkSurfaceKHR &surface) {
 	// transfer_queue_command_pool
 	{
 		VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
-		cmd_pool_info.queueFamilyIndex = queueFamilyIndices.transferFamily;
+		cmd_pool_info.queueFamilyIndex = familyIndices.transferFamily;
 		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 		if (vkCreateCommandPool(device, &cmd_pool_info, nullptr, &transfer_queue_command_pool) != VK_SUCCESS) {

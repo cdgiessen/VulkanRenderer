@@ -72,7 +72,6 @@ struct TerrainQuad {
 	//puts the position, size, and level into the class
 	void init(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, glm::i32vec2 subDivPos, float centerHeightValue);
 
-	DescriptorSet descriptorSet;
 	VkDeviceMemory vertexOffset;
 	VkDeviceMemory indexOffset;
 	TerrainMeshVertices vertices;
@@ -85,6 +84,7 @@ struct TerrainQuad {
 		std::shared_ptr<TerrainQuad> DownRight;
 	} subQuads;
 
+	ReadyFlag isReady;
 };
 
 class Terrain {
@@ -114,11 +114,10 @@ public:
 	VulkanBufferVertex vertexBuffer;
 	VulkanBufferIndex indexBuffer;
 
+	DescriptorSet descriptorSet;
+
 	std::shared_ptr<Texture> terrainSplatMap;
 	VulkanTexture2D terrainVulkanSplatMap;
-
-	VulkanTexture2DArray* terrainVulkanTextureArray;
-
 
 	VulkanBufferUniform modelUniformBuffer;
 
@@ -158,15 +157,13 @@ private:
 
 	void SetupMeshbuffers();
 	void SetupUniformBuffer();
-	void SetupImage();
-	void SetupModel();
+	void SetupImage(VkCommandBuffer cmdBuf);
 	void SetupPipeline();
 
-	void SetupDescriptorLayoutAndPool();
+	void SetupDescriptorSets(VulkanTexture2DArray* terrainVulkanTextureArray);
 
-	void UpdateModelBuffer();
+	//void UpdateModelBuffer();
 
-	void UploadMeshBuffer();
 	void UpdateMeshBuffer();
 
 	void UpdateUniformBuffer(float time);

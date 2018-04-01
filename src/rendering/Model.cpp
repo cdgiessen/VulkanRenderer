@@ -1,7 +1,8 @@
 #include "Model.hpp"
 
 
-bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device, VkQueue copyQueue) {
+bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device, 
+	VkCommandBuffer copyCmd) {
 
 	std::vector<float> vertexBuffer;
 	std::vector<uint32_t> indexBuffer;
@@ -47,8 +48,6 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device,
 	vertexStagingBuffer.CreateStagingVertexBuffer(device, vertexBuffer.data(), (uint32_t)vertexCount);
 	indexStagingBuffer.CreateStagingIndexBuffer(device, indexBuffer.data(), (uint32_t)indexCount);
 
-	VkCommandBuffer copyCmd = device.GetTransferCommandBuffer();
-
 	VkBufferCopy copyRegion{};
 
 	copyRegion.size = vBufferSize;
@@ -57,8 +56,7 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device,
 	copyRegion.size = iBufferSize;
 	vkCmdCopyBuffer(copyCmd, indexStagingBuffer.buffer.buffer, vmaIndicies.buffer.buffer, 1, &copyRegion);
 
-	//device.flushCommandBuffer(copyCmd, copyQueue);
-	device.SubmitTransferCommandBuffer();
+	device.SubmitTransferCommandBufferAndWait(copyCmd);
 
 	vertexStagingBuffer.CleanBuffer(device);
 	indexStagingBuffer.CleanBuffer(device);

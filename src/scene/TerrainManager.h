@@ -27,7 +27,7 @@ struct GeneralSettings {
 	float heightScale = 100.0f;
 	int maxLevels = 4;
 	int gridDimentions = 1;
-	int sourceImageResolution = 256;
+	int sourceImageResolution = 512;
 	int numCells = 64;
 };
 

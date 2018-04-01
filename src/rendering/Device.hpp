@@ -3,6 +3,8 @@
 #include <vector>
 #include <memory>
 #include <set>
+#include <thread>
+#include <mutex>
 
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
@@ -12,6 +14,7 @@
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 #include "RenderTools.h"
+#include "RendererStructs.h"
 
 const std::vector<const char*> VALIDATION_LAYERS = {
 	"VK_LAYER_LUNARG_standard_validation"
@@ -20,6 +23,17 @@ const std::vector<const char*> VALIDATION_LAYERS = {
 
 const std::vector<const char*> DEVICE_EXTENSIONS = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
+struct QueueFamilyIndices {
+	int graphicsFamily = -1;
+	int presentFamily = -1;
+	int transferFamily = -1;
+	int computeFamily = -1;
+
+	bool isComplete() {
+		return graphicsFamily >= 0 && presentFamily >= 0;
+	}
 };
 
 struct VmaBuffer {
@@ -34,6 +48,22 @@ struct VmaImage {
 	VmaAllocationInfo allocationInfo;
 };
 
+class TransferQueue {
+public:
+	TransferQueue(VkDevice device, VkCommandPool transfer_queue_command_pool, VkQueue transfer_queue, uint32_t transferFamily);
+	~TransferQueue();
+
+	VkCommandBuffer GetTransferCommandBuffer();
+	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<ReadyFlag> readySignal);
+	void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
+
+private:
+	VkDevice device;
+	VkQueue transfer_queue;
+	VkCommandPool transfer_queue_command_pool;
+	std::mutex transferLock;
+};
+
 class VulkanDevice {
 public:
 	GLFWwindow* window;
@@ -44,16 +74,13 @@ public:
 	
 	//VDeleter<VkSurfaceKHR> window_surface{ instance, vkDestroySurfaceKHR };
 
-	QueueFamilyIndices queue_family_indices;
 	VkPhysicalDevice physical_device;
 	VkQueue graphics_queue;
 	VkQueue present_queue;
 	VkQueue compute_queue;
-	VkQueue transfer_queue;
 
 	VkCommandPool graphics_queue_command_pool;
 	VkCommandPool compute_queue_command_pool;
-	VkCommandPool transfer_queue_command_pool;
 
 	VkPhysicalDeviceProperties physical_device_properties;
 	VkPhysicalDeviceFeatures physical_device_features;
@@ -68,17 +95,11 @@ public:
 
 	~VulkanDevice();
 
-	void initVulkanDevice(VkSurfaceKHR &surface);
+	void InitVulkanDevice(VkSurfaceKHR &surface);
 
 	void Cleanup(VkSurfaceKHR &surface);
 
-	bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface);
-
-	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-
-	bool checkValidationLayerSupport();
-
-	void CreateVulkanAllocator();
+	const QueueFamilyIndices GetFamilyIndices() const;
 
 	void VmaMapMemory(VmaBuffer& buffer, void** pData);
 	void VmaUnmapMemory(VmaBuffer& buffer);
@@ -100,13 +121,12 @@ public:
 	void CreateDepthImage(VkImageCreateInfo imageInfo, VmaImage& image);
 	void CreateStagingImage2D(VkImageCreateInfo imageInfo, VmaImage& image);
 
-
 	void DestroyVmaAllocatedImage(VmaImage& image);
 
 	VkCommandBuffer GetTransferCommandBuffer();
 
-	void CreateTransferCommandBuffer();
-	void SubmitTransferCommandBuffer();
+	void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
+	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<ReadyFlag> readySignal);
 
 	/**
 	* Create a buffer on the device
@@ -173,13 +193,27 @@ public:
 	void flushCommandBuffer(VkCommandPool pool, VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
 
 private:
-	
+	QueueFamilyIndices familyIndices;
+
 	bool enableValidationLayers = false;
 
-	VkCommandBuffer dmaCmdBuf;
+	bool separateTransferQueue = false;
+
+	//Non separate transfer queue (no threads where they don't help)
 	bool isDmaCmdBufWritable = false;
+	VkQueue transfer_queue;
+	VkCommandPool transfer_queue_command_pool;
+	VkCommandBuffer dmaCmdBuf;
+
+	std::unique_ptr<TransferQueue> transferQueue;
 
 	void createInstance(std::string appName);
+
+	bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface);
+
+	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+
+	bool checkValidationLayerSupport();
 	
 	void setupDebugCallback();
 	
@@ -187,9 +221,14 @@ private:
 	
 	void pickPhysicalDevice(VkSurfaceKHR &surface);
 
-	void createLogicalDevice(VkSurfaceKHR &surface);
+	void createLogicalDevice();
 
-	void createCommandPools(VkSurfaceKHR &surface);
+	void createCommandPools();
+
+	void CreateVulkanAllocator();
+
+	void FindQueueFamilies(VkSurfaceKHR windowSurface);
+	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physDevice, VkSurfaceKHR windowSurface);
 
 	VkPhysicalDeviceFeatures QueryDeviceFeatures();
 	
