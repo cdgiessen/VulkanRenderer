@@ -98,14 +98,17 @@ namespace InternalGraph {
 		ConstantFloat,
 		Invert,
 		TextureIndex,
+		FractalReturnType,
 
-		ValueFractalNoise,
-		SimplexFractalNoise,
-		PerlinFractalNoise,
 		WhiteNoise,
-		CellularNoise,
-		CubicFractalNoise,
-		VoroniFractalNoise,
+
+		ValueNoise,
+		SimplexNoise,
+		PerlinNoise,
+		CubicNoise,
+
+		CellNoise,
+		VoroniNoise,
 
 		ColorCreator,
 		MonoGradient,
@@ -182,6 +185,9 @@ namespace InternalGraph {
 		std::vector <InputLink> inputLinks;
 	
 	private:
+		void SetFractalType(int);
+		
+
 		NodeID id = -1;
 		NodeType nodeType = NodeType::None;
 
@@ -190,6 +196,7 @@ namespace InternalGraph {
 		bool isNoiseNode = false;
 		NoiseImage2D<float> noiseImage;
 		FastNoiseSIMD* myNoise;
+		FastNoiseSIMD::FractalType fractalType;
 	};
 
 

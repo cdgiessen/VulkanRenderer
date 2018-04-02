@@ -270,54 +270,58 @@ namespace InternalGraph {
 			inputLinks.push_back(InputLink(0));
 			break;
 
-		case InternalGraph::NodeType::ValueFractalNoise:
+		case InternalGraph::NodeType::FractalReturnType:
+			outputType = LinkType::Int;
+			inputLinks.push_back(InputLink(0));
+			break;
+
+		case InternalGraph::NodeType::ValueNoise:
 			AddNodeInputLinks(inputLinks,
-				{ LinkType::Int, LinkType::Float, LinkType::Float });
+				{ LinkType::Int, LinkType::Float, LinkType::Int, LinkType::Float, LinkType::Int });
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 			break;
 
-		case InternalGraph::NodeType::SimplexFractalNoise:
+		case InternalGraph::NodeType::SimplexNoise:
 			AddNodeInputLinks(inputLinks,
-				{ LinkType::Int, LinkType::Float, LinkType::Float });
+				{ LinkType::Int, LinkType::Float, LinkType::Int, LinkType::Float, LinkType::Int});
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 			break;
 
-		case InternalGraph::NodeType::PerlinFractalNoise:
+		case InternalGraph::NodeType::PerlinNoise:
 			AddNodeInputLinks(inputLinks,
-				{ LinkType::Int, LinkType::Float, LinkType::Float });
+				{ LinkType::Int, LinkType::Float, LinkType::Int, LinkType::Float, LinkType::Int});
+			isNoiseNode = true;
+			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+			break;
+
+		case InternalGraph::NodeType::CubicNoise:
+			AddNodeInputLinks(inputLinks,
+				{ LinkType::Int, LinkType::Float, LinkType::Int, LinkType::Float, LinkType::Int });
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 			break;
 
 		case InternalGraph::NodeType::WhiteNoise:
 			AddNodeInputLinks(inputLinks,
-				{ LinkType::Int, LinkType::Float, LinkType::Float });
+				{ LinkType::Int, LinkType::Float});
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 			break;
 
-		case InternalGraph::NodeType::CellularNoise:
+		case InternalGraph::NodeType::CellNoise:
 			AddNodeInputLinks(inputLinks,
 				{ LinkType::Int, LinkType::Float, LinkType::Float });
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 			break;
 
-		case InternalGraph::NodeType::CubicFractalNoise:
+		case InternalGraph::NodeType::VoroniNoise:
 			AddNodeInputLinks(inputLinks,
 				{ LinkType::Int, LinkType::Float, LinkType::Float });
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
-			break;
-
-		case InternalGraph::NodeType::VoroniFractalNoise:
-			AddNodeInputLinks(inputLinks,
-				{ LinkType::Int, LinkType::Float, LinkType::Float });
-			isNoiseNode = true;
-			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
-
 			break;
 
 		case NodeType::ColorCreator:
@@ -615,13 +619,18 @@ namespace InternalGraph {
 
 			break;
 
-		case InternalGraph::NodeType::ValueFractalNoise:
-		case InternalGraph::NodeType::SimplexFractalNoise:
-		case InternalGraph::NodeType::PerlinFractalNoise:
+		case InternalGraph::NodeType::FractalReturnType:
+			return inputLinks.at(0).GetValue(x, z);
+
+			break;
+
+		case InternalGraph::NodeType::ValueNoise:
+		case InternalGraph::NodeType::SimplexNoise:
+		case InternalGraph::NodeType::PerlinNoise:
 		case InternalGraph::NodeType::WhiteNoise:
-		case InternalGraph::NodeType::CellularNoise:
-		case InternalGraph::NodeType::CubicFractalNoise:
-		case InternalGraph::NodeType::VoroniFractalNoise:
+		case InternalGraph::NodeType::CellNoise:
+		case InternalGraph::NodeType::CubicNoise:
+		case InternalGraph::NodeType::VoroniNoise:
 
 			retVal = (noiseImage.BoundedLookUp(x, z) + 1.0f)/2.0f;
 			return retVal;
@@ -687,6 +696,18 @@ namespace InternalGraph {
 		isNoiseNode = val;
 	}
 
+	void Node::SetFractalType(int val){
+		if (val == 0)
+			myNoise->SetFractalType(FastNoiseSIMD::FractalType::FBM);
+		else if (val == 1)
+			myNoise->SetFractalType(FastNoiseSIMD::FractalType::Billow);
+		else if (val == 2)
+			myNoise->SetFractalType(FastNoiseSIMD::FractalType::RigidMulti);
+		else 
+			myNoise->SetFractalType(FastNoiseSIMD::FractalType::FBM);
+
+	}
+
 	void Node::SetupInputLinks(NodeMap* map) {
 		for (auto it = inputLinks.begin(); it != inputLinks.end(); it++) {
 			if (it->HasInputNode()) {
@@ -700,37 +721,52 @@ namespace InternalGraph {
 		if (isNoiseNode) {
 			noiseImage.SetWidth(info.cellsWide);
 
-			myNoise->SetFractalOctaves(std::get<int>(inputLinks.at(0).GetValue()));
+			myNoise->SetSeed(std::get<int>(inputLinks.at(0).GetValue()));
+
+
 			myNoise->SetFrequency(std::get<float>(inputLinks.at(1).GetValue()));
-			myNoise->SetFractalGain(std::get<float>(inputLinks.at(2).GetValue()));
+			
 			//myNoise->SetAxisScales(info.scale, info.scale, info.scale);
 			switch (nodeType)
 			{
-			case InternalGraph::NodeType::ValueFractalNoise:
-				noiseImage.SetImageData(info.cellsWide, myNoise->GetValueFractalSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
-				break;
-
-			case InternalGraph::NodeType::SimplexFractalNoise:
-				noiseImage.SetImageData(info.cellsWide, myNoise->GetSimplexFractalSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
-				break;
-
-			case InternalGraph::NodeType::PerlinFractalNoise:
-				noiseImage.SetImageData(info.cellsWide, myNoise->GetPerlinFractalSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
-				break;
-
 			case InternalGraph::NodeType::WhiteNoise:
 				noiseImage.SetImageData(info.cellsWide, myNoise->GetWhiteNoiseSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
 				break;
 
-			case InternalGraph::NodeType::CellularNoise:
-				noiseImage.SetImageData(info.cellsWide, myNoise->GetCellularSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
+			case InternalGraph::NodeType::ValueNoise:
+				myNoise->SetFractalOctaves(std::get<int>(inputLinks.at(2).GetValue()));
+				myNoise->SetFractalGain(std::get<float>(inputLinks.at(3).GetValue()));
+				SetFractalType(std::get<int>(inputLinks.at(4).GetValue()));
+				noiseImage.SetImageData(info.cellsWide, myNoise->GetValueFractalSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
 				break;
 
-			case InternalGraph::NodeType::CubicFractalNoise:
+			case InternalGraph::NodeType::SimplexNoise:
+				myNoise->SetFractalOctaves(std::get<int>(inputLinks.at(2).GetValue()));
+				myNoise->SetFractalGain(std::get<float>(inputLinks.at(3).GetValue()));
+				SetFractalType(std::get<int>(inputLinks.at(4).GetValue()));
+				noiseImage.SetImageData(info.cellsWide, myNoise->GetSimplexFractalSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
+				break;
+
+			case InternalGraph::NodeType::PerlinNoise:
+				myNoise->SetFractalOctaves(std::get<int>(inputLinks.at(2).GetValue()));
+				myNoise->SetFractalGain(std::get<float>(inputLinks.at(3).GetValue()));
+				SetFractalType(std::get<int>(inputLinks.at(4).GetValue()));
+				noiseImage.SetImageData(info.cellsWide, myNoise->GetPerlinFractalSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
+				break;
+			
+			case InternalGraph::NodeType::CubicNoise:
+				myNoise->SetFractalOctaves(std::get<int>(inputLinks.at(2).GetValue()));
+				myNoise->SetFractalGain(std::get<float>(inputLinks.at(3).GetValue()));
+				SetFractalType(std::get<int>(inputLinks.at(4).GetValue()));
 				noiseImage.SetImageData(info.cellsWide, myNoise->GetCubicFractalSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
 				break;
 
-			case InternalGraph::NodeType::VoroniFractalNoise:
+			case InternalGraph::NodeType::CellNoise:
+				myNoise->SetCellularJitter(std::get<int>(inputLinks.at(2).GetValue()));
+				noiseImage.SetImageData(info.cellsWide, myNoise->GetCellularSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
+				break;
+
+			case InternalGraph::NodeType::VoroniNoise:
 				myNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::CellValue);
 				noiseImage.SetImageData(info.cellsWide, myNoise->GetCellularSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
 				break;

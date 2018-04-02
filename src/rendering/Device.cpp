@@ -145,6 +145,7 @@ void VulkanDevice::InitVulkanDevice(VkSurfaceKHR &surface)
 	if (familyIndices.graphicsFamily != familyIndices.transferFamily) {
 		transferQueue = std::make_unique<TransferQueue>(*this, transfer_queue_command_pool, transfer_queue, familyIndices.transferFamily);
 		separateTransferQueue = true;
+		Log::Debug << "Using a Separate transfer queue\n";
 	}
 	else
 		separateTransferQueue = false;
@@ -626,61 +627,58 @@ VkCommandBuffer VulkanDevice::GetTransferCommandBuffer() {
 	if (separateTransferQueue) {
 		return transferQueue->GetTransferCommandBuffer();
 	} else {
+		VkCommandBuffer buf;
+		VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
-		if (!isDmaCmdBufWritable) {
-			VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+		vkAllocateCommandBuffers(device, &allocInfo, &buf);
 
-			vkAllocateCommandBuffers(device, &allocInfo, &dmaCmdBuf);
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-			VkCommandBufferBeginInfo beginInfo = {};
-			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-			vkBeginCommandBuffer(dmaCmdBuf, &beginInfo);
-			isDmaCmdBufWritable = true;
-			return dmaCmdBuf;
-		}
-		else {
-			return dmaCmdBuf;
-		}
+		vkBeginCommandBuffer(buf, &beginInfo);
+		return buf;
+		
 	}
 }
 
 void VulkanDevice::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
 	if (separateTransferQueue) {
 		transferQueue->SubmitTransferCommandBufferAndWait(buf);
-	} else
-	if (isDmaCmdBufWritable) {
-		vkEndCommandBuffer(dmaCmdBuf);
+	} else {
+		vkEndCommandBuffer(buf);
 
 		VkSubmitInfo submitInfo = initializers::submitInfo();
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &dmaCmdBuf;
+		submitInfo.pCommandBuffers = &buf;
 
 		vkQueueSubmit(transfer_queue, 1, &submitInfo, VK_NULL_HANDLE);
 		vkQueueWaitIdle(transfer_queue);
 
-		vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &dmaCmdBuf);
+		vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &buf);
 		isDmaCmdBufWritable = false;
 	}
 }
 
-void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
+void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf, 
+	std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
 	if (separateTransferQueue) {
 		transferQueue->SubmitTransferCommandBuffer(buf, readySignal, bufsToClean);
 	}
-	else if (isDmaCmdBufWritable) {
-		vkEndCommandBuffer(dmaCmdBuf);
+	else {
+		vkEndCommandBuffer(buf);
 
 		VkSubmitInfo submitInfo = initializers::submitInfo();
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &dmaCmdBuf;
+		submitInfo.pCommandBuffers = &buf;
 
 		vkQueueSubmit(transfer_queue, 1, &submitInfo, VK_NULL_HANDLE);
 		vkQueueWaitIdle(transfer_queue);
 
-		vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &dmaCmdBuf);
-		isDmaCmdBufWritable = false;
+		for (auto& buffer : bufsToClean) {
+			buffer.CleanBuffer();
+		}
+		vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &buf);
 	}
 }
 

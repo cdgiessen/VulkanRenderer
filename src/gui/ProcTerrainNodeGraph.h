@@ -119,17 +119,21 @@ enum class NodeType {
 	Clamp,
 	Selector,
 
-	Perlin,
-	Simplex,
-	CellNoise,
-	ValueNoise,
-	Voroni,
 	WhiteNoise,
+
+	ValueNoise,
+	SimplexNoise,
+	PerlinNoise,
+	CubicNoise,
+	
+	CellNoise,
+	VoroniNoise,
 
 	ConstantInt,
 	ConstantFloat,
 	Invert,
 	TextureIndex,
+	FractalReturnType,
 
 	ColorCreator,
 	MonoGradient,
@@ -182,16 +186,22 @@ class BlendNode	: public Node { public: BlendNode(InternalGraph::GraphPrototype&
 class ClampNode	: public Node { public: ClampNode(InternalGraph::GraphPrototype& graph); };
 class SelectorNode : public Node {public: SelectorNode(InternalGraph::GraphPrototype& graph);};
 
-class NoiseNode	: public Node { public: NoiseNode(std::string name);
-	//std::shared_ptr<NewNodeGraph::NoiseSourceNode> internal_node_noise;
-};
+class NoiseNode	: public Node { public: NoiseNode(std::string name);};
 
-class PerlinNode	: public NoiseNode { public: PerlinNode(InternalGraph::GraphPrototype& graph); };
-class SimplexNode	: public NoiseNode { public: SimplexNode(InternalGraph::GraphPrototype& graph); };
-class CellNoiseNode	: public NoiseNode { public: CellNoiseNode(InternalGraph::GraphPrototype& graph); };
-class ValueNoiseNode: public NoiseNode { public: ValueNoiseNode(InternalGraph::GraphPrototype& graph); };
-class VoroniNode	: public NoiseNode { public: VoroniNode(InternalGraph::GraphPrototype& graph); };
+class FractalNoiseNode : public NoiseNode { public: FractalNoiseNode(std::string name);};
+class CellularNoiseNode : public NoiseNode { public: CellularNoiseNode(std::string name);};
+
 class WhiteNoiseNode: public NoiseNode { public: WhiteNoiseNode(InternalGraph::GraphPrototype& graph); };
+
+class PerlinNode	: public FractalNoiseNode { public: PerlinNode(InternalGraph::GraphPrototype& graph); };
+class SimplexNode	: public FractalNoiseNode { public: SimplexNode(InternalGraph::GraphPrototype& graph); };
+class ValueNode: public FractalNoiseNode { public: ValueNode(InternalGraph::GraphPrototype& graph); };
+class CubicNode: public FractalNoiseNode { public: CubicNode(InternalGraph::GraphPrototype& graph);};
+
+class FractalReturnType: public Node { public: FractalReturnType(InternalGraph::GraphPrototype& graph);};
+
+class CellNoiseNode	: public CellularNoiseNode { public: CellNoiseNode(InternalGraph::GraphPrototype& graph); };
+class VoroniNode	: public CellularNoiseNode { public: VoroniNode(InternalGraph::GraphPrototype& graph); };
 
 class ConstantIntNode	: public Node { public: ConstantIntNode(InternalGraph::GraphPrototype& graph); };
 class ConstantFloatNode : public Node { public: ConstantFloatNode(InternalGraph::GraphPrototype& graph); };

@@ -187,12 +187,14 @@ void ProcTerrainNodeGraph::DrawNodeButtons() {
 	ImGui::BeginChild("node buttons", ImVec2(120, 0.0f), true);
 
 	ImGui::Text("Noise Sources");
-	if (ImGui::Button("Perlin", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Perlin, startingNodePos); }
-	if (ImGui::Button("Simplex", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Simplex, startingNodePos); }
-	if (ImGui::Button("Value", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ValueNoise, startingNodePos); }
-	if (ImGui::Button("Voronoi", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::Voroni, startingNodePos); }
-	if (ImGui::Button("Cellular", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::CellNoise, startingNodePos); }
 	if (ImGui::Button("White", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::WhiteNoise, startingNodePos); }
+	if (ImGui::Button("Perlin", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::PerlinNoise, startingNodePos); }
+	if (ImGui::Button("Simplex", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::SimplexNoise, startingNodePos); }
+	if (ImGui::Button("Value", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ValueNoise, startingNodePos); }
+	if (ImGui::Button("Cubic", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::CubicNoise, startingNodePos); }
+	if (ImGui::Button("Fractal Type", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::FractalReturnType, startingNodePos); }
+	if (ImGui::Button("Voronoi", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::VoroniNoise, startingNodePos); }
+	if (ImGui::Button("Cellular", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::CellNoise, startingNodePos); }
 	ImGui::Separator();
 	ImGui::Text("Modifiers");
 	if (ImGui::Button("Constant Int", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ConstantInt, startingNodePos); }
@@ -728,12 +730,16 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 	case(NodeType::Blend): newNode = std::make_shared<BlendNode>(protoGraph); break;
 	case(NodeType::Clamp): newNode = std::make_shared<ClampNode>(protoGraph); break;
 	case(NodeType::Selector): newNode = std::make_shared<SelectorNode>(protoGraph); break;
-	case(NodeType::Perlin): newNode = std::make_shared<PerlinNode>(protoGraph); break;
-	case(NodeType::Simplex): newNode = std::make_shared<SimplexNode>(protoGraph); break;
-	case(NodeType::CellNoise): newNode = std::make_shared<CellNoiseNode>(protoGraph); break;
-	case(NodeType::ValueNoise): newNode = std::make_shared<ValueNoiseNode>(protoGraph); break;
+	
 	case(NodeType::WhiteNoise): newNode = std::make_shared<WhiteNoiseNode>(protoGraph); break;
-	case(NodeType::Voroni): newNode = std::make_shared<VoroniNode>(protoGraph); break;
+	case(NodeType::PerlinNoise): newNode = std::make_shared<PerlinNode>(protoGraph); break;
+	case(NodeType::SimplexNoise): newNode = std::make_shared<SimplexNode>(protoGraph); break;
+	case(NodeType::ValueNoise): newNode = std::make_shared<ValueNode>(protoGraph); break;
+	case(NodeType::CubicNoise): newNode = std::make_shared<CubicNode>(protoGraph); break;
+
+	case(NodeType::CellNoise): newNode = std::make_shared<CellNoiseNode>(protoGraph); break;
+	case(NodeType::VoroniNoise): newNode = std::make_shared<VoroniNode>(protoGraph); break;
+	
 	case(NodeType::ConstantInt): newNode = std::make_shared<ConstantIntNode>(protoGraph); break;
 	case(NodeType::ConstantFloat): newNode = std::make_shared<ConstantFloatNode>(protoGraph); break;
 	case(NodeType::Invert): newNode = std::make_shared<InvertNode>(protoGraph); break;
@@ -982,6 +988,8 @@ SelectorNode::SelectorNode(InternalGraph::GraphPrototype& graph) : Node("Selecto
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Selector));
 }
 
+//Maths
+
 MathNode::MathNode(std::string name) : Node(name, ConnectionType::Float)
 {
 	AddInputSlot(ConnectionType::Float, "A", 0.0f, 0.01f, 0.0f, 0.0f);
@@ -1023,43 +1031,66 @@ MinNode::MinNode(InternalGraph::GraphPrototype& graph) : MathNode("Min")
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::Min));
 }
 
+//Noise Nodes
 
 NoiseNode::NoiseNode(std::string name) : Node(name, ConnectionType::Float)
 {
-	AddInputSlot(ConnectionType::Int, "Octaves", 5, 0.1f, 0.0f, 10.0f);
+	AddInputSlot(ConnectionType::Int, "Seed", 1337);
 	AddInputSlot(ConnectionType::Float, "Frequency", 2.0f, 0.001f, 0.0f, 10.0f);
-	AddInputSlot(ConnectionType::Float, "Persistence", 0.5f, 0.01f, 0.0f, 1.0f);
 }
 
-SimplexNode::SimplexNode(InternalGraph::GraphPrototype& graph) : NoiseNode("Simplex")
-{
-	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::SimplexFractalNoise));
-}
-
-PerlinNode::PerlinNode(InternalGraph::GraphPrototype& graph) : NoiseNode("Perlin")
-{
-	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::PerlinFractalNoise));
-}
-
-VoroniNode::VoroniNode(InternalGraph::GraphPrototype& graph) : NoiseNode("Voroni")
-{
-	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::VoroniFractalNoise));
-}
-
-ValueNoiseNode::ValueNoiseNode(InternalGraph::GraphPrototype& graph) : NoiseNode("ValueNoise")
-{
-	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::ValueFractalNoise));
-}
-
-CellNoiseNode::CellNoiseNode(InternalGraph::GraphPrototype& graph) : NoiseNode("CellNoise")
-{
-	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::CellularNoise));
-}
-
-WhiteNoiseNode::WhiteNoiseNode(InternalGraph::GraphPrototype& graph) : NoiseNode("WhiteNoise")
+WhiteNoiseNode::WhiteNoiseNode(InternalGraph::GraphPrototype& graph) : NoiseNode("White Noise")
 {
 	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::WhiteNoise));
 }
+
+//Fractal noises
+
+FractalNoiseNode::FractalNoiseNode(std::string name) : NoiseNode(name)
+{
+	AddInputSlot(ConnectionType::Int, "Octaves", 4, 0.1f, 0.0f, 10.0f);
+	AddInputSlot(ConnectionType::Float, "Persistence", 0.5f, 0.01f, 0.0f, 1.0f);
+	AddInputSlot(ConnectionType::Int, "Type", 0, 0.01f, 0, 2);
+}
+
+SimplexNode::SimplexNode(InternalGraph::GraphPrototype& graph) : FractalNoiseNode("Simplex")
+{
+	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::SimplexNoise));
+}
+
+PerlinNode::PerlinNode(InternalGraph::GraphPrototype& graph) : FractalNoiseNode("Perlin")
+{
+	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::PerlinNoise));
+}
+
+ValueNode::ValueNode(InternalGraph::GraphPrototype& graph) : FractalNoiseNode("Value")
+{
+	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::ValueNoise));
+}
+
+CubicNode::CubicNode(InternalGraph::GraphPrototype& graph) : FractalNoiseNode("Cubic")
+{
+	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::CubicNoise));
+}
+
+//Cellular noises
+
+CellularNoiseNode::CellularNoiseNode(std::string name) : NoiseNode(name)
+{
+	AddInputSlot(ConnectionType::Float, "Jitter", 0.5f, 0.01f, 0.0f, 1.0f);
+}
+
+VoroniNode::VoroniNode(InternalGraph::GraphPrototype& graph) : CellularNoiseNode("Voroni")
+{
+	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::VoroniNoise));
+}
+
+CellNoiseNode::CellNoiseNode(InternalGraph::GraphPrototype& graph) : CellularNoiseNode("Cellular")
+{
+	internalNodeID = graph.AddNoiseNoide(InternalGraph::Node(InternalGraph::NodeType::CellNoise));
+}
+
+//Utilities
 
 ConstantIntNode::ConstantIntNode(InternalGraph::GraphPrototype& graph) : Node("ConstantInt", ConnectionType::Int)
 {
@@ -1084,6 +1115,15 @@ TextureIndexNode::TextureIndexNode(InternalGraph::GraphPrototype& graph) : Node(
 	AddInputSlot(ConnectionType::Int, "Index", 0, 0.1f, 0.0f, 255.0f);
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::TextureIndex));
 }
+
+FractalReturnType::FractalReturnType(InternalGraph::GraphPrototype& graph) : Node("Fractal Type", ConnectionType::Int)
+{
+	AddInputSlot(ConnectionType::Int, "FBM-Billow-Rigid", 0, 0.1f, 0, 2);
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::FractalReturnType));
+
+}
+
+//Colors
 
 ColorCreator::ColorCreator(InternalGraph::GraphPrototype& graph) : Node("ColorCreator", ConnectionType::Color)
 {
