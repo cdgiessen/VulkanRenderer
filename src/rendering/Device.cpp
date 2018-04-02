@@ -32,7 +32,8 @@ VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
 	return buf;
 }
 
-void WaitForSubmissionFinish(VkDevice device, VkCommandPool transfer_queue_command_pool, VkCommandBuffer buf, VkFence fence, std::vector<ReadyFlag> readySignal) {
+void WaitForSubmissionFinish(VkDevice device, VkCommandPool transfer_queue_command_pool, 
+	VkCommandBuffer buf, VkFence fence, std::vector<Signal> readySignal) {
 
 	vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 	if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
@@ -57,7 +58,7 @@ void WaitForSubmissionFinish(VkDevice device, VkCommandPool transfer_queue_comma
 	vkDestroyFence(device, fence, nullptr);
 }
 
-void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<ReadyFlag> readySignal) {
+void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
 	vkEndCommandBuffer(buf);
 
 	VkSubmitInfo submitInfo = initializers::submitInfo();
@@ -653,7 +654,7 @@ void VulkanDevice::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
 	}
 }
 
-void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<ReadyFlag> readySignal) {
+void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
 	if (separateTransferQueue) {
 		transferQueue->SubmitTransferCommandBuffer(buf, readySignal);
 	} else if (isDmaCmdBufWritable) {

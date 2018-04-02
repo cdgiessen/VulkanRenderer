@@ -54,7 +54,7 @@ public:
 	~TransferQueue();
 
 	VkCommandBuffer GetTransferCommandBuffer();
-	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<ReadyFlag> readySignal);
+	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
 	void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
 
 private:
@@ -126,7 +126,7 @@ public:
 	VkCommandBuffer GetTransferCommandBuffer();
 
 	void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
-	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<ReadyFlag> readySignal);
+	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
 
 	/**
 	* Create a buffer on the device

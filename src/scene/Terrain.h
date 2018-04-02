@@ -25,8 +25,8 @@ const int vertCount = (NumCells + 1) * (NumCells + 1);
 const int indCount = NumCells * NumCells * 6;
 const int vertElementCount = 12;
 
-typedef std::array<float, vertCount * vertElementCount> TerrainMeshVertices;
-typedef std::array<uint32_t, indCount> TerrainMeshIndices;
+using TerrainMeshVertices = std::array<float, vertCount * vertElementCount>;
+using TerrainMeshIndices = std::array<uint32_t, indCount>;
 
 enum class Corner_Enum {
 	uR = 0,
@@ -69,9 +69,10 @@ struct TerrainQuad {
 	int level = 0; //how deep the quad is
 	float heightValAtCenter = 0;
 	bool isSubdivided = false;
+	bool isUploaded = false;
 
-	TerrainMeshVertices vertices;
-	TerrainMeshIndices indices;
+	std::shared_ptr<TerrainMeshVertices> vertices;
+	std::shared_ptr<TerrainMeshIndices> indices;
 
 	struct SubQuads {
 		std::shared_ptr<TerrainQuad> UpLeft;
@@ -80,7 +81,7 @@ struct TerrainQuad {
 		std::shared_ptr<TerrainQuad> DownRight;
 	} subQuads;
 
-	ReadyFlag isReady;
+	Signal isReady;
 };
 
 class Terrain {

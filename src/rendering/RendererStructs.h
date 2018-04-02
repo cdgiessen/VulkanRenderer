@@ -11,7 +11,7 @@
 
 /* Synchronization */
 
-typedef std::shared_ptr<bool> ReadyFlag;
+using Signal = std::shared_ptr<bool>;
 
 /* Common uniform buffers */
 

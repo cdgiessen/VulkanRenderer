@@ -14,6 +14,9 @@ TerrainQuad::TerrainQuad(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos,
 {
 	isReady = std::make_shared<bool>();
 	*isReady = false;
+
+	vertices = std::make_shared<TerrainMeshVertices>();
+	indices = std::make_shared<TerrainMeshIndices>();
 }
 
 //void TerrainQuad::init(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, glm::i32vec2 subDivPos, float centerHeightValue) 
@@ -72,7 +75,8 @@ Terrain::Terrain(
 	//test->init(posX, posY, sizeX, sizeY, 0, meshVertexPool->allocate(), meshIndexPool->allocate());
 	
 	rootQuad = std::make_shared<TerrainQuad>(
-		coordinateData.pos, coordinateData.size, coordinateData.noisePos, coordinateData.noiseSize,
+		coordinateData.pos, coordinateData.size, 
+		coordinateData.noisePos, coordinateData.noiseSize,
 		0, glm::i32vec2(0, 0),
 		GetHeightAtLocation(TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, 0, 0),
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, 0, 0)));
@@ -271,40 +275,46 @@ void Terrain::UpdateMeshBuffer() {
 	{
 		for (int i = 0; i < PrevQuadHandles.size(); i++) {
 			if (quadHandles[i] != PrevQuadHandles[i]) {
-				verts[i] = quadHandles[i]->vertices;
-				inds[i] = quadHandles[i]->indices;
+				verts[i] = *(quadHandles[i]->vertices);
+				inds[i] = *(quadHandles[i]->indices);
 
-				VkBufferCopy vBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices));
-				vertexCopyRegions.push_back(vBufferRegion);
+				vertexCopyRegions.push_back(
+					initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), 
+					i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices)));
 
-				VkBufferCopy iBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices));
-				indexCopyRegions.push_back(iBufferRegion);
+				indexCopyRegions.push_back(
+					initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), 
+					i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices)));
 				//flags.push_back(quadHandles[i]->isReady);
 			}
 		}
 		for (uint32_t i = (uint32_t)PrevQuadHandles.size(); i < quadHandles.size(); i++) {
-			verts[i] = quadHandles[i]->vertices;
-			inds[i] = quadHandles[i]->indices;
+			verts[i] = *(quadHandles[i]->vertices);
+			inds[i] = *(quadHandles[i]->indices);
 
-			VkBufferCopy vBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices));
-			vertexCopyRegions.push_back(vBufferRegion);
+			vertexCopyRegions.push_back(
+				initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), 
+				i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices)));
 
-			VkBufferCopy iBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices));
-			indexCopyRegions.push_back(iBufferRegion);
+			indexCopyRegions.push_back(
+				initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), 
+				i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices)));
 			//flags.push_back(quadHandles[i]->isReady);
 		}
 	}
 	else { //less meshes than before, can erase at end.
 		for (int i = 0; i < quadHandles.size(); i++) {
 			if (quadHandles[i] != PrevQuadHandles[i]) {
-				verts[i] = quadHandles[i]->vertices;
-				inds[i] = quadHandles[i]->indices;
+				verts[i] = *(quadHandles[i]->vertices);
+				inds[i] = *(quadHandles[i]->indices);
 
-				VkBufferCopy vBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices));
-				vertexCopyRegions.push_back(vBufferRegion);
+				vertexCopyRegions.push_back(
+					initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), 
+					i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices)));
 
-				VkBufferCopy iBufferRegion = initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices));
-				indexCopyRegions.push_back(iBufferRegion);
+				indexCopyRegions.push_back(
+					initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), 
+					i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices)));
 				//flags.push_back(quadHandles[i]->isReady);
 			}
 		}
@@ -476,7 +486,6 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuad> quad) {
 		if (delUR != quadHandles.end()) {
 			delUR->reset();
 			quadHandles.erase(delUR);
-			//descriptor->FreeDescriptorSet(quad->subQuads.UpRight->descriptorSet);
 			numQuads--;
 		}
 
@@ -484,7 +493,6 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuad> quad) {
 		if (delDR != quadHandles.end()) {
 			delDR->reset();
 			quadHandles.erase(delDR);
-			//descriptor->FreeDescriptorSet(quad->subQuads.DownRight->descriptorSet);
 			numQuads--;
 		}
 
@@ -492,7 +500,6 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuad> quad) {
 		if (delUL != quadHandles.end()) {
 			delUL->reset();
 			quadHandles.erase(delUL);
-			//descriptor->FreeDescriptorSet(quad->subQuads.UpLeft->descriptorSet);
 			numQuads--;
 		}
 
@@ -500,7 +507,6 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuad> quad) {
 		if (delDL != quadHandles.end()) {
 			delDL->reset();
 			quadHandles.erase(delDL);
-			//descriptor->FreeDescriptorSet(quad->subQuads.DownLeft->descriptorSet);
 			numQuads--;
 		}
 
@@ -593,23 +599,20 @@ void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, std::shared_ptr<T
 	Corner_Enum corner, float heightScale, float widthScale, int maxSubDivLevels) {
 
 	const int numCells = NumCells;
-
-	TerrainMeshVertices& verts = quad->vertices;
-	TerrainMeshIndices& indices = quad->indices;
-	      
+      
 	float uvUs[numCells + 3];
 	float uvVs[numCells + 3];
 	
-	float powLevel = 1 << quad->level;
+	int powLevel = 1 << (quad->level);
 	for (int i = 0; i < numCells + 3; i++)
 	{
-		uvUs[i] = glm::clamp((float)(i - 1) / (powLevel * (numCells)) + (float)quad->subDivPos.x / powLevel, 0.0f, 1.0f);
-		uvVs[i] = glm::clamp((float)(i - 1) / (powLevel * (numCells)) + (float)quad->subDivPos.y / powLevel, 0.0f, 1.0f);
+		uvUs[i] = glm::clamp((float)(i - 1) / ((float)(powLevel) * (numCells)) + (float)quad->subDivPos.x / (float)(powLevel), 0.0f, 1.0f);
+		uvVs[i] = glm::clamp((float)(i - 1) / ((float)(powLevel) * (numCells)) + (float)quad->subDivPos.y / (float)(powLevel), 0.0f, 1.0f);
 	}
 
-	for (int i = 0; i <= numCells; i++)
+	for (int i = 0; i < numCells + 1; i++)
 	{
-		for (int j = 0; j <= numCells; j++)
+		for (int j = 0; j <= numCells + 1; j++)
 		{
 			float uvU = uvUs[(i + 1)];
 			float uvV = uvVs[(j + 1)];
@@ -629,18 +632,18 @@ void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, std::shared_ptr<T
 				((uvUplus - uvUminus) + (uvVplus - uvVminus))*2,
 				(outheightvm - outheightvp)));
 
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 0] = uvU * (widthScale);
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 1] = outheight * heightScale;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 2] = uvV * (widthScale);
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 3] = normal.x;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 4] = normal.y;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 5] = normal.z;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 6] = uvU;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 7] = uvV;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 8] = 0.0f;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 9] = 0.0f;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 10] = 0.0f;
-			(verts)[((i)*(numCells + 1) + j)* vertElementCount + 11] = 0.0f;
+			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 0] = uvU * (widthScale);
+			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 1] = outheight * heightScale;
+			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 2] = uvV * (widthScale);
+			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 3] = normal.x;
+			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 4] = normal.y;
+			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 5] = normal.z;
+			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 6] = uvU;
+			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 7] = uvV;
+			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 8] = 0.0f;
+			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 9] = 0.0f;
+			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 10] = 0.0f;
+			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 11] = 0.0f;
 		}
 	}
 
@@ -682,12 +685,12 @@ void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, std::shared_ptr<T
 	{
 		for (int j = 0; j < numCells; j++)
 		{
-			(indices)[counter++] = i * (numCells + 1) + j;
-			(indices)[counter++] = i * (numCells + 1) + j + 1;
-			(indices)[counter++] = (i + 1) * (numCells + 1) + j;
-			(indices)[counter++] = i * (numCells + 1) + j + 1;
-			(indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
-			(indices)[counter++] = (i + 1) * (numCells + 1) + j;
+			(*quad->indices)[counter++] = i * (numCells + 1) + j;
+			(*quad->indices)[counter++] = i * (numCells + 1) + j + 1;
+			(*quad->indices)[counter++] = (i + 1) * (numCells + 1) + j;
+			(*quad->indices)[counter++] = i * (numCells + 1) + j + 1;
+			(*quad->indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
+			(*quad->indices)[counter++] = (i + 1) * (numCells + 1) + j;
 		}
 	}
 }

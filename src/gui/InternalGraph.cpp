@@ -18,14 +18,11 @@ namespace InternalGraph {
 		const int realXPlus1 = (int)glm::clamp(xScaled + 1, 0.0f, (float)cellScale); //make sure its not greater than the image size
 		const int realZPlus1 = (int)glm::clamp(zScaled + 1, 0.0f, (float)cellScale);
 
-<<<<<<< HEAD
-=======
 		const float UL = noiseImage.BoundedLookUp(realX, realZ);
 		const float UR = noiseImage.BoundedLookUp(realX, realZPlus1);
 		const float DL = noiseImage.BoundedLookUp(realXPlus1, realZ);
 		const float DR = noiseImage.BoundedLookUp(realXPlus1, realZPlus1);
 
->>>>>>> 66f58168d25e0cc7bda2d3f6eeb7dcf3164315bf
 		if (realX == realXPlus1 && realZ == realZPlus1) {
 			return UL;
 		}
