@@ -9,8 +9,9 @@ TerrainQuad::TerrainQuad(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos,
 	int level, glm::i32vec2 subDivPos, float centerHeightValue):
 
 	pos(pos), size(size), 
-	logicalPos(logicalPos), logicalSize(logicalSize), subDivPos(subDivPos), isSubdivided(false),
-	heightValAtCenter(0)
+	logicalPos(logicalPos), logicalSize(logicalSize), 
+	subDivPos(subDivPos), isSubdivided(false),
+	level(level), heightValAtCenter(0)
 {
 	isReady = std::make_shared<bool>();
 	*isReady = false;
@@ -59,7 +60,7 @@ Terrain::Terrain(
 	
 	//simple calculation right now, does the absolute max number of quads possible with given max level
 	//in future should calculate the actual number of max quads, based on distance calculation
-	if (maxLevels < 0) {
+	if (maxLevels <= 0) {
 		maxNumQuads = 1;
 	}
 	else {
@@ -371,16 +372,18 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuad> quad, glm::vec3 vie
 
 	glm::vec3 center = glm::vec3(quad->pos.x + quad->size.x / 2.0f, quad->heightValAtCenter, quad->pos.y + quad->size.y / 2.0f);
 	float distanceToViewer = glm::distance(viewerPos, center);
-	bool shouldUpdateBuffers = false;
-
 
 	if (!quad->isSubdivided) { //can only subdivide if this quad isn't already subdivided
 		if (distanceToViewer < quad->size.x * 2.0f && quad->level < maxLevels) { //must be 
 			SubdivideTerrain(quad, viewerPos);
-			shouldUpdateBuffers = true;
+			return true;
 		}
 	}
 
+	else if(distanceToViewer > quad->size.x * 2.0f) {
+		UnSubdivide(quad);
+		return true;
+	}
 	else { 
 		bool uR = UpdateTerrainQuad(quad->subQuads.UpRight, viewerPos);
 		bool uL = UpdateTerrainQuad(quad->subQuads.UpLeft, viewerPos);
@@ -388,15 +391,8 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuad> quad, glm::vec3 vie
 		bool dL = UpdateTerrainQuad(quad->subQuads.DownLeft, viewerPos);
 		
 		if(uR || uL || dR || dL)
-			shouldUpdateBuffers = true;
+			return true;
 	}
-
-	if (distanceToViewer > quad->size.x * 2.0f) {
-		UnSubdivide(quad);
-		shouldUpdateBuffers = true;
-	}
-
-	return shouldUpdateBuffers;
 }
 
 void Terrain::SubdivideTerrain(std::shared_ptr<TerrainQuad> quad, glm::vec3 viewerPos) {
@@ -612,7 +608,7 @@ void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, std::shared_ptr<T
 
 	for (int i = 0; i < numCells + 1; i++)
 	{
-		for (int j = 0; j <= numCells + 1; j++)
+		for (int j = 0; j < numCells + 1; j++)
 		{
 			float uvU = uvUs[(i + 1)];
 			float uvV = uvVs[(j + 1)];
