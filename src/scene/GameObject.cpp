@@ -21,7 +21,7 @@ void GameObject::CleanUp()
 {
 	renderer->pipelineManager.DeleteManagedPipeline(mvp);
 
-    gameObjectModel.destroy(renderer->device);
+    gameObjectModel->destroy();
     gameObjectVulkanTexture.destroy(renderer->device);
 
     //modelUniformBuffer.CleanBuffer(renderer->device);
@@ -59,7 +59,7 @@ void GameObject::SetupImage()
 
 void GameObject::SetupModel()
 {
-    gameObjectModel.loadFromMesh(gameObjectMesh, renderer->device, renderer->device.GetTransferCommandBuffer());
+    gameObjectModel->loadFromMesh(gameObjectMesh, renderer->device.GetTransferCommandBuffer());
 
 }
 
@@ -199,14 +199,14 @@ void GameObject::Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNo
 
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &m_descriptorSet.set, 0, nullptr);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
-	gameObjectModel.BindModel(commandBuffer);
+	gameObjectModel->BindModel(commandBuffer);
 
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(gameObjectModel.indexCount), 1, 0, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(gameObjectModel->indexCount), 1, 0, 0, 0);
 
 
 	if (drawNormals) {
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(2));
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(gameObjectModel.indexCount), 1, 0, 0, 0);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(gameObjectModel->indexCount), 1, 0, 0, 0);
 	}
 
 

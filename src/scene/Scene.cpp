@@ -35,10 +35,12 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 
 	skybox = std::make_shared<Skybox>();
 	skybox->skyboxCubeMap = resourceMan->texManager.loadCubeMapFromFile("assets/Textures/Skybox/Skybox2", ".png");
-	skybox->model.loadFromMesh(createCube(), renderer->device, renderer->device.GetTransferCommandBuffer());
+	skybox->model = std::make_shared<VulkanModel>(renderer->device);
+	skybox->model->loadFromMesh(createCube(),  renderer->device.GetTransferCommandBuffer());
 	skybox->InitSkybox(renderer);
 
 	std::shared_ptr<GameObject> cubeObject = std::make_shared<GameObject>();
+	cubeObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
 	cubeObject->LoadModel(createCube());
 	cubeObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/ColorGradientCube.png");
 	//cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
@@ -50,7 +52,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	terrainManager->SetupResources(resourceMan, renderer);
 	terrainManager->GenerateTerrain(resourceMan, renderer, camera);
 
-	treesInstanced = std::make_shared<InstancedSceneObject>();
+	treesInstanced = std::make_shared<InstancedSceneObject>(renderer);
 	treesInstanced->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/instancedSceneObject.frag.spv"));
 	treesInstanced->SetBlendMode(VK_FALSE);
 	treesInstanced->SetCullMode(VK_CULL_MODE_BACK_BIT);
@@ -59,7 +61,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	treesInstanced->InitInstancedSceneObject(renderer);
 	treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(20,0,10), glm::vec3(10,0,40), glm::vec3(10,0,-40), glm::vec3(100,0,40) });
 
-	rocksInstanced = std::make_shared<InstancedSceneObject>();
+	rocksInstanced = std::make_shared<InstancedSceneObject>(renderer);
 
 	// gltf2 integration
 	//std::shared_ptr< gltf2::Asset> tree_test = std::make_shared<gltf2::Asset>();
@@ -144,10 +146,10 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->layout, 2, 1, &skybox->m_descriptorSet.set, 0, nullptr);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->pipelines->at(0));
 
-	skybox->model.BindModel(commandBuffer);
+	skybox->model->BindModel(commandBuffer);
 	//vkCmdBindVertexBuffers(commandBuffer, 0, 1, &skybox->model.vmaBufferVertex, offsets);
 	//vkCmdBindIndexBuffer(commandBuffer, skybox->model.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(skybox->model.indexCount), 1, 0, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(skybox->model->indexCount), 1, 0, 0, 0);
 
 }
 

@@ -36,7 +36,7 @@ public:
 
 
 
-	InstancedSceneObject(int maxInstances = 256);
+	InstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer, int maxInstances = 256);
 	~InstancedSceneObject();
 
 	void InitInstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer);
@@ -80,7 +80,7 @@ private:
 	//VkDescriptorSet descriptorSet;
 
 	std::shared_ptr<Mesh> mesh;
-	VulkanModel vulkanModel;
+	std::shared_ptr<VulkanModel> vulkanModel;
 
 	std::shared_ptr<Texture> texture;
 	VulkanTexture2D vulkanTexture;
@@ -89,8 +89,8 @@ private:
 	std::vector<glm::vec3> modelPositions;
 	std::vector<ModelBufferObject> modelUniforms;
 
-	VulkanBufferUniform uniformBuffer;
-	VulkanBufferVertex instanceBuffer;
+	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
+	std::shared_ptr<VulkanBufferVertex> instanceBuffer;
 
 	int instanceCount = 0;
 	int maxInstanceCount = 256;

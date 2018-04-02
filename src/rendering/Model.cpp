@@ -1,7 +1,12 @@
 #include "Model.hpp"
 
+VulkanModel::VulkanModel(VulkanDevice &device): device(device),
+vmaVertices(device), vmaIndicies(device)
+{
 
-bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device, 
+}
+
+bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh, 
 	VkCommandBuffer copyCmd) {
 
 	std::vector<float> vertexBuffer;
@@ -39,14 +44,14 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device,
 	uint32_t iBufferSize = static_cast<uint32_t>(indexBuffer.size()) * sizeof(uint32_t);
 
 
-	vmaVertices.CreateVertexBuffer(device, (uint32_t)vertexBuffer.size());
-	vmaIndicies.CreateIndexBuffer(device, (uint32_t)indexBuffer.size());
+	vmaVertices.CreateVertexBuffer((uint32_t)vertexBuffer.size());
+	vmaIndicies.CreateIndexBuffer((uint32_t)indexBuffer.size());
 
-	VulkanBufferVertex vertexStagingBuffer;
-	VulkanBufferIndex indexStagingBuffer;
+	VulkanBufferVertex vertexStagingBuffer(device);
+	VulkanBufferIndex indexStagingBuffer(device);
 
-	vertexStagingBuffer.CreateStagingVertexBuffer(device, vertexBuffer.data(), (uint32_t)vertexCount);
-	indexStagingBuffer.CreateStagingIndexBuffer(device, indexBuffer.data(), (uint32_t)indexCount);
+	vertexStagingBuffer.CreateStagingVertexBuffer(vertexBuffer.data(), (uint32_t)vertexCount);
+	indexStagingBuffer.CreateStagingIndexBuffer(indexBuffer.data(), (uint32_t)indexCount);
 
 	VkBufferCopy copyRegion{};
 
@@ -58,8 +63,8 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device,
 
 	device.SubmitTransferCommandBufferAndWait(copyCmd);
 
-	vertexStagingBuffer.CleanBuffer(device);
-	indexStagingBuffer.CleanBuffer(device);
+	vertexStagingBuffer.CleanBuffer();
+	indexStagingBuffer.CleanBuffer();
 
 	return true;
 
@@ -133,7 +138,7 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device,
 * @param copyQueue Queue used for the memory staging copy commands (must support transfer)
 * @param (Optional) flags ASSIMP model loading flags
 */
-bool VulkanModel::loadFromFile(const std::string& filename, VulkanDevice &device, VkQueue copyQueue)
+bool VulkanModel::loadFromFile(const std::string& filename, VkQueue copyQueue)
 {
 	//Mesh importedMesh;
 	//if (fileExists(filename)) { //file exists and can be loaded
@@ -353,8 +358,8 @@ void VulkanModel::BindModel(VkCommandBuffer cmdBuf) {
 }
 
 /** @brief Release all Vulkan resources of this model */
-void VulkanModel::destroy(VulkanDevice& device)
+void VulkanModel::destroy()
 {
-	vmaVertices.CleanBuffer(device);
-	vmaIndicies.CleanBuffer(device);
+	vmaVertices.CleanBuffer();
+	vmaIndicies.CleanBuffer();
 }

@@ -21,6 +21,8 @@ void Water::InitWater(std::shared_ptr<VulkanRenderer> renderer, VulkanTexture2D&
 	//SetupModel();
 	SetupDescriptor(WaterVulkanTexture);
 	SetupPipeline();
+
+	modelUniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
 }
 
 void Water::CleanUp()
@@ -30,19 +32,19 @@ void Water::CleanUp()
 	//WaterModel.destroy(renderer->device);
 	//WaterVulkanTexture.destroy(renderer->device);
 
-	modelUniformBuffer.CleanBuffer(renderer->device);
+	modelUniformBuffer->CleanBuffer();
 }
 
 void Water::SetupUniformBuffer()
 {
 	//renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &modelUniformBuffer, sizeof(ModelBufferObject));
-	modelUniformBuffer.CreateUniformBuffer(renderer->device, sizeof(ModelBufferObject));
+	modelUniformBuffer->CreateUniformBuffer(sizeof(ModelBufferObject));
 
 	ModelBufferObject ubo = {};
 	ubo.model = glm::translate(glm::mat4(), pos);
 	ubo.normal = glm::transpose(glm::inverse(ubo.model));
 
-	modelUniformBuffer.CopyToBuffer(renderer->device, &ubo, sizeof(ModelBufferObject));
+	modelUniformBuffer->CopyToBuffer(&ubo, sizeof(ModelBufferObject));
 }
 
 void Water::SetupImage()
@@ -72,7 +74,7 @@ void Water::SetupDescriptor(VulkanTexture2D& WaterVulkanTexture)
 	m_descriptorSet = descriptor->CreateDescriptorSet();
 
 	std::vector<DescriptorUse> writes;
-	writes.push_back(DescriptorUse(2, 1, modelUniformBuffer.resource));
+	writes.push_back(DescriptorUse(2, 1, modelUniformBuffer->resource));
 	writes.push_back(DescriptorUse(3, 1, WaterVulkanTexture.resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
 }

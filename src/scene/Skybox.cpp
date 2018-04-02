@@ -11,7 +11,7 @@ Skybox::~Skybox() {
 void Skybox::CleanUp() {
 	renderer->pipelineManager.DeleteManagedPipeline(mvp);
 
-	model.destroy(renderer->device);
+	model->destroy();
 	vulkanCubeMap.destroy(renderer->device);
 
 	//skyboxUniformBuffer.cleanBuffer();

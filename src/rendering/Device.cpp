@@ -1,13 +1,14 @@
 #include "Device.hpp"
-#include "Initializers.hpp"
 
-#include "SwapChain.hpp"
+#include "Initializers.hpp"
 #include "RendererStructs.h"
+#include "SwapChain.hpp"
+#include "Buffer.hpp"
 
 #include "../core/Logger.h"
 
 
-TransferQueue::TransferQueue(VkDevice device, VkCommandPool transfer_queue_command_pool, VkQueue transfer_queue, uint32_t transferFamily):
+TransferQueue::TransferQueue(VulkanDevice& device, VkCommandPool transfer_queue_command_pool, VkQueue transfer_queue, uint32_t transferFamily):
 	device(device), transfer_queue_command_pool(transfer_queue_command_pool), transfer_queue(transfer_queue){
 
 	//vkGetDeviceQueue(device, transferFamily, 0, &transfer_queue);
@@ -21,7 +22,9 @@ VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
 	VkCommandBuffer buf;
 	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
-	vkAllocateCommandBuffers(device, &allocInfo, &buf);
+	transferLock.lock();
+	vkAllocateCommandBuffers(device.device, &allocInfo, &buf);
+	transferLock.unlock();
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -33,7 +36,7 @@ VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
 }
 
 void WaitForSubmissionFinish(VkDevice device, VkCommandPool transfer_queue_command_pool, 
-	VkCommandBuffer buf, VkFence fence, std::vector<Signal> readySignal) {
+	VkCommandBuffer buf, VkFence fence, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
 
 	vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 	if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
@@ -54,11 +57,15 @@ void WaitForSubmissionFinish(VkDevice device, VkCommandPool transfer_queue_comma
 	}
 
 
-	vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &buf);
 	vkDestroyFence(device, fence, nullptr);
+
+	vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &buf);
+	for (auto& buffer : bufsToClean) {
+		buffer.CleanBuffer();
+	}
 }
 
-void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
+void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
 	vkEndCommandBuffer(buf);
 
 	VkSubmitInfo submitInfo = initializers::submitInfo();
@@ -66,15 +73,19 @@ void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector
 	submitInfo.pCommandBuffers = &buf;
 
 	VkFence fence;
-	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo();
-	VK_CHECK_RESULT(vkCreateFence(device, &fenceInfo, nullptr, &fence))
+	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 
 	transferLock.lock();
 	vkQueueSubmit(transfer_queue, 1, &submitInfo, fence);
 	transferLock.unlock();
 
-	std::thread submissionCompletion = std::thread(WaitForSubmissionFinish, device, transfer_queue_command_pool, buf, fence, readySignal);
+	std::thread submissionCompletion = std::thread(WaitForSubmissionFinish, device.device, transfer_queue_command_pool, buf, fence, readySignal, bufsToClean);
 	submissionCompletion.detach();
+}
+
+void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
+	SubmitTransferCommandBuffer(buf, readySignal, {});
 }
 
 void TransferQueue::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
@@ -85,16 +96,16 @@ void TransferQueue::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
 	submitInfo.pCommandBuffers = &buf;
 
 	VkFence fence;
-	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo();
-	VK_CHECK_RESULT(vkCreateFence(device, &fenceInfo, nullptr, &fence))
+	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 
 	transferLock.lock();
 	vkQueueSubmit(transfer_queue, 1, &submitInfo, fence);
 	transferLock.unlock();
 
-	vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-	vkDestroyFence(device, fence, nullptr);
-	vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &buf);
+	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+	vkDestroyFence(device.device, fence, nullptr);
+	vkFreeCommandBuffers(device.device, transfer_queue_command_pool, 1, &buf);
 }
 
 
@@ -132,7 +143,7 @@ void VulkanDevice::InitVulkanDevice(VkSurfaceKHR &surface)
 
 	//when the hardware doesn't have a separate transfer queue ( can't do asynchronous submissions)
 	if (familyIndices.graphicsFamily != familyIndices.transferFamily) {
-		transferQueue = std::make_unique<TransferQueue>(device, transfer_queue_command_pool, transfer_queue, familyIndices.transferFamily);
+		transferQueue = std::make_unique<TransferQueue>(*this, transfer_queue_command_pool, transfer_queue, familyIndices.transferFamily);
 		separateTransferQueue = true;
 	}
 	else
@@ -654,10 +665,11 @@ void VulkanDevice::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
 	}
 }
 
-void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
+void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
 	if (separateTransferQueue) {
-		transferQueue->SubmitTransferCommandBuffer(buf, readySignal);
-	} else if (isDmaCmdBufWritable) {
+		transferQueue->SubmitTransferCommandBuffer(buf, readySignal, bufsToClean);
+	}
+	else if (isDmaCmdBufWritable) {
 		vkEndCommandBuffer(dmaCmdBuf);
 
 		VkSubmitInfo submitInfo = initializers::submitInfo();
@@ -670,6 +682,10 @@ void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<
 		vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &dmaCmdBuf);
 		isDmaCmdBufWritable = false;
 	}
+}
+
+void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
+	SubmitTransferCommandBuffer(buf, readySignal, {});
 }
 
 void VulkanDevice::createInstance(std::string appName) {

@@ -6,13 +6,17 @@
 #define INSTANCE_BUFFER_BIND_ID 1
 
 
-InstancedSceneObject::InstancedSceneObject(int maxInstances) : maxInstanceCount(maxInstances)
+InstancedSceneObject::InstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer, int maxInstances) : maxInstanceCount(maxInstances)
 {
+	vulkanModel = std::make_shared<VulkanModel>(renderer->device);
+	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
+	instanceBuffer = std::make_shared<VulkanBufferVertex>(renderer->device);
 }
 
 
 InstancedSceneObject::~InstancedSceneObject()
 {
+
 }
 
 
@@ -31,11 +35,11 @@ void InstancedSceneObject::CleanUp()
 {
 	renderer->pipelineManager.DeleteManagedPipeline(mvp);
 
-	vulkanModel.destroy(renderer->device);
+	vulkanModel->destroy();
 	vulkanTexture.destroy(renderer->device);
 
-	uniformBuffer.CleanBuffer(renderer->device);
-	instanceBuffer.CleanBuffer(renderer->device);
+	uniformBuffer->CleanBuffer();
+	instanceBuffer->CleanBuffer();
 	//vkDestroyBuffer(renderer->device.device, instanceBuffer.buffer, nullptr);
 	//vkFreeMemory(renderer->device.device, instanceBuffer.memory, nullptr);
 }
@@ -66,7 +70,7 @@ void InstancedSceneObject::SetBlendMode(VkBool32 blendEnable){
 }
 
 void InstancedSceneObject::SetupUniformBuffer() {
-	uniformBuffer.CreateUniformBuffer(renderer->device, sizeof(ModelBufferObject));
+	uniformBuffer->CreateUniformBuffer(sizeof(ModelBufferObject));
 	//renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &uniformBuffer, sizeof(ModelBufferObject));
 
 	ModelBufferObject ubo = {};
@@ -75,13 +79,13 @@ void InstancedSceneObject::SetupUniformBuffer() {
 	//ubo.model = glm::rotate(ubo.model, time / 2.0f, glm::vec3(0.5, 1, 0));
 	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 		
-	uniformBuffer.CopyToBuffer(renderer->device, &ubo, sizeof(ModelBufferObject));
+	uniformBuffer->CopyToBuffer(&ubo, sizeof(ModelBufferObject));
 
 	//VK_CHECK_RESULT(uniformBuffer.map(renderer->device.device));
 	//uniformBuffer.copyTo(&ubo, sizeof(ModelBufferObject));
 	//uniformBuffer.unmap();
 
-	instanceBuffer.CreateVertexBuffer(renderer->device, sizeof(InstanceData) * maxInstanceCount);
+	instanceBuffer->CreateVertexBuffer(sizeof(InstanceData) * maxInstanceCount);
 
 }
 
@@ -90,7 +94,7 @@ void InstancedSceneObject::SetupImage() {
 }
 
 void InstancedSceneObject::SetupModel() {
-	vulkanModel.loadFromMesh(mesh, renderer->device, renderer->device.GetTransferCommandBuffer());
+	vulkanModel->loadFromMesh(mesh, renderer->device.GetTransferCommandBuffer());
 }
 
 void InstancedSceneObject::SetupDescriptor() {
@@ -109,7 +113,7 @@ void InstancedSceneObject::SetupDescriptor() {
 	m_descriptorSet = descriptor->CreateDescriptorSet();
 
 	std::vector<DescriptorUse> writes;
-	writes.push_back(DescriptorUse(2, 1, uniformBuffer.resource));
+	writes.push_back(DescriptorUse(2, 1, uniformBuffer->resource));
 	writes.push_back(DescriptorUse(3, 1, vulkanTexture.resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
 
@@ -207,8 +211,8 @@ void InstancedSceneObject::AddInstance(InstanceData data) {
 void InstancedSceneObject::UploadInstances() {
 	size_t instanceBufferSize = instancesData.size() * sizeof(InstanceData);
 
-	VulkanBufferUniform stagingBuffer;
-	stagingBuffer.CreateStagingUniformBuffer(renderer->device, instancesData.data(), instanceBufferSize);
+	VulkanBufferUniform stagingBuffer(renderer->device);
+	stagingBuffer.CreateStagingUniformBuffer(instancesData.data(), instanceBufferSize);
 
 	auto copyCmd = renderer->device.GetTransferCommandBuffer();
 
@@ -217,16 +221,16 @@ void InstancedSceneObject::UploadInstances() {
 	vkCmdCopyBuffer(
 		copyCmd,
 		stagingBuffer.buffer.buffer,
-		instanceBuffer.buffer.buffer,
+		instanceBuffer->buffer.buffer,
 		1,
 		&copyRegion);
 
 	renderer->device.SubmitTransferCommandBufferAndWait(copyCmd);
 
-	instanceBuffer.resource.FillResource(instanceBuffer.buffer.buffer, 0, instanceBufferSize);
+	instanceBuffer->resource.FillResource(instanceBuffer->buffer.buffer, 0, instanceBufferSize);
 
 	// Destroy staging resources
-	stagingBuffer.CleanBuffer(renderer->device);
+	stagingBuffer.CleanBuffer();
 }
 
 void InstancedSceneObject::AddInstances(std::vector<glm::vec3> positions) {
@@ -277,11 +281,11 @@ void InstancedSceneObject::WriteToCommandBuffer(VkCommandBuffer commandBuffer, b
 	
 	//vulkanModel.BindModel(commandBuffer);
 	// Binding point 0 : Mesh vertex buffer
-	vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &vulkanModel.vmaVertices.buffer.buffer, offsets);
+	vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &vulkanModel->vmaVertices.buffer.buffer, offsets);
 	// Binding point 1 : Instance data buffer
-	vkCmdBindVertexBuffers(commandBuffer, INSTANCE_BUFFER_BIND_ID, 1, &instanceBuffer.buffer.buffer, offsets);
+	vkCmdBindVertexBuffers(commandBuffer, INSTANCE_BUFFER_BIND_ID, 1, &instanceBuffer->buffer.buffer, offsets);
 
-	vkCmdBindIndexBuffer(commandBuffer, vulkanModel.vmaIndicies.buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(vulkanModel.indexCount), 16, 0, 0, 0);
+	vkCmdBindIndexBuffer(commandBuffer, vulkanModel->vmaIndicies.buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(vulkanModel->indexCount), 16, 0, 0, 0);
 
 }

@@ -96,7 +96,7 @@ private:
 	std::vector<std::shared_ptr<Water>> waters;
 
 	std::shared_ptr<Mesh> WaterMesh;
-	VulkanModel WaterModel;
+	std::shared_ptr<VulkanModel> WaterModel;
 
 	std::shared_ptr<TextureArray> terrainTextureArray;
 	VulkanTexture2DArray terrainVulkanTextureArray;

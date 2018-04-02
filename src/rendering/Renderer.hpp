@@ -48,9 +48,6 @@ public:
 	void CreateCommandBuffers();
 	void CreateSemaphores();
 
-	void PrepareDMACommandBuffer();
-	void SubmitDMACommandBuffer();
-
 	void PrepareFrame();
 	void SubmitFrame();
 

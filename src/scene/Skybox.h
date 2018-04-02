@@ -32,7 +32,7 @@ public:
 	std::shared_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;
 
-	VulkanModel model;
+	std::shared_ptr<VulkanModel> model;
 
 	std::shared_ptr<CubeMap> skyboxCubeMap;
 	VulkanCubeMap vulkanCubeMap;

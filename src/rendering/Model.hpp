@@ -14,7 +14,12 @@
 
 
 class VulkanModel {
+private:
+	VulkanDevice & device;
+
 public:
+
+	VulkanModel(VulkanDevice &device);
 
 	//VulkanBuffer vertices;
 	//VulkanBuffer indices;
@@ -32,7 +37,7 @@ public:
 	};
 	std::vector<ModelPart> parts;
 
-	bool loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanDevice &device, VkCommandBuffer transferBuf);
+	bool loadFromMesh(std::shared_ptr<Mesh> mesh, VkCommandBuffer transferBuf);
 
 	/**
 	* Loads a 3D model from a file into Vulkan buffers
@@ -44,10 +49,10 @@ public:
 	* @param copyQueue Queue used for the memory staging copy commands (must support transfer)
 	* @param (Optional) flags ASSIMP model loading flags
 	*/
-	bool loadFromFile(const std::string& filename, VulkanDevice &device, VkQueue copyQueue);
+	bool loadFromFile(const std::string& filename, VkQueue copyQueue);
 
 	void BindModel(VkCommandBuffer cmdBuf);
 
 	/** @brief Release all Vulkan resources of this model */
-	void destroy(VulkanDevice& device);
+	void destroy();
 };

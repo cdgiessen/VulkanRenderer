@@ -94,8 +94,8 @@ Terrain::~Terrain() {
 void Terrain::CleanUp()
 {
 	//cleanup model buffers
-	vertexBuffer.CleanBuffer(renderer->device);
-	indexBuffer.CleanBuffer(renderer->device);
+	vertexBuffer->CleanBuffer();
+	indexBuffer->CleanBuffer();
 
 	terrainVulkanSplatMap.destroy(renderer->device);
 }
@@ -143,8 +143,11 @@ void Terrain::SetupMeshbuffers() {
 
 	// Create device local target buffers
 	// Vertex buffer
-	vertexBuffer.CreateVertexBuffer(renderer->device, maxNumQuads * vertCount);
-	indexBuffer.CreateIndexBuffer(renderer->device, maxNumQuads * indCount);
+	vertexBuffer = std::make_shared<VulkanBufferVertex>(renderer->device);
+	indexBuffer = std::make_shared<VulkanBufferIndex>(renderer->device);
+
+	vertexBuffer->CreateVertexBuffer(maxNumQuads * vertCount);
+	indexBuffer->CreateIndexBuffer(maxNumQuads * indCount);
 }
 
 void Terrain::SetupUniformBuffer()
@@ -269,8 +272,8 @@ void Terrain::UpdateMeshBuffer() {
 	verts.resize(quadHandles.size());
 	inds.resize(quadHandles.size());
 
-	//std::vector<ReadyFlag> flags;
-	//flags.reserve(quadHandles.size());
+	std::vector<Signal> flags;
+	flags.reserve(quadHandles.size());
 
 	if (quadHandles.size() > PrevQuadHandles.size()) //more meshes than before
 	{
@@ -286,7 +289,7 @@ void Terrain::UpdateMeshBuffer() {
 				indexCopyRegions.push_back(
 					initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), 
 					i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices)));
-				//flags.push_back(quadHandles[i]->isReady);
+				flags.push_back(quadHandles[i]->isReady);
 			}
 		}
 		for (uint32_t i = (uint32_t)PrevQuadHandles.size(); i < quadHandles.size(); i++) {
@@ -300,7 +303,7 @@ void Terrain::UpdateMeshBuffer() {
 			indexCopyRegions.push_back(
 				initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), 
 				i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices)));
-			//flags.push_back(quadHandles[i]->isReady);
+			flags.push_back(quadHandles[i]->isReady);
 		}
 	}
 	else { //less meshes than before, can erase at end.
@@ -316,7 +319,7 @@ void Terrain::UpdateMeshBuffer() {
 				indexCopyRegions.push_back(
 					initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), 
 					i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices)));
-				//flags.push_back(quadHandles[i]->isReady);
+				flags.push_back(quadHandles[i]->isReady);
 			}
 		}
 	}
@@ -325,23 +328,23 @@ void Terrain::UpdateMeshBuffer() {
 
 	if (vertexCopyRegions.size() > 0 || indexCopyRegions.size() > 0)
 	{
-		VulkanBufferVertex vertexStaging;
-		VulkanBufferIndex indexStaging;
+		VulkanBufferVertex vertexStaging(renderer->device);
+		VulkanBufferIndex indexStaging(renderer->device);
 
-		vertexStaging.CreateStagingVertexBuffer(renderer->device, verts.data(), verts.size() * vertCount);
-		indexStaging.CreateStagingIndexBuffer(renderer->device, inds.data(), inds.size() * indCount);
+		vertexStaging.CreateStagingVertexBuffer(verts.data(), verts.size() * vertCount);
+		indexStaging.CreateStagingIndexBuffer(inds.data(), inds.size() * indCount);
 
 		VkCommandBuffer copyCmd = renderer->device.GetTransferCommandBuffer();
 
-		vkCmdCopyBuffer(copyCmd, vertexStaging.buffer.buffer, vertexBuffer.buffer.buffer, (uint32_t)vertexCopyRegions.size(), vertexCopyRegions.data());
+		vkCmdCopyBuffer(copyCmd, vertexStaging.buffer.buffer, vertexBuffer->buffer.buffer, (uint32_t)vertexCopyRegions.size(), vertexCopyRegions.data());
 
-		//copyRegion.size = indexBuffer.size;
-		vkCmdCopyBuffer(copyCmd, indexStaging.buffer.buffer, indexBuffer.buffer.buffer, (uint32_t)indexCopyRegions.size(), indexCopyRegions.data());
+		//copyRegion.size = indexBuffer->size;
+		vkCmdCopyBuffer(copyCmd, indexStaging.buffer.buffer, indexBuffer->buffer.buffer, (uint32_t)indexCopyRegions.size(), indexCopyRegions.data());
 
-		renderer->device.SubmitTransferCommandBufferAndWait(copyCmd);
+		renderer->device.SubmitTransferCommandBuffer(copyCmd, flags, std::vector<VulkanBuffer>( { std::move(vertexStaging), std::move(indexStaging) }));
 
-		vertexStaging.CleanBuffer(renderer->device);
-		indexStaging.CleanBuffer(renderer->device);
+		//vertexStaging.CleanBuffer(renderer->device);
+		//indexStaging.CleanBuffer(renderer->device);
 
 		//renderer->device.DestroyVmaAllocatedBuffer(&vmaStagingBufVertex, &vmaStagingVertices);
 		//renderer->device.DestroyVmaAllocatedBuffer(&vmaStagingBufIndex, &vmaStagingIndecies);
@@ -535,11 +538,11 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], bool
 
 	drawTimer.StartTimer();
 	for (int i = 0; i < quadHandles.size(); ++i) {
-		if (!quadHandles[i]->isSubdivided ){//&& (*(quadHandles[i]->isReady)) == true) {
+		if (!quadHandles[i]->isSubdivided && (*(quadHandles[i]->isReady)) == true) {
 
 
-			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vertexBuffer.buffer.buffer, &vertexOffsettings[i]);
-			vkCmdBindIndexBuffer(cmdBuff, indexBuffer.buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
+			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vertexBuffer->buffer.buffer, &vertexOffsettings[i]);
+			vkCmdBindIndexBuffer(cmdBuff, indexBuffer->buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
 
 
 			vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);

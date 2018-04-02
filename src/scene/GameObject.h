@@ -29,7 +29,7 @@ class GameObject
 	DescriptorSet m_descriptorSet;
 
     std::shared_ptr<Mesh> gameObjectMesh;
-    VulkanModel gameObjectModel;
+	std::shared_ptr<VulkanModel> gameObjectModel;
 
     std::shared_ptr<Texture> gameObjectTexture;
     VulkanTexture2D gameObjectVulkanTexture;

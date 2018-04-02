@@ -25,7 +25,7 @@ public:
 	DescriptorSet m_descriptorSet;
 
 	ModelBufferObject modelUniformObject;
-	VulkanBufferUniform modelUniformBuffer;
+	std::shared_ptr<VulkanBufferUniform> modelUniformBuffer;
 
 	std::vector<VkCommandBuffer> commandBuffers;
 

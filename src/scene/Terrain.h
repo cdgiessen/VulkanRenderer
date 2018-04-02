@@ -108,8 +108,8 @@ public:
 
 	std::shared_ptr<VulkanDescriptor> descriptor;
 
-	VulkanBufferVertex vertexBuffer;
-	VulkanBufferIndex indexBuffer;
+	std::shared_ptr<VulkanBufferVertex> vertexBuffer;
+	std::shared_ptr<VulkanBufferIndex> indexBuffer;
 
 	DescriptorSet descriptorSet;
 

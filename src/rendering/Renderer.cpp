@@ -9,7 +9,15 @@
 #include "../core/Logger.h"
 
 VulkanRenderer::VulkanRenderer(bool validationLayer, std::shared_ptr<Scene> scene) 
-	: device(validationLayer), vulkanSwapChain(device), shaderManager(device), pipelineManager(device), scene(scene), textureManager(device)
+	: device(validationLayer), 
+	vulkanSwapChain(device), 
+	shaderManager(device), 
+	pipelineManager(device), 
+	scene(scene), 
+	textureManager(device),
+	globalVariableBuffer(device),
+	pointLightsBuffer(device),
+	entityPositions(device)
 {
 }
 
@@ -40,8 +48,8 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 }
 
 void VulkanRenderer::UpdateGlobalRenderResources(GlobalVariableUniformBuffer globalData, std::vector<PointLight> lightData){
-	globalVariableBuffer.CopyToBuffer(device, &globalData, sizeof(GlobalVariableUniformBuffer));
-	pointLightsBuffer.CopyToBuffer(device, lightData.data(), lightData.size()*sizeof(PointLight));
+	globalVariableBuffer.CopyToBuffer(&globalData, sizeof(GlobalVariableUniformBuffer));
+	pointLightsBuffer.CopyToBuffer(lightData.data(), lightData.size()*sizeof(PointLight));
 }
 
 void VulkanRenderer::RenderFrame() {
@@ -53,8 +61,8 @@ void VulkanRenderer::RenderFrame() {
 }
 
 void VulkanRenderer::CleanVulkanResources() {
-	globalVariableBuffer.CleanBuffer(device);
-	pointLightsBuffer.CleanBuffer(device);
+	globalVariableBuffer.CleanBuffer();
+	pointLightsBuffer.CleanBuffer();
 	vkDestroyPipelineLayout(device.device, globalDescriptorLayout, nullptr);
 	vkDestroyPipelineLayout(device.device, pointLightDescriptorLayout, nullptr);
 
@@ -365,8 +373,8 @@ void VulkanRenderer::SubmitFrame()
 }
 
 void VulkanRenderer::PrepareResources() {
-	globalVariableBuffer.CreateUniformBuffer(device, sizeof(GlobalVariableUniformBuffer));
-	pointLightsBuffer.CreateUniformBuffer(device, sizeof(PointLight) * 5);
+	globalVariableBuffer.CreateUniformBuffer(sizeof(GlobalVariableUniformBuffer));
+	pointLightsBuffer.CreateUniformBuffer(sizeof(PointLight) * 5);
 
 	SetupGlobalDescriptorSet();
 	SetupLightingDescriptorSet();

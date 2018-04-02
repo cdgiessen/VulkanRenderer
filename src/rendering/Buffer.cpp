@@ -1,22 +1,22 @@
 #include "Buffer.hpp"
 
 
-VulkanBuffer::VulkanBuffer()
-	: resource(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+VulkanBuffer::VulkanBuffer(VulkanDevice& device)
+	: device(device), resource(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER){
 }
 
-VulkanBuffer::VulkanBuffer(VkDescriptorType type)
-	: resource(type) {
+VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDescriptorType type)
+	: device(device), resource(type) {
 }
 
-void VulkanBuffer::CleanBuffer(VulkanDevice& device) {
+void VulkanBuffer::CleanBuffer() {
 	device.DestroyVmaAllocatedBuffer(buffer);
 }
 
-void VulkanBuffer::Map(VulkanDevice& device, void** pData) {
+void VulkanBuffer::Map(void** pData) {
 	device.VmaMapMemory(buffer, pData);
 }
-void VulkanBuffer::Unmap(VulkanDevice& device) {
+void VulkanBuffer::Unmap() {
 	device.VmaUnmapMemory(buffer);
 }
 
@@ -38,50 +38,50 @@ void AlignedMemcpy(uint8_t bytes, VkDeviceSize destMemAlignment, void* src, void
 	}
 }
 
-void VulkanBuffer::CopyToBuffer(VulkanDevice& device, void* pData, VkDeviceSize size)
+void VulkanBuffer::CopyToBuffer(void* pData, VkDeviceSize size)
 {
 	void* mapped;
-	this->Map(device, &mapped);
+	this->Map(&mapped);
 
 	//VkDeviceSize bufAlignment = device.physical_device_properties.limits.minUniformBufferOffsetAlignment;
 
 	//AlignedMemcpy((size_t)size, bufAlignment, pData, mapped);
 
 	memcpy(mapped, pData, (size_t)size);
-	this->Unmap(device);
+	this->Unmap();
 }
 
-VulkanBufferUniform::VulkanBufferUniform() {
+VulkanBufferUniform::VulkanBufferUniform(VulkanDevice& device): VulkanBuffer(device) {
 
 }
 
-void VulkanBufferUniform::CreateUniformBuffer(VulkanDevice& device, VkDeviceSize size) {
+void VulkanBufferUniform::CreateUniformBuffer(VkDeviceSize size) {
 	m_size = size;
 	device.CreateUniformBuffer(buffer, size);
 	SetupResource();
 }
 
-void VulkanBufferUniform::CreateStagingUniformBuffer(VulkanDevice& device, void* pData, VkDeviceSize size) {
+void VulkanBufferUniform::CreateStagingUniformBuffer(void* pData, VkDeviceSize size) {
 	m_size = size;
 	device.CreateStagingUniformBuffer(buffer, pData, size);
 	SetupResource();
 }
 
-VulkanBufferUniformDynamic::VulkanBufferUniformDynamic() :
-	VulkanBuffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+VulkanBufferUniformDynamic::VulkanBufferUniformDynamic(VulkanDevice& device):
+	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
 
 }
 
-void VulkanBufferUniformDynamic::CreateDynamicUniformBuffer(VulkanDevice& device, uint32_t count, VkDeviceSize size) {
+void VulkanBufferUniformDynamic::CreateDynamicUniformBuffer(uint32_t count, VkDeviceSize size) {
 	m_size = count*size;
 	device.CreateDynamicUniformBuffer(buffer, count, size);
 }
 
-VulkanBufferVertex::VulkanBufferVertex() {
+VulkanBufferVertex::VulkanBufferVertex(VulkanDevice& device) : VulkanBuffer(device) {
 
 }
 	 
-void VulkanBufferVertex::CreateVertexBuffer(VulkanDevice& device, uint32_t count) {
+void VulkanBufferVertex::CreateVertexBuffer(uint32_t count) {
 
 	VkDeviceSize size = count * 12 * sizeof(float);
 	m_size = size;
@@ -89,7 +89,7 @@ void VulkanBufferVertex::CreateVertexBuffer(VulkanDevice& device, uint32_t count
 	SetupResource();
 }
 
-void VulkanBufferVertex::CreateStagingVertexBuffer(VulkanDevice& device, void* pData, uint32_t count) {
+void VulkanBufferVertex::CreateStagingVertexBuffer(void* pData, uint32_t count) {
 	VkDeviceSize size = count * 12 * sizeof(float);
 	m_size = size;
 	device.CreateMeshStagingBuffer(buffer, pData, size);
@@ -101,17 +101,17 @@ void VulkanBufferVertex::BindVertexBuffer(VkCommandBuffer cmdBuf) {
 	vkCmdBindVertexBuffers(cmdBuf, 0, 1, &buffer.buffer, offsets);
 }
 
-VulkanBufferIndex::VulkanBufferIndex() {
+VulkanBufferIndex::VulkanBufferIndex(VulkanDevice& device) : VulkanBuffer(device) {
 
 }
 
-void VulkanBufferIndex::CreateIndexBuffer(VulkanDevice& device, uint32_t count) {
+void VulkanBufferIndex::CreateIndexBuffer(uint32_t count) {
 	m_size = sizeof(int) * count;
 	device.CreateMeshBufferIndex(buffer, sizeof(int) * count);
 	SetupResource();
 } 
 
-void VulkanBufferIndex::CreateStagingIndexBuffer(VulkanDevice& device, void* pData, uint32_t count) {
+void VulkanBufferIndex::CreateStagingIndexBuffer(void* pData, uint32_t count) {
 	m_size = sizeof(int) * count;
 	device.CreateMeshStagingBuffer(buffer, pData, sizeof(int) * count);
 	SetupResource();

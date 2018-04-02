@@ -48,17 +48,21 @@ struct VmaImage {
 	VmaAllocationInfo allocationInfo;
 };
 
+class VulkanDevice;
+class VulkanBuffer;
+
 class TransferQueue {
 public:
-	TransferQueue(VkDevice device, VkCommandPool transfer_queue_command_pool, VkQueue transfer_queue, uint32_t transferFamily);
+	TransferQueue(VulkanDevice& device, VkCommandPool transfer_queue_command_pool, VkQueue transfer_queue, uint32_t transferFamily);
 	~TransferQueue();
 
 	VkCommandBuffer GetTransferCommandBuffer();
 	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
+	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
 	void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
 
 private:
-	VkDevice device;
+	VulkanDevice& device;
 	VkQueue transfer_queue;
 	VkCommandPool transfer_queue_command_pool;
 	std::mutex transferLock;
@@ -127,6 +131,7 @@ public:
 
 	void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
 	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
+	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
 
 	/**
 	* Create a buffer on the device

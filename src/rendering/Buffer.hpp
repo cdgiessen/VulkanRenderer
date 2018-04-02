@@ -17,20 +17,22 @@
 
 class VulkanBuffer {
 public:
-	VulkanBuffer();
-	VulkanBuffer(VkDescriptorType type);
+	VulkanBuffer(VulkanDevice& device);
+	VulkanBuffer(VulkanDevice& device, VkDescriptorType type);
 
-	void CleanBuffer(VulkanDevice& device);
+	void CleanBuffer();
 
-	void Map(VulkanDevice& device, void** pData);
-	void Unmap(VulkanDevice& device);
+	void Map(void** pData);
+	void Unmap();
 
-	void CopyToBuffer(VulkanDevice& device, void* pData, VkDeviceSize size);
+	void CopyToBuffer(void* pData, VkDeviceSize size);
 
 	VmaBuffer buffer;
 	DescriptorResource resource;
 
 protected:
+	VulkanDevice& device;
+
 	void SetupResource();
 
 	VkDeviceSize m_size;
@@ -38,33 +40,36 @@ protected:
 
 class VulkanBufferUniform : public VulkanBuffer {
 public:
-	VulkanBufferUniform();
-	void CreateUniformBuffer(VulkanDevice& device, VkDeviceSize size);
-	void CreateStagingUniformBuffer(VulkanDevice& device, void* pData, VkDeviceSize size);
+	VulkanBufferUniform(VulkanDevice& device);
+
+	void CreateUniformBuffer(VkDeviceSize size);
+	void CreateStagingUniformBuffer(void* pData, VkDeviceSize size);
 
 
 };
 class VulkanBufferUniformDynamic : public VulkanBuffer {
 public:
-	VulkanBufferUniformDynamic();
-	void CreateDynamicUniformBuffer(VulkanDevice& device, uint32_t count, VkDeviceSize size);
+	VulkanBufferUniformDynamic(VulkanDevice& device);
+
+	void CreateDynamicUniformBuffer(uint32_t count, VkDeviceSize size);
 
 };
 
 class VulkanBufferVertex : public VulkanBuffer {
 public:
-	VulkanBufferVertex();
-	void CreateVertexBuffer(VulkanDevice& device, uint32_t count);
-	void CreateStagingVertexBuffer(VulkanDevice& device, void* pData, uint32_t count);
+	VulkanBufferVertex(VulkanDevice& device);
+
+	void CreateVertexBuffer(uint32_t count);
+	void CreateStagingVertexBuffer(void* pData, uint32_t count);
 	
 	void BindVertexBuffer(VkCommandBuffer cmdBuf);
 };
 
 class VulkanBufferIndex : public VulkanBuffer {
 public:
-	VulkanBufferIndex();
-	void CreateIndexBuffer(VulkanDevice& device, uint32_t count);
-	void CreateStagingIndexBuffer(VulkanDevice& device, void* pData, uint32_t count);
+	VulkanBufferIndex(VulkanDevice& device);
+	void CreateIndexBuffer(uint32_t count);
+	void CreateStagingIndexBuffer(void* pData, uint32_t count);
 
 	void BindIndexBuffer(VkCommandBuffer cmdBuf);
 
