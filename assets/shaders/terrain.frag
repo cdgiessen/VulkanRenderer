@@ -29,10 +29,9 @@ layout(set = 1, binding = 1) uniform PointLightsBuffer {
 layout(set = 2, binding = 3) uniform sampler2D texSplatMap;
 layout(set = 2, binding = 4) uniform sampler2DArray texArray;
 
-layout(location = 0) in vec3 inNormal;
-layout(location = 1) in vec2 inTexCoord;
-layout(location = 2) in vec4 inColor;
-layout(location = 3) in vec3 inFragPos;
+layout(location = 0) in vec3 inFragPos;
+layout(location = 1) in vec3 inNormal;
+layout(location = 2) in vec2 inTexCoord;
 
 layout(location = 0) out vec4 outColor;
 

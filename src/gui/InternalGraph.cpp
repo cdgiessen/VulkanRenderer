@@ -6,23 +6,26 @@
 namespace InternalGraph {
 
 	template<typename T>
-	static float BilinearImageSample2D(const NoiseImage2D<T>& noiseImage, const float x, const float z) {
-		int cellScale = noiseImage.GetImageWidth() - 1; // cellsWide - 1;
+	static const float BilinearImageSample2D(const NoiseImage2D<T>& noiseImage, const float x, const float z) {
+		const int cellScale = noiseImage.GetImageWidth() - 1; // cellsWide - 1;
 
-		float xScaled = x * (float)cellScale;
-		float zScaled = z * (float)cellScale;
+		const float xScaled = x * (float)cellScale;
+		const float zScaled = z * (float)cellScale;
 
-		int realX = (int)xScaled;
-		int realZ = (int)zScaled;
+		const int realX = (int)xScaled;
+		const int realZ = (int)zScaled;
 
-		int realXPlus1 = (int)glm::clamp(xScaled + 1, 0.0f, (float)cellScale); //make sure its not greater than the image size
-		int realZPlus1 = (int)glm::clamp(zScaled + 1, 0.0f, (float)cellScale);
+		const int realXPlus1 = (int)glm::clamp(xScaled + 1, 0.0f, (float)cellScale); //make sure its not greater than the image size
+		const int realZPlus1 = (int)glm::clamp(zScaled + 1, 0.0f, (float)cellScale);
 
-		float UL = noiseImage.BoundedLookUp(realX, realZ);
-		float UR = noiseImage.BoundedLookUp(realX, realZPlus1);
-		float DL = noiseImage.BoundedLookUp(realXPlus1, realZ);
-		float DR = noiseImage.BoundedLookUp(realXPlus1, realZPlus1);
+<<<<<<< HEAD
+=======
+		const float UL = noiseImage.BoundedLookUp(realX, realZ);
+		const float UR = noiseImage.BoundedLookUp(realX, realZPlus1);
+		const float DL = noiseImage.BoundedLookUp(realXPlus1, realZ);
+		const float DR = noiseImage.BoundedLookUp(realXPlus1, realZPlus1);
 
+>>>>>>> 66f58168d25e0cc7bda2d3f6eeb7dcf3164315bf
 		if (realX == realXPlus1 && realZ == realZPlus1) {
 			return UL;
 		}
@@ -862,7 +865,7 @@ namespace InternalGraph {
 		}
 	}
 
-	float GraphUser::SampleHeightMap(const float x, const float z) {
+	const float GraphUser::SampleHeightMap(const float x, const float z) const {
 		return BilinearImageSample2D(outputHeightMap, x, z);
 	}
 	NoiseImage2D<float>& GraphUser::GetHeightMap() {

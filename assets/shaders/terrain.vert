@@ -21,7 +21,6 @@ layout(set = 0, binding = 0) uniform CameraUniformBuffer {
 layout(push_constant) uniform PER_OBJECT
 {
     mat4 model;
-    mat4 normal;
 } obj;
 
 
@@ -29,13 +28,11 @@ layout(push_constant) uniform PER_OBJECT
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
-layout(location = 3) in vec4 inColor;
+layout(location = 2) in vec4 inColor;
 
-layout(location = 0) out vec3 outNormal;
-layout(location = 1) out vec2 outTexCoord;
-layout(location = 2) out vec4 outColor;
-layout(location = 3) out vec3 outFragPos;
-layout(location = 4) out float outTime;
+layout(location = 0) out vec3 outFragPos;
+layout(location = 1) out vec3 outNormal;
+layout(location = 2) out vec2 outTexCoord;
 
 out gl_PerVertex {
     vec4 gl_Position;
@@ -43,10 +40,9 @@ out gl_PerVertex {
 
 void main() {
 	outTexCoord = inTexCoord;
-	outColor = inColor;
 
     gl_Position = cbo.proj * cbo.view * obj.model * vec4(inPosition, 1.0);
 
-	outNormal = (obj.normal * vec4(inNormal,1.0f)).xyz;
+	outNormal = inNormal;
 	outFragPos = (obj.model * vec4(inPosition, 1.0)).xyz;		
 }

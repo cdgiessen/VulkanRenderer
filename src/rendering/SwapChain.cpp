@@ -65,7 +65,7 @@ void VulkanSwapChain::createSwapChain() {
 		createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	}
 
-	QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
+	QueueFamilyIndices indices = device.GetFamilyIndices();
 	uint32_t queueFamilyIndices[] = { (uint32_t)indices.graphicsFamily, (uint32_t)indices.presentFamily };
 
 	if (indices.graphicsFamily != indices.presentFamily) {

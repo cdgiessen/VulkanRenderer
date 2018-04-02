@@ -70,7 +70,7 @@ namespace InternalGraph {
 	}
 
 	template<typename T>
-	static float BilinearImageSample2D(const NoiseImage2D<T>& noiseImage, const float x, const float z);
+	static const float BilinearImageSample2D(const NoiseImage2D<T>& noiseImage, const float x, const float z);
 
 	enum class LinkType {
 		None, //ErrorType or just no output, like an outputNode....
@@ -224,7 +224,7 @@ namespace InternalGraph {
 	public:
 		GraphUser(const GraphPrototype& graph, int seed, int cellsWide, glm::i32vec2 pos, float scale);
 
-		float SampleHeightMap(const float x, const float z);
+		const float SampleHeightMap(const float x, const float z) const;
 		NoiseImage2D<float>& GetHeightMap();
 
 		NoiseImage2D<RGBA_pixel>& GetSplatMap();

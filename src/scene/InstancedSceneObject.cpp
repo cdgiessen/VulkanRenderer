@@ -86,11 +86,11 @@ void InstancedSceneObject::SetupUniformBuffer() {
 }
 
 void InstancedSceneObject::SetupImage() {
-	vulkanTexture.loadFromTexture(renderer->device, texture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
+	vulkanTexture.loadFromTexture(renderer->device, texture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.GetTransferCommandBuffer(), VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
 }
 
 void InstancedSceneObject::SetupModel() {
-	vulkanModel.loadFromMesh(mesh, renderer->device, renderer->device.graphics_queue);
+	vulkanModel.loadFromMesh(mesh, renderer->device, renderer->device.GetTransferCommandBuffer());
 }
 
 void InstancedSceneObject::SetupDescriptor() {
@@ -221,7 +221,7 @@ void InstancedSceneObject::UploadInstances() {
 		1,
 		&copyRegion);
 
-	renderer->device.SubmitTransferCommandBuffer();
+	renderer->device.SubmitTransferCommandBufferAndWait(copyCmd);
 
 	instanceBuffer.resource.FillResource(instanceBuffer.buffer.buffer, 0, instanceBufferSize);
 

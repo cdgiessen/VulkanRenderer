@@ -56,7 +56,7 @@ public:
 	VulkanBufferVertex();
 	void CreateVertexBuffer(VulkanDevice& device, uint32_t count);
 	void CreateStagingVertexBuffer(VulkanDevice& device, void* pData, uint32_t count);
-
+	
 	void BindVertexBuffer(VkCommandBuffer cmdBuf);
 };
 

@@ -55,6 +55,7 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph) : prot
 }
 
 void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer) {
+	
 	for (auto item : terrainTextureFileNames) {
 			terrainTextureHandles.push_back(
 				TerrainTextureNamedHandle(
@@ -63,7 +64,7 @@ void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan
 	}
 	
 	terrainTextureArray = resourceMan->texManager.loadTextureArrayFromFile("assets/Textures/TerrainTextures/", terrainTextureFileNames);
-	terrainVulkanTextureArray.loadTextureArray(renderer->device, terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, 
+	terrainVulkanTextureArray.loadTextureArray(renderer->device, terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.GetTransferCommandBuffer(), 
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
 
 	//WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
@@ -91,6 +92,20 @@ void TerrainManager::CleanUpResources() {
 TerrainManager::~TerrainManager()
 {
 	Log::Debug << "terrain manager deleted\n";
+}
+
+std::shared_ptr<Terrain> AsyncTerrainCreation(
+	std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, VulkanTexture2DArray* terrainVulkanTextureArray,
+	std::shared_ptr<MemoryPool<TerrainQuad>> pool, InternalGraph::GraphPrototype& protoGraph,
+	int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord) {
+	
+	auto terrain = std::make_shared<Terrain>(pool, protoGraph, numCells, maxLevels, heightScale, coord);
+
+	std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
+	terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(sourceImageResolution + 1, sourceImageResolution + 1, imgData);
+
+	terrain->InitTerrain(renderer, camera->Position, terrainVulkanTextureArray);
+	return terrain;
 }
 
 void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera) {

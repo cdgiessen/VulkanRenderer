@@ -23,7 +23,7 @@ VulkanRenderer::~VulkanRenderer()
 void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 	device.window = window;
 
-	device.initVulkanDevice(vulkanSwapChain.surface);
+	device.InitVulkanDevice(vulkanSwapChain.surface);
 	
 	vulkanSwapChain.InitSwapChain(device.window);
 
@@ -35,8 +35,6 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 	vulkanSwapChain.CreateFramebuffers(depthBuffer.textureImageView, renderPass);
 
 	CreateCommandBuffers();
-
-	PrepareDMACommandBuffer();
 
 	PrepareResources();
 }
@@ -306,14 +304,6 @@ std::array<VkClearValue, 2> VulkanRenderer::GetFramebufferClearValues() {
 	clearValues[0].color = clearColor;
 	clearValues[1].depthStencil = depthClearColor;
 	return clearValues;
-}
-
-void VulkanRenderer::PrepareDMACommandBuffer() {
-	device.CreateTransferCommandBuffer();
-}
-
-void VulkanRenderer::SubmitDMACommandBuffer() {
-	device.SubmitTransferCommandBuffer();
 }
 
 void VulkanRenderer::PrepareFrame()
