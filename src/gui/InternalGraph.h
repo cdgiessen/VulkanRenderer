@@ -99,6 +99,7 @@ namespace InternalGraph {
 		Invert,
 		TextureIndex,
 		FractalReturnType,
+		CellularReturnType,
 
 		WhiteNoise,
 
@@ -185,7 +186,9 @@ namespace InternalGraph {
 		std::vector <InputLink> inputLinks;
 	
 	private:
-		void SetFractalType(int);
+		void SetFractalType(int index);
+		void SetCellularDistanceFunction(int index);
+		void SetCellularReturnType(int index);
 		
 
 		NodeID id = -1;
@@ -197,6 +200,8 @@ namespace InternalGraph {
 		NoiseImage2D<float> noiseImage;
 		FastNoiseSIMD* myNoise;
 		FastNoiseSIMD::FractalType fractalType;
+		FastNoiseSIMD::CellularDistanceFunction cellularDistanceFunction;
+		FastNoiseSIMD::CellularReturnType cellularReturnType;
 	};
 
 

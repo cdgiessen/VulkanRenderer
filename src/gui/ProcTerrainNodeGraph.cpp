@@ -161,11 +161,11 @@ void ProcTerrainNodeGraph::DrawMenuBar() {
 void ProcTerrainNodeGraph::DrawButtonBar() {
 	ImGui::BeginGroup();
 
-	if (ImGui::Button("Build internal representation")) {
-		BuildTerGenNodeGraph();
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Reset graph")) {
+	//if (ImGui::Button("Reset Viewport")) {
+	//	graphOffset = ImVec2(0, 0);
+	//}
+	//ImGui::SameLine();
+	if (ImGui::Button("Reset graph - DELETES EVERYTHING!")) {
 		ResetGraph();
 		ResetOutputNode();
 	}
@@ -187,7 +187,7 @@ void ProcTerrainNodeGraph::DrawNodeButtons() {
 	ImGui::BeginChild("node buttons", ImVec2(120, 0.0f), true);
 
 	ImGui::Text("Noise Sources");
-	if (ImGui::Button("White", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::WhiteNoise, startingNodePos); }
+	if (ImGui::Button("White Noise", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::WhiteNoise, startingNodePos); }
 	if (ImGui::Button("Perlin", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::PerlinNoise, startingNodePos); }
 	if (ImGui::Button("Simplex", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::SimplexNoise, startingNodePos); }
 	if (ImGui::Button("Value", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ValueNoise, startingNodePos); }
@@ -195,6 +195,8 @@ void ProcTerrainNodeGraph::DrawNodeButtons() {
 	if (ImGui::Button("Fractal Type", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::FractalReturnType, startingNodePos); }
 	if (ImGui::Button("Voronoi", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::VoroniNoise, startingNodePos); }
 	if (ImGui::Button("Cellular", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::CellNoise, startingNodePos); }
+	if (ImGui::Button("Cellular Type", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::CellularReturnType, startingNodePos); }
+
 	ImGui::Separator();
 	ImGui::Text("Modifiers");
 	if (ImGui::Button("Constant Int", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ConstantInt, startingNodePos); }
@@ -736,9 +738,11 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 	case(NodeType::SimplexNoise): newNode = std::make_shared<SimplexNode>(protoGraph); break;
 	case(NodeType::ValueNoise): newNode = std::make_shared<ValueNode>(protoGraph); break;
 	case(NodeType::CubicNoise): newNode = std::make_shared<CubicNode>(protoGraph); break;
+	case(NodeType::FractalReturnType): newNode = std::make_shared<FractalReturnType>(protoGraph); break;
 
 	case(NodeType::CellNoise): newNode = std::make_shared<CellNoiseNode>(protoGraph); break;
 	case(NodeType::VoroniNoise): newNode = std::make_shared<VoroniNode>(protoGraph); break;
+	case(NodeType::CellularReturnType): newNode = std::make_shared<CellularReturnType>(protoGraph); break;
 	
 	case(NodeType::ConstantInt): newNode = std::make_shared<ConstantIntNode>(protoGraph); break;
 	case(NodeType::ConstantFloat): newNode = std::make_shared<ConstantFloatNode>(protoGraph); break;
@@ -1050,7 +1054,7 @@ FractalNoiseNode::FractalNoiseNode(std::string name) : NoiseNode(name)
 {
 	AddInputSlot(ConnectionType::Int, "Octaves", 4, 0.1f, 0.0f, 10.0f);
 	AddInputSlot(ConnectionType::Float, "Persistence", 0.5f, 0.01f, 0.0f, 1.0f);
-	AddInputSlot(ConnectionType::Int, "Type", 0, 0.01f, 0, 2);
+	AddInputSlot(ConnectionType::Int, "Type", 0, 0.1f, 0, 2);
 }
 
 SimplexNode::SimplexNode(InternalGraph::GraphPrototype& graph) : FractalNoiseNode("Simplex")
@@ -1078,6 +1082,7 @@ CubicNode::CubicNode(InternalGraph::GraphPrototype& graph) : FractalNoiseNode("C
 CellularNoiseNode::CellularNoiseNode(std::string name) : NoiseNode(name)
 {
 	AddInputSlot(ConnectionType::Float, "Jitter", 0.5f, 0.01f, 0.0f, 1.0f);
+	AddInputSlot(ConnectionType::Int, "Type", 0, 0.1f, 0, 7);
 }
 
 VoroniNode::VoroniNode(InternalGraph::GraphPrototype& graph) : CellularNoiseNode("Voroni")
@@ -1119,6 +1124,14 @@ TextureIndexNode::TextureIndexNode(InternalGraph::GraphPrototype& graph) : Node(
 FractalReturnType::FractalReturnType(InternalGraph::GraphPrototype& graph) : Node("Fractal Type", ConnectionType::Int)
 {
 	AddInputSlot(ConnectionType::Int, "FBM-Billow-Rigid", 0, 0.1f, 0, 2);
+	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::FractalReturnType));
+
+}
+
+CellularReturnType::CellularReturnType(InternalGraph::GraphPrototype& graph) : Node("Cellular Type", ConnectionType::Int)
+{
+	//CellValue, Distance, Distance2, Distance2Add, Distance2Sub, Distance2Mul, Distance2Div, NoiseLookup, Distance2Cave
+	AddInputSlot(ConnectionType::Int, "Value-Distance-2-Add-Sub-Mul-Div-Cave", 0, 0.1f, 0, 7);
 	internalNodeID = graph.AddNode(InternalGraph::Node(InternalGraph::NodeType::FractalReturnType));
 
 }

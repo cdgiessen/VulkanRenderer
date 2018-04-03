@@ -134,6 +134,7 @@ enum class NodeType {
 	Invert,
 	TextureIndex,
 	FractalReturnType,
+	CellularReturnType,
 
 	ColorCreator,
 	MonoGradient,
@@ -202,6 +203,8 @@ class FractalReturnType: public Node { public: FractalReturnType(InternalGraph::
 
 class CellNoiseNode	: public CellularNoiseNode { public: CellNoiseNode(InternalGraph::GraphPrototype& graph); };
 class VoroniNode	: public CellularNoiseNode { public: VoroniNode(InternalGraph::GraphPrototype& graph); };
+
+class CellularReturnType : public Node { public: CellularReturnType(InternalGraph::GraphPrototype& graph); };
 
 class ConstantIntNode	: public Node { public: ConstantIntNode(InternalGraph::GraphPrototype& graph); };
 class ConstantFloatNode : public Node { public: ConstantFloatNode(InternalGraph::GraphPrototype& graph); };
