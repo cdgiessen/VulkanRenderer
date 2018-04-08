@@ -24,7 +24,7 @@ struct SunSettings {
 	float moveSpeed = 0.0002f;
 	float intensity = 1.0f;
 	float horizontalAngle = 0.0f;
-	float verticalAngle = 1.5f;
+	float verticalAngle = 1.0f;
 
 	glm::vec3 dir = glm::vec3(0, 60, 25);
 	glm::vec3 color = glm::vec3(1.0f, 0.98f, 0.9f);

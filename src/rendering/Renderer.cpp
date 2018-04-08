@@ -40,7 +40,7 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 	CreateRenderPass();
 
 	CreateDepthResources();
-	vulkanSwapChain.CreateFramebuffers(depthBuffer.textureImageView, renderPass);
+	vulkanSwapChain.CreateFramebuffers(depthBuffer->textureImageView, renderPass);
 
 	CreateCommandBuffers();
 
@@ -69,7 +69,7 @@ void VulkanRenderer::CleanVulkanResources() {
 	for (auto descriptor : descriptors)
 		descriptor->CleanUpResources();
 
-	depthBuffer.destroy(device);
+	depthBuffer->destroy();
 
 	vkDestroyRenderPass(device.device, renderPass, nullptr);
 	vulkanSwapChain.CleanUp();
@@ -85,7 +85,7 @@ void VulkanRenderer::CleanVulkanResources() {
 void VulkanRenderer::RecreateSwapChain() {
 	Log::Debug << "Recreating SwapChain" << "\n";
 	
-	depthBuffer.destroy(device);
+	depthBuffer->destroy();
 
 	vkDestroyRenderPass(device.device, renderPass, nullptr);
 	
@@ -93,7 +93,7 @@ void VulkanRenderer::RecreateSwapChain() {
 
 	CreateRenderPass();
 	CreateDepthResources();
-	vulkanSwapChain.CreateFramebuffers(depthBuffer.textureImageView, renderPass);
+	vulkanSwapChain.CreateFramebuffers(depthBuffer->textureImageView, renderPass);
 
 	//frameIndex = 1; //cause it needs it to be synced back to zero (yes I know it says one, thats intended, build command buffers uses the "next" frame index since it has to sync with the swapchain so it starts at one....)
 	ReBuildCommandBuffers();
@@ -173,8 +173,8 @@ void VulkanRenderer::CreateRenderPass() {
 void VulkanRenderer::CreateDepthResources() {
 	VkFormat depthFormat = FindDepthFormat();
 	depthFormat = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
-
-	depthBuffer.CreateDepthImage(device, depthFormat, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+	depthBuffer = std::make_shared<VulkanTextureDepthBuffer>(device);
+	depthBuffer->CreateDepthImage(depthFormat, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 }
 
 VkFormat VulkanRenderer::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {

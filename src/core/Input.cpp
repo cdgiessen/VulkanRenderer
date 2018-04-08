@@ -252,6 +252,7 @@ namespace Input {
 		std::fill(std::begin(keysUp), std::end(keysUp), 0);
 		std::fill(std::begin(mouseButtonsUp), std::end(mouseButtonsUp), 0);
 		std::fill(std::begin(mouseButtonsDown), std::end(mouseButtonsDown), 0);
+		mouseScroll = glm::vec2(0, 0);
 		mouseChangeInPosition = glm::dvec2(0, 0);
 	}
 

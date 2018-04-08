@@ -99,10 +99,10 @@ private:
 	std::shared_ptr<VulkanModel> WaterModel;
 
 	std::shared_ptr<TextureArray> terrainTextureArray;
-	VulkanTexture2DArray terrainVulkanTextureArray;
+	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray;
 
 	std::shared_ptr<Texture> WaterTexture;
-	VulkanTexture2D WaterVulkanTexture;
+	std::shared_ptr<VulkanTexture2D> WaterVulkanTexture;
 	
 	bool recreateTerrain = false;
 	float nextTerrainWidth = 1000;

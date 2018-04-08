@@ -35,7 +35,7 @@ public:
 	std::shared_ptr<VulkanModel> model;
 
 	std::shared_ptr<CubeMap> skyboxCubeMap;
-	VulkanCubeMap vulkanCubeMap;
+	std::shared_ptr<VulkanCubeMap> vulkanCubeMap;
 	
 	//SkyboxUniformBuffer skyboxUniform;
 	//VulkanBuffer skyboxUniformBuffer;

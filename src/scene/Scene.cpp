@@ -24,7 +24,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 
 	
 
-	camera = std::make_shared< Camera>(glm::vec3(-2, 2, 0), glm::vec3(0, 1, 0), 0, -45);
+	camera = std::make_shared< Camera>(glm::vec3(0, 40, -500), glm::vec3(0, 1, 0), 0, 90);
 
 	pointLights.resize(5);
 	pointLights[0] = PointLight(glm::vec4(0, 10, 0, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
@@ -34,6 +34,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 
 	skybox = std::make_shared<Skybox>();
+	skybox->vulkanCubeMap = std::make_shared<VulkanCubeMap>(renderer->device);
 	skybox->skyboxCubeMap = resourceMan->texManager.loadCubeMapFromFile("assets/Textures/Skybox/Skybox2", ".png");
 	skybox->model = std::make_shared<VulkanModel>(renderer->device);
 	skybox->model->loadFromMesh(createCube(),  renderer->device.GetTransferCommandBuffer());
@@ -42,6 +43,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	std::shared_ptr<GameObject> cubeObject = std::make_shared<GameObject>();
 	cubeObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
 	cubeObject->LoadModel(createCube());
+	cubeObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
 	cubeObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/ColorGradientCube.png");
 	//cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
 	cubeObject->InitGameObject(renderer);

@@ -58,7 +58,7 @@ public:
 	void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true);
 
 	// Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-	void ProcessMouseScroll(float yoffset);
+	void ProcessMouseScroll(float yoffset, float deltaTime);
 
 	//alter the speed of movement
 	void ChangeCameraSpeed(Camera_Movement direction, float deltaTime);

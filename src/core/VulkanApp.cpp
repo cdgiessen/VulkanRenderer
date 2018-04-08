@@ -307,7 +307,7 @@ void VulkanApp::HandleInputs() {
 
 	if (mouseControlEnabled) {
 		scene->GetCamera()->ProcessMouseMovement(Input::GetMouseChangeInPosition().x, Input::GetMouseChangeInPosition().y);
-		scene->GetCamera()->ProcessMouseScroll(Input::GetMouseScrollY());
+		scene->GetCamera()->ProcessMouseScroll(Input::GetMouseScrollY(), deltaTime);
 	}
 
 	if (Input::GetMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {

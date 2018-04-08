@@ -97,11 +97,11 @@ void Terrain::CleanUp()
 	vertexBuffer->CleanBuffer();
 	indexBuffer->CleanBuffer();
 
-	terrainVulkanSplatMap.destroy(renderer->device);
+	terrainVulkanSplatMap->destroy();
 }
 
 
-void Terrain::InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos, VulkanTexture2DArray* terrainVulkanTextureArray)
+void Terrain::InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos, std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray)
 {
 	this->renderer = renderer;
 
@@ -159,8 +159,9 @@ void Terrain::SetupUniformBuffer()
 
 void Terrain::SetupImage(VkCommandBuffer cmdBuf)
 {
+	terrainVulkanSplatMap = std::make_shared<VulkanTexture2D>(renderer->device);
 	if (terrainSplatMap != nullptr) {
-		terrainVulkanSplatMap.loadFromTexture(renderer->device, terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, cmdBuf,
+		terrainVulkanSplatMap->loadFromTexture(terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, cmdBuf,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
 	
 	}
@@ -170,7 +171,7 @@ void Terrain::SetupImage(VkCommandBuffer cmdBuf)
 	}
 }
 
-void Terrain::SetupDescriptorSets(VulkanTexture2DArray* terrainVulkanTextureArray)
+void Terrain::SetupDescriptorSets(std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray)
 {
 	descriptor = renderer->GetVulkanDescriptor();
 
@@ -189,7 +190,7 @@ void Terrain::SetupDescriptorSets(VulkanTexture2DArray* terrainVulkanTextureArra
 
 	std::vector<DescriptorUse> writes;
 	
-	writes.push_back(DescriptorUse(3, 1, terrainVulkanSplatMap.resource));
+	writes.push_back(DescriptorUse(3, 1, terrainVulkanSplatMap->resource));
 	writes.push_back(DescriptorUse(4, 1, terrainVulkanTextureArray->resource));
 	descriptor->UpdateDescriptorSet(descriptorSet, writes);
 
