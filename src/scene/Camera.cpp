@@ -70,7 +70,7 @@ void Camera::ProcessJoystickLook(float x, float y, float deltaTime) {
 }
 
 // Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-void Camera::ProcessMouseScroll(float yoffset)
+void Camera::ProcessMouseScroll(float yoffset, float deltaTime)
 {
 	//if (Zoom >= 1.0f && Zoom <= 45.0f)
 	//	Zoom -= yoffset;
@@ -79,11 +79,11 @@ void Camera::ProcessMouseScroll(float yoffset)
 	//if (Zoom >= 45.0f)
 	//	Zoom = 45.0f;
 
-	MovementSpeed += yoffset;
+	MovementSpeed += 5 * yoffset * MovementSpeed * deltaTime;
 	
-	if (MovementSpeed <= 0.1f)
-		MovementSpeed = 0.1f;
-
+	if (MovementSpeed <= 0.2f)
+		MovementSpeed = 0.2f;
+	
 }
 
 void Camera::ChangeCameraSpeed(Camera_Movement direction, float deltaTime) {

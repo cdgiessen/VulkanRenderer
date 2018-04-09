@@ -32,7 +32,7 @@ class GameObject
 	std::shared_ptr<VulkanModel> gameObjectModel;
 
     std::shared_ptr<Texture> gameObjectTexture;
-    VulkanTexture2D gameObjectVulkanTexture;
+	std::shared_ptr<VulkanTexture2D> gameObjectVulkanTexture;
 
 	ModelPushConstant modelPushConstant;
 

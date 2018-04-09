@@ -11,9 +11,18 @@
 
 
 
-VulkanTexture::VulkanTexture() : resource(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+VulkanTexture::VulkanTexture(VulkanDevice& device) : 
+	device(device),
+	resource(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
 
 }
+VulkanTexture2D::VulkanTexture2D(VulkanDevice& device): VulkanTexture(device){}
+
+VulkanTexture2DArray::VulkanTexture2DArray(VulkanDevice& device) : VulkanTexture(device) {}
+
+VulkanCubeMap::VulkanCubeMap(VulkanDevice& device) : VulkanTexture(device) {}
+
+VulkanTextureDepthBuffer::VulkanTextureDepthBuffer(VulkanDevice& device) : VulkanTexture(device) {}
 
 void VulkanTexture::updateDescriptor()
 {
@@ -23,7 +32,7 @@ void VulkanTexture::updateDescriptor()
 	//descriptor.imageLayout = textureImageLayout;
 }
 
-void VulkanTexture::destroy(VulkanDevice &device) {
+void VulkanTexture::destroy() {
 	device.DestroyVmaAllocatedImage(image);
 
 	if(textureImageView != VK_NULL_HANDLE)
@@ -33,7 +42,7 @@ void VulkanTexture::destroy(VulkanDevice &device) {
 	
 }
 
-void VulkanTexture::GenerateMipMaps(VulkanDevice& device, VkImage image, int width, int height, int depth, int layers, int mipLevels) {
+void VulkanTexture::GenerateMipMaps(VkImage image, int width, int height, int depth, int layers, int mipLevels) {
 	// We copy down the whole mip chain doing a blit from mip-1 to mip
 	// An alternative way would be to always blit from the first mip level and sample that one down
 	VkCommandBuffer blitCmd = device.createCommandBuffer(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
@@ -114,7 +123,7 @@ void VulkanTexture::GenerateMipMaps(VulkanDevice& device, VkImage image, int wid
 
 }
 
-VkSampler VulkanTexture::CreateImageSampler(VulkanDevice &device, VkFilter mag, VkFilter min, VkSamplerMipmapMode mipMapMode,
+VkSampler VulkanTexture::CreateImageSampler(VkFilter mag, VkFilter min, VkSamplerMipmapMode mipMapMode,
 	VkSamplerAddressMode textureWrapMode, float mipMapLodBias, bool useMipMaps, int mipLevels, bool anisotropy, float maxAnisotropy,
 	VkBorderColor borderColor) {
 
@@ -140,7 +149,7 @@ VkSampler VulkanTexture::CreateImageSampler(VulkanDevice &device, VkFilter mag, 
 	return sampler;
 }
 
-VkImageView VulkanTexture::CreateImageView(VulkanDevice& device, VkImage image, VkImageViewType viewType, 
+VkImageView VulkanTexture::CreateImageView(VkImage image, VkImageViewType viewType, 
 	VkFormat format, VkImageAspectFlags aspectFlags, VkComponentMapping components, int mipLevels, int layers) 
 {
 	VkImageViewCreateInfo viewInfo = initializers::imageViewCreateInfo();
@@ -184,7 +193,6 @@ void AlignedTextureMemcpy(int layers, int dst_layer_width,
 
 
 void VulkanTexture2D::loadFromTexture(
-	VulkanDevice &device,
 	std::shared_ptr<Texture> texture,
 	VkFormat format,
 	VkCommandBuffer transferCmdBuf,
@@ -318,34 +326,34 @@ void VulkanTexture2D::loadFromTexture(
 	device.DestroyVmaAllocatedImage(stagingImage);
 
 
-	GenerateMipMaps(device, image.image, texture->width, texture->height, 1, 1, mipLevels);
+	GenerateMipMaps(image.image, texture->width, texture->height, 1, 1, mipLevels);
 
 	// With mip mapping and anisotropic filtering
 	if (device.physical_device_features.samplerAnisotropy)
 	{
 		// Create a defaultsampler
 		if (wrapBorder)
-			textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
+			textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
 				VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, 
 				true, mipLevels, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 		else
-			textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
+			textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
 				VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f,
 				true, mipLevels, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 	}
 	else {
 		// Create a defaultsampler
 		if (wrapBorder)
-			textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
+			textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
 				VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, 
 				true, mipLevels, false, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 		else				 
-			textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
+			textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
 				VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f, 
 				true, mipLevels, false, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 	}
 	
-	textureImageView = CreateImageView(device, image.image, VK_IMAGE_VIEW_TYPE_2D, format, VK_IMAGE_ASPECT_COLOR_BIT,
+	textureImageView = CreateImageView(image.image, VK_IMAGE_VIEW_TYPE_2D, format, VK_IMAGE_ASPECT_COLOR_BIT,
 		VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
 		(useStaging) ? mipLevels : 1, 1);
 
@@ -373,7 +381,6 @@ void VulkanTexture2D::loadFromTexture(
 }
 
 void VulkanTexture2DArray::loadTextureArray(
-	VulkanDevice &device,
 	std::shared_ptr<TextureArray> textures,
 	VkFormat format,
 	VkCommandBuffer transferCmdBuf,
@@ -487,13 +494,13 @@ void VulkanTexture2DArray::loadTextureArray(
 
 	device.DestroyVmaAllocatedImage(stagingImage);
 
-	GenerateMipMaps(device, image.image, textures->width, textures->height, 1, textures->layerCount, mipLevels);
+	GenerateMipMaps(image.image, textures->width, textures->height, 1, textures->layerCount, mipLevels);
 
-	textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR,
+	textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR,
 		VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, mipLevels,
 		true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
-	textureImageView = CreateImageView(device, image.image, VK_IMAGE_VIEW_TYPE_2D_ARRAY, format, 
+	textureImageView = CreateImageView(image.image, VK_IMAGE_VIEW_TYPE_2D_ARRAY, format, 
 		VK_IMAGE_ASPECT_COLOR_BIT, 
 		VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
 		mipLevels, textures->layerCount);
@@ -515,7 +522,6 @@ void VulkanTexture2DArray::loadTextureArray(
 	
 
 void VulkanCubeMap::loadFromTexture(
-	VulkanDevice &device,
 	std::shared_ptr<CubeMap> cubeMap,
 	VkFormat format,
 	VkCommandBuffer transferCmdBuf,
@@ -657,11 +663,11 @@ void VulkanCubeMap::loadFromTexture(
 
 	//GenerateMipMaps(device, cubeMap->width, cubeMap->height, 6, mipLevels);
 
-	textureSampler = CreateImageSampler(device, VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
+	textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
 		VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f, true, mipLevels, true, 8,
 		VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
-	textureImageView = CreateImageView(device, image.image, VK_IMAGE_VIEW_TYPE_CUBE, format, VK_IMAGE_ASPECT_COLOR_BIT,
+	textureImageView = CreateImageView(image.image, VK_IMAGE_VIEW_TYPE_CUBE, format, VK_IMAGE_ASPECT_COLOR_BIT,
 		VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
 		mipLevels, 6);
 
@@ -680,7 +686,7 @@ void VulkanCubeMap::loadFromTexture(
 	
 }
 
-void VulkanTextureDepthBuffer::CreateDepthImage(VulkanDevice& device, VkFormat depthFormat, int width, int height) {
+void VulkanTextureDepthBuffer::CreateDepthImage(VkFormat depthFormat, int width, int height) {
 
 	VkImageCreateInfo imageInfo = initializers::imageCreateInfo(
 		VK_IMAGE_TYPE_2D, depthFormat, 1, 1, 
@@ -693,7 +699,7 @@ void VulkanTextureDepthBuffer::CreateDepthImage(VulkanDevice& device, VkFormat d
 
 	device.CreateDepthImage(imageInfo, image);
 
-	textureImageView = VulkanTexture::CreateImageView(device, image.image, VK_IMAGE_VIEW_TYPE_2D, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+	textureImageView = VulkanTexture::CreateImageView(image.image, VK_IMAGE_VIEW_TYPE_2D, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
 		VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A }, 1, 1);
 
 	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -712,6 +718,45 @@ VulkanTextureManager::VulkanTextureManager(VulkanDevice& device) : device(device
 VulkanTextureManager::~VulkanTextureManager()
 {
 	for (auto tex : vulkanTextures) {
-		tex.destroy(device);
+		tex.destroy();
 	}
+}
+
+std::shared_ptr<VulkanTexture2D> VulkanTextureManager::CreateTexture2D(
+	std::shared_ptr<Texture> texture,
+	VkFormat format,
+	VkCommandBuffer transferBuf,
+	VkImageUsageFlags imageUsageFlags,
+	VkImageLayout imageLayout,
+	bool forceLinear,
+	bool genMipMaps ,
+	int mipMapLevelsToGen ,
+	bool wrapBorder) {
+	return std::make_shared<VulkanTexture2D>(device);
+}
+
+std::shared_ptr<VulkanTexture2DArray> VulkanTextureManager::CreateTexture2DArray(
+	std::shared_ptr<TextureArray> textures,
+	VkFormat format,
+	VkCommandBuffer transferBuf,
+	VkImageUsageFlags imageUsageFlags,
+	VkImageLayout imageLayout,
+	bool genMipMaps,
+	int mipMapLevelsToGen) {
+	return std::make_shared<VulkanTexture2DArray>(device);
+}
+
+std::shared_ptr<VulkanCubeMap> VulkanTextureManager::CreateCubeMap(
+	std::shared_ptr<CubeMap> cubeMap,
+	VkFormat format,
+	VkCommandBuffer transferBuf,
+	VkImageUsageFlags imageUsageFlags,
+	VkImageLayout imageLayout,
+	bool genMipMaps,
+	int mipMapLevelsToGen) {
+	return std::make_shared<VulkanCubeMap>(device);
+}
+std::shared_ptr<VulkanTextureDepthBuffer> VulkanTextureManager::CreateDepthImage(
+	VkFormat depthFormat, int width, int height) {
+	return std::make_shared<VulkanTextureDepthBuffer>(device);
 }

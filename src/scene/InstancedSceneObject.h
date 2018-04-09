@@ -83,7 +83,7 @@ private:
 	std::shared_ptr<VulkanModel> vulkanModel;
 
 	std::shared_ptr<Texture> texture;
-	VulkanTexture2D vulkanTexture;
+	std::shared_ptr<VulkanTexture2D> vulkanTexture;
 
 	std::vector<InstanceData> instancesData;
 	std::vector<glm::vec3> modelPositions;

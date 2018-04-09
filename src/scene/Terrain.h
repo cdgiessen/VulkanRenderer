@@ -114,7 +114,7 @@ public:
 	DescriptorSet descriptorSet;
 
 	std::shared_ptr<Texture> terrainSplatMap;
-	VulkanTexture2D terrainVulkanSplatMap;
+	std::shared_ptr<VulkanTexture2D> terrainVulkanSplatMap;
 
 	TerrainPushConstant modelMatrixData;
 
@@ -132,7 +132,8 @@ public:
 		int numCells, int maxLevels, float heightScale,	TerrainCoordinateData coordinateData);
 	~Terrain();
 
-	void InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos, VulkanTexture2DArray* terrainVulkanTextureArray);
+	void InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos, 
+		std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray);
 
 	void UpdateTerrain(glm::vec3 viewerPos);
 	void DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], bool wireframe);
@@ -154,7 +155,7 @@ private:
 	void SetupImage(VkCommandBuffer cmdBuf);
 	void SetupPipeline();
 
-	void SetupDescriptorSets(VulkanTexture2DArray* terrainVulkanTextureArray);
+	void SetupDescriptorSets(std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray);
 
 	void UpdateMeshBuffer();
 

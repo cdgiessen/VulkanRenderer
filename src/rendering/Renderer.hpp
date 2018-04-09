@@ -95,7 +95,7 @@ private:
 
 	//uint32_t frameIndex = 1; // which frame of the swapchain it is on
 
-	VulkanTextureDepthBuffer depthBuffer;
+	std::shared_ptr<VulkanTextureDepthBuffer> depthBuffer;
 
 	//Command buffer per frame
 	std::vector<VkCommandBuffer> commandBuffers;

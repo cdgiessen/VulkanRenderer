@@ -274,6 +274,10 @@ namespace InternalGraph {
 			outputType = LinkType::Int;
 			inputLinks.push_back(InputLink(0));
 			break;
+		case InternalGraph::NodeType::CellularReturnType:
+			outputType = LinkType::Int;
+			inputLinks.push_back(InputLink(0));
+			break;
 
 		case InternalGraph::NodeType::ValueNoise:
 			AddNodeInputLinks(inputLinks,
@@ -312,14 +316,14 @@ namespace InternalGraph {
 
 		case InternalGraph::NodeType::CellNoise:
 			AddNodeInputLinks(inputLinks,
-				{ LinkType::Int, LinkType::Float, LinkType::Float });
+				{ LinkType::Int, LinkType::Float, LinkType::Float, LinkType::Int });
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 			break;
 
 		case InternalGraph::NodeType::VoroniNoise:
 			AddNodeInputLinks(inputLinks,
-				{ LinkType::Int, LinkType::Float, LinkType::Float });
+				{ LinkType::Int, LinkType::Float, LinkType::Float, LinkType::Int });
 			isNoiseNode = true;
 			myNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 			break;
@@ -622,6 +626,9 @@ namespace InternalGraph {
 		case InternalGraph::NodeType::FractalReturnType:
 			return inputLinks.at(0).GetValue(x, z);
 
+		case InternalGraph::NodeType::CellularReturnType:
+			return inputLinks.at(0).GetValue(x, z);
+
 			break;
 
 		case InternalGraph::NodeType::ValueNoise:
@@ -697,15 +704,40 @@ namespace InternalGraph {
 	}
 
 	void Node::SetFractalType(int val){
-		if (val == 0)
-			myNoise->SetFractalType(FastNoiseSIMD::FractalType::FBM);
+		if (val == 2)
+			myNoise->SetFractalType(FastNoiseSIMD::FractalType::RigidMulti);
 		else if (val == 1)
 			myNoise->SetFractalType(FastNoiseSIMD::FractalType::Billow);
-		else if (val == 2)
-			myNoise->SetFractalType(FastNoiseSIMD::FractalType::RigidMulti);
-		else 
+		else
 			myNoise->SetFractalType(FastNoiseSIMD::FractalType::FBM);
 
+	}
+
+	void Node::SetCellularDistanceFunction(int index) {
+		if (index == 2)
+			myNoise->SetCellularDistanceFunction(FastNoiseSIMD::CellularDistanceFunction::Natural);
+		else if (index == 1)
+			myNoise->SetCellularDistanceFunction(FastNoiseSIMD::CellularDistanceFunction::Manhattan);
+		else
+			myNoise->SetCellularDistanceFunction(FastNoiseSIMD::CellularDistanceFunction::Euclidean);
+	}
+	void Node::SetCellularReturnType(int index) {
+			if (index == 1)
+				myNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::Distance);
+			else if (index == 2)
+				myNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::Distance2);
+			else if (index == 3)
+				myNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::Distance2Add);
+			else if (index == 4)
+				myNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::Distance2Sub);
+			else if (index == 5)
+				myNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::Distance2Mul);
+			else if (index == 6)
+				myNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::Distance2Div);
+			else if (index == 7)
+				myNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::Distance2Cave);
+			else
+				myNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::CellValue);
 	}
 
 	void Node::SetupInputLinks(NodeMap* map) {
@@ -762,11 +794,13 @@ namespace InternalGraph {
 				break;
 
 			case InternalGraph::NodeType::CellNoise:
-				myNoise->SetCellularJitter(std::get<int>(inputLinks.at(2).GetValue()));
+				myNoise->SetCellularJitter(std::get<float>(inputLinks.at(2).GetValue()));
+				SetCellularReturnType(std::get<int>(inputLinks.at(3).GetValue()));
 				noiseImage.SetImageData(info.cellsWide, myNoise->GetCellularSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
 				break;
 
 			case InternalGraph::NodeType::VoroniNoise:
+				myNoise->SetCellularJitter(std::get<float>(inputLinks.at(2).GetValue()));
 				myNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::CellValue);
 				noiseImage.SetImageData(info.cellsWide, myNoise->GetCellularSet(info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
 				break;
@@ -885,8 +919,12 @@ namespace InternalGraph {
 		{
 			for (int z = 0; z < cellsWide; z++)
 			{
-				glm::vec4 val = glm::normalize(std::get<glm::vec4>(outputNode->GetSplatMapValue(x, z)));
-				RGBA_pixel pixel = RGBA_pixel((stbi_uc)(val.x * 255), (stbi_uc)(val.y * 255), (stbi_uc)(val.z * 255), (stbi_uc)(val.w * 255));
+				glm::vec4 val = glm::normalize( std::get<glm::vec4>(outputNode->GetSplatMapValue(x, z)));
+				RGBA_pixel pixel = RGBA_pixel(
+					(stbi_uc)(glm::clamp(val.x, 0.0f, 1.0f) * 255), 
+					(stbi_uc)(glm::clamp(val.y, 0.0f, 1.0f) * 255), 
+					(stbi_uc)(glm::clamp(val.z, 0.0f, 1.0f) * 255), 
+					(stbi_uc)(glm::clamp(val.w, 0.0f, 1.0f) * 255));
 				
 				outputSplatmap.SetPixelValue(z, x, pixel);
 			}

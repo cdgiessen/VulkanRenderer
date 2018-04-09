@@ -24,13 +24,13 @@ VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
 
 	transferLock.lock();
 	vkAllocateCommandBuffers(device.device, &allocInfo, &buf);
-	transferLock.unlock();
 
 	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 
 	vkBeginCommandBuffer(buf, &beginInfo);
+	transferLock.unlock();
 	return buf;
 }
 
@@ -57,8 +57,9 @@ void WaitForSubmissionFinish(VkDevice device, VkCommandPool transfer_queue_comma
 
 
 	vkDestroyFence(device, fence, nullptr);
-
+	//transferLock.lock(); // need to pass a lock in? should have a better synchronization structure
 	vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &buf);
+	//transferLock.unlock();
 	for (auto& buffer : bufsToClean) {
 		buffer.CleanBuffer();
 	}
@@ -104,7 +105,9 @@ void TransferQueue::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
 
 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 	vkDestroyFence(device.device, fence, nullptr);
+	transferLock.lock();
 	vkFreeCommandBuffers(device.device, transfer_queue_command_pool, 1, &buf);
+	transferLock.unlock();
 }
 
 

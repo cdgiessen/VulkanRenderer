@@ -64,7 +64,8 @@ void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan
 	}
 	
 	terrainTextureArray = resourceMan->texManager.loadTextureArrayFromFile("assets/Textures/TerrainTextures/", terrainTextureFileNames);
-	terrainVulkanTextureArray.loadTextureArray(renderer->device, terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.GetTransferCommandBuffer(), 
+	terrainVulkanTextureArray = std::make_shared<VulkanTexture2DArray>(renderer->device);
+	terrainVulkanTextureArray->loadTextureArray(terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.GetTransferCommandBuffer(), 
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
 
 	//WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
@@ -80,7 +81,7 @@ void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan
 }
 
 void TerrainManager::CleanUpResources() {
-	terrainVulkanTextureArray.destroy(renderer->device);
+	terrainVulkanTextureArray->destroy();
 
 	instancedWaters->CleanUp();
 	//WaterVulkanTexture.destroy(renderer->device);
@@ -95,13 +96,14 @@ TerrainManager::~TerrainManager()
 }
 
 std::shared_ptr<Terrain> AsyncTerrainCreation(
-	std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, VulkanTexture2DArray* terrainVulkanTextureArray,
+	std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
 	std::shared_ptr<MemoryPool<TerrainQuad>> pool, InternalGraph::GraphPrototype& protoGraph,
 	int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord) {
 	
 	auto terrain = std::make_shared<Terrain>(pool, protoGraph, numCells, maxLevels, heightScale, coord);
 
 	std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
+	
 	terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(sourceImageResolution + 1, sourceImageResolution + 1, imgData);
 
 	terrain->InitTerrain(renderer, camera->Position, terrainVulkanTextureArray);
@@ -134,7 +136,7 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 
 	//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	for (auto ter : terrains) {
-		ter->InitTerrain(renderer, camera->Position, &terrainVulkanTextureArray);
+		ter->InitTerrain(renderer, camera->Position, terrainVulkanTextureArray);
 	}
 	//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
 

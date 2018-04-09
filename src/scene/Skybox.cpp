@@ -12,7 +12,7 @@ void Skybox::CleanUp() {
 	renderer->pipelineManager.DeleteManagedPipeline(mvp);
 
 	model->destroy();
-	vulkanCubeMap.destroy(renderer->device);
+	vulkanCubeMap->destroy();
 
 	//skyboxUniformBuffer.cleanBuffer();
 }
@@ -34,8 +34,7 @@ void Skybox::SetupUniformBuffer() {
 }
 
 void Skybox::SetupCubeMapImage() {
-	vulkanCubeMap.loadFromTexture(renderer->device, skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.GetTransferCommandBuffer());
-
+	vulkanCubeMap->loadFromTexture(skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.GetTransferCommandBuffer());
 }
 
 void Skybox::SetupDescriptor() {
@@ -52,7 +51,7 @@ void Skybox::SetupDescriptor() {
 	m_descriptorSet = descriptor->CreateDescriptorSet();
 
 	std::vector<DescriptorUse> writes;
-	writes.push_back(DescriptorUse(2, 1, vulkanCubeMap.resource));
+	writes.push_back(DescriptorUse(2, 1, vulkanCubeMap->resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
 }
 

@@ -9,6 +9,8 @@
 InstancedSceneObject::InstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer, int maxInstances) : maxInstanceCount(maxInstances)
 {
 	vulkanModel = std::make_shared<VulkanModel>(renderer->device);
+	vulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
+
 	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
 	instanceBuffer = std::make_shared<VulkanBufferVertex>(renderer->device);
 }
@@ -36,7 +38,7 @@ void InstancedSceneObject::CleanUp()
 	renderer->pipelineManager.DeleteManagedPipeline(mvp);
 
 	vulkanModel->destroy();
-	vulkanTexture.destroy(renderer->device);
+	vulkanTexture->destroy();
 
 	uniformBuffer->CleanBuffer();
 	instanceBuffer->CleanBuffer();
@@ -90,7 +92,7 @@ void InstancedSceneObject::SetupUniformBuffer() {
 }
 
 void InstancedSceneObject::SetupImage() {
-	vulkanTexture.loadFromTexture(renderer->device, texture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.GetTransferCommandBuffer(), VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
+	vulkanTexture->loadFromTexture(texture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.GetTransferCommandBuffer(), VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
 }
 
 void InstancedSceneObject::SetupModel() {
@@ -114,7 +116,7 @@ void InstancedSceneObject::SetupDescriptor() {
 
 	std::vector<DescriptorUse> writes;
 	writes.push_back(DescriptorUse(2, 1, uniformBuffer->resource));
-	writes.push_back(DescriptorUse(3, 1, vulkanTexture.resource));
+	writes.push_back(DescriptorUse(3, 1, vulkanTexture->resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
 
 }
