@@ -6,12 +6,6 @@
 #include "VulkanApp.h"
 #include "Logger.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "../../third-party/stb_image/stb_image.h"
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../../third-party/stb_image/stb_image_write.h"
-
 #define VMA_IMPLEMENTATION
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
@@ -20,6 +14,12 @@
 
 #define TINYGLTF_IMPLEMENTATION //needs stb_image & stb_image_write to be defined above 
 #include "../../third-party/tinygltf/tiny_gltf.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "../../third-party/stb_image/stb_image.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "../../third-party/stb_image/stb_image_write.h"
 
 int main(int argc, char* argv[]) {
 

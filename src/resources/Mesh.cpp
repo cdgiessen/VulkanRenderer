@@ -2,16 +2,7 @@
 #include "../core/CoreTools.h"
 #include "../core/Logger.h"
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "../../third-party/tinyobjloader/tiny_obj_loader.h"
-
 #include "../rendering/Initializers.hpp"
-
-//#include <assimp/Importer.hpp>
-//#include <assimp/scene.h>
-//#include <assimp/postprocess.h>
-//
-//static const int defaultAssimpFlags = aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals;
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<uint16_t> indices) : vertices(vertices), indices(indices)
 {
@@ -29,67 +20,67 @@ void Mesh::importFromFile(const std::string filename) {
 	vertexCount = 0;
 	indexCount = 0;
 
-	if (fileExists(filename)) { //file exists and can be loaded
+	// if (fileExists(filename)) { //file exists and can be loaded
 
-		glm::vec3 scale(1.0f);
-		glm::vec2 uvscale(1.0f);
-		glm::vec3 center(0.0f);
+	// 	glm::vec3 scale(1.0f);
+	// 	glm::vec2 uvscale(1.0f);
+	// 	glm::vec3 center(0.0f);
 
-		tinyobj::attrib_t attrib;
-		std::vector<tinyobj::shape_t> shapes;
-		std::vector<tinyobj::material_t> materials;
+	// 	tinyobj::attrib_t attrib;
+	// 	std::vector<tinyobj::shape_t> shapes;
+	// 	std::vector<tinyobj::material_t> materials;
 
-		std::string cerr;
-		bool cret = tinyobj::LoadObj(&attrib, &shapes, &materials, &cerr, filename.c_str());
+	// 	std::string cerr;
+	// 	bool cret = tinyobj::LoadObj(&attrib, &shapes, &materials, &cerr, filename.c_str());
 
-		if (!cerr.empty()) { // `err` may contain warning message.
-			Log::Error << cerr << "\n";
-		}
+	// 	if (!cerr.empty()) { // `err` may contain warning message.
+	// 		Log::Error << cerr << "\n";
+	// 	}
 
-		if (!cret) {
-			Log::Error << "Failed to load model" << "\n";
-			exit(1);
-		}
+	// 	if (!cret) {
+	// 		Log::Error << "Failed to load model" << "\n";
+	// 		exit(1);
+	// 	}
 
 
-		int i = 0, vertexIndex = 0;
-		for (const auto& shape : shapes) {
+	// 	int i = 0, vertexIndex = 0;
+	// 	for (const auto& shape : shapes) {
 
-			vertices.reserve(shape.mesh.indices.size());
-			indices.reserve(shape.mesh.indices.size() * 3);
-			std::unordered_map<Vertex, int> uniqueVertices = {};
+	// 		vertices.reserve(shape.mesh.indices.size());
+	// 		indices.reserve(shape.mesh.indices.size() * 3);
+	// 		std::unordered_map<Vertex, int> uniqueVertices = {};
 					
-			for (const auto& index : shape.mesh.indices) {
+	// 		for (const auto& index : shape.mesh.indices) {
 			
-				Vertex newVertex = {
-					glm::vec3(	attrib.vertices[3 * index.vertex_index + 0],
-								attrib.vertices[3 * index.vertex_index + 1],
-								attrib.vertices[3 * index.vertex_index + 2]),
+	// 			Vertex newVertex = {
+	// 				glm::vec3(	attrib.vertices[3 * index.vertex_index + 0],
+	// 							attrib.vertices[3 * index.vertex_index + 1],
+	// 							attrib.vertices[3 * index.vertex_index + 2]),
 
-					glm::vec3(	attrib.normals[3 * index.normal_index + 0],
-								attrib.normals[3 * index.normal_index + 1],
-								attrib.normals[3 * index.normal_index + 2]),
+	// 				glm::vec3(	attrib.normals[3 * index.normal_index + 0],
+	// 							attrib.normals[3 * index.normal_index + 1],
+	// 							attrib.normals[3 * index.normal_index + 2]),
 
-					glm::vec2(	attrib.texcoords[2 * index.texcoord_index + 0],
-								1.0f - attrib.texcoords[2 * index.texcoord_index + 1]),
+	// 				glm::vec2(	attrib.texcoords[2 * index.texcoord_index + 0],
+	// 							1.0f - attrib.texcoords[2 * index.texcoord_index + 1]),
 
-					glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
-				};
+	// 				glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
+	// 			};
 				
 
-				if (uniqueVertices.count(newVertex) == 0) {
-					uniqueVertices[newVertex] = (int)vertices.size();
-					vertices.push_back(newVertex);
-				}
+	// 			if (uniqueVertices.count(newVertex) == 0) {
+	// 				uniqueVertices[newVertex] = (int)vertices.size();
+	// 				vertices.push_back(newVertex);
+	// 			}
 
-				indices.push_back(uniqueVertices[newVertex]);
-			}
+	// 			indices.push_back(uniqueVertices[newVertex]);
+	// 		}
 
-			vertexCount = (int) vertices.size();
-			indexCount = (int) indices.size();
-		}
-	}
-	else
+	// 		vertexCount = (int) vertices.size();
+	// 		indexCount = (int) indices.size();
+	// 	}
+	// }
+	// else
 	{
 		printf("Error parsing '%s': '\n", filename.c_str());
 		
