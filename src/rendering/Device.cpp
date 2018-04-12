@@ -1,7 +1,6 @@
 #include "Device.hpp"
 
 #include "Initializers.hpp"
-#include "RendererStructs.h"
 #include "SwapChain.hpp"
 #include "Buffer.hpp"
 

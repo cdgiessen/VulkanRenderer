@@ -26,12 +26,12 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 
 	camera = std::make_shared< Camera>(glm::vec3(0, 40, -500), glm::vec3(0, 1, 0), 0, 90);
 
-	pointLights.resize(5);
-	pointLights[0] = PointLight(glm::vec4(0, 10, 0, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	pointLights[1] = PointLight(glm::vec4(10, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	pointLights[2] = PointLight(glm::vec4(50, 10, 10, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	pointLights[3] = PointLight(glm::vec4(50, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	//pointLights.resize(5);
+	//pointLights[0] = PointLight(glm::vec4(0, 10, 0, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	//pointLights[1] = PointLight(glm::vec4(10, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	//pointLights[2] = PointLight(glm::vec4(50, 10, 10, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	//pointLights[3] = PointLight(glm::vec4(50, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	//pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 
 	skybox = std::make_shared<Skybox>();
 	skybox->vulkanCubeMap = std::make_shared<VulkanCubeMap>(renderer->device);
@@ -117,17 +117,37 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 
 	UpdateSunData();
 
-	GlobalVariableUniformBuffer cbo = {};
-	cbo.view = camera->GetViewMatrix();
-	cbo.proj = depthReverserMatrix * glm::perspective(glm::radians(45.0f), 
-		renderer->vulkanSwapChain.swapChainExtent.width / (float)renderer->vulkanSwapChain.swapChainExtent.height, 
+	GlobalData gd;
+	gd.time = (float)timeManager->GetRunningTime();
+
+	glm::mat4 proj = depthReverserMatrix * glm::perspective(glm::radians(45.0f),
+		renderer->vulkanSwapChain.swapChainExtent.width / (float)renderer->vulkanSwapChain.swapChainExtent.height,
 		0.05f, 10000000.0f);
-	cbo.proj[1][1] *= -1;
-	cbo.cameraDir = camera->Front;
-	cbo.time = (float)timeManager->GetRunningTime();
-	cbo.sunDir = sunSettings.dir;
-	cbo.sunIntensity = sunSettings.intensity;
-	cbo.sunColor = sunSettings.color;
+	proj[1][1] *= -1;
+
+	CameraData cd;
+	cd.projView = proj * camera->GetViewMatrix();
+	cd.view = camera->GetViewMatrix();
+	cd.cameraDir = camera->Front;
+	cd.cameraPos = camera->Position;
+
+	DirectionalLight sun;
+	sun.direction = sunSettings.dir;
+	sun.intensity = sunSettings.intensity;
+	sun.color = sunSettings.color;
+
+
+	//GlobalVariableUniformBuffer cbo = {};
+	//cbo.view = camera->GetViewMatrix();
+	//cbo.proj = depthReverserMatrix * glm::perspective(glm::radians(45.0f), 
+	//	renderer->vulkanSwapChain.swapChainExtent.width / (float)renderer->vulkanSwapChain.swapChainExtent.height, 
+	//	0.05f, 10000000.0f);
+	//cbo.proj[1][1] *= -1;
+	//cbo.cameraDir = camera->Front;
+	//cbo.time = (float)timeManager->GetRunningTime();
+	//cbo.sunDir = sunSettings.dir;
+	//cbo.sunIntensity = sunSettings.intensity;
+	//cbo.sunColor = sunSettings.color;
 
 	renderer->UpdateGlobalRenderResources(cbo, pointLights);
 

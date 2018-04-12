@@ -4,7 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <iostream>
+#include "../core/Logger.h"
 
 //#define VMA_IMPLEMENTATION
 //#include <vk_mem_alloc.h>
@@ -27,8 +27,8 @@ std::string errorString(const VkResult errorCode);
 	VkResult res = (f);																											\
 	if (res != VK_SUCCESS)																										\
 	{																															\
-		std::cout << "Fatal : VkResult is \"" << errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n";	\
-		std::cerr << "Fatal : VkResult is \"" << errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n";	\
+		Log::Debug << "Fatal : VkResult is \"" << errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n";	\
+		Log::Error << "Fatal : VkResult is \"" << errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n";	\
 		assert(res == VK_SUCCESS);																								\
 	}																															\
 }

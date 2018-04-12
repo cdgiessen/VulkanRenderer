@@ -3,7 +3,7 @@
 #include "Initializers.hpp"
 #include "Device.hpp"
 #include "RenderTools.h"
-#include "RendererStructs.h"
+#include "RenderStructs.h"
 
 #include "../resources/Mesh.h"
 

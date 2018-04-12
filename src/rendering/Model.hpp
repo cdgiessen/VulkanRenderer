@@ -4,7 +4,7 @@
 
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
-#include "RendererStructs.h"
+#include "RenderStructs.h"
 #include "RenderTools.h"
 #include "Device.hpp"
 #include "Buffer.hpp"

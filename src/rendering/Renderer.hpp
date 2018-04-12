@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include "RenderTools.h"
-#include "RendererStructs.h"
+#include "RenderStructs.h"
 #include "Initializers.hpp"
 
 #include "Device.hpp"
@@ -81,16 +81,24 @@ private:
 	void SetupLightingDescriptorSet();
 
 	VulkanBufferUniform globalVariableBuffer;
+	VulkanBufferUniform cameraDataBuffer;
+	VulkanBufferUniform sunBuffer;
 	VulkanBufferUniform pointLightsBuffer;
+	VulkanBufferUniform spotLightsBuffer;
 
 	std::shared_ptr<VulkanDescriptor> globalDescriptor;
-	DescriptorSet globalDescriptorSet;
+	std::shared_ptr<VulkanDescriptor> cameraDataDescriptor;
 	std::shared_ptr<VulkanDescriptor> pointLightDescriptor;
-	DescriptorSet pointLightDescriptorSet;
+	std::shared_ptr<VulkanDescriptor> spotLightsDescriptor;
+	std::shared_ptr<VulkanDescriptor> sunDescriptor;
+
+	DescriptorSet frameDataDescriptorSet;
+	DescriptorSet lightingDescriptorSet;
 
 	VkPipelineLayout globalDescriptorLayout;
 	VkPipelineLayout pointLightDescriptorLayout;
 
+	VulkanBufferUniform 
 	VulkanBufferUniformDynamic entityPositions;
 
 	//uint32_t frameIndex = 1; // which frame of the swapchain it is on

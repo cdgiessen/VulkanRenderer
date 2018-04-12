@@ -14,7 +14,7 @@
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 #include "RenderTools.h"
-#include "RendererStructs.h"
+#include "RenderStructs.h"
 
 const std::vector<const char*> VALIDATION_LAYERS = {
 	"VK_LAYER_LUNARG_standard_validation"
