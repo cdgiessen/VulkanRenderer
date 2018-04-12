@@ -116,7 +116,8 @@ public:
 	std::shared_ptr<Texture> terrainSplatMap;
 	std::shared_ptr<VulkanTexture2D> terrainVulkanSplatMap;
 
-	TerrainPushConstant modelMatrixData;
+	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
+	//TerrainPushConstant modelMatrixData;
 
 	//std::shared_ptr<Texture> maillerFace;
 	
@@ -136,7 +137,7 @@ public:
 		std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray);
 
 	void UpdateTerrain(glm::vec3 viewerPos);
-	void DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], bool wireframe);
+	void DrawTerrain(VkCommandBuffer cmdBuff, bool wireframe);
 	void BuildCommandBuffer(std::shared_ptr<Terrain> curTerrain, bool ifWireframe);
 	void CleanUp();
 

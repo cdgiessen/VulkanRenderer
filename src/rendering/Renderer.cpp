@@ -431,13 +431,14 @@ void VulkanRenderer::SetupGlobalDescriptorSet() {
 
 	std::vector<DescriptorPoolSize> poolSizes;
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
 	frameDataDescriptor->SetupPool(poolSizes);
 
 	frameDataDescriptorSet = frameDataDescriptor->CreateDescriptorSet();
 	
 	std::vector<DescriptorUse> writes;
 	writes.push_back(DescriptorUse(0, 1, globalVariableBuffer.resource));
-	writes.push_back(DescriptorUse(0, 1, cameraDataBuffer.resource));
+	writes.push_back(DescriptorUse(1, 1, cameraDataBuffer.resource));
 	frameDataDescriptor->UpdateDescriptorSet(frameDataDescriptorSet, writes);
 
 	auto desLayout = frameDataDescriptor->GetLayout();
@@ -458,6 +459,8 @@ void VulkanRenderer::SetupLightingDescriptorSet() {
 	lightingDescriptor->SetupLayout(m_bindings);
 
 	std::vector<DescriptorPoolSize> poolSizes;
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
 	lightingDescriptor->SetupPool(poolSizes);
 

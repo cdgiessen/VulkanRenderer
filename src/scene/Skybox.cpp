@@ -14,13 +14,13 @@ void Skybox::CleanUp() {
 	model->destroy();
 	vulkanCubeMap->destroy();
 
-	//skyboxUniformBuffer.cleanBuffer();
+	skyboxUniformBuffer->CleanBuffer();
 }
 
 void Skybox::InitSkybox(std::shared_ptr<VulkanRenderer> renderer) {
 	this->renderer = renderer;
 
-	//SetupUniformBuffer();
+	SetupUniformBuffer();
 	SetupCubeMapImage();
 	SetupDescriptor();
 	SetupPipeline();
@@ -28,9 +28,8 @@ void Skybox::InitSkybox(std::shared_ptr<VulkanRenderer> renderer) {
 }
 
 void Skybox::SetupUniformBuffer() {
-	//renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-	//	(VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), 
-	//	&skyboxUniformBuffer, sizeof(SkyboxUniformBuffer));
+	skyboxUniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
+	skyboxUniformBuffer->CreateUniformBuffer(sizeof(SkyboxUniformBuffer));
 }
 
 void Skybox::SetupCubeMapImage() {
@@ -41,17 +40,20 @@ void Skybox::SetupDescriptor() {
 	descriptor = renderer->GetVulkanDescriptor();
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
 	descriptor->SetupLayout(m_bindings);
 
 	std::vector<DescriptorPoolSize> poolSizes;
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	descriptor->SetupPool(poolSizes);
 
 	m_descriptorSet = descriptor->CreateDescriptorSet();
 
 	std::vector<DescriptorUse> writes;
-	writes.push_back(DescriptorUse(2, 1, vulkanCubeMap->resource));
+	writes.push_back(DescriptorUse(0, 1, skyboxUniformBuffer->resource));
+	writes.push_back(DescriptorUse(1, 1, vulkanCubeMap->resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
 }
 
@@ -97,36 +99,23 @@ void Skybox::SetupPipeline()
 }
 
 void Skybox::UpdateUniform(glm::mat4 proj, glm::mat4 view) {
-	//SkyboxUniformBuffer sbo = {};
-	//sbo.proj = proj;
-	//sbo.view = glm::mat4(glm::mat3(view));
-	//
-	//skyboxUniformBuffer.map(renderer->device.device);
-	//skyboxUniformBuffer.copyTo(&sbo, sizeof(sbo));
-	//skyboxUniformBuffer.unmap();
+	SkyboxUniformBuffer sbo = {};
+	sbo.proj = proj;
+	sbo.view = glm::mat4(glm::mat3(view));
+	
+	skyboxUniformBuffer->CopyToBuffer(&sbo, sizeof(SkyboxUniformBuffer));
+	/*
+	skyboxUniformBuffer.map(renderer->device.device);
+	skyboxUniformBuffer.copyTo(&sbo, sizeof(sbo));
+	skyboxUniformBuffer.unmap();*/
 };
 
-//VkCommandBuffer Skybox::BuildSecondaryCommandBuffer(VkCommandBuffer secondaryCommandBuffer, 
-//		VkCommandBufferInheritanceInfo inheritanceInfo) {
-//
-//	VkCommandBufferBeginInfo commandBufferBeginInfo = initializers::commandBufferBeginInfo();
-//	commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-//	commandBufferBeginInfo.pInheritanceInfo = &inheritanceInfo;
-//
-//	VK_CHECK_RESULT(vkBeginCommandBuffer(secondaryCommandBuffer, &commandBufferBeginInfo));
-//
-//	
-//	vkCmdBindDescriptorSets(secondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 0, 1, &descriptorSet, 0, nullptr);
-//	vkCmdBindPipeline(secondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(0));
-//
-//	VkDeviceSize offsets[1] = { 0 };
-//	vkCmdBindVertexBuffers(secondaryCommandBuffer, 0, 1, &model.vertices.buffer, offsets);
-//	vkCmdBindIndexBuffer(secondaryCommandBuffer, model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-//	vkCmdDrawIndexed(secondaryCommandBuffer, static_cast<uint32_t>(model.indexCount), 1, 0, 0, 0);
-//
-//	VK_CHECK_RESULT(vkEndCommandBuffer(secondaryCommandBuffer));
-//
-//	return secondaryCommandBuffer;
-//}
 
+void Skybox::WriteToCommandBuffer(VkCommandBuffer commandBuffer) {
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &m_descriptorSet.set, 0, nullptr);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(0));
+
+	model->BindModel(commandBuffer);
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(model->indexCount), 1, 0, 0, 0);
+}
 

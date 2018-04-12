@@ -26,6 +26,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 
 	camera = std::make_shared< Camera>(glm::vec3(0, 40, -500), glm::vec3(0, 1, 0), 0, 90);
 
+
 	//pointLights.resize(5);
 	//pointLights[0] = PointLight(glm::vec4(0, 10, 0, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 	//pointLights[1] = PointLight(glm::vec4(10, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
@@ -111,9 +112,10 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 		obj->UpdateUniformBuffer((float)timeManager->GetRunningTime());
 	}
 
-	//skybox->UpdateUniform(cbo.proj, camera->GetViewMatrix());
-	//if(!Input::GetKey(GLFW_KEY_V))
-	terrainManager->UpdateTerrains(resourceMan, renderer, camera, timeManager);
+	if (Input::GetKeyDown(Input::KeyCode::V))
+		UpdateTerrain = !UpdateTerrain;
+	if (UpdateTerrain)
+		terrainManager->UpdateTerrains(resourceMan, renderer, camera, timeManager);
 
 	UpdateSunData();
 
@@ -126,8 +128,8 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 	proj[1][1] *= -1;
 
 	CameraData cd;
-	cd.projView = proj * camera->GetViewMatrix();
 	cd.view = camera->GetViewMatrix();
+	cd.projView = proj * cd.view;
 	cd.cameraDir = camera->Front;
 	cd.cameraPos = camera->Position;
 
@@ -136,19 +138,7 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 	sun.intensity = sunSettings.intensity;
 	sun.color = sunSettings.color;
 
-
-	//GlobalVariableUniformBuffer cbo = {};
-	//cbo.view = camera->GetViewMatrix();
-	//cbo.proj = depthReverserMatrix * glm::perspective(glm::radians(45.0f), 
-	//	renderer->vulkanSwapChain.swapChainExtent.width / (float)renderer->vulkanSwapChain.swapChainExtent.height, 
-	//	0.05f, 10000000.0f);
-	//cbo.proj[1][1] *= -1;
-	//cbo.cameraDir = camera->Front;
-	//cbo.time = (float)timeManager->GetRunningTime();
-	//cbo.sunDir = sunSettings.dir;
-	//cbo.sunIntensity = sunSettings.intensity;
-	//cbo.sunColor = sunSettings.color;
-
+	skybox->UpdateUniform(proj, cd.view );
 	renderer->UpdateRenderResources(gd, cd, sun, pointLights, spotLights);
 
 }
@@ -164,15 +154,7 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	
 	treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
 
-	//skybox
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->layout, 2, 1, &skybox->m_descriptorSet.set, 0, nullptr);
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skybox->mvp->pipelines->at(0));
-
-	skybox->model->BindModel(commandBuffer);
-	//vkCmdBindVertexBuffers(commandBuffer, 0, 1, &skybox->model.vmaBufferVertex, offsets);
-	//vkCmdBindIndexBuffer(commandBuffer, skybox->model.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(skybox->model->indexCount), 1, 0, 0, 0);
-
+	skybox->WriteToCommandBuffer(commandBuffer);
 }
 
 void Scene::UpdateSunData() {

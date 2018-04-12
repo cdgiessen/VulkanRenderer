@@ -17,9 +17,9 @@ layout(set = 0, binding = 1) uniform CameraData {
 } cam;
 
 struct DirectionalLight {
-	vec3 sunDir;
-	float sunIntensity;
-	vec3 sunColor;
+	vec3 direction;
+	float intensity;
+	vec3 color;
 };
 
 struct PointLight {

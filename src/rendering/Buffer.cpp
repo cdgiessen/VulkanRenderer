@@ -10,6 +10,10 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDescriptorType type)
 }
 
 void VulkanBuffer::CleanBuffer() {
+	if (persistantlyMapped) {
+		Unmap();
+	}
+
 	device.DestroyVmaAllocatedBuffer(buffer);
 }
 
@@ -40,15 +44,20 @@ void AlignedMemcpy(uint8_t bytes, VkDeviceSize destMemAlignment, void* src, void
 
 void VulkanBuffer::CopyToBuffer(void* pData, VkDeviceSize size)
 {
-	void* mapped;
-	this->Map(&mapped);
+	if (persistantlyMapped) {
+		memcpy(mapped, pData, (size_t)size);
 
-	//VkDeviceSize bufAlignment = device.physical_device_properties.limits.minUniformBufferOffsetAlignment;
-
-	//AlignedMemcpy((size_t)size, bufAlignment, pData, mapped);
-
-	memcpy(mapped, pData, (size_t)size);
-	this->Unmap();
+	}
+	else {
+		this->Map(&mapped);
+		memcpy(mapped, pData, (size_t)size);
+	
+		//VkDeviceSize bufAlignment = device.physical_device_properties.limits.minUniformBufferOffsetAlignment;
+	
+		//AlignedMemcpy((size_t)size, bufAlignment, pData, mapped);
+	
+		this->Unmap();
+	}
 }
 
 VulkanBufferUniform::VulkanBufferUniform(VulkanDevice& device): VulkanBuffer(device) {
@@ -59,6 +68,12 @@ void VulkanBufferUniform::CreateUniformBuffer(VkDeviceSize size) {
 	m_size = size;
 	device.CreateUniformBuffer(buffer, size);
 	SetupResource();
+}
+
+void VulkanBufferUniform::CreateUniformBufferPersitantlyMapped(VkDeviceSize size) {
+	persistantlyMapped = true;
+	CreateUniformBuffer(size);
+	Map(&mapped);
 }
 
 void VulkanBufferUniform::CreateStagingUniformBuffer(void* pData, VkDeviceSize size) {

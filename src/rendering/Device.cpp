@@ -162,7 +162,6 @@ void VulkanDevice::InitVulkanDevice(VkSurfaceKHR &surface)
 	if (familyIndices.graphicsFamily != familyIndices.transferFamily) {
 		transferQueue = std::make_unique<TransferQueue>(*this, familyIndices.transferFamily);
 		separateTransferQueue = true;
-		Log::Debug << "Using a Separate transfer queue\n";
 	}
 	else
 		separateTransferQueue = false;
@@ -587,7 +586,7 @@ void VulkanDevice::CreateStagingUniformBuffer(VmaBuffer& buffer, void* data, VkD
 	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
 	VmaAllocationCreateInfo allocInfo = {};
-	allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+	allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 	allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));

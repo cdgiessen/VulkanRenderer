@@ -23,9 +23,7 @@ void TerrainChunk::UpdateChunk(std::shared_ptr<ResourceManager> resourceMan, std
 }
 
 void TerrainChunk::RenderChunk(VkCommandBuffer commandBuffer, bool wireframe) {
-	VkDeviceSize offsets[] = { 0 };
-
-	terrain->DrawTerrain(commandBuffer, offsets, wireframe);
+	terrain->DrawTerrain(commandBuffer, wireframe);
 
 }
 
@@ -200,27 +198,12 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 }
 
 void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe) {
-	VkDeviceSize offsets[] = { 0 };
-
 	for (auto ter : terrains) {
-		ter->DrawTerrain(commandBuffer, offsets, wireframe);
+		ter->DrawTerrain(commandBuffer, wireframe);
 	}
 
 	instancedWaters->WriteToCommandBuffer(commandBuffer, wireframe);
 
-	//water
-	//vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->mvp->pipelines->at(1) : waters.at(0)->mvp->pipelines->at(0));
-	////vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? waters.at(0)->wireframe : waters.at(0)->seascapePipeline);
-	//
-	//WaterModel.BindModel(commandBuffer);
-	////vkCmdBindVertexBuffers(commandBuffer, 0, 1, &waters.at(0)->WaterModel.vmaBufferVertex, offsets);
-	////vkCmdBindIndexBuffer(commandBuffer, waters.at(0)->WaterModel.vmaBufferIndex, 0, VK_INDEX_TYPE_UINT32);
-
-	//for (auto water : waters) {
-	//	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, water->mvp->layout, 2, 1, &water->m_descriptorSet.set, 0, nullptr);
-
-	//	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(WaterModel.indexCount), 1, 0, 0, 0);
-	//}
 }
 
 //TODO : Reimplement getting height at terrain location

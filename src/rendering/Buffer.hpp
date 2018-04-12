@@ -36,6 +36,8 @@ protected:
 	void SetupResource();
 
 	VkDeviceSize m_size;
+	bool persistantlyMapped = false;
+	void* mapped;
 };
 
 class VulkanBufferUniform : public VulkanBuffer {
@@ -43,10 +45,10 @@ public:
 	VulkanBufferUniform(VulkanDevice& device);
 
 	void CreateUniformBuffer(VkDeviceSize size);
+	void CreateUniformBufferPersitantlyMapped(VkDeviceSize size);
 	void CreateStagingUniformBuffer(void* pData, VkDeviceSize size);
-
-
 };
+
 class VulkanBufferUniformDynamic : public VulkanBuffer {
 public:
 	VulkanBufferUniformDynamic(VulkanDevice& device);

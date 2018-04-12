@@ -2,21 +2,22 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 //Global information
-layout(set = 0, binding = 0) uniform CameraUniformBuffer {
+layout(set = 0, binding = 0) uniform GlobalData {
+	float time;
+} global;
+
+layout(set = 0, binding = 1) uniform CameraData {
+	mat4 projView;
 	mat4 view;
-	mat4 proj;
 	vec3 cameraDir;
-	float time; // in seconds
-	vec3 sunDir;
-	float sunIntensity;
-	vec3 sunColor;
-} cbo;
+	vec3 cameraPos;
+} cam;
 
 //per model information
-layout(set = 2, binding = 2) uniform UniformBufferObject {
+layout(set = 2, binding = 0) uniform ModelMatrixData {
     mat4 model;
 	mat4 normal;
-} ubo;
+} mnd;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
@@ -36,8 +37,8 @@ void main() {
 	outTexCoord = inTexCoord;
 	outColor = inColor;
 
-    gl_Position = cbo.proj * cbo.view * ubo.model * vec4(inPosition, 1.0);
+    gl_Position = cam.projView * mnd.model * vec4(inPosition, 1.0);
 
-	outNormal = (ubo.normal * vec4(inNormal, 1.0f)).xyz;
-	outFragPos = (ubo.model * vec4(inPosition, 1.0)).xyz;		
+	outNormal = (mnd.normal * vec4(inNormal, 1.0f)).xyz;
+	outFragPos = (mnd.model * vec4(inPosition, 1.0)).xyz;		
 }

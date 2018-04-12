@@ -83,7 +83,7 @@ Terrain::Terrain(
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, 0, 0)));
 	quadHandles.push_back(rootQuad);
 
-	modelMatrixData.model = glm::translate(glm::mat4(), glm::vec3(coordinateData.pos.x, 0, coordinateData.pos.y));
+	//modelMatrixData.model = glm::translate(glm::mat4(), glm::vec3(coordinateData.pos.x, 0, coordinateData.pos.y));
 }
 
 
@@ -93,7 +93,7 @@ Terrain::~Terrain() {
 
 void Terrain::CleanUp()
 {
-	//cleanup model buffers
+	uniformBuffer->CleanBuffer();
 	vertexBuffer->CleanBuffer();
 	indexBuffer->CleanBuffer();
 
@@ -104,6 +104,15 @@ void Terrain::CleanUp()
 void Terrain::InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos, std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray)
 {
 	this->renderer = renderer;
+
+	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
+	uniformBuffer->CreateUniformBufferPersitantlyMapped(sizeof(ModelBufferObject));
+
+	ModelBufferObject mbo;
+	mbo.model = glm::mat4();
+	mbo.model = glm::translate(mbo.model, glm::vec3(coordinateData.pos.x, 0 , coordinateData.pos.y));
+
+	uniformBuffer->CopyToBuffer(&mbo, sizeof(ModelBufferObject));
 
 	SetupMeshbuffers();
 	SetupUniformBuffer();
@@ -176,24 +185,25 @@ void Terrain::SetupDescriptorSets(std::shared_ptr<VulkanTexture2DArray> terrainV
 	descriptor = renderer->GetVulkanDescriptor();
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,	VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
 	descriptor->SetupLayout(m_bindings);
 
 	std::vector<DescriptorPoolSize> poolSizes;
-	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 * maxNumQuads));
-	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 * maxNumQuads));
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	descriptor->SetupPool(poolSizes, maxNumQuads);
 
 	//VkDescriptorSetAllocateInfo allocInfoTerrain = initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
 	descriptorSet = descriptor->CreateDescriptorSet();
 
 	std::vector<DescriptorUse> writes;
-	
-	writes.push_back(DescriptorUse(0, 1, terrainVulkanSplatMap->resource));
-	writes.push_back(DescriptorUse(1, 1, terrainVulkanTextureArray->resource));
+	writes.push_back(DescriptorUse(0, 1, uniformBuffer->resource));
+	writes.push_back(DescriptorUse(1, 1, terrainVulkanSplatMap->resource));
+	writes.push_back(DescriptorUse(2, 1, terrainVulkanTextureArray->resource));
 	descriptor->UpdateDescriptorSet(descriptorSet, writes);
-
 	
 }
 
@@ -516,7 +526,8 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuad> quad) {
 	//Log::Debug << "Terrain un-subdivided: Level: " << quad->level << " Position: " << quad->pos.x << ", " << quad->pos.z << " Size: " << quad->size.x << ", " << quad->size.z << "\n";
 }
 
-void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], bool ifWireframe) {
+void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
+	VkDeviceSize offsets[] = { 0 };
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &descriptorSet.set, 0, nullptr);
@@ -529,13 +540,13 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, VkDeviceSize offsets[1], bool
 		indexOffsettings[i] = (i * sizeof(TerrainMeshIndices));
 	}
 
-	vkCmdPushConstants(
-		cmdBuff,
-		mvp->layout,
-		VK_SHADER_STAGE_VERTEX_BIT,
-		0,
-		sizeof(TerrainPushConstant),
-		&modelMatrixData);
+	//vkCmdPushConstants(
+	//	cmdBuff,
+	//	mvp->layout,
+	//	VK_SHADER_STAGE_VERTEX_BIT,
+	//	0,
+	//	sizeof(TerrainPushConstant),
+	//	&modelMatrixData);
 
 	drawTimer.StartTimer();
 	for (int i = 0; i < quadHandles.size(); ++i) {

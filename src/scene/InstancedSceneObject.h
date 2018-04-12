@@ -87,7 +87,6 @@ private:
 
 	std::vector<InstanceData> instancesData;
 	std::vector<glm::vec3> modelPositions;
-	std::vector<ModelBufferObject> modelUniforms;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 	std::shared_ptr<VulkanBufferVertex> instanceBuffer;

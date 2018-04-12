@@ -37,8 +37,7 @@ public:
 	std::shared_ptr<CubeMap> skyboxCubeMap;
 	std::shared_ptr<VulkanCubeMap> vulkanCubeMap;
 	
-	//SkyboxUniformBuffer skyboxUniform;
-	//VulkanBuffer skyboxUniformBuffer;
+	std::shared_ptr<VulkanBufferUniform> skyboxUniformBuffer;
 
 
 	void InitSkybox(std::shared_ptr<VulkanRenderer> renderer);
@@ -52,8 +51,6 @@ public:
 	void SetupDescriptor();
 	void SetupPipeline();
 
-	//Builds a secondary command buffer for the skybox and returns the buffer
-	VkCommandBuffer BuildSecondaryCommandBuffer(VkCommandBuffer secondaryCommandBuffer, VkCommandBufferInheritanceInfo inheritanceInfo);
-
+	void WriteToCommandBuffer(VkCommandBuffer commandBuffer);
 
 };

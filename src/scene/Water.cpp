@@ -62,8 +62,8 @@ void Water::SetupDescriptor(VulkanTexture2D& WaterVulkanTexture)
 	descriptor = renderer->GetVulkanDescriptor();
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 2, 1));
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
 	descriptor->SetupLayout(m_bindings);
 
 	std::vector<DescriptorPoolSize> poolSizes;
@@ -74,8 +74,8 @@ void Water::SetupDescriptor(VulkanTexture2D& WaterVulkanTexture)
 	m_descriptorSet = descriptor->CreateDescriptorSet();
 
 	std::vector<DescriptorUse> writes;
-	writes.push_back(DescriptorUse(2, 1, modelUniformBuffer->resource));
-	writes.push_back(DescriptorUse(3, 1, WaterVulkanTexture.resource));
+	writes.push_back(DescriptorUse(0, 1, modelUniformBuffer->resource));
+	writes.push_back(DescriptorUse(1, 1, WaterVulkanTexture.resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
 }
 

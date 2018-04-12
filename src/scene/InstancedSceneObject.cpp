@@ -73,7 +73,6 @@ void InstancedSceneObject::SetBlendMode(VkBool32 blendEnable){
 
 void InstancedSceneObject::SetupUniformBuffer() {
 	uniformBuffer->CreateUniformBuffer(sizeof(ModelBufferObject));
-	//renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), &uniformBuffer, sizeof(ModelBufferObject));
 
 	ModelBufferObject ubo = {};
 	ubo.model = glm::mat4();
@@ -103,8 +102,8 @@ void InstancedSceneObject::SetupDescriptor() {
 	descriptor = renderer->GetVulkanDescriptor();
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 2, 1));
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
 	descriptor->SetupLayout(m_bindings);
 
 	std::vector<DescriptorPoolSize> poolSizes;
@@ -115,8 +114,8 @@ void InstancedSceneObject::SetupDescriptor() {
 	m_descriptorSet = descriptor->CreateDescriptorSet();
 
 	std::vector<DescriptorUse> writes;
-	writes.push_back(DescriptorUse(2, 1, uniformBuffer->resource));
-	writes.push_back(DescriptorUse(3, 1, vulkanTexture->resource));
+	writes.push_back(DescriptorUse(0, 1, uniformBuffer->resource));
+	writes.push_back(DescriptorUse(1, 1, vulkanTexture->resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
 
 }
@@ -261,13 +260,13 @@ void InstancedSceneObject::AddInstances(std::vector<glm::vec3> positions) {
 
 void InstancedSceneObject::UpdateUniformBuffer()
 {
-	for (auto it = modelUniforms.begin(); it != modelUniforms.end(); it++) {
+	//for (auto it = modelUniforms.begin(); it != modelUniforms.end(); it++) {
 		//ModelBufferObject ubo = {};
 		//ubo.model = glm::mat4();
 		////ubo.model = glm::translate(ubo.model, glm::vec3(50, 0, 0));
 		//ubo.model = glm::rotate(ubo.model, time / 2.0f, glm::vec3(0.5, 1, 0));
 		//ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
-	}
+	//}
 
 	//modelUniformsBuffer.map(renderer->device.device);
 	//modelUniformsBuffer.copyTo(&modelUniforms, modelUniforms.size() * sizeof(ModelBufferObject));

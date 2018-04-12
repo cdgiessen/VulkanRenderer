@@ -75,5 +75,7 @@ private:
 
 	bool pressedControllerJumpButton = false;
 	bool releasedControllerJumpButton = false;
+
+	bool UpdateTerrain = true;
 };
 
