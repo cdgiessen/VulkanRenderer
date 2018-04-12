@@ -5,15 +5,54 @@
 
 #include <glm/glm.hpp>
 
-#include "../resources/Texture.h"
-
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+
+class VulkanTexture;
 
 /* Synchronization */
 
 using Signal = std::shared_ptr<bool>;
 
 /* Common uniform buffers */
+
+struct GlobalData {
+	float time;
+};
+
+struct CameraData {
+	glm::mat4 projView;
+	glm::mat4 view;
+	glm::vec3 cameraDir;
+	glm::vec3 cameraPos;
+} ;
+
+/* Lighting */
+
+struct Light_Directional {
+	glm::vec3 sunDir;
+	float sunIntensity;
+	glm::vec3 sunColor;
+};
+
+struct Light_Point {
+	glm::vec3 position;
+	glm::vec3 color;
+	float attenuation;
+};
+
+struct  Light_Spot {
+	glm::vec3 position;
+	glm::vec3 color;
+	float attenuation;
+	float cutoff;
+	float outerCutOff;
+};
+
+
+
+
+
+
 
 struct GlobalVariableUniformBuffer {
 	glm::mat4 view;
@@ -38,11 +77,7 @@ struct ModelPushConstant {
 	glm::mat4 normal;
 };
 
-struct ModelInfo {
-	std::string name;
 
-	ModelBufferObject mbo;
-};
 
 /* Lighting */
 
@@ -55,10 +90,6 @@ struct PointLight {
 	PointLight(glm::vec4 pos, glm::vec4 color, glm::vec4 atten) : lightPos(pos), color(color), attenuation(atten) {};
 };
 
-struct PointLightInfo {
-	std::string name;
-	PointLight pl;
-};
 
 struct DirectionalLight {
 	glm::vec4 lightDir = glm::vec4(50.0f, -65.0f, 50.0f, 1.0f);
@@ -69,10 +100,6 @@ struct DirectionalLight {
 	DirectionalLight(glm::vec4 dir, glm::vec4 color, glm::vec4 atten) : lightDir(dir), color(color), attenuation(atten) {};
 };
 
-struct DirectionalLightInfo {
-	std::string name;
-	DirectionalLight dl;
-};
 
 struct SpotLight {
 	glm::vec4 lightPos = glm::vec4(50.0f, 25.0f, 50.0f, 1.0f);
@@ -89,35 +116,28 @@ struct SpotLight {
 		: lightDir(dir), color(color), attenuation(atten), cutOff(cutOff), outerCutOff(outerCutOff) {};
 };
 
-struct SpotLightInfo {
-	std::string name;
-	SpotLight dl;
-};
-
 /* Materials */
 
-struct PBRMaterial {
-	glm::vec4 baseColor;
-	glm::vec4 emissiveFactor;
+struct PBR_Material {
+	glm::vec3  albedo;
+	float metallic;
+	float roughness;
+	float ao;
+	glm::vec3 emmisive;
 
-	float metallicFactor;
-	float roughnessFactor;
+	bool useTexAlbedo;
+	bool useTexMetallic;
+	bool useTexRoughness;
+	bool useTexAmbientOcclusion;
+	bool useTexEmmisive;
+	bool useTexNormal;
 
-	std::shared_ptr<Texture> baseColorTexture;
-	std::shared_ptr<Texture> metallicRoughnessTexture;
-
-	std::shared_ptr<Texture> normalTexture;
-
-	std::shared_ptr<Texture> ambientOcclusionTexture;
-
-	std::shared_ptr<Texture> emissiveTexture;
-
-};
-
-struct PBRMaterialInfo {
-	std::string name;
-
-	PBRMaterial mat;
+	std::shared_ptr<VulkanTexture> tx_albedo;
+	std::shared_ptr<VulkanTexture> tx_metallic;
+	std::shared_ptr<VulkanTexture> tx_roughness;
+	std::shared_ptr<VulkanTexture> tx_ao;
+	std::shared_ptr<VulkanTexture> tx_emissiveTexture;
+	std::shared_ptr<VulkanTexture> tx_normal;
 };
 
 const glm::mat4 depthReverserMatrix = glm::mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1);

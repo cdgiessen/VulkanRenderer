@@ -176,8 +176,8 @@ void Terrain::SetupDescriptorSets(std::shared_ptr<VulkanTexture2DArray> terrainV
 	descriptor = renderer->GetVulkanDescriptor();
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1));
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
 	descriptor->SetupLayout(m_bindings);
 
 	std::vector<DescriptorPoolSize> poolSizes;
@@ -190,8 +190,8 @@ void Terrain::SetupDescriptorSets(std::shared_ptr<VulkanTexture2DArray> terrainV
 
 	std::vector<DescriptorUse> writes;
 	
-	writes.push_back(DescriptorUse(3, 1, terrainVulkanSplatMap->resource));
-	writes.push_back(DescriptorUse(4, 1, terrainVulkanTextureArray->resource));
+	writes.push_back(DescriptorUse(0, 1, terrainVulkanSplatMap->resource));
+	writes.push_back(DescriptorUse(1, 1, terrainVulkanTextureArray->resource));
 	descriptor->UpdateDescriptorSet(descriptorSet, writes);
 
 	

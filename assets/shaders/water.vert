@@ -5,7 +5,7 @@
 layout(set = 0, binding = 0) uniform CameraUniformBuffer {
 	mat4 view;
 	mat4 proj;
-	vec3 cameraPos;
+	vec3 cameraDir;
 	float time; // in seconds
 	vec3 sunDir;
 	float sunIntensity;

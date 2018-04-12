@@ -53,8 +53,8 @@ class VulkanBuffer;
 
 class TransferQueue {
 public:
-	TransferQueue(VulkanDevice& device, VkCommandPool transfer_queue_command_pool, VkQueue transfer_queue, uint32_t transferFamily);
-	~TransferQueue();
+	TransferQueue(VulkanDevice& device, uint32_t transferFamily);
+	void CleanUp();
 
 	VkCommandBuffer GetTransferCommandBuffer();
 	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
@@ -226,9 +226,9 @@ private:
 	
 	void pickPhysicalDevice(VkSurfaceKHR &surface);
 
-	void createLogicalDevice();
-
-	void createCommandPools();
+	void CreateLogicalDevice();
+	void CreateQueues();
+	void CreateCommandPools();
 
 	void CreateVulkanAllocator();
 

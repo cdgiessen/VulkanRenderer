@@ -26,8 +26,8 @@ layout(set = 1, binding = 1) uniform PointLightsBuffer {
 } plb;
 
 //texture sampling
-layout(set = 2, binding = 3) uniform sampler2D texSplatMap;
-layout(set = 2, binding = 4) uniform sampler2DArray texArray;
+layout(set = 2, binding = 0) uniform sampler2D texSplatMap;
+layout(set = 2, binding = 1) uniform sampler2DArray texArray;
 
 layout(location = 0) in vec3 inFragPos;
 layout(location = 1) in vec3 inNormal;
