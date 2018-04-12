@@ -30,7 +30,11 @@ public:
 	~VulkanRenderer();
 
 	void InitVulkanRenderer(GLFWwindow* window);
-	void UpdateGlobalRenderResources(GlobalVariableUniformBuffer globalData, std::vector<PointLight> lightData);
+	void UpdateRenderResources(GlobalData globalData,
+		CameraData cameraData, 
+		DirectionalLight sun, 
+		std::vector<PointLight> lightData,
+		std::vector<SpotLight> spotLights);
 	void RenderFrame();
 	void CleanVulkanResources();
 
@@ -76,6 +80,10 @@ public:
 	std::shared_ptr<Scene> scene;
 
 private:
+	int cameraCount = 1;
+	int directionalLightCount = 1;
+	int pointLightCount = 16;
+	int spotLightCount = 8;
 
 	void SetupGlobalDescriptorSet();
 	void SetupLightingDescriptorSet();
@@ -86,19 +94,15 @@ private:
 	VulkanBufferUniform pointLightsBuffer;
 	VulkanBufferUniform spotLightsBuffer;
 
-	std::shared_ptr<VulkanDescriptor> globalDescriptor;
-	std::shared_ptr<VulkanDescriptor> cameraDataDescriptor;
-	std::shared_ptr<VulkanDescriptor> pointLightDescriptor;
-	std::shared_ptr<VulkanDescriptor> spotLightsDescriptor;
-	std::shared_ptr<VulkanDescriptor> sunDescriptor;
+	std::shared_ptr<VulkanDescriptor> frameDataDescriptor;
+	std::shared_ptr<VulkanDescriptor> lightingDescriptor;
 
 	DescriptorSet frameDataDescriptorSet;
 	DescriptorSet lightingDescriptorSet;
 
-	VkPipelineLayout globalDescriptorLayout;
-	VkPipelineLayout pointLightDescriptorLayout;
+	VkPipelineLayout frameDataDescriptorLayout;
+	VkPipelineLayout lightingDescriptorLayout;
 
-	VulkanBufferUniform 
 	VulkanBufferUniformDynamic entityPositions;
 
 	//uint32_t frameIndex = 1; // which frame of the swapchain it is on

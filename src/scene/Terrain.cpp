@@ -3,7 +3,7 @@
 
 #include "../core/Logger.h"
 
-#include "../rendering/RendererStructs.h"
+#include "../rendering/RenderStructs.h"
 
 TerrainQuad::TerrainQuad(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, 
 	int level, glm::i32vec2 subDivPos, float centerHeightValue):

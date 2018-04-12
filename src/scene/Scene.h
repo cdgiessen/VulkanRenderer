@@ -51,6 +51,7 @@ private:
 	std::shared_ptr<VulkanRenderer> renderer;
 
 	std::vector<PointLight> pointLights;
+	std::vector<SpotLight> spotLights;
 
 	std::vector<std::shared_ptr<GameObject>> gameObjects;
 	std::shared_ptr<TerrainManager> terrainManager;

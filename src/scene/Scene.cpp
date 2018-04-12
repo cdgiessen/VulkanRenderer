@@ -149,7 +149,7 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 	//cbo.sunIntensity = sunSettings.intensity;
 	//cbo.sunColor = sunSettings.color;
 
-	renderer->UpdateGlobalRenderResources(cbo, pointLights);
+	renderer->UpdateRenderResources(gd, cd, sun, pointLights, spotLights);
 
 }
 
