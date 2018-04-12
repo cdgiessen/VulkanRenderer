@@ -997,6 +997,9 @@ void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf,
 			buffer.CleanBuffer();
 		}
 		vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
+
+		for (auto& sig : readySignal)
+			*sig = true;
 	}
 }
 
