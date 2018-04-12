@@ -34,8 +34,7 @@ VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
 	transferLock.lock();
 	vkAllocateCommandBuffers(device.device, &allocInfo, &buf);
 
-	VkCommandBufferBeginInfo beginInfo = {};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 
@@ -948,12 +947,12 @@ VkCommandBuffer VulkanDevice::GetTransferCommandBuffer() {
 	}
 	else {
 		VkCommandBuffer buf;
-		VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+		VkCommandBufferAllocateInfo allocInfo = 
+			initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
 		vkAllocateCommandBuffers(device, &allocInfo, &buf);
 
-		VkCommandBufferBeginInfo beginInfo = {};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 		vkBeginCommandBuffer(buf, &beginInfo);
@@ -973,10 +972,10 @@ void VulkanDevice::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &buf;
 
-		vkQueueSubmit(transfer_queue, 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(transfer_queue);
+		vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(graphics_queue);
 
-		vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &buf);
+		vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
 		isDmaCmdBufWritable = false;
 	}
 }
@@ -993,13 +992,13 @@ void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf,
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &buf;
 
-		vkQueueSubmit(transfer_queue, 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(transfer_queue);
+		vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(graphics_queue);
 
 		for (auto& buffer : bufsToClean) {
 			buffer.CleanBuffer();
 		}
-		vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &buf);
+		vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
 	}
 }
 
