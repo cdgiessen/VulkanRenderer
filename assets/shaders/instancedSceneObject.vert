@@ -32,10 +32,10 @@ layout (location = 5) in vec3 instanceRot;
 layout (location = 6) in float instanceScale;
 
 // Outputs
-layout(location = 0) out vec3 outNormal;
-layout(location = 1) out vec2 outTexCoord;
-layout(location = 2) out vec4 outColor;
-layout(location = 3) out vec3 outFragPos;
+layout(location = 0) out vec3 outFragPos;
+layout(location = 1) out vec3 outNormal;
+layout(location = 2) out vec2 outTexCoord;
+layout(location = 3) out vec4 outColor;
 
 out gl_PerVertex {
     vec4 gl_Position;
