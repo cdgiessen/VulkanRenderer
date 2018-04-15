@@ -26,11 +26,23 @@ void TransferQueue::CleanUp() {
 	vkDestroyCommandPool(device.device, transfer_queue_command_pool, nullptr);
 }
 
+VkDevice TransferQueue::GetDevice() {
+	return device.device;
+}
+VkCommandPool TransferQueue::GetCommandPool() {
+	return transfer_queue_command_pool;
+}
+
+std::mutex& TransferQueue::GetTransferMutex() {
+	return transferMutex;
+}
+
+
 VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
 	VkCommandBuffer buf;
 	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
-	transferLock.lock();
+	transferMutex.lock();
 	vkAllocateCommandBuffers(device.device, &allocInfo, &buf);
 
 	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
@@ -38,36 +50,38 @@ VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
 
 
 	vkBeginCommandBuffer(buf, &beginInfo);
-	transferLock.unlock();
+	transferMutex.unlock();
 	return buf;
 }
 
-void WaitForSubmissionFinish(VkDevice device, VkCommandPool transfer_queue_command_pool, 
+void WaitForSubmissionFinish(TransferQueue* queue, 
 	VkCommandBuffer buf, VkFence fence, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
 
-	vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-	if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
+	vkWaitForFences(queue->GetDevice(), 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+	if (vkGetFenceStatus(queue->GetDevice(), fence) == VK_SUCCESS) {
 		for (auto& sig : readySignal)
 			*sig = true;		
 	}
-	else if (vkGetFenceStatus(device, fence) == VK_NOT_READY) {
+	else if (vkGetFenceStatus(queue->GetDevice(), fence) == VK_NOT_READY) {
 		Log::Error << "Transfer exeeded maximum fence timeout! Is too much stuff happening?\n";
-		vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-		if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
+		vkWaitForFences(queue->GetDevice(), 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+		if (vkGetFenceStatus(queue->GetDevice(), fence) == VK_SUCCESS) {
 			for (auto& sig : readySignal)
 				*sig = true;
 		}
 	}
-	else if (vkGetFenceStatus(device, fence) == VK_ERROR_DEVICE_LOST){
+	else if (vkGetFenceStatus(queue->GetDevice(), fence) == VK_ERROR_DEVICE_LOST){
 		Log::Error << "AAAAAAAAAAAHHHHHHHHHHHHH EVERYTHING IS ONE FIRE\n";
 		throw std::runtime_error("Fence lost device!\n");
 	}
 
 
-	vkDestroyFence(device, fence, nullptr);
-	//transferLock.lock(); // need to pass a lock in? should have a better synchronization structure
-	vkFreeCommandBuffers(device, transfer_queue_command_pool, 1, &buf);
-	//transferLock.unlock();
+	vkDestroyFence(queue->GetDevice(), fence, nullptr);
+
+	auto& transferLock = queue->GetTransferMutex();	
+	transferLock.lock();
+	vkFreeCommandBuffers(queue->GetDevice(), queue->GetCommandPool(), 1, &buf);
+	transferLock.unlock();
 	for (auto& buffer : bufsToClean) {
 		buffer.CleanBuffer();
 	}
@@ -84,11 +98,11 @@ void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector
 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 
-	transferLock.lock();
+	transferMutex.lock();
 	vkQueueSubmit(transfer_queue, 1, &submitInfo, fence);
-	transferLock.unlock();
+	transferMutex.unlock();
 
-	std::thread submissionCompletion = std::thread(WaitForSubmissionFinish, device.device, transfer_queue_command_pool, buf, fence, readySignal, bufsToClean);
+	std::thread submissionCompletion = std::thread(WaitForSubmissionFinish, this, buf, fence, readySignal, bufsToClean);
 	submissionCompletion.detach();
 }
 
@@ -107,15 +121,15 @@ void TransferQueue::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 
-	transferLock.lock();
+	transferMutex.lock();
 	vkQueueSubmit(transfer_queue, 1, &submitInfo, fence);
-	transferLock.unlock();
+	transferMutex.unlock();
 
 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 	vkDestroyFence(device.device, fence, nullptr);
-	transferLock.lock();
+	transferMutex.lock();
 	vkFreeCommandBuffers(device.device, transfer_queue_command_pool, 1, &buf);
-	transferLock.unlock();
+	transferMutex.unlock();
 }
 
 

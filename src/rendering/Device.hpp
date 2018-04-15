@@ -56,6 +56,10 @@ public:
 	TransferQueue(VulkanDevice& device, uint32_t transferFamily);
 	void CleanUp();
 
+	VkDevice GetDevice();
+	VkCommandPool GetCommandPool();
+	std::mutex& GetTransferMutex();
+
 	VkCommandBuffer GetTransferCommandBuffer();
 	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
 	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
@@ -65,7 +69,7 @@ private:
 	VulkanDevice& device;
 	VkQueue transfer_queue;
 	VkCommandPool transfer_queue_command_pool;
-	std::mutex transferLock;
+	std::mutex transferMutex;
 };
 
 class VulkanDevice {

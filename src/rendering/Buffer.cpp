@@ -37,7 +37,7 @@ void AlignedMemcpy(uint8_t bytes, VkDeviceSize destMemAlignment, void* src, void
 			(char*)src + src_offset,
 			sizeof(bytes));
 		src_offset += 1;
-		dest_offset += destMemAlignment;
+		dest_offset += (int)destMemAlignment;
 	
 	}
 }

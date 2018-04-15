@@ -5,37 +5,6 @@
 #include "../core/Logger.h"
 
 
-
-
-
-
-
-
-
-TerrainChunk::TerrainChunk(TerrainCoordinateData coordData) :
-	coordinates(coordData)
-{
-
-}
-
-void TerrainChunk::UpdateChunk(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager) {
-
-}
-
-void TerrainChunk::RenderChunk(VkCommandBuffer commandBuffer, bool wireframe) {
-	terrain->DrawTerrain(commandBuffer, wireframe);
-
-}
-
-
-
-
-
-
-
-
-
-
 TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph) : protoGraph(protoGraph)
 {
 	if (settings.maxLevels < 0) {
@@ -93,9 +62,14 @@ TerrainManager::~TerrainManager()
 	Log::Debug << "terrain manager deleted\n";
 }
 
-std::shared_ptr<Terrain> AsyncTerrainCreation(
-	std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
-	std::shared_ptr<MemoryPool<TerrainQuad>> pool, InternalGraph::GraphPrototype& protoGraph,
+void AsyncTerrainCreation(
+	std::shared_ptr<Terrain> terrainToCreate,
+	std::shared_ptr<ResourceManager> resourceMan, 
+	std::shared_ptr<VulkanRenderer> renderer, 
+	std::shared_ptr<Camera> camera, 
+	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
+	std::shared_ptr<MemoryPool<TerrainQuad>> pool, 
+	InternalGraph::GraphPrototype& protoGraph,
 	int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord) {
 	
 	auto terrain = std::make_shared<Terrain>(pool, protoGraph, numCells, maxLevels, heightScale, coord);
@@ -105,16 +79,20 @@ std::shared_ptr<Terrain> AsyncTerrainCreation(
 	terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(sourceImageResolution + 1, sourceImageResolution + 1, imgData);
 
 	terrain->InitTerrain(renderer, camera->Position, terrainVulkanTextureArray);
-	return terrain;
+
+
 }
 
 void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera) {
 	this->renderer = renderer;
 	settings.width = nextTerrainWidth;
 
+	std::vector<std::thread> terrainCreators;
+
 	for (int i = 0; i < settings.gridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < settings.gridDimentions; j++) {
 			
+
 			TerrainCoordinateData coord = TerrainCoordinateData(
 				glm::vec2((i - settings.gridDimentions / 2) * settings.width - settings.width / 2, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2), //position
 				glm::vec2(settings.width, settings.width), //size
@@ -122,6 +100,10 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 				glm::vec2(1.0 / (float)settings.sourceImageResolution, 1.0f / (float)settings.sourceImageResolution),//noiseSize 
 				settings.sourceImageResolution + 1);
 
+			/*terrainCreators.push_back(std::thread(AsyncTerrainCreation, 
+				resourceMan, renderer, camera, terrainVulkanTextureArray,
+				terrainQuadPool, protoGraph, settings.numCells, settings.maxLevels, settings.heightScale, coord
+				));*/
 
 			auto terrain = std::make_shared<Terrain>(terrainQuadPool, protoGraph, settings.numCells, settings.maxLevels, settings.heightScale, coord);
 
@@ -130,6 +112,10 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 			//delete(imgData);
 			terrains.push_back(terrain);
 		}
+	}
+	for (auto& thread : terrainCreators) {
+		thread.join();
+
 	}
 
 	//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);

@@ -38,19 +38,6 @@ struct TerrainTextureNamedHandle {
 	TerrainTextureNamedHandle(std::string name, std::shared_ptr<Texture> handle) : name(name), handle(handle) {}
 };
 
-class TerrainChunk {
-public:
-	TerrainCoordinateData coordinates;
-
-	std::shared_ptr<Terrain> terrain;
-
-	TerrainChunk(TerrainCoordinateData coordData);
-
-	void UpdateChunk(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager);
-	
-	void RenderChunk(VkCommandBuffer commandBuffer, bool wireframe);
-};
-
 class TerrainManager
 {
 public:
@@ -84,10 +71,7 @@ private:
 
 	std::shared_ptr<VulkanRenderer> renderer;
 
-	
-	std::vector<TerrainChunk> chunks;
-	std::mutex chunk_mutex;
-
+	std::mutex terrain_mutex;
 	std::vector<std::shared_ptr<Terrain>> terrains;
 	std::shared_ptr<MemoryPool<TerrainQuad>> terrainQuadPool;
 

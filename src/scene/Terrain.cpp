@@ -342,8 +342,8 @@ void Terrain::UpdateMeshBuffer() {
 		VulkanBufferVertex vertexStaging(renderer->device);
 		VulkanBufferIndex indexStaging(renderer->device);
 
-		vertexStaging.CreateStagingVertexBuffer(verts.data(), verts.size() * vertCount);
-		indexStaging.CreateStagingIndexBuffer(inds.data(), inds.size() * indCount);
+		vertexStaging.CreateStagingVertexBuffer(verts.data(), (uint32_t)verts.size() * vertCount);
+		indexStaging.CreateStagingIndexBuffer(inds.data(), (uint32_t)inds.size() * indCount);
 
 		VkCommandBuffer copyCmd = renderer->device.GetTransferCommandBuffer();
 
@@ -384,17 +384,19 @@ void Terrain::InitTerrainQuad( std::shared_ptr<TerrainQuad> quad,
 
 bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuad> quad, glm::vec3 viewerPos) {
 
+	float SubdivideDistanceBias = 2.0f;
+
 	glm::vec3 center = glm::vec3(quad->pos.x + quad->size.x / 2.0f, quad->heightValAtCenter, quad->pos.y + quad->size.y / 2.0f);
 	float distanceToViewer = glm::distance(viewerPos, center);
 
 	if (!quad->isSubdivided) { //can only subdivide if this quad isn't already subdivided
-		if (distanceToViewer < quad->size.x * 2.0f && quad->level < maxLevels) { //must be 
+		if (distanceToViewer < quad->size.x * SubdivideDistanceBias && quad->level < maxLevels) { //must be 
 			SubdivideTerrain(quad, viewerPos);
 			return true;
 		}
 	}
 
-	else if(distanceToViewer > quad->size.x * 2.0f) {
+	else if(distanceToViewer > quad->size.x * SubdivideDistanceBias) {
 		UnSubdivide(quad);
 		return true;
 	}
@@ -407,6 +409,7 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuad> quad, glm::vec3 vie
 		if(uR || uL || dR || dL)
 			return true;
 	}
+	return false;
 }
 
 void Terrain::SubdivideTerrain(std::shared_ptr<TerrainQuad> quad, glm::vec3 viewerPos) {
@@ -472,20 +475,7 @@ void Terrain::SubdivideTerrain(std::shared_ptr<TerrainQuad> quad, glm::vec3 view
 	InitTerrainQuad(quad->subQuads.DownRight, Corner_Enum::dR, viewerPos);
 	InitTerrainQuad(quad->subQuads.DownLeft, Corner_Enum::dL, viewerPos);
 
-	//quad->subQuads.UpRight = InitTerrainQuad(qUR, Corner_Enum::uR, glm::vec2(new_pos.x, new_pos.y), new_size, 
-	//	glm::i32vec2(new_lpos.x, new_lpos.y), new_lsize, quad->level + 1,  glm::i32vec2(quad->subDivPos.x * 2, quad->subDivPos.y * 2));
-
-	//quad->subQuads.UpLeft = InitTerrainQuad(qUL, Corner_Enum::uL, glm::vec2(new_pos.x, new_pos.y + new_size.y), new_size, 
-	//	glm::i32vec2(new_lpos.x, new_lpos.y + new_lsize.y), new_lsize, quad->level + 1, glm::i32vec2(quad->subDivPos.x * 2, quad->subDivPos.y * 2 + 1));
-
-	//quad->subQuads.DownRight = InitTerrainQuad(qDR, Corner_Enum::dR, glm::vec2(new_pos.x + new_size.x, new_pos.y), new_size, 
-	//	glm::i32vec2(new_lpos.x + new_lsize.x, new_lpos.y), new_lsize, quad->level + 1, glm::i32vec2(quad->subDivPos.x * 2 + 1, quad->subDivPos.y * 2));
-
-	//quad->subQuads.DownLeft = InitTerrainQuad(qDL, Corner_Enum::dL, glm::vec2(new_pos.x + new_size.x, new_pos.y + new_size.y), new_size, 
-	//	glm::i32vec2(new_lpos.x + new_lsize.x, new_lpos.y + new_lsize.y), new_lsize, quad->level + 1,  glm::i32vec2(quad->subDivPos.x * 2 + 1, quad->subDivPos.y * 2 + 1));
-
 	//Log::Debug << "Terrain subdivided: Level: " << quad->level << " Position: " << quad->pos.x << ", " <<quad->pos.z << " Size: " << quad->size.x << ", " << quad->size.z << "\n";
-
 
 }
 
@@ -494,6 +484,7 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuad> quad) {
 
 		auto delUR = std::find(quadHandles.begin(), quadHandles.end(), quad->subQuads.UpRight);
 		if (delUR != quadHandles.end()) {
+			UnSubdivide(*delUR);
 			delUR->reset();
 			quadHandles.erase(delUR);
 			numQuads--;
@@ -501,6 +492,7 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuad> quad) {
 
 		auto delDR = std::find(quadHandles.begin(), quadHandles.end(), quad->subQuads.DownRight);
 		if (delDR != quadHandles.end()) {
+			UnSubdivide(*delDR);
 			delDR->reset();
 			quadHandles.erase(delDR);
 			numQuads--;
@@ -508,6 +500,7 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuad> quad) {
 
 		auto delUL = std::find(quadHandles.begin(), quadHandles.end(), quad->subQuads.UpLeft);
 		if (delUL != quadHandles.end()) {
+			UnSubdivide(*delUL);
 			delUL->reset();
 			quadHandles.erase(delUL);
 			numQuads--;
@@ -515,6 +508,7 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuad> quad) {
 
 		auto delDL = std::find(quadHandles.begin(), quadHandles.end(), quad->subQuads.DownLeft);
 		if (delDL != quadHandles.end()) {
+			UnSubdivide(*delDL);
 			delDL->reset();
 			quadHandles.erase(delDL);
 			numQuads--;
@@ -522,7 +516,6 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuad> quad) {
 
 		quad->isSubdivided = false;
 	}
-	//quad->isSubdivided = false;
 	//Log::Debug << "Terrain un-subdivided: Level: " << quad->level << " Position: " << quad->pos.x << ", " << quad->pos.z << " Size: " << quad->size.x << ", " << quad->size.z << "\n";
 }
 

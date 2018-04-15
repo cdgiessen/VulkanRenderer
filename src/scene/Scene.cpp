@@ -95,7 +95,7 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 		if (Input::GetKeyDown(Input::KeyCode::SPACE)) {
 			verticalVelocity += 0.15f;
 		}
-		verticalVelocity += (float)gravity*timeManager->GetDeltaTime();
+		verticalVelocity += (float)timeManager->GetDeltaTime()*gravity;
 		height += verticalVelocity;
 		camera->Position.y = height;
 		if (camera->Position.y < groundHeight) { //for over land
