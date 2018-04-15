@@ -70,9 +70,6 @@ private:
 	void UpdateSunData();
 	void DrawSkySettingsGui();
 
-	//TODO: gltf2 integration
-	//std::vector<std::shared_ptr<gltf2::Asset>> assets;
-
 	bool pressedControllerJumpButton = false;
 	bool releasedControllerJumpButton = false;
 

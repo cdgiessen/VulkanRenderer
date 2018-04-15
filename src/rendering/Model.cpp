@@ -12,24 +12,60 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	std::vector<float> vertexBuffer;
 	std::vector<uint32_t> indexBuffer;
 
-	vertexCount = static_cast<uint32_t>(mesh->vertices.size());
 	indexCount = static_cast<uint32_t>(mesh->indices.size());
+	vertexBuffer.resize(vertexCount * mesh->vertexElementCount);
 
-	vertexBuffer.resize(vertexCount * 12);
-	for (int i = 0; i < (int)vertexCount; i++)
-	{
-		vertexBuffer[i * 12 + 0] = mesh->vertices[i].pos[0];
-		vertexBuffer[i * 12 + 1] = mesh->vertices[i].pos[1];
-		vertexBuffer[i * 12 + 2] = mesh->vertices[i].pos[2];
-		vertexBuffer[i * 12 + 3] = mesh->vertices[i].normal[0];
-		vertexBuffer[i * 12 + 4] = mesh->vertices[i].normal[1];
-		vertexBuffer[i * 12 + 5] = mesh->vertices[i].normal[2];
-		vertexBuffer[i * 12 + 6] = mesh->vertices[i].texCoord[0];
-		vertexBuffer[i * 12 + 7] = mesh->vertices[i].texCoord[1];
-		vertexBuffer[i * 12 + 8] = mesh->vertices[i].color[0];
-		vertexBuffer[i * 12 + 9] = mesh->vertices[i].color[1];
-		vertexBuffer[i * 12 + 10] = mesh->vertices[i].color[2];
-		vertexBuffer[i * 12 + 11] = mesh->vertices[i].color[3];
+	if(mesh->vertexElementCount == 6){
+		vertexCount = static_cast<uint32_t>(std::get<Vertices_PosNorm>(mesh->vertices).size());
+		vertexBuffer.resize(vertexCount * mesh->vertexElementCount);
+
+		for (int i = 0; i < (int)vertexCount; i++)
+			{
+				vertexBuffer[i * 6 + 0] = std::get<Vertices_PosNorm>(mesh->vertices)[i].pos[0];
+				vertexBuffer[i * 6 + 1] = std::get<Vertices_PosNorm>(mesh->vertices)[i].pos[1];
+				vertexBuffer[i * 6 + 2] = std::get<Vertices_PosNorm>(mesh->vertices)[i].pos[2];
+				vertexBuffer[i * 6 + 3] = std::get<Vertices_PosNorm>(mesh->vertices)[i].normal[0];
+				vertexBuffer[i * 6 + 4] = std::get<Vertices_PosNorm>(mesh->vertices)[i].normal[1];
+				vertexBuffer[i * 6 + 5] = std::get<Vertices_PosNorm>(mesh->vertices)[i].normal[2];
+			}
+		} 
+	else if (mesh->vertexElementCount == 8){
+		vertexCount = static_cast<uint32_t>(std::get<Vertices_PosNormTex>(mesh->vertices).size());
+		vertexBuffer.resize(vertexCount * mesh->vertexElementCount);
+
+		for (int i = 0; i < (int)vertexCount; i++)
+			{
+				vertexBuffer[i * 8 + 0] = std::get	<Vertices_PosNormTex>(mesh->vertices)[i].pos[0];
+				vertexBuffer[i * 8 + 1] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].pos[1];
+				vertexBuffer[i * 8 + 2] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].pos[2];
+				vertexBuffer[i * 8 + 3] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].normal[0];
+				vertexBuffer[i * 8 + 4] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].normal[1];
+				vertexBuffer[i * 8 + 5] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].normal[2];
+				vertexBuffer[i * 8 + 6] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].texCoord[0];
+				vertexBuffer[i * 8 + 7] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].texCoord[1];
+			}
+	
+	} else {
+		vertexCount = static_cast<uint32_t>(std::get<Vertices_PosNormTexColor>(mesh->vertices).size());
+		vertexBuffer.resize(vertexCount * mesh->vertexElementCount);
+
+		for (int i = 0; i < (int)vertexCount; i++)
+		{
+			vertexBuffer[i * 12 + 0] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).pos[0];
+			vertexBuffer[i * 12 + 1] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).pos[1];
+			vertexBuffer[i * 12 + 2] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).pos[2];
+			vertexBuffer[i * 12 + 3] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).normal[0];
+			vertexBuffer[i * 12 + 4] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).normal[1];
+			vertexBuffer[i * 12 + 5] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).normal[2];
+			vertexBuffer[i * 12 + 6] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).texCoord[0];
+			vertexBuffer[i * 12 + 7] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).texCoord[1];
+			vertexBuffer[i * 12 + 8] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).color[0];
+			vertexBuffer[i * 12 + 9] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).color[1];
+			vertexBuffer[i * 12 + 10] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).color[2];
+			vertexBuffer[i * 12 + 11] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).color[3];
+		
+		
+        }
 	}
 
 	indexBuffer.resize(indexCount);

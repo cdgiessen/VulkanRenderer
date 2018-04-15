@@ -94,8 +94,8 @@ void GameObject::SetupPipeline()
     pipeMan.SetFragmentShader(
         mvp, loadShaderModule(renderer->device.device,
                               "assets/shaders/gameObject_shader.frag.spv"));
-    pipeMan.SetVertexInput(mvp, Vertex::getBindingDescription(),
-                           Vertex::getAttributeDescriptions());
+    pipeMan.SetVertexInput(mvp, Vertex_PosNormTexColor::getBindingDescription(),
+                           Vertex_PosNormTexColor::getAttributeDescriptions());
     pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0,
                              VK_FALSE);
     pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width,
