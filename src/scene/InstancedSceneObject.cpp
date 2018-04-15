@@ -158,7 +158,7 @@ void InstancedSceneObject::SetupPipeline()
 
 	std::vector<VkVertexInputBindingDescription> bindingDescriptions = {
 		// Binding point 0: Mesh vertex layout description at per-vertex rate
-		initializers::vertexInputBindingDescription(VERTEX_BUFFER_BIND_ID, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX),
+		initializers::vertexInputBindingDescription(VERTEX_BUFFER_BIND_ID, sizeof(Vertex_PosNormTexColor), VK_VERTEX_INPUT_RATE_VERTEX),
 		// Binding point 1: Instanced data at per-instance rate
 		initializers::vertexInputBindingDescription(INSTANCE_BUFFER_BIND_ID, sizeof(InstanceData), VK_VERTEX_INPUT_RATE_INSTANCE)
 	};
