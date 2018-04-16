@@ -230,7 +230,10 @@ static void stbi__stdio_write(void *context, void *data, int size)
 
 static int stbi__start_write_file(stbi__write_context *s, const char *filename)
 {
+#pragma warning(push)
+#pragma warning( disable : 4996)
 	FILE *f = fopen(filename, "wb");
+#pragma warning(pop)
 	stbi__start_write_callbacks(s, stbi__stdio_write, (void *)f);
 	return f != NULL;
 }
@@ -635,8 +638,10 @@ static int stbi_write_hdr_core(stbi__write_context *s, int x, int y, int comp, f
 		char buffer[128];
 		char header[] = "#?RADIANCE\n# Written by stb_image_write.h\nFORMAT=32-bit_rle_rgbe\n";
 		s->func(s->context, header, sizeof(header) - 1);
-
+#pragma warning(push)
+#pragma warning( disable : 4996)
 		len = sprintf(buffer, "EXPOSURE=          1.0000000000000\n\n-Y %d +X %d\n", y, x);
+#pragma warning(pop)
 		s->func(s->context, buffer, len);
 
 		for (i = 0; i < y; i++)
@@ -1021,8 +1026,12 @@ STBIWDEF int stbi_write_png(char const *filename, int x, int y, int comp, const 
 	FILE *f;
 	int len;
 	unsigned char *png = stbi_write_png_to_mem((unsigned char *)data, stride_bytes, x, y, comp, &len);
+
 	if (png == NULL) return 0;
+#pragma warning(push)
+#pragma warning( disable : 4996)
 	f = fopen(filename, "wb");
+#pragma warning(pop)
 	if (!f) { STBIW_FREE(png); return 0; }
 	fwrite(png, 1, len, f);
 	fclose(f);

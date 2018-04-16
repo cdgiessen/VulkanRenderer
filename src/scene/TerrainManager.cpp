@@ -1,8 +1,78 @@
 #include "TerrainManager.h"
 
+#include <chrono>
+
 #include "../../third-party/ImGui/imgui.h"
 
 #include "../core/Logger.h"
+
+TerrainCreationData::TerrainCreationData(
+	std::shared_ptr<ResourceManager> resourceMan,
+	std::shared_ptr<VulkanRenderer> renderer,
+	std::shared_ptr<Camera> camera,
+	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
+	std::shared_ptr<MemoryPool<TerrainQuad>> pool,
+	InternalGraph::GraphPrototype& protoGraph,
+	int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord):
+
+	resourceMan(resourceMan),
+	renderer(renderer),
+	camera(camera),
+	terrainVulkanTextureArray(terrainVulkanTextureArray),
+	pool(pool),
+	protoGraph(protoGraph),
+	numCells(numCells),
+	maxLevels(maxLevels),
+	sourceImageResolution(sourceImageResolution),
+	heightScale(heightScale),
+	coord(coord)
+{
+
+}
+
+void TerrainCreationWorker(TerrainManager* man) {
+
+	while (man->isCreatingTerrain) {
+
+		std::unique_lock<std::mutex> lock(man->workerMutex);
+		man->workerConditionVariable.wait_for(lock, std::chrono::milliseconds(100));
+		lock.unlock();
+
+		if (!man->isCreatingTerrain)
+			break;
+
+		std::unique_lock<std::mutex> queue_lock(man->creationDataQueueMutex);
+		if (!man->terrainCreationWork.empty()) {
+			TerrainCreationData data{ man->terrainCreationWork.pop() };
+			queue_lock.unlock();
+
+			auto terrain = std::make_shared<Terrain>(data.pool, data.protoGraph, data.numCells, data.maxLevels, data.heightScale, data.coord);
+
+			std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
+
+			terrain->terrainSplatMap = data.resourceMan->texManager.loadTextureFromRGBAPixelData(data.sourceImageResolution + 1, data.sourceImageResolution + 1, imgData);
+
+			terrain->InitTerrain(data.renderer, data.camera->Position, data.terrainVulkanTextureArray);
+
+			if (!man->isCreatingTerrain)
+				break;
+
+			{
+				std::lock_guard<std::mutex> lk(man->terrain_mutex);
+				man->terrains.push_back(terrain);
+			}
+			if (!man->isCreatingTerrain)
+				break;
+		}
+		else {
+			queue_lock.unlock();
+		}
+
+		if (!man->isCreatingTerrain)
+			break;
+	}
+
+}
 
 
 TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph) : protoGraph(protoGraph)
@@ -18,7 +88,28 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph) : prot
 	//terrainQuadPool = std::make_shared<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>>();
 	//nodeGraph.BuildNoiseGraph();
 
+}
 
+TerrainManager::~TerrainManager()
+{
+	isCreatingTerrain = false;
+	for (auto& thread : terrainCreationWorkers) {
+		thread.join();
+	}
+	terrainCreationWorkers.clear();
+	//Log::Debug << "terrain manager deleted\n";
+}
+
+void TerrainManager::ResetWorkerThreads() {
+	isCreatingTerrain = false;
+	for (auto& thread : terrainCreationWorkers) {
+		thread.join();
+	}
+	terrainCreationWorkers.clear();
+	isCreatingTerrain = true;
+	for (int i = 0; i < WorkerThreads; i++) {
+		terrainCreationWorkers.push_back(std::thread(TerrainCreationWorker, this));
+	}
 }
 
 void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer) {
@@ -56,38 +147,11 @@ void TerrainManager::CleanUpResources() {
 	//	WaterModel.destroy(renderer->device);
 }
 
-
-TerrainManager::~TerrainManager()
-{
-	Log::Debug << "terrain manager deleted\n";
-}
-
-void AsyncTerrainCreation(
-	std::shared_ptr<Terrain> terrainToCreate,
-	std::shared_ptr<ResourceManager> resourceMan, 
-	std::shared_ptr<VulkanRenderer> renderer, 
-	std::shared_ptr<Camera> camera, 
-	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
-	std::shared_ptr<MemoryPool<TerrainQuad>> pool, 
-	InternalGraph::GraphPrototype& protoGraph,
-	int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord) {
-	
-	auto terrain = std::make_shared<Terrain>(pool, protoGraph, numCells, maxLevels, heightScale, coord);
-
-	std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
-	
-	terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(sourceImageResolution + 1, sourceImageResolution + 1, imgData);
-
-	terrain->InitTerrain(renderer, camera->Position, terrainVulkanTextureArray);
-
-
-}
-
 void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera) {
 	this->renderer = renderer;
 	settings.width = nextTerrainWidth;
 
-	std::vector<std::thread> terrainCreators;
+	ResetWorkerThreads();
 
 	for (int i = 0; i < settings.gridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < settings.gridDimentions; j++) {
@@ -100,23 +164,27 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 				glm::vec2(1.0 / (float)settings.sourceImageResolution, 1.0f / (float)settings.sourceImageResolution),//noiseSize 
 				settings.sourceImageResolution + 1);
 
-			/*terrainCreators.push_back(std::thread(AsyncTerrainCreation, 
-				resourceMan, renderer, camera, terrainVulkanTextureArray,
-				terrainQuadPool, protoGraph, settings.numCells, settings.maxLevels, settings.heightScale, coord
-				));*/
+			//auto terrain = std::make_shared<Terrain>(terrainQuadPool, protoGraph, settings.numCells, settings.maxLevels, settings.heightScale, coord);
+			//
+			//std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
+			//terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(settings.sourceImageResolution + 1, settings.sourceImageResolution + 1, imgData);
+			////delete(imgData);
+			//terrains.push_back(terrain);
 
-			auto terrain = std::make_shared<Terrain>(terrainQuadPool, protoGraph, settings.numCells, settings.maxLevels, settings.heightScale, coord);
+			terrainCreationWork.push_back(TerrainCreationData(
+			resourceMan, renderer, camera, terrainVulkanTextureArray,
+			terrainQuadPool, protoGraph, 
+			settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale, 
+			coord));
 
-			std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
-			terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(settings.sourceImageResolution + 1, settings.sourceImageResolution + 1, imgData);
-			//delete(imgData);
-			terrains.push_back(terrain);
+			std::lock_guard<std::mutex> lk(workerMutex);
+			workerConditionVariable.notify_one();
 		}
 	}
-	for (auto& thread : terrainCreators) {
-		thread.join();
+	//for (auto& thread : terrainCreators) {
+	//	thread.join();
 
-	}
+	//}
 
 	//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	for (auto ter : terrains) {
@@ -172,7 +240,9 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 		terrainUpdateTimer.StartTimer();
 		//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
+		terrain_mutex.lock();
 		ter->UpdateTerrain(camera->Position);
+		terrain_mutex.unlock();
 
 		//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
 		terrainUpdateTimer.EndTimer();
@@ -184,9 +254,11 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 }
 
 void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe) {
+	terrain_mutex.lock();
 	for (auto ter : terrains) {
 		ter->DrawTerrain(commandBuffer, wireframe);
 	}
+	terrain_mutex.unlock();
 
 	instancedWaters->WriteToCommandBuffer(commandBuffer, wireframe);
 
@@ -258,10 +330,9 @@ void TerrainManager::DrawTerrainTextureViewer() {
 		ImGui::BeginChild("left pane", ImVec2(150, 0), true);
 		for (int i = 0; i < terrainTextureHandles.size(); i++)
 		{
-			char label[128];
-			//lable = textureHandles.at(i).
-			sprintf(label, "%s", terrainTextureHandles[i].name.c_str());
-			if (ImGui::Selectable(label, selectedTexture == i))
+			//char label[128];
+			//sprintf(label, "%s", terrainTextureHandles[i].name.c_str());
+			if (ImGui::Selectable(terrainTextureHandles[i].name.c_str(), selectedTexture == i))
 				selectedTexture = i;
 		}
 

@@ -7,9 +7,6 @@
 #include "Device.hpp"
 #include "Descriptor.hpp"
 
-
-
-
 /**
 * @brief Encapsulates access to a Vulkan buffer backed up by device memory
 * @note To be filled by an external source like the VulkanDevice
@@ -61,8 +58,8 @@ class VulkanBufferVertex : public VulkanBuffer {
 public:
 	VulkanBufferVertex(VulkanDevice& device);
 
-	void CreateVertexBuffer(uint32_t count);
-	void CreateStagingVertexBuffer(void* pData, uint32_t count);
+	void CreateVertexBuffer(uint32_t count, uint32_t vertexElementCount);
+	void CreateStagingVertexBuffer(void* pData, uint32_t count, uint32_t vertexElementCount);
 	
 	void BindVertexBuffer(VkCommandBuffer cmdBuf);
 };
@@ -74,5 +71,17 @@ public:
 	void CreateStagingIndexBuffer(void* pData, uint32_t count);
 
 	void BindIndexBuffer(VkCommandBuffer cmdBuf);
+
+};
+
+class VulkanBufferInstance : public VulkanBuffer {
+public:
+	VulkanBufferInstance(VulkanDevice& device);
+
+	void CreateInstanceBuffer(uint32_t count, uint32_t indexElementCount);
+	void CreateStagingInstanceBuffer(void* pData, uint32_t count, uint32_t indexElementCount);
+
+	void BindInstanceBuffer(VkCommandBuffer cmdBuf);
+
 
 };

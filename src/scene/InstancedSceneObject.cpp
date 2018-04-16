@@ -12,7 +12,7 @@ InstancedSceneObject::InstancedSceneObject(std::shared_ptr<VulkanRenderer> rende
 	vulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
 
 	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
-	instanceBuffer = std::make_shared<VulkanBufferVertex>(renderer->device);
+	instanceBuffer = std::make_shared<VulkanBufferInstance>(renderer->device);
 }
 
 
@@ -86,7 +86,7 @@ void InstancedSceneObject::SetupUniformBuffer() {
 	//uniformBuffer.copyTo(&ubo, sizeof(ModelBufferObject));
 	//uniformBuffer.unmap();
 
-	instanceBuffer->CreateVertexBuffer(sizeof(InstanceData) * maxInstanceCount);
+	instanceBuffer->CreateInstanceBuffer(sizeof(InstanceData) * maxInstanceCount, 9);
 
 }
 
@@ -204,16 +204,14 @@ void InstancedSceneObject::SetupPipeline()
 }
 
 void InstancedSceneObject::AddInstance(InstanceData data) {
-
 	instancesData.push_back(data);
-
 }
 
 void InstancedSceneObject::UploadInstances() {
 	size_t instanceBufferSize = instancesData.size() * sizeof(InstanceData);
 
-	VulkanBufferUniform stagingBuffer(renderer->device);
-	stagingBuffer.CreateStagingUniformBuffer(instancesData.data(), instanceBufferSize);
+	VulkanBufferInstance stagingBuffer(renderer->device);
+	stagingBuffer.CreateStagingInstanceBuffer(instancesData.data(), instancesData.size(), 9);
 
 	auto copyCmd = renderer->device.GetTransferCommandBuffer();
 
@@ -280,13 +278,16 @@ void InstancedSceneObject::WriteToCommandBuffer(VkCommandBuffer commandBuffer, b
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &m_descriptorSet.set, 0, nullptr);
 
 	
-	//vulkanModel.BindModel(commandBuffer);
+	vulkanModel->BindModel(commandBuffer);
+	
+	instanceBuffer->BindInstanceBuffer(commandBuffer);
+	
 	// Binding point 0 : Mesh vertex buffer
-	vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &vulkanModel->vmaVertices.buffer.buffer, offsets);
+	//vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &vulkanModel->vmaVertices.buffer.buffer, offsets);
 	// Binding point 1 : Instance data buffer
-	vkCmdBindVertexBuffers(commandBuffer, INSTANCE_BUFFER_BIND_ID, 1, &instanceBuffer->buffer.buffer, offsets);
+	//vkCmdBindVertexBuffers(commandBuffer, INSTANCE_BUFFER_BIND_ID, 1, &instanceBuffer->buffer.buffer, offsets);
+	//vkCmdBindIndexBuffer(commandBuffer, vulkanModel->vmaIndicies.buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
-	vkCmdBindIndexBuffer(commandBuffer, vulkanModel->vmaIndicies.buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(vulkanModel->indexCount), 16, 0, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(vulkanModel->indexCount), instancesData.size(), 0, 0, 0);
 
 }

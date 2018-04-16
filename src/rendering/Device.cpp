@@ -663,6 +663,32 @@ void VulkanDevice::CreateMeshStagingBuffer(VmaBuffer& buffer, void* data, VkDevi
 	memcpy(buffer.allocationInfo.pMappedData, data, bufferSize);
 }
 
+void VulkanDevice::CreateInstancingBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize) {
+	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+	bufferInfo.size = bufferSize;
+	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+	VmaAllocationCreateInfo allocInfo = {};
+	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+
+}
+
+void VulkanDevice::CreateStagingInstancingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize) {
+	VkBufferCreateInfo bufferInfo = initializers::bufferCreateInfo();
+	bufferInfo.size = bufferSize;
+	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+	VmaAllocationCreateInfo allocCreateInfo = {};
+	allocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+	allocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocCreateInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+
+	memcpy(buffer.allocationInfo.pMappedData, data, bufferSize);
+}
+
 void VulkanDevice::DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation) {
 	vmaDestroyBuffer(allocator, *buffer, *allocation);
 }

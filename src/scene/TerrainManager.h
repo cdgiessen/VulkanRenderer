@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <mutex>
+#include <queue>
   
 #include "../core/CoreTools.h"
 #include "../core/TimeManager.h"
@@ -38,6 +39,28 @@ struct TerrainTextureNamedHandle {
 	TerrainTextureNamedHandle(std::string name, std::shared_ptr<Texture> handle) : name(name), handle(handle) {}
 };
 
+struct TerrainCreationData {
+	std::shared_ptr<ResourceManager> resourceMan;
+	std::shared_ptr<VulkanRenderer> renderer;
+	std::shared_ptr<Camera> camera;
+	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray;
+	std::shared_ptr<MemoryPool<TerrainQuad>> pool;
+	InternalGraph::GraphPrototype& protoGraph;
+	int numCells; int maxLevels;
+	int sourceImageResolution;
+	float heightScale;
+	TerrainCoordinateData coord;
+
+	TerrainCreationData(
+		std::shared_ptr<ResourceManager> resourceMan,
+		std::shared_ptr<VulkanRenderer> renderer,
+		std::shared_ptr<Camera> camera,
+		std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
+		std::shared_ptr<MemoryPool<TerrainQuad>> pool,
+		InternalGraph::GraphPrototype& protoGraph,
+		int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord);
+};
+
 class TerrainManager
 {
 public:
@@ -58,6 +81,8 @@ public:
 
 	void CleanUpTerrain();
 
+	void ResetWorkerThreads();
+
 	float GetTerrainHeightAtLocation(float x, float z);
 
 	VkCommandBuffer CreateTerrainMeshUpdateCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel level);
@@ -65,14 +90,23 @@ public:
 
 	void RecreateTerrain();
 
+	std::mutex workerMutex;
+	std::condition_variable workerConditionVariable;
+
+	std::mutex creationDataQueueMutex;
+	ConcurrentQueue<TerrainCreationData> terrainCreationWork;
+
+	bool isCreatingTerrain = true; //while condition for worker threads
+
+	std::mutex terrain_mutex;
+	std::vector<std::shared_ptr<Terrain>> terrains;
+
 private:
 	InternalGraph::GraphPrototype& protoGraph;
 	//NewNodeGraph::TerGenNodeGraph& nodeGraph;
 
 	std::shared_ptr<VulkanRenderer> renderer;
 
-	std::mutex terrain_mutex;
-	std::vector<std::shared_ptr<Terrain>> terrains;
 	std::shared_ptr<MemoryPool<TerrainQuad>> terrainQuadPool;
 
 	std::unique_ptr<InstancedSceneObject> instancedWaters;
@@ -88,6 +122,8 @@ private:
 	std::shared_ptr<Texture> WaterTexture;
 	std::shared_ptr<VulkanTexture2D> WaterVulkanTexture;
 	
+	std::vector<std::thread> terrainCreationWorkers;
+
 	bool recreateTerrain = false;
 	float nextTerrainWidth = 1000;
 	GeneralSettings settings;
@@ -97,6 +133,8 @@ private:
 
 	bool drawWindow;
 	int selectedTexture;
+
+	int WorkerThreads = 6;
 
 	std::vector<TerrainTextureNamedHandle> terrainTextureHandles;
 
@@ -113,5 +151,6 @@ private:
 	//	"OakTreeTrunk.png",
 	//	"SpruceTreeTrunk.png"};
 	//
+
 };
 

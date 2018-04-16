@@ -155,7 +155,7 @@ void Terrain::SetupMeshbuffers() {
 	vertexBuffer = std::make_shared<VulkanBufferVertex>(renderer->device);
 	indexBuffer = std::make_shared<VulkanBufferIndex>(renderer->device);
 
-	vertexBuffer->CreateVertexBuffer(maxNumQuads * vertCount);
+	vertexBuffer->CreateVertexBuffer(maxNumQuads * vertCount, 8);
 	indexBuffer->CreateIndexBuffer(maxNumQuads * indCount);
 }
 
@@ -214,7 +214,7 @@ void Terrain::SetupPipeline()
 
 	pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/terrain.vert.spv"));
 	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/terrain.frag.spv"));
-	pipeMan.SetVertexInput(mvp, Vertex_PosNormTexColor::getBindingDescription(), Vertex_PosNormTexColor::getAttributeDescriptions());
+	pipeMan.SetVertexInput(mvp, Vertex_PosNormTex::getBindingDescription(), Vertex_PosNormTex::getAttributeDescriptions());
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width, (float) renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
 	pipeMan.SetScissor(mvp, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);
@@ -342,7 +342,7 @@ void Terrain::UpdateMeshBuffer() {
 		VulkanBufferVertex vertexStaging(renderer->device);
 		VulkanBufferIndex indexStaging(renderer->device);
 
-		vertexStaging.CreateStagingVertexBuffer(verts.data(), (uint32_t)verts.size() * vertCount);
+		vertexStaging.CreateStagingVertexBuffer(verts.data(), (uint32_t)verts.size() * vertCount, 8);
 		indexStaging.CreateStagingIndexBuffer(inds.data(), (uint32_t)inds.size() * indCount);
 
 		VkCommandBuffer copyCmd = renderer->device.GetTransferCommandBuffer();
@@ -644,10 +644,10 @@ void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, std::shared_ptr<T
 			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 5] = normal.z;
 			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 6] = uvU;
 			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 7] = uvV;
-			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 8] = 0.0f;
-			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 9] = 0.0f;
-			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 10] = 0.0f;
-			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 11] = 0.0f;
+			//(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 8] = 0.0f;
+			//(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 9] = 0.0f;
+			//(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 10] = 0.0f;
+			//(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 11] = 0.0f;
 		}
 	}
 

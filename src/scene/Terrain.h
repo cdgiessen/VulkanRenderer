@@ -23,7 +23,7 @@
 const int NumCells = 64;
 const int vertCount = (NumCells + 1) * (NumCells + 1);
 const int indCount = NumCells * NumCells * 6;
-const int vertElementCount = 12;
+const int vertElementCount = 8;
 
 using TerrainMeshVertices = std::array<float, vertCount * vertElementCount>;
 using TerrainMeshIndices = std::array<uint32_t, indCount>;

@@ -7,20 +7,20 @@
 Mesh::Mesh(Vertices_PosNorm vertices, std::vector<uint16_t> indices) 
 	: vertices(vertices), indices(indices), vertexElementCount(6)
 {
-	this->vertices = vertices;
+	//this->vertices = vertices;
 }
 
 Mesh::Mesh(Vertices_PosNormTex vertices, std::vector<uint16_t> indices) 
 	: vertices(vertices), indices(indices), vertexElementCount(8)
 {
-		this->vertices = vertices;
+	//this->vertices = vertices;
 
 }
 
 Mesh::Mesh(Vertices_PosNormTexColor vertices, std::vector<uint16_t> indices) 
 	: vertices(vertices), indices(indices), vertexElementCount(12)
 {
-		this->vertices = vertices;
+	//this->vertices = vertices;
 
 }
 

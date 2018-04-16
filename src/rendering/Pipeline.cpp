@@ -176,7 +176,7 @@ void VulkanPipeline::SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> mvp,
 	mvp->pco.dynamicState = VkPipelineDynamicStateCreateInfo();
 	mvp->pco.dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 	mvp->pco.dynamicState.flags = flags;
-	mvp->pco.dynamicState.dynamicStateCount = dynamicStates.size();
+	mvp->pco.dynamicState.dynamicStateCount = (uint32_t)dynamicStates.size();
 	mvp->pco.dynamicState.pDynamicStates = dynamicStates.data();
 }
 
@@ -257,7 +257,7 @@ void VulkanPipeline::SetColorBlending(std::shared_ptr<ManagedVulkanPipeline> mvp
 
 void VulkanPipeline::SetDescriptorSetLayout(std::shared_ptr<ManagedVulkanPipeline> mvp, std::vector<VkDescriptorSetLayout>& descriptorSetlayouts)
 {
-	mvp->pco.pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(descriptorSetlayouts.data(), descriptorSetlayouts.size());
+	mvp->pco.pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(descriptorSetlayouts.data(), (uint32_t)descriptorSetlayouts.size());
 }
 
 void VulkanPipeline::SetModelPushConstant(std::shared_ptr<ManagedVulkanPipeline> mvp, VkPushConstantRange& pushConstantRange) {

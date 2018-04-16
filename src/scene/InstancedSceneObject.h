@@ -89,7 +89,7 @@ private:
 	std::vector<glm::vec3> modelPositions;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
-	std::shared_ptr<VulkanBufferVertex> instanceBuffer;
+	std::shared_ptr<VulkanBufferInstance> instanceBuffer;
 
 	int instanceCount = 0;
 	int maxInstanceCount = 256;

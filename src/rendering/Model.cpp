@@ -13,9 +13,10 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	std::vector<uint32_t> indexBuffer;
 
 	indexCount = static_cast<uint32_t>(mesh->indices.size());
-	vertexBuffer.resize(vertexCount * mesh->vertexElementCount);
+	vertexElementCount = mesh->vertexElementCount;
+	vertexBuffer.resize(vertexCount * vertexElementCount);
 
-	if(mesh->vertexElementCount == 6){
+	if(vertexElementCount == 6){
 		vertexCount = static_cast<uint32_t>(std::get<Vertices_PosNorm>(mesh->vertices).size());
 		vertexBuffer.resize(vertexCount * mesh->vertexElementCount);
 
@@ -29,13 +30,13 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 				vertexBuffer[i * 6 + 5] = std::get<Vertices_PosNorm>(mesh->vertices)[i].normal[2];
 			}
 		} 
-	else if (mesh->vertexElementCount == 8){
+	else if (vertexElementCount == 8){
 		vertexCount = static_cast<uint32_t>(std::get<Vertices_PosNormTex>(mesh->vertices).size());
 		vertexBuffer.resize(vertexCount * mesh->vertexElementCount);
 
 		for (int i = 0; i < (int)vertexCount; i++)
 			{
-				vertexBuffer[i * 8 + 0] = std::get	<Vertices_PosNormTex>(mesh->vertices)[i].pos[0];
+				vertexBuffer[i * 8 + 0] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].pos[0];
 				vertexBuffer[i * 8 + 1] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].pos[1];
 				vertexBuffer[i * 8 + 2] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].pos[2];
 				vertexBuffer[i * 8 + 3] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].normal[0];
@@ -47,7 +48,7 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	
 	} else {
 		vertexCount = static_cast<uint32_t>(std::get<Vertices_PosNormTexColor>(mesh->vertices).size());
-		vertexBuffer.resize(vertexCount * mesh->vertexElementCount);
+		vertexBuffer.resize(vertexCount * vertexElementCount);
 
 		for (int i = 0; i < (int)vertexCount; i++)
 		{
@@ -80,13 +81,13 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	uint32_t iBufferSize = static_cast<uint32_t>(indexBuffer.size()) * sizeof(uint32_t);
 
 
-	vmaVertices.CreateVertexBuffer((uint32_t)vertexBuffer.size());
+	vmaVertices.CreateVertexBuffer((uint32_t)vertexBuffer.size(), vertexElementCount);
 	vmaIndicies.CreateIndexBuffer((uint32_t)indexBuffer.size());
 
 	VulkanBufferVertex vertexStagingBuffer(device);
 	VulkanBufferIndex indexStagingBuffer(device);
 
-	vertexStagingBuffer.CreateStagingVertexBuffer(vertexBuffer.data(), (uint32_t)vertexCount);
+	vertexStagingBuffer.CreateStagingVertexBuffer(vertexBuffer.data(), (uint32_t)vertexCount, vertexElementCount);
 	indexStagingBuffer.CreateStagingIndexBuffer(indexBuffer.data(), (uint32_t)indexCount);
 
 	VkBufferCopy copyRegion{};

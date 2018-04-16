@@ -24,6 +24,7 @@ public:
 	//VulkanBuffer vertices;
 	//VulkanBuffer indices;
 	uint32_t vertexCount = 0;
+	uint32_t vertexElementCount = 0;
 	uint32_t indexCount = 0;
 
 	VulkanBufferVertex vmaVertices;

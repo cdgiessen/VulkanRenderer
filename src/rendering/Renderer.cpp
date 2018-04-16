@@ -249,7 +249,7 @@ void VulkanRenderer::BuildCommandBuffers() {
 		VkViewport viewport = initializers::viewport((float)vulkanSwapChain.swapChainExtent.width, (float)vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f);
 		vkCmdSetViewport(commandBuffers[frameIndex], 0, 1, &viewport);
 
-		VkRect2D scissor = initializers::rect2D((float)vulkanSwapChain.swapChainExtent.width, (float)vulkanSwapChain.swapChainExtent.height, 0, 0);
+		VkRect2D scissor = initializers::rect2D(vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, 0, 0);
 		vkCmdSetScissor(commandBuffers[frameIndex], 0, 1, &scissor);
 		
 		VkDeviceSize offsets[] = { 0 };

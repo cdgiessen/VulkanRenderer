@@ -122,6 +122,9 @@ public:
 	void CreateMeshBufferIndex(VmaBuffer& buffer, VkDeviceSize bufferSize);
 	void CreateMeshStagingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
 
+	void CreateInstancingBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
+	void CreateStagingInstancingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
+	
 	void DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation);
 	void DestroyVmaAllocatedBuffer(VmaBuffer& buffer);
 
