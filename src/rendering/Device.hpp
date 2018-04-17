@@ -51,6 +51,58 @@ struct VmaImage {
 class VulkanDevice;
 class VulkanBuffer;
 
+class CommandBuffer {
+public:
+	CommandBuffer(VulkanDevice& device);
+	VkCommandBuffer* GetCommandBuffer();
+
+	void BeginBufferRecording(VkCommandBufferUsageFlagBits flags = (VkCommandBufferUsageFlagBits)(0));
+	void EndBufferRecording();
+
+	void ResetBuffer(VkCommandBufferResetFlags flags);
+private:
+	VulkanDevice& device;
+	VkCommandBuffer buf;
+};
+
+class CommandQueue {
+public:
+	CommandQueue(VulkanDevice& device, uint32_t queueFamily);
+	void SubmitCommandBuffer(CommandBuffer buf, VkFence fence);
+
+	uint32_t GetQueueFamily();
+private:
+	VulkanDevice& device;
+	std::mutex submissionMutex;
+	VkQueue queue;
+	uint32_t queueFamily;
+};
+
+class CommandPool {
+public:
+	CommandPool(VulkanDevice& device, CommandQueue& queue, VkCommandPoolCreateFlags flags);
+	VkBool32 CleanUp();
+
+	CommandBuffer GetOneTimeUseCommandBuffer(int count);
+	CommandBuffer GetPrimaryCommandBuffer(int count);
+	CommandBuffer GetSecondaryCommandBuffer(int count);
+
+	void AllocateCommandBuffer(CommandBuffer buf, VkCommandBufferLevel);
+	void FreeCommandBuffer(CommandBuffer buf);
+
+	VkBool32 SubmitOneTimeUseCommandBuffer(CommandBuffer cmdBuffer, VkFence fence);
+	VkBool32 SubmitPrimaryCommandBuffer(CommandBuffer buf, VkFence fence);
+	VkBool32 SubmitSecondaryCommandBuffer(CommandBuffer buf, VkFence fence);
+
+private:
+	VulkanDevice& device;
+	std::mutex poolLock;
+	VkCommandPool commandPool;
+	CommandQueue& queue;
+
+	std::vector<CommandBuffer> cmdBuffers;
+};
+
 class TransferQueue {
 public:
 	TransferQueue(VulkanDevice& device, uint32_t transferFamily);
@@ -83,12 +135,14 @@ public:
 	//VDeleter<VkSurfaceKHR> window_surface{ instance, vkDestroySurfaceKHR };
 
 	VkPhysicalDevice physical_device;
-	VkQueue graphics_queue;
-	VkQueue present_queue;
-	VkQueue compute_queue;
 
+	VkQueue graphics_queue;
+	VkQueue compute_queue;
+	VkQueue present_queue;
+	
 	VkCommandPool graphics_queue_command_pool;
 	VkCommandPool compute_queue_command_pool;
+
 
 	VkPhysicalDeviceProperties physical_device_properties;
 	VkPhysicalDeviceFeatures physical_device_features;
@@ -134,38 +188,16 @@ public:
 
 	void DestroyVmaAllocatedImage(VmaImage& image);
 
+	VkCommandBuffer GetGraphicsCommandBuffer();
+	VkCommandBuffer GetSingleUseGraphicsCommandBuffer();
+	void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);
+
 	VkCommandBuffer GetTransferCommandBuffer();
 
 	void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
 	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
 	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
 
-	/**
-	* Create a buffer on the device
-	*
-	* @param usageFlags Usage flag bitmask for the buffer (i.e. index, vertex, uniform buffer)
-	* @param memoryPropertyFlags Memory properties for this buffer (i.e. device local, host visible, coherent)
-	* @param size Size of the buffer in byes
-	* @param buffer Pointer to the buffer handle acquired by the function
-	* @param memory Pointer to the memory handle acquired by the function
-	* @param data Pointer to the data that should be copied to the buffer after creation (optional, if not set, no data is copied over)
-	*
-	* @return VK_SUCCESS if buffer handle and memory have been created and (optionally passed) data has been copied
-	*/
-	//VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, VkBuffer *buffer, VkDeviceMemory *memory, void *data = nullptr);
-
-	/**
-	* Create a buffer on the device
-	*
-	* @param usageFlags Usage flag bitmask for the buffer (i.e. index, vertex, uniform buffer)
-	* @param memoryPropertyFlags Memory properties for this buffer (i.e. device local, host visible, coherent)
-	* @param buffer Pointer to a vk::Vulkan buffer object
-	* @param size Size of the buffer in byes
-	* @param data Pointer to the data that should be copied to the buffer after creation (optional, if not set, no data is copied over)
-	*
-	* @return VK_SUCCESS if buffer handle and memory have been created and (optionally passed) data has been copied
-	*/
-	//VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VulkanBuffer *buffer, VkDeviceSize size, void *data = nullptr);
 
 	/**
 	* Get the index of a memory type that has all the requested property bits set
@@ -180,30 +212,6 @@ public:
 	*/
 	uint32_t getMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties, VkBool32 *memTypeFound = nullptr);
 
-
-	/**
-	* Allocate a command buffer from the command pool
-	*
-	* @param level Level of the new command buffer (primary or secondary)
-	* @param (Optional) begin If true, recording on the new command buffer will be started (vkBeginCommandBuffer) (Defaults to false)
-	*
-	* @return A handle to the allocated command buffer
-	*/
-	VkCommandBuffer createCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel level, bool begin = false);
-
-	/**
-	* Finish command buffer recording and submit it to a queue
-	*
-	* @param commandBuffer Command buffer to flush
-	* @param queue Queue to submit the command buffer to
-	* @param free (Optional) Free the command buffer once it has been submitted (Defaults to true)
-	*
-	* @note The queue that the command buffer is submitted to must be from the same family index as the pool it was allocated from
-	* @note Uses a fence to ensure command buffer has finished executing
-	*/
-	void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
-	void flushCommandBuffer(VkCommandPool pool, VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
-
 private:
 	QueueFamilyIndices familyIndices;
 
@@ -211,11 +219,13 @@ private:
 
 	bool separateTransferQueue = false;
 
+
 	//Non separate transfer queue (no threads where they don't help)
-	bool isDmaCmdBufWritable = false;
 	VkQueue transfer_queue;
 	VkCommandPool transfer_queue_command_pool;
 	VkCommandBuffer dmaCmdBuf;
+
+	std::mutex graphics_lock;
 
 	std::unique_ptr<TransferQueue> transferQueue;
 

@@ -45,7 +45,7 @@ void VulkanTexture::destroy() {
 void VulkanTexture::GenerateMipMaps(VkImage image, int width, int height, int depth, int layers, int mipLevels) {
 	// We copy down the whole mip chain doing a blit from mip-1 to mip
 	// An alternative way would be to always blit from the first mip level and sample that one down
-	VkCommandBuffer blitCmd = device.createCommandBuffer(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	VkCommandBuffer blitCmd = device.GetGraphicsCommandBuffer();
 
 	// Copy down mips from n-1 to n
 	for (int32_t i = 1; i < mipLevels; i++)
@@ -119,7 +119,7 @@ void VulkanTexture::GenerateMipMaps(VkImage image, int width, int height, int de
 		textureImageLayout,
 		subresourceRange);
 
-	device.flushCommandBuffer(blitCmd, device.graphics_queue);
+	device.SubmitGraphicsCommandBufferAndWait(blitCmd);
 
 }
 
@@ -194,7 +194,7 @@ void AlignedTextureMemcpy(int layers, int dst_layer_width,
 
 void VulkanTexture2D::loadFromTexture(
 	std::shared_ptr<Texture> texture,
-	VkFormat format,
+	VkFormat format,	
 	VkCommandBuffer transferCmdBuf,
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout,
@@ -704,11 +704,11 @@ void VulkanTextureDepthBuffer::CreateDepthImage(VkFormat depthFormat, int width,
 
 	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-	VkCommandBuffer copyBuf = device.createCommandBuffer(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	VkCommandBuffer copyBuf = device.GetGraphicsCommandBuffer();
 
 	setImageLayout(copyBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, subresourceRange);
 
-	device.flushCommandBuffer(copyBuf, device.graphics_queue, true);
+	device.SubmitGraphicsCommandBufferAndWait(copyBuf);
 }
 	
 VulkanTextureManager::VulkanTextureManager(VulkanDevice& device) : device(device)

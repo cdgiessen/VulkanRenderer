@@ -9,6 +9,7 @@
 #include <string>
 #include <array>
 #include <set>
+#include <thread>
 
 #include <glm/glm.hpp>
 
@@ -83,6 +84,10 @@ void VulkanApp::mainLoop() {
 
 		Input::inputDirector.ResetReleasedInput();
 		timeManager->EndFrameTimer();
+
+		//if(timeManager->GetDeltaTime() < 0.016){
+		//	std::this_thread::sleep_for(timeManager->GetDeltaTime() - 0.016);
+		//}
 		//Log::Debug << "main loop breaker. Break me if you want to stop after every frame!\n";
 	}
 

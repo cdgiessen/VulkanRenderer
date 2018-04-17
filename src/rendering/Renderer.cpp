@@ -582,7 +582,7 @@ void VulkanRenderer::SaveScreenshot()
 		VK_CHECK_RESULT(vkBindImageMemory(device.device, dstImage, dstImageMemory, 0));
 
 		// Do the actual blit from the swapchain image to our host visible destination image
-		VkCommandBuffer copyCmd = device.createCommandBuffer(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+		VkCommandBuffer copyCmd = device.GetGraphicsCommandBuffer();
 
 		VkImageMemoryBarrier imageMemoryBarrier = initializers::imageMemoryBarrier();
 
@@ -684,7 +684,7 @@ void VulkanRenderer::SaveScreenshot()
 
 
 
-		device.flushCommandBuffer(copyCmd, device.graphics_queue);
+		device.SubmitGraphicsCommandBufferAndWait(copyCmd);
 
 		// Get layout of the image (including row pitch)
 		VkImageSubresource subResource{};

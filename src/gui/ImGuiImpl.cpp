@@ -901,7 +901,7 @@ void PrepareImGui(std::shared_ptr<Window> window, std::shared_ptr<VulkanRenderer
 
 	ImGui_ImplGlfwVulkan_Init(window->getWindowContext(), false, &init_data);
 
-	VkCommandBuffer fontUploader = vulkanRenderer->device.createCommandBuffer(vulkanRenderer->device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	VkCommandBuffer fontUploader = vulkanRenderer->device.GetGraphicsCommandBuffer();
 	ImGui_ImplGlfwVulkan_CreateFontsTexture(fontUploader);
-	vulkanRenderer->device.flushCommandBuffer(fontUploader, vulkanRenderer->device.graphics_queue, true);
+	vulkanRenderer->device.SubmitGraphicsCommandBufferAndWait(fontUploader);
 }
