@@ -85,9 +85,6 @@ public:
 
 	float GetTerrainHeightAtLocation(float x, float z);
 
-	VkCommandBuffer CreateTerrainMeshUpdateCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel level);
-	void FlushTerrainMeshUpdateCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free);
-
 	void RecreateTerrain();
 
 	std::mutex workerMutex;

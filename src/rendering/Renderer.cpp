@@ -223,6 +223,7 @@ void VulkanRenderer::CreateCommandBuffers() {
 
 	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
 
+	std::lock_guard<std::mutex> lock(device.graphics_command_pool_lock);
 	if (vkAllocateCommandBuffers(device.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
 	}
@@ -272,12 +273,13 @@ void VulkanRenderer::BuildCommandBuffers() {
 void VulkanRenderer::CreatePrimaryCommandBuffer() {
 	commandBuffers.resize(vulkanSwapChain.swapChainFramebuffers.size());
 
-	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
-
-	if (vkAllocateCommandBuffers(device.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate command buffers!");
+	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(device.+, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
+	{
+		std::lock_guard<std::mutex> lock(device.graphics_command_pool_lock);
+		if (vkAllocateCommandBuffers(device.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate command buffers!");
+		}
 	}
-
 	for (size_t i = 0; i < commandBuffers.size(); i++) {
 		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -359,8 +361,11 @@ void VulkanRenderer::SubmitFrame()
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit(device.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-		throw std::runtime_error("failed to submit draw command buffer!");
+	{
+		std::lock_guard<std::mutex> lock(device.graphics_lock);
+		if (vkQueueSubmit(device.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+			throw std::runtime_error("failed to submit draw command buffer!");
+		}
 	}
 
 	VkPresentInfoKHR presentInfo = {};
@@ -374,9 +379,11 @@ void VulkanRenderer::SubmitFrame()
 	presentInfo.pSwapchains = swapChains;
 
 	presentInfo.pImageIndices = &frameIndex;
-
-	VkResult result = vkQueuePresentKHR(device.present_queue, &presentInfo);
-
+	VkResult result;
+	{
+		std::lock_guard<std::mutex> lock(device.graphics_lock);
+		result = vkQueuePresentKHR(device.present_queue, &presentInfo);
+	}
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
 		RecreateSwapChain();
 	}

@@ -186,11 +186,9 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 
 	//}
 
-	//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	for (auto ter : terrains) {
 		ter->InitTerrain(renderer, camera->Position, terrainVulkanTextureArray);
 	}
-	//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
 
 	//WaterMesh.reset();
 	//WaterModel.destroy(renderer->device); 
@@ -238,13 +236,11 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 
 	for (auto ter : terrains) {
 		terrainUpdateTimer.StartTimer();
-		//VkCommandBuffer copyCmdBuf = CreateTerrainMeshUpdateCommandBuffer(device->graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
 		terrain_mutex.lock();
 		ter->UpdateTerrain(camera->Position);
 		terrain_mutex.unlock();
 
-		//FlushTerrainMeshUpdateCommandBuffer(copyCmdBuf, device->graphics_queue, true);
 		terrainUpdateTimer.EndTimer();
 		//if (terrainUpdateTimer.GetElapsedTimeMicroSeconds() > 1000) {
 		//	Log::Debug << terrainUpdateTimer.GetElapsedTimeMicroSeconds() << "\n";
@@ -373,66 +369,3 @@ void TerrainManager::CleanUpTerrain() {
 	//terrainQuadPool = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
 }
 
-/**
-* Allocate a command buffer from the command pool
-*
-* @param level Level of the new command buffer (primary or secondary)
-* @param (Optional) begin If true, recording on the new command buffer will be started (vkBeginCommandBuffer) (Defaults to false)
-*
-* @return A handle to the allocated command buffer
-*/
-VkCommandBuffer TerrainManager::CreateTerrainMeshUpdateCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel level)
-{
-	VkCommandBufferAllocateInfo cmdBufAllocateInfo = initializers::commandBufferAllocateInfo(commandPool, level, (uint32_t)terrains.size());
-
-	VkCommandBuffer cmdBuffer;
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(renderer->device.device, &cmdBufAllocateInfo, &cmdBuffer));
-
-
-	VkCommandBufferBeginInfo cmdBufInfo = initializers::commandBufferBeginInfo();
-	VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
-
-	return cmdBuffer;
-}
-
-/**
-* Finish command buffer recording and submit it to a queue
-*
-* @param commandBuffer Command buffer to flush
-* @param queue Queue to submit the command buffer to
-* @param free (Optional) Free the command buffer once it has been submitted (Defaults to true)
-*
-* @note The queue that the command buffer is submitted to must be from the same family index as the pool it was allocated from
-* @note Uses a fence to ensure command buffer has finished executing
-*/
-void TerrainManager::FlushTerrainMeshUpdateCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
-{
-	if (commandBuffer == VK_NULL_HANDLE)
-	{
-		return;
-	}
-
-
-	VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
-
-	VkSubmitInfo submitInfo = initializers::submitInfo();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
-
-	// Create fence to ensure that the command buffer has finished executing
-	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
-	VkFence fence;
-	VK_CHECK_RESULT(vkCreateFence(renderer->device.device, &fenceInfo, nullptr, &fence));
-
-	// Submit to the queue
-	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
-	// Wait for the fence to signal that command buffer has finished executing
-	VK_CHECK_RESULT(vkWaitForFences(renderer->device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
-
-	vkDestroyFence(renderer->device.device, fence, nullptr);
-
-	if (free)
-	{
-		vkFreeCommandBuffers(renderer->device.device, renderer->device.graphics_queue_command_pool, 1, &commandBuffer);
-	}
-}

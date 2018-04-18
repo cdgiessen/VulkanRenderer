@@ -180,15 +180,16 @@ VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
 	VkCommandBuffer buf;
 	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
-	transferMutex.lock();
-	vkAllocateCommandBuffers(device.device, &allocInfo, &buf);
+	{
+		std::lock_guard<std::mutex> lock(transferMutex);
+		vkAllocateCommandBuffers(device.device, &allocInfo, &buf);
+	}
 
 	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 
 	vkBeginCommandBuffer(buf, &beginInfo);
-	transferMutex.unlock();
 	return buf;
 }
 
@@ -217,9 +218,10 @@ void WaitForSubmissionFinish(TransferQueue* queue,
 	vkDestroyFence(queue->GetDevice(), fence, nullptr);
 
 	auto& transferLock = queue->GetTransferMutex();	
-	transferLock.lock();
-	vkFreeCommandBuffers(queue->GetDevice(), queue->GetCommandPool(), 1, &buf);
-	transferLock.unlock();
+	{
+		std::lock_guard<std::mutex> lock(transferLock);
+		vkFreeCommandBuffers(queue->GetDevice(), queue->GetCommandPool(), 1, &buf);
+	}
 	for (auto& buffer : bufsToClean) {
 		buffer.CleanBuffer();
 	}
@@ -236,9 +238,10 @@ void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector
 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 
-	transferMutex.lock();
-	vkQueueSubmit(transfer_queue, 1, &submitInfo, fence);
-	transferMutex.unlock();
+	{
+		std::lock_guard<std::mutex> lock(transferMutex);
+		vkQueueSubmit(transfer_queue, 1, &submitInfo, fence);
+	}
 
 	std::thread submissionCompletion = std::thread(WaitForSubmissionFinish, this, buf, fence, readySignal, bufsToClean);
 	submissionCompletion.detach();
@@ -259,15 +262,17 @@ void TransferQueue::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 
-	transferMutex.lock();
-	vkQueueSubmit(transfer_queue, 1, &submitInfo, fence);
-	transferMutex.unlock();
+	{
+		std::lock_guard<std::mutex> lock(transferMutex);
+		vkQueueSubmit(transfer_queue, 1, &submitInfo, fence);
+	}
 
 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 	vkDestroyFence(device.device, fence, nullptr);
-	transferMutex.lock();
-	vkFreeCommandBuffers(device.device, transfer_queue_command_pool, 1, &buf);
-	transferMutex.unlock();
+	{
+		std::lock_guard<std::mutex> lock(transferMutex);
+		vkFreeCommandBuffers(device.device, transfer_queue_command_pool, 1, &buf);
+	}
 }
 
 
@@ -922,15 +927,17 @@ VkCommandBuffer VulkanDevice::GetGraphicsCommandBuffer(){
 	initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
 	VkCommandBuffer cmdBuffer;
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &cmdBuffer));
-
+	{
+		std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+		VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &cmdBuffer));
+	}
 	// If requested, also start recording for the new command buffer
 
 	VkCommandBufferBeginInfo cmdBufInfo = initializers::commandBufferBeginInfo();
-	{
-		std::lock_guard<std::mutex> lock(graphics_lock);
+	//{
+	//	std::lock_guard<std::mutex> lock(graphics_lock);
 		VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
-	}
+	//}
 
 	return cmdBuffer;
 }
@@ -961,7 +968,7 @@ void VulkanDevice::SubmitGraphicsCommandBufferAndWait(VkCommandBuffer commandBuf
 
 	if (free)
 	{
-		std::lock_guard<std::mutex> lock(graphics_lock);
+		std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
 		vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &commandBuffer);
 	}
 }
@@ -972,7 +979,7 @@ VkCommandBuffer VulkanDevice::GetSingleUseGraphicsCommandBuffer(){
 		initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
 	{
-		std::lock_guard<std::mutex> lock();
+		std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
 		vkAllocateCommandBuffers(device, &allocInfo, &buf);
 	}
 
@@ -992,7 +999,10 @@ VkCommandBuffer VulkanDevice::GetTransferCommandBuffer() {
 		VkCommandBufferAllocateInfo allocInfo = 
 			initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
-		vkAllocateCommandBuffers(device, &allocInfo, &buf);
+		{
+			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+			vkAllocateCommandBuffers(device, &allocInfo, &buf);
+		}
 
 		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -1014,10 +1024,17 @@ void VulkanDevice::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &buf;
 
-		vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(graphics_queue);
+		{
+			std::lock_guard<std::mutex> lock(graphics_lock);
 
-		vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
+			vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+		}
+
+		vkQueueWaitIdle(graphics_queue);
+		{
+			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+			vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
+		}
 	}
 }
 
@@ -1039,8 +1056,10 @@ void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf,
 		for (auto& buffer : bufsToClean) {
 			buffer.CleanBuffer();
 		}
-		vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
-
+		{
+			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+			vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
+		}
 		for (auto& sig : readySignal)
 			*sig = true;
 	}

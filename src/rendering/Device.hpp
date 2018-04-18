@@ -136,6 +136,9 @@ public:
 
 	VkPhysicalDevice physical_device;
 
+	std::mutex graphics_lock;
+	std::mutex graphics_command_pool_lock;
+
 	VkQueue graphics_queue;
 	VkQueue compute_queue;
 	VkQueue present_queue;
@@ -224,8 +227,6 @@ private:
 	VkQueue transfer_queue;
 	VkCommandPool transfer_queue_command_pool;
 	VkCommandBuffer dmaCmdBuf;
-
-	std::mutex graphics_lock;
 
 	std::unique_ptr<TransferQueue> transferQueue;
 
