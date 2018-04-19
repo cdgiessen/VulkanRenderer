@@ -3,6 +3,7 @@
 #include <array>
 #include <vector>
 #include <string>
+
 #include <vulkan/vulkan.h>
 
 #include "RenderTools.h"
@@ -66,6 +67,17 @@ public:
 	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat FindDepthFormat();
 
+	VkCommandBuffer GetGraphicsCommandBuffer();
+	VkCommandBuffer GetSingleUseGraphicsCommandBuffer();
+	void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);
+
+	VkCommandBuffer GetTransferCommandBuffer();
+
+	void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
+	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
+	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
+
+
 	void SaveScreenshotNextFrame();
 	void SetWireframe(bool wireframe);
 
@@ -109,11 +121,23 @@ private:
 
 	std::shared_ptr<VulkanTextureDepthBuffer> depthBuffer;
 
+	CommandPool graphicsPrimaryCommandPool;
+	CommandPool singleUseGraphicsCommandPool;
+
+	CommandPool computeCommandPool;
+
+	CommandPool transferCommandPool;
+
 	//Command buffer per frame
 	std::vector<VkCommandBuffer> commandBuffers;
 
+	//VkCommandPool graphics_queue_command_pool;
+	//VkCommandPool compute_queue_command_pool;
+
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
+
+
 
 	std::vector<std::shared_ptr<VulkanDescriptor>> descriptors;
 

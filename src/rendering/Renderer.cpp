@@ -20,7 +20,11 @@ VulkanRenderer::VulkanRenderer(bool validationLayer, std::shared_ptr<Scene> scen
 	sunBuffer(device),
 	pointLightsBuffer(device),
 	spotLightsBuffer(device),
-	entityPositions(device)
+	entityPositions(device),
+	graphicsPrimaryCommandPool(device, device.GetCommandQueue(VulkanDevice::CommandQueueType::graphics), 
+		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+	singleUseGraphicsCommandPool(device, device.GetCommandQueue(VulkanDevice::CommandQueueType::graphics),
+		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
 {
 }
 
@@ -115,8 +119,10 @@ void VulkanRenderer::RecreateSwapChain() {
 }
 
 void VulkanRenderer::ReBuildCommandBuffers() {
-	vkFreeCommandBuffers(device.device, device.graphics_queue_command_pool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
-	vkResetCommandPool(device.device, device.graphics_queue_command_pool, 0);
+	//vkFreeCommandBuffers(device.device, device.graphics_queue_command_pool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+	//vkResetCommandPool(device.device, device.graphics_queue_command_pool, 0);
+
+	graphicsPrimaryCommandPool.ResetPool();
 
 	CreateCommandBuffers();
 	BuildCommandBuffers();
@@ -221,12 +227,16 @@ void VulkanRenderer::CreateCommandBuffers() {
 
 	commandBuffers.resize(vulkanSwapChain.swapChainFramebuffers.size());
 
-	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
+	for (auto& cmdBuf : commandBuffers) {
+		cmdBuf = graphicsPrimaryCommandPool.GetPrimaryCommandBuffer();
+	}
+
+	/*VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
 
 	std::lock_guard<std::mutex> lock(device.graphics_command_pool_lock);
 	if (vkAllocateCommandBuffers(device.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
-	}
+	}*/
 
 }
 
@@ -273,13 +283,17 @@ void VulkanRenderer::BuildCommandBuffers() {
 void VulkanRenderer::CreatePrimaryCommandBuffer() {
 	commandBuffers.resize(vulkanSwapChain.swapChainFramebuffers.size());
 
-	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(device.+, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
+	/*VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
 	{
 		std::lock_guard<std::mutex> lock(device.graphics_command_pool_lock);
 		if (vkAllocateCommandBuffers(device.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate command buffers!");
 		}
+	}*/
+	for (auto& cmdBuf : commandBuffers) {
+		cmdBuf = graphicsPrimaryCommandPool.GetPrimaryCommandBuffer();
 	}
+
 	for (size_t i = 0; i < commandBuffers.size(); i++) {
 		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -346,33 +360,35 @@ void VulkanRenderer::PrepareFrame()
 
 void VulkanRenderer::SubmitFrame()
 {
-	VkSubmitInfo submitInfo = initializers::submitInfo();
+	std::vector<VkSemaphore> waitSemaphores = { imageAvailableSemaphore };
+	std::vector<VkSemaphore> signalSemaphores = { renderFinishedSemaphore };
+	
+	VkSubmitInfo submitInfo = initializers::submitInfo(
+		{ commandBuffers[frameIndex] },
+		waitSemaphores, { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT },
+		signalSemaphores);
 
-	VkSemaphore waitSemaphores[] = { imageAvailableSemaphore };
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
+	//VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	//submitInfo.waitSemaphoreCount = 1;
+	//submitInfo.pWaitSemaphores = waitSemaphores;
+	//submitInfo.pWaitDstStageMask = waitStages;
 
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffers[frameIndex];
+	//submitInfo.commandBufferCount = 1;
+	//submitInfo.pCommandBuffers = &commandBuffers[frameIndex];
 
-	VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
-
-	{
-		std::lock_guard<std::mutex> lock(device.graphics_lock);
-		if (vkQueueSubmit(device.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-			throw std::runtime_error("failed to submit draw command buffer!");
-		}
-	}
+	device.graphics_queue.Submit(submitInfo, VK_NULL_HANDLE);
+	//{
+	//	std::lock_guard<std::mutex> lock(device.graphics_lock);
+	//	if (vkQueueSubmit(device.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+	//		throw std::runtime_error("failed to submit draw command buffer!");
+	//	}
+	//}
 
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = signalSemaphores;
+	presentInfo.pWaitSemaphores = signalSemaphores.data();
 
 	VkSwapchainKHR swapChains[] = { vulkanSwapChain.swapChain };
 	presentInfo.swapchainCount = 1;
@@ -382,7 +398,7 @@ void VulkanRenderer::SubmitFrame()
 	VkResult result;
 	{
 		std::lock_guard<std::mutex> lock(device.graphics_lock);
-		result = vkQueuePresentKHR(device.present_queue, &presentInfo);
+		result = vkQueuePresentKHR(device.present_queue.GetQueue(), &presentInfo);
 	}
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
 		RecreateSwapChain();
@@ -391,7 +407,7 @@ void VulkanRenderer::SubmitFrame()
 		throw std::runtime_error("failed to present swap chain image!");
 	}
 
-	vkQueueWaitIdle(device.present_queue);
+	vkQueueWaitIdle(device.present_queue.GetQueue());
 }
 
 void VulkanRenderer::PrepareResources() {
@@ -522,6 +538,203 @@ void InsertImageMemoryBarrier(
 	//Log::Debug << " HI " << "\n";
 }
 
+VkCommandBuffer VulkanRenderer::GetGraphicsCommandBuffer() {
+	//VkCommandBufferAllocateInfo cmdBufAllocateInfo =
+	//	initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+
+	//VkCommandBuffer cmdBuffer;
+	//{
+	//	std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+	//	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &cmdBuffer));
+	//}
+	//// If requested, also start recording for the new command buffer
+
+	//VkCommandBufferBeginInfo cmdBufInfo = initializers::commandBufferBeginInfo();
+	////{
+	////	std::lock_guard<std::mutex> lock(graphics_lock);
+	//VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
+	////}
+
+	return graphicsPrimaryCommandPool.GetPrimaryCommandBuffer();
+}
+
+void VulkanRenderer::SubmitGraphicsCommandBufferAndWait(VkCommandBuffer commandBuffer) {
+	if (commandBuffer == VK_NULL_HANDLE)
+		return;
+	
+	VkFence fence;
+	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence));
+	graphicsPrimaryCommandPool.SubmitPrimaryCommandBuffer(commandBuffer, fence);
+	
+	vkDestroyFence(device.device, fence, nullptr);
+	graphicsPrimaryCommandPool.FreeCommandBuffer(commandBuffer);
+	//if (commandBuffer == VK_NULL_HANDLE)
+	//	return;
+
+	//VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
+
+	//VkSubmitInfo submitInfo = initializers::submitInfo();
+	//submitInfo.commandBufferCount = 1;
+	//submitInfo.pCommandBuffers = &commandBuffer;
+
+	//// Create fence to ensure that the command buffer has finished executing
+	//VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+	//VkFence fence;
+	//VK_CHECK_RESULT(vkCreateFence(device, &fenceInfo, nullptr, &fence));
+
+	//{
+	//	std::lock_guard<std::mutex> lock(graphics_lock);
+	//	VK_CHECK_RESULT(vkQueueSubmit(graphics_queue, 1, &submitInfo, fence));
+	//}
+
+	//VK_CHECK_RESULT(vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
+
+	//vkDestroyFence(device, fence, nullptr);
+
+	//{
+	//	std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+	//	vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &commandBuffer);
+	//}
+}
+
+VkCommandBuffer VulkanRenderer::GetSingleUseGraphicsCommandBuffer() {
+
+	return graphicsPrimaryCommandPool.GetOneTimeUseCommandBuffer();
+	/*VkCommandBuffer buf;
+	VkCommandBufferAllocateInfo allocInfo =
+		initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+
+	{
+		std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+		vkAllocateCommandBuffers(device, &allocInfo, &buf);
+	}
+
+	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(buf, &beginInfo);
+	return buf;*/
+}
+
+VkCommandBuffer VulkanRenderer::GetTransferCommandBuffer() {
+
+
+
+
+
+
+	if (separateTransferQueue) {
+		return transferQueue->GetTransferCommandBuffer();
+	}
+	else {
+		graphicsPrimaryCommandPool.GetOneTimeUseCommandBuffer();
+		/*VkCommandBuffer buf;
+		VkCommandBufferAllocateInfo allocInfo =
+			initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+
+		{
+			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+			vkAllocateCommandBuffers(device, &allocInfo, &buf);
+		}
+
+		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		vkBeginCommandBuffer(buf, &beginInfo);
+		return buf;
+*/
+	}
+}
+
+void WaitForSubmissionFinish(VkDevice device, TransferQueue* queue,
+	VkCommandBuffer buf, VkFence fence, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
+
+	vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+	if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
+		for (auto& sig : readySignal)
+			*sig = true;
+	}
+	else if (vkGetFenceStatus(device, fence) == VK_NOT_READY) {
+		Log::Error << "Transfer exeeded maximum fence timeout! Is too much stuff happening?\n";
+		vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+		if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
+			for (auto& sig : readySignal)
+				*sig = true;
+		}
+	}
+	else if (vkGetFenceStatus(device, fence) == VK_ERROR_DEVICE_LOST) {
+		Log::Error << "AAAAAAAAAAAHHHHHHHHHHHHH EVERYTHING IS ONE FIRE\n";
+		throw std::runtime_error("Fence lost device!\n");
+	}
+
+
+	vkDestroyFence(device, fence, nullptr);
+
+	queue->GetCommandPool().FreeCommandBuffer(buf);
+
+	for (auto& buffer : bufsToClean) {
+		buffer.CleanBuffer();
+	}
+}
+
+void VulkanRenderer::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
+	if (separateTransferQueue) {
+		transferQueue->SubmitTransferCommandBufferAndWait(buf);
+	}
+	else {
+		SubmitGraphicsCommandBufferAndWait(buf);
+		vkQueueWaitIdle(device.graphics_queue.GetQueue());
+		/*vkEndCommandBuffer(buf);
+
+		VkSubmitInfo submitInfo = initializers::submitInfo();
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &buf;
+
+		{
+			std::lock_guard<std::mutex> lock(graphics_lock);
+
+			vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+		}
+
+		{
+			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+			vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
+		}*/
+	}
+}
+
+void VulkanRenderer::SubmitTransferCommandBuffer(VkCommandBuffer buf,
+	std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
+	if (separateTransferQueue) {
+		transferQueue->SubmitTransferCommandBuffer(buf, readySignal, bufsToClean);
+	}
+	else {
+		vkEndCommandBuffer(buf);
+
+		VkSubmitInfo submitInfo = initializers::submitInfo();
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &buf;
+
+		vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(graphics_queue);
+
+		for (auto& buffer : bufsToClean) {
+			buffer.CleanBuffer();
+		}
+		{
+			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+			vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
+		}
+		for (auto& sig : readySignal)
+			*sig = true;
+	}
+}
+
+void VulkanRenderer::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
+	SubmitTransferCommandBuffer(buf, readySignal, {});
+}
+
 void VulkanRenderer::SaveScreenshotNextFrame() {
 	saveScreenshot = true;
 }
@@ -589,7 +802,7 @@ void VulkanRenderer::SaveScreenshot()
 		VK_CHECK_RESULT(vkBindImageMemory(device.device, dstImage, dstImageMemory, 0));
 
 		// Do the actual blit from the swapchain image to our host visible destination image
-		VkCommandBuffer copyCmd = device.GetGraphicsCommandBuffer();
+		VkCommandBuffer copyCmd = GetGraphicsCommandBuffer();
 
 		VkImageMemoryBarrier imageMemoryBarrier = initializers::imageMemoryBarrier();
 
@@ -691,7 +904,7 @@ void VulkanRenderer::SaveScreenshot()
 
 
 
-		device.SubmitGraphicsCommandBufferAndWait(copyCmd);
+		SubmitGraphicsCommandBufferAndWait(copyCmd);
 
 		// Get layout of the image (including row pitch)
 		VkImageSubresource subResource{};

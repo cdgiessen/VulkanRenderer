@@ -6,18 +6,26 @@
 
 #include "../core/Logger.h"
 
-CommandQueue::CommandQueue(VulkanDevice& device, uint32_t queueFamily):
-device(device), queueFamily(queueFamily)
+CommandQueue::CommandQueue(VulkanDevice& device):
+device(device)
 {
-	vkGetDeviceQueue(device.device, queueFamily, 0, &queue);
 
 }
 
-void CommandQueue::SubmitCommandBuffer(CommandBuffer buffer, VkFence fence){
-	VkSubmitInfo submitInfo = initializers::submitInfo();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = buffer.GetCommandBuffer();
+void CommandQueue::SetupQueue(uint32_t queueFamily) {
+	vkGetDeviceQueue(device.device, queueFamily, 0, &queue);
+}
 
+void CommandQueue::SubmitCommandBuffer(VkCommandBuffer buffer, VkFence fence,
+	std::vector<VkSemaphore> waitSemaphores = std::vector<VkSemaphore>(),
+	std::vector<VkSemaphore> signalSemaphores = std::vector<VkSemaphore>())
+{
+	Submit(initializers::submitInfo(
+		{ buffer }, waitSemaphores, { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT }, signalSemaphores), fence);
+}
+
+void CommandQueue::Submit(VkSubmitInfo submitInfo, VkFence fence ) {
+	
 	std::lock_guard<std::mutex> lock(submissionMutex);
 	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
 }
@@ -26,29 +34,8 @@ uint32_t CommandQueue::GetQueueFamily(){
 	return queueFamily;
 }
 
-CommandBuffer::CommandBuffer(VulkanDevice& device)
-	:device(device){
-
-}
-
-VkCommandBuffer* CommandBuffer::GetCommandBuffer(){
-	return &buf;
-}
-
-void CommandBuffer::BeginBufferRecording(VkCommandBufferUsageFlagBits flags){
-
-	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
-	beginInfo.flags = flags;
-
-	vkBeginCommandBuffer(buf, &beginInfo);
-}
-
-void CommandBuffer::EndBufferRecording(){
-	vkEndCommandBuffer(buf);
-}
-
-void CommandBuffer::ResetBuffer(VkCommandBufferResetFlags flags){
-	vkResetCommandBuffer( buf, flags);
+VkQueue CommandQueue::GetQueue() {
+	return queue;
 }
 
 
@@ -70,73 +57,96 @@ VkBool32 CommandPool::CleanUp(){
 	return VK_TRUE;
 }
 
-void CommandPool::AllocateCommandBuffer(CommandBuffer cmdBuffer, VkCommandBufferLevel level)
+VkBool32 CommandPool::ResetPool() {
+
+	std::lock_guard<std::mutex> lock(poolLock);
+	vkResetCommandPool(device.device, commandPool, 0);
+	return VK_TRUE;
+}
+
+VkCommandBuffer CommandPool::AllocateCommandBuffer(VkCommandBufferLevel level)
 {
+	VkCommandBuffer buf;
+
 	VkCommandBufferAllocateInfo allocInfo = 
 	initializers::commandBufferAllocateInfo(commandPool, level, 1);
 
 	std::lock_guard<std::mutex> lock(poolLock);
-	vkAllocateCommandBuffers(device.device, &allocInfo, cmdBuffer.GetCommandBuffer());
+	vkAllocateCommandBuffers(device.device, &allocInfo, &buf);
+
+	return buf;
 }
 
-void CommandPool::FreeCommandBuffer(CommandBuffer buf){
+void CommandPool::BeginBufferRecording(VkCommandBuffer buf, VkCommandBufferUsageFlagBits flags){
+
+	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
+	beginInfo.flags = flags;
+
+	vkBeginCommandBuffer(buf, &beginInfo);
+}
+
+void CommandPool::EndBufferRecording(VkCommandBuffer buf) {
+	vkEndCommandBuffer(buf);
+}
+
+void CommandPool::FreeCommandBuffer(VkCommandBuffer buf){
 	{
 		std::lock_guard<std::mutex> lock(poolLock);
-		vkFreeCommandBuffers(device.device, commandPool, 1, buf.GetCommandBuffer());
+		vkFreeCommandBuffers(device.device, commandPool, 1, &buf);
 	}
 }
 
-CommandBuffer CommandPool::GetOneTimeUseCommandBuffer(int count){
-	CommandBuffer cmdBuffer(device);
-
-	VkCommandBufferAllocateInfo allocInfo = 
-	initializers::commandBufferAllocateInfo(commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
-
-	AllocateCommandBuffer(cmdBuffer, VK_COMMAND_BUFFER_LEVEL_PRIMARY); 
+VkCommandBuffer CommandPool::GetOneTimeUseCommandBuffer(){
+	VkCommandBuffer cmdBuffer = AllocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	
-	cmdBuffer.BeginBufferRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	BeginBufferRecording(cmdBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 	return cmdBuffer;
 }
 
-CommandBuffer CommandPool::GetPrimaryCommandBuffer(int count){
+VkCommandBuffer CommandPool::GetPrimaryCommandBuffer(){
 
-	CommandBuffer cmdBuffer(device);
+	VkCommandBuffer cmdBuffer = AllocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-	AllocateCommandBuffer(cmdBuffer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
-	cmdBuffer.BeginBufferRecording();
+	BeginBufferRecording(cmdBuffer);
 
 	return cmdBuffer;
 }
 
-CommandBuffer CommandPool::GetSecondaryCommandBuffer(int count){
-	CommandBuffer cmdBuffer(device);
+VkCommandBuffer CommandPool::GetSecondaryCommandBuffer(){
+	VkCommandBuffer cmdBuffer = AllocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-	AllocateCommandBuffer(cmdBuffer, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-
-	cmdBuffer.BeginBufferRecording();
+	BeginBufferRecording(cmdBuffer);
 
 	return cmdBuffer;
 }
 
-VkBool32 CommandPool::SubmitOneTimeUseCommandBuffer(CommandBuffer cmdBuffer, VkFence fence){
-	cmdBuffer.EndBufferRecording();
+VkBool32 CommandPool::SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence){
+	EndBufferRecording(cmdBuffer);
+
+	VkSubmitInfo submitInfo = initializers::submitInfo();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &cmdBuffer;
+
+	if (fence == nullptr) {
+		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+	}
+
+	queue.SubmitCommandBuffer(cmdBuffer, fence);
+
+	return VK_TRUE;
+}
+
+VkBool32 CommandPool::SubmitPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence){
+	EndBufferRecording(cmdBuffer);
 
 
 
 	return VK_TRUE;
 }
-
-VkBool32 CommandPool::SubmitPrimaryCommandBuffer(CommandBuffer cmdBuffer, VkFence fence){
-	cmdBuffer.EndBufferRecording();
-
-
-
-	return VK_TRUE;
-}
-VkBool32 CommandPool::SubmitSecondaryCommandBuffer(CommandBuffer cmdBuffer, VkFence fence){
-	cmdBuffer.EndBufferRecording();
+VkBool32 CommandPool::SubmitSecondaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence){
+	EndBufferRecording(cmdBuffer);
 
 
 
@@ -145,105 +155,68 @@ VkBool32 CommandPool::SubmitSecondaryCommandBuffer(CommandBuffer cmdBuffer, VkFe
 
 
 
-TransferQueue::TransferQueue(VulkanDevice& device, uint32_t transferFamily):
-	device(device){
-
-	vkGetDeviceQueue(device.device, transferFamily, 0, &transfer_queue);
-
-
-	VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
-	cmd_pool_info.queueFamilyIndex = transferFamily;
-	cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-
-	if (vkCreateCommandPool(device.device, &cmd_pool_info, nullptr, &transfer_queue_command_pool) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create graphics command pool!");
-	}
+TransferQueue::TransferQueue(VulkanDevice& device, CommandQueue& transferQueue) :
+	device(device),
+	transferQueue(transferQueue),
+	transferCommandPool(device, transferQueue, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)
+{
 }
 
 void TransferQueue::CleanUp() {
-	vkDestroyCommandPool(device.device, transfer_queue_command_pool, nullptr);
+	transferCommandPool.CleanUp();
 }
 
-VkDevice TransferQueue::GetDevice() {
-	return device.device;
-}
-VkCommandPool TransferQueue::GetCommandPool() {
-	return transfer_queue_command_pool;
+CommandPool& TransferQueue::GetCommandPool() {
+	return transferCommandPool;
 }
 
-std::mutex& TransferQueue::GetTransferMutex() {
-	return transferMutex;
-}
 
 
 VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
-	VkCommandBuffer buf;
-	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(transfer_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
-	{
-		std::lock_guard<std::mutex> lock(transferMutex);
-		vkAllocateCommandBuffers(device.device, &allocInfo, &buf);
-	}
-
-	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-
-	vkBeginCommandBuffer(buf, &beginInfo);
-	return buf;
+	return transferCommandPool.GetOneTimeUseCommandBuffer();
 }
 
-void WaitForSubmissionFinish(TransferQueue* queue, 
+void WaitForSubmissionFinish(VkDevice device, TransferQueue* queue, 
 	VkCommandBuffer buf, VkFence fence, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
 
-	vkWaitForFences(queue->GetDevice(), 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-	if (vkGetFenceStatus(queue->GetDevice(), fence) == VK_SUCCESS) {
+	vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+	if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
 		for (auto& sig : readySignal)
 			*sig = true;		
 	}
-	else if (vkGetFenceStatus(queue->GetDevice(), fence) == VK_NOT_READY) {
+	else if (vkGetFenceStatus(device, fence) == VK_NOT_READY) {
 		Log::Error << "Transfer exeeded maximum fence timeout! Is too much stuff happening?\n";
-		vkWaitForFences(queue->GetDevice(), 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-		if (vkGetFenceStatus(queue->GetDevice(), fence) == VK_SUCCESS) {
+		vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+		if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
 			for (auto& sig : readySignal)
 				*sig = true;
 		}
 	}
-	else if (vkGetFenceStatus(queue->GetDevice(), fence) == VK_ERROR_DEVICE_LOST){
+	else if (vkGetFenceStatus(device, fence) == VK_ERROR_DEVICE_LOST){
 		Log::Error << "AAAAAAAAAAAHHHHHHHHHHHHH EVERYTHING IS ONE FIRE\n";
 		throw std::runtime_error("Fence lost device!\n");
 	}
 
 
-	vkDestroyFence(queue->GetDevice(), fence, nullptr);
+	vkDestroyFence(device, fence, nullptr);
 
-	auto& transferLock = queue->GetTransferMutex();	
-	{
-		std::lock_guard<std::mutex> lock(transferLock);
-		vkFreeCommandBuffers(queue->GetDevice(), queue->GetCommandPool(), 1, &buf);
-	}
+	queue->GetCommandPool().FreeCommandBuffer(buf);
+	
 	for (auto& buffer : bufsToClean) {
 		buffer.CleanBuffer();
 	}
 }
 
 void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
-	vkEndCommandBuffer(buf);
-
-	VkSubmitInfo submitInfo = initializers::submitInfo();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &buf;
 
 	VkFence fence;
 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 
-	{
-		std::lock_guard<std::mutex> lock(transferMutex);
-		vkQueueSubmit(transfer_queue, 1, &submitInfo, fence);
-	}
+	transferCommandPool.SubmitOneTimeUseCommandBuffer(buf, fence);
 
-	std::thread submissionCompletion = std::thread(WaitForSubmissionFinish, this, buf, fence, readySignal, bufsToClean);
+	std::thread submissionCompletion = std::thread(WaitForSubmissionFinish, device.device, this, buf, fence, readySignal, bufsToClean);
 	submissionCompletion.detach();
 }
 
@@ -252,27 +225,17 @@ void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector
 }
 
 void TransferQueue::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
-	vkEndCommandBuffer(buf);
-
-	VkSubmitInfo submitInfo = initializers::submitInfo();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &buf;
 
 	VkFence fence;
 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 
-	{
-		std::lock_guard<std::mutex> lock(transferMutex);
-		vkQueueSubmit(transfer_queue, 1, &submitInfo, fence);
-	}
+	transferCommandPool.SubmitOneTimeUseCommandBuffer(buf, fence);
 
 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 	vkDestroyFence(device.device, fence, nullptr);
-	{
-		std::lock_guard<std::mutex> lock(transferMutex);
-		vkFreeCommandBuffers(device.device, transfer_queue_command_pool, 1, &buf);
-	}
+	
+	transferCommandPool.FreeCommandBuffer(buf);
 }
 
 
@@ -280,7 +243,11 @@ void TransferQueue::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
 
 
 
-VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(validationLayers)
+VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(validationLayers),
+	graphics_queue(*this),
+	compute_queue(*this),
+	transfer_queue(*this),
+	present_queue(*this)
 {
 
 }
@@ -315,28 +282,29 @@ void VulkanDevice::InitVulkanDevice(VkSurfaceKHR &surface)
 
 	CreateLogicalDevice();
 
-	//when the hardware doesn't have a separate transfer queue ( can't do asynchronous submissions)
 	if (familyIndices.graphicsFamily != familyIndices.transferFamily) {
-		transferQueue = std::make_unique<TransferQueue>(*this, familyIndices.transferFamily);
+		transferQueue = std::make_unique<TransferQueue>(*this, transfer_queue);
 		separateTransferQueue = true;
 	}
 	else
 		separateTransferQueue = false;
 	
+	//when the hardware doesn't have a separate transfer queue ( can't do asynchronous submissions)
+	
 	CreateQueues();
-	CreateCommandPools();
+	//CreateCommandPools();
 	CreateVulkanAllocator();
 }
 
 void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
 	vmaDestroyAllocator(allocator);
 
-	vkDestroyCommandPool(device, graphics_queue_command_pool, nullptr);
-	vkDestroyCommandPool(device, compute_queue_command_pool, nullptr);
-	if (!separateTransferQueue)
-		vkDestroyCommandPool(device, transfer_queue_command_pool, nullptr);
-	else
-		transferQueue->CleanUp();
+	//vkDestroyCommandPool(device, graphics_queue_command_pool, nullptr);
+	//vkDestroyCommandPool(device, compute_queue_command_pool, nullptr);
+	//if (!separateTransferQueue)
+	//	vkDestroyCommandPool(device, transfer_queue_command_pool, nullptr);
+	//else
+	transferQueue->CleanUp();
 
 
 	vkDestroyDevice(device, nullptr);
@@ -649,50 +617,75 @@ void VulkanDevice::CreateLogicalDevice() {
 }
 
 void VulkanDevice::CreateQueues() {
-	vkGetDeviceQueue(device, familyIndices.graphicsFamily, 0, &graphics_queue);
-	vkGetDeviceQueue(device, familyIndices.presentFamily, 0, &present_queue);
-	vkGetDeviceQueue(device, familyIndices.computeFamily, 0, &compute_queue);
+	graphics_queue.SetupQueue(familyIndices.graphicsFamily);
+	compute_queue.SetupQueue(familyIndices.computeFamily);
+	transfer_queue.SetupQueue(familyIndices.transferFamily);
+	present_queue.SetupQueue(familyIndices.presentFamily);
 
-	if (!separateTransferQueue)
-		vkGetDeviceQueue(device, familyIndices.transferFamily, 0, &transfer_queue);
+	//vkGetDeviceQueue(device, familyIndices.graphicsFamily, 0, &graphics_queue);
+	//vkGetDeviceQueue(device, familyIndices.presentFamily, 0, &present_queue);
+	//vkGetDeviceQueue(device, familyIndices.computeFamily, 0, &compute_queue);
+	//
+	//if (!separateTransferQueue)
+	//	vkGetDeviceQueue(device, familyIndices.transferFamily, 0, &transfer_queue);
 }
 
-void VulkanDevice::CreateCommandPools() {
-
-	// graphics_queue_command_pool
+CommandQueue& VulkanDevice::GetCommandQueue(CommandQueueType queueType) {
+	switch (queueType)
 	{
-		VkCommandPoolCreateInfo pool_info = initializers::commandPoolCreateInfo();
-		pool_info.queueFamilyIndex = familyIndices.graphicsFamily;
-		pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
-							 // hint the command pool will rerecord buffers by VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
-							 // allow buffers to be rerecorded individually by VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
-		if (vkCreateCommandPool(device, &pool_info, nullptr, &graphics_queue_command_pool) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create graphics command pool!");
-		}
-	}
-
-	// compute_queue_command_pool
-	{
-		VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
-		cmd_pool_info.queueFamilyIndex = familyIndices.computeFamily;
-		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-		if (vkCreateCommandPool(device, &cmd_pool_info, nullptr, &compute_queue_command_pool) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create graphics command pool!");
-		}
-	}
-
-	// transfer_queue_command_pool
-	if(!separateTransferQueue){
-		VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
-		cmd_pool_info.queueFamilyIndex = familyIndices.transferFamily;
-		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-
-		if (vkCreateCommandPool(device, &cmd_pool_info, nullptr, &transfer_queue_command_pool) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create graphics command pool!");
-		}
+	case VulkanDevice::CommandQueueType::graphics:
+		return graphics_queue;
+		
+	case VulkanDevice::CommandQueueType::compute:
+		return compute_queue;
+		
+	case VulkanDevice::CommandQueueType::transfer:
+		return transfer_queue;
+		
+	case VulkanDevice::CommandQueueType::present:
+		return present_queue;
+		
+	default:
+		break;
 	}
 }
+
+//void VulkanDevice::CreateCommandPools() {
+//
+//	// graphics_queue_command_pool
+//	{
+//		VkCommandPoolCreateInfo pool_info = initializers::commandPoolCreateInfo();
+//		pool_info.queueFamilyIndex = familyIndices.graphicsFamily;
+//		pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
+//							 // hint the command pool will rerecord buffers by VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
+//							 // allow buffers to be rerecorded individually by VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+//		if (vkCreateCommandPool(device, &pool_info, nullptr, &graphics_queue_command_pool) != VK_SUCCESS) {
+//			throw std::runtime_error("failed to create graphics command pool!");
+//		}
+//	}
+//
+//	// compute_queue_command_pool
+//	{
+//		VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
+//		cmd_pool_info.queueFamilyIndex = familyIndices.computeFamily;
+//		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+//
+//		if (vkCreateCommandPool(device, &cmd_pool_info, nullptr, &compute_queue_command_pool) != VK_SUCCESS) {
+//			throw std::runtime_error("failed to create graphics command pool!");
+//		}
+//	}
+//
+//	// transfer_queue_command_pool
+//	if(!separateTransferQueue){
+//		VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
+//		cmd_pool_info.queueFamilyIndex = familyIndices.transferFamily;
+//		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+//
+//		if (vkCreateCommandPool(device, &cmd_pool_info, nullptr, &transfer_queue_command_pool) != VK_SUCCESS) {
+//			throw std::runtime_error("failed to create graphics command pool!");
+//		}
+//	}
+//}
 
 
 void VulkanDevice::CreateVulkanAllocator()
@@ -921,150 +914,149 @@ uint32_t VulkanDevice::getMemoryType(uint32_t typeBits, VkMemoryPropertyFlags pr
 	}
 
 }
-
-VkCommandBuffer VulkanDevice::GetGraphicsCommandBuffer(){
-	VkCommandBufferAllocateInfo cmdBufAllocateInfo = 
-	initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
-
-	VkCommandBuffer cmdBuffer;
-	{
-		std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
-		VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &cmdBuffer));
-	}
-	// If requested, also start recording for the new command buffer
-
-	VkCommandBufferBeginInfo cmdBufInfo = initializers::commandBufferBeginInfo();
-	//{
-	//	std::lock_guard<std::mutex> lock(graphics_lock);
-		VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
-	//}
-
-	return cmdBuffer;
-}
-
-void VulkanDevice::SubmitGraphicsCommandBufferAndWait(VkCommandBuffer commandBuffer){
-	if (commandBuffer == VK_NULL_HANDLE)
-		return;
-
-	VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
-
-	VkSubmitInfo submitInfo = initializers::submitInfo();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
-
-	// Create fence to ensure that the command buffer has finished executing
-	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
-	VkFence fence;
-	VK_CHECK_RESULT(vkCreateFence(device, &fenceInfo, nullptr, &fence));
-
-	{
-		std::lock_guard<std::mutex> lock(graphics_lock);
-		VK_CHECK_RESULT(vkQueueSubmit(graphics_queue, 1, &submitInfo, fence));
-	}
-
-	VK_CHECK_RESULT(vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
-
-	vkDestroyFence(device, fence, nullptr);
-
-	if (free)
-	{
-		std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
-		vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &commandBuffer);
-	}
-}
-
-VkCommandBuffer VulkanDevice::GetSingleUseGraphicsCommandBuffer(){
-	VkCommandBuffer buf;
-	VkCommandBufferAllocateInfo allocInfo = 
-		initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
-
-	{
-		std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
-		vkAllocateCommandBuffers(device, &allocInfo, &buf);
-	}
-
-	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-	vkBeginCommandBuffer(buf, &beginInfo);
-	return buf;
-}
-
-VkCommandBuffer VulkanDevice::GetTransferCommandBuffer() {
-	if (separateTransferQueue) {
-		return transferQueue->GetTransferCommandBuffer();
-	}
-	else {
-		VkCommandBuffer buf;
-		VkCommandBufferAllocateInfo allocInfo = 
-			initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
-
-		{
-			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
-			vkAllocateCommandBuffers(device, &allocInfo, &buf);
-		}
-
-		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-		vkBeginCommandBuffer(buf, &beginInfo);
-		return buf;
-
-	}
-}
-
-void VulkanDevice::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
-	if (separateTransferQueue) {
-		transferQueue->SubmitTransferCommandBufferAndWait(buf);
-	}
-	else {
-		vkEndCommandBuffer(buf);
-
-		VkSubmitInfo submitInfo = initializers::submitInfo();
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &buf;
-
-		{
-			std::lock_guard<std::mutex> lock(graphics_lock);
-
-			vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
-		}
-
-		vkQueueWaitIdle(graphics_queue);
-		{
-			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
-			vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
-		}
-	}
-}
-
-void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf,
-	std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
-	if (separateTransferQueue) {
-		transferQueue->SubmitTransferCommandBuffer(buf, readySignal, bufsToClean);
-	}
-	else {
-		vkEndCommandBuffer(buf);
-
-		VkSubmitInfo submitInfo = initializers::submitInfo();
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &buf;
-
-		vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(graphics_queue);
-
-		for (auto& buffer : bufsToClean) {
-			buffer.CleanBuffer();
-		}
-		{
-			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
-			vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
-		}
-		for (auto& sig : readySignal)
-			*sig = true;
-	}
-}
-
-void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
-	SubmitTransferCommandBuffer(buf, readySignal, {});
-}
+//
+//VkCommandBuffer VulkanDevice::GetGraphicsCommandBuffer(){
+//	VkCommandBufferAllocateInfo cmdBufAllocateInfo = 
+//	initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+//
+//	VkCommandBuffer cmdBuffer;
+//	{
+//		std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+//		VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &cmdBuffer));
+//	}
+//	// If requested, also start recording for the new command buffer
+//
+//	VkCommandBufferBeginInfo cmdBufInfo = initializers::commandBufferBeginInfo();
+//	//{
+//	//	std::lock_guard<std::mutex> lock(graphics_lock);
+//		VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
+//	//}
+//
+//	return cmdBuffer;
+//}
+//
+//void VulkanDevice::SubmitGraphicsCommandBufferAndWait(VkCommandBuffer commandBuffer){
+//	if (commandBuffer == VK_NULL_HANDLE)
+//		return;
+//
+//	VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
+//
+//	VkSubmitInfo submitInfo = initializers::submitInfo();
+//	submitInfo.commandBufferCount = 1;
+//	submitInfo.pCommandBuffers = &commandBuffer;
+//
+//	// Create fence to ensure that the command buffer has finished executing
+//	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+//	VkFence fence;
+//	VK_CHECK_RESULT(vkCreateFence(device, &fenceInfo, nullptr, &fence));
+//
+//	{
+//		std::lock_guard<std::mutex> lock(graphics_lock);
+//		VK_CHECK_RESULT(vkQueueSubmit(graphics_queue, 1, &submitInfo, fence));
+//	}
+//
+//	VK_CHECK_RESULT(vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
+//
+//	vkDestroyFence(device, fence, nullptr);
+//
+//	{
+//		std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+//		vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &commandBuffer);
+//	}
+//}
+//
+//VkCommandBuffer VulkanDevice::GetSingleUseGraphicsCommandBuffer(){
+//	VkCommandBuffer buf;
+//	VkCommandBufferAllocateInfo allocInfo = 
+//		initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+//
+//	{
+//		std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+//		vkAllocateCommandBuffers(device, &allocInfo, &buf);
+//	}
+//
+//	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
+//	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+//
+//	vkBeginCommandBuffer(buf, &beginInfo);
+//	return buf;
+//}
+//
+//VkCommandBuffer VulkanDevice::GetTransferCommandBuffer() {
+//	if (separateTransferQueue) {
+//		return transferQueue->GetTransferCommandBuffer();
+//	}
+//	else {
+//		VkCommandBuffer buf;
+//		VkCommandBufferAllocateInfo allocInfo = 
+//			initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+//
+//		{
+//			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+//			vkAllocateCommandBuffers(device, &allocInfo, &buf);
+//		}
+//
+//		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
+//		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+//
+//		vkBeginCommandBuffer(buf, &beginInfo);
+//		return buf;
+//
+//	}
+//}
+//
+//void VulkanDevice::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
+//	if (separateTransferQueue) {
+//		transferQueue->SubmitTransferCommandBufferAndWait(buf);
+//	}
+//	else {
+//		vkEndCommandBuffer(buf);
+//
+//		VkSubmitInfo submitInfo = initializers::submitInfo();
+//		submitInfo.commandBufferCount = 1;
+//		submitInfo.pCommandBuffers = &buf;
+//
+//		{
+//			std::lock_guard<std::mutex> lock(graphics_lock);
+//
+//			vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+//		}
+//
+//		vkQueueWaitIdle(graphics_queue);
+//		{
+//			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+//			vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
+//		}
+//	}
+//}
+//
+//void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf,
+//	std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
+//	if (separateTransferQueue) {
+//		transferQueue->SubmitTransferCommandBuffer(buf, readySignal, bufsToClean);
+//	}
+//	else {
+//		vkEndCommandBuffer(buf);
+//
+//		VkSubmitInfo submitInfo = initializers::submitInfo();
+//		submitInfo.commandBufferCount = 1;
+//		submitInfo.pCommandBuffers = &buf;
+//
+//		vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+//		vkQueueWaitIdle(graphics_queue);
+//
+//		for (auto& buffer : bufsToClean) {
+//			buffer.CleanBuffer();
+//		}
+//		{
+//			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+//			vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
+//		}
+//		for (auto& sig : readySignal)
+//			*sig = true;
+//	}
+//}
+//
+//void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
+//	SubmitTransferCommandBuffer(buf, readySignal, {});
+//}

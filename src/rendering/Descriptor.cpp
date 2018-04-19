@@ -121,9 +121,8 @@ DescriptorSet VulkanDescriptor::CreateDescriptorSet() {
 void VulkanDescriptor::UpdateDescriptorSet(DescriptorSet set, std::vector<DescriptorUse> descriptors) {
 
 	std::vector<VkWriteDescriptorSet> writes;
-	for (int i = 0; i < descriptors.size(); i++) {
-		//VkWriteDescriptorSet w = descriptors.at(i).GetWriteDescriptorSet(set.set);
-		writes.push_back(descriptors.at(i).GetWriteDescriptorSet(set.set));
+	for (auto& descriptor : descriptors) {
+		writes.push_back(descriptor.GetWriteDescriptorSet(set.set));
 	}
 
 	vkUpdateDescriptorSets(device.device,

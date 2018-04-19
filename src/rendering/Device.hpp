@@ -7,7 +7,7 @@
 #include <mutex>
 
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan.hpp>
+//#include <vulkan/vulkan.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -51,26 +51,18 @@ struct VmaImage {
 class VulkanDevice;
 class VulkanBuffer;
 
-class CommandBuffer {
-public:
-	CommandBuffer(VulkanDevice& device);
-	VkCommandBuffer* GetCommandBuffer();
-
-	void BeginBufferRecording(VkCommandBufferUsageFlagBits flags = (VkCommandBufferUsageFlagBits)(0));
-	void EndBufferRecording();
-
-	void ResetBuffer(VkCommandBufferResetFlags flags);
-private:
-	VulkanDevice& device;
-	VkCommandBuffer buf;
-};
-
 class CommandQueue {
 public:
-	CommandQueue(VulkanDevice& device, uint32_t queueFamily);
-	void SubmitCommandBuffer(CommandBuffer buf, VkFence fence);
+	CommandQueue(VulkanDevice& device);
+	void SetupQueue(uint32_t queueFamily);
+
+	void Submit(VkSubmitInfo info, VkFence fence);
+	void SubmitCommandBuffer(VkCommandBuffer buf, VkFence fence,
+		std::vector<VkSemaphore> semaphore = std::vector<VkSemaphore>(), 
+		std::vector<VkSemaphore> signalSemaphores = std::vector<VkSemaphore>());
 
 	uint32_t GetQueueFamily();
+	VkQueue GetQueue();
 private:
 	VulkanDevice& device;
 	std::mutex submissionMutex;
@@ -83,16 +75,20 @@ public:
 	CommandPool(VulkanDevice& device, CommandQueue& queue, VkCommandPoolCreateFlags flags);
 	VkBool32 CleanUp();
 
-	CommandBuffer GetOneTimeUseCommandBuffer(int count);
-	CommandBuffer GetPrimaryCommandBuffer(int count);
-	CommandBuffer GetSecondaryCommandBuffer(int count);
+	VkBool32 ResetPool();
 
-	void AllocateCommandBuffer(CommandBuffer buf, VkCommandBufferLevel);
-	void FreeCommandBuffer(CommandBuffer buf);
+	VkCommandBuffer GetOneTimeUseCommandBuffer();
+	VkCommandBuffer GetPrimaryCommandBuffer();
+	VkCommandBuffer GetSecondaryCommandBuffer();
 
-	VkBool32 SubmitOneTimeUseCommandBuffer(CommandBuffer cmdBuffer, VkFence fence);
-	VkBool32 SubmitPrimaryCommandBuffer(CommandBuffer buf, VkFence fence);
-	VkBool32 SubmitSecondaryCommandBuffer(CommandBuffer buf, VkFence fence);
+	VkBool32 SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence = nullptr);
+	VkBool32 SubmitPrimaryCommandBuffer(VkCommandBuffer buf, VkFence fence = nullptr);
+	VkBool32 SubmitSecondaryCommandBuffer(VkCommandBuffer buf, VkFence fence = nullptr);
+
+	VkCommandBuffer AllocateCommandBuffer(VkCommandBufferLevel level);
+	void BeginBufferRecording(VkCommandBuffer buf, VkCommandBufferUsageFlagBits flags = (VkCommandBufferUsageFlagBits)(0));
+	void EndBufferRecording(VkCommandBuffer buf);
+	void FreeCommandBuffer(VkCommandBuffer buf);
 
 private:
 	VulkanDevice& device;
@@ -100,17 +96,17 @@ private:
 	VkCommandPool commandPool;
 	CommandQueue& queue;
 
-	std::vector<CommandBuffer> cmdBuffers;
+	//std::vector<VkCommandBuffer> cmdBuffers;
 };
 
-class TransferQueue {
+
+class NotTransferQueue {
 public:
-	TransferQueue(VulkanDevice& device, uint32_t transferFamily);
+	NotTransferQueue(VulkanDevice& device, CommandQueue& transferQueue);
 	void CleanUp();
 
-	VkDevice GetDevice();
-	VkCommandPool GetCommandPool();
-	std::mutex& GetTransferMutex();
+	CommandPool& GetCommandPool();
+	//std::mutex& GetTransferMutex();
 
 	VkCommandBuffer GetTransferCommandBuffer();
 	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
@@ -119,9 +115,11 @@ public:
 
 private:
 	VulkanDevice& device;
-	VkQueue transfer_queue;
-	VkCommandPool transfer_queue_command_pool;
-	std::mutex transferMutex;
+	CommandQueue& transferQueue;
+	//VkQueue transfer_queue;
+	CommandPool transferCommandPool;
+	//VkCommandPool transfer_queue_command_pool;
+	//std::mutex transferMutex;
 };
 
 class VulkanDevice {
@@ -136,16 +134,26 @@ public:
 
 	VkPhysicalDevice physical_device;
 
-	std::mutex graphics_lock;
-	std::mutex graphics_command_pool_lock;
+	//CommandQueue graphics_queue;
+	//CommandQueue compute_queue;
+	//CommandQueue present_queue;
+	//
+	//CommandPool graphics_command_pool;
 
-	VkQueue graphics_queue;
-	VkQueue compute_queue;
-	VkQueue present_queue;
-	
-	VkCommandPool graphics_queue_command_pool;
-	VkCommandPool compute_queue_command_pool;
+	//std::mutex graphics_lock;
+	//std::mutex graphics_command_pool_lock;
 
+	enum class CommandQueueType {
+		graphics,
+		compute,
+		transfer,
+		present
+	};
+
+	CommandQueue graphics_queue;
+	CommandQueue compute_queue;
+	CommandQueue transfer_queue;
+	CommandQueue present_queue;
 
 	VkPhysicalDeviceProperties physical_device_properties;
 	VkPhysicalDeviceFeatures physical_device_features;
@@ -153,8 +161,8 @@ public:
 
 	VmaAllocator allocator;
 
-	VkMemoryPropertyFlags uniformBufferMemPropertyFlags = 
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	//VkMemoryPropertyFlags uniformBufferMemPropertyFlags = 
+	//	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
 	VulkanDevice(bool validationLayers);
 
@@ -165,6 +173,8 @@ public:
 	void Cleanup(VkSurfaceKHR &surface);
 
 	const QueueFamilyIndices GetFamilyIndices() const;
+
+	CommandQueue& GetCommandQueue(CommandQueueType queueType);
 
 	void VmaMapMemory(VmaBuffer& buffer, void** pData);
 	void VmaUnmapMemory(VmaBuffer& buffer);
@@ -191,15 +201,15 @@ public:
 
 	void DestroyVmaAllocatedImage(VmaImage& image);
 
-	VkCommandBuffer GetGraphicsCommandBuffer();
-	VkCommandBuffer GetSingleUseGraphicsCommandBuffer();
-	void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);
+	//VkCommandBuffer GetGraphicsCommandBuffer();
+	//VkCommandBuffer GetSingleUseGraphicsCommandBuffer();
+	//void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);
 
-	VkCommandBuffer GetTransferCommandBuffer();
+	//VkCommandBuffer GetTransferCommandBuffer();
 
-	void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
-	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
-	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
+	//void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
+	//void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
+	//void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
 
 
 	/**
@@ -223,12 +233,7 @@ private:
 	bool separateTransferQueue = false;
 
 
-	//Non separate transfer queue (no threads where they don't help)
-	VkQueue transfer_queue;
-	VkCommandPool transfer_queue_command_pool;
-	VkCommandBuffer dmaCmdBuf;
-
-	std::unique_ptr<TransferQueue> transferQueue;
+	//std::unique_ptr<TransferQueue> transferQueue;
 
 	void createInstance(std::string appName);
 
@@ -246,7 +251,7 @@ private:
 
 	void CreateLogicalDevice();
 	void CreateQueues();
-	void CreateCommandPools();
+	//void CreateCommandPools();
 
 	void CreateVulkanAllocator();
 
