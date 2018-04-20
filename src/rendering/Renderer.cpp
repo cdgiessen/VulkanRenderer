@@ -647,7 +647,7 @@ VkCommandBuffer VulkanRenderer::GetTransferCommandBuffer() {
 	}
 }
 
-void WaitForSubmissionFinish(VkDevice device, TransferQueue* queue,
+void WaitForSubmissionFinish(VkDevice device, CommandPool* pool,
 	VkCommandBuffer buf, VkFence fence, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
 
 	vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
@@ -671,7 +671,7 @@ void WaitForSubmissionFinish(VkDevice device, TransferQueue* queue,
 
 	vkDestroyFence(device, fence, nullptr);
 
-	queue->GetCommandPool().FreeCommandBuffer(buf);
+	pool->FreeCommandBuffer(buf);
 
 	for (auto& buffer : bufsToClean) {
 		buffer.CleanBuffer();
