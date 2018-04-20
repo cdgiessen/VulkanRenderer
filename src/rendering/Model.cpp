@@ -1,5 +1,7 @@
 #include "Model.hpp"
 
+#include "Renderer.hpp"
+
 VulkanModel::VulkanModel(VulkanDevice &device): device(device),
 vmaVertices(device), vmaIndicies(device)
 {
@@ -7,7 +9,7 @@ vmaVertices(device), vmaIndicies(device)
 }
 
 bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh, 
-	VkCommandBuffer copyCmd) {
+	VulkanRenderer& renderer) {
 
 	std::vector<float> vertexBuffer;
 	std::vector<uint32_t> indexBuffer;
@@ -92,13 +94,15 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 
 	VkBufferCopy copyRegion{};
 
+	VkCommandBuffer copyCmd = renderer.GetTransferCommandBuffer();
+
 	copyRegion.size = vBufferSize;
 	vkCmdCopyBuffer(copyCmd, vertexStagingBuffer.buffer.buffer, vmaVertices.buffer.buffer, 1, &copyRegion);
 
 	copyRegion.size = iBufferSize;
 	vkCmdCopyBuffer(copyCmd, indexStagingBuffer.buffer.buffer, vmaIndicies.buffer.buffer, 1, &copyRegion);
 
-	device.SubmitTransferCommandBufferAndWait(copyCmd);
+	renderer.SubmitTransferCommandBufferAndWait(copyCmd);
 
 	vertexStagingBuffer.CleanBuffer();
 	indexStagingBuffer.CleanBuffer();

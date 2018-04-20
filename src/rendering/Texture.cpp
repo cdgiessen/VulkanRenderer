@@ -6,6 +6,7 @@
 
 #include "RenderTools.h"
 #include "Initializers.hpp"
+#include "Renderer.hpp"
 
 #include "../core/Logger.h"
 
@@ -42,10 +43,17 @@ void VulkanTexture::destroy() {
 	
 }
 
-void VulkanTexture::GenerateMipMaps(VkImage image, int width, int height, int depth, int layers, int mipLevels) {
+void VulkanTexture::GenerateMipMaps(
+	VulkanRenderer& renderer,
+	VkImage image, 
+	int width, 
+	int height, 
+	int depth, 
+	int layers, 
+	int mipLevels) {
 	// We copy down the whole mip chain doing a blit from mip-1 to mip
 	// An alternative way would be to always blit from the first mip level and sample that one down
-	VkCommandBuffer blitCmd = device.GetGraphicsCommandBuffer();
+	VkCommandBuffer blitCmd = renderer.GetSingleUseGraphicsCommandBuffer();
 
 	// Copy down mips from n-1 to n
 	for (int32_t i = 1; i < mipLevels; i++)
@@ -119,7 +127,7 @@ void VulkanTexture::GenerateMipMaps(VkImage image, int width, int height, int de
 		textureImageLayout,
 		subresourceRange);
 
-	device.SubmitGraphicsCommandBufferAndWait(blitCmd);
+	renderer.SubmitGraphicsCommandBufferAndWait(blitCmd);
 
 }
 
@@ -195,7 +203,7 @@ void AlignedTextureMemcpy(int layers, int dst_layer_width,
 void VulkanTexture2D::loadFromTexture(
 	std::shared_ptr<Texture> texture,
 	VkFormat format,	
-	VkCommandBuffer transferCmdBuf,
+	VulkanRenderer& renderer,
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout,
 	bool forceLinear,
@@ -267,6 +275,8 @@ void VulkanTexture2D::loadFromTexture(
 
 	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels); {};
 
+	VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
+
 	setImageLayout(
 		transferCmdBuf,
 		image.image,
@@ -321,12 +331,12 @@ void VulkanTexture2D::loadFromTexture(
 
 	this->textureImageLayout = imageLayout;
 
-	device.SubmitTransferCommandBufferAndWait(transferCmdBuf);
+	renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
 
 	device.DestroyVmaAllocatedImage(stagingImage);
 
 
-	GenerateMipMaps(image.image, texture->width, texture->height, 1, 1, mipLevels);
+	GenerateMipMaps(renderer, image.image, texture->width, texture->height, 1, 1, mipLevels);
 
 	// With mip mapping and anisotropic filtering
 	if (device.physical_device_features.samplerAnisotropy)
@@ -383,7 +393,7 @@ void VulkanTexture2D::loadFromTexture(
 void VulkanTexture2DArray::loadTextureArray(
 	std::shared_ptr<TextureArray> textures,
 	VkFormat format,
-	VkCommandBuffer transferCmdBuf,
+	VulkanRenderer& renderer,
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout,
 	bool genMipMaps,
@@ -458,7 +468,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	
 	
 	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, textures->layerCount);
-
+	VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
 	setImageLayout(
 		transferCmdBuf,
 		image.image,
@@ -490,11 +500,11 @@ void VulkanTexture2DArray::loadTextureArray(
 		subresourceRange);
 
 	this->textureImageLayout = imageLayout;
-	device.SubmitTransferCommandBufferAndWait(transferCmdBuf);
+	renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
 
 	device.DestroyVmaAllocatedImage(stagingImage);
 
-	GenerateMipMaps(image.image, textures->width, textures->height, 1, textures->layerCount, mipLevels);
+	GenerateMipMaps(renderer, image.image, textures->width, textures->height, 1, textures->layerCount, mipLevels);
 
 	textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR,
 		VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, mipLevels,
@@ -524,8 +534,7 @@ void VulkanTexture2DArray::loadTextureArray(
 void VulkanCubeMap::loadFromTexture(
 	std::shared_ptr<CubeMap> cubeMap,
 	VkFormat format,
-	VkCommandBuffer transferCmdBuf,
-	
+	VulkanRenderer& renderer,	
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout,
 	bool genMipMaps,
@@ -626,6 +635,8 @@ void VulkanCubeMap::loadFromTexture(
 	
 	imageCopyRegion.extent = imageExtent;
 	
+	VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
+
 	setImageLayout(
 		transferCmdBuf,
 		image.image,
@@ -657,7 +668,7 @@ void VulkanCubeMap::loadFromTexture(
 		subresourceRange);
 
 	this->textureImageLayout = imageLayout;
-	device.SubmitTransferCommandBufferAndWait(transferCmdBuf);
+	renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
 
 	device.DestroyVmaAllocatedImage(stagingImage);
 
@@ -686,7 +697,7 @@ void VulkanCubeMap::loadFromTexture(
 	
 }
 
-void VulkanTextureDepthBuffer::CreateDepthImage(VkFormat depthFormat, int width, int height) {
+void VulkanTextureDepthBuffer::CreateDepthImage(VulkanRenderer& renderer, VkFormat depthFormat, int width, int height) {
 
 	VkImageCreateInfo imageInfo = initializers::imageCreateInfo(
 		VK_IMAGE_TYPE_2D, depthFormat, 1, 1, 
@@ -704,11 +715,11 @@ void VulkanTextureDepthBuffer::CreateDepthImage(VkFormat depthFormat, int width,
 
 	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-	VkCommandBuffer copyBuf = device.GetGraphicsCommandBuffer();
+	VkCommandBuffer copyBuf = renderer.GetTransferCommandBuffer();
 
 	setImageLayout(copyBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, subresourceRange);
 
-	device.SubmitGraphicsCommandBufferAndWait(copyBuf);
+	renderer.SubmitGraphicsCommandBufferAndWait(copyBuf);
 }
 	
 VulkanTextureManager::VulkanTextureManager(VulkanDevice& device) : device(device)
@@ -725,7 +736,7 @@ VulkanTextureManager::~VulkanTextureManager()
 std::shared_ptr<VulkanTexture2D> VulkanTextureManager::CreateTexture2D(
 	std::shared_ptr<Texture> texture,
 	VkFormat format,
-	VkCommandBuffer transferBuf,
+	VulkanRenderer& renderer,
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout,
 	bool forceLinear,
@@ -738,7 +749,7 @@ std::shared_ptr<VulkanTexture2D> VulkanTextureManager::CreateTexture2D(
 std::shared_ptr<VulkanTexture2DArray> VulkanTextureManager::CreateTexture2DArray(
 	std::shared_ptr<TextureArray> textures,
 	VkFormat format,
-	VkCommandBuffer transferBuf,
+	VulkanRenderer& renderer,
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout,
 	bool genMipMaps,
@@ -749,7 +760,7 @@ std::shared_ptr<VulkanTexture2DArray> VulkanTextureManager::CreateTexture2DArray
 std::shared_ptr<VulkanCubeMap> VulkanTextureManager::CreateCubeMap(
 	std::shared_ptr<CubeMap> cubeMap,
 	VkFormat format,
-	VkCommandBuffer transferBuf,
+	VulkanRenderer& renderer,
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout,
 	bool genMipMaps,
@@ -757,6 +768,6 @@ std::shared_ptr<VulkanCubeMap> VulkanTextureManager::CreateCubeMap(
 	return std::make_shared<VulkanCubeMap>(device);
 }
 std::shared_ptr<VulkanTextureDepthBuffer> VulkanTextureManager::CreateDepthImage(
-	VkFormat depthFormat, int width, int height) {
+	VulkanRenderer& renderer, VkFormat depthFormat, int width, int height) {
 	return std::make_shared<VulkanTextureDepthBuffer>(device);
 }

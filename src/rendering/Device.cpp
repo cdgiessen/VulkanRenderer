@@ -17,8 +17,8 @@ void CommandQueue::SetupQueue(uint32_t queueFamily) {
 }
 
 void CommandQueue::SubmitCommandBuffer(VkCommandBuffer buffer, VkFence fence,
-	std::vector<VkSemaphore> waitSemaphores = std::vector<VkSemaphore>(),
-	std::vector<VkSemaphore> signalSemaphores = std::vector<VkSemaphore>())
+	std::vector<VkSemaphore> waitSemaphores,
+	std::vector<VkSemaphore> signalSemaphores)
 {
 	Submit(initializers::submitInfo(
 		{ buffer }, waitSemaphores, { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT }, signalSemaphores), fence);
@@ -38,8 +38,11 @@ VkQueue CommandQueue::GetQueue() {
 	return queue;
 }
 
+void CommandQueue::WaitForFences(VkFence fence) {
+	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+}
 
-CommandPool::CommandPool(VulkanDevice& device, CommandQueue& queue, VkCommandPoolCreateFlags flags):
+CommandPool::CommandPool(VulkanDevice& device, CommandQueue& queue, VkCommandPoolCreateFlagBits flags):
 	device(device), queue(queue)
 {
 
@@ -155,88 +158,88 @@ VkBool32 CommandPool::SubmitSecondaryCommandBuffer(VkCommandBuffer cmdBuffer, Vk
 
 
 
-TransferQueue::TransferQueue(VulkanDevice& device, CommandQueue& transferQueue) :
-	device(device),
-	transferQueue(transferQueue),
-	transferCommandPool(device, transferQueue, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)
-{
-}
+// TransferQueue::TransferQueue(VulkanDevice& device, CommandQueue& transferQueue) :
+// 	device(device),
+// 	transferQueue(transferQueue),
+// 	transferCommandPool(device, transferQueue, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)
+// {
+// }
 
-void TransferQueue::CleanUp() {
-	transferCommandPool.CleanUp();
-}
+// void TransferQueue::CleanUp() {
+// 	transferCommandPool.CleanUp();
+// }
 
-CommandPool& TransferQueue::GetCommandPool() {
-	return transferCommandPool;
-}
-
-
-
-VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
-
-	return transferCommandPool.GetOneTimeUseCommandBuffer();
-}
-
-void WaitForSubmissionFinish(VkDevice device, TransferQueue* queue, 
-	VkCommandBuffer buf, VkFence fence, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
-
-	vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-	if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
-		for (auto& sig : readySignal)
-			*sig = true;		
-	}
-	else if (vkGetFenceStatus(device, fence) == VK_NOT_READY) {
-		Log::Error << "Transfer exeeded maximum fence timeout! Is too much stuff happening?\n";
-		vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-		if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
-			for (auto& sig : readySignal)
-				*sig = true;
-		}
-	}
-	else if (vkGetFenceStatus(device, fence) == VK_ERROR_DEVICE_LOST){
-		Log::Error << "AAAAAAAAAAAHHHHHHHHHHHHH EVERYTHING IS ONE FIRE\n";
-		throw std::runtime_error("Fence lost device!\n");
-	}
+// CommandPool& TransferQueue::GetCommandPool() {
+// 	return transferCommandPool;
+// }
 
 
-	vkDestroyFence(device, fence, nullptr);
 
-	queue->GetCommandPool().FreeCommandBuffer(buf);
+// VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
+
+// 	return transferCommandPool.GetOneTimeUseCommandBuffer();
+// }
+
+// void WaitForSubmissionFinish(VkDevice device, TransferQueue* queue, 
+// 	VkCommandBuffer buf, VkFence fence, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
+
+// 	vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+// 	if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
+// 		for (auto& sig : readySignal)
+// 			*sig = true;		
+// 	}
+// 	else if (vkGetFenceStatus(device, fence) == VK_NOT_READY) {
+// 		Log::Error << "Transfer exeeded maximum fence timeout! Is too much stuff happening?\n";
+// 		vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+// 		if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
+// 			for (auto& sig : readySignal)
+// 				*sig = true;
+// 		}
+// 	}
+// 	else if (vkGetFenceStatus(device, fence) == VK_ERROR_DEVICE_LOST){
+// 		Log::Error << "AAAAAAAAAAAHHHHHHHHHHHHH EVERYTHING IS ONE FIRE\n";
+// 		throw std::runtime_error("Fence lost device!\n");
+// 	}
+
+
+// 	vkDestroyFence(device, fence, nullptr);
+
+// 	queue->GetCommandPool().FreeCommandBuffer(buf);
 	
-	for (auto& buffer : bufsToClean) {
-		buffer.CleanBuffer();
-	}
-}
+// 	for (auto& buffer : bufsToClean) {
+// 		buffer.CleanBuffer();
+// 	}
+// }
 
-void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
+// void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
 
-	VkFence fence;
-	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
-	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+// 	VkFence fence;
+// 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+// 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 
-	transferCommandPool.SubmitOneTimeUseCommandBuffer(buf, fence);
+// 	transferCommandPool.SubmitOneTimeUseCommandBuffer(buf, fence);
 
-	std::thread submissionCompletion = std::thread(WaitForSubmissionFinish, device.device, this, buf, fence, readySignal, bufsToClean);
-	submissionCompletion.detach();
-}
+// 	std::thread submissionCompletion = std::thread(WaitForSubmissionFinish, device.device, this, buf, fence, readySignal, bufsToClean);
+// 	submissionCompletion.detach();
+// }
 
-void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
-	SubmitTransferCommandBuffer(buf, readySignal, {});
-}
+// void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
+// 	SubmitTransferCommandBuffer(buf, readySignal, {});
+// }
 
-void TransferQueue::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
+// void TransferQueue::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
 
-	VkFence fence;
-	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
-	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+// 	VkFence fence;
+// 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+// 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 
-	transferCommandPool.SubmitOneTimeUseCommandBuffer(buf, fence);
+// 	transferCommandPool.SubmitOneTimeUseCommandBuffer(buf, fence);
 
-	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-	vkDestroyFence(device.device, fence, nullptr);
+// 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+// 	vkDestroyFence(device.device, fence, nullptr);
 	
-	transferCommandPool.FreeCommandBuffer(buf);
-}
+// 	transferCommandPool.FreeCommandBuffer(buf);
+// }
 
 
 
@@ -283,7 +286,7 @@ void VulkanDevice::InitVulkanDevice(VkSurfaceKHR &surface)
 	CreateLogicalDevice();
 
 	if (familyIndices.graphicsFamily != familyIndices.transferFamily) {
-		transferQueue = std::make_unique<TransferQueue>(*this, transfer_queue);
+		//transferQueue = std::make_unique<TransferQueue>(*this, transfer_queue);
 		separateTransferQueue = true;
 	}
 	else
@@ -304,7 +307,7 @@ void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
 	//if (!separateTransferQueue)
 	//	vkDestroyCommandPool(device, transfer_queue_command_pool, nullptr);
 	//else
-	transferQueue->CleanUp();
+	//transferQueue->CleanUp();
 
 
 	vkDestroyDevice(device, nullptr);

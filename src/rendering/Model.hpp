@@ -12,6 +12,7 @@
 #include "../resources/Mesh.h"
 #include "../core/CoreTools.h"
 
+class VulkanRenderer;
 
 class VulkanModel {
 private:
@@ -38,7 +39,7 @@ public:
 	};
 	std::vector<ModelPart> parts;
 
-	bool loadFromMesh(std::shared_ptr<Mesh> mesh, VkCommandBuffer transferBuf);
+	bool loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanRenderer& renderer);
 
 	/**
 	* Loads a 3D model from a file into Vulkan buffers

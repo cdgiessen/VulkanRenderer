@@ -21,9 +21,13 @@ VulkanRenderer::VulkanRenderer(bool validationLayer, std::shared_ptr<Scene> scen
 	pointLightsBuffer(device),
 	spotLightsBuffer(device),
 	entityPositions(device),
-	graphicsPrimaryCommandPool(device, device.GetCommandQueue(VulkanDevice::CommandQueueType::graphics), 
+	graphicsPrimaryCommandPool(device, device.graphics_queue, 
 		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
-	singleUseGraphicsCommandPool(device, device.GetCommandQueue(VulkanDevice::CommandQueueType::graphics),
+	singleUseGraphicsCommandPool(device, device.graphics_queue,
+		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+	transferCommandPool(device, device.transfer_queue, 
+		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+	computeCommandPool(device, device.compute_queue, 
 		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
 {
 }
@@ -89,6 +93,8 @@ void VulkanRenderer::CleanVulkanResources() {
 		descriptor->CleanUpResources();
 
 	depthBuffer->destroy();
+
+
 
 	vkDestroyRenderPass(device.device, renderPass, nullptr);
 	vulkanSwapChain.CleanUp();
@@ -195,7 +201,7 @@ void VulkanRenderer::CreateDepthResources() {
 	VkFormat depthFormat = FindDepthFormat();
 	depthFormat = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
 	depthBuffer = std::make_shared<VulkanTextureDepthBuffer>(device);
-	depthBuffer->CreateDepthImage(depthFormat, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+	depthBuffer->CreateDepthImage(*this, depthFormat, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 }
 
 VkFormat VulkanRenderer::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
@@ -397,7 +403,7 @@ void VulkanRenderer::SubmitFrame()
 	presentInfo.pImageIndices = &frameIndex;
 	VkResult result;
 	{
-		std::lock_guard<std::mutex> lock(device.graphics_lock);
+		std::lock_guard<std::mutex> lock(presentMutex);
 		result = vkQueuePresentKHR(device.present_queue.GetQueue(), &presentInfo);
 	}
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
@@ -567,6 +573,8 @@ void VulkanRenderer::SubmitGraphicsCommandBufferAndWait(VkCommandBuffer commandB
 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence));
 	graphicsPrimaryCommandPool.SubmitPrimaryCommandBuffer(commandBuffer, fence);
 	
+	device.GetCommandQueue(VulkanDevice::CommandQueueType::graphics).WaitForFences(fence);
+
 	vkDestroyFence(device.device, fence, nullptr);
 	graphicsPrimaryCommandPool.FreeCommandBuffer(commandBuffer);
 	//if (commandBuffer == VK_NULL_HANDLE)
@@ -617,15 +625,11 @@ VkCommandBuffer VulkanRenderer::GetSingleUseGraphicsCommandBuffer() {
 	return buf;*/
 }
 
-VkCommandBuffer VulkanRenderer::GetTransferCommandBuffer() {
+VkCommandBuffer VulkanRenderer::GetTransferCommandBuffer(){
 
-
-
-
-
-
-	if (separateTransferQueue) {
-		return transferQueue->GetTransferCommandBuffer();
+	if (device.separateTransferQueue) {
+		return transferCommandPool.GetOneTimeUseCommandBuffer();
+		//return GetTransferCommandBuffer();
 	}
 	else {
 		graphicsPrimaryCommandPool.GetOneTimeUseCommandBuffer();
@@ -679,12 +683,22 @@ void WaitForSubmissionFinish(VkDevice device, CommandPool* pool,
 }
 
 void VulkanRenderer::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
-	if (separateTransferQueue) {
-		transferQueue->SubmitTransferCommandBufferAndWait(buf);
+	if (device.separateTransferQueue) {
+		//transferQueue->SubmitTransferCommandBufferAndWait(buf);
+
+		VkFence fence;
+		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+
+		transferCommandPool.SubmitOneTimeUseCommandBuffer(buf, fence);
+
+		vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+		vkDestroyFence(device.device, fence, nullptr);
+
+		transferCommandPool.FreeCommandBuffer(buf);
 	}
 	else {
 		SubmitGraphicsCommandBufferAndWait(buf);
-		vkQueueWaitIdle(device.graphics_queue.GetQueue());
 		/*vkEndCommandBuffer(buf);
 
 		VkSubmitInfo submitInfo = initializers::submitInfo();
@@ -706,26 +720,37 @@ void VulkanRenderer::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
 
 void VulkanRenderer::SubmitTransferCommandBuffer(VkCommandBuffer buf,
 	std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
-	if (separateTransferQueue) {
-		transferQueue->SubmitTransferCommandBuffer(buf, readySignal, bufsToClean);
+	if (device.separateTransferQueue) {
+		//transferQueue->SubmitTransferCommandBuffer(buf, readySignal, bufsToClean);
+
+		VkFence fence;
+		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+	
+		transferCommandPool.SubmitOneTimeUseCommandBuffer(buf, fence);
+	
+		std::thread submissionCompletion = std::thread(WaitForSubmissionFinish, device.device, &transferCommandPool, buf, fence, readySignal, bufsToClean);
+		submissionCompletion.detach();
 	}
 	else {
 		vkEndCommandBuffer(buf);
 
-		VkSubmitInfo submitInfo = initializers::submitInfo();
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &buf;
+		//VkSubmitInfo submitInfo = initializers::submitInfo();
+		//submitInfo.commandBufferCount = 1;
+		//submitInfo.pCommandBuffers = &buf;
 
-		vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(graphics_queue);
+		graphicsPrimaryCommandPool.SubmitOneTimeUseCommandBuffer(buf);
+		//vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+		//vkQueueWaitIdle(graphics_queue);
 
 		for (auto& buffer : bufsToClean) {
 			buffer.CleanBuffer();
 		}
-		{
-			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
-			vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
-		}
+		graphicsPrimaryCommandPool.FreeCommandBuffer(buf);
+		//{
+		//	std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
+		//	vkFreeCommandBuffers(device, graphicsPrimaryCommandPool, 1, &buf);
+		//}
 		for (auto& sig : readySignal)
 			*sig = true;
 	}
@@ -734,6 +759,36 @@ void VulkanRenderer::SubmitTransferCommandBuffer(VkCommandBuffer buf,
 void VulkanRenderer::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
 	SubmitTransferCommandBuffer(buf, readySignal, {});
 }
+
+// void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
+
+// 	VkFence fence;
+// 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+// 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+
+// 	transferCommandPool.SubmitOneTimeUseCommandBuffer(buf, fence);
+
+// 	std::thread submissionCompletion = std::thread(WaitForSubmissionFinish, device.device, this, buf, fence, readySignal, bufsToClean);
+// 	submissionCompletion.detach();
+// }
+
+// void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
+// 	SubmitTransferCommandBuffer(buf, readySignal, {});
+// }
+
+// void TransferQueue::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
+
+// 	VkFence fence;
+// 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+// 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+
+// 	transferCommandPool.SubmitOneTimeUseCommandBuffer(buf, fence);
+
+// 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+// 	vkDestroyFence(device.device, fence, nullptr);
+	
+// 	transferCommandPool.FreeCommandBuffer(buf);
+// }
 
 void VulkanRenderer::SaveScreenshotNextFrame() {
 	saveScreenshot = true;

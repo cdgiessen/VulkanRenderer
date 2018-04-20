@@ -116,7 +116,7 @@ void Terrain::InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 ca
 
 	SetupMeshbuffers();
 	SetupUniformBuffer();
-	SetupImage(renderer->device.GetTransferCommandBuffer());
+	SetupImage();
 	SetupDescriptorSets(terrainVulkanTextureArray);
 	SetupPipeline();
 
@@ -166,11 +166,12 @@ void Terrain::SetupUniformBuffer()
 	//	&modelUniformBuffer, sizeof(ModelBufferObject) * maxNumQuads);
 }
 
-void Terrain::SetupImage(VkCommandBuffer cmdBuf)
+void Terrain::SetupImage()
 {
 	terrainVulkanSplatMap = std::make_shared<VulkanTexture2D>(renderer->device);
 	if (terrainSplatMap != nullptr) {
-		terrainVulkanSplatMap->loadFromTexture(terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, cmdBuf,
+
+		terrainVulkanSplatMap->loadFromTexture(terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, *renderer,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
 	
 	}
@@ -345,14 +346,14 @@ void Terrain::UpdateMeshBuffer() {
 		vertexStaging.CreateStagingVertexBuffer(verts.data(), (uint32_t)verts.size() * vertCount, 8);
 		indexStaging.CreateStagingIndexBuffer(inds.data(), (uint32_t)inds.size() * indCount);
 
-		VkCommandBuffer copyCmd = renderer->device.GetTransferCommandBuffer();
+		VkCommandBuffer copyCmd = renderer->GetTransferCommandBuffer();
 
 		vkCmdCopyBuffer(copyCmd, vertexStaging.buffer.buffer, vertexBuffer->buffer.buffer, (uint32_t)vertexCopyRegions.size(), vertexCopyRegions.data());
 
 		//copyRegion.size = indexBuffer->size;
 		vkCmdCopyBuffer(copyCmd, indexStaging.buffer.buffer, indexBuffer->buffer.buffer, (uint32_t)indexCopyRegions.size(), indexCopyRegions.data());
 
-		renderer->device.SubmitTransferCommandBuffer(copyCmd, flags, std::vector<VulkanBuffer>( { std::move(vertexStaging), std::move(indexStaging) }));
+		renderer->SubmitTransferCommandBuffer(copyCmd, flags, std::vector<VulkanBuffer>( { std::move(vertexStaging), std::move(indexStaging) }));
 
 		//vertexStaging.CleanBuffer(renderer->device);
 		//indexStaging.CleanBuffer(renderer->device);

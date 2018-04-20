@@ -33,7 +33,7 @@ void Skybox::SetupUniformBuffer() {
 }
 
 void Skybox::SetupCubeMapImage() {
-	vulkanCubeMap->loadFromTexture(skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.GetTransferCommandBuffer());
+	vulkanCubeMap->loadFromTexture(skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, *renderer);
 }
 
 void Skybox::SetupDescriptor() {

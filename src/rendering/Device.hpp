@@ -63,6 +63,9 @@ public:
 
 	uint32_t GetQueueFamily();
 	VkQueue GetQueue();
+
+	void WaitForFences(VkFence fence);
+	
 private:
 	VulkanDevice& device;
 	std::mutex submissionMutex;
@@ -72,7 +75,7 @@ private:
 
 class CommandPool {
 public:
-	CommandPool(VulkanDevice& device, CommandQueue& queue, VkCommandPoolCreateFlags flags);
+	CommandPool(VulkanDevice& device, CommandQueue& queue, VkCommandPoolCreateFlagBits flags);
 	VkBool32 CleanUp();
 
 	VkBool32 ResetPool();
@@ -100,27 +103,27 @@ private:
 };
 
 
-class NotTransferQueue {
-public:
-	NotTransferQueue(VulkanDevice& device, CommandQueue& transferQueue);
-	void CleanUp();
+// class NotTransferQueue {
+// public:
+// 	NotTransferQueue(VulkanDevice& device, CommandQueue& transferQueue);
+// 	void CleanUp();
 
-	CommandPool& GetCommandPool();
-	//std::mutex& GetTransferMutex();
+// 	CommandPool& GetCommandPool();
+// 	//std::mutex& GetTransferMutex();
 
-	VkCommandBuffer GetTransferCommandBuffer();
-	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
-	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
-	void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
+// 	VkCommandBuffer GetTransferCommandBuffer();
+// 	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
+// 	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
+// 	void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
 
-private:
-	VulkanDevice& device;
-	CommandQueue& transferQueue;
-	//VkQueue transfer_queue;
-	CommandPool transferCommandPool;
-	//VkCommandPool transfer_queue_command_pool;
-	//std::mutex transferMutex;
-};
+// private:
+// 	VulkanDevice& device;
+// 	CommandQueue& transferQueue;
+// 	//VkQueue transfer_queue;
+// 	CommandPool transferCommandPool;
+// 	//VkCommandPool transfer_queue_command_pool;
+// 	//std::mutex transferMutex;
+// };
 
 class VulkanDevice {
 public:
@@ -225,12 +228,12 @@ public:
 	*/
 	uint32_t getMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties, VkBool32 *memTypeFound = nullptr);
 
+	bool separateTransferQueue = false;
 private:
 	QueueFamilyIndices familyIndices;
 
 	bool enableValidationLayers = false;
 
-	bool separateTransferQueue = false;
 
 
 	//std::unique_ptr<TransferQueue> transferQueue;

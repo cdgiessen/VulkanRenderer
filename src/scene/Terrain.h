@@ -153,7 +153,7 @@ private:
 
 	void SetupMeshbuffers();
 	void SetupUniformBuffer();
-	void SetupImage(VkCommandBuffer cmdBuf);
+	void SetupImage();
 	void SetupPipeline();
 
 	void SetupDescriptorSets(std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray);

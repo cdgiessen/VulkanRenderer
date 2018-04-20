@@ -125,7 +125,6 @@ private:
 	CommandPool singleUseGraphicsCommandPool;
 
 	CommandPool computeCommandPool;
-
 	CommandPool transferCommandPool;
 
 	//Command buffer per frame
@@ -136,7 +135,7 @@ private:
 
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
-
+	std::mutex presentMutex;
 
 
 	std::vector<std::shared_ptr<VulkanDescriptor>> descriptors;
