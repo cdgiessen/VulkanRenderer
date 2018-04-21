@@ -85,10 +85,11 @@ void VulkanApp::mainLoop() {
 		Input::inputDirector.ResetReleasedInput();
 		timeManager->EndFrameTimer();
 
-		//if(timeManager->GetDeltaTime() < 0.016){
-		//	std::this_thread::sleep_for(timeManager->GetDeltaTime() - 0.016);
-		//}
-		//Log::Debug << "main loop breaker. Break me if you want to stop after every frame!\n";
+		if (isFrameCapped) {
+			if(timeManager->GetDeltaTime() < 1.0/ MaxFPS){
+				std::this_thread::sleep_for(std::chrono::duration<double>(1.0 / MaxFPS - timeManager->GetDeltaTime()));
+			}
+		}
 	}
 
 	vkDeviceWaitIdle(vulkanRenderer->device.device);
@@ -107,6 +108,9 @@ void VulkanApp::ReadSettings() {
 	useValidationLayers = settings["use-validation-layers"];
 
 	isFullscreen = settings["fullscreen"];
+
+	isFrameCapped = settings["is-frame-rate-capped"];
+	MaxFPS = settings["max-fps"];
 }
 
 void VulkanApp::RecreateSwapChain() {

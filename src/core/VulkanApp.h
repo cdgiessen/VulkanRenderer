@@ -79,5 +79,7 @@ private:
 
 	bool useValidationLayers = true;
 
+	bool isFrameCapped = true;
+	double MaxFPS = 100.0f;
 };
 

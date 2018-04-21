@@ -6,7 +6,8 @@
 
   "use-validation-layers": true,
 
-  "fullscreen":  false
+  "fullscreen": false,
 
-
+  "is-frame-rate-capped": true,
+  "max-fps" : 30
 }
