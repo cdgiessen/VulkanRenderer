@@ -715,7 +715,7 @@ void VulkanTextureDepthBuffer::CreateDepthImage(VulkanRenderer& renderer, VkForm
 
 	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-	VkCommandBuffer copyBuf = renderer.GetTransferCommandBuffer();
+	VkCommandBuffer copyBuf = renderer.GetSingleUseGraphicsCommandBuffer();
 
 	setImageLayout(copyBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, subresourceRange);
 

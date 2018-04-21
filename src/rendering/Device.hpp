@@ -54,14 +54,14 @@ class VulkanBuffer;
 class CommandQueue {
 public:
 	CommandQueue(VulkanDevice& device);
-	void SetupQueue(uint32_t queueFamily);
+	void SetupQueue(int queueFamily);
 
 	void Submit(VkSubmitInfo info, VkFence fence);
 	void SubmitCommandBuffer(VkCommandBuffer buf, VkFence fence,
 		std::vector<VkSemaphore> semaphore = std::vector<VkSemaphore>(), 
 		std::vector<VkSemaphore> signalSemaphores = std::vector<VkSemaphore>());
 
-	uint32_t GetQueueFamily();
+	int GetQueueFamily();
 	VkQueue GetQueue();
 
 	void WaitForFences(VkFence fence);
@@ -70,12 +70,14 @@ private:
 	VulkanDevice& device;
 	std::mutex submissionMutex;
 	VkQueue queue;
-	uint32_t queueFamily;
+	int queueFamily;
 };
 
 class CommandPool {
 public:
-	CommandPool(VulkanDevice& device, CommandQueue& queue, VkCommandPoolCreateFlagBits flags);
+	CommandPool(VulkanDevice& device, CommandQueue& queue);
+
+	VkBool32 Setup(VkCommandPoolCreateFlags flags);
 	VkBool32 CleanUp();
 
 	VkBool32 ResetPool();

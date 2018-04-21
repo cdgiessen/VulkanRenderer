@@ -7,21 +7,30 @@
 #include "../core/Logger.h"
 
 CommandQueue::CommandQueue(VulkanDevice& device):
-device(device)
+	device(device)
 {
 
 }
 
-void CommandQueue::SetupQueue(uint32_t queueFamily) {
+void CommandQueue::SetupQueue(int queueFamily) {
 	vkGetDeviceQueue(device.device, queueFamily, 0, &queue);
+	this->queueFamily = queueFamily;
 }
 
 void CommandQueue::SubmitCommandBuffer(VkCommandBuffer buffer, VkFence fence,
 	std::vector<VkSemaphore> waitSemaphores,
 	std::vector<VkSemaphore> signalSemaphores)
 {
-	Submit(initializers::submitInfo(
-		{ buffer }, waitSemaphores, { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT }, signalSemaphores), fence);
+	const auto stageMasks = std::vector<VkPipelineStageFlags>{ VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
+	auto submitInfo = initializers::submitInfo();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &buffer;
+	submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size();
+	submitInfo.pSignalSemaphores = signalSemaphores.data();
+	submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
+	submitInfo.pWaitSemaphores = waitSemaphores.data();
+	submitInfo.pWaitDstStageMask = stageMasks.data();
+	Submit(submitInfo, fence);
 }
 
 void CommandQueue::Submit(VkSubmitInfo submitInfo, VkFence fence ) {
@@ -30,7 +39,7 @@ void CommandQueue::Submit(VkSubmitInfo submitInfo, VkFence fence ) {
 	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
 }
 
-uint32_t CommandQueue::GetQueueFamily(){
+int CommandQueue::GetQueueFamily(){
 	return queueFamily;
 }
 
@@ -42,10 +51,14 @@ void CommandQueue::WaitForFences(VkFence fence) {
 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 }
 
-CommandPool::CommandPool(VulkanDevice& device, CommandQueue& queue, VkCommandPoolCreateFlagBits flags):
+CommandPool::CommandPool(VulkanDevice& device, CommandQueue& queue):
 	device(device), queue(queue)
 {
 
+}
+
+VkBool32 CommandPool::Setup(VkCommandPoolCreateFlags flags)
+{
 	VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
 	cmd_pool_info.queueFamilyIndex = queue.GetQueueFamily();
 	cmd_pool_info.flags = flags;
@@ -144,6 +157,16 @@ VkBool32 CommandPool::SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, V
 VkBool32 CommandPool::SubmitPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence){
 	EndBufferRecording(cmdBuffer);
 
+	VkSubmitInfo submitInfo = initializers::submitInfo();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &cmdBuffer;
+
+	if (fence == nullptr) {
+		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+	}
+
+	queue.SubmitCommandBuffer(cmdBuffer, fence);
 
 
 	return VK_TRUE;
@@ -151,6 +174,16 @@ VkBool32 CommandPool::SubmitPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFe
 VkBool32 CommandPool::SubmitSecondaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence){
 	EndBufferRecording(cmdBuffer);
 
+	VkSubmitInfo submitInfo = initializers::submitInfo();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &cmdBuffer;
+
+	if (fence == nullptr) {
+		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+	}
+
+	queue.SubmitCommandBuffer(cmdBuffer, fence);
 
 
 	return VK_TRUE;	
@@ -651,6 +684,7 @@ CommandQueue& VulkanDevice::GetCommandQueue(CommandQueueType queueType) {
 	default:
 		break;
 	}
+	return graphics_queue;
 }
 
 //void VulkanDevice::CreateCommandPools() {

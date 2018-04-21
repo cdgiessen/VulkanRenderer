@@ -21,14 +21,10 @@ VulkanRenderer::VulkanRenderer(bool validationLayer, std::shared_ptr<Scene> scen
 	pointLightsBuffer(device),
 	spotLightsBuffer(device),
 	entityPositions(device),
-	graphicsPrimaryCommandPool(device, device.graphics_queue, 
-		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
-	singleUseGraphicsCommandPool(device, device.graphics_queue,
-		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
-	transferCommandPool(device, device.transfer_queue, 
-		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
-	computeCommandPool(device, device.compute_queue, 
-		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
+	graphicsPrimaryCommandPool(device, device.graphics_queue),
+	singleUseGraphicsCommandPool(device, device.graphics_queue),
+	transferCommandPool(device, device.transfer_queue),
+	computeCommandPool(device, device.compute_queue)
 {
 }
 
@@ -44,6 +40,11 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 
 	device.InitVulkanDevice(vulkanSwapChain.surface);
 	
+	graphicsPrimaryCommandPool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	singleUseGraphicsCommandPool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	transferCommandPool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	computeCommandPool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
 	vulkanSwapChain.InitSwapChain(device.window);
 
 	pipelineManager.InitPipelineCache();
@@ -94,7 +95,10 @@ void VulkanRenderer::CleanVulkanResources() {
 
 	depthBuffer->destroy();
 
-
+	graphicsPrimaryCommandPool.CleanUp();
+	transferCommandPool.CleanUp();
+	computeCommandPool.CleanUp();
+	singleUseGraphicsCommandPool.CleanUp();
 
 	vkDestroyRenderPass(device.device, renderPass, nullptr);
 	vulkanSwapChain.CleanUp();
@@ -369,11 +373,15 @@ void VulkanRenderer::SubmitFrame()
 	std::vector<VkSemaphore> waitSemaphores = { imageAvailableSemaphore };
 	std::vector<VkSemaphore> signalSemaphores = { renderFinishedSemaphore };
 	
-	VkSubmitInfo submitInfo = initializers::submitInfo(
-		{ commandBuffers[frameIndex] },
-		waitSemaphores, { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT },
-		signalSemaphores);
-
+	const auto stageMasks = std::vector<VkPipelineStageFlags>{ VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
+	VkSubmitInfo submitInfo = initializers::submitInfo();
+	submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size();
+	submitInfo.pSignalSemaphores = signalSemaphores.data();
+	submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
+	submitInfo.pWaitSemaphores = waitSemaphores.data();
+	submitInfo.pWaitDstStageMask = stageMasks.data();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffers[frameIndex];
 	//VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	//submitInfo.waitSemaphoreCount = 1;
 	//submitInfo.pWaitSemaphores = waitSemaphores;
@@ -573,7 +581,7 @@ void VulkanRenderer::SubmitGraphicsCommandBufferAndWait(VkCommandBuffer commandB
 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence));
 	graphicsPrimaryCommandPool.SubmitPrimaryCommandBuffer(commandBuffer, fence);
 	
-	device.GetCommandQueue(VulkanDevice::CommandQueueType::graphics).WaitForFences(fence);
+	device.graphics_queue.WaitForFences(fence);
 
 	vkDestroyFence(device.device, fence, nullptr);
 	graphicsPrimaryCommandPool.FreeCommandBuffer(commandBuffer);

@@ -229,21 +229,19 @@ namespace initializers
 		return submitInfo;
 	}
 
-	inline VkSubmitInfo submitInfo(std::vector<VkCommandBuffer> commandBuffers, 
-		std::vector<VkSemaphore> waitSemaphores, std::vector<VkPipelineStageFlags> stageFlags,
-		std::vector<VkSemaphore> signalSemaphores)
-	{
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size();
-		submitInfo.pSignalSemaphores = signalSemaphores.data();
-		submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
-		submitInfo.pWaitSemaphores = waitSemaphores.data();
-		submitInfo.pWaitDstStageMask = stageFlags.data();
-		submitInfo.commandBufferCount = (uint32_t)commandBuffers.size();
-		submitInfo.pCommandBuffers = commandBuffers.data();
-		return submitInfo;
-	}
+	//inline VkSubmitInfo submitInfo(
+	//	std::vector<VkSemaphore> waitSemaphores, std::vector<VkPipelineStageFlags> stageFlags,
+	//	std::vector<VkSemaphore> signalSemaphores)
+	//{
+	//	VkSubmitInfo submitInfo{};
+	//	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	//	submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size();
+	//	submitInfo.pSignalSemaphores = signalSemaphores.data();
+	//	submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
+	//	submitInfo.pWaitSemaphores = waitSemaphores.data();
+	//	submitInfo.pWaitDstStageMask = stageFlags.data();
+	//	return submitInfo;
+	//}
 
 	inline VkViewport viewport(
 		float width,
