@@ -120,19 +120,21 @@ VkCommandBuffer CommandPool::GetOneTimeUseCommandBuffer(){
 	return cmdBuffer;
 }
 
-VkCommandBuffer CommandPool::GetPrimaryCommandBuffer(){
+VkCommandBuffer CommandPool::GetPrimaryCommandBuffer(bool beginBufferRecording){
 
 	VkCommandBuffer cmdBuffer = AllocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-	BeginBufferRecording(cmdBuffer);
+	if(beginBufferRecording == true)
+		BeginBufferRecording(cmdBuffer);
 
 	return cmdBuffer;
 }
 
-VkCommandBuffer CommandPool::GetSecondaryCommandBuffer(){
+VkCommandBuffer CommandPool::GetSecondaryCommandBuffer(bool beginBufferRecording){
 	VkCommandBuffer cmdBuffer = AllocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-	BeginBufferRecording(cmdBuffer);
+	if(beginBufferRecording == true)
+		BeginBufferRecording(cmdBuffer);
 
 	return cmdBuffer;
 }

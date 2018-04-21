@@ -238,7 +238,7 @@ void VulkanRenderer::CreateCommandBuffers() {
 	commandBuffers.resize(vulkanSwapChain.swapChainFramebuffers.size());
 
 	for (auto& cmdBuf : commandBuffers) {
-		cmdBuf = graphicsPrimaryCommandPool.GetPrimaryCommandBuffer();
+		cmdBuf = graphicsPrimaryCommandPool.GetPrimaryCommandBuffer(false);
 	}
 
 	/*VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo(device.graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)commandBuffers.size());
@@ -301,7 +301,7 @@ void VulkanRenderer::CreatePrimaryCommandBuffer() {
 		}
 	}*/
 	for (auto& cmdBuf : commandBuffers) {
-		cmdBuf = graphicsPrimaryCommandPool.GetPrimaryCommandBuffer();
+		cmdBuf = graphicsPrimaryCommandPool.GetPrimaryCommandBuffer(false);
 	}
 
 	for (size_t i = 0; i < commandBuffers.size(); i++) {
