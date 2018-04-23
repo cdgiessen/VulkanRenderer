@@ -196,7 +196,7 @@ static std::shared_ptr<Mesh> createSinglePlane() {
 	}), std::vector<uint16_t>({
 		0, 1, 2, 2, 3, 0	
 	}));
-}
+};
 
 static std::shared_ptr<Mesh> createDoublePlane() {
 	return std::make_shared<Mesh>(Vertices_PosNormTexColor({
@@ -217,38 +217,38 @@ static std::shared_ptr<Mesh> createDoublePlane() {
 		0, 1, 2, 2, 3, 0,
 		4, 5, 6, 6, 7, 4
 	}) );
-}
+};
 
 
-static std::shared_ptr<Mesh> createFlatPlane(int numCells, glm::vec3 size) {
+static std::shared_ptr<Mesh> createFlatPlane(int dim, glm::vec3 size) {
 	Vertices_PosNormTexColor verts;
 	std::vector<uint16_t> indices;
 
-	verts.resize((numCells + 1) * (numCells + 1));
-	indices.resize((numCells) * (numCells)* 6);
+	verts.resize((dim + 1) * (dim + 1));
+	indices.resize((dim) * (dim)* 6);
 
-	for (int i = 0; i <= numCells; i++)
+	for (int i = 0; i <= dim; i++)
 	{
-		for (int j = 0; j <= numCells; j++)
+		for (int j = 0; j <= dim; j++)
 		{
-			verts[(i)*(numCells + 1) + j] = Vertex_PosNormTexColor(
-				glm::vec3((double)i *(size.x) / (float)numCells, 0, 
-							(double)j *(size.z) / (float)numCells), 
+			verts[(i)*(dim + 1) + j] = Vertex_PosNormTexColor(
+				glm::vec3((double)i *(size.x) / (float)dim, 0, 
+							(double)j *(size.z) / (float)dim), 
 				glm::vec3(0,1,0), glm::vec2(i, j), glm::vec4(1));
 		}
 	}
 
 	int counter = 0;
-	for (int i = 0; i < numCells; i++)
+	for (int i = 0; i < dim; i++)
 	{
-		for (int j = 0; j < numCells; j++)
+		for (int j = 0; j < dim; j++)
 		{
-			indices[counter++] = i * (numCells + 1) + j;
-			indices[counter++] = i * (numCells + 1) + j + 1;
-			indices[counter++] = (i + 1) * (numCells + 1) + j;
-			indices[counter++] = i * (numCells + 1) + j + 1;
-			indices[counter++] = (i + 1) * (numCells + 1) + j + 1;
-			indices[counter++] = (i + 1) * (numCells + 1) + j;
+			indices[counter++] = i * (dim + 1) + j;
+			indices[counter++] = i * (dim + 1) + j + 1;
+			indices[counter++] = (i + 1) * (dim + 1) + j;
+			indices[counter++] = i * (dim + 1) + j + 1;
+			indices[counter++] = (i + 1) * (dim + 1) + j + 1;
+			indices[counter++] = (i + 1) * (dim + 1) + j;
 		}
 	}
 
@@ -314,3 +314,5 @@ static std::shared_ptr<Mesh> createCube() {
 			
 }
 
+
+extern std::shared_ptr<Mesh> createSphere();

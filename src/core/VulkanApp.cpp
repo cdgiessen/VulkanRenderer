@@ -252,11 +252,11 @@ void VulkanApp::HandleInputs() {
 		if (Input::IsJoystickConnected(0)) {
 			scene->GetCamera()->ProcessJoystickMove(Input::GetControllerAxis(0, 1), Input::GetControllerAxis(0, 0), 
 				(Input::GetControllerAxis(0, 4) + 1)/2.0, (Input::GetControllerAxis(0, 5) + 1)/2.0, deltaTime);
-			scene->GetCamera()->ProcessJoystickLook(Input::GetControllerAxis(0, 2), Input::GetControllerAxis(0, 3), deltaTime);
+			scene->GetCamera()->ProcessJoystickLook(Input::GetControllerAxis(0, 3), Input::GetControllerAxis(0, 4), deltaTime);
 
-			if (Input::GetControllerButton(0, 5))
+			if (Input::GetControllerButton(0, 2))
 				scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::UP, deltaTime);
-			if (Input::GetControllerButton(0, 4))
+			if (Input::GetControllerButton(0, 5))
 				scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::DOWN, deltaTime);
 		}
 

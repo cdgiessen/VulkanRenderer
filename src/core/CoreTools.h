@@ -7,6 +7,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <optional>
 
 std::string GetExecutableFilePath();
 void SetExecutableFilePath(std::string file);
@@ -56,6 +57,8 @@ public:
 
 	T& front();
 	T& pop();
+
+	//std::optional<T> pop_if_
 
 	void push_back(const T& item);
 	void push_back(T&& item);

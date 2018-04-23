@@ -10,7 +10,7 @@
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
 
-Scene::Scene() : renderer()
+Scene::Scene()
 {
 }
 
@@ -24,7 +24,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 
 	
 
-	camera = std::make_shared< Camera>(glm::vec3(0, 40, -500), glm::vec3(0, 1, 0), 0, 90);
+	camera = std::make_shared< Camera>(glm::vec3(0, 1, -5), glm::vec3(0, 1, 0), 0, 90);
 
 
 	//pointLights.resize(5);
@@ -39,17 +39,24 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	skybox->skyboxCubeMap = resourceMan->texManager.loadCubeMapFromFile("assets/Textures/Skybox/Skybox2", ".png");
 	skybox->model = std::make_shared<VulkanModel>(renderer->device);
 	skybox->model->loadFromMesh(createCube(),  *renderer);
-	skybox->InitSkybox(renderer);
+	skybox->InitSkybox(renderer);	
 
-	std::shared_ptr<GameObject> cubeObject = std::make_shared<GameObject>();
-	cubeObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
-	cubeObject->LoadModel(createCube());
-	cubeObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
-	cubeObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/ColorGradientCube.png");
-	//cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
-	cubeObject->InitGameObject(renderer);
-	gameObjects.push_back(cubeObject);
+	//std::shared_ptr<GameObject> cubeObject = std::make_shared<GameObject>();
+	//cubeObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
+	//cubeObject->LoadModel(createCube());
+	//cubeObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
+	//cubeObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/ColorGradientCube.png");
+	////cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
+	//cubeObject->InitGameObject(renderer);
+	//gameObjects.push_back(cubeObject);
 
+	std::shared_ptr<GameObject> sphereObject = std::make_shared<GameObject>();
+	sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
+	sphereObject->LoadModel(createSphere());
+	sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
+	sphereObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/ColorGradientCube.png");
+	sphereObject->InitGameObject(renderer);
+	gameObjects.push_back(sphereObject);
 
 	terrainManager = std::make_shared<TerrainManager>(graph);
 	terrainManager->SetupResources(resourceMan, renderer);
