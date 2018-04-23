@@ -52,9 +52,9 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 
 	std::shared_ptr<GameObject> sphereObject = std::make_shared<GameObject>();
 	sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
-	sphereObject->LoadModel(createSphere());
+	sphereObject->LoadModel(createSphere(10));
 	sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
-	sphereObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/ColorGradientCube.png");
+	sphereObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/Red.png");
 	sphereObject->InitGameObject(renderer);
 	gameObjects.push_back(sphereObject);
 

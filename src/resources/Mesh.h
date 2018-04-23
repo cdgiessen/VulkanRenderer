@@ -315,4 +315,4 @@ static std::shared_ptr<Mesh> createCube() {
 }
 
 
-extern std::shared_ptr<Mesh> createSphere();
+extern std::shared_ptr<Mesh> createSphere(int dim = 10);

@@ -243,182 +243,62 @@ void Mesh::importFromFile(const std::string filename) {
 //}
 
 
+void AddPlane(Vertices_PosNormTexColor& verts, std::vector<uint16_t>& indices,
+	int dim, int faceNum, 
+	glm::vec3 topLeft, glm::vec3 topRight, glm::vec3 bottomLeft, glm::vec3 bottomRight
+	) {
 
+	glm::vec3 p1 = topLeft;
+	glm::vec3 p2 = topRight;
+	glm::vec3 p3 = bottomLeft;
 
-std::shared_ptr<Mesh> createSphere() {
-	float dim = 1;
+	glm::vec3 t1 = p2 - p1;
+	glm::vec3 t2 = p3 - p1;
 
-	Vertices_PosNormTex verts;
+	glm::vec3 normal = glm::cross(t1, t2);
+
+	for (float i = 0; i <= dim; i++) {
+		for (float j = 0; j <= dim; j++) {
+
+			verts.push_back(
+				Vertex_PosNormTexColor(glm::mix(glm::mix(topLeft, topRight, j/dim), glm::mix(bottomLeft, bottomRight, j / dim), i / dim),
+					normal, glm::vec2(i, j), glm::vec4(1)));
+		}
+	}
+
+	for (int i = 0; i < dim; i++)
+	{
+		for (int j = 0; j < dim; j++)
+		{
+			indices.push_back((dim + 1) * (dim + 1) * faceNum + i * (dim + 1) + j);
+			indices.push_back((dim + 1) * (dim + 1) * faceNum + i * (dim + 1) + j + 1);
+			indices.push_back((dim + 1) * (dim + 1) * faceNum + (i + 1) * (dim + 1) + j);
+			indices.push_back((dim + 1) * (dim + 1) * faceNum + i * (dim + 1) + j + 1);
+			indices.push_back((dim + 1) * (dim + 1) * faceNum + (i + 1) * (dim + 1) + j + 1);
+			indices.push_back((dim + 1) * (dim + 1) * faceNum + (i + 1) * (dim + 1) + j);
+		}
+	}
+}
+
+std::shared_ptr<Mesh> createSphere(int dim) {
+
+	Vertices_PosNormTexColor verts;
 	std::vector<uint16_t> indices;
 
-	// verts.resize((dim + 1) * (dim + 1));
-	// indices.resize((dim) * (dim)* 6);
+	verts.reserve((dim + 1) * (dim + 1) * 6);
+	indices.reserve((dim) * (dim)* 6 * 6);
 
-	// verts[0] = Vertex_PosNormTex(glm::vec3(0,1,0), glm::vec3(0,1,0), glm::vec2(0,0));
-	// verts[1] = Vertex_PosNormTex(glm::vec3(1,1,0), glm::vec3(0,1,0), glm::vec2(1,0));
-	// verts[2] = Vertex_PosNormTex(glm::vec3(0,1,1), glm::vec3(0,1,0), glm::vec2(0,1));
-	// verts[3] = Vertex_PosNormTex(glm::vec3(1,1,1), glm::vec3(0,1,0), glm::vec2(1,1));
+	AddPlane(verts, indices, dim, 0, glm::vec3(0.5, 0.5, 0.5),	glm::vec3(0.5, 0.5, -0.5),	glm::vec3(-0.5, 0.5, 0.5),	glm::vec3(-0.5, 0.5, -0.5));
+	AddPlane(verts, indices, dim, 1, glm::vec3(-0.5, -0.5, 0.5), glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, -0.5, 0.5), glm::vec3(0.5, -0.5, -0.5));
+	AddPlane(verts, indices, dim, 2, glm::vec3(0.5, -0.5, 0.5),	glm::vec3(0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5), glm::vec3(0.5, 0.5, -0.5));
+	AddPlane(verts, indices, dim, 3, glm::vec3(-0.5, 0.5, 0.5), glm::vec3(-0.5, 0.5, -0.5),	glm::vec3(-0.5, -0.5, 0.5), glm::vec3(-0.5, -0.5, -0.5));
+	AddPlane(verts, indices, dim, 4, glm::vec3(-0.5, 0.5, 0.5),	glm::vec3(-0.5, -0.5, 0.5), glm::vec3(0.5, 0.5, 0.5), glm::vec3(0.5, -0.5, 0.5));
+	AddPlane(verts, indices, dim, 5, glm::vec3(0.5, 0.5, -0.5), glm::vec3(0.5, -0.5, -0.5), glm::vec3(-0.5, 0.5, -0.5), glm::vec3(-0.5, -0.5, -0.5));
 
-//				glm::vec3((double)i *(1) / (float)dim, 1, 
-//							(double)j *(1) / (float)dim), 
-//				glm::vec3(0,1,0), glm::vec2(i, j));
-//
-//	for (int i = 0; i <= dim; i++)
-//	{
-//		for (int j = 0; j <= dim; j++)
-//		{
-//			verts[(i)*(dim) + j] = Vertex_PosNormTex(
-//				glm::vec3((double)i *(1) / (float)dim, 1, 
-//							(double)j *(1) / (float)dim), 
-//				glm::vec3(0,1,0), glm::vec2(i, j));
-//		}
-//	}
-
-	// int counter = 0;
-	// for (int i = 0; i < dim; i++)
-	// {
-	// 	for (int j = 0; j < dim; j++)
-	// 	{
-	// 		indices[counter++] = i * (dim + 1) + j;
-	// 		indices[counter++] = i * (dim + 1) + j + 1;
-	// 		indices[counter++] = (i + 1) * (dim + 1) + j;
-	// 		indices[counter++] = i * (dim + 1) + j + 1;
-	// 		indices[counter++] = (i + 1) * (dim + 1) + j;
-	// 		indices[counter++] = (i + 1) * (dim + 1) + j + 1;
-	// 	}
-	// }
-
-	// return std::make_shared<Mesh>(verts, indices);
-
-	verts.resize((dim + 1) * (dim + 1) * 6);
-	indices.resize((dim) * (dim)* 6 * 6);
-
-
-	int counter = 0;
-	for(float i = 0; i <= dim; i++){
-		for(float j = 0; j <= dim; j++){
-			verts[counter++] = (Vertex_PosNormTex(glm::vec3(i/dim - 0.5, 0.5 , j/dim - 0.5),
-									glm::vec3(i/dim - 0.5, 0.5 , j/dim - 0.5), glm::vec2(i,j)));
-		}
-	}
-	for(float i = 0; i <= dim; i++){
-		for(float j = 0; j <= dim; j++){
-			verts[counter++] = (Vertex_PosNormTex(glm::vec3(i / dim - 0.5, -0.5 , j / dim - 0.5),
-									glm::vec3(i/dim - 0.5, -0.5 , j/dim - 0.5), glm::vec2(i,j)));
-		}
-	}
-	for(float i = 0; i <= dim; i++){
-		for(float j = 0; j <= dim; j++){
-			verts[counter++] = (Vertex_PosNormTex(glm::vec3(i / dim - 0.5 , j / dim - 0.5, 0.5),
-									glm::vec3(i/dim - 0.5 , j/dim - 0.5, 0.5), glm::vec2(i,j)));
-		}
-	}
-	for(float i = 0; i <= dim; i++){
-		for(float j = 0; j <= dim; j++){
-			verts[counter++] = (Vertex_PosNormTex(glm::vec3(i / dim - 0.5, j/dim- 0.5, -0.5),
-									glm::vec3(i/dim - 0.5, j/dim - 0.5, -0.5), glm::vec2(i,j)));
-		}
-	}
-	for(float i = 0; i <= dim; i++){
-		for(float j = 0; j <= dim; j++){
-			verts[counter++] = (Vertex_PosNormTex(glm::vec3(0.5, i/dim - 0.5, j/dim - 0.5),
-									glm::vec3(0.5, i/dim - 0.5, j/dim - 0.5), glm::vec2(i,j)));
-		}
-	}
-	for(float i = 0; i <= dim; i++){
-		for(float j = 0; j <= dim; j++){
-			verts[counter++] = (Vertex_PosNormTex(glm::vec3(-0.5, i/dim - 0.5, j/dim - 0.5),
-									glm::vec3(-0.5, i/dim - 0.5 , j/dim - 0.5), glm::vec2(i,j)));
-		}
-	}
-	//for(auto& vert : verts){
-	//	vert.pos = glm::normalize(vert.pos);
-	//}
-
-	counter = 0;
-	int newCounter = 0;
-	for (int i = 0; i < dim; i++)
-	{
-		for (int j = 0; j < dim; j++)
-		{
-			indices[counter++] = newCounter + i * (dim + 1) + j;
-			indices[counter++] = newCounter + i * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j;
-			indices[counter++] = newCounter + i * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j;
-		}
-	}
-	newCounter = (dim + 1) * (dim + 1) * 1;
-	for (int i = 0; i < dim; i++)
-	{
-		for (int j = 0; j < dim; j++)
-		{
-			indices[counter++] = newCounter + i * (dim + 1) + j;
-			indices[counter++] = newCounter + i * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j;
-			indices[counter++] = newCounter + i * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j;
-		}
-	}
-	newCounter = (dim + 1) * (dim + 1) * 2;
-
-	for (int i = 0; i < dim; i++)
-	{
-		for (int j = 0; j < dim; j++)
-		{
-			indices[counter++] = newCounter + i * (dim + 1) + j;
-			indices[counter++] = newCounter + i * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j;
-			indices[counter++] = newCounter + i * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j;
-		}
-	}	
-	newCounter = (dim + 1) * (dim + 1) * 3;
-
-	for (int i = 0; i < dim; i++)
-	{
-		for (int j = 0; j < dim; j++)
-		{
-			indices[counter++] = newCounter + i * (dim + 1) + j;
-			indices[counter++] = newCounter + i * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j;
-			indices[counter++] = newCounter + i * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j;
-		}
-	}	
-	newCounter = (dim + 1) * (dim + 1) * 4;
-
-	for (int i = 0; i < dim; i++)
-	{
-		for (int j = 0; j < dim; j++)
-		{
-			indices[counter++] = newCounter + i * (dim + 1) + j;
-			indices[counter++] = newCounter + i * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j;
-			indices[counter++] = newCounter + i * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j;
-		}
-	}	
-	newCounter = (dim + 1) * (dim + 1) * 5;
-
-	for (int i = 0; i < dim; i++)
-	{
-		for (int j = 0; j < dim; j++)
-		{
-			indices[counter++] = newCounter + i * (dim + 1) + j;
-			indices[counter++] = newCounter + i * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j;
-			indices[counter++] = newCounter + i * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j + 1;
-			indices[counter++] = newCounter + (i + 1) * (dim + 1) + j;
-		}
+	for(auto& vert : verts){
+		vert.pos = glm::normalize(vert.pos);
+		vert.normal = glm::normalize(vert.pos);
 	}
 
 	return std::make_shared<Mesh>(verts, indices);
-
 };
