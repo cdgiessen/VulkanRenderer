@@ -439,7 +439,7 @@ void VulkanDevice::createInstance(std::string appName) {
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_0;
+	appInfo.apiVersion = VK_MAKE_VERSION(1, 1, 0);
 
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -468,9 +468,9 @@ void VulkanDevice::createInstance(std::string appName) {
 		createInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
 	}
 
-	if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create instance!");
-	}
+
+	VK_CHECK_RESULT(vkCreateInstance(&createInfo, nullptr, &instance));
+	
 }
 
 

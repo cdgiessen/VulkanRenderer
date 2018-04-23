@@ -131,9 +131,9 @@ class VulkanDevice {
 public:
 	GLFWwindow* window;
 
-	VkDevice device;
 	VkInstance instance;
 	VkDebugReportCallbackEXT callback;
+	VkDevice device;
 	
 	//VDeleter<VkSurfaceKHR> window_surface{ instance, vkDestroySurfaceKHR };
 
