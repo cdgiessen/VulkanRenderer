@@ -9,5 +9,5 @@
   "fullscreen": false,
 
   "is-frame-rate-capped": true,
-  "max-fps" : 30
+  "max-fps" : 60
 }
