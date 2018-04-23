@@ -110,14 +110,6 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
 endif(MSVC)
 
-if (UNIX)
-add_custom_command(TARGET VulkanApp POST_BUILD        # Adds a post-build event to VulkanApp
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
-        "${PROJECT_BINARY_DIR}/third-party/glfw-3.2.1/src/libglfw.so"      # <--this is in-file
- "${PROJECT_BINARY_DIR}")										# <--this is out-file path
-
-endif(UNIX)
-
 # copy settings.json
 add_custom_command(TARGET VulkanApp PRE_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different

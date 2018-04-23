@@ -83,8 +83,8 @@ public:
 	VkBool32 ResetPool();
 
 	VkCommandBuffer GetOneTimeUseCommandBuffer();
-	VkCommandBuffer GetPrimaryCommandBuffer();
-	VkCommandBuffer GetSecondaryCommandBuffer();
+	VkCommandBuffer GetPrimaryCommandBuffer(bool beginBufferRecording = true);
+	VkCommandBuffer GetSecondaryCommandBuffer(bool beginBufferRecording = true);
 
 	VkBool32 SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence = nullptr);
 	VkBool32 SubmitPrimaryCommandBuffer(VkCommandBuffer buf, VkFence fence = nullptr);
