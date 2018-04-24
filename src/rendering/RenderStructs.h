@@ -74,18 +74,18 @@ struct StaticModelPushConstant {
 /* Materials */
 
 struct PBR_Material {
-	glm::vec3  albedo;
-	float metallic;
-	float roughness;
-	float ao;
-	glm::vec3 emmisive;
+	glm::vec3 albedo = glm::vec3(0.5,0.5,0.5);
+	float metallic = 0.1;
+	float roughness = 0.5;
+	float ao = 1;
+	glm::vec3 emmisive = glm::vec3(0.0, 0.0, 0.0);
 
-	bool useTexAlbedo;
-	bool useTexMetallic;
-	bool useTexRoughness;
-	bool useTexAmbientOcclusion;
-	bool useTexEmmisive;
-	bool useTexNormal;
+	bool useTexAlbedo = false;
+	bool useTexMetallic = false;
+	bool useTexRoughness = false;
+	bool useTexAmbientOcclusion = false;
+	bool useTexEmmisive = false;
+	bool useTexNormal = false;
 
 	std::shared_ptr<VulkanTexture> tx_albedo;
 	std::shared_ptr<VulkanTexture> tx_metallic;

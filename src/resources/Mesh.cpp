@@ -243,7 +243,7 @@ void Mesh::importFromFile(const std::string filename) {
 //}
 
 
-void AddPlane(Vertices_PosNormTexColor& verts, std::vector<uint16_t>& indices,
+void AddPlane(Vertices_PosNormTex& verts, std::vector<uint16_t>& indices,
 	int dim, int faceNum, 
 	glm::vec3 topLeft, glm::vec3 topRight, glm::vec3 bottomLeft, glm::vec3 bottomRight
 	) {
@@ -261,8 +261,8 @@ void AddPlane(Vertices_PosNormTexColor& verts, std::vector<uint16_t>& indices,
 		for (float j = 0; j <= dim; j++) {
 
 			verts.push_back(
-				Vertex_PosNormTexColor(glm::mix(glm::mix(topLeft, topRight, j/dim), glm::mix(bottomLeft, bottomRight, j / dim), i / dim),
-					normal, glm::vec2(i, j), glm::vec4(1)));
+				Vertex_PosNormTex(glm::mix(glm::mix(topLeft, topRight, j/dim), glm::mix(bottomLeft, bottomRight, j / dim), i / dim),
+					normal, glm::vec2(i, j)));
 		}
 	}
 
@@ -282,7 +282,7 @@ void AddPlane(Vertices_PosNormTexColor& verts, std::vector<uint16_t>& indices,
 
 std::shared_ptr<Mesh> createSphere(int dim) {
 
-	Vertices_PosNormTexColor verts;
+	Vertices_PosNormTex verts;
 	std::vector<uint16_t> indices;
 
 	verts.reserve((dim + 1) * (dim + 1) * 6);
@@ -297,7 +297,7 @@ std::shared_ptr<Mesh> createSphere(int dim) {
 
 	for(auto& vert : verts){
 		vert.pos = glm::normalize(vert.pos);
-		vert.normal = glm::normalize(vert.pos);
+		vert.normal = vert.pos;
 	}
 
 	return std::make_shared<Mesh>(verts, indices);

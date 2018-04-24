@@ -27,8 +27,14 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	camera = std::make_shared< Camera>(glm::vec3(0, 1, -5), glm::vec3(0, 1, 0), 0, 90);
 
 
-	//pointLights.resize(5);
-	//pointLights[0] = PointLight(glm::vec4(0, 10, 0, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	pointLights.resize(1);
+	PointLight pl;
+	pl.position = glm::vec3(0, 3, 3);
+	pl.color = glm::vec3(0, 1, 0);
+	pl.attenuation = 5;
+
+	pointLights[0] = pl;
+	//pointLights[0] = PointLight(glm::vec4(0, 4, 3, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 	//pointLights[1] = PointLight(glm::vec4(10, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 	//pointLights[2] = PointLight(glm::vec4(50, 10, 10, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 	//pointLights[3] = PointLight(glm::vec4(50, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
@@ -53,8 +59,8 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	std::shared_ptr<GameObject> sphereObject = std::make_shared<GameObject>();
 	sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
 	sphereObject->LoadModel(createSphere(10));
-	sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
-	sphereObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/Red.png");
+	//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
+	//sphereObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/Red.png");
 	sphereObject->InitGameObject(renderer);
 	gameObjects.push_back(sphereObject);
 
@@ -114,10 +120,6 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 			verticalVelocity = 0;
 		}
 	}
-	
-	for (auto obj : gameObjects) {
-		obj->UpdateUniformBuffer((float)timeManager->GetRunningTime());
-	}
 
 	if (Input::GetKeyDown(Input::KeyCode::V))
 		UpdateTerrain = !UpdateTerrain;
@@ -125,6 +127,10 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 		terrainManager->UpdateTerrains(resourceMan, renderer, camera, timeManager);
 
 	UpdateSunData();
+
+	for (auto& obj : gameObjects) {
+		obj->UpdateUniformBuffer((float)timeManager->GetRunningTime());
+	}
 
 	GlobalData gd;
 	gd.time = (float)timeManager->GetRunningTime();
@@ -153,11 +159,11 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	VkDeviceSize offsets[] = { 0 };
 
-	terrainManager->RenderTerrain(commandBuffer, wireframe);
-	
-	for (auto obj : gameObjects) {
+	for (auto& obj : gameObjects) {
 		obj->Draw(commandBuffer, wireframe, drawNormals);
 	}
+	
+	terrainManager->RenderTerrain(commandBuffer, wireframe);
 	
 	treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
 
@@ -196,6 +202,16 @@ void Scene::UpdateSceneGUI(){
 	terrainManager->DrawTerrainTextureViewer();
 
 	DrawSkySettingsGui();
+	bool value;
+	if (ImGui::Begin("Mat tester", &value)) {
+		ImGui::SliderFloat3("Albedo", ((float*)glm::value_ptr(gameObjects.at(0)->pbr_mat.albedo)), 0.0f, 1.0f);
+		ImGui::SliderFloat("Metalness", &(gameObjects.at(0)->pbr_mat.metallic), 0.0f, 1.0f);
+		ImGui::SliderFloat("Roughness", &(gameObjects.at(0)->pbr_mat.roughness), 0.0f, 1.0f);
+		ImGui::SliderFloat("Ambient Occlusion", &(gameObjects.at(0)->pbr_mat.ao), 0.0f, 1.0f);
+
+
+	}
+	ImGui::End();
 }
 
 void Scene::CleanUpScene() {

@@ -74,5 +74,7 @@ private:
 	bool releasedControllerJumpButton = false;
 
 	bool UpdateTerrain = true;
+
+	PBR_Material testMat;
 };
 

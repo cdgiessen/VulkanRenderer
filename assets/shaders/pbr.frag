@@ -1,6 +1,7 @@
 #version 450 core
 #extension GL_ARB_separate_shader_objects : enable
 
+const int DirectionalLightCount = 1;
 const int PointLightCount = 10;
 const int SpotLightCount = 10;
 const float PI = 3.14159265359;
@@ -24,8 +25,8 @@ struct DirectionalLight {
 
 struct PointLight {
 	vec3 position;
-	float intensity;
 	vec3 color;
+	float intensity;
 };
 
 struct SpotLight {
@@ -36,8 +37,8 @@ struct SpotLight {
 };
 
 layout(set = 1, binding = 0) uniform DirectionalLightData {
-	DirectionalLight light[1];
-} sun;
+	DirectionalLight lights[1];
+} directional;
 
 layout(set = 1, binding = 1) uniform PointLightData {
 	PointLight lights[PointLightCount];
@@ -120,51 +121,89 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
+vec3 DirectionalLightingCalc(int i, vec3 N, vec3 V, vec3 F0){
+
+     // calculate per-light radiance
+     vec3 L = normalize(directional.lights[i].direction);
+     vec3 H = normalize(V + L);
+     //float separation    = distance(directional.lights[i].position, inFragPos);
+     //float attenuation = 1.0 / (separation * separation);
+     vec3 radiance     = directional.lights[i].color 
+		* directional.lights[i].intensity; 
+		//* attenuation;        
+   
+     // cook-torrance brdf
+     float NDF = DistributionGGX(N, H, pbr_mat.roughness);        
+     float G   = GeometrySmith(N, V, L, pbr_mat.roughness);      
+     vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
+   
+     vec3 kS = F;
+     vec3 kD = vec3(1.0) - kS;
+     kD *= 1.0 - pbr_mat.metallic;	  
+   
+     vec3 numerator    = NDF * G * F;
+     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+     vec3 specular     = numerator / max(denominator, 0.001);  
+       
+     // add to outgoing radiance Lo
+     float NdotL = max(dot(N, L), 0.0);                
+     return (kD * pbr_mat.albedo / PI + specular) * radiance * NdotL; 
+ } 
+
+vec3 PointLightingCalc(int i, vec3 N, vec3 V, vec3 F0){
+
+     // calculate per-light radiance
+     vec3 L = normalize(point.lights[i].position - inFragPos);
+     vec3 H = normalize(V + L);
+     float separation    = distance(point.lights[i].position, inFragPos);
+     float attenuation = 1.0 / (separation * separation);
+     vec3 radiance     = point.lights[i].color	
+		* point.lights[i].intensity 
+		* attenuation;        
+   
+     // cook-torrance brdf
+     float NDF = DistributionGGX(N, H, pbr_mat.roughness);        
+     float G   = GeometrySmith(N, V, L, pbr_mat.roughness);      
+     vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
+   
+     vec3 kS = F;
+     vec3 kD = vec3(1.0) - kS;
+     kD *= 1.0 - pbr_mat.metallic;	  
+   
+     vec3 numerator    = NDF * G * F;
+     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+     vec3 specular     = numerator / max(denominator, 0.001);  
+       
+     // add to outgoing radiance Lo
+     float NdotL = max(dot(N, L), 0.0);                
+     return (kD * pbr_mat.albedo / PI + specular) * radiance * NdotL; 
+ } 
+
 void main()
 {		
     vec3 N = normalize(inNormal);
     vec3 V = normalize(cam.cameraPos - inFragPos);
 
     vec3 F0 = vec3(0.04); 
-    F0 = mix(F0, pbr_mat.albedo, pbr_mat.metallic);
+    //F0 = mix(F0, pbr_mat.albedo, pbr_mat.metallic);
 	         
     // reflectance equation
     vec3 Lo = vec3(0.0);
-    for(int i = 0; i < 4; ++i) 
+	for(int i = 0; i < DirectionalLightCount; ++i) 
     {
-        // calculate per-light radiance
-        vec3 L = normalize(point.lights[i].position - inFragPos);
-        vec3 H = normalize(V + L);
-        float separation    = distance(point.lights[i].position, inFragPos);
-        float attenuation = 1.0 / (separation * separation);
-        vec3 radiance     = point.lights[i].position 
-			* point.lights[i].position	
-			* point.lights[i].intensity 
-			* attenuation;        
-      
-        // cook-torrance brdf
-        float NDF = DistributionGGX(N, H, pbr_mat.roughness);        
-        float G   = GeometrySmith(N, V, L, pbr_mat.roughness);      
-        vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
-      
-        vec3 kS = F;
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - pbr_mat.metallic;	  
-      
-        vec3 numerator    = NDF * G * F;
-        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-        vec3 specular     = numerator / max(denominator, 0.001);  
-          
-        // add to outgoing radiance Lo
-        float NdotL = max(dot(N, L), 0.0);                
-        Lo += (kD * pbr_mat.albedo / PI + specular) * radiance * NdotL; 
-    }   
+		Lo += DirectionalLightingCalc(i, N, V, F0);
+	} 
+    for(int i = 0; i < PointLightCount; ++i) 
+    {
+		Lo += PointLightingCalc(i, N, V, F0);
+	}   
+ 
   
-    vec3 ambient = vec3(0.03) * pbr_mat.albedo * pbr_mat.ao;
+    vec3 ambient = vec3(0.03); //* pbr_mat.albedo * pbr_mat.ao;
     vec3 color = ambient + Lo;
 	
-    color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0/2.2));  
+    //color = color / (color + vec3(1.0));
+    //color = pow(color, vec3(1.0/2.2));  
    
-    outColor = vec4(1.0);
+    outColor = vec4(color, 1.0);
 }

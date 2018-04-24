@@ -11,7 +11,7 @@ void GameObject::InitGameObject(std::shared_ptr<VulkanRenderer> renderer)
     this->renderer = renderer;
 
     SetupUniformBuffer();
-    SetupImage();
+    //SetupImage();
     SetupModel();
     SetupDescriptor();
     SetupPipeline();
@@ -22,9 +22,10 @@ void GameObject::CleanUp()
 	renderer->pipelineManager.DeleteManagedPipeline(mvp);
 
     gameObjectModel->destroy();
-    gameObjectVulkanTexture->destroy();
+	//gameObjectVulkanTexture->destroy();
 
     uniformBuffer->CleanBuffer();
+	materialBuffer->CleanBuffer();
 }
 
 void GameObject::LoadModel(std::string filename)
@@ -41,7 +42,14 @@ void GameObject::LoadModel(std::shared_ptr<Mesh> mesh)
 void GameObject::SetupUniformBuffer()
 {
 	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
-	uniformBuffer->CreateUniformBuffer(sizeof(ModelBufferObject));
+	uniformBuffer->CreateUniformBufferPersitantlyMapped(sizeof(ModelBufferObject));
+
+	materialBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
+	materialBuffer->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Material));
+
+	PBR_Material pbr;
+	pbr.albedo = glm::vec3(0, 0, 1);
+	materialBuffer->CopyToBuffer(&pbr, sizeof(PBR_Material));
 }
 
 void GameObject::SetupImage()
@@ -66,20 +74,41 @@ void GameObject::SetupDescriptor()
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
+	//m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
+
 	descriptor->SetupLayout(m_bindings);
 
 	std::vector<DescriptorPoolSize> poolSizes;
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	//poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	descriptor->SetupPool(poolSizes);
 
 	m_descriptorSet = descriptor->CreateDescriptorSet();
 
 	std::vector<DescriptorUse> writes;
 	writes.push_back(DescriptorUse(0, 1, uniformBuffer->resource));
-	writes.push_back(DescriptorUse(1, 1, gameObjectVulkanTexture->resource));
+	//writes.push_back(DescriptorUse(1, 1, gameObjectVulkanTexture->resource));
 	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
+
+	materialDescriptor = renderer->GetVulkanDescriptor();
+
+	std::vector<VkDescriptorSetLayoutBinding> mat_bindings;
+	mat_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1));
+//	mat_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
+
+	materialDescriptor->SetupLayout(mat_bindings);
+
+	std::vector<DescriptorPoolSize> mat_poolSizes;
+	mat_poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	//mat_poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	materialDescriptor->SetupPool(mat_poolSizes);
+
+	material_descriptorSet = materialDescriptor->CreateDescriptorSet();
+
+	std::vector<DescriptorUse> mat_writes;
+	mat_writes.push_back(DescriptorUse(0, 1, materialBuffer->resource));
+	//mat_writes.push_back(DescriptorUse(1, 1, gameObjectVulkanTexture->resource));
+	materialDescriptor->UpdateDescriptorSet(material_descriptorSet, writes);
 }
 
 void GameObject::SetupPipeline()
@@ -90,12 +119,12 @@ void GameObject::SetupPipeline()
 
     pipeMan.SetVertexShader(
         mvp, loadShaderModule(renderer->device.device,
-                              "assets/shaders/gameObject_shader.vert.spv"));
+                              "assets/shaders/pbr.vert.spv"));
     pipeMan.SetFragmentShader(
         mvp, loadShaderModule(renderer->device.device,
-                              "assets/shaders/gameObject_shader.frag.spv"));
-    pipeMan.SetVertexInput(mvp, Vertex_PosNormTexColor::getBindingDescription(),
-                           Vertex_PosNormTexColor::getAttributeDescriptions());
+                              "assets/shaders/pbr.frag.spv"));
+    pipeMan.SetVertexInput(mvp, Vertex_PosNormTex::getBindingDescription(),
+                           Vertex_PosNormTex::getAttributeDescriptions());
     pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0,
                              VK_FALSE);
     pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width,
@@ -130,6 +159,7 @@ void GameObject::SetupPipeline()
 	std::vector<VkDescriptorSetLayout> layouts;
 	renderer->AddGlobalLayouts(layouts);
 	layouts.push_back(descriptor->GetLayout());
+	layouts.push_back(materialDescriptor->GetLayout());
     pipeMan.SetDescriptorSetLayout(mvp, layouts);
 	
 	VkPushConstantRange pushConstantRange = {};
@@ -173,15 +203,18 @@ void GameObject::UpdateUniformBuffer(float time)
 	ModelBufferObject ubo = {};
 	ubo.model = glm::mat4();
 	ubo.model = glm::translate(ubo.model, glm::vec3(0, 0, 0));
-	//ubo.model = glm::rotate(ubo.model, time / 2.0f, glm::vec3(0.5, 1, 0));
+	ubo.model = glm::rotate(ubo.model, time * 2.0f, glm::vec3(0.5, 1, 0));
 	ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 
 	uniformBuffer->CopyToBuffer(&ubo, sizeof(ModelBufferObject));
+
+	materialBuffer->CopyToBuffer(&pbr_mat, sizeof(PBR_Material));
 
 	//modelUniformBuffer.CopyToBuffer(renderer->device, &ubo, sizeof(ModelBufferObject));
     //modelUniformBuffer.Map(renderer->device, );
     //modelUniformBuffer.copyTo(&ubo, sizeof(ubo));
     //modelUniformBuffer.Unmap();
+
 }
 
 void GameObject::Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNormals) {
@@ -202,14 +235,15 @@ void GameObject::Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNo
 		0,
 		sizeof(ModelPushConstant),
 		&modelPushConstant);*/
-
-
+	
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &m_descriptorSet.set, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 3, 1, &material_descriptorSet.set, 0, nullptr);
+
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
 	gameObjectModel->BindModel(commandBuffer);
 
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(gameObjectModel->indexCount), 1, 0, 0, 0);
-
+	
 
 	if (drawNormals) {
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(2));
