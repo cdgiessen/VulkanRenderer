@@ -59,4 +59,6 @@ class GameObject
 
 	PBR_Material pbr_mat;
 	std::shared_ptr<VulkanBufferUniform> materialBuffer;
+
+	glm::vec3 position;
 };

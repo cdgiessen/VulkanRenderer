@@ -33,8 +33,8 @@ public:
 	void InitVulkanRenderer(GLFWwindow* window);
 	void UpdateRenderResources(GlobalData globalData,
 		CameraData cameraData, 
-		DirectionalLight sun, 
-		std::vector<PointLight> lightData,
+		std::vector<DirectionalLight> directionalLights, 
+		std::vector<PointLight> pointLights,
 		std::vector<SpotLight> spotLights);
 	void RenderFrame();
 	void CleanVulkanResources();
@@ -93,7 +93,7 @@ public:
 
 private:
 	int cameraCount = 1;
-	int directionalLightCount = 1;
+	int directionalLightCount = 5;
 	int pointLightCount = 16;
 	int spotLightCount = 8;
 
@@ -144,7 +144,8 @@ private:
 	bool wireframe = false; //whether or not to use the wireframe pipeline for the scene.
 	bool saveScreenshot = false;
 
-	VkClearColorValue clearColor = {{ 0.2f, 0.3f, 0.3f, 1.0f }};
+	VkClearColorValue clearColor = { { 0.1f, 0.1f, 0.1f, 1.0f } };
+	//VkClearColorValue clearColor = {{ 0.2f, 0.3f, 0.3f, 1.0f }};
 	VkClearDepthStencilValue depthClearColor = { 0.0f, 0 };
 
 	std::array<VkClearValue, 2> GetFramebufferClearValues();

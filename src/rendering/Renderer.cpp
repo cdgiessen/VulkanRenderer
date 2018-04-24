@@ -61,13 +61,13 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 
 void VulkanRenderer::UpdateRenderResources(GlobalData globalData,
 		CameraData cameraData, 
-		DirectionalLight sun, 
+		std::vector<DirectionalLight> directionalLights,
 		std::vector<PointLight> pointLights,
 		std::vector<SpotLight> spotLights)
 {
 	globalVariableBuffer.CopyToBuffer(&globalData, sizeof(GlobalData));
 	cameraDataBuffer.CopyToBuffer(&cameraData, sizeof(CameraData));
-	sunBuffer.CopyToBuffer(&sun, sizeof(DirectionalLight));
+	sunBuffer.CopyToBuffer(directionalLights.data(), directionalLights.size()*sizeof(DirectionalLight));
 	pointLightsBuffer.CopyToBuffer(pointLights.data(), pointLights.size()*sizeof(PointLight));
 	spotLightsBuffer.CopyToBuffer(spotLights.data(), spotLights.size()*sizeof(SpotLight));
 }

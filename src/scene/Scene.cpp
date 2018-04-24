@@ -22,18 +22,42 @@ Scene::~Scene()
 void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, InternalGraph::GraphPrototype& graph) {
 	this->renderer = renderer;
 
-	
-
 	camera = std::make_shared< Camera>(glm::vec3(0, 1, -5), glm::vec3(0, 1, 0), 0, 90);
 
+	DirectionalLight l;
+	l.color = glm::vec3(0, 1, 1);
+	l.direction = glm::normalize(glm::vec3(0.6,0.5,-0.4));
+	l.intensity = 0.5f;
+	directionalLights.push_back(l);
 
-	pointLights.resize(1);
-	PointLight pl;
-	pl.position = glm::vec3(0, 3, 3);
-	pl.color = glm::vec3(0, 1, 0);
-	pl.attenuation = 5;
+	l.color = glm::vec3(1, 1, 1);
+	l.direction = glm::normalize(glm::vec3(1, -0.6, 0.8));
+	l.intensity = 0.5f;
+	directionalLights.push_back(l);
+	
+	l.color = glm::vec3(1, 1, 1);
+	l.direction = glm::normalize(glm::vec3(0.95,1,0.6));
+	l.intensity = 0.7f;
+	directionalLights.push_back(l);
+	
+	l.color = glm::vec3(1, 1, 1);
+	l.direction = glm::normalize(glm::vec3(0.8, -0.01, -0.17));
+	l.intensity = 0.6f;
+	directionalLights.push_back(l);
+	
+	l.color = glm::vec3(1, 1, 1);
+	l.direction = glm::normalize(glm::vec3(0.94, -0.56, -0.76 ));
+	l.intensity = 0.4f;
+	directionalLights.push_back(l);
 
-	pointLights[0] = pl;
+
+	//pointLights.resize(1);
+	//PointLight pl;
+	//pl.position = glm::vec3(0, 3, 3);
+	//pl.color = glm::vec3(0, 1, 0);
+	//pl.attenuation = 5;
+	//pointLights[0] = pl;
+
 	//pointLights[0] = PointLight(glm::vec4(0, 4, 3, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 	//pointLights[1] = PointLight(glm::vec4(10, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 	//pointLights[2] = PointLight(glm::vec4(50, 10, 10, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
@@ -55,14 +79,24 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	////cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
 	//cubeObject->InitGameObject(renderer);
 	//gameObjects.push_back(cubeObject);
+	for (int i = 0; i < 9; i++) {
+		for (int j = 0; j < 9; j++)
+		{
 
-	std::shared_ptr<GameObject> sphereObject = std::make_shared<GameObject>();
-	sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
-	sphereObject->LoadModel(createSphere(10));
-	//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
-	//sphereObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/Red.png");
-	sphereObject->InitGameObject(renderer);
-	gameObjects.push_back(sphereObject);
+			std::shared_ptr<GameObject> sphereObject = std::make_shared<GameObject>();
+			sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
+			sphereObject->LoadModel(createSphere(10));
+			sphereObject->position = glm::vec3(0, i * 2.2, j * 2.2 );
+			//sphereObject->pbr_mat.albedo = glm::vec3(0.8, 0.2, 0.2);
+			sphereObject->pbr_mat.metallic = 0.1 + (float)i / 10.0;
+			sphereObject->pbr_mat.roughness = 0.1 + (float)j / 10.0;
+
+			//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
+			//sphereObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/Red.png");
+			sphereObject->InitGameObject(renderer);
+			gameObjects.push_back(sphereObject);
+		}
+	}
 
 	terrainManager = std::make_shared<TerrainManager>(graph);
 	terrainManager->SetupResources(resourceMan, renderer);
@@ -123,8 +157,8 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 
 	if (Input::GetKeyDown(Input::KeyCode::V))
 		UpdateTerrain = !UpdateTerrain;
-	if (UpdateTerrain)
-		terrainManager->UpdateTerrains(resourceMan, renderer, camera, timeManager);
+	//if (UpdateTerrain)
+	//	terrainManager->UpdateTerrains(resourceMan, renderer, camera, timeManager);
 
 	UpdateSunData();
 
@@ -146,13 +180,13 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 	cd.cameraDir = camera->Front;
 	cd.cameraPos = camera->Position;
 
-	DirectionalLight sun;
-	sun.direction = sunSettings.dir;
-	sun.intensity = sunSettings.intensity;
-	sun.color = sunSettings.color;
+	//DirectionalLight sun;
+	//sun.direction = sunSettings.dir;
+	//sun.intensity = sunSettings.intensity;
+	//sun.color = sunSettings.color;
 
 	skybox->UpdateUniform(proj, cd.view );
-	renderer->UpdateRenderResources(gd, cd, sun, pointLights, spotLights);
+	renderer->UpdateRenderResources(gd, cd, directionalLights, pointLights, spotLights);
 
 }
 
@@ -163,11 +197,11 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 		obj->Draw(commandBuffer, wireframe, drawNormals);
 	}
 	
-	terrainManager->RenderTerrain(commandBuffer, wireframe);
+	//terrainManager->RenderTerrain(commandBuffer, wireframe);
 	
-	treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
+	//treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
 
-	skybox->WriteToCommandBuffer(commandBuffer);
+	//skybox->WriteToCommandBuffer(commandBuffer);
 }
 
 void Scene::UpdateSunData() {
@@ -204,14 +238,27 @@ void Scene::UpdateSceneGUI(){
 	DrawSkySettingsGui();
 	bool value;
 	if (ImGui::Begin("Mat tester", &value)) {
-		ImGui::SliderFloat3("Albedo", ((float*)glm::value_ptr(gameObjects.at(0)->pbr_mat.albedo)), 0.0f, 1.0f);
-		ImGui::SliderFloat("Metalness", &(gameObjects.at(0)->pbr_mat.metallic), 0.0f, 1.0f);
-		ImGui::SliderFloat("Roughness", &(gameObjects.at(0)->pbr_mat.roughness), 0.0f, 1.0f);
-		ImGui::SliderFloat("Ambient Occlusion", &(gameObjects.at(0)->pbr_mat.ao), 0.0f, 1.0f);
+		ImGui::SliderFloat3("Albedo##i", ((float*)glm::value_ptr(testMat.albedo)), 0.0f, 1.0f);
+		//ImGui::SliderFloat("Metalness", &(testMat.metallic), 0.0f, 1.0f);
+		//ImGui::SliderFloat("Roughness", &(testMat.roughness), 0.0f, 1.0f);
+		//ImGui::SliderFloat("Ambient Occlusion", &(testMat.ao), 0.0f, 1.0f);
+		ImGui::Text("");
+		for (int i = 0; i < directionalLights.size(); i++)
+		{
 
-
+			ImGui::DragFloat3(std::string("Direction##" + std::to_string(i)).c_str(), (float*)glm::value_ptr(directionalLights[i].direction), 0.01);
+			ImGui::DragFloat3(std::string("Color##" + std::to_string(i)).c_str(), (float*)glm::value_ptr(directionalLights[i].color), 0.01);
+			ImGui::DragFloat(std::string("Intensity##" + std::to_string(i)).c_str(), &directionalLights[i].intensity, 0.01);
+			ImGui::Text("");
+		}
+		//ImGui::SliderFloat3("Light Position", ((float*)glm::value_ptr(pointLights.at(0).position)), 0.0f, 1.0f);
+		//ImGui::SliderFloat3("Light Color", ((float*)glm::value_ptr(pointLights.at(0).color)), 0.0f, 1.0f);
+		//ImGui::SliderFloat("Light Attenuation", &pointLights.at(0).attenuation, 0.0f, 1.0f);
 	}
 	ImGui::End();
+
+	for (auto& go : gameObjects)
+		go->pbr_mat.albedo = testMat.albedo;
 }
 
 void Scene::CleanUpScene() {

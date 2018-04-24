@@ -23,6 +23,7 @@ struct CameraData {
 	glm::mat4 projView;
 	glm::mat4 view;
 	glm::vec3 cameraDir;
+	float dummy;
 	glm::vec3 cameraPos;
 } ;
 
@@ -30,8 +31,10 @@ struct CameraData {
 
 struct DirectionalLight {
 	glm::vec3 direction;
-	float intensity;
+	float dum;
 	glm::vec3 color;
+	float intensity;
+	//float dum2;
 };
 
 struct PointLight {

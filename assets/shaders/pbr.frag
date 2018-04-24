@@ -1,7 +1,7 @@
 #version 450 core
 #extension GL_ARB_separate_shader_objects : enable
 
-const int DirectionalLightCount = 1;
+const int DirectionalLightCount = 5;
 const int PointLightCount = 10;
 const int SpotLightCount = 10;
 const float PI = 3.14159265359;
@@ -14,13 +14,16 @@ layout(set = 0, binding = 1) uniform CameraData {
 	mat4 projView;
 	mat4 view;
 	vec3 cameraDir;
+	float dummy;
 	vec3 cameraPos;
 } cam;
 
 struct DirectionalLight {
 	vec3 direction;
-	float intensity;
+	float dum;
 	vec3 color;
+	float intensity;
+
 };
 
 struct PointLight {
@@ -37,7 +40,7 @@ struct SpotLight {
 };
 
 layout(set = 1, binding = 0) uniform DirectionalLightData {
-	DirectionalLight lights[1];
+	DirectionalLight lights[DirectionalLightCount];
 } directional;
 
 layout(set = 1, binding = 1) uniform PointLightData {
@@ -48,7 +51,7 @@ layout(set = 1, binding = 2) uniform SpotLightData {
 	SpotLight lights[SpotLightCount];
 } spot;
 
-layout(set = 3, binding = 0) uniform PBR_Material_Constant {
+layout(set = 2, binding = 1) uniform PBR_Material_Constant {
 	vec3  albedo;
 	float metallic;
 	float roughness;
@@ -56,21 +59,21 @@ layout(set = 3, binding = 0) uniform PBR_Material_Constant {
 
 } pbr_mat;
 
-layout(push_constant) uniform PER_OBJECT
-{
-	bool tex_albedo;
-	bool tex_metallic;
-	bool tex_roughness;
-	bool tex_ao;
-	bool tex_normal;
-	bool tex_emissive;
-
-}pc;
-
-
-layout(set = 4, binding = 0) uniform sampler pbr_sampler;
-layout(set = 4, binding = 1) uniform texture2D pbr_tex[4];
-layout(set = 4, binding = 2) uniform texture2D normalMap;
+//layout(push_constant) uniform PER_OBJECT
+//{
+//	bool tex_albedo;
+//	bool tex_metallic;
+//	bool tex_roughness;
+//	bool tex_ao;
+//	bool tex_normal;
+//	bool tex_emissive;
+//
+//}pc;
+//
+//
+//layout(set = 4, binding = 0) uniform sampler pbr_sampler;
+//layout(set = 4, binding = 1) uniform texture2D pbr_tex[4];
+//layout(set = 4, binding = 2) uniform texture2D normalMap;
 
 
 
@@ -128,8 +131,8 @@ vec3 DirectionalLightingCalc(int i, vec3 N, vec3 V, vec3 F0){
      vec3 H = normalize(V + L);
      //float separation    = distance(directional.lights[i].position, inFragPos);
      //float attenuation = 1.0 / (separation * separation);
-     vec3 radiance     = directional.lights[i].color 
-		* directional.lights[i].intensity; 
+     vec3 radiance     = directional.lights[i].color
+					   * directional.lights[i].intensity; 
 		//* attenuation;        
    
      // cook-torrance brdf
@@ -143,7 +146,7 @@ vec3 DirectionalLightingCalc(int i, vec3 N, vec3 V, vec3 F0){
    
      vec3 numerator    = NDF * G * F;
      float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-     vec3 specular     = numerator / max(denominator, 0.001);  
+     vec3 specular     = numerator / max(denominator, 0.0001);  
        
      // add to outgoing radiance Lo
      float NdotL = max(dot(N, L), 0.0);                
@@ -172,7 +175,7 @@ vec3 PointLightingCalc(int i, vec3 N, vec3 V, vec3 F0){
    
      vec3 numerator    = NDF * G * F;
      float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-     vec3 specular     = numerator / max(denominator, 0.001);  
+     vec3 specular     = numerator / max(denominator, 0.0001);  
        
      // add to outgoing radiance Lo
      float NdotL = max(dot(N, L), 0.0);                
@@ -185,7 +188,7 @@ void main()
     vec3 V = normalize(cam.cameraPos - inFragPos);
 
     vec3 F0 = vec3(0.04); 
-    //F0 = mix(F0, pbr_mat.albedo, pbr_mat.metallic);
+    F0 = mix(F0, pbr_mat.albedo, pbr_mat.metallic);
 	         
     // reflectance equation
     vec3 Lo = vec3(0.0);
@@ -193,17 +196,17 @@ void main()
     {
 		Lo += DirectionalLightingCalc(i, N, V, F0);
 	} 
-    for(int i = 0; i < PointLightCount; ++i) 
-    {
-		Lo += PointLightingCalc(i, N, V, F0);
-	}   
+    //for(int i = 0; i < PointLightCount; ++i) 
+    //{
+	//	Lo += PointLightingCalc(i, N, V, F0);
+	//}   
  
   
-    vec3 ambient = vec3(0.03); //* pbr_mat.albedo * pbr_mat.ao;
+    vec3 ambient = vec3(0.03) * pbr_mat.albedo * pbr_mat.ao;
     vec3 color = ambient + Lo;
 	
-    //color = color / (color + vec3(1.0));
-    //color = pow(color, vec3(1.0/2.2));  
+    color = color / (color + vec3(1.0));
+    color = pow(color, vec3(1.0/2.2));  
    
     outColor = vec4(color, 1.0);
 }

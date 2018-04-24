@@ -50,6 +50,7 @@ private:
 
 	std::shared_ptr<VulkanRenderer> renderer;
 
+	std::vector<DirectionalLight> directionalLights;
 	std::vector<PointLight> pointLights;
 	std::vector<SpotLight> spotLights;
 
