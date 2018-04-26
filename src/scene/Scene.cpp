@@ -84,6 +84,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 		{
 
 			std::shared_ptr<GameObject> sphereObject = std::make_shared<GameObject>();
+			sphereObject->usePBR = true;
 			sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
 			sphereObject->LoadModel(createSphere(10));
 			sphereObject->position = glm::vec3(0, i * 2.2, j * 2.2 );
@@ -91,6 +92,26 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 			sphereObject->pbr_mat.metallic = 0.1 + (float)i / 10.0;
 			sphereObject->pbr_mat.roughness = 0.1 + (float)j / 10.0;
 
+			//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
+			//sphereObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/Red.png");
+			sphereObject->InitGameObject(renderer);
+			//gameObjects.push_back(sphereObject);
+		}
+	}
+
+	for (int i = 0; i < 9; i++) {
+		for (int j = 0; j < 9; j++)
+		{
+
+			std::shared_ptr<GameObject> sphereObject = std::make_shared<GameObject>();
+			sphereObject->usePBR = false;
+			sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
+			sphereObject->LoadModel(createSphere(10));
+			sphereObject->position = glm::vec3(0, i * 2.2, (float) 8 * 2.2 - j * 2.2 - 30);
+			sphereObject->phong_mat.diffuse = (float)(i ) / 10.0;
+			sphereObject->phong_mat.specular = (float)j / 6;
+			sphereObject->phong_mat.reflectivity = 128;
+			sphereObject->phong_mat.color = glm::vec4(1.0, 0.3, 0.3, 1.0);
 			//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
 			//sphereObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/Red.png");
 			sphereObject->InitGameObject(renderer);
@@ -257,8 +278,10 @@ void Scene::UpdateSceneGUI(){
 	}
 	ImGui::End();
 
-	for (auto& go : gameObjects)
+	for (auto& go : gameObjects) {
 		go->pbr_mat.albedo = testMat.albedo;
+		go->phong_mat.color = glm::vec4(testMat.albedo, 1.0f);
+	}
 }
 
 void Scene::CleanUpScene() {

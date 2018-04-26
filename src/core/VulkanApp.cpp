@@ -29,8 +29,8 @@ VulkanApp::VulkanApp()
 
 	window = std::make_shared<Window>();
 	window->createWindow(isFullscreen, glm::uvec2(screenWidth, screenHeight));
-	SetMouseControl(true);
-	Input::SetupJoysticks();
+	Input::SetupInputDirector(window->getWindowContext());
+	Input::SetMouseControlStatus(true);
 
 	resourceManager = std::make_shared<ResourceManager>();
 
@@ -59,24 +59,24 @@ void VulkanApp::clean() {
 	vulkanRenderer->CleanVulkanResources();
 
 	window->destroyWindow();
-	glfwTerminate();
-
 }
 
 void VulkanApp::mainLoop() {
 
 	while (!window->CheckForWindowClose()) {
-		timeManager->StartFrameTimer();
 
 		if (window->CheckForWindowResizing()) {
-			RecreateSwapChain();
-			window->SetWindowResizeDone();
+			if (!window->CheckForWindowIconified()) {
+				RecreateSwapChain();
+				window->SetWindowResizeDone();
+			}
 		}
+
+		timeManager->StartFrameTimer();
 
 		Input::inputDirector.UpdateInputs();
 		HandleInputs();
 
-		//updateScene();
 		scene->UpdateScene(resourceManager, timeManager);
 		BuildImgui();
 
@@ -86,13 +86,14 @@ void VulkanApp::mainLoop() {
 		timeManager->EndFrameTimer();
 
 		if (isFrameCapped) {
-			if(timeManager->GetDeltaTime() < 1.0/ MaxFPS){
+			if (timeManager->GetDeltaTime() < 1.0 / MaxFPS) {
 				std::this_thread::sleep_for(std::chrono::duration<double>(1.0 / MaxFPS - timeManager->GetDeltaTime()));
 			}
 		}
+
 	}
 
-	vkDeviceWaitIdle(vulkanRenderer->device.device);
+	vulkanRenderer->DeviceWaitTillIdle();
 
 }
 
@@ -114,7 +115,7 @@ void VulkanApp::ReadSettings() {
 }
 
 void VulkanApp::RecreateSwapChain() {
-	vkDeviceWaitIdle(vulkanRenderer->device.device);
+	vulkanRenderer->DeviceWaitTillIdle();
 
 	vulkanRenderer->RecreateSwapChain();
 }
@@ -278,7 +279,7 @@ void VulkanApp::HandleInputs() {
 		if (Input::GetKeyDown(Input::KeyCode::ESCAPE))
 			window->SetWindowToClose();
 		if (Input::GetKeyDown(Input::KeyCode::ENTER))
-			SetMouseControl(!mouseControlEnabled);
+			Input::SetMouseControlStatus(!Input::GetMouseControlStatus());
 
 		if (Input::GetKey(Input::KeyCode::E))
 			scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::UP, deltaTime);
@@ -314,22 +315,22 @@ void VulkanApp::HandleInputs() {
 			Input::ResetTextInputMode();
 	}
 
-	if (mouseControlEnabled) {
+	if (Input::GetMouseControlStatus()) {
 		scene->GetCamera()->ProcessMouseMovement(Input::GetMouseChangeInPosition().x, Input::GetMouseChangeInPosition().y);
 		scene->GetCamera()->ProcessMouseScroll(Input::GetMouseScrollY(), deltaTime);
 	}
 
 	if (Input::GetMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
 		if (!ImGui::IsMouseHoveringAnyWindow()) {
-			SetMouseControl(true);
+			Input::SetMouseControlStatus(true);
 		}
 	}
 }
 
-void VulkanApp::SetMouseControl(bool value) {
-	mouseControlEnabled = value;
-	if (mouseControlEnabled)
-		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	else
-		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-}
+//void VulkanApp::SetMouseControl(bool value) {
+//	mouseControlEnabled = value;
+//	if (mouseControlEnabled)
+//		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+//	else
+//		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+//}

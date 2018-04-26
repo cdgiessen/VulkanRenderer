@@ -35,6 +35,10 @@ VulkanRenderer::~VulkanRenderer()
 	//CleanVulkanResources();
 }
 
+void VulkanRenderer::DeviceWaitTillIdle() {
+	vkDeviceWaitIdle(device.device);
+}
+
 void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 	device.window = window;
 

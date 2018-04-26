@@ -20,23 +20,24 @@ layout(set = 0, binding = 1) uniform CameraData {
 
 struct DirectionalLight {
 	vec3 direction;
-	float dum;
-	vec3 color;
 	float intensity;
-
+	vec3 color;
+	float dum;
 };
 
 struct PointLight {
 	vec3 position;
-	vec3 color;
 	float intensity;
+	vec3 color;
 };
 
 struct SpotLight {
 	vec3 position;
-	vec3 color;
 	float attenuation;
+	vec3 color;
 	float cutoff;
+	float outerCutOff;
+	float padding;
 };
 
 layout(set = 1, binding = 0) uniform DirectionalLightData {
@@ -202,7 +203,7 @@ void main()
 	//}   
  
   
-    vec3 ambient = vec3(0.03) * pbr_mat.albedo * pbr_mat.ao;
+    vec3 ambient = vec3(0.0) * pbr_mat.albedo * pbr_mat.ao;
     vec3 color = ambient + Lo;
 	
     color = color / (color + vec3(1.0));

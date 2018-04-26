@@ -52,9 +52,9 @@ private:
 	std::shared_ptr<VulkanRenderer> vulkanRenderer;
 
 	//Input stuff
-	bool mouseControlEnabled = true;
+	//bool mouseControlEnabled = true;
 	bool wireframe = false;
-	void SetMouseControl(bool value);
+	//void SetMouseControl(bool value);
 	
 	ImGUI_PanelSettings panels;
 

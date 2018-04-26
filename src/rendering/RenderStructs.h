@@ -31,24 +31,24 @@ struct CameraData {
 
 struct DirectionalLight {
 	glm::vec3 direction;
-	float dum;
-	glm::vec3 color;
 	float intensity;
-	//float dum2;
+	glm::vec3 color;
+	float dum;
 };
 
 struct PointLight {
 	glm::vec3 position;
-	glm::vec3 color;
 	float attenuation;
+	glm::vec3 color;
 };
 
 struct  SpotLight {
 	glm::vec3 position;
-	glm::vec3 color;
 	float attenuation;
+	glm::vec3 color;
 	float cutoff;
 	float outerCutOff;
+	float padding;
 };
 
 /* Model and Normal matrices */
@@ -75,6 +75,14 @@ struct StaticModelPushConstant {
 };
 
 /* Materials */
+
+struct Phong_Material {
+	glm::vec4 color = glm::vec4(0.5, 0.5, 0.5, 1.0);
+	float diffuse = 0.8;
+	float specular = 0.2;
+	float reflectivity = 4;
+	float padding = 0;
+};
 
 struct PBR_Material {
 	glm::vec3 albedo = glm::vec3(0.5,0.5,0.5);

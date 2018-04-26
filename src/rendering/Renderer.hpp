@@ -81,6 +81,8 @@ public:
 	void SaveScreenshotNextFrame();
 	void SetWireframe(bool wireframe);
 
+	void DeviceWaitTillIdle();
+
 	VulkanDevice device;
 	VulkanSwapChain vulkanSwapChain;
 	VkRenderPass renderPass;

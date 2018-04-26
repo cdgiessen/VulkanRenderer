@@ -18,8 +18,8 @@ namespace Input {
 
 	InputDirector inputDirector;
 
-	void SetupJoysticks() {
-		inputDirector.SetupJoysticks();
+	void SetupInputDirector(GLFWwindow* window) {
+		inputDirector.SetupInputDirector(window);
 	}
 
 	bool GetKey(KeyCode code) {
@@ -66,6 +66,14 @@ namespace Input {
 		return inputDirector.GetTextInputMode();
 	}
 
+	bool GetMouseControlStatus() {
+		return inputDirector.GetMouseControlStatus();
+	}
+	
+	void SetMouseControlStatus(bool value) {
+		inputDirector.SetMouseControlStatus(value);
+	}
+
 	void ConnectJoystick(int index) {
 		inputDirector.ConnectJoystick(index);
 	}
@@ -85,13 +93,17 @@ namespace Input {
 	}
 
 
-	InputDirector::InputDirector() :
-		mousePosition(glm::vec2(0, 0)), mousePositionPrevious(glm::vec2(0, 0)),
-		mouseChangeInPosition(glm::vec2(0, 0)), mouseScroll(glm::vec2(0, 0))
+	InputDirector::InputDirector()
 	{
 	}
 
-	void InputDirector::SetupJoysticks() {
+	void InputDirector::SetupInputDirector(GLFWwindow* window) {
+		this->window = window;
+
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+		mousePosition = mousePositionPrevious = glm::dvec2(xpos, ypos);
+
 		for (int i = 0; i < 16; i++) {
 			joystickData[i].joystickIndex = i;
 			if (glfwJoystickPresent(i)) {
@@ -194,6 +206,22 @@ namespace Input {
 		return textInputMode;
 	}
 
+	bool InputDirector::GetMouseControlStatus() {
+		return mouseControlStatus;
+	}
+
+	void InputDirector::SetMouseControlStatus(bool value) {
+		mouseControlStatus = value; 
+		Log::Debug << "Mouse control status " << value << "\n";
+		if (mouseControlStatus) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+		else {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
+		
+	}
+
 	void InputDirector::ConnectJoystick(int index) {
 		if (index >= 0 && index < 16) 
 			joystickData[index].Connect();	
@@ -232,6 +260,7 @@ namespace Input {
 
 	void InputDirector::UpdateInputs() {
 		glfwPollEvents();
+
 		for (int i = 0; i < 16; i++) {
 			if (glfwJoystickPresent(i)) {
 				joystickData[i].connected = true;
@@ -299,14 +328,13 @@ namespace Input {
 	}
 
 	void InputDirector::mouseMoveEvent(double xoffset, double yoffset) {
+		
 		mousePosition = glm::dvec2(xoffset, yoffset);
-
+	
 		mouseChangeInPosition = mousePositionPrevious - mousePosition;
 		mouseChangeInPosition.x *= -1; //coordinates are reversed on y axis (top left vs bottom left)
-
+	
 		mousePositionPrevious = mousePosition;
-
-		//glfwGetCursorPos(glfwGetCurrentContext(), &mousePosition.x, &mousePosition.y);
 	}
 
 	void InputDirector::mouseScrollEvent(double xoffset, double yoffset) {

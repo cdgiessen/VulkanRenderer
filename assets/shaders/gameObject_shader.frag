@@ -1,6 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+const int DirectionalLightCount = 5;
 const int PointLightCount = 10;
 const int SpotLightCount = 10;
 const float PI = 3.14159265359;
@@ -20,6 +21,7 @@ struct DirectionalLight {
 	vec3 direction;
 	float intensity;
 	vec3 color;
+	float dum;
 };
 
 struct PointLight {
@@ -36,8 +38,8 @@ struct SpotLight {
 };
 
 layout(set = 1, binding = 0) uniform DirectionalLightData {
-	DirectionalLight light[1];
-} sun;
+	DirectionalLight lights[1];
+} directional;
 
 layout(set = 1, binding = 1) uniform PointLightData {
 	PointLight lights[PointLightCount];
@@ -47,29 +49,37 @@ layout(set = 1, binding = 2) uniform SpotLightData {
 	SpotLight lights[SpotLightCount];
 } spot;
 
-//texture sampling
-layout(set = 2, binding = 1) uniform sampler2D texSampler;
+layout(set = 2, binding = 1) uniform Phong_Material {
+	vec4 color;
+	float diffuse;
+	float specular;
+	float reflectivity;
+	float padding;
+} phong_mat;
 
-layout(location = 0) in vec3 inNormal;
-layout(location = 1) in vec2 inTexCoord;
-layout(location = 2) in vec4 inColor;
-layout(location = 3) in vec3 inFragPos;
+//texture sampling
+//layout(set = 2, binding = 1) uniform sampler2D texSampler;
+
+layout(location = 0) in vec3 inFragPos;
+layout(location = 1) in vec3 inNormal;
+layout(location = 2) in vec2 inTexCoord;
 
 layout(location = 0) out vec4 outColor;
 
-vec3 DirPhongLighting(vec3 view, vec3 dir, vec3 normal, vec3 color, float intensity) {
-	vec3 light = normalize(dir);
+vec3 DirPhongLighting(vec3 view, vec3 normal, int i) {
+	
+	vec3 light = normalize(directional.lights[i].direction);
 	vec3 halfway = normalize(light + view);
 	vec3 reflect = reflect(-light, normal);
-	vec3 diffuse = max(dot(normal, light), 0.0f)* vec3(0.8f);
-	vec3 specular = pow(max(dot(view, reflect), 0.0), 16.0f)* vec3(0.15f);
-	vec3 contrib = (diffuse + specular)* vec3(intensity) * color;
+	vec3 diffuse = max(dot(normal, light), 0.0f)* vec3(phong_mat.diffuse);
+	vec3 specular = pow(max(dot(view, reflect), 0.0), phong_mat.reflectivity)* vec3(phong_mat.specular);
+	vec3 contrib = (diffuse + specular)* vec3(directional.lights[i].intensity) * directional.lights[i].color;
 
 	return contrib;
 } 
 
 void main() {
-vec4 texColor = texture(texSampler, inTexCoord);
+vec4 texColor = vec4(1.0); //texture(texSampler, inTexCoord);
 	
 	vec3 viewVec = normalize(-cam.cameraDir);
 
@@ -89,10 +99,13 @@ vec4 texColor = texture(texSampler, inTexCoord);
 		pointLightContrib += (diffuse + specular);
 	}
 
-	vec3 dirContrib = DirPhongLighting(viewVec, sun.light[0].direction, normalVec, sun.light[0].color, sun.light[0].intensity);
+	vec3 spotLightContrib = vec3(0.0f);
+	for(int i = 0; i < DirectionalLightCount; i++){
+		spotLightContrib += DirPhongLighting(viewVec, normalVec, i);
+	}
 
-    outColor = texColor * vec4((pointLightContrib + dirContrib), 1.0f) * inColor;
+    outColor = texColor * vec4(((pointLightContrib + spotLightContrib)), 1.0f)*phong_mat.color;
 	//outColor = texColor * vec4(pointLightContrib * inColor, 1.0f);
 	
-	
+	 outColor = vec4(pow(outColor.xyz, vec3(1.0/2.2)), 1.0);  
 }

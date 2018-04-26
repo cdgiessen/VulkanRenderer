@@ -6,6 +6,8 @@
 #include <array>
 #include <vector>
 
+struct GLFWwindow;
+
 namespace Input {
 
 	//Keycodes reflect ascii encodings, for simplicity's sake
@@ -135,7 +137,7 @@ namespace Input {
 
 	};
 
-	void SetupJoysticks();
+	void SetupInputDirector(GLFWwindow* window);
 
 	bool GetKey(KeyCode code);
 	bool GetKeyDown(KeyCode code);
@@ -149,6 +151,13 @@ namespace Input {
 	float GetMouseScrollX();
 	float GetMouseScrollY();
 
+	void SetTextInputMode();
+	void ResetTextInputMode();
+	bool GetTextInputMode();
+
+	bool GetMouseControlStatus();
+	void SetMouseControlStatus(bool value);
+
 	void ConnectJoystick(int index);
 	void DisconnectJoystick(int index);
 
@@ -157,13 +166,10 @@ namespace Input {
 	float GetControllerAxis(int controllerID, int axis);
 	bool GetControllerButton(int controllerID, int button);
 
-	void SetTextInputMode();
-	void ResetTextInputMode();
-	bool GetTextInputMode();
-
 	class InputDirector {
 	public:
 		InputDirector();
+		void SetupInputDirector(GLFWwindow* window);
 		void SetupJoysticks(); //find controllers already plugged in
 
 		bool GetKey(KeyCode code);
@@ -181,6 +187,9 @@ namespace Input {
 		void SetTextInputMode();
 		void ResetTextInputMode();
 		bool GetTextInputMode();
+
+		bool GetMouseControlStatus();
+		void SetMouseControlStatus(bool value);
 
 		void keyEvent(int key, int scancode, int action, int mods);
 		void mouseButtonEvent(int button, int action, int mods);
@@ -201,6 +210,7 @@ namespace Input {
 		void UpdateInputs();
 
 	private:
+		GLFWwindow* window;
 
 		//contains joystick info, such as if it's connected, how many axes and buttons there are, and pointers to the data of the axes and buttons
 		struct JoystickData {
@@ -231,11 +241,12 @@ namespace Input {
 		std::array<bool, 15> mouseButtonsUp = { { false } };
 
 		bool textInputMode = false;
-		glm::vec2 mousePosition;
-		glm::vec2 mousePositionPrevious;
-		glm::vec2 mouseChangeInPosition;
-		glm::vec2 mouseScroll;
+		glm::dvec2 mousePosition = glm::dvec2(0, 0);
+		glm::dvec2 mousePositionPrevious = glm::dvec2(0, 0);
+		glm::dvec2 mouseChangeInPosition = glm::dvec2(0, 0);
+		glm::dvec2 mouseScroll = glm::dvec2(0, 0);
 
+		bool mouseControlStatus = false;
 
 		std::array<JoystickData, 16> joystickData;
 

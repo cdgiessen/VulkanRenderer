@@ -19,9 +19,9 @@ class Window {
 public:
 	Window();                                                                                                                                                                                            
 
-	void createWindow(bool isFullscreen, const glm::uvec2& size, const glm::ivec2& position = { 0, 0 });
+	void createWindow(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position = { 0, 0 });
 	void showWindow(bool show = true);
-	void setSizeLimits(const glm::uvec2& minSize, const glm::uvec2& maxSize = {});
+	void setSizeLimits(const glm::ivec2& minSize, const glm::ivec2& maxSize = {});
 	void destroyWindow();
 
 	GLFWwindow* getWindowContext();
@@ -29,6 +29,11 @@ public:
 	void SetWindowResizeDone();
 	bool CheckForWindowClose();
 	void SetWindowToClose();
+
+	bool CheckForWindowIconified();
+	bool CheckForWindowFocus();
+
+	glm::ivec2 GetWindowSize();
 
 protected:
 	//
@@ -44,10 +49,16 @@ protected:
 	static void JoystickConfigurationChangeHandler(int joy, int event);
 	static void FramebufferSizeHandler(GLFWwindow* window, int width, int height);
 	static void WindowResizeHandler(GLFWwindow* window, int width, int height);
-	static void CloseHandler(GLFWwindow* window);
+	static void WindowFocusHandler(GLFWwindow* window, int focused);
+	static void WindowIconifyHandler(GLFWwindow* window, int iconified);
+	static void WindowCloseHandler(GLFWwindow* window);
+
+	glm::ivec2 currentWindowSize = glm::ivec2(0, 0);
 
 	GLFWwindow* window{ nullptr };
 	bool updateWindowSize = false;
 	bool shouldCloseWindow = false;
+	bool isWindowIconofied = false;
+	bool isWindowFocused = false;
 };
 

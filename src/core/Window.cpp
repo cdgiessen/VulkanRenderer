@@ -18,7 +18,7 @@ Window::Window() {
 	});
 }
 
-void Window::createWindow(bool isFullscreen, const glm::uvec2& size, const glm::ivec2& position) {
+void Window::createWindow(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position) {
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	if (isFullscreen) {
@@ -43,7 +43,9 @@ void Window::createWindow(bool isFullscreen, const glm::uvec2& size, const glm::
 	glfwSetWindowUserPointer(window, this);
 	glfwSetFramebufferSizeCallback(window, FramebufferSizeHandler);
 	glfwSetWindowSizeCallback(window, WindowResizeHandler);
-	glfwSetWindowCloseCallback(window, CloseHandler);
+	glfwSetWindowIconifyCallback(window, WindowIconifyHandler);
+	glfwSetWindowFocusCallback(window, WindowFocusHandler);
+	glfwSetWindowCloseCallback(window, WindowCloseHandler);
 	glfwSetErrorCallback(ErrorHandler);
 
 	//Set input callbacks
@@ -54,10 +56,16 @@ void Window::createWindow(bool isFullscreen, const glm::uvec2& size, const glm::
 	glfwSetScrollCallback(window, MouseScrollHandler);
 	glfwSetJoystickCallback(JoystickConfigurationChangeHandler);
 
+	isWindowIconofied = glfwGetWindowAttrib(window, GLFW_ICONIFIED);
+	isWindowFocused = glfwGetWindowAttrib(window, GLFW_FOCUSED);
+	
+	currentWindowSize = GetWindowSize();
 }
 
-void Window::setSizeLimits(const glm::uvec2& minSize, const glm::uvec2& maxSize) {
-	glfwSetWindowSizeLimits(window, minSize.x, minSize.y, maxSize.x ? maxSize.x : minSize.x, maxSize.y ? maxSize.y : minSize.y);
+void Window::setSizeLimits(const glm::ivec2& minSize, const glm::ivec2& maxSize) {
+	glfwSetWindowSizeLimits(window, minSize.x, minSize.y, 
+		maxSize.x ? maxSize.x : minSize.x, 
+		maxSize.y ? maxSize.y : minSize.y);
 }
 
 void Window::showWindow(bool show) {
@@ -72,6 +80,7 @@ void Window::showWindow(bool show) {
 void Window::destroyWindow() {
 	glfwDestroyWindow(window);
 	window = nullptr;
+	glfwTerminate();
 }
 
 GLFWwindow* Window::getWindowContext() {
@@ -86,6 +95,15 @@ void Window::SetWindowResizeDone() {
 	updateWindowSize = false;
 }
 
+
+bool Window::CheckForWindowIconified() {
+	return isWindowIconofied;
+}
+
+bool Window::CheckForWindowFocus() {
+	return isWindowFocused;
+}
+
 bool Window::CheckForWindowClose() {
 	return shouldCloseWindow;
 }
@@ -93,6 +111,12 @@ bool Window::CheckForWindowClose() {
 void Window::SetWindowToClose() {
 	shouldCloseWindow = true;
 	glfwSetWindowShouldClose(window, true);
+}
+
+glm::ivec2 Window::GetWindowSize() {
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+	return glm::ivec2(width, height);
 }
 
 void Window::ErrorHandler(int error, const char* description)
@@ -139,7 +163,7 @@ void Window::JoystickConfigurationChangeHandler(int joy, int event)
 	}
 }
 
-void Window::CloseHandler(GLFWwindow* window) {
+void Window::WindowCloseHandler(GLFWwindow* window) {
 	Window* w = (Window*)glfwGetWindowUserPointer(window);
 	w->SetWindowToClose();
 }
@@ -157,4 +181,29 @@ void Window::WindowResizeHandler(GLFWwindow* window, int width, int height) {
 	//glfwSetWindowSize(window, width, height);
 	w->updateWindowSize = true;
 	
+}
+
+void Window::WindowIconifyHandler(GLFWwindow* window, int iconified) {
+	
+	Window* w = (Window*)glfwGetWindowUserPointer(window);
+	if (iconified)
+	{
+		w->isWindowIconofied = true;
+	}
+	else
+	{
+		w->isWindowIconofied = false;
+	}
+}
+
+void Window::WindowFocusHandler(GLFWwindow* window, int focused) {
+	Window* w = (Window*)glfwGetWindowUserPointer(window);
+	if (focused)
+	{
+		w->isWindowFocused = true;
+	}
+	else
+	{
+		w->isWindowFocused = false;
+	}
 }

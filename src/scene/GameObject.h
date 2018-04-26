@@ -57,6 +57,9 @@ class GameObject
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 	//ModelPushConstant modelPushConstant;
 
+	bool usePBR;
+
+	Phong_Material phong_mat;
 	PBR_Material pbr_mat;
 	std::shared_ptr<VulkanBufferUniform> materialBuffer;
 

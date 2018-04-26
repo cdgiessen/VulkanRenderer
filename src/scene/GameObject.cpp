@@ -45,8 +45,10 @@ void GameObject::SetupUniformBuffer()
 	uniformBuffer->CreateUniformBufferPersitantlyMapped(sizeof(ModelBufferObject));
 
 	materialBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
-	materialBuffer->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Material));
-
+	if(usePBR)
+		materialBuffer->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Material));
+	else 
+		materialBuffer->CreateUniformBufferPersitantlyMapped(sizeof(Phong_Material));
 	//PBR_Material pbr;
 	//pbr.albedo = glm::vec3(0, 0, 1);
 	//materialBuffer->CopyToBuffer(&pbr, sizeof(PBR_Material));
@@ -120,6 +122,7 @@ void GameObject::SetupPipeline()
 
     VulkanPipeline &pipeMan = renderer->pipelineManager;
 	mvp = pipeMan.CreateManagedPipeline();
+	if (usePBR) {
 
     pipeMan.SetVertexShader(
         mvp, loadShaderModule(renderer->device.device,
@@ -127,6 +130,15 @@ void GameObject::SetupPipeline()
     pipeMan.SetFragmentShader(
         mvp, loadShaderModule(renderer->device.device,
                               "assets/shaders/pbr.frag.spv"));
+	}
+	else {
+		pipeMan.SetVertexShader(
+			mvp, loadShaderModule(renderer->device.device,
+				"assets/shaders/gameObject_shader.vert.spv"));
+		pipeMan.SetFragmentShader(
+			mvp, loadShaderModule(renderer->device.device,
+				"assets/shaders/gameObject_shader.frag.spv"));
+	}
     pipeMan.SetVertexInput(mvp, Vertex_PosNormTex::getBindingDescription(),
                            Vertex_PosNormTex::getAttributeDescriptions());
     pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0,
@@ -211,8 +223,10 @@ void GameObject::UpdateUniformBuffer(float time)
 	//ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 	ubo.normal = glm::mat4();
 	uniformBuffer->CopyToBuffer(&ubo, sizeof(ModelBufferObject));
-
-	materialBuffer->CopyToBuffer(&pbr_mat, sizeof(PBR_Material));
+	if (usePBR)
+		materialBuffer->CopyToBuffer(&pbr_mat, sizeof(PBR_Material));
+	else 
+		materialBuffer->CopyToBuffer(&phong_mat, sizeof(Phong_Material));
 
 	//modelUniformBuffer.CopyToBuffer(renderer->device, &ubo, sizeof(ModelBufferObject));
     //modelUniformBuffer.Map(renderer->device, );
