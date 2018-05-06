@@ -1,6 +1,9 @@
 #include "InstancedSceneObject.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include "../core/Logger.h"
+
 
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
@@ -86,7 +89,7 @@ void InstancedSceneObject::SetupUniformBuffer() {
 	//uniformBuffer.copyTo(&ubo, sizeof(ModelBufferObject));
 	//uniformBuffer.unmap();
 
-	instanceBuffer->CreateInstanceBuffer(sizeof(InstanceData) * maxInstanceCount, 9);
+	instanceBuffer->CreateInstanceBuffer(sizeof(InstanceData) * maxInstanceCount, instanceMemberSize);
 
 }
 
@@ -179,8 +182,8 @@ void InstancedSceneObject::SetupPipeline()
 
 		// Per-Instance attributes
 		// These are fetched for each instance rendered
-		initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 5, VK_FORMAT_R32G32B32_SFLOAT, sizeof(float) * 3),	// Location 4: Position
-		initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 4, VK_FORMAT_R32G32B32_SFLOAT, 0),					// Location 5: Rotation
+		initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 4, VK_FORMAT_R32G32B32_SFLOAT, 0),					// Location 4: Position
+		initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 5, VK_FORMAT_R32G32B32_SFLOAT, sizeof(float) * 3),	// Location 5: Rotation
 		initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 6, VK_FORMAT_R32_SFLOAT,sizeof(float) * 6),			// Location 6: Scale
 		initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 7, VK_FORMAT_R32_SINT, sizeof(float) * 7),			// Location 7: Texture array layer index
 	};
@@ -205,13 +208,15 @@ void InstancedSceneObject::SetupPipeline()
 
 void InstancedSceneObject::AddInstance(InstanceData data) {
 	instancesData.push_back(data);
+
+	UploadInstances();
 }
 
 void InstancedSceneObject::UploadInstances() {
 	size_t instanceBufferSize = instancesData.size() * sizeof(InstanceData);
 
 	VulkanBufferInstance stagingBuffer(renderer->device);
-	stagingBuffer.CreateStagingInstanceBuffer(instancesData.data(), instancesData.size(), 9);
+	stagingBuffer.CreateStagingInstanceBuffer(instancesData.data(), instancesData.size(), instanceMemberSize);
 
 	auto copyCmd = renderer->GetTransferCommandBuffer();
 
@@ -232,7 +237,7 @@ void InstancedSceneObject::UploadInstances() {
 	stagingBuffer.CleanBuffer();
 }
 
-void InstancedSceneObject::AddInstances(std::vector<glm::vec3> positions) {
+void InstancedSceneObject::AddInstances(std::vector<InstanceData> newInstances) {
 	//for (auto it = positions.begin(); it != positions.end(); it++) {
 	//	ModelBufferObject ubo = {};
 	//	ubo.model = glm::translate(ubo.model, *it);
@@ -244,13 +249,34 @@ void InstancedSceneObject::AddInstances(std::vector<glm::vec3> positions) {
 	//modelUniformsBuffer.copyTo(&modelUniforms, modelUniforms.size() * sizeof(ModelBufferObject));
 	//modelUniformsBuffer.unmap();
 
-	for (int i = 0; i < positions.size(); i++)
+	/*for (int i = 0; i < positions.size(); i++)
 	{
 		InstanceData id;
 		id.pos = positions[i];
 		id.rot = glm::vec3(0,0,0);
 		id.scale = 1.0f;
 		instancesData.push_back(id);
+	}*/
+
+	for (auto& data : newInstances) {
+		instancesData.push_back(data);
+	}
+
+	UploadInstances();
+}
+
+void InstancedSceneObject::RemoveInstances(std::vector<InstanceData> instances) {
+
+	std::vector<std::vector<InstanceData>::iterator> indexesToDelete(instances.size());
+	for (auto& instance : instances) {
+
+		auto foundInstance = std::find(std::begin(instancesData), std::end(instancesData), instance);
+		if (foundInstance != std::end(instancesData)) {
+			indexesToDelete.push_back(foundInstance);
+		}
+	}
+	for (auto& index : indexesToDelete) {
+		instancesData.erase(index);
 	}
 
 	UploadInstances();
@@ -290,4 +316,23 @@ void InstancedSceneObject::WriteToCommandBuffer(VkCommandBuffer commandBuffer, b
 
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(vulkanModel->indexCount), instancesData.size(), 0, 0, 0);
 
+}
+
+
+void InstancedSceneObject::ImGuiShowInstances() {
+	bool value = true;
+	if (ImGui::Begin("instance data", &value)) {
+		if (ImGui::Button("UploadInstance")) {
+			UploadInstances();
+		}
+
+		for (auto& instance : instancesData) {
+			ImGui::DragFloat3("Position", ((float*)glm::value_ptr(instance.pos)));
+			ImGui::DragFloat3("Rotation", ((float*)glm::value_ptr(instance.rot)));
+			ImGui::DragFloat("Scale", &instance.scale);
+			ImGui::Separator();
+		}		
+
+	}
+	ImGui::End();
 }

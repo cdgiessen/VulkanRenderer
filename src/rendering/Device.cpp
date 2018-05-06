@@ -66,6 +66,8 @@ VkBool32 CommandPool::Setup(VkCommandPoolCreateFlags flags)
 	if (vkCreateCommandPool(device.device, &cmd_pool_info, nullptr, &commandPool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics command pool!");
 	}
+
+	return VK_TRUE;
 }
 
 VkBool32 CommandPool::CleanUp(){

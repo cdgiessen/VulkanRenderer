@@ -148,8 +148,8 @@ namespace Input {
 	bool GetMouseButtonReleased(int button);
 	glm::vec2 GetMousePosition();
 	glm::vec2 GetMouseChangeInPosition();
-	float GetMouseScrollX();
-	float GetMouseScrollY();
+	double GetMouseScrollX();
+	double GetMouseScrollY();
 
 	void SetTextInputMode();
 	void ResetTextInputMode();
@@ -181,8 +181,8 @@ namespace Input {
 		bool GetMouseButtonReleased(int button);
 		glm::vec2 GetMousePosition();
 		glm::vec2 GetMouseChangeInPosition();
-		float GetMouseScrollX();
-		float GetMouseScrollY();
+		double GetMouseScrollX();
+		double GetMouseScrollY();
 
 		void SetTextInputMode();
 		void ResetTextInputMode();

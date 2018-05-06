@@ -49,10 +49,10 @@ namespace Input {
 	glm::vec2 GetMouseChangeInPosition() {
 		return inputDirector.GetMouseChangeInPosition();
 	}
-	float GetMouseScrollX() {
+	double GetMouseScrollX() {
 		return inputDirector.GetMouseScrollX();
 	}
-	float GetMouseScrollY() {
+	double GetMouseScrollY() {
 		return inputDirector.GetMouseScrollY();
 	}
 
@@ -151,16 +151,18 @@ namespace Input {
 		if (index >= 0 && index < axesCount)
 			if (axes != nullptr)
 				return axes[index];
-		else
-			Log::Error << "Tried to access axes that is out of bounds! \n";
+		
+		Log::Error << "Tried to access axes that is out of bounds! \n";
+		return 0.0f;
 	}
 
 	bool InputDirector::JoystickData::GetButton(int index) {
 		if (index >= 0 && index < buttonCount)
 			if(buttons != nullptr)
 				return buttons[index];
-		else
-			Log::Error << "Tried to access button that is out of bounds! \n";
+		
+		Log::Error << "Tried to access button that is out of bounds! \n";
+		return false;
 	}
 
 	bool InputDirector::GetKey(KeyCode code) {
@@ -190,10 +192,10 @@ namespace Input {
 	glm::vec2 InputDirector::GetMouseChangeInPosition() {
 		return mouseChangeInPosition;
 	}
-	float InputDirector::GetMouseScrollX() {
+	double InputDirector::GetMouseScrollX() {
 		return mouseScroll.x;
 	}
-	float InputDirector::GetMouseScrollY() {
+	double InputDirector::GetMouseScrollY() {
 		return mouseScroll.y;
 	}
 	void InputDirector::SetTextInputMode() {
@@ -239,22 +241,25 @@ namespace Input {
 	bool InputDirector::IsJoystickConnected(int index) {
 		if (index >= 0 && index < 16)
 			return joystickData[index].IsConnected();
-		else
-			Log::Error << "Tried to test if an out of range joystick is connected!\n";
+		
+		Log::Error << "Tried to test if an out of range joystick is connected!\n";
+		return false;
 	}
 
 	float InputDirector::GetControllerAxis(int id, int axis) {
 		if (id >= 0 && id < 16) 
 			return joystickData[id].GetAxis(axis);
-		else
-			Log::Error << "Tried to access joystick axis that is out of bounds!\n";
+		
+		Log::Error << "Tried to access joystick axis that is out of bounds!\n";
+		return 0.0f;
 	}
 
 	bool InputDirector::GetControllerButton(int id, int button) {
 		if (id >= 0 && id < 16)
 			return joystickData[id].GetButton(button);
-		else
-			Log::Error << "Tried to access joystick button that is out of bounds!\n";
+		
+		Log::Error << "Tried to access joystick button that is out of bounds!\n";
+		return false;
 	}
 
 

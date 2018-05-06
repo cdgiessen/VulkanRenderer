@@ -1,36 +1,43 @@
 #pragma once
 #include <chrono>
 #include <array>
+#include <vector>
 
-#include "CoreTools.h"
-
-typedef std::array<float, 50> TimingsHistory;
+using PreciseClockPoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
+using BriefTimingHistory = std::vector<double>;
 
 class TimeManager
 {
 public:
-	TimeManager();
-	~TimeManager();
+	TimeManager(); //Starts application timing
+	
+	void CollectRuntimeData(); //Ends application timing
 
 	void StartFrameTimer();
 	void EndFrameTimer();
 
-	double GetDeltaTime(); // in seconds
-	double GetRunningTime(); // in seconds
-	double GetPreviousFrameTime(); //in seconds (how long the last frame took
+	double ExactTimeSinceFrameStart();
 
-	TimingsHistory GetFrameTimeHistory();
-	float GetFrameTimeMax();
-	float GetFrameTimeMin();
+	double DeltaTime(); // in seconds
+	double RunningTime(); // in seconds
+	double PreviousFrameTime(); //in seconds (how long the last frame took
+
+	BriefTimingHistory FrameTimeHistory();
+	float FrameTimeMax();
+	float FrameTimeMin();
 
 private:
-	std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
-	SimpleTimer frameTimer;
+	using DoubleDuration = std::chrono::duration<double>;
 
-	double timeSinceStart = 0.0f; //in seconds
-	double deltaTime = 0.016f; //in seconds
-	double prevFrameTime = 0.0f;
-	TimingsHistory frameTimes{};
+	PreciseClockPoint  applicationStartTime;
+	PreciseClockPoint  applicationEndTime;
+	PreciseClockPoint  frameStartTime;
+	PreciseClockPoint  frameEndTime;
+
+	DoubleDuration curFrameTime;
+	DoubleDuration prevFrameTime;
+
+	BriefTimingHistory frameTimes{};
 	float frameTimeMin = 999.0f, frameTimeMax = 0.0f;
 };
 

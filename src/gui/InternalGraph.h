@@ -127,17 +127,17 @@ namespace InternalGraph {
 
 		void SetInputNode(NodeID id);
 		void ResetInputNode();
-		NodeID GetInputNode();
+		NodeID GetInputNode() const;
 
-		bool HasInputNode();
-
+		bool HasInputNode() const;
+		 
 		void SetInputNodePointer(Node* node);
 		void ResetInputNodePointer();
 
 		void SetDataValue(LinkTypeVariants data);
 
-		LinkTypeVariants GetValue();
-		LinkTypeVariants GetValue(const int x, const int z);
+		LinkTypeVariants GetValue() const;
+		LinkTypeVariants GetValue(const int x, const int z) const;
 
 	private:
 		bool hasInputNode = false;
@@ -160,8 +160,8 @@ namespace InternalGraph {
 	public:
 		Node(NodeType type = NodeType::None);
 
-		NodeType GetNodeType();
-		LinkType GetOutputType();
+		NodeType GetNodeType() const ;
+		LinkType GetOutputType() const;
 
 		void SetLinkValue(const int index, const LinkTypeVariants data);
 
@@ -169,10 +169,11 @@ namespace InternalGraph {
 
 		void ResetLinkInput(const int index);
 
-		LinkTypeVariants GetValue(const int x, const int z);
+		LinkTypeVariants GetValue(const int x, const int z) const ;
 
-		LinkTypeVariants GetHeightMapValue(const int x, const int z);
-		LinkTypeVariants GetSplatMapValue(const int x, const int z);
+		LinkTypeVariants GetHeightMapValue(const int x, const int z) const;
+		LinkTypeVariants GetSplatMapValue(const int x, const int z) const ;
+		LinkTypeVariants GetVegetationMapValue(const int x, const int z) const;
 
 		void SetID(NodeID);
 		NodeID GetID();
@@ -241,6 +242,8 @@ namespace InternalGraph {
 
 		NoiseImage2D<RGBA_pixel>& GetSplatMap();
 
+		NoiseImage2D<uint8_t>& GetVegetationDensityMap();
+
 	private:
 		NodeMap nodeMap;
 		Node* outputNode;
@@ -249,5 +252,7 @@ namespace InternalGraph {
 
 		NoiseImage2D<float> outputHeightMap;
 		NoiseImage2D<RGBA_pixel> outputSplatmap;
+
+		NoiseImage2D<uint8_t> vegetationDensityMap;
 	};
 }

@@ -1,25 +1,13 @@
 #include "VulkanApp.h"
 
 #include <fstream>
-#include <stdexcept>
-#include <algorithm>
-#include <chrono>
 #include <vector>
-#include <cstring>
 #include <string>
-#include <array>
-#include <set>
-#include <thread>
+
 
 #include <glm/glm.hpp>
 
-#include <GLFW/glfw3.h>
-
-#include "../../third-party/ImGui/imgui.h"
-
 #include "../../third-party/json/json.hpp"
-
-#include "../rendering/Initializers.hpp"
 
 VulkanApp::VulkanApp()
 {
@@ -83,13 +71,13 @@ void VulkanApp::mainLoop() {
 		vulkanRenderer->RenderFrame();
 
 		Input::inputDirector.ResetReleasedInput();
-		timeManager->EndFrameTimer();
 
 		if (isFrameCapped) {
-			if (timeManager->GetDeltaTime() < 1.0 / MaxFPS) {
-				std::this_thread::sleep_for(std::chrono::duration<double>(1.0 / MaxFPS - timeManager->GetDeltaTime()));
+			if (timeManager->ExactTimeSinceFrameStart() < 1.0 / MaxFPS) {
+				std::this_thread::sleep_for(std::chrono::duration<double>(1.0 / MaxFPS - timeManager->ExactTimeSinceFrameStart()));
 			}
 		}
+		timeManager->EndFrameTimer();
 
 	}
 
@@ -130,13 +118,13 @@ void VulkanApp::DebugOverlay(bool* show_debug_overlay) {
 		return;
 	}
 	ImGui::Text("FPS %.3f", ImGui::GetIO().Framerate);
-	ImGui::Text("DeltaT: %f(s)", timeManager->GetDeltaTime());
+	ImGui::Text("DeltaT: %f(s)", timeManager->DeltaTime());
 	if (ImGui::Button("Toggle Verbose")) {
 		verbose = !verbose;
 	}
-	if (verbose) ImGui::Text("Run Time: %f(s)", timeManager->GetRunningTime());
-	if (verbose) ImGui::Text("Last frame time%f(s)", timeManager->GetPreviousFrameTime());
-	if (verbose) ImGui::Text("Last frame time%f(s)", timeManager->GetPreviousFrameTime());
+	if (verbose) ImGui::Text("Run Time: %f(s)", timeManager->RunningTime());
+	if (verbose) ImGui::Text("Last frame time%f(s)", timeManager->PreviousFrameTime());
+	if (verbose) ImGui::Text("Last frame time%f(s)", timeManager->PreviousFrameTime());
 	ImGui::Separator();
 	ImGui::Text("Mouse Position: (%.1f,%.1f)", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
 	ImGui::End();
@@ -240,13 +228,12 @@ void VulkanApp::BuildImgui() {
 //Release associated resources and shutdown imgui
 void VulkanApp::CleanUpImgui() {
 	ImGui_ImplGlfwVulkan_Shutdown();
-	//vkDestroyDescriptorPool(vulkanRenderer->device.device, imgui_descriptor_pool, VK_NULL_HANDLE);
 }
 
 void VulkanApp::HandleInputs() {
 	//Log::Debug << camera->Position.x << " " << camera->Position.y << " " << camera->Position.z << "\n";
 
-	double deltaTime = (float)timeManager->GetDeltaTime();
+	double deltaTime = timeManager->DeltaTime();
 
 	if (!Input::GetTextInputMode()) {
 
@@ -320,17 +307,10 @@ void VulkanApp::HandleInputs() {
 		scene->GetCamera()->ProcessMouseScroll(Input::GetMouseScrollY(), deltaTime);
 	}
 
-	if (Input::GetMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
+	if (Input::GetMouseButtonPressed(Input::GetMouseButtonPressed(0))) {
 		if (!ImGui::IsMouseHoveringAnyWindow()) {
 			Input::SetMouseControlStatus(true);
 		}
 	}
 }
 
-//void VulkanApp::SetMouseControl(bool value) {
-//	mouseControlEnabled = value;
-//	if (mouseControlEnabled)
-//		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-//	else
-//		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-//}

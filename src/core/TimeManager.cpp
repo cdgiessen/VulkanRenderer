@@ -1,58 +1,71 @@
 #include "TimeManager.h"
 #include <algorithm>
 
+using namespace std::chrono;
 
 TimeManager::TimeManager()
 {
-	startTime = std::chrono::high_resolution_clock::now();
+	applicationStartTime = high_resolution_clock::now();
+	frameStartTime = high_resolution_clock::now();
+	frameEndTime = high_resolution_clock::now();
+	curFrameTime = (frameEndTime - frameStartTime);
+
+	frameTimes = std::vector<double>(50, 0.01666);
 }
 
-
-TimeManager::~TimeManager()
+void TimeManager::CollectRuntimeData() 
 {
+	applicationEndTime = high_resolution_clock::now();
 }
 
 void TimeManager::StartFrameTimer() {
-	frameTimer.StartTimer();
+	frameStartTime = high_resolution_clock::now();
 }
 
 void TimeManager::EndFrameTimer() {
-	frameTimer.EndTimer();
+	frameEndTime = high_resolution_clock::now();
 
-	prevFrameTime = frameTimer.GetElapsedTimeMicroSeconds() / 1.0e6;
-	deltaTime = frameTimer.GetElapsedTimeNanoSeconds() / 1.0e9;
-	timeSinceStart = std::chrono::duration_cast<std::chrono::microseconds>(frameTimer.GetEndTime() - startTime).count() / 1.0e6;
+	prevFrameTime = curFrameTime;
+	curFrameTime = (frameEndTime - frameStartTime);
 
 	// Update frame timings display
 	{
 		std::rotate(frameTimes.begin(), frameTimes.begin() + 1, frameTimes.end());
-		double frameTime = 1000.0f / (deltaTime * 1000.0f);
-		frameTimes.back() = (float)frameTime;
-		if (frameTime < frameTimeMin) {
-			frameTimeMin = (float)frameTime;
+
+		frameTimes.back() = (float)DeltaTime();
+
+		if (frameTimes.back() < frameTimeMin) {
+			frameTimeMin = frameTimes.back();
 		}
-		if (frameTime > frameTimeMax) {
-			frameTimeMax = (float)frameTime;
+		if (frameTimes.back() > frameTimeMax) {
+			frameTimeMax = frameTimes.back();
 		}
 	}
 }
 
-double TimeManager::GetDeltaTime() {
-	return deltaTime;
+double TimeManager::ExactTimeSinceFrameStart() {
+	DoubleDuration time = high_resolution_clock::now() - frameStartTime;
+	return time.count();
+}
+
+double TimeManager::DeltaTime() {
+	DoubleDuration time = curFrameTime;
+	return time.count();
 }
 
 
-double TimeManager::GetRunningTime() {
-	return timeSinceStart;
+double TimeManager::RunningTime() {
+	DoubleDuration time = high_resolution_clock::now() - applicationStartTime;
+	return time.count();
 }
 
-TimingsHistory TimeManager::GetFrameTimeHistory() {
+BriefTimingHistory TimeManager::FrameTimeHistory() {
 	return frameTimes;
 }
 
-double TimeManager::GetPreviousFrameTime() {
-	return prevFrameTime;
+double TimeManager::PreviousFrameTime() {
+	return prevFrameTime.count();
 }
 
-float TimeManager::GetFrameTimeMax(){ return frameTimeMax;}
-float TimeManager::GetFrameTimeMin(){ return frameTimeMin;}
+float TimeManager::FrameTimeMax(){ return frameTimeMax;}
+float TimeManager::FrameTimeMin(){ return frameTimeMin;}

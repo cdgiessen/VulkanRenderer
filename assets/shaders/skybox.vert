@@ -34,7 +34,7 @@ void main()
 {
 	outUVW = inPos;
 	outUVW.x *= -1.0;
-	vec4 pos =  sky.proj * mat4(mat3(sky.view)) * vec4(inPos, 1.0);
+	vec4 pos =  sky.proj * sky.view * vec4(inPos, 1.0);
 	pos.z = 0;
 	gl_Position = pos;
 }

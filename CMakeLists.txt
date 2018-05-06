@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
 include(CMakeToolsHelpers OPTIONAL)
 
 set(CMAKE_CXX_STANDARD 17)
+if(MSVC)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+endif(MSVC)
 
 project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
 
@@ -105,6 +108,9 @@ endif(UNIX)
 
 if(MSVC)
 	add_compile_options("/permissive-")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive-")
+	add_compile_options("/Debug:fastlink")
+	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Debug:fastlink")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")	
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} /MDd")

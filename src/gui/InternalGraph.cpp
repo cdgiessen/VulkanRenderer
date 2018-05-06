@@ -53,15 +53,6 @@ namespace InternalGraph {
 	NoiseImage2D<T>::NoiseImage2D(int width) : width(width), isExternallyAllocated(false) {
 		
 		data = std::vector<T>(width*width);
-		/*
-		image = (float*)malloc(GetSizeBytes());
-		for (int i = 0; i < width; i++)
-		{
-			for (int j = 0; j < width; j++)
-			{
-				SetPixelValue(i, j, -1);
-			}
-		}*/
 	}
 
 	template<typename T>
@@ -157,11 +148,11 @@ namespace InternalGraph {
 		handle.handle = nullptr;
 	}
 
-	NodeID InputLink::GetInputNode() {
+	NodeID InputLink::GetInputNode() const {
 		return handle.id;
 	}
 
-	bool InputLink::HasInputNode() {
+	bool InputLink::HasInputNode() const {
 		return hasInputNode;
 	}
 
@@ -179,11 +170,11 @@ namespace InternalGraph {
 		value = data;
 	}
 
-	LinkTypeVariants InputLink::GetValue() {
+	LinkTypeVariants InputLink::GetValue() const {
 		return value;
 	}
 
-	LinkTypeVariants InputLink::GetValue(const int x, const int z) {
+	LinkTypeVariants InputLink::GetValue(const int x, const int z) const {
 	
 		if (hasInputNode)
 			return handle.handle->GetValue(x, z);
@@ -351,15 +342,15 @@ namespace InternalGraph {
 		inputLinks.at(index).SetDataValue(data);
 	}
 
-	LinkTypeVariants Node::GetHeightMapValue(const int x, const int z) {
+	LinkTypeVariants Node::GetHeightMapValue(const int x, const int z) const {
 		return std::get<float>(inputLinks.at(0).GetValue(x,z)) * 2 - 1;
 	}
 
-	LinkTypeVariants Node::GetSplatMapValue(const int x, const int z) {
+	LinkTypeVariants Node::GetSplatMapValue(const int x, const int z) const {
 		return inputLinks.at(1).GetValue(x, z);
 	}
 
-	LinkTypeVariants Node::GetValue(const int x, const int z) {
+	LinkTypeVariants Node::GetValue(const int x, const int z) const {
 		LinkTypeVariants retVal;
 		//LinkTypeVariants reA, reB;
 		float a, b, c, d, alpha;
@@ -673,13 +664,14 @@ namespace InternalGraph {
 		default:
 			break;
 		}
+		return retVal;
 	}
 
-	NodeType Node::GetNodeType() {
+	NodeType Node::GetNodeType() const {
 		return nodeType;
 	}
 
-	LinkType Node::GetOutputType() {
+	LinkType Node::GetOutputType() const {
 		return outputType;
 	}
 
@@ -931,6 +923,7 @@ namespace InternalGraph {
 		}
 		
 
+
 		for (auto node : nodeMap) {
 			node.second.CleanUp();
 		}
@@ -946,6 +939,12 @@ namespace InternalGraph {
 
 	NoiseImage2D<RGBA_pixel>& GraphUser::GetSplatMap() {
 		return outputSplatmap;
+
+	}
+
+
+	NoiseImage2D<uint8_t>& GraphUser::GetVegetationDensityMap() {
+		return vegetationDensityMap;
 
 	}
 

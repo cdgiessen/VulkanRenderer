@@ -18,16 +18,15 @@
 
 //#include <gltf2\glTF2.hpp>
 
-struct SunSettings {
+struct SkySettings {
 	bool show_skyEditor = true;
 	bool autoMove = false;
 	float moveSpeed = 0.0002f;
-	float intensity = 1.0f;
 	float horizontalAngle = 0.0f;
 	float verticalAngle = 1.0f;
 
-	glm::vec3 dir = glm::vec3(0, 60, 25);
-	glm::vec3 color = glm::vec3(1.0f, 0.98f, 0.9f);
+	DirectionalLight sun;
+	DirectionalLight moon;
 };
 
 class Scene
@@ -67,7 +66,7 @@ private:
 	float gravity = -0.25f;
 	float heightOfGround = 1.4f;
 
-	SunSettings sunSettings;
+	SkySettings skySettings;
 	void UpdateSunData();
 	void DrawSkySettingsGui();
 
@@ -77,5 +76,6 @@ private:
 	bool UpdateTerrain = true;
 
 	PBR_Material testMat;
+	InstancedSceneObject::InstanceData testInstanceData;
 };
 

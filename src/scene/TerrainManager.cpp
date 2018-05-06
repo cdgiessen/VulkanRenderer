@@ -210,8 +210,8 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 			InstancedSceneObject::InstanceData id;
 			id.pos = glm::vec3((i - settings.gridDimentions / 2) * settings.width - settings.width / 2,
 				0, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2);
-			id.scale = 1;
 			id.rot = glm::vec3(0, 0, 0);
+			id.scale = 1;
 			instancedWaters->AddInstance(id);
 
 			//auto water = std::make_shared< Water>

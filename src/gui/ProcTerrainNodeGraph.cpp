@@ -350,7 +350,7 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 
 		node->outputSlot.Draw(imDrawList, *this, *node, 0);
 
-		int verticalOffset = 40;
+		float verticalOffset = 40;
 		for (int i = 0; i < node->inputSlots.size(); i++)
 		{
 			verticalOffset += node->inputSlots[i].Draw(imDrawList, *this, *node, verticalOffset);

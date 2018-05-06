@@ -644,7 +644,7 @@ VkCommandBuffer VulkanRenderer::GetTransferCommandBuffer(){
 		//return GetTransferCommandBuffer();
 	}
 	else {
-		graphicsPrimaryCommandPool.GetOneTimeUseCommandBuffer();
+		return graphicsPrimaryCommandPool.GetOneTimeUseCommandBuffer();
 		/*VkCommandBuffer buf;
 		VkCommandBufferAllocateInfo allocInfo =
 			initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);

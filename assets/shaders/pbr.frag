@@ -125,18 +125,8 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
-vec3 DirectionalLightingCalc(int i, vec3 N, vec3 V, vec3 F0){
-
-     // calculate per-light radiance
-     vec3 L = normalize(directional.lights[i].direction);
-     vec3 H = normalize(V + L);
-     //float separation    = distance(directional.lights[i].position, inFragPos);
-     //float attenuation = 1.0 / (separation * separation);
-     vec3 radiance     = directional.lights[i].color
-					   * directional.lights[i].intensity; 
-		//* attenuation;        
-   
-     // cook-torrance brdf
+ vec3 PBR_Calc(vec3 N, vec3 V, vec3 F0, vec3 L, vec3 H, vec3 radiance){
+	// cook-torrance brdf
      float NDF = DistributionGGX(N, H, pbr_mat.roughness);        
      float G   = GeometrySmith(N, V, L, pbr_mat.roughness);      
      vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
@@ -152,6 +142,17 @@ vec3 DirectionalLightingCalc(int i, vec3 N, vec3 V, vec3 F0){
      // add to outgoing radiance Lo
      float NdotL = max(dot(N, L), 0.0);                
      return (kD * pbr_mat.albedo / PI + specular) * radiance * NdotL; 
+ }
+
+vec3 DirectionalLightingCalc(int i, vec3 N, vec3 V, vec3 F0){
+
+     // calculate per-light radiance
+     vec3 L = normalize(directional.lights[i].direction);
+     vec3 H = normalize(V + L);
+     vec3 radiance     = directional.lights[i].color
+					   * directional.lights[i].intensity; 
+   
+    return PBR_Calc(N, V, F0, L, H, radiance);
  } 
 
 vec3 PointLightingCalc(int i, vec3 N, vec3 V, vec3 F0){
@@ -165,23 +166,8 @@ vec3 PointLightingCalc(int i, vec3 N, vec3 V, vec3 F0){
 		* point.lights[i].intensity 
 		* attenuation;        
    
-     // cook-torrance brdf
-     float NDF = DistributionGGX(N, H, pbr_mat.roughness);        
-     float G   = GeometrySmith(N, V, L, pbr_mat.roughness);      
-     vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
-   
-     vec3 kS = F;
-     vec3 kD = vec3(1.0) - kS;
-     kD *= 1.0 - pbr_mat.metallic;	  
-   
-     vec3 numerator    = NDF * G * F;
-     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-     vec3 specular     = numerator / max(denominator, 0.0001);  
-       
-     // add to outgoing radiance Lo
-     float NdotL = max(dot(N, L), 0.0);                
-     return (kD * pbr_mat.albedo / PI + specular) * radiance * NdotL; 
- } 
+	return PBR_Calc(N, V, F0, L, H, radiance);
+} 
 
 void main()
 {		

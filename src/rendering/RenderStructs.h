@@ -2,12 +2,14 @@
 
 #include <vector>
 #include <memory>
+#include <functional>
 
 #include <glm/glm.hpp>
 
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 class VulkanTexture;
+
 
 /* Synchronization */
 
@@ -34,21 +36,37 @@ struct DirectionalLight {
 	float intensity;
 	glm::vec3 color;
 	float dum;
+
+	DirectionalLight() {};
+	DirectionalLight(glm::vec3 dir, float intensity, glm::vec3 color) :
+		direction(dir), intensity(intensity), color(color)
+	{}
 };
 
 struct PointLight {
 	glm::vec3 position;
 	float attenuation;
 	glm::vec3 color;
+
+	PointLight() {};
+	PointLight(glm::vec3 position, float attenuation, glm::vec3 color) :
+		position(position), attenuation(attenuation), color(color)
+	{}
 };
 
 struct  SpotLight {
 	glm::vec3 position;
 	float attenuation;
-	glm::vec3 color;
+	glm::vec3 direction;
 	float cutoff;
+	glm::vec3 color;
 	float outerCutOff;
-	float padding;
+
+
+	SpotLight() {};
+	SpotLight(glm::vec3 position, glm::vec3 dir, glm::vec3 color, float attenuation, float cutoff, float outerCutOff) :
+		position(position), direction(dir), attenuation(attenuation), color(color), cutoff(cutoff), outerCutOff(outerCutOff)
+	{}
 };
 
 /* Model and Normal matrices */
@@ -78,16 +96,16 @@ struct StaticModelPushConstant {
 
 struct Phong_Material {
 	glm::vec4 color = glm::vec4(0.5, 0.5, 0.5, 1.0);
-	float diffuse = 0.8;
-	float specular = 0.2;
+	float diffuse = 0.8f;
+	float specular = 0.2f;
 	float reflectivity = 4;
 	float padding = 0;
 };
 
 struct PBR_Material {
 	glm::vec3 albedo = glm::vec3(0.5,0.5,0.5);
-	float metallic = 0.1;
-	float roughness = 0.5;
+	float metallic = 0.1f;
+	float roughness = 0.5f;
 	float ao = 1;
 	glm::vec3 emmisive = glm::vec3(0.0, 0.0, 0.0);
 

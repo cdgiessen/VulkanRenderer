@@ -7,6 +7,15 @@
 
 #include "../resources/Mesh.h"
 
+
+void ManagedVulkanPipeline::BindPipelineAtIndex(VkCommandBuffer cmdBuf, int index) {
+	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines->at(0));
+}
+
+void ManagedVulkanPipeline::BindPipelineOptionalWireframe(VkCommandBuffer cmdBuf, bool wireframe) {
+	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? pipelines->at(1) : pipelines->at(0));
+}
+
 VulkanPipeline::VulkanPipeline(const VulkanDevice &device) :device(device) {
 }
 

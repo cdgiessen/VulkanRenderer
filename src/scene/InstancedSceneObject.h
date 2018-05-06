@@ -18,23 +18,27 @@ class InstancedSceneObject
 {
 public:
 
+	int instanceMemberSize = 8;
+
 	// Per-instance data block
 	struct InstanceData {
 		glm::vec3 pos;
 		glm::vec3 rot;
-		float scale;
-		float dummy1;//Alignment fix
-		float dummy2;//Alignment fix
+		float scale = 1;
+		int texIndex = 0;
+		//float dummy2;
+		InstanceData() = default;
+		InstanceData(glm::vec3 pos, glm::vec3 rot, float scale, int texIndex) :
+			pos(pos), rot(rot), scale(scale), texIndex(texIndex)
+		{}
+
+		bool operator==(const InstanceData& rhs) {
+			return this->pos == rhs.pos 
+				&& this->rot == rhs.rot 
+				&& this->scale == rhs.scale 
+				&& this->texIndex == rhs.texIndex;
+		}
 	};
-	// Contains the instanced data
-	//struct InstanceBuffer {
-	//	VkBuffer buffer = VK_NULL_HANDLE;
-	//	VkDeviceMemory memory = VK_NULL_HANDLE;
-	//	size_t size = 0;
-	//	VkDescriptorBufferInfo descriptor;
-	//} instanceBuffer;
-
-
 
 	InstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer, int maxInstances = 256);
 	~InstancedSceneObject();
@@ -60,10 +64,12 @@ public:
 
 	void AddInstance(InstanceData data);
 
-	void AddInstances(std::vector<glm::vec3> positions);
-	//void RemoveInstance(std::vector<glm::vec3> positions);
+	void AddInstances(std::vector<InstanceData> instances);
+	void RemoveInstances(std::vector<InstanceData> instances);
 
 	void UploadInstances();
+
+	void ImGuiShowInstances();
 
 	void WriteToCommandBuffer(VkCommandBuffer commandBuffer, bool wireframe);
 private:
@@ -74,10 +80,6 @@ private:
 
 	std::shared_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;
-
-	//VkDescriptorSetLayout descriptorSetLayout;
-	//VkDescriptorPool descriptorPool;
-	//VkDescriptorSet descriptorSet;
 
 	std::shared_ptr<Mesh> mesh;
 	std::shared_ptr<VulkanModel> vulkanModel;
@@ -92,7 +94,7 @@ private:
 	std::shared_ptr<VulkanBufferInstance> instanceBuffer;
 
 	int instanceCount = 0;
-	int maxInstanceCount = 256;
+	int maxInstanceCount = 16384;
 
 	VkShaderModule fragShaderModule;
 	VkCullModeFlagBits cullModeFlagBits = VK_CULL_MODE_BACK_BIT;
