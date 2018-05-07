@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "Device.hpp"
+#include "Device.h"
 #include <vulkan/vulkan.h>
 
 //Manages Shaderlife times

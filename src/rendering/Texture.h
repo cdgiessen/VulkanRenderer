@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include "Device.hpp"
-#include "Descriptor.hpp"
+#include "Device.h"
+#include "Descriptor.h"
 
 #include "../resources/Texture.h"
 

@@ -133,9 +133,10 @@ void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan
 	instancedWaters->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
 	instancedWaters->SetBlendMode(VK_TRUE);
 	instancedWaters->SetCullMode(VK_CULL_MODE_NONE);
-	instancedWaters->LoadModel(createFlatPlane(settings.numCells, glm::vec3(settings.width, 0, settings.width)));
+	instancedWaters->LoadModel(createFlatPlane(settings.numCells, glm::vec3(1, 0, 1)));
 	instancedWaters->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg"));
 	instancedWaters->InitInstancedSceneObject(renderer);
+
 }
 
 void TerrainManager::CleanUpResources() {
@@ -195,24 +196,29 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 	//WaterMesh = createFlatPlane(settings.numCells, glm::vec3(settings.width, 0, settings.width));
 	//WaterModel.loadFromMesh(WaterMesh, renderer->device, renderer->device.graphics_queue);
 
-	instancedWaters->CleanUp();
-	instancedWaters.release();
-	instancedWaters = std::make_unique<InstancedSceneObject>(renderer);
-	instancedWaters->SetBlendMode(VK_TRUE);
-	instancedWaters->SetCullMode(VK_CULL_MODE_NONE);
-	instancedWaters->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
-	instancedWaters->LoadModel(createFlatPlane(settings.numCells, glm::vec3(settings.width, 0, settings.width)));
-	instancedWaters->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg"));
-	instancedWaters->InitInstancedSceneObject(renderer);
 
+
+	//instancedWaters->CleanUp();
+	//instancedWaters.release();
+	//instancedWaters = std::make_unique<InstancedSceneObject>(renderer);
+	//instancedWaters->SetBlendMode(VK_TRUE);
+	//instancedWaters->SetCullMode(VK_CULL_MODE_NONE);
+	//instancedWaters->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
+	//instancedWaters->LoadModel(createFlatPlane(settings.numCells, glm::vec3(settings.width, 0, settings.width)));
+	//instancedWaters->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg"));
+	//instancedWaters->InitInstancedSceneObject(renderer);
+
+
+	std::vector<InstancedSceneObject::InstanceData> waterData;
 	for (int i = 0; i < settings.gridDimentions; i++) {
 		for (int j = 0; j < settings.gridDimentions; j++) {
 			InstancedSceneObject::InstanceData id;
 			id.pos = glm::vec3((i - settings.gridDimentions / 2) * settings.width - settings.width / 2,
 				0, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2);
 			id.rot = glm::vec3(0, 0, 0);
-			id.scale = 1;
-			instancedWaters->AddInstance(id);
+			id.scale = settings.width;
+			waterData.push_back(id);
+			//instancedWaters->AddInstance(id);
 
 			//auto water = std::make_shared< Water>
 			//	(64, (i - settings.gridDimentions / 2) * settings.width - settings.width / 2, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2, settings.width, settings.width);
@@ -223,7 +229,8 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 			//waters.push_back(water);
 		}
 	}
-	instancedWaters->UploadInstances();
+	instancedWaters->RemoveAllInstances(waterData);
+	//instancedWaters->UploadInstances();
 	recreateTerrain = false;
 }
 

@@ -10,9 +10,9 @@
 
 #include "../resources/Texture.h"
 
-#include "../rendering/Texture.hpp"
-#include "../rendering/Model.hpp"
-#include "../rendering/Renderer.hpp"
+#include "../rendering/Texture.h"
+#include "../rendering/Model.h"
+#include "../rendering/Renderer.h"
 
 
 struct SkyboxUniformBuffer {

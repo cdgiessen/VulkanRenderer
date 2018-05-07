@@ -1,8 +1,8 @@
-#include "Device.hpp"
+#include "Device.h"
 
-#include "Initializers.hpp"
-#include "SwapChain.hpp"
-#include "Buffer.hpp"
+#include "Initializers.h"
+#include "SwapChain.h"
+//#include "Buffer.h"
 
 #include "../core/Logger.h"
 

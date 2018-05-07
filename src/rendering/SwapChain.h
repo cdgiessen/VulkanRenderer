@@ -9,8 +9,8 @@
 
 #include <GLFW/glfw3.h>
 
-#include "Initializers.hpp"
-#include "Device.hpp"
+#include "Initializers.h"
+#include "Device.h"
 
 struct SwapChainSupportDetails
 {

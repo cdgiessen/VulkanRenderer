@@ -21,8 +21,8 @@
 
 #include "ImGuiImpl.h"
 
-#include "../core/Window.hpp"
-#include "../rendering/Renderer.hpp"
+#include "../core/Window.h"
+#include "../rendering/Renderer.h"
 
 // GLFW Data
 static GLFWwindow*  g_Window = NULL;

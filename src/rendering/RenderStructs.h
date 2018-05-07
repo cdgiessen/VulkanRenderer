@@ -6,9 +6,11 @@
 
 #include <glm/glm.hpp>
 
-#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+//#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 class VulkanTexture;
+
+
 
 
 /* Synchronization */

@@ -2,7 +2,7 @@
 #include "../core/CoreTools.h"
 #include "../core/Logger.h"
 
-#include "../rendering/Initializers.hpp"
+#include "../rendering/Initializers.h"
 
 Mesh::Mesh(Vertices_PosNorm vertices, std::vector<uint16_t> indices) 
 	: vertices(vertices), indices(indices), vertexElementCount(6)

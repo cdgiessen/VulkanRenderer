@@ -282,6 +282,15 @@ void InstancedSceneObject::RemoveInstances(std::vector<InstanceData> instances) 
 	UploadInstances();
 }
 
+void InstancedSceneObject::RemoveAllInstances(std::vector<InstanceData> instances) {
+	instancesData.clear();
+
+	this->instancesData = instances;
+
+	UploadInstances();
+
+}
+
 void InstancedSceneObject::UpdateUniformBuffer()
 {
 	//for (auto it = modelUniforms.begin(); it != modelUniforms.end(); it++) {
@@ -295,6 +304,8 @@ void InstancedSceneObject::UpdateUniformBuffer()
 	//modelUniformsBuffer.map(renderer->device.device);
 	//modelUniformsBuffer.copyTo(&modelUniforms, modelUniforms.size() * sizeof(ModelBufferObject));
 	//modelUniformsBuffer.unmap();
+
+
 }
 
 void InstancedSceneObject::WriteToCommandBuffer(VkCommandBuffer commandBuffer, bool wireframe) {

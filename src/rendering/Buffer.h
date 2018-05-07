@@ -4,8 +4,8 @@
 
 #include <vulkan/vulkan.h>
 
-#include "Device.hpp"
-#include "Descriptor.hpp"
+#include "Device.h"
+#include "Descriptor.h"
 
 /**
 * @brief Encapsulates access to a Vulkan buffer backed up by device memory

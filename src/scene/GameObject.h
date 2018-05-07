@@ -7,10 +7,10 @@
 
 
 
-#include "../rendering/Model.hpp"
-#include "../rendering/Renderer.hpp"
-#include "../rendering/Texture.hpp"
-#include "../rendering/Descriptor.hpp"
+#include "../rendering/Model.h"
+#include "../rendering/Renderer.h"
+#include "../rendering/Texture.h"
+#include "../rendering/Descriptor.h"
 
 #include "../resources/Mesh.h"
 #include "../resources/Texture.h"

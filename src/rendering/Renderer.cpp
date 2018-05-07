@@ -1,4 +1,4 @@
-#include "Renderer.hpp"
+#include "Renderer.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../../third-party/stb_image/stb_image_write.h"

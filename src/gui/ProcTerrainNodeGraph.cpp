@@ -1,5 +1,7 @@
 #include "ProcTerrainNodeGraph.h"
 
+#include "../../third-party/json/json.hpp"
+
 #include "../../third-party/noc/noc_file_dialog.h"
 
 #include "../core/CoreTools.h"

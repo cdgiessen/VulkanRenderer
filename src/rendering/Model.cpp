@@ -1,6 +1,6 @@
-#include "Model.hpp"
+#include "Model.h"
 
-#include "Renderer.hpp"
+#include "Renderer.h"
 
 VulkanModel::VulkanModel(VulkanDevice &device): device(device),
 vmaVertices(device), vmaIndicies(device)

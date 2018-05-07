@@ -51,6 +51,7 @@ src/rendering/Buffer.cpp
 src/rendering/Device.cpp
 src/rendering/Descriptor.cpp
 src/rendering/Pipeline.cpp
+src/rendering/Material.cpp
 src/rendering/Model.cpp
 src/rendering/Renderer.cpp
 src/rendering/Shader.cpp

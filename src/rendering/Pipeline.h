@@ -7,38 +7,44 @@
 
 #include <vulkan/vulkan.h>
 
-class PipelineCreationData {
-public:
-
-	void WriteToFile(std::string filename);
-	void ReadFromFile(std::string filename);
-
-	//Data
-	struct ShaderString {
-
-		std::string vertShader;
-		std::string fragShader;
-		std::optional<std::string> geomShader;
-		std::optional<std::string> tessControlShader;
-		std::optional<std::string> tessEvalShader;
-
-	} shaders;
-	
-	VkPipelineInputAssemblyStateCreateInfo inputAssembly;
-	bool multiViewport;
-	std::vector<VkViewport> viewport;
-	std::vector<VkRect2D> scissor;
-	VkPipelineRasterizationStateCreateInfo rasterizer;
-	VkPipelineMultisampleStateCreateInfo multisampling;
-	VkPipelineDepthStencilStateCreateInfo depthStencil;
-	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment;
-	VkPipelineColorBlendStateCreateInfo colorBlending;
-
-};
+//class PipelineCreationData {
+//public:
+//	
+//	void WriteToFile(std::string filename);
+//	void ReadFromFile(std::string filename);
+//
+//	//Data
+//	struct ShaderString {
+//
+//		std::string vertShader;
+//		std::string fragShader;
+//		std::optional<std::string> geomShader;
+//		std::optional<std::string> tessControlShader;
+//		std::optional<std::string> tessEvalShader;
+//
+//	} shaders;
+//	
+//	VkPipelineInputAssemblyStateCreateInfo inputAssembly;
+//	bool multiViewport;
+//	std::vector<VkViewport> viewport;
+//	std::vector<VkRect2D> scissor;
+//	VkPipelineRasterizationStateCreateInfo rasterizer;
+//	VkPipelineMultisampleStateCreateInfo multisampling;
+//	VkPipelineDepthStencilStateCreateInfo depthStencil;
+//	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment;
+//	VkPipelineColorBlendStateCreateInfo colorBlending;
+//
+//};
 
 class VulkanDevice;
 
-struct PipelineCreationObject {
+class PipelineCreationObject {
+public:
+
+	//PipelineCreationObject(PipelineCreationData data);
+	//PipelineCreationObject();
+
+
 	bool geomShader;
 	bool tessShader;
 	VkShaderModule vertShaderModule;

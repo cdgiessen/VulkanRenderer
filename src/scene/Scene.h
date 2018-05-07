@@ -2,7 +2,7 @@
 
 #include <glm/vec3.hpp>
 
-#include "../rendering/Renderer.hpp"
+#include "../rendering/Renderer.h"
 
 #include "../resources/ResourceManager.h"
 #include "../resources/Mesh.h"

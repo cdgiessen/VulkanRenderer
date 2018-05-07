@@ -6,9 +6,9 @@
 #include <glm/common.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "../rendering/Renderer.hpp"
-#include "../rendering/Model.hpp"
-#include "../rendering/Texture.hpp"
+#include "../rendering/Renderer.h"
+#include "../rendering/Model.h"
+#include "../rendering/Texture.h"
 
 #include "../resources/Mesh.h"
 #include "../resources/Texture.h"
@@ -66,6 +66,9 @@ public:
 
 	void AddInstances(std::vector<InstanceData> instances);
 	void RemoveInstances(std::vector<InstanceData> instances);
+
+	//Resets all current instances and puts new ones in its place
+	void RemoveAllInstances(std::vector<InstanceData> instances);
 
 	void UploadInstances();
 

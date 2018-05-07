@@ -10,7 +10,7 @@
 #include <glm/gtx/hash.hpp>
 #include <vulkan/vulkan.h>
 
-#include "../rendering/Initializers.hpp"
+#include "../rendering/Initializers.h"
 
 struct Vertex_PosNorm {
 	glm::vec3 pos;

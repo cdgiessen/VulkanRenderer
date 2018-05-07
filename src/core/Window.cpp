@@ -1,4 +1,4 @@
-#include "Window.hpp"
+#include "Window.h"
 
 #include <glm/glm.hpp>
 #include <mutex>

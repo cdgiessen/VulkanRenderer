@@ -95,24 +95,29 @@ vec3 DirPhongLighting(vec3 view, vec3 dir, vec3 normal, vec3 color, float intens
 }
 
 void main() {
-	float inTime = global.time;
-	vec4 texSample1 = texture(waterTex, vec2(inTexCoord.x + cos(inTime/5.0f + 2.0f)/7.0f, inTexCoord.y + cos(inTime/6.0f)/7.5f+ 1.0f));
-	vec4 texSample2 = texture(waterTex, vec2(inTexCoord.x + 0.1f + sin(inTime/5.0f+ 0.5f)/8.0f, inTexCoord.y + 0.1f + sin(inTime/4.0f+ 1.5f)/6.0f));
-	vec4 texSample3 = texture(waterTex, vec2(inTexCoord.x , inTexCoord.y + sin(inTime/4.5f)/10.0f));
-	vec4 texSampleAll =  vec4(0.25) * (texSample1 + texSample2 + texSample3);
+	float inTime = global.time;	
+	float time = global.time * 0.1f;
+
+	vec2 sampPoint = inFragPos.xz * 0.25f;
+
+	vec4 baseBlue = vec4(0.129, 0.404, 1.0f, 1.0f);
+	float samp1 = dot(texture(waterTex, vec2(cos(time) + sampPoint.x, cos(time) + sampPoint.y + 0.1f)).xyz, vec3(0.299, 0.587, 0.114));
+	float samp2 = dot(texture(waterTex, vec2(cos(time* 0.5f) + sampPoint.x + 0.1f, sin(time) + sampPoint.y)).xyz, vec3(0.299, 0.587, 0.114));
+	vec4 sampAll = (samp1 *0.5 + samp2 *0.5) * baseBlue;
+
 
 	float newTime = inTime * 0.05f;
-	vec2 uvModified = vec2(	inFragPos.x + sin(newTime * 1.2f + cos(newTime * 0.25f) * 1.2f) * 1.6f + sin(newTime * 0.25f) * 1.2f + newTime * 0.8f * (sin(newTime) + 3) + 1.0f, 
-							inFragPos.z + cos(newTime * 1.1f + sin(newTime * 0.3f ) * 1.6f) * 1.8f + cos(newTime * 0.3f ) * 1.6f + newTime * 0.5f * (sin(newTime) + 2) + 1.0f);
-	vec2 uvModified2 = vec2(inFragPos.x + cos(newTime * 1.3f + sin(newTime * 0.35f) * 1.5f) * 1.5f + sin(newTime * 0.35f) * 1.5f + newTime * 0.5f * (sin(newTime) + 2), 
-							inFragPos.z + sin(newTime * 1.4f + cos(newTime * 0.45f ) * 1.4f) * 1.4f + cos(newTime * 0.45f ) * 1.4f + newTime * 0.8f * (sin(newTime) + 3) );
-	vec4 texColor = vec4(0.3) * causticsSampler(uvModified, inTime * 0.2f) + vec4(0.3) * causticsSampler(uvModified2, inTime * 0.6f) + texSampleAll;
+	vec2 uvModified = vec2(	inFragPos.x + sin(newTime * 1.2f + cos(newTime * 0.35f) * 1.2f) * 1.6f + sin(newTime * 0.35f) * 1.2f + newTime * 0.8f * (sin(newTime) + 3) + 1.0f, 
+							inFragPos.z + cos(newTime * 1.1f + sin(newTime * 0.4f ) * 1.6f) * 1.8f + cos(newTime * 0.4f ) * 1.6f + newTime * 0.5f * (sin(newTime) + 2) + 1.0f);
+	vec2 uvModified2 = vec2(inFragPos.x + cos(newTime * 1.3f + sin(newTime * 0.45f) * 1.5f) * 1.5f + sin(newTime * 0.45f) * 1.5f + newTime * 0.5f * (sin(newTime) + 2), 
+							inFragPos.z + sin(newTime * 1.4f + cos(newTime * 0.55f ) * 1.4f) * 1.4f + cos(newTime * 0.55f ) * 1.4f + newTime * 0.8f * (sin(newTime) + 3) );
+	vec4 texColor = vec4(0.65) * sampAll + vec4(0.45) * (causticsSampler(uvModified, inTime * 0.2f) + causticsSampler(uvModified2, inTime * 0.6f));
 
 	vec3 viewVec = normalize(-cam.cameraDir);
 
 	vec3 normalVec = normalize(inNormal);
 
-vec3 pointLightContrib = vec3(0.0f);
+	vec3 pointLightContrib = vec3(0.0f);
 	for(int i = 0; i < PointLightCount; i++){
 		vec3 lightVec = normalize(point.lights[i].position - inFragPos).xyz;
 		vec3 reflectVec = reflect(-lightVec, normalVec);

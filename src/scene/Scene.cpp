@@ -203,9 +203,9 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 		obj->Draw(commandBuffer, wireframe, drawNormals);
 	}
 	
-	terrainManager->RenderTerrain(commandBuffer, wireframe);
-	
 	treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
+	
+	terrainManager->RenderTerrain(commandBuffer, wireframe);
 
 	skybox->WriteToCommandBuffer(commandBuffer);
 }

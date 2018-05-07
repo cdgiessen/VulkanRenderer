@@ -1,4 +1,4 @@
-#include "SwapChain.hpp"
+#include "SwapChain.h"
 #include "RenderTools.h"
 
 #include "../core/Logger.h"

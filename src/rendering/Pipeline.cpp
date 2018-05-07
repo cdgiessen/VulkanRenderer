@@ -1,12 +1,40 @@
-#include "Pipeline.hpp"
+#include "Pipeline.h"
 
-#include "Initializers.hpp"
-#include "Device.hpp"
+
+
+//#include "../../third-party/json/json.hpp"
+
+#include "Initializers.h"
+#include "Device.h"
 #include "RenderTools.h"
 #include "RenderStructs.h"
 
 #include "../resources/Mesh.h"
 
+//void PipelineCreationData::WriteToFile(std::string filename) {
+//
+//}
+//
+//void PipelineCreationData::ReadFromFile(std::string filename) {
+//
+//	std::ifstream inFile(filename);
+//	nlohmann::json j;
+//
+//	if (inFile.peek() == std::ifstream::traits_type::eof()) {
+//		Log::Error << "Opened graph is empty! Did something go wrong?\n";
+//		return;
+//	}
+//
+//}
+
+
+//PipelineCreationObject::PipelineCreationObject(PipelineCreationData data) {
+//
+//}
+//
+//PipelineCreationObject::PipelineCreationObject() {
+//
+//}
 
 void ManagedVulkanPipeline::BindPipelineAtIndex(VkCommandBuffer cmdBuf, int index) {
 	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines->at(0));

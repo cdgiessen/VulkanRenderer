@@ -16,7 +16,7 @@ VulkanApp::VulkanApp()
 	timeManager = std::make_shared<TimeManager>();
 
 	window = std::make_shared<Window>();
-	window->createWindow(isFullscreen, glm::uvec2(screenWidth, screenHeight));
+	window->createWindow(isFullscreen, glm::ivec2(screenWidth, screenHeight), glm::ivec2(10,10));
 	Input::SetupInputDirector(window->getWindowContext());
 	Input::SetMouseControlStatus(true);
 

@@ -5,7 +5,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
-#include "Window.hpp"
+#include "Window.h"
 #include "Input.h"
 #include "Logger.h"
 #include "TimeManager.h"
@@ -13,7 +13,7 @@
 
 #include "../resources/ResourceManager.h"
 
-#include "../rendering/Renderer.hpp"
+#include "../rendering/Renderer.h"
 
 #include "../scene/Scene.h"
 

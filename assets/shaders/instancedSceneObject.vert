@@ -91,5 +91,5 @@ void main() {
     gl_Position = cam.projView * mnd.model * CreateRotationMat(instanceRot) * pos;
 
 	outNormal = (mnd.normal * vec4(inNormal,1.0f)).xyz;
-	outFragPos = (mnd.model * vec4(inPosition.xyz + instancePos, 1.0)).xyz;		
+	outFragPos = (mnd.model * vec4((locPos.xyz * instanceScale) + instancePos, 1.0)).xyz;		
 }

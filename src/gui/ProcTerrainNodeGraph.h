@@ -15,9 +15,6 @@
 
 #include "../../third-party/ImGui/imgui.h"
 
-#include "../../third-party/json/json.hpp"
-
-
 
 enum class ConnectionType
 {

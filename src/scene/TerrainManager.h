@@ -10,7 +10,7 @@
 #include "../core/TimeManager.h"
 #include "../core/MemoryPool.h"
 
-#include "../rendering/Renderer.hpp"
+#include "../rendering/Renderer.h"
 
 #include "../resources/ResourceManager.h"
 

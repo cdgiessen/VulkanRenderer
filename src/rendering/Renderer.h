@@ -8,15 +8,15 @@
 
 #include "RenderTools.h"
 #include "RenderStructs.h"
-#include "Initializers.hpp"
+#include "Initializers.h"
 
-#include "Device.hpp"
-#include "Buffer.hpp"
-#include "Pipeline.hpp"
-#include "Shader.hpp"
-#include "SwapChain.hpp"
-#include "Texture.hpp"
-#include "Descriptor.hpp"
+#include "Device.h"
+#include "Buffer.h"
+#include "Pipeline.h"
+#include "Shader.h"
+#include "SwapChain.h"
+#include "Texture.h"
+#include "Descriptor.h"
 
 ////Custom Rendering Implementation
 //class RenderableCustomImpl {

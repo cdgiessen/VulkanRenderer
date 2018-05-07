@@ -1,8 +1,8 @@
-#include "Shader.hpp"
+#include "Shader.h"
 
 #include "../core/CoreTools.h"
 #include "../core/Logger.h"
-#include "Initializers.hpp"
+#include "Initializers.h"
 #include "RenderTools.h"
 
 

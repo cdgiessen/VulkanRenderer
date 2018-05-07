@@ -1,12 +1,12 @@
-#include "Texture.hpp"
+#include "Texture.h"
 
 #include <algorithm>
 
 #include "../../third-party/stb_image/stb_image.h"
 
 #include "RenderTools.h"
-#include "Initializers.hpp"
-#include "Renderer.hpp"
+#include "Initializers.h"
+#include "Renderer.h"
 
 #include "../core/Logger.h"
 

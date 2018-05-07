@@ -6,8 +6,8 @@
 
 #include "RenderStructs.h"
 #include "RenderTools.h"
-#include "Device.hpp"
-#include "Buffer.hpp"
+#include "Device.h"
+#include "Buffer.h"
 
 #include "../resources/Mesh.h"
 #include "../core/CoreTools.h"

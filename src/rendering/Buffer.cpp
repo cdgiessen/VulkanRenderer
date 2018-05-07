@@ -1,4 +1,4 @@
-#include "Buffer.hpp"
+#include "Buffer.h"
 
 
 const uint32_t VERTEX_BUFFER_BIND_ID = 0;
