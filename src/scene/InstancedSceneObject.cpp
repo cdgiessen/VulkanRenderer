@@ -314,7 +314,6 @@ void InstancedSceneObject::WriteToCommandBuffer(VkCommandBuffer commandBuffer, b
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &m_descriptorSet.set, 0, nullptr);
 
-	
 	vulkanModel->BindModel(commandBuffer);
 	
 	instanceBuffer->BindInstanceBuffer(commandBuffer);

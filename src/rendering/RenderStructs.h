@@ -35,9 +35,9 @@ struct CameraData {
 
 struct DirectionalLight {
 	glm::vec3 direction;
-	float intensity;
+	float intensity = 0.0f;
 	glm::vec3 color;
-	float dum;
+	float dum = 0.0f;
 
 	DirectionalLight() {};
 	DirectionalLight(glm::vec3 dir, float intensity, glm::vec3 color) :
@@ -47,8 +47,9 @@ struct DirectionalLight {
 
 struct PointLight {
 	glm::vec3 position;
-	float attenuation;
+	float attenuation = 0.0f;
 	glm::vec3 color;
+	float cufOff = 0.0f;
 
 	PointLight() {};
 	PointLight(glm::vec3 position, float attenuation, glm::vec3 color) :
@@ -58,11 +59,11 @@ struct PointLight {
 
 struct  SpotLight {
 	glm::vec3 position;
-	float attenuation;
+	float attenuation = 0.0f;
 	glm::vec3 direction;
-	float cutoff;
+	float cutoff = 0.0f;
 	glm::vec3 color;
-	float outerCutOff;
+	float outerCutOff = 0.0f;
 
 
 	SpotLight() {};

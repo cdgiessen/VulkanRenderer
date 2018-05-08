@@ -25,6 +25,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	camera = std::make_shared< Camera>(glm::vec3(0, 1, -5), glm::vec3(0, 1, 0), 0, 90);
 
 	directionalLights.resize(5);
+	pointLights.resize(5);
 
 	skySettings.sun = DirectionalLight(glm::vec3(0, 60, 25), 1.0f, glm::vec3(1.0f, 0.98f, 0.9f));
 	skySettings.moon = DirectionalLight(-glm::vec3(0, 60, 25), 0.5f, glm::vec3(0.9f, 0.95f, 1.0f));
@@ -188,8 +189,8 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 	cd.cameraDir = camera->Front;
 	cd.cameraPos = camera->Position;
 
-	directionalLights.at(0) = DirectionalLight(skySettings.sun);
-	directionalLights.at(1) = DirectionalLight(skySettings.moon);
+	//directionalLights.at(0) = DirectionalLight(skySettings.sun);
+	//directionalLights.at(1) = DirectionalLight(skySettings.moon);
 
 	skybox->UpdateUniform(proj, cd.view );
 	renderer->UpdateRenderResources(gd, cd, directionalLights, pointLights, spotLights);
@@ -229,7 +230,7 @@ void Scene::DrawSkySettingsGui() {
 	if (ImGui::Begin("Sky editor", &skySettings.show_skyEditor)) {
 		ImGui::Checkbox("Sun motion", &skySettings.autoMove);
 		ImGui::DragFloat("Sun Move Speed", &skySettings.moveSpeed, 0.0001f, 0.0f, 0.0f, "%.5f");
-		ImGui::SliderFloat("Sun Intensity", &skySettings.sun.intensity, 0.0f, 2.0f);
+		ImGui::DragFloat("Sun Intensity", &skySettings.sun.intensity, 0.01f);
 		ImGui::DragFloat("Sun Horizontal", &skySettings.horizontalAngle, 0.01f, 0.0f, 0.0f, "%.5f");
 		ImGui::DragFloat("Sun Vertical", &skySettings.verticalAngle, 0.01f, 0.0f, 0.0f, "%.5f");
 		ImGui::SliderFloat3("Sun Color", ((float*)glm::value_ptr(skySettings.sun.color)), 0.0f, 1.0f);
@@ -243,25 +244,27 @@ void Scene::UpdateSceneGUI(){
 
 	DrawSkySettingsGui();
 	bool value;
-	//if (ImGui::Begin("Mat tester", &value)) {
-		//ImGui::SliderFloat3("Albedo##i", ((float*)glm::value_ptr(testMat.albedo)), 0.0f, 1.0f);
-		//ImGui::SliderFloat("Metalness", &(testMat.metallic), 0.0f, 1.0f);
-		//ImGui::SliderFloat("Roughness", &(testMat.roughness), 0.0f, 1.0f);
-		//ImGui::SliderFloat("Ambient Occlusion", &(testMat.ao), 0.0f, 1.0f);
-		//ImGui::Text("");
-		//for (int i = 0; i < directionalLights.size(); i++)
-		//{
-		//
-		//	ImGui::DragFloat3(std::string("Direction##" + std::to_string(i)).c_str(), (float*)glm::value_ptr(directionalLights[i].direction), 0.01f);
-		//	ImGui::DragFloat3(std::string("Color##" + std::to_string(i)).c_str(), (float*)glm::value_ptr(directionalLights[i].color), 0.01f);
-		//	ImGui::DragFloat(std::string("Intensity##" + std::to_string(i)).c_str(), &directionalLights[i].intensity, 0.01f);
-		//	ImGui::Text("");
-		//}
-		//ImGui::SliderFloat3("Light Position", ((float*)glm::value_ptr(pointLights.at(0).position)), 0.0f, 1.0f);
-		//ImGui::SliderFloat3("Light Color", ((float*)glm::value_ptr(pointLights.at(0).color)), 0.0f, 1.0f);
-		//ImGui::SliderFloat("Light Attenuation", &pointLights.at(0).attenuation, 0.0f, 1.0f);
-	//}
-	//ImGui::End();
+	if (ImGui::Begin("Lighting Tester", &value)) {
+		ImGui::Text("Directional Lights");
+		for (int i = 0; i < directionalLights.size(); i++)
+		{
+		
+			ImGui::DragFloat3(std::string("Direction##" + std::to_string(i)).c_str(), (float*)glm::value_ptr(directionalLights[i].direction), 0.01f);
+			ImGui::SliderFloat3(std::string("Color##" + std::to_string(i)).c_str(), (float*)glm::value_ptr(directionalLights[i].color), 0.0f, 1.0f);
+			ImGui::DragFloat(std::string("Intensity##" + std::to_string(i)).c_str(), &directionalLights[i].intensity, 0.01f);
+			ImGui::Text("");
+		}
+		ImGui::Text("Point Lights");
+		for (int i = 0; i < pointLights.size(); i++)
+		{
+
+			ImGui::DragFloat3(std::string("Position##" + std::to_string(i + 1000)).c_str(), ((float*)glm::value_ptr(pointLights[i].position)), 0.01f);
+			ImGui::SliderFloat3(std::string("Color##" + std::to_string(i + 1000)).c_str(), ((float*)glm::value_ptr(pointLights[i].color)), 0.0f, 1.0f);
+			ImGui::DragFloat(std::string("Attenuation##" + std::to_string(i + 1000)).c_str(), &pointLights[i].attenuation, 0.0f, 0.01f);
+			ImGui::Text("");
+		}
+	}
+	ImGui::End();
 	
 	if (ImGui::Begin("instance tester", &value)) {
 		ImGui::DragFloat3("Position", ((float*)glm::value_ptr(testInstanceData.pos)));

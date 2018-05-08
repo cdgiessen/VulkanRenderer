@@ -169,6 +169,22 @@ vec3 PointLightingCalc(int i, vec3 N, vec3 V, vec3 F0){
 	return PBR_Calc(N, V, F0, L, H, radiance);
 } 
 
+vec3 LightingContribution(vec3 N, vec3 V, vec3 F0)
+{
+	vec3 Lo = vec3(0.0);
+	for(int i = 0; i < DirectionalLightCount; ++i) 
+    {
+		Lo += DirectionalLightingCalc(i, N, V, F0);
+	} 
+    for(int i = 0; i < PointLightCount; ++i) 
+    {
+		Lo += PointLightingCalc(i, N, V, F0);
+	}
+
+	return Lo;
+}
+
+
 void main()
 {		
     vec3 N = normalize(inNormal);
@@ -176,21 +192,9 @@ void main()
 
     vec3 F0 = vec3(0.04); 
     F0 = mix(F0, pbr_mat.albedo, pbr_mat.metallic);
-	         
-    // reflectance equation
-    vec3 Lo = vec3(0.0);
-	for(int i = 0; i < DirectionalLightCount; ++i) 
-    {
-		Lo += DirectionalLightingCalc(i, N, V, F0);
-	} 
-    //for(int i = 0; i < PointLightCount; ++i) 
-    //{
-	//	Lo += PointLightingCalc(i, N, V, F0);
-	//}   
- 
-  
+	           
     vec3 ambient = vec3(0.0) * pbr_mat.albedo * pbr_mat.ao;
-    vec3 color = ambient + Lo;
+    vec3 color = ambient + LightingContribution(N, V, F0);
 	
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0/2.2));  
