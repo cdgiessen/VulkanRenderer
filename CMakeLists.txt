@@ -86,6 +86,10 @@ third-party/FastNoiseSIMD/FastNoiseSIMD_sse2.cpp
 third-party/FastNoiseSIMD/FastNoiseSIMD_sse41.cpp
 )
 
+
+#json
+target_include_directories(VulkanApp PUBLIC third-party/json)
+
 #glm
 target_include_directories(VulkanApp PUBLIC glm)
 

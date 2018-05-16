@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 
-#include "../../third-party/json/json.hpp"
+#include <json.hpp>
 
 VulkanApp::VulkanApp()
 {

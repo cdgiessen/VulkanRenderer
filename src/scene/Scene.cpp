@@ -27,8 +27,10 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	directionalLights.resize(5);
 	pointLights.resize(5);
 
-	skySettings.sun = DirectionalLight(glm::vec3(0, 60, 25), 1.0f, glm::vec3(1.0f, 0.98f, 0.9f));
+	skySettings.sun = DirectionalLight(glm::vec3(0, 60, 25), 15.0f, glm::vec3(1.0f, 0.98f, 0.9f));
 	skySettings.moon = DirectionalLight(-glm::vec3(0, 60, 25), 0.5f, glm::vec3(0.9f, 0.95f, 1.0f));
+
+	directionalLights.at(0) = skySettings.sun;
 
 	//pointLights.resize(1);
 	//PointLight pl;

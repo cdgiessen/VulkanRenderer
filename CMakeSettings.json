@@ -11,10 +11,10 @@
       "cmakeCommandArgs": "-DCMAKE_TOOLCHAIN_FILE=C:\\src\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
       "buildCommandArgs": "-v",
       "variables": [
-        {
-          "name": "CMAKE_TOOLCHAIN_FILE",
-          "value": "C:/src/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        }
+        //{
+        //  "name": "CMAKE_TOOLCHAIN_FILE",
+        //  "value": "C:/src/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        //}
       ],
       "ctestCommandArgs": ""
     },

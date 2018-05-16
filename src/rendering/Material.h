@@ -1,8 +1,13 @@
+#pragma once
+
 #include <vector>
+#include <string>
 #include <memory>
 #include <functional>
 
 #include <glm/glm.hpp>
+
+
 
 #include "Device.h"
 #include "Texture.h"
@@ -11,6 +16,7 @@
 #include "Shader.h"
 #include "RenderStructs.h"
 
+//VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath);
 
 class Material {
 public:
