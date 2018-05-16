@@ -98,6 +98,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	//	}
 	//}
 
+
 	terrainManager = std::make_shared<TerrainManager>(graph);
 	terrainManager->SetupResources(resourceMan, renderer);
 	terrainManager->GenerateTerrain(resourceMan, renderer, camera);

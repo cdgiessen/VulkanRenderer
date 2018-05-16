@@ -135,11 +135,11 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
    
      vec3 kS = F;
      vec3 kD = vec3(1.0) - kS;
-     kD *= 1.0 - 0.1f /*pbr_mat.metallic*/;	  
+     kD *= 1.0 - 0.5f /*pbr_mat.metallic*/;	  
    
      vec3 numerator    = NDF * G * F;
      float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-     vec3 specular     = numerator / max(denominator, 0.0001);  
+     vec3 specular     = numerator / max(denominator, 0.001);  
        
      // add to outgoing radiance Lo
      float NdotL = max(dot(N, L), 0.0);                

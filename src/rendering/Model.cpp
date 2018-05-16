@@ -77,8 +77,6 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 		indexBuffer[i] = mesh->indices[i];
 	}
 
-
-
 	uint32_t vBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(float);
 	uint32_t iBufferSize = static_cast<uint32_t>(indexBuffer.size()) * sizeof(uint32_t);
 
