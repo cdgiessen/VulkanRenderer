@@ -28,8 +28,9 @@ struct GeneralSettings {
 	float heightScale = 100.0f;
 	int maxLevels = 4;
 	int gridDimentions = 1;
+	int viewDistance = 4; //terrain chunks to load away from camera;
 	int sourceImageResolution = 512;
-	int numCells = 64;
+	int numCells = 64; //compile time currently
 };
 
 struct TerrainTextureNamedHandle {
@@ -99,6 +100,12 @@ public:
 	std::vector<std::shared_ptr<Terrain>> terrains;
 
 private:
+
+	void SaveSettingsToFile();
+	void LoadSettingsFromFile();
+
+
+
 	InternalGraph::GraphPrototype& protoGraph;
 	//NewNodeGraph::TerGenNodeGraph& nodeGraph;
 
@@ -121,9 +128,9 @@ private:
 	
 	std::vector<std::thread> terrainCreationWorkers;
 
+	GeneralSettings settings;
 	bool recreateTerrain = false;
 	float nextTerrainWidth = 1000;
-	GeneralSettings settings;
 	SimpleTimer terrainUpdateTimer;
 
 	int maxNumQuads = 1; //maximum quads managed by this

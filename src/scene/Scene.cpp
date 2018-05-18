@@ -100,6 +100,9 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	//	}
 	//}
 
+	std::shared_ptr<GameObject> pbr_test = std::make_shared<GameObject>();
+	pbr_test->usePBR = true;
+
 
 	terrainManager = std::make_shared<TerrainManager>(graph);
 	terrainManager->SetupResources(resourceMan, renderer);

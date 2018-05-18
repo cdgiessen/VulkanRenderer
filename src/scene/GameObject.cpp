@@ -223,6 +223,8 @@ void GameObject::UpdateUniformBuffer(float time)
 	//ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 	ubo.normal = glm::mat4();
 	uniformBuffer->CopyToBuffer(&ubo, sizeof(ModelBufferObject));
+	if (usePBR_Tex)
+
 	if (usePBR)
 		materialBuffer->CopyToBuffer(&pbr_mat, sizeof(PBR_Material));
 	else 

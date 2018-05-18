@@ -105,6 +105,23 @@ struct Phong_Material {
 	float padding = 0;
 };
 
+struct PBR_Mat_Value {
+	glm::vec3 albedo = glm::vec3(0.5, 0.5, 0.5);
+	float metallic = 0.1f;
+	float roughness = 0.5f;
+	float ao = 1;
+	glm::vec3 emmisive = glm::vec3(0.0, 0.0, 0.0);
+};
+
+struct PBR_Mat_Tex {
+	std::shared_ptr<VulkanTexture> tx_albedo;
+	std::shared_ptr<VulkanTexture> tx_metallic;
+	std::shared_ptr<VulkanTexture> tx_roughness;
+	std::shared_ptr<VulkanTexture> tx_ao;
+	std::shared_ptr<VulkanTexture> tx_emissiveTexture;
+	std::shared_ptr<VulkanTexture> tx_normal;
+};
+
 struct PBR_Material {
 	glm::vec3 albedo = glm::vec3(0.5,0.5,0.5);
 	float metallic = 0.1f;

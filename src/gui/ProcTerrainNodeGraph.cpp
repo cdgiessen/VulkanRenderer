@@ -329,7 +329,6 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 			ImGui::Text("Edit name:");
 			char name[32];
 			memset(name, '\0', 32);
-			//name[0] = '\0';
 			node->name.copy(name, 31);
 			if (node->hasTextInput == false) {
 				Input::SetTextInputMode();

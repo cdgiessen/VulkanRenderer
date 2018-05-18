@@ -3,6 +3,11 @@
 #include <array>
 #include <vector>
 #include <string>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <condition_variable>
 
 #include <vulkan/vulkan.h>
 
@@ -35,6 +40,16 @@
 //	std::shared_ptr<VulkanModel> model;
 //};
 
+class ThreadedWorker {
+public:
+	ThreadedWorker();
+
+
+	
+private:
+	bool active = true;
+	std::thread thread;
+};
 
 class Scene;
 

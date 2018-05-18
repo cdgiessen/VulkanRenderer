@@ -2,9 +2,13 @@
 
 #include <chrono>
 
+#include <json.hpp>
+
 #include "../../third-party/ImGui/imgui.h"
 
 #include "../core/Logger.h"
+
+constexpr auto TerrainSettingsFileName = "terrain_settings.json";
 
 TerrainCreationData::TerrainCreationData(
 	std::shared_ptr<ResourceManager> resourceMan,
@@ -41,9 +45,37 @@ void TerrainCreationWorker(TerrainManager* man) {
 		if (!man->isCreatingTerrain)
 			break;
 
-		std::unique_lock<std::mutex> queue_lock(man->creationDataQueueMutex);
+		std::optional<TerrainCreationData> data = man->terrainCreationWork.pop_if();
+
+		if (data.has_value()) {
+
+			auto terrain = std::make_shared<Terrain>(data->pool, data->protoGraph, data->numCells, data->maxLevels, data->heightScale, data->coord);
+
+			std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
+
+			terrain->terrainSplatMap = data->resourceMan->texManager.loadTextureFromRGBAPixelData(data->sourceImageResolution + 1, data->sourceImageResolution + 1, imgData);
+
+			terrain->InitTerrain(data->renderer, data->camera->Position, data->terrainVulkanTextureArray);
+
+			//shouldn't need to check if I am still doing work, as the program should wait until all workers are finished before starting more
+			//if (!man->isCreatingTerrain)
+			//	break;
+
+			{
+				std::lock_guard<std::mutex> lk(man->terrain_mutex);
+				man->terrains.push_back(terrain);
+			}
+			if (!man->isCreatingTerrain)
+				break;
+		}
+		else {
+
+		}
+
+		/*std::unique_lock<std::mutex> queue_lock(man->creationDataQueueMutex);
 		if (!man->terrainCreationWork.empty()) {
-			TerrainCreationData data{ man->terrainCreationWork.pop() };
+
+			TerrainCreationData data{ man->terrainCreationWork.front() };
 			queue_lock.unlock();
 
 			auto terrain = std::make_shared<Terrain>(data.pool, data.protoGraph, data.numCells, data.maxLevels, data.heightScale, data.coord);
@@ -69,7 +101,7 @@ void TerrainCreationWorker(TerrainManager* man) {
 		}
 
 		if (!man->isCreatingTerrain)
-			break;
+			break;*/
 	}
 
 }
@@ -280,11 +312,59 @@ float TerrainManager::GetTerrainHeightAtLocation(float x, float z) {
 	return 0;
 }
 
+void TerrainManager::SaveSettingsToFile() {
+	nlohmann::json j;
+
+	j["show_window"] = settings.show_terrain_manager_window;
+	j["terrain_width"] = settings.width;
+	j["height_scale"] = settings.heightScale;
+	j["max_levels"] = settings.maxLevels;
+	j["grid_dimentions"] = settings.gridDimentions;
+	j["view_distance"] = settings.viewDistance;
+	j["souce_iamge_resolution"] = settings.sourceImageResolution;
+
+	std::ofstream outFile(TerrainSettingsFileName);
+	outFile << std::setw(4) << j;
+	outFile.close();
+}
+
+void TerrainManager::LoadSettingsFromFile() {
+	if (fileExists(TerrainSettingsFileName)) {
+		std::ifstream input(TerrainSettingsFileName);
+
+		nlohmann::json j;
+		input >> j;
+
+		settings.show_terrain_manager_window = j["show_window"];
+		settings.width = j["terrain_width"];
+		settings.heightScale = j["height_scale"];
+		settings.maxLevels = j["max_levels"];
+		settings.gridDimentions = j["grid_dimentions"];
+		settings.viewDistance = j["view_distance"];
+		settings.sourceImageResolution = j["souce_iamge_resolution"];
+	}
+	else {
+		settings = GeneralSettings{};
+	}
+}
+
+
 void TerrainManager::UpdateTerrainGUI() {
 
 	ImGui::SetNextWindowSize(ImVec2(200, 220), ImGuiSetCond_FirstUseEver);
 	ImGui::SetNextWindowPos(ImVec2(220, 0), ImGuiSetCond_FirstUseEver);
 	if (ImGui::Begin("Debug Info", &settings.show_terrain_manager_window)) {
+
+		ImGui::BeginGroup();
+		if (ImGui::Button("Save")) {
+			SaveSettingsToFile();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Load")) {
+			LoadSettingsFromFile();
+		}
+		ImGui::EndGroup();
+
 		ImGui::SliderFloat("Width", &nextTerrainWidth, 100, 10000);
 		ImGui::SliderInt("Max Subdivision", &settings.maxLevels, 0, 10);
 		ImGui::SliderInt("Grid Width", &settings.gridDimentions, 1, 10);
