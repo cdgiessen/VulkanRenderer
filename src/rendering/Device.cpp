@@ -280,8 +280,43 @@ VkBool32 CommandPool::SubmitSecondaryCommandBuffer(VkCommandBuffer cmdBuffer, Vk
 
 
 
+CommandBufferWorker::CommandBufferWorker(VulkanDevice& device, 
+	CommandQueue queue, bool startActive)
+:pool(device, queue)
+{
+	
+	workingThread = std::thread(this->Work);
+
+}
+
+CommandBufferWorker::~CommandBufferWorker(){
+	workingThread.join();
+}
+
+void CommandBufferWorker::Work(){
+
+	while(keepWorking){
+		auto pos_work = workQueue.pop_if();
+		if(pos_work.has_value()){
+			VkCommandBuffer buf = pool.GetOneTimeUseCommandBuffer();
+
+			pos_work->get().work(buf);
+
+			pool.SubmitCommandBuffer(buf);
+
+			//Do I wait for work to finish or start new work?
+			//Cause I want to get as much going on as possible.
+			//Or should I batch a bunch of work together by waiting for submission
+			//also, where to put fences/semaphores? 
+			//Should I create a buffer object that holds those resources,
+			//since I *should* be recycling buffers instead of recreating them.
+			//the joys of a threaded renderer.
+		} 
 
 
+	}
+
+}
 
 VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(validationLayers),
 	graphics_queue(*this),

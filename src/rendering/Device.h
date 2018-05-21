@@ -5,6 +5,7 @@
 #include <set>
 #include <thread>
 #include <mutex>
+#include <functional>
 
 #include <vulkan/vulkan.h>
 //#include <vulkan/vulkan.hpp>
@@ -58,7 +59,7 @@ public:
 
 	void Submit(VkSubmitInfo info, VkFence fence);
 	void SubmitCommandBuffer(VkCommandBuffer buf, VkFence fence,
-		std::vector<VkSemaphore> semaphore = std::vector<VkSemaphore>(), 
+		std::vector<VkSemaphore> waitSemaphores = std::vector<VkSemaphore>(), 
 		std::vector<VkSemaphore> signalSemaphores = std::vector<VkSemaphore>());
 
 	int GetQueueFamily();
@@ -126,6 +127,29 @@ private:
 // 	//VkCommandPool transfer_queue_command_pool;
 // 	//std::mutex transferMutex;
 // };
+
+struct CommandBufferWork {
+	std::function<void(VkCommandBuffer)> work; //function to run (preferably a lambda) 
+	std::vector<Signal> flags;
+}
+
+class CommandBufferWorker {
+public:
+	CommandBufferWorker(VulkanDevice& device, 
+		CommandQueue queue, bool startActive = true)
+	~CommandBufferWorker();
+	AddWork(CommandBufferWork);
+
+
+private:
+	std::thread workingThread;
+	void Work();
+
+	bool keepWorking = true; //default to start working
+	ConcurrentQueue<T> workQueue;
+	std::condition_variable waitVar;
+	CommandPool pool;
+}
 
 class VulkanDevice {
 public:
