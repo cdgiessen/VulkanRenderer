@@ -8,7 +8,9 @@
   
 #include "../core/CoreTools.h"
 #include "../core/TimeManager.h"
-#include "../core/MemoryPool.h"
+
+#include "../util/ConcurrentQueue.h"
+#include "../util/MemoryPool.h"
 
 #include "../rendering/Renderer.h"
 
@@ -27,7 +29,7 @@ struct GeneralSettings {
 	float width = 1000;
 	float heightScale = 100.0f;
 	int maxLevels = 4;
-	int gridDimentions = 0;
+	int gridDimentions = 1;
 	int viewDistance = 4; //terrain chunks to load away from camera;
 	int sourceImageResolution = 512;
 	int numCells = 64; //compile time currently
@@ -138,7 +140,7 @@ private:
 	bool drawWindow;
 	int selectedTexture;
 
-	int WorkerThreads = 1;
+	int WorkerThreads = 0;
 
 	std::vector<TerrainTextureNamedHandle> terrainTextureHandles;
 

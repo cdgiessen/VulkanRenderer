@@ -31,6 +31,8 @@ public:
 	VulkanBufferVertex vmaVertices;
 	VulkanBufferIndex vmaIndicies;
 
+	Signal readyToUse;
+
 	struct ModelPart {
 		uint32_t vertexBase;
 		uint32_t vertexCount;

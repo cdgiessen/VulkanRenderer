@@ -11,6 +11,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "../util/ConcurrentQueue.h"
+
 #include "RenderTools.h"
 #include "RenderStructs.h"
 #include "Initializers.h"
@@ -40,18 +42,86 @@
 //	std::shared_ptr<VulkanModel> model;
 //};
 
-class ThreadedWorker {
+//class ThreadedWorker {
+//public:
+//	ThreadedWorker();
+//
+//
+//	
+//private:
+//	bool active = true;
+//	std::thread thread;
+//};
+
+struct CommandBufferWork {
+	std::function<void(VkCommandBuffer)> work; //function to run (preferably a lambda) 
+	std::vector<Signal> flags;
+};
+
+struct TransferCommandWork {
+	std::function<void(const VkCommandBuffer)> work; //function to run (preferably a lambda) 
+	std::vector<Signal> flags;
+	std::vector<VulkanBuffer> buffersToClean;
+};
+
+template<typename WorkType>
+class CommandBufferWorkQueue {
 public:
-	ThreadedWorker();
+	CommandBufferWorkQueue();
 
+	~CommandBufferWorkQueue();
 
-	
+	void AddWork(WorkType data);
+	void AddWork(WorkType&& data);
+
+	bool HasWork();
+
+	std::optional<WorkType> GetWork();
+
+	std::mutex lock;
+	std::condition_variable condVar;
+
 private:
-	bool active = true;
-	std::thread thread;
+	ConcurrentQueue<WorkType> workQueue;
+};
+
+template<typename WorkType>
+class CommandBufferWorker {
+public:
+	CommandBufferWorker(VulkanDevice& device,
+		CommandQueue& queue, CommandBufferWorkQueue<WorkType>& workQueue,
+		bool startActive = true);
+
+	CommandBufferWorker(const CommandBufferWorker& other) = default; //copy
+	CommandBufferWorker(CommandBufferWorker&& other) = default; //move
+	CommandBufferWorker& operator=(const CommandBufferWorker&) = default;
+	CommandBufferWorker& operator=(CommandBufferWorker&&) = default;
+	
+	~CommandBufferWorker();
+
+	void StopWork();
+
+private:
+	VulkanDevice& device;
+	void Work();
+	std::thread workingThread;
+
+	bool keepWorking = true; //default to start working
+	CommandBufferWorkQueue<WorkType>& workQueue;
+	std::condition_variable waitVar;
+	CommandPool pool;
 };
 
 class Scene;
+
+struct RenderSettings {
+
+	//Lighting?
+	int cameraCount = 1;
+	int directionalLightCount = 5;
+	int pointLightCount = 16;
+	int spotLightCount = 8;
+};
 
 class VulkanRenderer
 {
@@ -99,6 +169,9 @@ public:
 
 	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat FindDepthFormat();
+
+	void SubmitGraphicsSetupWork(CommandBufferWork&& data);
+	void SubmitTransferWork(TransferCommandWork&& data);
 
 	VkCommandBuffer GetGraphicsCommandBuffer();
 	VkCommandBuffer GetSingleUseGraphicsCommandBuffer();
@@ -155,6 +228,14 @@ private:
 	//uint32_t frameIndex = 1; // which frame of the swapchain it is on
 
 	std::shared_ptr<VulkanTextureDepthBuffer> depthBuffer;
+
+	CommandBufferWorkQueue<CommandBufferWork> graphicsSetupWorkQueue;
+	std::vector<std::unique_ptr<CommandBufferWorker<CommandBufferWork>>> graphicsSetupWorkers;
+	int graphicsSetupWorkerCount = 1;
+
+	CommandBufferWorkQueue<TransferCommandWork> transferWorkQueue;
+	std::vector<std::unique_ptr<CommandBufferWorker<TransferCommandWork>>> transferWorkers;
+	int transferWorkerCount = 1;
 
 	CommandPool graphicsPrimaryCommandPool;
 	CommandPool singleUseGraphicsCommandPool;

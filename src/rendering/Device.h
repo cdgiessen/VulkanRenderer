@@ -14,8 +14,11 @@
 
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
+#include "../util/ConcurrentQueue.h"
+
 #include "RenderTools.h"
 #include "RenderStructs.h"
+
 
 const std::vector<const char*> VALIDATION_LAYERS = {
 	"VK_LAYER_LUNARG_standard_validation"
@@ -89,9 +92,10 @@ public:
 
 	VkBool32 SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence = nullptr);
 	VkBool32 SubmitPrimaryCommandBuffer(VkCommandBuffer buf, VkFence fence = nullptr);
-	VkBool32 SubmitSecondaryCommandBuffer(VkCommandBuffer buf, VkFence fence = nullptr);
+	//VkBool32 SubmitSecondaryCommandBuffer(VkCommandBuffer buf, VkFence fence = nullptr);
 
 	VkCommandBuffer AllocateCommandBuffer(VkCommandBufferLevel level);
+
 	void BeginBufferRecording(VkCommandBuffer buf, VkCommandBufferUsageFlagBits flags = (VkCommandBufferUsageFlagBits)(0));
 	void EndBufferRecording(VkCommandBuffer buf);
 	void FreeCommandBuffer(VkCommandBuffer buf);
@@ -128,28 +132,31 @@ private:
 // 	//std::mutex transferMutex;
 // };
 
-struct CommandBufferWork {
-	std::function<void(VkCommandBuffer)> work; //function to run (preferably a lambda) 
-	std::vector<Signal> flags;
-}
-
-class CommandBufferWorker {
-public:
-	CommandBufferWorker(VulkanDevice& device, 
-		CommandQueue queue, bool startActive = true)
-	~CommandBufferWorker();
-	AddWork(CommandBufferWork);
 
 
-private:
-	std::thread workingThread;
-	void Work();
-
-	bool keepWorking = true; //default to start working
-	ConcurrentQueue<T> workQueue;
-	std::condition_variable waitVar;
-	CommandPool pool;
-}
+//struct CommandBufferWork {
+//	std::function<void(VkCommandBuffer)> work; //function to run (preferably a lambda) 
+//	std::vector<Signal> flags;
+//};
+//
+//class CommandBufferWorker {
+//public:
+//	CommandBufferWorker(VulkanDevice& device,
+//		CommandQueue queue, ConcurrentQueue<CommandBufferWorker>& workQueue,
+//		bool startActive = true);
+//	~CommandBufferWorker();
+//	//void AddWork(CommandBufferWork work);
+//
+//
+//private:
+//	void Work();
+//	std::thread workingThread;
+//
+//	bool keepWorking = true; //default to start working
+//	ConcurrentQueue<CommandBufferWorker>& workQueue;
+//	std::condition_variable waitVar;
+//	CommandPool pool;
+//};
 
 class VulkanDevice {
 public:

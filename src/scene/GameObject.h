@@ -67,4 +67,6 @@ class GameObject
 	std::shared_ptr<VulkanBufferUniform> materialBuffer;
 
 	glm::vec3 position;
+
+	bool isReadyToRender = false;
 };

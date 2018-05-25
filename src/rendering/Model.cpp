@@ -5,10 +5,27 @@
 VulkanModel::VulkanModel(VulkanDevice &device): device(device),
 vmaVertices(device), vmaIndicies(device)
 {
-
+	readyToUse = std::make_shared<bool>(false);
 }
 
-bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh, 
+void CopyMeshBuffers(
+	const VkCommandBuffer copyCmd,
+	const VkBuffer vertexStagingBuffer,
+	const VkBuffer vertexBuffer,
+	const uint32_t vBufferSize, 
+	const VkBuffer indexStagingBuffer,
+	const VkBuffer indexBuffer,
+	const uint32_t iBufferSize) 
+{
+	VkBufferCopy copyRegion{};
+	copyRegion.size = vBufferSize;
+	vkCmdCopyBuffer(copyCmd, vertexStagingBuffer, vertexBuffer, 1, &copyRegion);
+
+	copyRegion.size = iBufferSize;
+	vkCmdCopyBuffer(copyCmd, indexStagingBuffer, indexBuffer, 1, &copyRegion);
+}
+
+bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	VulkanRenderer& renderer) {
 
 	std::vector<float> vertexBuffer;
@@ -90,20 +107,31 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	vertexStagingBuffer.CreateStagingVertexBuffer(vertexBuffer.data(), (uint32_t)vertexCount, vertexElementCount);
 	indexStagingBuffer.CreateStagingIndexBuffer(indexBuffer.data(), (uint32_t)indexCount);
 
-	VkBufferCopy copyRegion{};
+	TransferCommandWork work;
+	work.work = std::function<void(const VkCommandBuffer )>(
+		[=]	(const VkCommandBuffer copyCmd) {
+			CopyMeshBuffers(copyCmd,
+			vertexStagingBuffer.buffer.buffer, vmaVertices.buffer.buffer, vBufferSize,
+			indexStagingBuffer.buffer.buffer, vmaIndicies.buffer.buffer, iBufferSize); 
+		}
+	);
 
-	VkCommandBuffer copyCmd = renderer.GetTransferCommandBuffer();
+	work.buffersToClean.push_back(vertexStagingBuffer);
+	work.buffersToClean.push_back(indexStagingBuffer);
+	work.flags.push_back(readyToUse);
 
-	copyRegion.size = vBufferSize;
-	vkCmdCopyBuffer(copyCmd, vertexStagingBuffer.buffer.buffer, vmaVertices.buffer.buffer, 1, &copyRegion);
+	renderer.SubmitTransferWork(std::move(work));
 
-	copyRegion.size = iBufferSize;
-	vkCmdCopyBuffer(copyCmd, indexStagingBuffer.buffer.buffer, vmaIndicies.buffer.buffer, 1, &copyRegion);
-
-	renderer.SubmitTransferCommandBufferAndWait(copyCmd);
-
-	vertexStagingBuffer.CleanBuffer();
-	indexStagingBuffer.CleanBuffer();
+	//VkCommandBuffer copyCmd = renderer.GetTransferCommandBuffer();
+	//
+	//CopyMeshBuffers(copyCmd, 
+	//	vertexStagingBuffer.buffer.buffer, vmaVertices.buffer.buffer, vBufferSize, 
+	//	indexStagingBuffer.buffer.buffer, vmaIndicies.buffer.buffer, iBufferSize);
+	//
+	//renderer.SubmitTransferCommandBufferAndWait(copyCmd);
+	//
+	//vertexStagingBuffer.CleanBuffer();
+	//indexStagingBuffer.CleanBuffer();
 
 	return true;
 

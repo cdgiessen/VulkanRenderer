@@ -68,7 +68,7 @@ public:
 	void RemoveInstances(std::vector<InstanceData> instances);
 
 	//Resets all current instances and puts new ones in its place
-	void RemoveAllInstances(std::vector<InstanceData> instances);
+	void ReplaceAllInstances(std::vector<InstanceData> instances);
 
 	void UploadInstances();
 
@@ -102,4 +102,6 @@ private:
 	VkShaderModule fragShaderModule;
 	VkCullModeFlagBits cullModeFlagBits = VK_CULL_MODE_BACK_BIT;
 	VkBool32 enableBlending = VK_FALSE;
+
+	bool isReadyToRender = false;
 };

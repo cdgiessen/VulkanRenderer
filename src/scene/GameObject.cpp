@@ -239,6 +239,13 @@ void GameObject::UpdateUniformBuffer(float time)
 
 void GameObject::Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNormals) {
 
+	if (*gameObjectModel->readyToUse)// && *gameObjectVulkanTexture->readyToUse)
+		isReadyToRender = true;
+
+	if (!isReadyToRender) {
+		return;
+	}
+
 	VkDeviceSize offsets[] = { 0 };
 
 	//vkCmdBindVertexBuffers(commandBuffer, 0, 1, &gameObjectModel.vertices.buffer, offsets);

@@ -286,8 +286,25 @@ void Scene::UpdateSceneGUI(){
 	ImGui::End();
 
 	treesInstanced->ImGuiShowInstances();
+	static int x = 0;
+	if (ImGui::Begin("create game object", &value)) {
+		if (ImGui::Button("Add game object")) {
+			std::shared_ptr<GameObject> sphereObject = std::make_shared<GameObject>();
+			sphereObject->usePBR = true;
+			sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
+			sphereObject->LoadModel(createSphere(10));
+			sphereObject->position = glm::vec3(x++, 3, 2.2 );
+			//sphereObject->pbr_mat.albedo = glm::vec3(0.8, 0.2, 0.2);
+			sphereObject->pbr_mat.metallic = 0.1f + (float)5 / 10.0f;
+			sphereObject->pbr_mat.roughness = 0.1f + (float)5 / 10.0f;
 
-
+			//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
+			//sphereObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/Red.png");
+			sphereObject->InitGameObject(renderer);
+			gameObjects.push_back(sphereObject);
+		}
+	}
+	ImGui::End();
 	for (auto& go : gameObjects) {
 		go->pbr_mat.albedo = testMat.albedo;
 		go->phong_mat.color = glm::vec4(testMat.albedo, 1.0f);

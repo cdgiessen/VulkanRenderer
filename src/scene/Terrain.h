@@ -14,9 +14,9 @@
 #include "../rendering/Texture.h"
 
 #include "../resources/Texture.h"
-#include "../core/Gradient.h"
-#include "../core/MemoryPool.h"
 #include "../core/CoreTools.h"
+#include "../util/Gradient.h"
+#include "../util/MemoryPool.h"
 
 #include "../gui/InternalGraph.h"
 

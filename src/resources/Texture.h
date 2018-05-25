@@ -63,3 +63,9 @@ public:
 	CubeMap(uint32_t width, uint32_t height);
 
 };
+
+//void SetLayoutCopyImage(const VkCommandBuffer &transferCmdBuf, const VkImageSubresourceRange &subresourceRange, VmaImage &stagingImage, std::shared_ptr<Texture> &texture);
+//
+//void SetLayoutCopyImageArray(std::shared_ptr<TextureArray> &textures, const VkOffset3D &dstCopyOffset, const VkOffset3D &srcCopyOffset, const VkExtent3D &imageExtent, int mipLevels, const VkCommandBuffer &transferCmdBuf, VmaImage &stagingImage);
+//
+//void SetLayoutCopyCubeMap(const VkOffset3D &copyOffset, const VkExtent3D &imageExtent, const VkCommandBuffer &transferCmdBuf, const VkImageSubresourceRange &subresourceRange, VmaImage &stagingImage);

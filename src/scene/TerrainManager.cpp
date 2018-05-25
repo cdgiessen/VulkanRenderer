@@ -205,10 +205,10 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 			//terrains.push_back(terrain);
 
 			terrainCreationWork.push_back(TerrainCreationData(
-			resourceMan, renderer, camera, terrainVulkanTextureArray,
-			terrainQuadPool, protoGraph, 
-			settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale, 
-			coord));
+				resourceMan, renderer, camera, terrainVulkanTextureArray,
+				terrainQuadPool, protoGraph, 
+				settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale, 
+				coord));
 
 			std::lock_guard<std::mutex> lk(workerMutex);
 			workerConditionVariable.notify_one();
@@ -261,7 +261,7 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 			//waters.push_back(water);
 		}
 	}
-	instancedWaters->RemoveAllInstances(waterData);
+	instancedWaters->ReplaceAllInstances(waterData);
 	//instancedWaters->UploadInstances();
 	recreateTerrain = false;
 }

@@ -51,6 +51,8 @@ public:
 	DescriptorResource resource;
 
 	VulkanDevice& device;
+
+	Signal readyToUse;
 };
 
 

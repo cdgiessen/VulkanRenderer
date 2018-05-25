@@ -282,7 +282,7 @@ void InstancedSceneObject::RemoveInstances(std::vector<InstanceData> instances) 
 	UploadInstances();
 }
 
-void InstancedSceneObject::RemoveAllInstances(std::vector<InstanceData> instances) {
+void InstancedSceneObject::ReplaceAllInstances(std::vector<InstanceData> instances) {
 	instancesData.clear();
 
 	this->instancesData = instances;
@@ -309,6 +309,14 @@ void InstancedSceneObject::UpdateUniformBuffer()
 }
 
 void InstancedSceneObject::WriteToCommandBuffer(VkCommandBuffer commandBuffer, bool wireframe) {
+
+	//if ((*vulkanModel->readyToUse) && (*vulkanTexture->readyToUse))
+	//	isReadyToRender = true;
+	//
+	//if (!isReadyToRender) {
+	//	return;
+	//}
+
 	VkDeviceSize offsets[] = { 0 };
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));

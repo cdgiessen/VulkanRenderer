@@ -36,12 +36,12 @@ add_executable(VulkanApp
 src/core/main.cpp
 src/core/CoreTools.cpp
 src/core/VulkanApp.cpp
-src/core/Gradient.cpp
 src/core/Input.cpp
 src/core/Logger.cpp
-src/core/MemoryPool.cpp
 src/core/TimeManager.cpp
 src/core/Window.cpp
+
+src/util/Gradient.cpp
 
 src/gui/ImGuiImpl.cpp
 src/gui/ProcTerrainNodeGraph.cpp

@@ -8,6 +8,147 @@
 
 #include "../core/Logger.h"
 
+template<typename WorkType>
+CommandBufferWorkQueue<WorkType>::CommandBufferWorkQueue()
+{
+
+}
+
+template<typename WorkType>
+CommandBufferWorkQueue<WorkType>::~CommandBufferWorkQueue() {
+	condVar.notify_all();
+}
+
+template<typename WorkType>
+void CommandBufferWorkQueue<WorkType>::AddWork(WorkType data)
+{
+	workQueue.push_back(data);
+	condVar.notify_one();
+}
+
+template<typename WorkType>
+void CommandBufferWorkQueue<WorkType>::AddWork(WorkType&& data)
+{
+	workQueue.push_back(std::move(data));
+	condVar.notify_one();
+}
+
+template<typename WorkType>
+bool CommandBufferWorkQueue<WorkType>::HasWork() {
+	return workQueue.empty();
+}
+
+template<typename WorkType>
+std::optional<WorkType> CommandBufferWorkQueue<WorkType>::GetWork() {
+	return workQueue.pop_if();
+}
+
+template<typename WorkType>
+CommandBufferWorker<WorkType>::CommandBufferWorker(VulkanDevice& device,
+	CommandQueue& queue, CommandBufferWorkQueue<WorkType>& workQueue,
+	bool startActive)
+	: device(device), pool(device, queue), workQueue(workQueue)
+{
+	pool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	workingThread = std::thread{ &CommandBufferWorker::Work, this };
+
+}
+
+template<typename WorkType>
+CommandBufferWorker<WorkType>::~CommandBufferWorker() {
+	workingThread.join();
+}
+
+template<typename WorkType>
+void CommandBufferWorker<WorkType>::StopWork() {
+	keepWorking = false;
+}
+
+template<>
+void CommandBufferWorker<CommandBufferWork>::Work() {
+
+	while (keepWorking) {
+		auto pos_work = workQueue.GetWork();
+		if (pos_work.has_value()) {
+			VkCommandBuffer buf = pool.GetOneTimeUseCommandBuffer();
+
+
+			pos_work->work(buf);
+
+
+			VkFence fence;
+			VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+			VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+
+			pool.SubmitOneTimeUseCommandBuffer(buf, fence);
+
+			vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+
+			for (auto& flag : pos_work->flags)
+				*flag = true;
+
+
+
+			/*Do I wait for work to finish or start new work?
+			Cause I want to get as much going on as possible.
+			Or should I batch a bunch of work together by waiting for submission
+			also, where to put fences/semaphores?
+			Should I create a buffer object that holds those resources,
+			since I *should* be recycling buffers instead of recreating them.
+			the joys of a threaded renderer.*/
+		}
+
+		std::unique_lock<std::mutex> uniqueLock(workQueue.lock);
+		workQueue.condVar.wait(uniqueLock);
+	}
+
+}
+
+template<>
+void CommandBufferWorker<TransferCommandWork>::Work() {
+
+	while (keepWorking) {
+		auto pos_work = workQueue.GetWork();
+		if (pos_work.has_value()) {
+			VkCommandBuffer buf = pool.GetOneTimeUseCommandBuffer();
+
+			pos_work->work(buf);
+
+			VkFence fence;
+			VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+			VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+
+				pool.SubmitOneTimeUseCommandBuffer(buf, fence);
+
+			vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+
+			for (auto& flag : pos_work->flags)
+				*flag = true;
+
+			for (auto& buffer : pos_work->buffersToClean) {
+				buffer.CleanBuffer();
+			}
+
+			/*Do I wait for work to finish or start new work?
+			Cause I want to get as much going on as possible.
+			Or should I batch a bunch of work together by waiting for submission
+			also, where to put fences/semaphores?
+			Should I create a buffer object that holds those resources,
+			since I *should* be recycling buffers instead of recreating them.
+			the joys of a threaded renderer.*/
+		}
+
+		//using namespace std::chrono_literals;
+		//std::this_thread::sleep_for(0.25s);
+
+		std::unique_lock<std::mutex> uniqueLock(workQueue.lock);
+		workQueue.condVar.wait(uniqueLock);
+	}
+
+}
+
+
+
 VulkanRenderer::VulkanRenderer(bool validationLayer, std::shared_ptr<Scene> scene) 
 	: device(validationLayer), 
 	vulkanSwapChain(device), 
@@ -59,6 +200,18 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 	vulkanSwapChain.CreateFramebuffers(depthBuffer->textureImageView, renderPass);
 
 	CreateCommandBuffers();
+
+	for (int i = 0; i < graphicsSetupWorkerCount; i++) {
+		graphicsSetupWorkers.push_back(
+			std::make_unique<CommandBufferWorker<CommandBufferWork>>(
+				device, device.graphics_queue, graphicsSetupWorkQueue));
+	}
+	
+	for (int i = 0; i < transferWorkerCount; i++){
+		transferWorkers.push_back(
+			std::make_unique<CommandBufferWorker<TransferCommandWork>>(
+				device, device.transfer_queue, transferWorkQueue));
+	}
 
 	PrepareResources();
 }
@@ -554,6 +707,16 @@ void InsertImageMemoryBarrier(
 		1, &imageMemoryBarrier);
 
 	//Log::Debug << " HI " << "\n";
+}
+
+void VulkanRenderer::SubmitTransferWork(TransferCommandWork&& data)
+{
+	transferWorkQueue.AddWork(data);
+}
+
+void VulkanRenderer::SubmitGraphicsSetupWork(CommandBufferWork&& data)
+{
+	graphicsSetupWorkQueue.AddWork(data);
 }
 
 VkCommandBuffer VulkanRenderer::GetGraphicsCommandBuffer() {

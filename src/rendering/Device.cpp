@@ -175,23 +175,24 @@ VkBool32 CommandPool::SubmitPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFe
 
 	return VK_TRUE;
 }
-VkBool32 CommandPool::SubmitSecondaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence){
-	EndBufferRecording(cmdBuffer);
 
-	VkSubmitInfo submitInfo = initializers::submitInfo();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &cmdBuffer;
-
-	if (fence == nullptr) {
-		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
-		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
-	}
-
-	queue.SubmitCommandBuffer(cmdBuffer, fence);
-
-
-	return VK_TRUE;	
-}
+//VkBool32 CommandPool::SubmitSecondaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence){
+//	EndBufferRecording(cmdBuffer);
+//
+//	VkSubmitInfo submitInfo = initializers::submitInfo();
+//	submitInfo.commandBufferCount = 1;
+//	submitInfo.pCommandBuffers = &cmdBuffer;
+//
+//	if (fence == nullptr) {
+//		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+//		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+//	}
+//
+//	queue.SubmitCommandBuffer(cmdBuffer, fence);
+//
+//
+//	return VK_TRUE;	
+//}
 
 
 
@@ -280,43 +281,44 @@ VkBool32 CommandPool::SubmitSecondaryCommandBuffer(VkCommandBuffer cmdBuffer, Vk
 
 
 
-CommandBufferWorker::CommandBufferWorker(VulkanDevice& device, 
-	CommandQueue queue, bool startActive)
-:pool(device, queue)
-{
-	
-	workingThread = std::thread(this->Work);
-
-}
-
-CommandBufferWorker::~CommandBufferWorker(){
-	workingThread.join();
-}
-
-void CommandBufferWorker::Work(){
-
-	while(keepWorking){
-		auto pos_work = workQueue.pop_if();
-		if(pos_work.has_value()){
-			VkCommandBuffer buf = pool.GetOneTimeUseCommandBuffer();
-
-			pos_work->get().work(buf);
-
-			pool.SubmitCommandBuffer(buf);
-
-			//Do I wait for work to finish or start new work?
-			//Cause I want to get as much going on as possible.
-			//Or should I batch a bunch of work together by waiting for submission
-			//also, where to put fences/semaphores? 
-			//Should I create a buffer object that holds those resources,
-			//since I *should* be recycling buffers instead of recreating them.
-			//the joys of a threaded renderer.
-		} 
-
-
-	}
-
-}
+//CommandBufferWorker::CommandBufferWorker(VulkanDevice& device, 
+//	CommandQueue queue, ConcurrentQueue<CommandBufferWorker>& workQueue, 
+//	bool startActive)
+//:pool(device, queue), workQueue(workQueue)
+//{
+//	
+//	workingThread = std::thread(this->Work);
+//	
+//}
+//
+//CommandBufferWorker::~CommandBufferWorker(){
+//	workingThread.join();
+//}
+//
+//void CommandBufferWorker::Work(){
+//
+//	while(keepWorking){
+//		auto pos_work = workQueue.pop_if();
+//		if(pos_work.has_value()){
+//			VkCommandBuffer buf = pool.GetOneTimeUseCommandBuffer();
+//	
+//			pos_work->get().work(buf);
+//	
+//			pool.SubmitCommandBuffer(buf);
+//	
+//			/*Do I wait for work to finish or start new work?
+//			Cause I want to get as much going on as possible.
+//			Or should I batch a bunch of work together by waiting for submission
+//			also, where to put fences/semaphores? 
+//			Should I create a buffer object that holds those resources,
+//			since I *should* be recycling buffers instead of recreating them.
+//			the joys of a threaded renderer.*/
+//		} 
+//
+//
+//	}
+//
+//}
 
 VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(validationLayers),
 	graphics_queue(*this),
