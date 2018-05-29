@@ -6,16 +6,17 @@
 
 #include "../core/Logger.h"
 
-CommandQueue::CommandQueue(VulkanDevice& device):
+CommandQueue::CommandQueue(VulkanDevice& device, int queueFamily):
 	device(device)
 {
-
-}
-
-void CommandQueue::SetupQueue(int queueFamily) {
 	vkGetDeviceQueue(device.device, queueFamily, 0, &queue);
 	this->queueFamily = queueFamily;
 }
+
+//void CommandQueue::SetupQueue(int queueFamily) {
+//	vkGetDeviceQueue(device.device, queueFamily, 0, &queue);
+//	this->queueFamily = queueFamily;
+//}
 
 void CommandQueue::SubmitCommandBuffer(VkCommandBuffer buffer, VkFence fence,
 	std::vector<VkSemaphore> waitSemaphores,
@@ -34,7 +35,6 @@ void CommandQueue::SubmitCommandBuffer(VkCommandBuffer buffer, VkFence fence,
 }
 
 void CommandQueue::Submit(VkSubmitInfo submitInfo, VkFence fence ) {
-	
 	std::lock_guard<std::mutex> lock(submissionMutex);
 	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
 }
@@ -51,16 +51,18 @@ void CommandQueue::WaitForFences(VkFence fence) {
 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 }
 
-CommandPool::CommandPool(VulkanDevice& device, CommandQueue& queue):
-	device(device), queue(queue)
+CommandPool::CommandPool(VulkanDevice& device):
+	device(device)
 {
 
 }
 
-VkBool32 CommandPool::Setup(VkCommandPoolCreateFlags flags)
+VkBool32 CommandPool::Setup(VkCommandPoolCreateFlags flags, CommandQueue* queue)
 {
+	this->queue = queue;
+
 	VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
-	cmd_pool_info.queueFamilyIndex = queue.GetQueueFamily();
+	cmd_pool_info.queueFamilyIndex = queue->GetQueueFamily();
 	cmd_pool_info.flags = flags;
 
 	if (vkCreateCommandPool(device.device, &cmd_pool_info, nullptr, &commandPool) != VK_SUCCESS) {
@@ -153,7 +155,7 @@ VkBool32 CommandPool::SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, V
 		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 	}
 
-	queue.SubmitCommandBuffer(cmdBuffer, fence);
+	queue->SubmitCommandBuffer(cmdBuffer, fence);
 
 	return VK_TRUE;
 }
@@ -170,7 +172,7 @@ VkBool32 CommandPool::SubmitPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFe
 		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 	}
 
-	queue.SubmitCommandBuffer(cmdBuffer, fence);
+	queue->SubmitCommandBuffer(cmdBuffer, fence);
 
 
 	return VK_TRUE;
@@ -320,11 +322,7 @@ VkBool32 CommandPool::SubmitPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFe
 //
 //}
 
-VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(validationLayers),
-	graphics_queue(*this),
-	compute_queue(*this),
-	transfer_queue(*this),
-	present_queue(*this)
+VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(validationLayers)
 {
 
 }
@@ -694,11 +692,16 @@ void VulkanDevice::CreateLogicalDevice() {
 }
 
 void VulkanDevice::CreateQueues() {
-	graphics_queue.SetupQueue(familyIndices.graphicsFamily);
-	compute_queue.SetupQueue(familyIndices.computeFamily);
-	transfer_queue.SetupQueue(familyIndices.transferFamily);
-	present_queue.SetupQueue(familyIndices.presentFamily);
-
+	graphics_queue = std::make_unique<CommandQueue>(*this,familyIndices.graphicsFamily);
+	present_queue = std::make_unique<CommandQueue>(*this,familyIndices.presentFamily);
+	
+	//Make sure it is a unique queue, else don't make anything (empty pointer means it isn't unique)
+	if(familyIndices.graphicsFamily != familyIndices.computeFamily)
+		compute_queue = std::make_unique<CommandQueue>(*this,familyIndices.computeFamily);
+	
+	if(familyIndices.graphicsFamily != familyIndices.transferFamily)
+		transfer_queue = std::make_unique<CommandQueue>(*this,familyIndices.transferFamily);
+	
 	//vkGetDeviceQueue(device, familyIndices.graphicsFamily, 0, &graphics_queue);
 	//vkGetDeviceQueue(device, familyIndices.presentFamily, 0, &present_queue);
 	//vkGetDeviceQueue(device, familyIndices.computeFamily, 0, &compute_queue);
@@ -711,21 +714,39 @@ CommandQueue& VulkanDevice::GetCommandQueue(CommandQueueType queueType) {
 	switch (queueType)
 	{
 	case VulkanDevice::CommandQueueType::graphics:
-		return graphics_queue;
+		return GraphicsQueue();
 		
 	case VulkanDevice::CommandQueueType::compute:
-		return compute_queue;
+		return ComputeQueue();
 		
 	case VulkanDevice::CommandQueueType::transfer:
-		return transfer_queue;
+		return TransferQueue();
 		
 	case VulkanDevice::CommandQueueType::present:
-		return present_queue;
+		return PresentQueue();
 		
 	default:
 		break;
 	}
-	return graphics_queue;
+	return GraphicsQueue();
+}
+
+
+CommandQueue& VulkanDevice::GraphicsQueue(){
+	return *graphics_queue;
+}
+CommandQueue& VulkanDevice::ComputeQueue(){
+	if(compute_queue)
+		return *compute_queue;
+	return GraphicsQueue();
+}
+CommandQueue& VulkanDevice::TransferQueue(){
+	if(transfer_queue)
+		return *transfer_queue;
+	return GraphicsQueue();
+}
+CommandQueue& VulkanDevice::PresentQueue(){
+	return *present_queue;
 }
 
 //void VulkanDevice::CreateCommandPools() {
@@ -943,6 +964,21 @@ void VulkanDevice::CreateStagingImage2D(VkImageCreateInfo imageInfo, VmaImage& i
 	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &stagingImageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
 
 }
+
+void VulkanDevice::CreateStagingImageBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize){
+	VkBufferCreateInfo bufferInfo = initializers::bufferCreateInfo();
+	bufferInfo.size = bufferSize;
+	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+	VmaAllocationCreateInfo allocInfo = {};
+	allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+	allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+
+	memcpy(buffer.allocationInfo.pMappedData, data, bufferSize);
+}
+	
 
 void VulkanDevice::DestroyVmaAllocatedImage(VmaImage& image) {
 	vmaDestroyImage(allocator, image.image, image.allocation);

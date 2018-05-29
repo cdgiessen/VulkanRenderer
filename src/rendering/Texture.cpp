@@ -270,7 +270,7 @@ void VulkanTexture2D::loadFromTexture(
 	int mipMapLevelsToGen,
 	bool wrapBorder)
 {
-	VmaImage stagingImage;
+	//VmaImage stagingImage;
 
 	this->texture = texture;
 	int maxMipMapLevelsPossible = (int)floor(log2(std::max(texture->width, texture->height))) + 1;
@@ -307,7 +307,7 @@ void VulkanTexture2D::loadFromTexture(
 			| VK_IMAGE_USAGE_TRANSFER_SRC_BIT 
 			| VK_IMAGE_USAGE_SAMPLED_BIT);
 
-	VkImageCreateInfo stagingImageCreateInfo = initializers::imageCreateInfo(
+	/* VkImageCreateInfo stagingImageCreateInfo = initializers::imageCreateInfo(
 		VK_IMAGE_TYPE_2D,
 		format,
 		(uint32_t)mipLevels,
@@ -317,32 +317,70 @@ void VulkanTexture2D::loadFromTexture(
 		VK_SHARING_MODE_EXCLUSIVE,
 		VK_IMAGE_LAYOUT_PREINITIALIZED,
 		imageExtent,
-		VK_IMAGE_USAGE_TRANSFER_SRC_BIT	);
+		VK_IMAGE_USAGE_TRANSFER_SRC_BIT	); */
 
-	VmaAllocationInfo stagingImageAllocInfo = {};
-	device.CreateStagingImage2D(stagingImageCreateInfo, stagingImage);
+	
+
+	//VmaAllocationInfo stagingImageAllocInfo = {};
+	//device.CreateStagingImage2D(stagingImageCreateInfo, stagingImage);
 	
 	VkSubresourceLayout sub;
 
-	const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
-	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
-
-	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-	AlignedTextureMemcpy(1, 0, texture->height, texture->width, texture->width * 4, sub.rowPitch, (char*)texture->pixels.data(), stagingPointer);
+	//const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+	//vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
+//
+	//char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
+	//AlignedTextureMemcpy(1, 0, texture->height, texture->width, texture->width * 4, sub.rowPitch, (char*)texture->pixels.data(), stagingPointer);
 	
+	VmaBuffer stagingBuffer;
+	device.CreateStagingImageBuffer(stagingBuffer, texture->pixels.data(), texture->texImageSize);
+
 	device.CreateImage2D(imageCreateInfo, image);
 
 	VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
 
-	SetLayoutCopyImage(transferCmdBuf, image.image, stagingImage.image, mipLevels, imageExtent);
+	//transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	//copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+    //transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+	VkImageSubresourceRange subresourceRange = 
+		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
+
+	setImageLayout(
+		transferCmdBuf,
+		image.image,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		subresourceRange);
+	
+	VkBufferImageCopy bufferCopyRegion = {};
+		bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		bufferCopyRegion.imageSubresource.mipLevel = 0;
+		bufferCopyRegion.imageSubresource.baseArrayLayer = 0; //layer count
+		bufferCopyRegion.imageSubresource.layerCount = 1;
+		bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(texture->width);
+		bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(texture->height);
+		bufferCopyRegion.imageExtent.depth = 1;
+		bufferCopyRegion.bufferOffset = 0;
+
+	vkCmdCopyBufferToImage(transferCmdBuf, stagingBuffer.buffer, image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1/*copy region counts*/, &bufferCopyRegion/*data*/);
+
+	setImageLayout(
+		transferCmdBuf,
+		image.image,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		subresourceRange);
+
+	//SetLayoutCopyImage(transferCmdBuf, image.image, stagingImage.image, mipLevels, imageExtent);
 
 	renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
 
 	this->textureImageLayout = imageLayout;
 
 
-	device.DestroyVmaAllocatedImage(stagingImage);
-
+	//device.DestroyVmaAllocatedImage(stagingImage);
+	device.DestroyVmaAllocatedBuffer(stagingBuffer);
 
 	GenerateMipMaps(renderer, image.image, texture->width, texture->height, 1, 1, mipLevels);
 
@@ -465,7 +503,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	bool genMipMaps,
 	int mipMapLevelsToGen)
 {
-	VmaImage stagingImage;
+	//VmaImage stagingImage;
 
 	this->textures = textures;
 	int mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
@@ -486,40 +524,86 @@ void VulkanTexture2DArray::loadTextureArray(
 		| VK_IMAGE_USAGE_TRANSFER_SRC_BIT
 		| VK_IMAGE_USAGE_SAMPLED_BIT);
 
-	VkImageCreateInfo stagingImageCreateInfo = initializers::imageCreateInfo(
-		VK_IMAGE_TYPE_2D,
-		format,
-		(uint32_t)mipLevels,
-		(uint32_t)textures->layerCount,
-		VK_SAMPLE_COUNT_1_BIT,
-		VK_IMAGE_TILING_LINEAR,
-		VK_SHARING_MODE_EXCLUSIVE,
-		VK_IMAGE_LAYOUT_PREINITIALIZED,
-		imageExtent,
-		VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-
-	VmaAllocationInfo stagingImageAllocInfo = {};
-	device.CreateStagingImage2D(stagingImageCreateInfo, stagingImage);
+	//VkImageCreateInfo stagingImageCreateInfo = initializers::imageCreateInfo(
+	//	VK_IMAGE_TYPE_2D,
+	//	format,
+	//	(uint32_t)mipLevels,
+	//	(uint32_t)textures->layerCount,
+	//	VK_SAMPLE_COUNT_1_BIT,
+	//	VK_IMAGE_TILING_LINEAR,
+	//	VK_SHARING_MODE_EXCLUSIVE,
+	//	VK_IMAGE_LAYOUT_PREINITIALIZED,
+	//	imageExtent,
+	//	VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 	
-	VkSubresourceLayout sub;
+	//VmaAllocationInfo stagingImageAllocInfo = {};
+	//device.CreateStagingImage2D(stagingImageCreateInfo, stagingImage);
 
-	const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
-	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
+	//VkSubresourceLayout sub;
+//
+	//const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+	//vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
+//
+	//char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
+	//AlignedTextureMemcpy(textures->layerCount, sub.arrayPitch, textures->height, textures->width, 
+	//	textures->width * 4, sub.rowPitch, 
+	//	(char*)textures->pixels.data(), stagingPointer);
 
-	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-	AlignedTextureMemcpy(textures->layerCount, sub.arrayPitch, textures->height, textures->width, 
-		textures->width * 4, sub.rowPitch, 
-		(char*)textures->pixels.data(), stagingPointer);
+	VmaBuffer stagingBuffer;
+	device.CreateStagingImageBuffer(stagingBuffer, textures->pixels.data(), textures->texImageSize);
 
 	device.CreateImage2D(imageCreateInfo, image);
 	
-	VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
 	
-	SetLayoutCopyImageArray(transferCmdBuf, image.image, stagingImage.image, mipLevels, textures->layerCount, imageExtent);
+	VkImageSubresourceRange subresourceRange = 
+		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, textures->layerCount);
+	
+	std::vector<VkBufferImageCopy> bufferCopyRegions;
+	size_t offset = 0;
+	
+	for (uint32_t layer = 0; layer < textures->layerCount; layer++)
+	{
+		VkBufferImageCopy bufferCopyRegion = {};
+		bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		bufferCopyRegion.imageSubresource.mipLevel = 0;
+		bufferCopyRegion.imageSubresource.baseArrayLayer = layer;
+		bufferCopyRegion.imageSubresource.layerCount = 1;
+		bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(textures->width);
+		bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(textures->height);
+		bufferCopyRegion.imageExtent.depth = 1;
+		bufferCopyRegion.bufferOffset = offset;
+		bufferCopyRegions.push_back(bufferCopyRegion);
+		// Increase offset into staging buffer for next level / face
+		offset += textures->texImageSizePerTex;
+	}
+
+	VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
+
+	setImageLayout(
+		transferCmdBuf,
+		image.image,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		subresourceRange);
+
+	vkCmdCopyBufferToImage(transferCmdBuf, 
+		stagingBuffer.buffer, image.image, 
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+		bufferCopyRegions.size(), bufferCopyRegions.data());
+
+	setImageLayout(
+		transferCmdBuf,
+		image.image,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		subresourceRange);
+
+	//SetLayoutCopyImageArray(transferCmdBuf, image.image, stagingImage.image, mipLevels, textures->layerCount, imageExtent);
 
 	renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
 
-	device.DestroyVmaAllocatedImage(stagingImage);
+	//device.DestroyVmaAllocatedImage(stagingImage);
+	device.DestroyVmaAllocatedBuffer(stagingBuffer);
 
 	this->textureImageLayout = imageLayout;
 
@@ -547,8 +631,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	//viewCreateInfo.subresourceRange.levelCount = mipLevels;
 	//viewCreateInfo.image = image.image;
 	//VK_CHECK_RESULT(vkCreateImageView(device.device, &viewCreateInfo, nullptr, &textureImageView));
-}
-	
+}	
 
 void SetLayoutCopyCubeMap(
 	const VkCommandBuffer &transferCmdBuf, 
@@ -620,36 +703,36 @@ void VulkanCubeMap::loadFromTexture(
 	this->cubeMap = cubeMap;
 	int mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
 	
-	VmaImage stagingImage;
+	//VmaImage stagingImage;
 
 	VkExtent3D imageExtent = { cubeMap->width, cubeMap->height, 1 };
 
-	VkImageCreateInfo stagingImageCreateInfo = initializers::imageCreateInfo(
-		VK_IMAGE_TYPE_2D,
-		format,
-		(uint32_t)1,
-		(uint32_t)6,
-		VK_SAMPLE_COUNT_1_BIT,
-		VK_IMAGE_TILING_LINEAR,
-		VK_SHARING_MODE_EXCLUSIVE,
-		VK_IMAGE_LAYOUT_PREINITIALIZED,
-		imageExtent,
-		VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-	stagingImageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+	//VkImageCreateInfo stagingImageCreateInfo = initializers::imageCreateInfo(
+	//	VK_IMAGE_TYPE_2D,
+	//	format,
+	//	(uint32_t)1,
+	//	(uint32_t)6,
+	//	VK_SAMPLE_COUNT_1_BIT,
+	//	VK_IMAGE_TILING_LINEAR,
+	//	VK_SHARING_MODE_EXCLUSIVE,
+	//	VK_IMAGE_LAYOUT_PREINITIALIZED,
+	//	imageExtent,
+	//	VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+	//stagingImageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
 
-	VmaAllocationInfo stagingImageAllocInfo = {};
+	//VmaAllocationInfo stagingImageAllocInfo = {};
 	
-	device.CreateStagingImage2D(stagingImageCreateInfo, stagingImage);
+	//device.CreateStagingImage2D(stagingImageCreateInfo, stagingImage);
 	
-	VkSubresourceLayout sub;
-
-	const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
-	vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
-	
-	char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-	AlignedTextureMemcpy(6, 0, cubeMap->height, cubeMap->width, cubeMap->width * 4, sub.rowPitch, (char*)cubeMap->pixels.data(), stagingPointer);
-
+	//VkSubresourceLayout sub;
+//
+	//const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+	//vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
+	//
+	//char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
+	//AlignedTextureMemcpy(6, 0, cubeMap->height, cubeMap->width, cubeMap->width * 4, sub.rowPitch, (char*)cubeMap->pixels.data(), stagingPointer);
+//
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo(
 		VK_IMAGE_TYPE_2D,
 		format,
@@ -693,14 +776,67 @@ void VulkanCubeMap::loadFromTexture(
 	}
 	*/
 
-	VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
-	
-	SetLayoutCopyCubeMap(transferCmdBuf, image.image, stagingImage.image, mipLevels, imageExtent);
 
-	renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
+	VmaBuffer stagingBuffer;
+	device.CreateStagingImageBuffer(stagingBuffer, cubeMap->pixels.data(), cubeMap->texImageSize);
+	
+	VkImageSubresourceRange subresourceRange = 
+		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, 1);
+	
+	std::vector<VkBufferImageCopy> bufferCopyRegions;
+	size_t offset = 0;
+	
+	for (uint32_t layer = 0; layer < 6; layer++)
+	{
+		VkBufferImageCopy bufferCopyRegion = {};
+		bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		bufferCopyRegion.imageSubresource.mipLevel = 0;
+		bufferCopyRegion.imageSubresource.baseArrayLayer = layer;
+		bufferCopyRegion.imageSubresource.layerCount = 1;
+		bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(cubeMap->width);
+		bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(cubeMap->height);
+		bufferCopyRegion.imageExtent.depth = 1;
+		bufferCopyRegion.bufferOffset = offset;
+		bufferCopyRegions.push_back(bufferCopyRegion);
+		// Increase offset into staging buffer for next level / face
+		offset += cubeMap->texImageSizePerTex;
+	}
+
+	VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
+
+	setImageLayout(
+		transferCmdBuf,
+		image.image,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		subresourceRange);
+
+	vkCmdCopyBufferToImage(transferCmdBuf, 
+		stagingBuffer.buffer, image.image, 
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+		bufferCopyRegions.size(), bufferCopyRegions.data());
+
+	setImageLayout(
+		transferCmdBuf,
+		image.image,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		subresourceRange);
+
+
+
+
+
+
+	//VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
+	
+	//SetLayoutCopyCubeMap(transferCmdBuf, image.image, stagingImage.image, mipLevels, imageExtent);
+
+	//renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
 	this->textureImageLayout = imageLayout;
 
-	device.DestroyVmaAllocatedImage(stagingImage);
+	device.DestroyVmaAllocatedBuffer(stagingBuffer);
+	//device.DestroyVmaAllocatedImage(stagingImage);
 
 	//GenerateMipMaps(device, cubeMap->width, cubeMap->height, 6, mipLevels);
 
@@ -734,7 +870,7 @@ void VulkanTextureDepthBuffer::CreateDepthImage(VulkanRenderer& renderer, VkForm
 		VK_SAMPLE_COUNT_1_BIT,
 		VK_IMAGE_TILING_OPTIMAL, 
 		VK_SHARING_MODE_EXCLUSIVE, 
-		VK_IMAGE_LAYOUT_PREINITIALIZED, 
+		VK_IMAGE_LAYOUT_UNDEFINED, 
 		VkExtent3D{ (uint32_t)width, (uint32_t)height, (uint32_t)1 }, 
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 

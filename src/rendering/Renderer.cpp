@@ -45,11 +45,11 @@ std::optional<WorkType> CommandBufferWorkQueue<WorkType>::GetWork() {
 
 template<typename WorkType>
 CommandBufferWorker<WorkType>::CommandBufferWorker(VulkanDevice& device,
-	CommandQueue& queue, CommandBufferWorkQueue<WorkType>& workQueue,
+	CommandQueue* queue, CommandBufferWorkQueue<WorkType>& workQueue,
 	bool startActive)
-	: device(device), pool(device, queue), workQueue(workQueue)
+	: device(device), pool(device), workQueue(workQueue)
 {
-	pool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	pool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, queue);
 	workingThread = std::thread{ &CommandBufferWorker::Work, this };
 
 }
@@ -162,10 +162,10 @@ VulkanRenderer::VulkanRenderer(bool validationLayer, std::shared_ptr<Scene> scen
 	pointLightsBuffer(device),
 	spotLightsBuffer(device),
 	entityPositions(device),
-	graphicsPrimaryCommandPool(device, device.graphics_queue),
-	singleUseGraphicsCommandPool(device, device.graphics_queue),
-	transferCommandPool(device, device.transfer_queue),
-	computeCommandPool(device, device.compute_queue)
+	graphicsPrimaryCommandPool(device),
+	singleUseGraphicsCommandPool(device),
+	transferCommandPool(device),
+	computeCommandPool(device)
 {
 }
 
@@ -185,10 +185,10 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 
 	device.InitVulkanDevice(vulkanSwapChain.surface);
 	
-	graphicsPrimaryCommandPool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-	singleUseGraphicsCommandPool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-	transferCommandPool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-	computeCommandPool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	graphicsPrimaryCommandPool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue());
+	singleUseGraphicsCommandPool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue());
+	transferCommandPool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.TransferQueue());
+	computeCommandPool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.ComputeQueue());
 
 	vulkanSwapChain.InitSwapChain(device.window);
 
@@ -204,16 +204,18 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow* window) {
 	for (int i = 0; i < graphicsSetupWorkerCount; i++) {
 		graphicsSetupWorkers.push_back(
 			std::make_unique<CommandBufferWorker<CommandBufferWork>>(
-				device, device.graphics_queue, graphicsSetupWorkQueue));
+				device, &device.GraphicsQueue(), graphicsSetupWorkQueue));
 	}
 	
 	for (int i = 0; i < transferWorkerCount; i++){
 		transferWorkers.push_back(
 			std::make_unique<CommandBufferWorker<TransferCommandWork>>(
-				device, device.transfer_queue, transferWorkQueue));
+				device, &device.TransferQueue(), transferWorkQueue));
 	}
 
 	PrepareResources();
+
+	CreateSemaphores();
 }
 
 void VulkanRenderer::UpdateRenderResources(GlobalData globalData,
@@ -547,7 +549,7 @@ void VulkanRenderer::SubmitFrame()
 	//submitInfo.commandBufferCount = 1;
 	//submitInfo.pCommandBuffers = &commandBuffers[frameIndex];
 
-	device.graphics_queue.Submit(submitInfo, VK_NULL_HANDLE);
+	device.GraphicsQueue().Submit(submitInfo, VK_NULL_HANDLE);
 	//{
 	//	std::lock_guard<std::mutex> lock(device.graphics_lock);
 	//	if (vkQueueSubmit(device.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
@@ -569,7 +571,7 @@ void VulkanRenderer::SubmitFrame()
 	VkResult result;
 	{
 		std::lock_guard<std::mutex> lock(presentMutex);
-		result = vkQueuePresentKHR(device.present_queue.GetQueue(), &presentInfo);
+		result = vkQueuePresentKHR(device.PresentQueue().GetQueue(), &presentInfo);
 	}
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
 		RecreateSwapChain();
@@ -578,7 +580,7 @@ void VulkanRenderer::SubmitFrame()
 		throw std::runtime_error("failed to present swap chain image!");
 	}
 
-	vkQueueWaitIdle(device.present_queue.GetQueue());
+	vkQueueWaitIdle(device.PresentQueue().GetQueue());
 }
 
 void VulkanRenderer::PrepareResources() {
@@ -748,7 +750,7 @@ void VulkanRenderer::SubmitGraphicsCommandBufferAndWait(VkCommandBuffer commandB
 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence));
 	graphicsPrimaryCommandPool.SubmitPrimaryCommandBuffer(commandBuffer, fence);
 	
-	device.graphics_queue.WaitForFences(fence);
+	device.GraphicsQueue().WaitForFences(fence);
 
 	vkDestroyFence(device.device, fence, nullptr);
 	graphicsPrimaryCommandPool.FreeCommandBuffer(commandBuffer);

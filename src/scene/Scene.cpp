@@ -100,11 +100,12 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	//	}
 	//}
 
-	std::shared_ptr<GameObject> pbr_test = std::make_shared<GameObject>();
-	pbr_test->usePBR = true;
+	//std::shared_ptr<GameObject> pbr_test = std::make_shared<GameObject>();
+	//pbr_test->usePBR = true;
 
 
 	terrainManager = std::make_shared<TerrainManager>(graph);
+
 	terrainManager->SetupResources(resourceMan, renderer);
 	terrainManager->GenerateTerrain(resourceMan, renderer, camera);
 
@@ -115,6 +116,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	treesInstanced->LoadModel(createCube());
 	treesInstanced->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/grass.jpg"));
 	treesInstanced->InitInstancedSceneObject(renderer);
+	
 	//treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(20,0,10), glm::vec3(10,0,40), glm::vec3(10,0,-40), glm::vec3(100,0,40) });
 	
 	std::vector< InstancedSceneObject::InstanceData> data;
@@ -128,6 +130,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	treesInstanced->AddInstances(data);
 	//rocksInstanced = std::make_shared<InstancedSceneObject>(renderer);
 
+	Log::Debug << "5\n";
 	// gltf2 integration
 	//std::shared_ptr< gltf2::Asset> tree_test = std::make_shared<gltf2::Asset>();
 	//*tree_test = gltf2::load("Resources/Assets/tree_test.gltf");
@@ -172,7 +175,7 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 
 	if (Input::GetKeyDown(Input::KeyCode::V))
 		UpdateTerrain = !UpdateTerrain;
-	if (UpdateTerrain)
+	if (UpdateTerrain && terrainManager != nullptr)
 		terrainManager->UpdateTerrains(resourceMan, renderer, camera, timeManager);
 
 	UpdateSunData();

@@ -57,8 +57,9 @@ class VulkanBuffer;
 
 class CommandQueue {
 public:
-	CommandQueue(VulkanDevice& device);
-	void SetupQueue(int queueFamily);
+	CommandQueue(VulkanDevice& device, int queueFamily);
+	//void SetupQueue(int queueFamily);
+	//void SetupQueue(CommandQueue* master);
 
 	void Submit(VkSubmitInfo info, VkFence fence);
 	void SubmitCommandBuffer(VkCommandBuffer buf, VkFence fence,
@@ -75,13 +76,14 @@ private:
 	std::mutex submissionMutex;
 	VkQueue queue;
 	int queueFamily;
+	//CommandQueue* parentQueue;//when this queue doesn't own the VkQueue it represents (cause the hardware doesn't have multiple queues)
 };
 
 class CommandPool {
 public:
-	CommandPool(VulkanDevice& device, CommandQueue& queue);
+	CommandPool(VulkanDevice& device);
 
-	VkBool32 Setup(VkCommandPoolCreateFlags flags);
+	VkBool32 Setup(VkCommandPoolCreateFlags flags, CommandQueue* queue);
 	VkBool32 CleanUp();
 
 	VkBool32 ResetPool();
@@ -104,7 +106,7 @@ private:
 	VulkanDevice& device;
 	std::mutex poolLock;
 	VkCommandPool commandPool;
-	CommandQueue& queue;
+	CommandQueue* queue;
 
 	//std::vector<VkCommandBuffer> cmdBuffers;
 };
@@ -186,11 +188,6 @@ public:
 		present
 	};
 
-	CommandQueue graphics_queue;
-	CommandQueue compute_queue;
-	CommandQueue transfer_queue;
-	CommandQueue present_queue;
-
 	VkPhysicalDeviceProperties physical_device_properties;
 	VkPhysicalDeviceFeatures physical_device_features;
 	VkPhysicalDeviceMemoryProperties memoryProperties;
@@ -211,6 +208,11 @@ public:
 	const QueueFamilyIndices GetFamilyIndices() const;
 
 	CommandQueue& GetCommandQueue(CommandQueueType queueType);
+
+	CommandQueue& GraphicsQueue();
+	CommandQueue& ComputeQueue();
+	CommandQueue& TransferQueue();
+	CommandQueue& PresentQueue();
 
 	void VmaMapMemory(VmaBuffer& buffer, void** pData);
 	void VmaUnmapMemory(VmaBuffer& buffer);
@@ -234,7 +236,8 @@ public:
 	void CreateImage2D(VkImageCreateInfo imageInfo, VmaImage& image);
 	void CreateDepthImage(VkImageCreateInfo imageInfo, VmaImage& image);
 	void CreateStagingImage2D(VkImageCreateInfo imageInfo, VmaImage& image);
-
+	void CreateStagingImageBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
+	
 	void DestroyVmaAllocatedImage(VmaImage& image);
 
 	//VkCommandBuffer GetGraphicsCommandBuffer();
@@ -264,6 +267,11 @@ public:
 	bool separateTransferQueue = false;
 private:
 	QueueFamilyIndices familyIndices;
+
+	std::unique_ptr<CommandQueue> graphics_queue;
+	std::unique_ptr<CommandQueue> compute_queue;
+	std::unique_ptr<CommandQueue> transfer_queue;
+	std::unique_ptr<CommandQueue> present_queue;
 
 	bool enableValidationLayers = false;
 

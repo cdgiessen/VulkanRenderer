@@ -11,11 +11,22 @@
 
 VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath);
 
-void setImageLayout(VkCommandBuffer cmdbuffer, VkImage image, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkImageSubresourceRange subresourceRange, 
-	VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+void setImageLayout(
+	VkCommandBuffer cmdbuffer, 
+	VkImage image, 
+	VkImageLayout oldImageLayout, 
+	VkImageLayout newImageLayout, 
+	VkImageSubresourceRange subresourceRange, 
+	VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 
+	VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
 // Fixed sub resource on first mip level and layer
-void setImageLayout(VkCommandBuffer cmdbuffer, VkImage image, VkImageAspectFlags aspectMask, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, 
+void setImageLayout(
+	VkCommandBuffer cmdbuffer, 
+	VkImage image, 
+	VkImageAspectFlags aspectMask, 
+	VkImageLayout oldImageLayout, 
+	VkImageLayout newImageLayout, 
 	VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 
 	VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 

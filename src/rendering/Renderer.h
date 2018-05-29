@@ -89,7 +89,7 @@ template<typename WorkType>
 class CommandBufferWorker {
 public:
 	CommandBufferWorker(VulkanDevice& device,
-		CommandQueue& queue, CommandBufferWorkQueue<WorkType>& workQueue,
+		CommandQueue* queue, CommandBufferWorkQueue<WorkType>& workQueue,
 		bool startActive = true);
 
 	CommandBufferWorker(const CommandBufferWorker& other) = default; //copy

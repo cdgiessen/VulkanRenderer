@@ -26,11 +26,11 @@ VulkanApp::VulkanApp()
 
 	vulkanRenderer = std::make_shared<VulkanRenderer>(useValidationLayers, scene);
 	vulkanRenderer->InitVulkanRenderer(window->getWindowContext());
-	vulkanRenderer->CreateSemaphores();
-
+	
 	scene->PrepareScene(resourceManager, vulkanRenderer, imgui_nodeGraph_terrain.GetGraph());
 
 	PrepareImGui(window, vulkanRenderer);
+
 }
 
 
@@ -52,7 +52,6 @@ void VulkanApp::clean() {
 void VulkanApp::mainLoop() {
 
 	while (!window->CheckForWindowClose()) {
-
 		if (window->CheckForWindowResizing()) {
 			if (!window->CheckForWindowIconified()) {
 				RecreateSwapChain();
@@ -61,15 +60,11 @@ void VulkanApp::mainLoop() {
 		}
 
 		timeManager->StartFrameTimer();
-
 		Input::inputDirector.UpdateInputs();
 		HandleInputs();
-
 		scene->UpdateScene(resourceManager, timeManager);
 		BuildImgui();
-
 		vulkanRenderer->RenderFrame();
-
 		Input::inputDirector.ResetReleasedInput();
 
 		if (isFrameCapped) {
@@ -78,7 +73,6 @@ void VulkanApp::mainLoop() {
 			}
 		}
 		timeManager->EndFrameTimer();
-
 	}
 
 	vulkanRenderer->DeviceWaitTillIdle();
