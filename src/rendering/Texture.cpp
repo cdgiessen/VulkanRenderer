@@ -781,7 +781,7 @@ void VulkanCubeMap::loadFromTexture(
 	device.CreateStagingImageBuffer(stagingBuffer, cubeMap->pixels.data(), cubeMap->texImageSize);
 	
 	VkImageSubresourceRange subresourceRange = 
-		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, 1);
+		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, 6);
 	
 	std::vector<VkBufferImageCopy> bufferCopyRegions;
 	size_t offset = 0;
@@ -823,7 +823,7 @@ void VulkanCubeMap::loadFromTexture(
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		subresourceRange);
 
-
+	renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
 
 
 
