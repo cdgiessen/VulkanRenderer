@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <mutex>
 
 #include "Texture.h"
 
@@ -30,6 +31,8 @@ public:
 	std::shared_ptr<CubeMap> loadCubeMapFromFile(std::string filename, std::string fileExt);
 
 private:
+	std::mutex lock;
+
 	std::vector<std::shared_ptr<Texture>> textureHandles;
 
 	std::shared_ptr<Texture> loadTextureFromFile(std::string filename, int imgType);

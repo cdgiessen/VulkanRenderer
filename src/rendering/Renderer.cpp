@@ -71,10 +71,8 @@ void CommandBufferWorker<CommandBufferWork>::Work() {
 		auto pos_work = workQueue.GetWork();
 		if (pos_work.has_value()) {
 			VkCommandBuffer buf = pool.GetOneTimeUseCommandBuffer();
-
-
+			
 			pos_work->work(buf);
-
 
 			VkFence fence;
 			VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
@@ -87,15 +85,7 @@ void CommandBufferWorker<CommandBufferWork>::Work() {
 			for (auto& flag : pos_work->flags)
 				*flag = true;
 
-
-
-			/*Do I wait for work to finish or start new work?
-			Cause I want to get as much going on as possible.
-			Or should I batch a bunch of work together by waiting for submission
-			also, where to put fences/semaphores?
-			Should I create a buffer object that holds those resources,
-			since I *should* be recycling buffers instead of recreating them.
-			the joys of a threaded renderer.*/
+			pool.FreeCommandBuffer(buf);
 		}
 
 		std::unique_lock<std::mutex> uniqueLock(workQueue.lock);
@@ -118,7 +108,7 @@ void CommandBufferWorker<TransferCommandWork>::Work() {
 			VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
 			VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 
-				pool.SubmitOneTimeUseCommandBuffer(buf, fence);
+			pool.SubmitOneTimeUseCommandBuffer(buf, fence);
 
 			vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 
@@ -129,13 +119,7 @@ void CommandBufferWorker<TransferCommandWork>::Work() {
 				buffer.CleanBuffer();
 			}
 
-			/*Do I wait for work to finish or start new work?
-			Cause I want to get as much going on as possible.
-			Or should I batch a bunch of work together by waiting for submission
-			also, where to put fences/semaphores?
-			Should I create a buffer object that holds those resources,
-			since I *should* be recycling buffers instead of recreating them.
-			the joys of a threaded renderer.*/
+			pool.FreeCommandBuffer(buf);
 		}
 
 		//using namespace std::chrono_literals;

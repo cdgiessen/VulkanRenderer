@@ -45,7 +45,7 @@ void VulkanTexture::destroy() {
 }
 
 void VulkanTexture::GenerateMipMaps(
-	VulkanRenderer& renderer,
+	VkCommandBuffer cmdBuf,
 	VkImage image, 
 	int width, 
 	int height, 
@@ -54,7 +54,8 @@ void VulkanTexture::GenerateMipMaps(
 	int mipLevels) {
 	// We copy down the whole mip chain doing a blit from mip-1 to mip
 	// An alternative way would be to always blit from the first mip level and sample that one down
-	VkCommandBuffer blitCmd = renderer.GetSingleUseGraphicsCommandBuffer();
+	
+	//VkCommandBuffer blitCmd = renderer.GetSingleUseGraphicsCommandBuffer();
 
 	// Copy down mips from n-1 to n
 	for (int32_t i = 1; i < mipLevels; i++)
@@ -87,7 +88,7 @@ void VulkanTexture::GenerateMipMaps(
 
 		// Transiton current mip level to transfer dest
 		setImageLayout(
-			blitCmd,
+			cmdBuf,
 			image,
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -97,7 +98,7 @@ void VulkanTexture::GenerateMipMaps(
 
 		// Blit from previous level
 		vkCmdBlitImage(
-			blitCmd,
+			cmdBuf,
 			image,
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 			image,
@@ -108,7 +109,7 @@ void VulkanTexture::GenerateMipMaps(
 
 		// Transiton current mip level to transfer source for read in next iteration
 		setImageLayout(
-			blitCmd,
+			cmdBuf,
 			image,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -122,13 +123,13 @@ void VulkanTexture::GenerateMipMaps(
 	
 	// After the loop, all mip layers are in TRANSFER_SRC layout, so transition all to SHADER_READ
 	setImageLayout(
-		blitCmd,
+		cmdBuf,
 		image,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		textureImageLayout,
 		subresourceRange);
 
-	renderer.SubmitGraphicsCommandBufferAndWait(blitCmd);
+	//renderer.SubmitGraphicsCommandBufferAndWait(blitCmd);
 
 
 }
@@ -201,17 +202,13 @@ void AlignedTextureMemcpy(int layers, int dst_layer_width,
 	}
 }
 
-
-void SetLayoutCopyImage(
-	const VkCommandBuffer &transferCmdBuf,
+void SetLayoutTransferRegions(
+	VkCommandBuffer transferCmdBuf,
 	VkImage image,
-	VkImage stagingImage,
-	int mipLevels,
-	const VkExtent3D &imageExtent)
+	VkBuffer stagingBuffer,
+	const VkImageSubresourceRange subresourceRange,
+	std::vector<VkBufferImageCopy> bufferCopyRegions)
 {
-	VkImageSubresourceRange subresourceRange = 
-		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
-
 	setImageLayout(
 		transferCmdBuf,
 		image,
@@ -219,37 +216,10 @@ void SetLayoutCopyImage(
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		subresourceRange);
 
-	setImageLayout(
-		transferCmdBuf,
-		stagingImage,
-		VK_IMAGE_LAYOUT_PREINITIALIZED,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		subresourceRange);
-
-	VkImageCopy imageCopy;
-	imageCopy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	imageCopy.srcSubresource.baseArrayLayer = 0;
-	imageCopy.srcSubresource.mipLevel = 0;
-	imageCopy.srcSubresource.layerCount = 1;
-
-	imageCopy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	imageCopy.dstSubresource.baseArrayLayer = 0;
-	imageCopy.dstSubresource.mipLevel = 0;
-	imageCopy.dstSubresource.layerCount = 1;
-
-	imageCopy.srcOffset = { 0,0,0 };
-	imageCopy.dstOffset = { 0,0,0 };
-
-	imageCopy.extent = imageExtent;
-
-	vkCmdCopyImage(
-		transferCmdBuf,
-		stagingImage,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		image,
+	vkCmdCopyBufferToImage(transferCmdBuf,
+		stagingBuffer, image,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		1, &imageCopy);
-
+		bufferCopyRegions.size(), bufferCopyRegions.data());
 
 	setImageLayout(
 		transferCmdBuf,
@@ -324,7 +294,7 @@ void VulkanTexture2D::loadFromTexture(
 	//VmaAllocationInfo stagingImageAllocInfo = {};
 	//device.CreateStagingImage2D(stagingImageCreateInfo, stagingImage);
 	
-	VkSubresourceLayout sub;
+	//VkSubresourceLayout sub;
 
 	//const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
 	//vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub, &sub);
@@ -332,82 +302,105 @@ void VulkanTexture2D::loadFromTexture(
 	//char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
 	//AlignedTextureMemcpy(1, 0, texture->height, texture->width, texture->width * 4, sub.rowPitch, (char*)texture->pixels.data(), stagingPointer);
 	
-	VmaBuffer stagingBuffer;
-	device.CreateStagingImageBuffer(stagingBuffer, texture->pixels.data(), texture->texImageSize);
+	//VmaBuffer stagingBuffer;
+	//device.CreateStagingImageBuffer(stagingBuffer, texture->pixels.data(), texture->texImageSize);
 
-	device.CreateImage2D(imageCreateInfo, image);
+	//device.CreateImage2D(imageCreateInfo, image);
 
-	VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
+	//VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
 
 	//transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	//copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
     //transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	VkImageSubresourceRange subresourceRange = 
-		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
+	//VkImageSubresourceRange subresourceRange = 
+	//	initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
 
-	setImageLayout(
-		transferCmdBuf,
-		image.image,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		subresourceRange);
-	
-	VkBufferImageCopy bufferCopyRegion = {};
-		bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		bufferCopyRegion.imageSubresource.mipLevel = 0;
-		bufferCopyRegion.imageSubresource.baseArrayLayer = 0; //layer count
-		bufferCopyRegion.imageSubresource.layerCount = 1;
-		bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(texture->width);
-		bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(texture->height);
-		bufferCopyRegion.imageExtent.depth = 1;
-		bufferCopyRegion.bufferOffset = 0;
+	//setImageLayout(
+	//	transferCmdBuf,
+	//	image.image,
+	//	VK_IMAGE_LAYOUT_UNDEFINED,
+	//	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	//	subresourceRange);
+	//
+	//VkBufferImageCopy bufferCopyRegion = {};
+	//	bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	//	bufferCopyRegion.imageSubresource.mipLevel = 0;
+	//	bufferCopyRegion.imageSubresource.baseArrayLayer = 0; //layer count
+	//	bufferCopyRegion.imageSubresource.layerCount = 1;
+	//	bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(texture->width);
+	//	bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(texture->height);
+	//	bufferCopyRegion.imageExtent.depth = 1;
+	//	bufferCopyRegion.bufferOffset = 0;
 
-	vkCmdCopyBufferToImage(transferCmdBuf, stagingBuffer.buffer, image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1/*copy region counts*/, &bufferCopyRegion/*data*/);
+	//vkCmdCopyBufferToImage(transferCmdBuf, stagingBuffer.buffer, image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1/*copy region counts*/, &bufferCopyRegion/*data*/);
 
-	setImageLayout(
-		transferCmdBuf,
-		image.image,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		subresourceRange);
+	//setImageLayout(
+	//	transferCmdBuf,
+	//	image.image,
+	//	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	//	VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+	//	subresourceRange);
 
 	//SetLayoutCopyImage(transferCmdBuf, image.image, stagingImage.image, mipLevels, imageExtent);
 
-	renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
+	//renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
+
+	VulkanBufferStagingResource buffer(device, texture->pixels.data(), texture->texImageSize);
+
+	device.CreateImage2D(imageCreateInfo, image);
+
+	VkImageSubresourceRange subresourceRange =
+		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, 1);
+
+	std::vector<VkBufferImageCopy> bufferCopyRegions;
+
+	VkBufferImageCopy bufferCopyRegion = {};
+	bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	bufferCopyRegion.imageSubresource.mipLevel = 0;
+	bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
+	bufferCopyRegion.imageSubresource.layerCount = 1;
+	bufferCopyRegion.imageExtent.width = static_cast<uint32_t>(texture->width);
+	bufferCopyRegion.imageExtent.height = static_cast<uint32_t>(texture->height);
+	bufferCopyRegion.imageExtent.depth = 1;
+	bufferCopyRegion.bufferOffset = 0;
+	bufferCopyRegions.push_back(bufferCopyRegion);
+	// Increase offset into staging buffer for next level / face
+
+	VkSemaphore sem;
+
+	TransferCommandWork transfer;
+	transfer.work = std::function<void(const VkCommandBuffer)>(
+		[=](const VkCommandBuffer cmdBuf) {SetLayoutTransferRegions(cmdBuf,
+		image.image, buffer.buffer.buffer, subresourceRange, bufferCopyRegions); }
+	);
+	transfer.buffersToClean.push_back(buffer);
+	transfer.flags.push_back(readyToUse);
+
+	renderer.SubmitTransferWork(std::move(transfer));
 
 	this->textureImageLayout = imageLayout;
 
 
 	//device.DestroyVmaAllocatedImage(stagingImage);
-	device.DestroyVmaAllocatedBuffer(stagingBuffer);
+	//device.DestroyVmaAllocatedBuffer(stagingBuffer);
+	
+	//CommandBufferWork mipMapGen;
+	//mipMapGen.work = [&](VkCommandBuffer cmdBuf) {
+	//	GenerateMipMaps(cmdBuf, image.image, texture->width, texture->height, 1, 1, mipLevels);
+	//};
+	//work.flags.push_back();
 
-	GenerateMipMaps(renderer, image.image, texture->width, texture->height, 1, 1, mipLevels);
+	//renderer.SubmitGraphicsSetupWork(std::move(mipMapGen));
 
 	// With mip mapping and anisotropic filtering
-	if (device.physical_device_features.samplerAnisotropy)
-	{
-		// Create a defaultsampler
-		if (wrapBorder)
-			textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
-				VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, 
-				true, mipLevels, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-		else
-			textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
-				VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f,
-				true, mipLevels, true, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-	}
-	else {
-		// Create a defaultsampler
-		if (wrapBorder)
-			textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
-				VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, 
-				true, mipLevels, false, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-		else				 
-			textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
-				VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f, 
-				true, mipLevels, false, 8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-	}
+	textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
+		VK_SAMPLER_MIPMAP_MODE_LINEAR, 
+		wrapBorder ? VK_SAMPLER_ADDRESS_MODE_REPEAT : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f,
+		true, mipLevels, 
+		device.physical_device_features.samplerAnisotropy ? true : false, 
+		8, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+
 	
 	textureImageView = CreateImageView(image.image, VK_IMAGE_VIEW_TYPE_2D, format, VK_IMAGE_ASPECT_COLOR_BIT,
 		VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
@@ -434,64 +427,6 @@ void VulkanTexture2D::loadFromTexture(
 	//viewCreateInfo.image = image.image;
 	//VK_CHECK_RESULT(vkCreateImageView(device.device, &viewCreateInfo, nullptr, &textureImageView));
 
-}
-
-void SetLayoutCopyImageArray(
-	const VkCommandBuffer &transferCmdBuf,
-	VkImage image,
-	VkImage stagingImage,
-	int mipLevels,
-	int layerCount,
-	const VkExtent3D &imageExtent)
-{
-	VkOffset3D dstCopyOffset = { 0, 0, 0 };
-	VkOffset3D srcCopyOffset = { 0, 0, 0 };
-
-	VkImageCopy imageCopyRegion = {};
-	imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	imageCopyRegion.dstSubresource.baseArrayLayer = 0;
-	imageCopyRegion.dstSubresource.layerCount = layerCount;
-	imageCopyRegion.dstSubresource.mipLevel = 0;
-	imageCopyRegion.dstOffset = dstCopyOffset;
-
-	imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	imageCopyRegion.srcSubresource.baseArrayLayer = 0;
-	imageCopyRegion.srcSubresource.layerCount = layerCount;
-	imageCopyRegion.srcSubresource.mipLevel = 0;
-	imageCopyRegion.srcOffset = srcCopyOffset;
-	imageCopyRegion.extent = imageExtent;
-
-
-	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, layerCount);
-	setImageLayout(
-		transferCmdBuf,
-		image,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		subresourceRange);
-
-	setImageLayout(
-		transferCmdBuf,
-		stagingImage,
-		VK_IMAGE_LAYOUT_PREINITIALIZED,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		subresourceRange);
-
-	vkCmdCopyImage(
-		transferCmdBuf,
-		stagingImage,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		image,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		static_cast<uint32_t>(1),
-		&imageCopyRegion);
-
-	setImageLayout(
-		transferCmdBuf,
-		image,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		subresourceRange);
 }
 
 void VulkanTexture2DArray::loadTextureArray(
@@ -549,11 +484,12 @@ void VulkanTexture2DArray::loadTextureArray(
 	//	textures->width * 4, sub.rowPitch, 
 	//	(char*)textures->pixels.data(), stagingPointer);
 
-	VmaBuffer stagingBuffer;
-	device.CreateStagingImageBuffer(stagingBuffer, textures->pixels.data(), textures->texImageSize);
+	//VmaBuffer stagingBuffer;
+	//device.CreateStagingImageBuffer(stagingBuffer, textures->pixels.data(), textures->texImageSize);
 
-	device.CreateImage2D(imageCreateInfo, image);
+	VulkanBufferStagingResource buffer(device, textures->pixels.data(), textures->texImageSize);
 	
+	device.CreateImage2D(imageCreateInfo, image);
 	
 	VkImageSubresourceRange subresourceRange = 
 		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, textures->layerCount);
@@ -577,37 +513,53 @@ void VulkanTexture2DArray::loadTextureArray(
 		offset += textures->texImageSizePerTex;
 	}
 
-	VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
+	TransferCommandWork work;
+	work.work = std::function<void(const VkCommandBuffer)>(
+		[=](const VkCommandBuffer cmdBuf) { SetLayoutTransferRegions(cmdBuf,
+		image.image, buffer.buffer.buffer, subresourceRange, bufferCopyRegions); }
+	);
+	work.buffersToClean.push_back(buffer);
+	work.flags.push_back(readyToUse);
 
-	setImageLayout(
-		transferCmdBuf,
-		image.image,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		subresourceRange);
+	renderer.SubmitTransferWork(std::move(work));
 
-	vkCmdCopyBufferToImage(transferCmdBuf, 
-		stagingBuffer.buffer, image.image, 
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-		bufferCopyRegions.size(), bufferCopyRegions.data());
+	//VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
 
-	setImageLayout(
-		transferCmdBuf,
-		image.image,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		subresourceRange);
+	//setImageLayout(
+	//	transferCmdBuf,
+	//	image.image,
+	//	VK_IMAGE_LAYOUT_UNDEFINED,
+	//	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	//	subresourceRange);
+
+	//vkCmdCopyBufferToImage(transferCmdBuf, 
+	//	buffer.buffer.buffer, image.image,
+	//	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+	//	bufferCopyRegions.size(), bufferCopyRegions.data());
+
+	//setImageLayout(
+	//	transferCmdBuf,
+	//	image.image,
+	//	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	//	VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+	//	subresourceRange);
 
 	//SetLayoutCopyImageArray(transferCmdBuf, image.image, stagingImage.image, mipLevels, textures->layerCount, imageExtent);
 
-	renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
+	//renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
 
 	//device.DestroyVmaAllocatedImage(stagingImage);
-	device.DestroyVmaAllocatedBuffer(stagingBuffer);
 
 	this->textureImageLayout = imageLayout;
 
-	GenerateMipMaps(renderer, image.image, textures->width, textures->height, 1, textures->layerCount, mipLevels);
+	//CommandBufferWork mipMapGen;
+	//mipMapGen.work = [&](VkCommandBuffer cmdBuf) {
+	//	GenerateMipMaps(cmdBuf, image.image, textures->width, textures->height, 1, textures->layerCount, mipLevels);
+	//};
+
+	//renderer.SubmitGraphicsSetupWork(std::move(mipMapGen));
+	
+	//GenerateMipMaps(renderer, image.image, textures->width, textures->height, 1, textures->layerCount, mipLevels);
 
 	textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR,
 		VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, mipLevels,
@@ -633,68 +585,10 @@ void VulkanTexture2DArray::loadTextureArray(
 	//VK_CHECK_RESULT(vkCreateImageView(device.device, &viewCreateInfo, nullptr, &textureImageView));
 }	
 
-void SetLayoutCopyCubeMap(
-	const VkCommandBuffer &transferCmdBuf, 
-	VkImage image,
-	VkImage stagingImage,
-	int mipLevels,
-	const VkExtent3D &imageExtent)
-{
-	VkOffset3D copyOffset = { 0, 0, 0 };
-
-	VkImageSubresourceRange subresourceRange =
-		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, 6);
-
-	VkImageCopy imageCopyRegion = {};
-	imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	imageCopyRegion.dstSubresource.baseArrayLayer = 0;
-	imageCopyRegion.dstSubresource.layerCount = 6;
-	imageCopyRegion.dstSubresource.mipLevel = 0;
-	imageCopyRegion.dstOffset = copyOffset;// VkOffset3D{ textures->width, textures->height, 1 };
-
-	imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	imageCopyRegion.srcSubresource.baseArrayLayer = 0;
-	imageCopyRegion.srcSubresource.layerCount = 6;
-	imageCopyRegion.srcSubresource.mipLevel = 0;
-	imageCopyRegion.srcOffset = copyOffset;// VkOffset3D{ textures->width, textures->height, 1 };
-
-	imageCopyRegion.extent = imageExtent;
-
-	setImageLayout(
-		transferCmdBuf,
-		image,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		subresourceRange);
-
-	setImageLayout(
-		transferCmdBuf,
-		stagingImage,
-		VK_IMAGE_LAYOUT_PREINITIALIZED,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		subresourceRange);
-
-	vkCmdCopyImage(
-		transferCmdBuf,
-		stagingImage,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		image,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		static_cast<uint32_t>(1),
-		&imageCopyRegion);
-
-	setImageLayout(
-		transferCmdBuf,
-		image,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		subresourceRange);
-}
-
 void VulkanCubeMap::loadFromTexture(
 	std::shared_ptr<CubeMap> cubeMap,
 	VkFormat format,
-	VulkanRenderer& renderer,	
+	VulkanRenderer& renderer,
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout,
 	bool genMipMaps,
@@ -702,7 +596,7 @@ void VulkanCubeMap::loadFromTexture(
 {
 	this->cubeMap = cubeMap;
 	int mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
-	
+
 	//VmaImage stagingImage;
 
 	VkExtent3D imageExtent = { cubeMap->width, cubeMap->height, 1 };
@@ -722,9 +616,9 @@ void VulkanCubeMap::loadFromTexture(
 
 
 	//VmaAllocationInfo stagingImageAllocInfo = {};
-	
+
 	//device.CreateStagingImage2D(stagingImageCreateInfo, stagingImage);
-	
+
 	//VkSubresourceLayout sub;
 //
 	//const VkImageSubresource imSub = initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
@@ -754,7 +648,7 @@ void VulkanCubeMap::loadFromTexture(
 	stagingImageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	stagingImageSubresource.mipLevel = 0;
 	stagingImageSubresource.arrayLayer = 0;
-	
+
 	VkSubresourceLayout stagingImageLayout = {};
 	vkGetImageSubresourceLayout(device.device, stagingImage, &stagingImageSubresource, &stagingImageLayout);
 
@@ -776,16 +670,16 @@ void VulkanCubeMap::loadFromTexture(
 	}
 	*/
 
+	VulkanBufferStagingResource buffer(device, cubeMap->pixels.data(), cubeMap->texImageSize);
+	//VmaBuffer stagingBuffer;
+	//device.CreateStagingImageBuffer(stagingBuffer, cubeMap->pixels.data(), cubeMap->texImageSize);
 
-	VmaBuffer stagingBuffer;
-	device.CreateStagingImageBuffer(stagingBuffer, cubeMap->pixels.data(), cubeMap->texImageSize);
-	
-	VkImageSubresourceRange subresourceRange = 
+	VkImageSubresourceRange subresourceRange =
 		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, 6);
-	
+
 	std::vector<VkBufferImageCopy> bufferCopyRegions;
 	size_t offset = 0;
-	
+
 	for (uint32_t layer = 0; layer < 6; layer++)
 	{
 		VkBufferImageCopy bufferCopyRegion = {};
@@ -802,28 +696,21 @@ void VulkanCubeMap::loadFromTexture(
 		offset += cubeMap->texImageSizePerTex;
 	}
 
-	VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
+	TransferCommandWork work;
+	work.work = std::function<void(const VkCommandBuffer)>(
+		[=](const VkCommandBuffer cmdBuf) {SetLayoutTransferRegions(cmdBuf,
+			image.image, buffer.buffer.buffer, subresourceRange, bufferCopyRegions); }
+	);
+	work.buffersToClean.push_back(buffer);
+	work.flags.push_back(readyToUse);
 
-	setImageLayout(
-		transferCmdBuf,
-		image.image,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		subresourceRange);
+	renderer.SubmitTransferWork(std::move(work));
 
-	vkCmdCopyBufferToImage(transferCmdBuf, 
-		stagingBuffer.buffer, image.image, 
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-		bufferCopyRegions.size(), bufferCopyRegions.data());
+	//VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
 
-	setImageLayout(
-		transferCmdBuf,
-		image.image,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		subresourceRange);
+	//SetLayoutTransferRegions(subresourceRange, buffer.buffer.buffer, bufferCopyRegions);
 
-	renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
+	//renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
 
 
 
@@ -835,10 +722,17 @@ void VulkanCubeMap::loadFromTexture(
 	//renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
 	this->textureImageLayout = imageLayout;
 
-	device.DestroyVmaAllocatedBuffer(stagingBuffer);
+	//device.DestroyVmaAllocatedBuffer(buffer);
 	//device.DestroyVmaAllocatedImage(stagingImage);
 
 	//GenerateMipMaps(device, cubeMap->width, cubeMap->height, 6, mipLevels);
+
+	//CommandBufferWork mipMapGen;
+	//mipMapGen.work = [&](VkCommandBuffer cmdBuf) {
+	//	GenerateMipMaps(cmdBuf, image.image, cubeMap->width, cubeMap->height, 1, 6, mipLevels);
+	//};
+
+	//renderer.SubmitGraphicsSetupWork(std::move(mipMapGen));
 
 	textureSampler = CreateImageSampler(VK_FILTER_LINEAR, VK_FILTER_LINEAR, 
 		VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f, true, mipLevels, true, 8,

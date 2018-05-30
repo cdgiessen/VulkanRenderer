@@ -54,6 +54,12 @@ public:
 
 };
 
+class VulkanBufferStagingResource : public VulkanBuffer {
+public:
+	VulkanBufferStagingResource(VulkanDevice& device, void* pData, VkDeviceSize size);
+
+};
+
 class VulkanBufferVertex : public VulkanBuffer {
 public:
 	VulkanBufferVertex(VulkanDevice& device);

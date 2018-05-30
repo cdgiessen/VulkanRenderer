@@ -186,7 +186,6 @@ void setImageLayout(
 		0, nullptr,
 		1, &imageMemoryBarrier);
 
-	//Log::Debug << " HI" << "\n";
 }
 
 // Fixed sub resource on first mip level and layer

@@ -50,7 +50,7 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromFile(std::string filenam
 	std::memcpy(tex->pixels.data(), pixels, texWidth * texHeight * 4);
 
 	stbi_image_free(pixels);
-
+	std::lock_guard<std::mutex> lg(lock);
 	textureHandles.push_back(tex);
 	return tex;
 }
@@ -89,6 +89,7 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromGreyscalePixelData(int w
 	}
 	
 
+	std::lock_guard<std::mutex> lg(lock);
 	textureHandles.push_back(tex);
 	
 	return tex;

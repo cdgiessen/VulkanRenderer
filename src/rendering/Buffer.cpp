@@ -97,6 +97,13 @@ void VulkanBufferUniformDynamic::CreateDynamicUniformBuffer(uint32_t count, VkDe
 	device.CreateDynamicUniformBuffer(buffer, count, size);
 }
 
+VulkanBufferStagingResource::VulkanBufferStagingResource(VulkanDevice& device, void* pData, VkDeviceSize size):
+	VulkanBuffer(device)
+{
+	m_size = size;
+	device.CreateStagingImageBuffer(buffer, pData, size);
+}
+
 VulkanBufferVertex::VulkanBufferVertex(VulkanDevice& device) : VulkanBuffer(device) {
 
 }

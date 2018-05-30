@@ -54,7 +54,7 @@
 //};
 
 struct CommandBufferWork {
-	std::function<void(VkCommandBuffer)> work; //function to run (preferably a lambda) 
+	std::function<void(const VkCommandBuffer)> work; //function to run (preferably a lambda) 
 	std::vector<Signal> flags;
 };
 

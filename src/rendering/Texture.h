@@ -16,7 +16,7 @@ public:
 
 	void destroy();
 
-	void GenerateMipMaps(VulkanRenderer& renderer,
+	void GenerateMipMaps(VkCommandBuffer cmdBuf,
 		VkImage image, int width, int height, 
 		int depth, int layers, int mipLevels);
 
@@ -53,6 +53,7 @@ public:
 	VulkanDevice& device;
 
 	Signal readyToUse;
+
 };
 
 
