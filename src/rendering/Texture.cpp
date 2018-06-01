@@ -51,14 +51,14 @@ void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout textur
 
 	// VkCommandBuffer blitCmd = renderer.GetSingleUseGraphicsCommandBuffer();
 
-	VkImageSubresourceRange subRange =
-		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT,
-			mipLevels, layers);
-
-	setImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_UNDEFINED, subRange,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT);
+	//VkImageSubresourceRange subRange =
+	//	initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT,
+	//		mipLevels, layers);
+//
+	//setImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	//	VK_IMAGE_LAYOUT_UNDEFINED, subRange,
+	//	VK_PIPELINE_STAGE_TRANSFER_BIT,
+	//	VK_PIPELINE_STAGE_TRANSFER_BIT);
 
 	// Copy down mips from n-1 to n
 	for (int32_t i = 1; i < mipLevels; i++) {
@@ -811,6 +811,7 @@ void VulkanTextureDepthBuffer::CreateDepthImage(VulkanRenderer &renderer,
 		subresourceRange);
 
 	renderer.SubmitGraphicsCommandBufferAndWait(copyBuf);
+	Log::Debug << "Depth "<< image.image << "\n";
 }
 
 VulkanTextureManager::VulkanTextureManager(VulkanDevice &device)

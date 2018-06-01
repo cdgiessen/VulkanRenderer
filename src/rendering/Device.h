@@ -193,6 +193,9 @@ public:
 	VkPhysicalDeviceMemoryProperties memoryProperties;
 
 	VmaAllocator allocator;
+	VmaAllocator depth_allocator;
+	VmaAllocator linear_allocator;
+	VmaAllocator optimal_allocator;
 
 	//VkMemoryPropertyFlags uniformBufferMemPropertyFlags = 
 	//	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;

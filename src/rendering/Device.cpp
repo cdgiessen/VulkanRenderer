@@ -373,7 +373,9 @@ void VulkanDevice::InitVulkanDevice(VkSurfaceKHR &surface)
 
 void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
 	vmaDestroyAllocator(allocator);
-
+	vmaDestroyAllocator(depth_allocator);
+	vmaDestroyAllocator(linear_allocator);
+	vmaDestroyAllocator(optimal_allocator);
 	//vkDestroyCommandPool(device, graphics_queue_command_pool, nullptr);
 	//vkDestroyCommandPool(device, compute_queue_command_pool, nullptr);
 	//if (!separateTransferQueue)
@@ -795,6 +797,11 @@ void VulkanDevice::CreateVulkanAllocator()
 
 	VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &allocator));
 
+	VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &depth_allocator));
+	VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &linear_allocator));
+	VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &optimal_allocator));
+	
+
 }
 
 void VulkanDevice::VmaMapMemory(VmaBuffer& buffer, void** pData) {
@@ -941,7 +948,14 @@ void VulkanDevice::CreateImage2D(VkImageCreateInfo imageInfo, VmaImage& image) {
 	VmaAllocationCreateInfo imageAllocCreateInfo = {};
 	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
+	if(imageInfo.tiling == VK_IMAGE_TILING_OPTIMAL){
+		VK_CHECK_RESULT(vmaCreateImage(optimal_allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
+	}
+	else if (imageInfo.tiling == VK_IMAGE_TILING_LINEAR) {
+		VK_CHECK_RESULT(vmaCreateImage(linear_allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
+	}
+
+
 }
 
 void VulkanDevice::CreateDepthImage(VkImageCreateInfo imageInfo, VmaImage& image) {
@@ -950,7 +964,7 @@ void VulkanDevice::CreateDepthImage(VkImageCreateInfo imageInfo, VmaImage& image
 	VmaAllocationCreateInfo imageAllocCreateInfo = {};
 	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
+	VK_CHECK_RESULT(vmaCreateImage(depth_allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
 }
 
 void VulkanDevice::CreateStagingImage2D(VkImageCreateInfo imageInfo, VmaImage& image) {
