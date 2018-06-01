@@ -231,11 +231,11 @@ private:
 
 	CommandBufferWorkQueue<CommandBufferWork> graphicsSetupWorkQueue;
 	std::vector<std::unique_ptr<CommandBufferWorker<CommandBufferWork>>> graphicsSetupWorkers;
-	int graphicsSetupWorkerCount = 1;
+	int graphicsSetupWorkerCount = 3;
 
 	CommandBufferWorkQueue<TransferCommandWork> transferWorkQueue;
 	std::vector<std::unique_ptr<CommandBufferWorker<TransferCommandWork>>> transferWorkers;
-	int transferWorkerCount = 1;
+	int transferWorkerCount = 3;
 
 	CommandPool graphicsPrimaryCommandPool;
 	CommandPool singleUseGraphicsCommandPool;

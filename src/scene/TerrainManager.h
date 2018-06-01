@@ -5,7 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <queue>
-  
+
 #include "../core/CoreTools.h"
 #include "../core/TimeManager.h"
 
@@ -127,7 +127,7 @@ private:
 
 	std::shared_ptr<Texture> WaterTexture;
 	std::shared_ptr<VulkanTexture2D> WaterVulkanTexture;
-	
+
 	std::vector<std::thread> terrainCreationWorkers;
 
 	GeneralSettings settings;
@@ -140,7 +140,7 @@ private:
 	bool drawWindow;
 	int selectedTexture;
 
-	int WorkerThreads = 1;
+	int WorkerThreads = 4;
 
 	std::vector<TerrainTextureNamedHandle> terrainTextureHandles;
 

@@ -5,11 +5,11 @@
 
 #include "../rendering/RenderStructs.h"
 
-TerrainQuad::TerrainQuad(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, 
-	int level, glm::i32vec2 subDivPos, float centerHeightValue):
+TerrainQuad::TerrainQuad(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,
+	int level, glm::i32vec2 subDivPos, float centerHeightValue) :
 
-	pos(pos), size(size), 
-	logicalPos(logicalPos), logicalSize(logicalSize), 
+	pos(pos), size(size),
+	logicalPos(logicalPos), logicalSize(logicalSize),
 	subDivPos(subDivPos), isSubdivided(false),
 	level(level), heightValAtCenter(0)
 {
@@ -50,14 +50,14 @@ float TerrainQuad::GetUVvalueFromLocalIndex(float i, int numCells, int level, in
 Terrain::Terrain(
 	std::shared_ptr<MemoryPool<TerrainQuad>> pool,
 	InternalGraph::GraphPrototype& protoGraph,
-	int numCells, int maxLevels, float heightScale, 
+	int numCells, int maxLevels, float heightScale,
 	TerrainCoordinateData coords)
-	
+
 	: maxLevels(maxLevels), heightScale(heightScale), coordinateData(coords),
 	fastGraphUser(protoGraph, 1337, coords.sourceImageResolution, coords.noisePos, coords.noiseSize.x)
 
 {
-	
+
 	//simple calculation right now, does the absolute max number of quads possible with given max level
 	//in future should calculate the actual number of max quads, based on distance calculation
 	if (maxLevels <= 0) {
@@ -65,7 +65,7 @@ Terrain::Terrain(
 	}
 	else {
 		//with current quad density this is the average upper bound (kidna a guess but its probably more than enough for now (had to add 25 cause it wasn't enough lol!)
-		maxNumQuads = 1 + 16 + 20 + 25 + 50 * maxLevels; 
+		maxNumQuads = 1 + 16 + 20 + 25 + 50 * maxLevels;
 		//maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads (like if everything was subdivided)
 	}
 	//terrainQuads = new MemoryPool<TerrainQuad, 2 * sizeof(TerrainQuad)>();
@@ -74,9 +74,9 @@ Terrain::Terrain(
 
 	//TerrainQuad* test = terrainQuadPool->allocate();
 	//test->init(posX, posY, sizeX, sizeY, 0, meshVertexPool->allocate(), meshIndexPool->allocate());
-	
+
 	rootQuad = std::make_shared<TerrainQuad>(
-		coordinateData.pos, coordinateData.size, 
+		coordinateData.pos, coordinateData.size,
 		coordinateData.noisePos, coordinateData.noiseSize,
 		0, glm::i32vec2(0, 0),
 		GetHeightAtLocation(TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, 0, 0),
@@ -110,7 +110,7 @@ void Terrain::InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 ca
 
 	ModelBufferObject mbo;
 	mbo.model = glm::mat4();
-	mbo.model = glm::translate(mbo.model, glm::vec3(coordinateData.pos.x, 0 , coordinateData.pos.y));
+	mbo.model = glm::translate(mbo.model, glm::vec3(coordinateData.pos.x, 0, coordinateData.pos.y));
 
 	uniformBuffer->CopyToBuffer(&mbo, sizeof(ModelBufferObject));
 
@@ -128,16 +128,16 @@ void Terrain::InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 ca
 void Terrain::UpdateTerrain(glm::vec3 viewerPos) {
 	SimpleTimer updateTime;
 	updateTime.StartTimer();
-		
+
 	bool shouldUpdateBuffers = UpdateTerrainQuad(rootQuad, viewerPos);
-	
-	if (shouldUpdateBuffers) 
+
+	if (shouldUpdateBuffers)
 		UpdateMeshBuffer();
-	
+
 	PrevQuadHandles = quadHandles;
 
 	updateTime.EndTimer();
-	
+
 	//if (updateTime.GetElapsedTimeMicroSeconds() > 1500)
 	//	Log::Debug << " Update time " << updateTime.GetElapsedTimeMicroSeconds() << "\n";
 }
@@ -173,7 +173,7 @@ void Terrain::SetupImage()
 
 		terrainVulkanSplatMap->loadFromTexture(terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, *renderer,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
-	
+
 	}
 	else {
 		throw std::runtime_error("failed to load terrain splat map!");
@@ -186,7 +186,7 @@ void Terrain::SetupDescriptorSets(std::shared_ptr<VulkanTexture2DArray> terrainV
 	descriptor = renderer->GetVulkanDescriptor();
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,	VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
 	descriptor->SetupLayout(m_bindings);
@@ -205,7 +205,7 @@ void Terrain::SetupDescriptorSets(std::shared_ptr<VulkanTexture2DArray> terrainV
 	writes.push_back(DescriptorUse(1, 1, terrainVulkanSplatMap->resource));
 	writes.push_back(DescriptorUse(2, 1, terrainVulkanTextureArray->resource));
 	descriptor->UpdateDescriptorSet(descriptorSet, writes);
-	
+
 }
 
 void Terrain::SetupPipeline()
@@ -217,7 +217,7 @@ void Terrain::SetupPipeline()
 	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/terrain.frag.spv"));
 	pipeMan.SetVertexInput(mvp, Vertex_PosNormTex::getBindingDescription(), Vertex_PosNormTex::getAttributeDescriptions());
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width, (float) renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
+	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width, (float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
 	pipeMan.SetScissor(mvp, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);
 	pipeMan.SetViewportState(mvp, 1, 1, 0);
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
@@ -254,7 +254,7 @@ void Terrain::SetupPipeline()
 	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
 
 	pipeMan.CleanShaderResources(mvp);
-	
+
 	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.vert.spv"));
 	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.frag.spv"));
 	//pipeMan.SetGeometryShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.geom.spv"));
@@ -262,7 +262,7 @@ void Terrain::SetupPipeline()
 	//pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
 	//pipeMan.CleanShaderResources(mvp);
 
-	
+
 }
 
 void Terrain::UpdateMeshBuffer() {
@@ -295,12 +295,12 @@ void Terrain::UpdateMeshBuffer() {
 				inds[i] = *(quadHandles[i]->indices);
 
 				vertexCopyRegions.push_back(
-					initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), 
-					i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices)));
+					initializers::bufferCopyCreate(sizeof(TerrainMeshVertices),
+						i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices)));
 
 				indexCopyRegions.push_back(
-					initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), 
-					i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices)));
+					initializers::bufferCopyCreate(sizeof(TerrainMeshIndices),
+						i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices)));
 				flags.push_back(quadHandles[i]->isReady);
 			}
 		}
@@ -309,12 +309,12 @@ void Terrain::UpdateMeshBuffer() {
 			inds[i] = *(quadHandles[i]->indices);
 
 			vertexCopyRegions.push_back(
-				initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), 
-				i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices)));
+				initializers::bufferCopyCreate(sizeof(TerrainMeshVertices),
+					i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices)));
 
 			indexCopyRegions.push_back(
-				initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), 
-				i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices)));
+				initializers::bufferCopyCreate(sizeof(TerrainMeshIndices),
+					i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices)));
 			flags.push_back(quadHandles[i]->isReady);
 		}
 	}
@@ -325,12 +325,12 @@ void Terrain::UpdateMeshBuffer() {
 				inds[i] = *(quadHandles[i]->indices);
 
 				vertexCopyRegions.push_back(
-					initializers::bufferCopyCreate(sizeof(TerrainMeshVertices), 
-					i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices)));
+					initializers::bufferCopyCreate(sizeof(TerrainMeshVertices),
+						i * sizeof(TerrainMeshVertices), i * sizeof(TerrainMeshVertices)));
 
 				indexCopyRegions.push_back(
-					initializers::bufferCopyCreate(sizeof(TerrainMeshIndices), 
-					i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices)));
+					initializers::bufferCopyCreate(sizeof(TerrainMeshIndices),
+						i * sizeof(TerrainMeshIndices), i * sizeof(TerrainMeshIndices)));
 				flags.push_back(quadHandles[i]->isReady);
 			}
 		}
@@ -346,14 +346,35 @@ void Terrain::UpdateMeshBuffer() {
 		vertexStaging.CreateStagingVertexBuffer(verts.data(), (uint32_t)verts.size() * vertCount, 8);
 		indexStaging.CreateStagingIndexBuffer(inds.data(), (uint32_t)inds.size() * indCount);
 
-		VkCommandBuffer copyCmd = renderer->GetTransferCommandBuffer();
+		TransferCommandWork transfer;
+		VkBuffer vbuf = vertexBuffer->buffer.buffer;
+		VkBuffer ibuf = indexBuffer->buffer.buffer;
 
-		vkCmdCopyBuffer(copyCmd, vertexStaging.buffer.buffer, vertexBuffer->buffer.buffer, (uint32_t)vertexCopyRegions.size(), vertexCopyRegions.data());
+		transfer.work = std::function<void(VkCommandBuffer)>(
+			[=](const VkCommandBuffer cmdBuf) {
+			vkCmdCopyBuffer(cmdBuf, vertexStaging.buffer.buffer, vbuf, (uint32_t)vertexCopyRegions.size(), vertexCopyRegions.data());
+
+			//copyRegion.size = indexBuffer->size;
+			vkCmdCopyBuffer(cmdBuf, indexStaging.buffer.buffer, ibuf, (uint32_t)indexCopyRegions.size(), indexCopyRegions.data());
+
+		}
+		);
+		transfer.buffersToClean.push_back(vertexStaging);
+		transfer.buffersToClean.push_back(indexStaging);
+		transfer.flags.insert(transfer.flags.end(), flags.begin(), flags.end());
+
+		//transfer.flags.insert(transfer.flags.end(), indexCopyRegions.begin(), indexCopyRegions.end());
+
+		renderer->SubmitTransferWork(std::move(transfer));
+
+		//VkCommandBuffer copyCmd = renderer->GetTransferCommandBuffer();
+
+		//vkCmdCopyBuffer(copyCmd, vertexStaging.buffer.buffer, vertexBuffer->buffer.buffer, (uint32_t)vertexCopyRegions.size(), vertexCopyRegions.data());
 
 		//copyRegion.size = indexBuffer->size;
-		vkCmdCopyBuffer(copyCmd, indexStaging.buffer.buffer, indexBuffer->buffer.buffer, (uint32_t)indexCopyRegions.size(), indexCopyRegions.data());
+		//vkCmdCopyBuffer(copyCmd, indexStaging.buffer.buffer, indexBuffer->buffer.buffer, (uint32_t)indexCopyRegions.size(), indexCopyRegions.data());
 
-		renderer->SubmitTransferCommandBuffer(copyCmd, flags, std::vector<VulkanBuffer>( { std::move(vertexStaging), std::move(indexStaging) }));
+		//renderer->SubmitTransferCommandBuffer(copyCmd, flags, std::vector<VulkanBuffer>({ std::move(vertexStaging), std::move(indexStaging) }));
 
 		//vertexStaging.CleanBuffer(renderer->device);
 		//indexStaging.CleanBuffer(renderer->device);
@@ -368,9 +389,9 @@ void Terrain::UpdateMeshBuffer() {
 	//Log::Debug << "Execute buffer copies: " << gpuTransferTime.GetElapsedTimeMicroSeconds() << "\n";
 }
 
-void Terrain::InitTerrainQuad( std::shared_ptr<TerrainQuad> quad, 
+void Terrain::InitTerrainQuad(std::shared_ptr<TerrainQuad> quad,
 	Corner_Enum corner, glm::vec3 viewerPos) {
-	
+
 	//SimpleTimer terrainQuadCreateTime;
 
 	std::thread* worker = new std::thread(GenerateTerrainChunk, std::ref(fastGraphUser), quad, corner, heightScale, coordinateData.size.x, maxLevels);
@@ -397,17 +418,17 @@ bool Terrain::UpdateTerrainQuad(std::shared_ptr<TerrainQuad> quad, glm::vec3 vie
 		}
 	}
 
-	else if(distanceToViewer > quad->size.x * SubdivideDistanceBias) {
+	else if (distanceToViewer > quad->size.x * SubdivideDistanceBias) {
 		UnSubdivide(quad);
 		return true;
 	}
-	else { 
+	else {
 		bool uR = UpdateTerrainQuad(quad->subQuads.UpRight, viewerPos);
 		bool uL = UpdateTerrainQuad(quad->subQuads.UpLeft, viewerPos);
 		bool dR = UpdateTerrainQuad(quad->subQuads.DownRight, viewerPos);
 		bool dL = UpdateTerrainQuad(quad->subQuads.DownLeft, viewerPos);
-		
-		if(uR || uL || dR || dL)
+
+		if (uR || uL || dR || dL)
 			return true;
 	}
 	return false;
@@ -418,45 +439,45 @@ void Terrain::SubdivideTerrain(std::shared_ptr<TerrainQuad> quad, glm::vec3 view
 	numQuads += 4;
 
 	glm::vec2 new_pos = glm::vec2(quad->pos.x, quad->pos.y);
-	glm::vec2 new_size = glm::vec2(quad->size.x/2.0, quad->size.y/2.0);
-	
+	glm::vec2 new_size = glm::vec2(quad->size.x / 2.0, quad->size.y / 2.0);
+
 	glm::i32vec2 new_lpos = glm::i32vec2(quad->logicalPos.x, quad->logicalPos.y);
 	glm::i32vec2 new_lsize = glm::i32vec2(quad->logicalSize.x / 2.0, quad->logicalSize.y / 2.0);
 
 	quad->subQuads.UpRight = std::make_shared<TerrainQuad>(
-		glm::vec2(new_pos.x, new_pos.y), 
+		glm::vec2(new_pos.x, new_pos.y),
 		new_size,
-		glm::i32vec2(new_lpos.x, new_lpos.y), 
-		new_lsize, 
-		quad->level + 1, 
-		glm::i32vec2(quad->subDivPos.x * 2, quad->subDivPos.y * 2), 
+		glm::i32vec2(new_lpos.x, new_lpos.y),
+		new_lsize,
+		quad->level + 1,
+		glm::i32vec2(quad->subDivPos.x * 2, quad->subDivPos.y * 2),
 		GetHeightAtLocation(
-			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, quad->level + 1, quad->subDivPos.x * 2), 
+			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, quad->level + 1, quad->subDivPos.x * 2),
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, quad->level + 1, quad->subDivPos.y * 2)));
 
 	quad->subQuads.UpLeft = std::make_shared<TerrainQuad>(
-		glm::vec2(new_pos.x, new_pos.y + new_size.y), 
+		glm::vec2(new_pos.x, new_pos.y + new_size.y),
 		new_size,
-		glm::i32vec2(new_lpos.x, new_lpos.y + new_lsize.y), 
-		new_lsize, 
-		quad->level + 1, 
-		glm::i32vec2(quad->subDivPos.x * 2, quad->subDivPos.y * 2 + 1), 
+		glm::i32vec2(new_lpos.x, new_lpos.y + new_lsize.y),
+		new_lsize,
+		quad->level + 1,
+		glm::i32vec2(quad->subDivPos.x * 2, quad->subDivPos.y * 2 + 1),
 		GetHeightAtLocation(
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, quad->level + 1, quad->subDivPos.x * 2),
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, quad->level + 1, quad->subDivPos.y * 2 + 1)));
 
 	quad->subQuads.DownRight = std::make_shared<TerrainQuad>(
 		glm::vec2(new_pos.x + new_size.x, new_pos.y), new_size,
-		glm::i32vec2(new_lpos.x + new_lsize.x, new_lpos.y), 
-		new_lsize, 
-		quad->level + 1, 
-		glm::i32vec2(quad->subDivPos.x * 2 + 1, quad->subDivPos.y * 2), 
+		glm::i32vec2(new_lpos.x + new_lsize.x, new_lpos.y),
+		new_lsize,
+		quad->level + 1,
+		glm::i32vec2(quad->subDivPos.x * 2 + 1, quad->subDivPos.y * 2),
 		GetHeightAtLocation(
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, quad->level + 1, quad->subDivPos.x * 2 + 1),
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, quad->level + 1, quad->subDivPos.y * 2)));
-	
+
 	quad->subQuads.DownLeft = std::make_shared<TerrainQuad>(
-		glm::vec2(new_pos.x + new_size.x, new_pos.y + new_size.y), 
+		glm::vec2(new_pos.x + new_size.x, new_pos.y + new_size.y),
 		new_size,
 		glm::i32vec2(new_lpos.x + new_lsize.x, new_lpos.y + new_lsize.y),
 		new_lsize,
@@ -523,6 +544,9 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuad> quad) {
 void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
 	VkDeviceSize offsets[] = { 0 };
 
+	if (!terrainVulkanSplatMap->readyToUse)
+		return;
+
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &descriptorSet.set, 0, nullptr);
 
@@ -556,11 +580,11 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
 			//Vertex normals (yay geometry shaders!)
 			//vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(2));
 			//vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
-		}	
+		}
 	}
 	drawTimer.EndTimer();
 
-	
+
 
 }
 
@@ -604,10 +628,10 @@ void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, std::shared_ptr<T
 	Corner_Enum corner, float heightScale, float widthScale, int maxSubDivLevels) {
 
 	const int numCells = NumCells;
-      
+
 	float uvUs[numCells + 3];
 	float uvVs[numCells + 3];
-	
+
 	int powLevel = 1 << (quad->level);
 	for (int i = 0; i < numCells + 3; i++)
 	{
@@ -629,12 +653,12 @@ void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, std::shared_ptr<T
 
 			float outheight = graphUser.SampleHeightMap(uvU, uvV);
 			float outheightum = graphUser.SampleHeightMap(uvUminus, uvV);
-			float outheightup = graphUser.SampleHeightMap(uvUplus, uvV) ;
+			float outheightup = graphUser.SampleHeightMap(uvUplus, uvV);
 			float outheightvm = graphUser.SampleHeightMap(uvU, uvVminus);
-			float outheightvp = graphUser.SampleHeightMap(uvU, uvVplus) ;
+			float outheightvp = graphUser.SampleHeightMap(uvU, uvVplus);
 
 			glm::vec3 normal = glm::normalize(glm::vec3((outheightum - outheightup),
-				((uvUplus - uvUminus) + (uvVplus - uvVminus))*2,
+				((uvUplus - uvUminus) + (uvVplus - uvVminus)) * 2,
 				(outheightvm - outheightvp)));
 
 			(*quad->vertices)[((i)*(numCells + 1) + j)* vertElementCount + 0] = uvU * (widthScale);
@@ -684,7 +708,7 @@ void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, std::shared_ptr<T
 	//		(verts)[((i)*(numCells + 1) + j)* vertElementCount + 7] = uvV;
 	//	}
 	//}
-	
+
 	int counter = 0;
 	for (int i = 0; i < numCells; i++)
 	{
