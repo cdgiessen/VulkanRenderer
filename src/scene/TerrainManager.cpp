@@ -17,7 +17,7 @@ TerrainCreationData::TerrainCreationData(
 	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
 	std::shared_ptr<MemoryPool<TerrainQuad>> pool,
 	InternalGraph::GraphPrototype& protoGraph,
-	int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord):
+	int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord) :
 
 	resourceMan(resourceMan),
 	renderer(renderer),
@@ -118,8 +118,6 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph) : prot
 	}
 
 	//terrainQuadPool = std::make_shared<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>>();
-	//nodeGraph.BuildNoiseGraph();
-
 }
 
 TerrainManager::~TerrainManager()
@@ -145,23 +143,23 @@ void TerrainManager::ResetWorkerThreads() {
 }
 
 void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer) {
-	
+
 	for (auto item : terrainTextureFileNames) {
-			terrainTextureHandles.push_back(
-				TerrainTextureNamedHandle(
-					item, 
-					resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TerrainTextures/" + item)));
+		terrainTextureHandles.push_back(
+			TerrainTextureNamedHandle(
+				item,
+				resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TerrainTextures/" + item)));
 	}
-	
+
 	terrainTextureArray = resourceMan->texManager.loadTextureArrayFromFile("assets/Textures/TerrainTextures/", terrainTextureFileNames);
-		
-	terrainVulkanTextureArray = std::make_shared<VulkanTexture2DArray>(renderer->device);		
-	terrainVulkanTextureArray->loadTextureArray(terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, *renderer, 
+
+	terrainVulkanTextureArray = std::make_shared<VulkanTexture2DArray>(renderer->device);
+	terrainVulkanTextureArray->loadTextureArray(terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, *renderer,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
-	
+
 	//WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
 	//WaterVulkanTexture.loadFromTexture(renderer->device, WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
-	
+
 	instancedWaters = std::make_unique<InstancedSceneObject>(renderer);
 	instancedWaters->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
 	instancedWaters->SetBlendMode(VK_TRUE);
@@ -190,7 +188,7 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 
 	for (int i = 0; i < settings.gridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < settings.gridDimentions; j++) {
-			
+
 
 			TerrainCoordinateData coord = TerrainCoordinateData(
 				glm::vec2((i - settings.gridDimentions / 2) * settings.width - settings.width / 2, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2), //position
@@ -199,17 +197,10 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 				glm::vec2(1.0 / (float)settings.sourceImageResolution, 1.0f / (float)settings.sourceImageResolution),//noiseSize 
 				settings.sourceImageResolution + 1);
 
-			//auto terrain = std::make_shared<Terrain>(terrainQuadPool, protoGraph, settings.numCells, settings.maxLevels, settings.heightScale, coord);
-			//
-			//std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
-			//terrain->terrainSplatMap = resourceMan->texManager.loadTextureFromRGBAPixelData(settings.sourceImageResolution + 1, settings.sourceImageResolution + 1, imgData);
-			////delete(imgData);
-			//terrains.push_back(terrain);
-
 			terrainCreationWork.push_back(TerrainCreationData(
 				resourceMan, renderer, camera, terrainVulkanTextureArray,
-				terrainQuadPool, protoGraph, 
-				settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale, 
+				terrainQuadPool, protoGraph,
+				settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale,
 				coord));
 
 			std::lock_guard<std::mutex> lk(workerMutex);
@@ -221,9 +212,9 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 
 	//}
 
-	for (auto ter : terrains) {
-		ter->InitTerrain(renderer, camera->Position, terrainVulkanTextureArray);
-	}
+	//for (auto ter : terrains) {
+	//	ter->InitTerrain(renderer, camera->Position, terrainVulkanTextureArray);
+	//}
 
 	//WaterMesh.reset();
 	//WaterModel.destroy(renderer->device); 
@@ -275,18 +266,18 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 		GenerateTerrain(resourceMan, renderer, camera);
 	}
 
+	terrainUpdateTimer.StartTimer();
+	terrain_mutex.lock();
 	for (auto ter : terrains) {
-		terrainUpdateTimer.StartTimer();
 
-		terrain_mutex.lock();
 		ter->UpdateTerrain(camera->Position);
-		terrain_mutex.unlock();
 
-		terrainUpdateTimer.EndTimer();
 		//if (terrainUpdateTimer.GetElapsedTimeMicroSeconds() > 1000) {
 		//	Log::Debug << terrainUpdateTimer.GetElapsedTimeMicroSeconds() << "\n";
 		//}
 	}
+	terrain_mutex.unlock();
+	terrainUpdateTimer.EndTimer();
 
 }
 
@@ -308,7 +299,7 @@ float TerrainManager::GetTerrainHeightAtLocation(float x, float z) {
 		glm::vec2 pos = terrain->coordinateData.pos;
 		glm::vec2 size = terrain->coordinateData.size;
 		if (pos.x <= x && pos.x + size.x >= x && pos.y <= z && pos.y + size.y >= z) {
-			return terrain->GetHeightAtLocation((x - pos.x)/ settings.width, (z - pos.y)/ settings.width);
+			return terrain->GetHeightAtLocation((x - pos.x) / settings.width, (z - pos.y) / settings.width);
 		}
 	}
 	return 0;

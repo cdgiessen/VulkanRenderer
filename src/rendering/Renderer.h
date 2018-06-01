@@ -54,12 +54,12 @@
 //};
 
 struct CommandBufferWork {
-	std::function<void(const VkCommandBuffer)> work; //function to run (preferably a lambda) 
+	std::function<void(const VkCommandBuffer)> work;
 	std::vector<Signal> flags;
 };
 
 struct TransferCommandWork {
-	std::function<void(const VkCommandBuffer)> work; //function to run (preferably a lambda) 
+	std::function<void(const VkCommandBuffer)> work;
 	std::vector<Signal> flags;
 	std::vector<VulkanBuffer> buffersToClean;
 };
@@ -92,17 +92,17 @@ public:
 		CommandQueue* queue, CommandBufferWorkQueue<WorkType>& workQueue,
 		bool startActive = true);
 
-	CommandBufferWorker(const CommandBufferWorker& other) = default; //copy
-	CommandBufferWorker(CommandBufferWorker&& other) = default; //move
+	CommandBufferWorker(const CommandBufferWorker& other) = delete; //copy
+	CommandBufferWorker(CommandBufferWorker&& other) = delete; //move
 	CommandBufferWorker& operator=(const CommandBufferWorker&) = default;
 	CommandBufferWorker& operator=(CommandBufferWorker&&) = default;
-	
+
 	~CommandBufferWorker();
 
 	void StopWork();
 
 private:
-	VulkanDevice& device;
+	VulkanDevice & device;
 	void Work();
 	std::thread workingThread;
 
@@ -135,8 +135,8 @@ public:
 
 	void InitVulkanRenderer(GLFWwindow* window);
 	void UpdateRenderResources(GlobalData globalData,
-		CameraData cameraData, 
-		std::vector<DirectionalLight> directionalLights, 
+		CameraData cameraData,
+		std::vector<DirectionalLight> directionalLights,
 		std::vector<PointLight> pointLights,
 		std::vector<SpotLight> spotLights);
 	void RenderFrame();
@@ -150,7 +150,7 @@ public:
 
 	void BuildCommandBuffers();
 	void ReBuildCommandBuffers();
-	
+
 	void CreatePrimaryCommandBuffer(); //testing out multiple command buffers
 
 	void CreateCommandBuffers();

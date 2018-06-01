@@ -16,31 +16,27 @@ public:
 
 	void destroy();
 
-	void GenerateMipMaps(VkCommandBuffer cmdBuf,
-		VkImage image, int width, int height, 
-		int depth, int layers, int mipLevels);
-
 	VkSampler CreateImageSampler(
-		VkFilter mag = VK_FILTER_LINEAR, 
-		VkFilter min = VK_FILTER_LINEAR, 
+		VkFilter mag = VK_FILTER_LINEAR,
+		VkFilter min = VK_FILTER_LINEAR,
 		VkSamplerMipmapMode mipMapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-		VkSamplerAddressMode textureWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, 
-		float mipMapLodBias = 0.0f, 
-		bool useMipmaps = true, 
-		int mipLevels = 1, 
-		bool anisotropy = true, 
+		VkSamplerAddressMode textureWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		float mipMapLodBias = 0.0f,
+		bool useMipmaps = true,
+		int mipLevels = 1,
+		bool anisotropy = true,
 		float maxAnisotropy = 8,
 		VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-				
-	VkImageView CreateImageView(VkImage image, 
-		VkImageViewType viewType, 
-		VkFormat format, 
-		VkImageAspectFlags aspectFlags, 
-		VkComponentMapping components, 
-		int mipLevels, 
+
+	VkImageView CreateImageView(VkImage image,
+		VkImageViewType viewType,
+		VkFormat format,
+		VkImageAspectFlags aspectFlags,
+		VkComponentMapping components,
+		int mipLevels,
 		int layers);
-	
-	
+
+
 	VmaImage image;
 
 	VkImageView textureImageView = VK_NULL_HANDLE;
@@ -151,7 +147,7 @@ public:
 
 
 private:
-	VulkanDevice& device;
+	VulkanDevice & device;
 
 	std::vector<VulkanTexture> vulkanTextures;
 };

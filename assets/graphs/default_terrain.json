@@ -1,0 +1,318 @@
+{
+    "0": {
+        "0": {
+            "hasConnection": true,
+            "slotName": "HeightMap",
+            "slotType": 1,
+            "value": 9
+        },
+        "1": {
+            "hasConnection": true,
+            "slotName": "Splatmap",
+            "slotType": 6,
+            "value": 2
+        },
+        "2": {
+            "hasConnection": false,
+            "slotName": "Texture 1",
+            "slotType": 2,
+            "value": 0
+        },
+        "3": {
+            "hasConnection": false,
+            "slotName": "Texture 2",
+            "slotType": 2,
+            "value": 1
+        },
+        "4": {
+            "hasConnection": false,
+            "slotName": "Texture 3",
+            "slotType": 2,
+            "value": 2
+        },
+        "5": {
+            "hasConnection": false,
+            "slotName": "Texture 4",
+            "slotType": 2,
+            "value": 3
+        },
+        "id": 0,
+        "nodeType": 0,
+        "numSlots": 6,
+        "winPosX": 1327.0,
+        "winPosY": 248.0
+    },
+    "1": {
+        "0": {
+            "hasConnection": false,
+            "slotName": "Seed",
+            "slotType": 2,
+            "value": 1337
+        },
+        "1": {
+            "hasConnection": false,
+            "slotName": "Frequency",
+            "slotType": 1,
+            "value": 2.0
+        },
+        "2": {
+            "hasConnection": false,
+            "slotName": "Octaves",
+            "slotType": 2,
+            "value": 6
+        },
+        "3": {
+            "hasConnection": false,
+            "slotName": "Persistence",
+            "slotType": 1,
+            "value": 0.5
+        },
+        "4": {
+            "hasConnection": false,
+            "slotName": "Type",
+            "slotType": 2,
+            "value": 0
+        },
+        "id": 1,
+        "nodeType": 13,
+        "numSlots": 5,
+        "winPosX": 239.0,
+        "winPosY": 222.0
+    },
+    "2": {
+        "0": {
+            "hasConnection": true,
+            "slotName": "Red",
+            "slotType": 1,
+            "value": 8
+        },
+        "1": {
+            "hasConnection": true,
+            "slotName": "Blue",
+            "slotType": 1,
+            "value": 4
+        },
+        "2": {
+            "hasConnection": true,
+            "slotName": "Green",
+            "slotType": 1,
+            "value": 5
+        },
+        "3": {
+            "hasConnection": true,
+            "slotName": "Alpha",
+            "slotType": 1,
+            "value": 6
+        },
+        "id": 2,
+        "nodeType": 24,
+        "numSlots": 4,
+        "winPosX": 1053.0,
+        "winPosY": 290.0
+    },
+    "3": {
+        "0": {
+            "hasConnection": true,
+            "slotName": "value",
+            "slotType": 1,
+            "value": 10
+        },
+        "1": {
+            "hasConnection": false,
+            "slotName": "a",
+            "slotType": 1,
+            "value": 0.0
+        },
+        "2": {
+            "hasConnection": false,
+            "slotName": "b",
+            "slotType": 1,
+            "value": 1.0
+        },
+        "3": {
+            "hasConnection": false,
+            "slotName": "bottom",
+            "slotType": 1,
+            "value": 0.425000011920929
+        },
+        "4": {
+            "hasConnection": false,
+            "slotName": "top",
+            "slotType": 1,
+            "value": 0.545000016689301
+        },
+        "5": {
+            "hasConnection": false,
+            "slotName": "smoothing range",
+            "slotType": 1,
+            "value": 0.0500000007450581
+        },
+        "id": 4,
+        "nodeType": 10,
+        "numSlots": 6,
+        "winPosX": 649.0,
+        "winPosY": 322.0
+    },
+    "4": {
+        "0": {
+            "hasConnection": true,
+            "slotName": "value",
+            "slotType": 1,
+            "value": 10
+        },
+        "1": {
+            "hasConnection": false,
+            "slotName": "a",
+            "slotType": 1,
+            "value": 0.0
+        },
+        "2": {
+            "hasConnection": false,
+            "slotName": "b",
+            "slotType": 1,
+            "value": 1.0
+        },
+        "3": {
+            "hasConnection": false,
+            "slotName": "bottom",
+            "slotType": 1,
+            "value": 0.545000016689301
+        },
+        "4": {
+            "hasConnection": false,
+            "slotName": "top",
+            "slotType": 1,
+            "value": 0.700000047683716
+        },
+        "5": {
+            "hasConnection": false,
+            "slotName": "smoothing range",
+            "slotType": 1,
+            "value": 0.0500000007450581
+        },
+        "id": 5,
+        "nodeType": 10,
+        "numSlots": 6,
+        "winPosX": 793.0,
+        "winPosY": 366.0
+    },
+    "5": {
+        "0": {
+            "hasConnection": true,
+            "slotName": "value",
+            "slotType": 1,
+            "value": 10
+        },
+        "1": {
+            "hasConnection": false,
+            "slotName": "a",
+            "slotType": 1,
+            "value": 0.0
+        },
+        "2": {
+            "hasConnection": false,
+            "slotName": "b",
+            "slotType": 1,
+            "value": 1.0
+        },
+        "3": {
+            "hasConnection": false,
+            "slotName": "bottom",
+            "slotType": 1,
+            "value": 0.715000033378601
+        },
+        "4": {
+            "hasConnection": false,
+            "slotName": "top",
+            "slotType": 1,
+            "value": 1.0
+        },
+        "5": {
+            "hasConnection": false,
+            "slotName": "smoothing range",
+            "slotType": 1,
+            "value": 0.0500000007450581
+        },
+        "id": 6,
+        "nodeType": 10,
+        "numSlots": 6,
+        "winPosX": 918.0,
+        "winPosY": 398.0
+    },
+    "6": {
+        "0": {
+            "hasConnection": true,
+            "slotName": "value",
+            "slotType": 1,
+            "value": 10
+        },
+        "1": {
+            "hasConnection": false,
+            "slotName": "a",
+            "slotType": 1,
+            "value": 0.0
+        },
+        "2": {
+            "hasConnection": false,
+            "slotName": "b",
+            "slotType": 1,
+            "value": 1.0
+        },
+        "3": {
+            "hasConnection": false,
+            "slotName": "bottom",
+            "slotType": 1,
+            "value": 0.0
+        },
+        "4": {
+            "hasConnection": false,
+            "slotName": "top",
+            "slotType": 1,
+            "value": 0.430000007152557
+        },
+        "5": {
+            "hasConnection": false,
+            "slotName": "smoothing range",
+            "slotType": 1,
+            "value": 0.0850000008940697
+        },
+        "id": 8,
+        "nodeType": 10,
+        "numSlots": 6,
+        "winPosX": 497.0,
+        "winPosY": 294.0
+    },
+    "7": {
+        "0": {
+            "hasConnection": true,
+            "slotName": "A",
+            "slotType": 1,
+            "value": 10
+        },
+        "1": {
+            "hasConnection": false,
+            "slotName": "B",
+            "slotType": 1,
+            "value": 1.32000005245209
+        },
+        "id": 9,
+        "nodeType": 3,
+        "numSlots": 2,
+        "winPosX": 557.0,
+        "winPosY": 158.0
+    },
+    "8": {
+        "0": {
+            "hasConnection": true,
+            "slotName": "Value",
+            "slotType": 1,
+            "value": 1
+        },
+        "id": 10,
+        "nodeType": 19,
+        "numSlots": 1,
+        "winPosX": 380.0,
+        "winPosY": 196.0
+    },
+    "numNodes": 9
+}

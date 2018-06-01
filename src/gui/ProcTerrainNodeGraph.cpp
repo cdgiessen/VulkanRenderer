@@ -18,7 +18,8 @@ auto as_integer(Enumeration const value) -> typename std::underlying_type<Enumer
 
 ProcTerrainNodeGraph::ProcTerrainNodeGraph()
 {
-	ResetOutputNode();
+	RecreateOutputNode();
+	LoadGraphFromFile("assets/graphs/default_terrain.json");
 }
 
 
@@ -38,12 +39,12 @@ void ProcTerrainNodeGraph::DeleteNode(std::shared_ptr<Node> node) {
 	auto found = std::find(nodes.begin(), nodes.end(), node);
 	if (found != nodes.end()) {
 
-		for (auto slot : (*found)->inputSlots)
+		for (auto& slot : (*found)->inputSlots)
 			if (slot.connection != nullptr) {
 				ResetNodeInternalLinkByID((*found)->internalNodeID, slot.slotNum);
 				DeleteConnection(slot.connection);
 			}
-		for (auto con : (*found)->outputSlot.connections) {
+		for (auto& con : (*found)->outputSlot.connections) {
 			DeleteConnection(con);
 		}
 
@@ -85,7 +86,7 @@ void ProcTerrainNodeGraph::ResetGraph() {
 	curID = 0;
 }
 
-void ProcTerrainNodeGraph::ResetOutputNode() {
+void ProcTerrainNodeGraph::RecreateOutputNode() {
 
 	outputNode.reset();
 	outputNode = std::make_shared<OutputNode>(protoGraph);
@@ -169,7 +170,7 @@ void ProcTerrainNodeGraph::DrawButtonBar() {
 	//ImGui::SameLine();
 	if (ImGui::Button("Reset graph - DELETES EVERYTHING!")) {
 		ResetGraph();
-		ResetOutputNode();
+		RecreateOutputNode();
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Save graph")) {
@@ -219,7 +220,7 @@ void ProcTerrainNodeGraph::DrawNodeButtons() {
 	ImGui::Text("Colors");
 	if (ImGui::Button("Color Creator", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::ColorCreator, startingNodePos); }
 	if (ImGui::Button("MonoGradient", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::MonoGradient, startingNodePos); }
-	if (ImGui::Button("Texture Index", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::TextureIndex, startingNodePos);}
+	if (ImGui::Button("Texture Index", ImVec2(-1.0f, 0.0f))) { AddNode(NodeType::TextureIndex, startingNodePos); }
 
 	ImGui::EndChild();
 	ImGui::PopStyleVar();
@@ -260,7 +261,7 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 
 	std::vector<std::shared_ptr<Node>> nodesToDelete;
 
-	for (auto node : nodes) {
+	for (auto& node : nodes) {
 
 		//updates nodes positions, relative to mouseDelta
 		if (ImGui::IsMouseDragging(1) && !posCon.isActive) //right mouse click
@@ -447,17 +448,17 @@ void ProcTerrainNodeGraph::DrawPossibleConnection(ImDrawList* imDrawList) {
 
 				//Delete old connection if exists
 				if (incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection != nullptr) {
-					
+
 					ResetNodeInternalLinkByID(incomingSlot.node->internalNodeID, incomingSlot.inputSlotNum);
 					DeleteConnection(incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection);
 				}
-				
+
 				newConnection = std::make_shared<Connection>(
 					PossibleConnection::GetActiveSlotType(posCon.slot),
 					outgoingSlot.node,
 					incomingSlot.node,
 					incomingSlot.inputSlotNum);
-				
+
 				incomingSlot.node->inputSlots[incomingSlot.inputSlotNum].connection = newConnection;
 				outgoingSlot.node->outputSlot.connections.push_back(newConnection);
 
@@ -524,7 +525,7 @@ void ProcTerrainNodeGraph::DrawHermite(ImDrawList* imDrawList, ImVec2 p1, ImVec2
 }
 
 void ProcTerrainNodeGraph::DrawConnections(ImDrawList*  imDrawList) {
-	for (auto con : connections) {
+	for (auto& con : connections) {
 		con->endPosRelNode = con->output->inputSlots.at(con->output_slot_id).pos;
 		ImVec2 start = windowPos + con->input->pos + con->startPosRelNode;
 		ImVec2 end = windowPos + con->output->pos + con->endPosRelNode;
@@ -534,78 +535,94 @@ void ProcTerrainNodeGraph::DrawConnections(ImDrawList*  imDrawList) {
 }
 
 
-void ProcTerrainNodeGraph::SaveGraphFromFile()
-{
+void ProcTerrainNodeGraph::SaveGraphFromFile() {
 	const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_SAVE, NULL, GetExecutableFilePath().c_str(), NULL);
 	if (filename != NULL) {
-
-		nlohmann::json j;
-
-		j["numNodes"] = nodes.size();
-
-		int curNodeIndex = 0;
-		for (auto node : nodes) {
-			nlohmann::json nodeJson;
-			nodeJson["id"] = node->id;
-			nodeJson["nodeType"] = as_integer(node->type);
-			nodeJson["winPosX"] = node->pos.x;
-			nodeJson["winPosY"] = node->pos.y;
-			nodeJson["numSlots"] = node->inputSlots.size();
-
-			for (auto slot : node->inputSlots)
-			{
-				nlohmann::json slotJson;
-				slotJson["slotName"] = slot.name;
-				slotJson["slotType"] = as_integer(slot.conType);
-				if (slot.connection == nullptr) {
-					slotJson["hasConnection"] = false;
-					if (slot.value.type == ConnectionType::Int) slotJson["value"] = std::get<int>(slot.value.value);
-					else if (slot.value.type == ConnectionType::Float) slotJson["value"] = std::get<float>(slot.value.value);
-
-					else if (slot.value.type == ConnectionType::Vec2) {
-						glm::vec2 vec2 = std::get<glm::vec2>(slot.value.value);
-						slotJson["value"] = { vec2.x, vec2.y };
-					}
-					else if (slot.value.type == ConnectionType::Vec3) {
-						glm::vec3 vec3 = std::get<glm::vec3>(slot.value.value);
-						slotJson["value"] = { vec3.x, vec3.y, vec3.z };
-					}
-					else if (slot.value.type == ConnectionType::Vec4 || slot.value.type == ConnectionType::Color) {
-						glm::vec4 vec4 = std::get<glm::vec4>(slot.value.value);
-						slotJson["value"] = { vec4.x, vec4.y, vec4.z, vec4.w };
-					}
-
-				}
-				else {
-					slotJson["hasConnection"] = true;
-					slotJson["value"] = slot.connection->input->id;
-				}
-
-
-				nodeJson[std::to_string(slot.slotNum)] = slotJson;
-			}
-
-			j[std::to_string(curNodeIndex)] = nodeJson;
-			curNodeIndex++;
-		}
-
-		std::ofstream outFile(filename);
-		outFile << std::setw(4) << j;
-		outFile.close();
-	}
-	else {
-		Log::Debug << "User didn't specify file, Aborting save\n";
+		SaveGraphFromFile(std::string(filename));
 	}
 }
 
-void ProcTerrainNodeGraph::LoadGraphFromFile()
+void ProcTerrainNodeGraph::SaveGraphFromFile(std::string fileName)
 {
-	const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, NULL, GetExecutableFilePath().c_str(), NULL);
-	if (filename == NULL) {
-		Log::Debug << "User didn't specify file, Aborting load\n";
+	std::ofstream outFile(fileName);
+	if (!outFile) {
+		Log::Debug << "Bad file name for terrain graph!\n";
 		return;
 	}
-	std::ifstream inFile(filename);
+	nlohmann::json j;
+
+	j["numNodes"] = nodes.size();
+
+	int curNodeIndex = 0;
+	for (auto& node : nodes) {
+		nlohmann::json nodeJson;
+		nodeJson["id"] = node->id;
+		nodeJson["nodeType"] = as_integer(node->type);
+		nodeJson["winPosX"] = node->pos.x;
+		nodeJson["winPosY"] = node->pos.y;
+		nodeJson["numSlots"] = node->inputSlots.size();
+
+		for (auto& slot : node->inputSlots)
+		{
+			nlohmann::json slotJson;
+			slotJson["slotName"] = slot.name;
+			slotJson["slotType"] = as_integer(slot.conType);
+			if (slot.connection == nullptr) {
+				slotJson["hasConnection"] = false;
+				if (slot.value.type == ConnectionType::Int) slotJson["value"] = std::get<int>(slot.value.value);
+				else if (slot.value.type == ConnectionType::Float) slotJson["value"] = std::get<float>(slot.value.value);
+
+				else if (slot.value.type == ConnectionType::Vec2) {
+					glm::vec2 vec2 = std::get<glm::vec2>(slot.value.value);
+					slotJson["value"] = { vec2.x, vec2.y };
+				}
+				else if (slot.value.type == ConnectionType::Vec3) {
+					glm::vec3 vec3 = std::get<glm::vec3>(slot.value.value);
+					slotJson["value"] = { vec3.x, vec3.y, vec3.z };
+				}
+				else if (slot.value.type == ConnectionType::Vec4 || slot.value.type == ConnectionType::Color) {
+					glm::vec4 vec4 = std::get<glm::vec4>(slot.value.value);
+					slotJson["value"] = { vec4.x, vec4.y, vec4.z, vec4.w };
+				}
+
+			}
+			else {
+				slotJson["hasConnection"] = true;
+				slotJson["value"] = slot.connection->input->id;
+			}
+
+
+			nodeJson[std::to_string(slot.slotNum)] = slotJson;
+		}
+
+		j[std::to_string(curNodeIndex)] = nodeJson;
+		curNodeIndex++;
+	}
+
+	outFile << std::setw(4) << j;
+	outFile.close();
+
+}
+
+void ProcTerrainNodeGraph::LoadGraphFromFile() {
+	const char * filename = noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, NULL, GetExecutableFilePath().c_str(), NULL);
+	if (filename != NULL) {
+		LoadGraphFromFile(std::string(filename));
+	}
+	else {
+		Log::Debug << "User didn't specify file, Aborting load\n";
+	}
+}
+
+void ProcTerrainNodeGraph::LoadGraphFromFile(std::string fileName)
+{
+
+	std::ifstream inFile(fileName);
+	if (!inFile) {
+		Log::Debug << "Bad file name for terrain graph!\n";
+		return;
+	}
+
 	nlohmann::json j;
 
 	if (inFile.peek() == std::ifstream::traits_type::eof()) {
@@ -658,14 +675,14 @@ void ProcTerrainNodeGraph::LoadGraphFromFile()
 
 				//node->SetInternalLink(slot, outGoingNode->internal_node);
 				SetNodeInternalLinkByID(node->internalNodeID, slot, outGoingNode->internalNodeID);
-				
+
 				connections.push_back(newConnection);
 
 			}
 			else {
 				int slotType = j[curIndex][curSlotIndex]["slotType"];
 				ConnectionType type = static_cast<ConnectionType>(slotType);
-				
+
 				if (type == ConnectionType::Int) {
 					int valInt = j[curIndex][curSlotIndex]["value"];
 					node->inputSlots[slot].value.value = valInt;
@@ -734,7 +751,7 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 	case(NodeType::Blend): newNode = std::make_shared<BlendNode>(protoGraph); break;
 	case(NodeType::Clamp): newNode = std::make_shared<ClampNode>(protoGraph); break;
 	case(NodeType::Selector): newNode = std::make_shared<SelectorNode>(protoGraph); break;
-	
+
 	case(NodeType::WhiteNoise): newNode = std::make_shared<WhiteNoiseNode>(protoGraph); break;
 	case(NodeType::PerlinNoise): newNode = std::make_shared<PerlinNode>(protoGraph); break;
 	case(NodeType::SimplexNoise): newNode = std::make_shared<SimplexNode>(protoGraph); break;
@@ -745,7 +762,7 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 	case(NodeType::CellNoise): newNode = std::make_shared<CellNoiseNode>(protoGraph); break;
 	case(NodeType::VoroniNoise): newNode = std::make_shared<VoroniNode>(protoGraph); break;
 	case(NodeType::CellularReturnType): newNode = std::make_shared<CellularReturnType>(protoGraph); break;
-	
+
 	case(NodeType::ConstantInt): newNode = std::make_shared<ConstantIntNode>(protoGraph); break;
 	case(NodeType::ConstantFloat): newNode = std::make_shared<ConstantFloatNode>(protoGraph); break;
 	case(NodeType::Invert): newNode = std::make_shared<InvertNode>(protoGraph); break;
@@ -766,7 +783,7 @@ void ProcTerrainNodeGraph::AddNode(NodeType nodeType, ImVec2 position, int id)
 }
 
 std::shared_ptr<Node> ProcTerrainNodeGraph::GetNodeById(int id) {
-	for (auto node : nodes) {
+	for (auto& node : nodes) {
 		if (id == node->id) {
 			return node;
 		}
