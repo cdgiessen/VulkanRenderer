@@ -6,7 +6,7 @@
 
 #include "../core/Logger.h"
 
-CommandQueue::CommandQueue(VulkanDevice& device, int queueFamily):
+CommandQueue::CommandQueue(VulkanDevice& device, int queueFamily) :
 	device(device)
 {
 	vkGetDeviceQueue(device.device, queueFamily, 0, &queue);
@@ -34,12 +34,12 @@ void CommandQueue::SubmitCommandBuffer(VkCommandBuffer buffer, VkFence fence,
 	Submit(submitInfo, fence);
 }
 
-void CommandQueue::Submit(VkSubmitInfo submitInfo, VkFence fence ) {
+void CommandQueue::Submit(VkSubmitInfo submitInfo, VkFence fence) {
 	std::lock_guard<std::mutex> lock(submissionMutex);
 	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
 }
 
-int CommandQueue::GetQueueFamily(){
+int CommandQueue::GetQueueFamily() {
 	return queueFamily;
 }
 
@@ -51,7 +51,7 @@ void CommandQueue::WaitForFences(VkFence fence) {
 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 }
 
-CommandPool::CommandPool(VulkanDevice& device):
+CommandPool::CommandPool(VulkanDevice& device) :
 	device(device)
 {
 
@@ -72,7 +72,7 @@ VkBool32 CommandPool::Setup(VkCommandPoolCreateFlags flags, CommandQueue* queue)
 	return VK_TRUE;
 }
 
-VkBool32 CommandPool::CleanUp(){
+VkBool32 CommandPool::CleanUp() {
 	vkDestroyCommandPool(device.device, commandPool, nullptr);
 	return VK_TRUE;
 }
@@ -88,8 +88,8 @@ VkCommandBuffer CommandPool::AllocateCommandBuffer(VkCommandBufferLevel level)
 {
 	VkCommandBuffer buf;
 
-	VkCommandBufferAllocateInfo allocInfo = 
-	initializers::commandBufferAllocateInfo(commandPool, level, 1);
+	VkCommandBufferAllocateInfo allocInfo =
+		initializers::commandBufferAllocateInfo(commandPool, level, 1);
 
 	std::lock_guard<std::mutex> lock(poolLock);
 	vkAllocateCommandBuffers(device.device, &allocInfo, &buf);
@@ -97,7 +97,7 @@ VkCommandBuffer CommandPool::AllocateCommandBuffer(VkCommandBufferLevel level)
 	return buf;
 }
 
-void CommandPool::BeginBufferRecording(VkCommandBuffer buf, VkCommandBufferUsageFlagBits flags){
+void CommandPool::BeginBufferRecording(VkCommandBuffer buf, VkCommandBufferUsageFlagBits flags) {
 
 	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
 	beginInfo.flags = flags;
@@ -109,41 +109,41 @@ void CommandPool::EndBufferRecording(VkCommandBuffer buf) {
 	vkEndCommandBuffer(buf);
 }
 
-void CommandPool::FreeCommandBuffer(VkCommandBuffer buf){
+void CommandPool::FreeCommandBuffer(VkCommandBuffer buf) {
 	{
 		std::lock_guard<std::mutex> lock(poolLock);
 		vkFreeCommandBuffers(device.device, commandPool, 1, &buf);
 	}
 }
 
-VkCommandBuffer CommandPool::GetOneTimeUseCommandBuffer(){
+VkCommandBuffer CommandPool::GetOneTimeUseCommandBuffer() {
 	VkCommandBuffer cmdBuffer = AllocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-	
+
 	BeginBufferRecording(cmdBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 	return cmdBuffer;
 }
 
-VkCommandBuffer CommandPool::GetPrimaryCommandBuffer(bool beginBufferRecording){
+VkCommandBuffer CommandPool::GetPrimaryCommandBuffer(bool beginBufferRecording) {
 
 	VkCommandBuffer cmdBuffer = AllocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-	if(beginBufferRecording == true)
+	if (beginBufferRecording == true)
 		BeginBufferRecording(cmdBuffer);
 
 	return cmdBuffer;
 }
 
-VkCommandBuffer CommandPool::GetSecondaryCommandBuffer(bool beginBufferRecording){
+VkCommandBuffer CommandPool::GetSecondaryCommandBuffer(bool beginBufferRecording) {
 	VkCommandBuffer cmdBuffer = AllocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-	if(beginBufferRecording == true)
+	if (beginBufferRecording == true)
 		BeginBufferRecording(cmdBuffer);
 
 	return cmdBuffer;
 }
 
-VkBool32 CommandPool::SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence){
+VkBool32 CommandPool::SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence) {
 	EndBufferRecording(cmdBuffer);
 
 	VkSubmitInfo submitInfo = initializers::submitInfo();
@@ -160,7 +160,7 @@ VkBool32 CommandPool::SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, V
 	return VK_TRUE;
 }
 
-VkBool32 CommandPool::SubmitPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence){
+VkBool32 CommandPool::SubmitPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence) {
 	EndBufferRecording(cmdBuffer);
 
 	VkSubmitInfo submitInfo = initializers::submitInfo();
@@ -245,7 +245,7 @@ VkBool32 CommandPool::SubmitPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFe
 // 	vkDestroyFence(device, fence, nullptr);
 
 // 	queue->GetCommandPool().FreeCommandBuffer(buf);
-	
+
 // 	for (auto& buffer : bufsToClean) {
 // 		buffer.CleanBuffer();
 // 	}
@@ -277,7 +277,7 @@ VkBool32 CommandPool::SubmitPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFe
 
 // 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 // 	vkDestroyFence(device.device, fence, nullptr);
-	
+
 // 	transferCommandPool.FreeCommandBuffer(buf);
 // }
 
@@ -333,15 +333,15 @@ VulkanDevice::~VulkanDevice()
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debugCallback(
-	VkDebugReportFlagsEXT flags, 
-	VkDebugReportObjectTypeEXT objType, 
-	uint64_t obj, 
-	size_t location, 
-	int32_t code, 
-	const char* layerPrefix, 
-	const char* msg, 
-	void* userData) 
-{	
+	VkDebugReportFlagsEXT flags,
+	VkDebugReportObjectTypeEXT objType,
+	uint64_t obj,
+	size_t location,
+	int32_t code,
+	const char* layerPrefix,
+	const char* msg,
+	void* userData)
+{
 	Log::Debug << "validation layer: " << msg << "\n";// << "\n";
 
 	return VK_FALSE;
@@ -363,9 +363,9 @@ void VulkanDevice::InitVulkanDevice(VkSurfaceKHR &surface)
 	}
 	else
 		separateTransferQueue = false;
-	
+
 	//when the hardware doesn't have a separate transfer queue ( can't do asynchronous submissions)
-	
+
 	CreateQueues();
 	//CreateCommandPools();
 	CreateVulkanAllocator();
@@ -511,7 +511,7 @@ void VulkanDevice::createInstance(std::string appName) {
 
 
 	VK_CHECK_RESULT(vkCreateInstance(&createInfo, nullptr, &instance));
-	
+
 }
 
 
@@ -650,7 +650,7 @@ const QueueFamilyIndices VulkanDevice::GetFamilyIndices() const {
 
 void VulkanDevice::CreateLogicalDevice() {
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<int> uniqueQueueFamilies = 
+	std::set<int> uniqueQueueFamilies =
 	{ familyIndices.graphicsFamily, familyIndices.presentFamily, familyIndices.computeFamily, familyIndices.transferFamily };
 
 	float queuePriority = 1.0f;
@@ -694,16 +694,16 @@ void VulkanDevice::CreateLogicalDevice() {
 }
 
 void VulkanDevice::CreateQueues() {
-	graphics_queue = std::make_unique<CommandQueue>(*this,familyIndices.graphicsFamily);
-	present_queue = std::make_unique<CommandQueue>(*this,familyIndices.presentFamily);
-	
+	graphics_queue = std::make_unique<CommandQueue>(*this, familyIndices.graphicsFamily);
+	present_queue = std::make_unique<CommandQueue>(*this, familyIndices.presentFamily);
+
 	//Make sure it is a unique queue, else don't make anything (empty pointer means it isn't unique)
-	if(familyIndices.graphicsFamily != familyIndices.computeFamily)
-		compute_queue = std::make_unique<CommandQueue>(*this,familyIndices.computeFamily);
-	
-	if(familyIndices.graphicsFamily != familyIndices.transferFamily)
-		transfer_queue = std::make_unique<CommandQueue>(*this,familyIndices.transferFamily);
-	
+	if (familyIndices.graphicsFamily != familyIndices.computeFamily)
+		compute_queue = std::make_unique<CommandQueue>(*this, familyIndices.computeFamily);
+
+	if (familyIndices.graphicsFamily != familyIndices.transferFamily)
+		transfer_queue = std::make_unique<CommandQueue>(*this, familyIndices.transferFamily);
+
 	//vkGetDeviceQueue(device, familyIndices.graphicsFamily, 0, &graphics_queue);
 	//vkGetDeviceQueue(device, familyIndices.presentFamily, 0, &present_queue);
 	//vkGetDeviceQueue(device, familyIndices.computeFamily, 0, &compute_queue);
@@ -717,16 +717,16 @@ CommandQueue& VulkanDevice::GetCommandQueue(CommandQueueType queueType) {
 	{
 	case VulkanDevice::CommandQueueType::graphics:
 		return GraphicsQueue();
-		
+
 	case VulkanDevice::CommandQueueType::compute:
 		return ComputeQueue();
-		
+
 	case VulkanDevice::CommandQueueType::transfer:
 		return TransferQueue();
-		
+
 	case VulkanDevice::CommandQueueType::present:
 		return PresentQueue();
-		
+
 	default:
 		break;
 	}
@@ -734,20 +734,20 @@ CommandQueue& VulkanDevice::GetCommandQueue(CommandQueueType queueType) {
 }
 
 
-CommandQueue& VulkanDevice::GraphicsQueue(){
+CommandQueue& VulkanDevice::GraphicsQueue() {
 	return *graphics_queue;
 }
-CommandQueue& VulkanDevice::ComputeQueue(){
-	if(compute_queue)
+CommandQueue& VulkanDevice::ComputeQueue() {
+	if (compute_queue)
 		return *compute_queue;
 	return GraphicsQueue();
 }
-CommandQueue& VulkanDevice::TransferQueue(){
-	if(transfer_queue)
+CommandQueue& VulkanDevice::TransferQueue() {
+	if (transfer_queue)
 		return *transfer_queue;
 	return GraphicsQueue();
 }
-CommandQueue& VulkanDevice::PresentQueue(){
+CommandQueue& VulkanDevice::PresentQueue() {
 	return *present_queue;
 }
 
@@ -800,7 +800,7 @@ void VulkanDevice::CreateVulkanAllocator()
 	VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &depth_allocator));
 	VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &linear_allocator));
 	VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &optimal_allocator));
-	
+
 
 }
 
@@ -948,7 +948,7 @@ void VulkanDevice::CreateImage2D(VkImageCreateInfo imageInfo, VmaImage& image) {
 	VmaAllocationCreateInfo imageAllocCreateInfo = {};
 	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-	if(imageInfo.tiling == VK_IMAGE_TILING_OPTIMAL){
+	if (imageInfo.tiling == VK_IMAGE_TILING_OPTIMAL) {
 		VK_CHECK_RESULT(vmaCreateImage(optimal_allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
 	}
 	else if (imageInfo.tiling == VK_IMAGE_TILING_LINEAR) {
@@ -979,7 +979,7 @@ void VulkanDevice::CreateStagingImage2D(VkImageCreateInfo imageInfo, VmaImage& i
 
 }
 
-void VulkanDevice::CreateStagingImageBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize){
+void VulkanDevice::CreateStagingImageBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize) {
 	VkBufferCreateInfo bufferInfo = initializers::bufferCreateInfo();
 	bufferInfo.size = bufferSize;
 	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -992,7 +992,7 @@ void VulkanDevice::CreateStagingImageBuffer(VmaBuffer& buffer, void* data, VkDev
 
 	memcpy(buffer.allocationInfo.pMappedData, data, bufferSize);
 }
-	
+
 
 void VulkanDevice::DestroyVmaAllocatedImage(VmaImage& image) {
 	vmaDestroyImage(allocator, image.image, image.allocation);

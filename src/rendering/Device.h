@@ -63,16 +63,16 @@ public:
 
 	void Submit(VkSubmitInfo info, VkFence fence);
 	void SubmitCommandBuffer(VkCommandBuffer buf, VkFence fence,
-		std::vector<VkSemaphore> waitSemaphores = std::vector<VkSemaphore>(), 
+		std::vector<VkSemaphore> waitSemaphores = std::vector<VkSemaphore>(),
 		std::vector<VkSemaphore> signalSemaphores = std::vector<VkSemaphore>());
 
 	int GetQueueFamily();
 	VkQueue GetQueue();
 
 	void WaitForFences(VkFence fence);
-	
+
 private:
-	VulkanDevice& device;
+	VulkanDevice & device;
 	std::mutex submissionMutex;
 	VkQueue queue;
 	int queueFamily;
@@ -103,7 +103,7 @@ public:
 	void FreeCommandBuffer(VkCommandBuffer buf);
 
 private:
-	VulkanDevice& device;
+	VulkanDevice & device;
 	std::mutex poolLock;
 	VkCommandPool commandPool;
 	CommandQueue* queue;
@@ -162,12 +162,12 @@ private:
 
 class VulkanDevice {
 public:
-	GLFWwindow* window;
+	GLFWwindow * window;
 
 	VkInstance instance;
 	VkDebugReportCallbackEXT callback;
 	VkDevice device;
-	
+
 	//VDeleter<VkSurfaceKHR> window_surface{ instance, vkDestroySurfaceKHR };
 
 	VkPhysicalDevice physical_device;
@@ -220,7 +220,7 @@ public:
 	void VmaMapMemory(VmaBuffer& buffer, void** pData);
 	void VmaUnmapMemory(VmaBuffer& buffer);
 
-	void CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize); 
+	void CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
 	void CreateUniformBufferMapped(VmaBuffer& buffer, VkDeviceSize bufferSize);
 	void CreateStagingUniformBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
 
@@ -232,7 +232,7 @@ public:
 
 	void CreateInstancingBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
 	void CreateStagingInstancingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
-	
+
 	void DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation);
 	void DestroyVmaAllocatedBuffer(VmaBuffer& buffer);
 
@@ -240,7 +240,7 @@ public:
 	void CreateDepthImage(VkImageCreateInfo imageInfo, VmaImage& image);
 	void CreateStagingImage2D(VkImageCreateInfo imageInfo, VmaImage& image);
 	void CreateStagingImageBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
-	
+
 	void DestroyVmaAllocatedImage(VmaImage& image);
 
 	//VkCommandBuffer GetGraphicsCommandBuffer();
@@ -289,11 +289,11 @@ private:
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
 	bool checkValidationLayerSupport();
-	
+
 	void setupDebugCallback();
-	
+
 	void createSurface(VkSurfaceKHR &surface);
-	
+
 	void pickPhysicalDevice(VkSurfaceKHR &surface);
 
 	void CreateLogicalDevice();
@@ -306,10 +306,10 @@ private:
 	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physDevice, VkSurfaceKHR windowSurface);
 
 	VkPhysicalDeviceFeatures QueryDeviceFeatures();
-	
+
 	VkResult CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback);
 
 	void DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator);
-	
+
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData);
 };
