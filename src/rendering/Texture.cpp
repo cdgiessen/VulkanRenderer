@@ -51,6 +51,15 @@ void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout textur
 
 	// VkCommandBuffer blitCmd = renderer.GetSingleUseGraphicsCommandBuffer();
 
+	VkImageSubresourceRange subRange =
+		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT,
+			mipLevels, layers);
+
+	setImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_UNDEFINED, subRange,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT);
+
 	// Copy down mips from n-1 to n
 	for (int32_t i = 1; i < mipLevels; i++) {
 
@@ -357,6 +366,9 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 		[=](const VkCommandBuffer cmdBuf) {
 		SetLayoutTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
 			subresourceRange, bufferCopyRegions);
+
+		//setTransferBarrier(cmdBuf, buffer.buffer.buffer, buffer.Size());
+
 		GenerateMipMaps(cmdBuf, rawImage, rawLayout, texture->width, texture->height, 1, 1, mipLevels);
 	});
 	transfer.buffersToClean.push_back(buffer);
@@ -503,6 +515,9 @@ void VulkanTexture2DArray::loadTextureArray(
 		[=](const VkCommandBuffer cmdBuf) {
 		SetLayoutTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
 			subresourceRange, bufferCopyRegions);
+
+		//setTransferBarrier(cmdBuf, buffer.buffer.buffer, buffer.Size());
+
 		GenerateMipMaps(cmdBuf, rawImage, rawLayout,
 			textures->width, textures->height, 1, textures->layerCount, mipLevels);
 	});
@@ -699,6 +714,9 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 		[=](const VkCommandBuffer cmdBuf) {
 		SetLayoutTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
 			subresourceRange, bufferCopyRegions);
+
+		//setTransferBarrier(cmdBuf, buffer.buffer.buffer, buffer.Size());
+
 		GenerateMipMaps(cmdBuf, rawImage, rawLayout,
 			cubeMap->width, cubeMap->height, 1, 6, mipLevels);
 	});

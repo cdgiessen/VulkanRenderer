@@ -581,6 +581,19 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
 			//vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(2));
 			//vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
 		}
+		else if (quadHandles[i]->isSubdivided &&
+			!(*quadHandles[i]->subQuads.DownLeft->isReady == true //note the inverse logic: (!a & !b) = !(a | b)
+				|| *quadHandles[i]->subQuads.DownRight->isReady == true
+				|| *quadHandles[i]->subQuads.UpLeft->isReady == true
+				|| *quadHandles[i]->subQuads.UpRight->isReady == true))
+		{
+			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vertexBuffer->buffer.buffer, &vertexOffsettings[i]);
+			vkCmdBindIndexBuffer(cmdBuff, indexBuffer->buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
+
+
+			vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
+
+		}
 	}
 	drawTimer.EndTimer();
 

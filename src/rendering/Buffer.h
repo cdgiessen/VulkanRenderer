@@ -24,11 +24,13 @@ public:
 
 	void CopyToBuffer(void* pData, VkDeviceSize size);
 
+	VkDeviceSize Size() const;
+
 	VmaBuffer buffer;
 	DescriptorResource resource;
 
 protected:
-	VulkanDevice& device;
+	VulkanDevice & device;
 
 	void SetupResource();
 
@@ -66,7 +68,7 @@ public:
 
 	void CreateVertexBuffer(uint32_t count, uint32_t vertexElementCount);
 	void CreateStagingVertexBuffer(void* pData, uint32_t count, uint32_t vertexElementCount);
-	
+
 	void BindVertexBuffer(VkCommandBuffer cmdBuf);
 };
 

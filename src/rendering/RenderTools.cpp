@@ -65,6 +65,27 @@ std::string errorString(const VkResult errorCode)
 	}
 }
 
+void setTransferBarrier(VkCommandBuffer cmdbuffer, VkBuffer buffer,
+	VkDeviceSize size, VkDeviceSize offset) {
+
+	VkBufferMemoryBarrier barrier = initializers::bufferMemoryBarrier();
+	barrier.buffer = buffer;
+	barrier.size = size;
+	barrier.offset = offset;
+	barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+
+	vkCmdPipelineBarrier(
+		cmdbuffer,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		0,
+		0, nullptr,
+		1, &barrier,
+		0, nullptr);
+}
+
 void setImageLayout(
 	VkCommandBuffer cmdbuffer,
 	VkImage image,
@@ -170,7 +191,7 @@ void setImageLayout(
 			imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
 		}
 		imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-		break; 
+		break;
 	default:
 		// Other source layouts aren't handled (yet)
 		break;
