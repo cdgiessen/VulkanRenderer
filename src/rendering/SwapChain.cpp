@@ -21,6 +21,9 @@ void VulkanSwapChain::InitSwapChain(GLFWwindow* window) {
 	this->physicalDevice = device.physical_device;
 	this->window = window;
 
+	// QueueFamilyIndices indices = device.GetFamilyIndices();
+	// present_queue = std::make_unique<CommandQueue>(device, indices.presentFamily);
+
 	createSwapChain();
 	createImageViews();
 }
@@ -150,6 +153,7 @@ void VulkanSwapChain::CleanUp() {
 	}
 
 	vkDestroySwapchainKHR(device.device, swapChain, nullptr);
+	//present_queue.reset();
 }
 
 VkSurfaceFormatKHR VulkanSwapChain::chooseSwapSurfaceFormat() {
@@ -234,3 +238,7 @@ SwapChainSupportDetails VulkanSwapChain::querySwapChainSupport(VkPhysicalDevice 
 
 	return details;
 }
+
+// CommandQueue& VulkanSwapChain::PresentQueue() {
+// 	return *present_queue;
+// }

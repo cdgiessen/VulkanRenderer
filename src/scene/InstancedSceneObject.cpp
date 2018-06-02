@@ -16,6 +16,8 @@ InstancedSceneObject::InstancedSceneObject(std::shared_ptr<VulkanRenderer> rende
 
 	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
 	instanceBuffer = std::make_shared<VulkanBufferInstance>(renderer->device);
+
+	isFinishedTransfer = std::make_shared<bool>(false);
 }
 
 
@@ -218,23 +220,39 @@ void InstancedSceneObject::UploadInstances() {
 	VulkanBufferInstance stagingBuffer(renderer->device);
 	stagingBuffer.CreateStagingInstanceBuffer(instancesData.data(), instancesData.size(), instanceMemberSize);
 
-	auto copyCmd = renderer->GetTransferCommandBuffer();
+	TransferCommandWork transfer;
+	transfer.work = std::function<void(VkCommandBuffer cmdBuf)> (
+		[=](VkCommandBuffer cmdBuf){
+			VkBufferCopy copyRegion = {};
+			copyRegion.size = instanceBufferSize;
+			vkCmdCopyBuffer(
+				cmdBuf,
+				stagingBuffer.buffer.buffer,
+				instanceBuffer->buffer.buffer,
+				1,
+				&copyRegion);
+			});
+	transfer.buffersToClean.push_back(stagingBuffer);
+	transfer.flags.push_back(isFinishedTransfer);
+	renderer->SubmitTransferWork(std::move(transfer));
 
-	VkBufferCopy copyRegion = {};
-	copyRegion.size = instanceBufferSize;
-	vkCmdCopyBuffer(
-		copyCmd,
-		stagingBuffer.buffer.buffer,
-		instanceBuffer->buffer.buffer,
-		1,
-		&copyRegion);
+	//auto copyCmd = renderer->GetTransferCommandBuffer();
 
-	renderer->SubmitTransferCommandBufferAndWait(copyCmd);
+	//VkBufferCopy copyRegion = {};
+	//copyRegion.size = instanceBufferSize;
+	//vkCmdCopyBuffer(
+	//	copyCmd,
+	//	stagingBuffer.buffer.buffer,
+	//	instanceBuffer->buffer.buffer,
+	//	1,
+	//	&copyRegion);
+	//
+	//renderer->SubmitTransferCommandBufferAndWait(copyCmd);
 
 	instanceBuffer->resource.FillResource(instanceBuffer->buffer.buffer, 0, instanceBufferSize);
 
 	// Destroy staging resources
-	stagingBuffer.CleanBuffer();
+	//stagingBuffer.CleanBuffer();
 }
 
 void InstancedSceneObject::AddInstances(std::vector<InstanceData> newInstances) {
@@ -313,9 +331,9 @@ void InstancedSceneObject::WriteToCommandBuffer(VkCommandBuffer commandBuffer, b
 	//if ((*vulkanModel->readyToUse) && (*vulkanTexture->readyToUse))
 	//	isReadyToRender = true;
 	//
-	//if (!isReadyToRender) {
-	//	return;
-	//}
+
+	if((*vulkanModel->readyToUse != true) || *vulkanTexture->readyToUse != true  || *isFinishedTransfer != true)
+		return;
 
 	VkDeviceSize offsets[] = { 0 };
 

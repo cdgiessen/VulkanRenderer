@@ -44,22 +44,45 @@ struct VmaBuffer {
 	VkBuffer buffer = VK_NULL_HANDLE;
 	VmaAllocation allocation = VK_NULL_HANDLE;
 	VmaAllocationInfo allocationInfo;
+	VmaAllocator* allocator = nullptr;
 };
 
 struct VmaImage {
 	VkImage image = VK_NULL_HANDLE;
 	VmaAllocation allocation = VK_NULL_HANDLE;
 	VmaAllocationInfo allocationInfo;
+	VmaAllocator* allocator = nullptr;
 };
 
 class VulkanDevice;
+
+class VulkanFence {
+public:
+	VulkanFence(const VulkanDevice& device, 
+		long int timeout = DEFAULT_FENCE_TIMEOUT, 
+		VkFenceCreateFlags flags = VK_FLAGS_NONE);
+	~VulkanFence();
+	
+	void WaitTillTrue();
+	void WaitTillFalse();
+	//void CleanUp();
+	VkFence GetFence();
+
+private:
+	const VulkanDevice& device;
+	VkFence fence;
+	int timeout;
+};
+
 class VulkanBuffer;
 
 class CommandQueue {
 public:
-	CommandQueue(VulkanDevice& device, int queueFamily);
-	//void SetupQueue(int queueFamily);
-	//void SetupQueue(CommandQueue* master);
+	CommandQueue(const VulkanDevice&  device, int queueFamily);
+	CommandQueue(const CommandQueue& cmd) = delete;
+	CommandQueue& operator=(const CommandQueue& cmd) = delete;
+	CommandQueue(CommandQueue&& cmd) = delete;
+	CommandQueue& operator=(CommandQueue&& cmd) = delete;
 
 	void Submit(VkSubmitInfo info, VkFence fence);
 	void SubmitCommandBuffer(VkCommandBuffer buf, VkFence fence,
@@ -72,11 +95,10 @@ public:
 	void WaitForFences(VkFence fence);
 
 private:
-	VulkanDevice & device;
+	const VulkanDevice & device;
 	std::mutex submissionMutex;
 	VkQueue queue;
 	int queueFamily;
-	//CommandQueue* parentQueue;//when this queue doesn't own the VkQueue it represents (cause the hardware doesn't have multiple queues)
 };
 
 class CommandPool {
@@ -94,7 +116,6 @@ public:
 
 	VkBool32 SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence = nullptr);
 	VkBool32 SubmitPrimaryCommandBuffer(VkCommandBuffer buf, VkFence fence = nullptr);
-	//VkBool32 SubmitSecondaryCommandBuffer(VkCommandBuffer buf, VkFence fence = nullptr);
 
 	VkCommandBuffer AllocateCommandBuffer(VkCommandBufferLevel level);
 
@@ -193,7 +214,6 @@ public:
 	VkPhysicalDeviceMemoryProperties memoryProperties;
 
 	VmaAllocator allocator;
-	VmaAllocator depth_allocator;
 	VmaAllocator linear_allocator;
 	VmaAllocator optimal_allocator;
 
@@ -233,7 +253,7 @@ public:
 	void CreateInstancingBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
 	void CreateStagingInstancingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
 
-	void DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation);
+	//void DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation);
 	void DestroyVmaAllocatedBuffer(VmaBuffer& buffer);
 
 	void CreateImage2D(VkImageCreateInfo imageInfo, VmaImage& image);

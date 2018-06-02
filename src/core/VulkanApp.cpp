@@ -30,7 +30,6 @@ VulkanApp::VulkanApp()
 	scene->PrepareScene(resourceManager, vulkanRenderer, imgui_nodeGraph_terrain.GetGraph());
 
 	PrepareImGui(window, vulkanRenderer);
-
 }
 
 
@@ -289,6 +288,12 @@ void VulkanApp::HandleInputs() {
 		if (Input::GetKeyDown(Input::KeyCode::F10)) {
 			Log::Debug << "screenshot taken " << "\n";
 			vulkanRenderer->SaveScreenshotNextFrame();
+		}
+
+		if(Input::GetKeyDown(Input::KeyCode::DIGIT_0) && Input::GetKey(Input::KeyCode::DIGIT_9)){
+			scene->CleanUpScene();
+			vulkanRenderer->ReloadRenderer(window->getWindowContext());
+			scene->PrepareScene(resourceManager, vulkanRenderer, imgui_nodeGraph_terrain.GetGraph());
 		}
 	}
 	else {

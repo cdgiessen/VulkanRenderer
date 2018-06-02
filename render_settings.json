@@ -1,0 +1,7 @@
+{
+    "directional_light_count": 5,
+    "graphics_worker_count": 1,
+    "point_light_count": 16,
+    "spot_light_count": 8,
+    "transfer_worker_count": 1
+}

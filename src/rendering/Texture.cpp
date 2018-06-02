@@ -13,7 +13,7 @@
 VulkanTexture::VulkanTexture(VulkanDevice &device)
 	: device(device), resource(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
 
-	readyToUse = std::make_shared<bool>(true);
+	readyToUse = std::make_shared<bool>(false);
 }
 VulkanTexture2D::VulkanTexture2D(VulkanDevice &device)
 	: VulkanTexture(device) {}
@@ -51,14 +51,14 @@ void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout textur
 
 	// VkCommandBuffer blitCmd = renderer.GetSingleUseGraphicsCommandBuffer();
 
-	//VkImageSubresourceRange subRange =
-	//	initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT,
-	//		mipLevels, layers);
-//
-	//setImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-	//	VK_IMAGE_LAYOUT_UNDEFINED, subRange,
-	//	VK_PIPELINE_STAGE_TRANSFER_BIT,
-	//	VK_PIPELINE_STAGE_TRANSFER_BIT);
+	// VkImageSubresourceRange subRange =
+	// 	initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT,
+	// 		mipLevels, layers);
+
+	// setImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_PREINITIALIZED,
+	// 	VK_IMAGE_LAYOUT_UNDEFINED, subRange,
+	// 	VK_PIPELINE_STAGE_TRANSFER_BIT,
+	// 	VK_PIPELINE_STAGE_TRANSFER_BIT);
 
 	// Copy down mips from n-1 to n
 	for (int32_t i = 1; i < mipLevels; i++) {
@@ -360,7 +360,7 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 	TransferCommandWork transfer;
 	VkImage rawImage = image.image;//not sure why I have to do this. Lambdas are weird
 	VkImageLayout rawLayout = textureImageLayout;
-	Log::Debug << rawImage << "\n";
+	//Log::Debug << "Tex2D handle value "<< rawImage << "\n";
 
 	transfer.work = std::function<void(const VkCommandBuffer)>(
 		[=](const VkCommandBuffer cmdBuf) {
@@ -369,7 +369,7 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 
 		//setTransferBarrier(cmdBuf, buffer.buffer.buffer, buffer.Size());
 
-		GenerateMipMaps(cmdBuf, rawImage, rawLayout, texture->width, texture->height, 1, 1, mipLevels);
+		//GenerateMipMaps(cmdBuf, rawImage, rawLayout, texture->width, texture->height, 1, 1, mipLevels);
 	});
 	transfer.buffersToClean.push_back(buffer);
 	transfer.flags.push_back(readyToUse);
@@ -518,8 +518,8 @@ void VulkanTexture2DArray::loadTextureArray(
 
 		//setTransferBarrier(cmdBuf, buffer.buffer.buffer, buffer.Size());
 
-		GenerateMipMaps(cmdBuf, rawImage, rawLayout,
-			textures->width, textures->height, 1, textures->layerCount, mipLevels);
+		//GenerateMipMaps(cmdBuf, rawImage, rawLayout,
+		//	textures->width, textures->height, 1, textures->layerCount, mipLevels);
 	});
 	work.buffersToClean.push_back(buffer);
 	work.flags.push_back(readyToUse);
@@ -717,8 +717,8 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 
 		//setTransferBarrier(cmdBuf, buffer.buffer.buffer, buffer.Size());
 
-		GenerateMipMaps(cmdBuf, rawImage, rawLayout,
-			cubeMap->width, cubeMap->height, 1, 6, mipLevels);
+		//GenerateMipMaps(cmdBuf, rawImage, rawLayout,
+		//	cubeMap->width, cubeMap->height, 1, 6, mipLevels);
 	});
 	work.buffersToClean.push_back(buffer);
 	work.flags.push_back(readyToUse);
@@ -800,18 +800,30 @@ void VulkanTextureDepthBuffer::CreateDepthImage(VulkanRenderer &renderer,
 						   VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
 		1, 1);
 
-	VkImageSubresourceRange subresourceRange =
-		initializers::imageSubresourceRangeCreateInfo(
-			VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+	Signal wait = std::make_shared<bool>(false);
 
-	VkCommandBuffer copyBuf = renderer.GetSingleUseGraphicsCommandBuffer();
+	CommandBufferWork cmdWork;
+	cmdWork.work = std::function<void(VkCommandBuffer cmdBuf)>(
+		[=](VkCommandBuffer cmdBuf){
+			VkImageSubresourceRange subresourceRange =
+				initializers::imageSubresourceRangeCreateInfo(
+				VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-	setImageLayout(copyBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-		subresourceRange);
+			setImageLayout(cmdBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED,
+				VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+				subresourceRange);
+		}
+	);
+	cmdWork.flags.push_back(wait);
+	renderer.SubmitGraphicsSetupWork(std::move(cmdWork));
 
-	renderer.SubmitGraphicsCommandBufferAndWait(copyBuf);
-	Log::Debug << "Depth "<< image.image << "\n";
+	while(*wait == false) {};
+
+	//VkCommandBuffer copyBuf = renderer.GetSingleUseGraphicsCommandBuffer();
+
+
+	//renderer.SubmitGraphicsCommandBufferAndWait(copyBuf);
+	//Log::Debug << "Depth "<< image.image << "\n";
 }
 
 VulkanTextureManager::VulkanTextureManager(VulkanDevice &device)

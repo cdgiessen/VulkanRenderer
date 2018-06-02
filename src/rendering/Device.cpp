@@ -6,11 +6,38 @@
 
 #include "../core/Logger.h"
 
-CommandQueue::CommandQueue(VulkanDevice& device, int queueFamily) :
+VulkanFence::VulkanFence(const VulkanDevice& device, 
+	long int timeout, 
+	VkFenceCreateFlags flags)  		:device(device), timeout(timeout) {
+		VkFenceCreateInfo fenceInfo =
+			initializers::fenceCreateInfo(VK_FLAGS_NONE);
+		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+
+	}
+VulkanFence::~VulkanFence()
+{
+	vkDestroyFence(device.device, fence, nullptr);
+}
+
+void VulkanFence::WaitTillTrue() {
+	vkWaitForFences(device.device, 1, &fence, VK_TRUE, timeout);
+}
+void VulkanFence::WaitTillFalse() {
+	vkWaitForFences(device.device, 1, &fence, VK_FALSE, timeout);
+}
+VkFence VulkanFence::GetFence(){
+	return fence;
+}
+
+//void CleanUp() {
+//	vkDestroyFence(device.device, fence, nullptr);	//}	VkFence VulkanFence::GetFence() {return fence;};
+
+CommandQueue::CommandQueue(const VulkanDevice& device, int queueFamily) :
 	device(device)
 {
 	vkGetDeviceQueue(device.device, queueFamily, 0, &queue);
 	this->queueFamily = queueFamily;
+	//Log::Debug << "Queue on " << queueFamily << " type\n";
 }
 
 //void CommandQueue::SetupQueue(int queueFamily) {
@@ -73,6 +100,7 @@ VkBool32 CommandPool::Setup(VkCommandPoolCreateFlags flags, CommandQueue* queue)
 }
 
 VkBool32 CommandPool::CleanUp() {
+	std::lock_guard<std::mutex> lock(poolLock);
 	vkDestroyCommandPool(device.device, commandPool, nullptr);
 	return VK_TRUE;
 }
@@ -373,7 +401,6 @@ void VulkanDevice::InitVulkanDevice(VkSurfaceKHR &surface)
 
 void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
 	vmaDestroyAllocator(allocator);
-	vmaDestroyAllocator(depth_allocator);
 	vmaDestroyAllocator(linear_allocator);
 	vmaDestroyAllocator(optimal_allocator);
 	//vkDestroyCommandPool(device, graphics_queue_command_pool, nullptr);
@@ -608,7 +635,7 @@ QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice physDevice, 
 		i++;
 	}
 
-	//finds graphics, present, and optionally a compute queue
+	//finds graphics, present and optionally a transfer and compute queue
 	i = 0;
 	for (const auto& queueFamily : queueFamilies) {
 		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
@@ -640,6 +667,9 @@ QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice physDevice, 
 	if (indices.computeFamily == -1) {
 		indices.computeFamily = 0;
 	}
+	//if (indices.presentFamily == -1) {
+	//	indices.presentFamily = 0;
+	//}
 
 	return indices;
 }
@@ -695,15 +725,18 @@ void VulkanDevice::CreateLogicalDevice() {
 
 void VulkanDevice::CreateQueues() {
 	graphics_queue = std::make_unique<CommandQueue>(*this, familyIndices.graphicsFamily);
-	present_queue = std::make_unique<CommandQueue>(*this, familyIndices.presentFamily);
-
+	
 	//Make sure it is a unique queue, else don't make anything (empty pointer means it isn't unique)
 	if (familyIndices.graphicsFamily != familyIndices.computeFamily)
 		compute_queue = std::make_unique<CommandQueue>(*this, familyIndices.computeFamily);
 
 	if (familyIndices.graphicsFamily != familyIndices.transferFamily)
 		transfer_queue = std::make_unique<CommandQueue>(*this, familyIndices.transferFamily);
+	
+	if (familyIndices.graphicsFamily != familyIndices.presentFamily)
+		present_queue = std::make_unique<CommandQueue>(*this, familyIndices.presentFamily);
 
+	
 	//vkGetDeviceQueue(device, familyIndices.graphicsFamily, 0, &graphics_queue);
 	//vkGetDeviceQueue(device, familyIndices.presentFamily, 0, &present_queue);
 	//vkGetDeviceQueue(device, familyIndices.computeFamily, 0, &compute_queue);
@@ -725,7 +758,7 @@ CommandQueue& VulkanDevice::GetCommandQueue(CommandQueueType queueType) {
 		return TransferQueue();
 
 	case VulkanDevice::CommandQueueType::present:
-		return PresentQueue();
+	 	return PresentQueue();
 
 	default:
 		break;
@@ -748,46 +781,10 @@ CommandQueue& VulkanDevice::TransferQueue() {
 	return GraphicsQueue();
 }
 CommandQueue& VulkanDevice::PresentQueue() {
-	return *present_queue;
+	if (transfer_queue)
+		return *present_queue;
+	return GraphicsQueue();
 }
-
-//void VulkanDevice::CreateCommandPools() {
-//
-//	// graphics_queue_command_pool
-//	{
-//		VkCommandPoolCreateInfo pool_info = initializers::commandPoolCreateInfo();
-//		pool_info.queueFamilyIndex = familyIndices.graphicsFamily;
-//		pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
-//							 // hint the command pool will rerecord buffers by VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
-//							 // allow buffers to be rerecorded individually by VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
-//		if (vkCreateCommandPool(device, &pool_info, nullptr, &graphics_queue_command_pool) != VK_SUCCESS) {
-//			throw std::runtime_error("failed to create graphics command pool!");
-//		}
-//	}
-//
-//	// compute_queue_command_pool
-//	{
-//		VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
-//		cmd_pool_info.queueFamilyIndex = familyIndices.computeFamily;
-//		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-//
-//		if (vkCreateCommandPool(device, &cmd_pool_info, nullptr, &compute_queue_command_pool) != VK_SUCCESS) {
-//			throw std::runtime_error("failed to create graphics command pool!");
-//		}
-//	}
-//
-//	// transfer_queue_command_pool
-//	if(!separateTransferQueue){
-//		VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
-//		cmd_pool_info.queueFamilyIndex = familyIndices.transferFamily;
-//		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-//
-//		if (vkCreateCommandPool(device, &cmd_pool_info, nullptr, &transfer_queue_command_pool) != VK_SUCCESS) {
-//			throw std::runtime_error("failed to create graphics command pool!");
-//		}
-//	}
-//}
-
 
 void VulkanDevice::CreateVulkanAllocator()
 {
@@ -797,7 +794,6 @@ void VulkanDevice::CreateVulkanAllocator()
 
 	VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &allocator));
 
-	VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &depth_allocator));
 	VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &linear_allocator));
 	VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &optimal_allocator));
 
@@ -823,6 +819,7 @@ void VulkanDevice::CreateUniformBufferMapped(VmaBuffer& buffer, VkDeviceSize buf
 	allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+	buffer.allocator = &allocator;
 }
 
 void VulkanDevice::CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize) {
@@ -834,6 +831,7 @@ void VulkanDevice::CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSiz
 	allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+	buffer.allocator = &allocator;
 }
 
 void VulkanDevice::CreateStagingUniformBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize) {
@@ -846,6 +844,7 @@ void VulkanDevice::CreateStagingUniformBuffer(VmaBuffer& buffer, void* data, VkD
 	allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+	buffer.allocator = &allocator;
 
 	memcpy(buffer.allocationInfo.pMappedData, data, bufferSize);
 }
@@ -865,7 +864,7 @@ void VulkanDevice::CreateDynamicUniformBuffer(VmaBuffer& buffer, uint32_t count,
 	allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
-
+	buffer.allocator = &allocator;
 
 }
 
@@ -878,6 +877,7 @@ void VulkanDevice::CreateMeshBufferVertex(VmaBuffer& buffer, VkDeviceSize buffer
 	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+	buffer.allocator = &allocator;
 }
 
 void VulkanDevice::CreateMeshBufferIndex(VmaBuffer& buffer, VkDeviceSize bufferSize) {
@@ -889,6 +889,7 @@ void VulkanDevice::CreateMeshBufferIndex(VmaBuffer& buffer, VkDeviceSize bufferS
 	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+	buffer.allocator = &allocator;
 }
 
 void VulkanDevice::CreateMeshStagingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize) {
@@ -901,6 +902,7 @@ void VulkanDevice::CreateMeshStagingBuffer(VmaBuffer& buffer, void* data, VkDevi
 	allocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocCreateInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+	buffer.allocator = &allocator;
 
 	memcpy(buffer.allocationInfo.pMappedData, data, bufferSize);
 }
@@ -914,7 +916,7 @@ void VulkanDevice::CreateInstancingBuffer(VmaBuffer& buffer, VkDeviceSize buffer
 	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
-
+	buffer.allocator = &allocator;
 }
 
 void VulkanDevice::CreateStagingInstancingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize) {
@@ -927,16 +929,17 @@ void VulkanDevice::CreateStagingInstancingBuffer(VmaBuffer& buffer, void* data, 
 	allocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocCreateInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+	buffer.allocator = &allocator;
 
 	memcpy(buffer.allocationInfo.pMappedData, data, bufferSize);
 }
 
-void VulkanDevice::DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation) {
-	vmaDestroyBuffer(allocator, *buffer, *allocation);
-}
+// void VulkanDevice::DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation) {
+// 	vmaDestroyBuffer(allocator, *buffer, *allocation);
+// }
 
 void VulkanDevice::DestroyVmaAllocatedBuffer(VmaBuffer& buffer) {
-	vmaDestroyBuffer(allocator, buffer.buffer, buffer.allocation);
+	vmaDestroyBuffer(*buffer.allocator, buffer.buffer, buffer.allocation);
 }
 
 void VulkanDevice::CreateImage2D(VkImageCreateInfo imageInfo, VmaImage& image) {
@@ -950,9 +953,11 @@ void VulkanDevice::CreateImage2D(VkImageCreateInfo imageInfo, VmaImage& image) {
 
 	if (imageInfo.tiling == VK_IMAGE_TILING_OPTIMAL) {
 		VK_CHECK_RESULT(vmaCreateImage(optimal_allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
+		image.allocator = &optimal_allocator;
 	}
 	else if (imageInfo.tiling == VK_IMAGE_TILING_LINEAR) {
 		VK_CHECK_RESULT(vmaCreateImage(linear_allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
+		image.allocator = &linear_allocator;
 	}
 
 
@@ -964,7 +969,8 @@ void VulkanDevice::CreateDepthImage(VkImageCreateInfo imageInfo, VmaImage& image
 	VmaAllocationCreateInfo imageAllocCreateInfo = {};
 	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-	VK_CHECK_RESULT(vmaCreateImage(depth_allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
+	VK_CHECK_RESULT(vmaCreateImage(optimal_allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
+	image.allocator = &optimal_allocator;
 }
 
 void VulkanDevice::CreateStagingImage2D(VkImageCreateInfo imageInfo, VmaImage& image) {
@@ -976,6 +982,7 @@ void VulkanDevice::CreateStagingImage2D(VkImageCreateInfo imageInfo, VmaImage& i
 	stagingImageAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &stagingImageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
+	image.allocator = &allocator;
 
 }
 
@@ -989,13 +996,15 @@ void VulkanDevice::CreateStagingImageBuffer(VmaBuffer& buffer, void* data, VkDev
 	allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+	buffer.allocator = &allocator;
 
 	memcpy(buffer.allocationInfo.pMappedData, data, bufferSize);
 }
 
 
 void VulkanDevice::DestroyVmaAllocatedImage(VmaImage& image) {
-	vmaDestroyImage(allocator, image.image, image.allocation);
+	
+	vmaDestroyImage(*image.allocator, image.image, image.allocation);
 }
 
 
@@ -1042,149 +1051,3 @@ uint32_t VulkanDevice::getMemoryType(uint32_t typeBits, VkMemoryPropertyFlags pr
 	}
 
 }
-//
-//VkCommandBuffer VulkanDevice::GetGraphicsCommandBuffer(){
-//	VkCommandBufferAllocateInfo cmdBufAllocateInfo = 
-//	initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
-//
-//	VkCommandBuffer cmdBuffer;
-//	{
-//		std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
-//		VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &cmdBuffer));
-//	}
-//	// If requested, also start recording for the new command buffer
-//
-//	VkCommandBufferBeginInfo cmdBufInfo = initializers::commandBufferBeginInfo();
-//	//{
-//	//	std::lock_guard<std::mutex> lock(graphics_lock);
-//		VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
-//	//}
-//
-//	return cmdBuffer;
-//}
-//
-//void VulkanDevice::SubmitGraphicsCommandBufferAndWait(VkCommandBuffer commandBuffer){
-//	if (commandBuffer == VK_NULL_HANDLE)
-//		return;
-//
-//	VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
-//
-//	VkSubmitInfo submitInfo = initializers::submitInfo();
-//	submitInfo.commandBufferCount = 1;
-//	submitInfo.pCommandBuffers = &commandBuffer;
-//
-//	// Create fence to ensure that the command buffer has finished executing
-//	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
-//	VkFence fence;
-//	VK_CHECK_RESULT(vkCreateFence(device, &fenceInfo, nullptr, &fence));
-//
-//	{
-//		std::lock_guard<std::mutex> lock(graphics_lock);
-//		VK_CHECK_RESULT(vkQueueSubmit(graphics_queue, 1, &submitInfo, fence));
-//	}
-//
-//	VK_CHECK_RESULT(vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
-//
-//	vkDestroyFence(device, fence, nullptr);
-//
-//	{
-//		std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
-//		vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &commandBuffer);
-//	}
-//}
-//
-//VkCommandBuffer VulkanDevice::GetSingleUseGraphicsCommandBuffer(){
-//	VkCommandBuffer buf;
-//	VkCommandBufferAllocateInfo allocInfo = 
-//		initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
-//
-//	{
-//		std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
-//		vkAllocateCommandBuffers(device, &allocInfo, &buf);
-//	}
-//
-//	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
-//	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-//
-//	vkBeginCommandBuffer(buf, &beginInfo);
-//	return buf;
-//}
-//
-//VkCommandBuffer VulkanDevice::GetTransferCommandBuffer() {
-//	if (separateTransferQueue) {
-//		return transferQueue->GetTransferCommandBuffer();
-//	}
-//	else {
-//		VkCommandBuffer buf;
-//		VkCommandBufferAllocateInfo allocInfo = 
-//			initializers::commandBufferAllocateInfo(graphics_queue_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
-//
-//		{
-//			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
-//			vkAllocateCommandBuffers(device, &allocInfo, &buf);
-//		}
-//
-//		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
-//		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-//
-//		vkBeginCommandBuffer(buf, &beginInfo);
-//		return buf;
-//
-//	}
-//}
-//
-//void VulkanDevice::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
-//	if (separateTransferQueue) {
-//		transferQueue->SubmitTransferCommandBufferAndWait(buf);
-//	}
-//	else {
-//		vkEndCommandBuffer(buf);
-//
-//		VkSubmitInfo submitInfo = initializers::submitInfo();
-//		submitInfo.commandBufferCount = 1;
-//		submitInfo.pCommandBuffers = &buf;
-//
-//		{
-//			std::lock_guard<std::mutex> lock(graphics_lock);
-//
-//			vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
-//		}
-//
-//		vkQueueWaitIdle(graphics_queue);
-//		{
-//			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
-//			vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
-//		}
-//	}
-//}
-//
-//void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf,
-//	std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
-//	if (separateTransferQueue) {
-//		transferQueue->SubmitTransferCommandBuffer(buf, readySignal, bufsToClean);
-//	}
-//	else {
-//		vkEndCommandBuffer(buf);
-//
-//		VkSubmitInfo submitInfo = initializers::submitInfo();
-//		submitInfo.commandBufferCount = 1;
-//		submitInfo.pCommandBuffers = &buf;
-//
-//		vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
-//		vkQueueWaitIdle(graphics_queue);
-//
-//		for (auto& buffer : bufsToClean) {
-//			buffer.CleanBuffer();
-//		}
-//		{
-//			std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
-//			vkFreeCommandBuffers(device, graphics_queue_command_pool, 1, &buf);
-//		}
-//		for (auto& sig : readySignal)
-//			*sig = true;
-//	}
-//}
-//
-//void VulkanDevice::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
-//	SubmitTransferCommandBuffer(buf, readySignal, {});
-//}

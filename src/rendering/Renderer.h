@@ -99,6 +99,8 @@ public:
 
 	~CommandBufferWorker();
 
+	void CleanUp();
+
 	void StopWork();
 
 private:
@@ -115,6 +117,9 @@ private:
 class Scene;
 
 struct RenderSettings {
+
+	int graphicsSetupWorkerCount = 1;
+	int transferWorkerCount = 1;
 
 	//Lighting?
 	int cameraCount = 1;
@@ -133,6 +138,9 @@ public:
 	VulkanRenderer& operator=(VulkanRenderer&&) = default;
 	~VulkanRenderer();
 
+	void LoadRenderSettings();
+	void SaveRenderSettings();
+
 	void InitVulkanRenderer(GLFWwindow* window);
 	void UpdateRenderResources(GlobalData globalData,
 		CameraData cameraData,
@@ -141,6 +149,8 @@ public:
 		std::vector<SpotLight> spotLights);
 	void RenderFrame();
 	void CleanVulkanResources();
+
+	void ReloadRenderer(GLFWwindow *window);
 
 	//void InitSwapchain();
 	void RecreateSwapChain();
@@ -177,11 +187,11 @@ public:
 	VkCommandBuffer GetSingleUseGraphicsCommandBuffer();
 	void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);
 
-	VkCommandBuffer GetTransferCommandBuffer();
+	//VkCommandBuffer GetTransferCommandBuffer();
 
-	void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
-	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
-	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
+	//void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
+	//void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
+	//void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
 
 
 	void SaveScreenshotNextFrame();
@@ -200,10 +210,7 @@ public:
 	std::shared_ptr<Scene> scene;
 
 private:
-	int cameraCount = 1;
-	int directionalLightCount = 5;
-	int pointLightCount = 16;
-	int spotLightCount = 8;
+	RenderSettings settings;
 
 	void SetupGlobalDescriptorSet();
 	void SetupLightingDescriptorSet();
@@ -231,28 +238,17 @@ private:
 
 	CommandBufferWorkQueue<CommandBufferWork> graphicsSetupWorkQueue;
 	std::vector<std::unique_ptr<CommandBufferWorker<CommandBufferWork>>> graphicsSetupWorkers;
-	int graphicsSetupWorkerCount = 3;
 
 	CommandBufferWorkQueue<TransferCommandWork> transferWorkQueue;
 	std::vector<std::unique_ptr<CommandBufferWorker<TransferCommandWork>>> transferWorkers;
-	int transferWorkerCount = 3;
 
 	CommandPool graphicsPrimaryCommandPool;
-	CommandPool singleUseGraphicsCommandPool;
-
-	CommandPool computeCommandPool;
-	CommandPool transferCommandPool;
 
 	//Command buffer per frame
 	std::vector<VkCommandBuffer> commandBuffers;
 
-	//VkCommandPool graphics_queue_command_pool;
-	//VkCommandPool compute_queue_command_pool;
-
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
-	std::mutex presentMutex;
-
 
 	std::vector<std::shared_ptr<VulkanDescriptor>> descriptors;
 

@@ -126,6 +126,10 @@ add_custom_command(TARGET VulkanApp PRE_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different
 		${PROJECT_SOURCE_DIR}/settings.json $<TARGET_FILE_DIR:VulkanApp>/settings.json)
 
+add_custom_command(TARGET VulkanApp PRE_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		${PROJECT_SOURCE_DIR}/render_settings.json $<TARGET_FILE_DIR:VulkanApp>/render_settings.json)
+	
 
 # copy files over
 add_custom_command(TARGET VulkanApp POST_BUILD

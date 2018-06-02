@@ -103,5 +103,5 @@ private:
 	VkCullModeFlagBits cullModeFlagBits = VK_CULL_MODE_BACK_BIT;
 	VkBool32 enableBlending = VK_FALSE;
 
-	bool isReadyToRender = false;
+	Signal isFinishedTransfer;
 };
