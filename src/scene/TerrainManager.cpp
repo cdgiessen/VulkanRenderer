@@ -37,57 +37,33 @@ TerrainCreationData::TerrainCreationData(
 void TerrainCreationWorker(TerrainManager* man) {
 
 	while (man->isCreatingTerrain) {
-
-		auto data = man->terrainCreationWork.pop_if();
-		if (data.has_value()) {
-
-			auto terrain = std::make_shared<Terrain>(data->pool, data->protoGraph, data->numCells, data->maxLevels, data->heightScale, data->coord);
-
-			std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
-
-			terrain->terrainSplatMap = data->resourceMan->texManager.loadTextureFromRGBAPixelData(data->sourceImageResolution + 1, data->sourceImageResolution + 1, imgData);
-
-			terrain->InitTerrain(data->renderer, data->camera->Position, data->terrainVulkanTextureArray);
-
+		{
+			std::unique_lock<std::mutex> lock(man->workerMutex);
+			man->workerConditionVariable.wait(lock);
+		}
+		
+		while(!man->terrainCreationWork.empty()) {
+			auto data = man->terrainCreationWork.pop_if();
+			if(data.has_value())
 			{
-				std::lock_guard<std::mutex> lk(man->terrain_mutex);
-				man->terrains.push_back(std::move(terrain));
+				auto terrain = std::make_shared<Terrain>(data->pool, data->protoGraph, data->numCells, data->maxLevels, data->heightScale, data->coord);
+
+				std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
+
+				terrain->terrainSplatMap = data->resourceMan->texManager.loadTextureFromRGBAPixelData(data->sourceImageResolution + 1, data->sourceImageResolution + 1, imgData);
+
+				terrain->InitTerrain(data->renderer, data->camera->Position, data->terrainVulkanTextureArray);
+
+				{
+					std::lock_guard<std::mutex> lk(man->terrain_mutex);
+					man->terrains.push_back(std::move(terrain));
+				}
+
 			}
+			//break out of loop if work shouldn't be continued
+			if(!man->isCreatingTerrain) 
+				return;	
 		}
-
-		std::unique_lock<std::mutex> lock(man->workerMutex);
-		man->workerConditionVariable.wait(lock);
-
-		/*std::unique_lock<std::mutex> queue_lock(man->creationDataQueueMutex);
-		if (!man->terrainCreationWork.empty()) {
-
-			TerrainCreationData data{ man->terrainCreationWork.front() };
-			queue_lock.unlock();
-
-			auto terrain = std::make_shared<Terrain>(data.pool, data.protoGraph, data.numCells, data.maxLevels, data.heightScale, data.coord);
-
-			std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
-
-			terrain->terrainSplatMap = data.resourceMan->texManager.loadTextureFromRGBAPixelData(data.sourceImageResolution + 1, data.sourceImageResolution + 1, imgData);
-
-			terrain->InitTerrain(data.renderer, data.camera->Position, data.terrainVulkanTextureArray);
-
-			if (!man->isCreatingTerrain)
-				break;
-
-			{
-				std::lock_guard<std::mutex> lk(man->terrain_mutex);
-				man->terrains.push_back(terrain);
-			}
-			if (!man->isCreatingTerrain)
-				break;
-		}
-		else {
-			queue_lock.unlock();
-		}
-
-		if (!man->isCreatingTerrain)
-			break;*/
 	}
 
 }

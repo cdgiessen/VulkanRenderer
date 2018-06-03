@@ -241,12 +241,12 @@ void Terrain::SetupPipeline()
 	layouts.push_back(descriptor->GetLayout());
 	pipeMan.SetDescriptorSetLayout(mvp, layouts);
 
-	VkPushConstantRange pushConstantRange = {};
-	pushConstantRange.offset = 0;
-	pushConstantRange.size = sizeof(TerrainPushConstant);
-	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	//VkPushConstantRange pushConstantRange = {};
+	//pushConstantRange.offset = 0;
+	//pushConstantRange.size = sizeof(TerrainPushConstant);
+	//pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-	pipeMan.SetModelPushConstant(mvp, pushConstantRange);
+	//pipeMan.SetModelPushConstant(mvp, pushConstantRange);
 
 	pipeMan.BuildPipelineLayout(mvp);
 	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
@@ -263,7 +263,6 @@ void Terrain::SetupPipeline()
 	//pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
 	//pipeMan.CleanShaderResources(mvp);
 
-	Log::Debug << "Terrain Pipeline = " << mvp->pipelines->at(0) << "\n";
 }
 
 void Terrain::UpdateMeshBuffer() {
@@ -544,10 +543,9 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuad> quad) {
 
 void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
 	VkDeviceSize offsets[] = { 0 };
-
+	//return;
 	if (!terrainVulkanSplatMap->readyToUse)
-		return;
-
+		return ;
 	std::vector<VkDeviceSize> vertexOffsettings(quadHandles.size());
 	std::vector<VkDeviceSize> indexOffsettings(quadHandles.size());
 

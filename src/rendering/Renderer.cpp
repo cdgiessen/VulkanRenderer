@@ -68,9 +68,16 @@ template <typename WorkType> void CommandBufferWorker<WorkType>::StopWork() {
 
 template <> void CommandBufferWorker<CommandBufferWork>::Work() {
 
-	while (keepWorking) {
+	while (keepWorking) 
+	{
+		{
+			std::unique_lock<std::mutex> uniqueLock(workQueue.lock);
+			workQueue.condVar.wait(uniqueLock);
+		}
+
 		auto pos_work = workQueue.GetWork();
-		if (pos_work.has_value()) {
+		while (pos_work.has_value()) 
+		{
 			VkCommandBuffer buf = pool.GetOneTimeUseCommandBuffer();
 
 			pos_work->work(buf);
@@ -92,18 +99,23 @@ template <> void CommandBufferWorker<CommandBufferWork>::Work() {
 				*flag = true;
 
 			pool.FreeCommandBuffer(buf);
-		}
 
-		std::unique_lock<std::mutex> uniqueLock(workQueue.lock);
-		workQueue.condVar.wait(uniqueLock);
+			pos_work = workQueue.GetWork();
+		}
 	}
 }
 
 template <> void CommandBufferWorker<TransferCommandWork>::Work() {
-
-	while (keepWorking) {
+	while (keepWorking) 
+	{
+		{
+			std::unique_lock<std::mutex> uniqueLock(workQueue.lock);
+			workQueue.condVar.wait(uniqueLock);
+		}
+	
 		auto pos_work = workQueue.GetWork();
-		if (pos_work.has_value()) {
+		while (pos_work.has_value()) 
+		{
 			VkCommandBuffer buf = pool.GetOneTimeUseCommandBuffer();
 
 			pos_work->work(buf);
@@ -130,13 +142,9 @@ template <> void CommandBufferWorker<TransferCommandWork>::Work() {
 			}
 
 			pool.FreeCommandBuffer(buf);
+
+			pos_work = workQueue.GetWork();
 		}
-
-		// using namespace std::chrono_literals;
-		// std::this_thread::sleep_for(0.25s);
-
-		std::unique_lock<std::mutex> uniqueLock(workQueue.lock);
-		workQueue.condVar.wait(uniqueLock);
 	}
 }
 

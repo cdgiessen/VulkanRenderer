@@ -178,12 +178,12 @@ void GameObject::SetupPipeline()
 	//layouts.push_back(materialDescriptor->GetLayout());
     pipeMan.SetDescriptorSetLayout(mvp, layouts);
 	
-	VkPushConstantRange pushConstantRange = {};
-	pushConstantRange.offset = 0;
-	pushConstantRange.size = sizeof(ModelPushConstant);
-	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	
-	pipeMan.SetModelPushConstant(mvp, pushConstantRange);
+	//VkPushConstantRange pushConstantRange = {};
+	//pushConstantRange.offset = 0;
+	//pushConstantRange.size = sizeof(ModelPushConstant);
+	//pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	//
+	//pipeMan.SetModelPushConstant(mvp, pushConstantRange);
 
     pipeMan.BuildPipelineLayout(mvp);
     pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
