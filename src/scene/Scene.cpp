@@ -107,7 +107,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	terrainManager = std::make_shared<TerrainManager>(graph);
 
 	terrainManager->SetupResources(resourceMan, renderer);
-	terrainManager->GenerateTerrain(resourceMan, renderer, camera);
+	//terrainManager->GenerateTerrain(resourceMan, renderer, camera);
 
 	treesInstanced = std::make_shared<InstancedSceneObject>(renderer);
 	treesInstanced->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/instancedSceneObject.frag.spv"));
@@ -175,7 +175,7 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 	if (Input::GetKeyDown(Input::KeyCode::V))
 		UpdateTerrain = !UpdateTerrain;
 	if (UpdateTerrain && terrainManager != nullptr)
-		terrainManager->UpdateTerrains(resourceMan, renderer, camera, timeManager);
+		terrainManager->UpdateTerrains(resourceMan, camera->Position);
 
 	UpdateSunData();
 

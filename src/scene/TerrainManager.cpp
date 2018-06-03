@@ -13,7 +13,7 @@ constexpr auto TerrainSettingsFileName = "terrain_settings.json";
 TerrainCreationData::TerrainCreationData(
 	std::shared_ptr<ResourceManager> resourceMan,
 	std::shared_ptr<VulkanRenderer> renderer,
-	std::shared_ptr<Camera> camera,
+	glm::vec3 cameraPos,
 	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
 	std::shared_ptr<MemoryPool<TerrainQuad>> pool,
 	InternalGraph::GraphPrototype& protoGraph,
@@ -21,7 +21,7 @@ TerrainCreationData::TerrainCreationData(
 
 	resourceMan(resourceMan),
 	renderer(renderer),
-	camera(camera),
+	cameraPos(cameraPos),
 	terrainVulkanTextureArray(terrainVulkanTextureArray),
 	pool(pool),
 	protoGraph(protoGraph),
@@ -52,7 +52,7 @@ void TerrainCreationWorker(TerrainManager* man) {
 
 				terrain->terrainSplatMap = data->resourceMan->texManager.loadTextureFromRGBAPixelData(data->sourceImageResolution + 1, data->sourceImageResolution + 1, imgData);
 
-				terrain->InitTerrain(data->renderer, data->camera->Position, data->terrainVulkanTextureArray);
+				terrain->InitTerrain(data->renderer, data->cameraPos, data->terrainVulkanTextureArray);
 
 				{
 					std::lock_guard<std::mutex> lk(man->terrain_mutex);
@@ -84,29 +84,28 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph) : prot
 
 TerrainManager::~TerrainManager()
 {
-	isCreatingTerrain = false;
-	workerConditionVariable.notify_all();
-	for (auto& thread : terrainCreationWorkers) {
-		thread.join();
-	}
-	terrainCreationWorkers.clear();
+	StopWorkerThreads();
 }
 
-void TerrainManager::ResetWorkerThreads() {
-	isCreatingTerrain = false;
-	workerConditionVariable.notify_all();
-	for (auto& thread : terrainCreationWorkers) {
-		thread.join();
-	}
-	terrainCreationWorkers.clear();
-	
+void TerrainManager::StartWorkerThreads(){
 	isCreatingTerrain = true;
 	for (int i = 0; i < WorkerThreads; i++) {
 		terrainCreationWorkers.push_back(std::thread(TerrainCreationWorker, this));
 	}
 }
 
+void TerrainManager::StopWorkerThreads() {
+	isCreatingTerrain = false;
+	workerConditionVariable.notify_all();
+	for (auto& thread : terrainCreationWorkers) {
+		thread.join();
+	}
+	terrainCreationWorkers.clear();
+}
+
 void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer) {
+
+	this->renderer = renderer;
 
 	for (auto& item : terrainTextureFileNames) {
 		terrainTextureHandles.push_back(
@@ -133,22 +132,21 @@ void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan
 
 	instancedWaters->InitInstancedSceneObject(renderer);
 
+	StartWorkerThreads();
+
 }
 
 void TerrainManager::CleanUpResources() {
 	terrainVulkanTextureArray->destroy();
 
 	instancedWaters->CleanUp();
-	//WaterVulkanTexture.destroy(renderer->device);
-
-	//	WaterModel.destroy(renderer->device);
 }
 
 void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera) {
 	this->renderer = renderer;
 	settings.width = nextTerrainWidth;
 
-	ResetWorkerThreads();
+	//ResetWorkerThreads();
 
 	for (int i = 0; i < settings.gridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < settings.gridDimentions; j++) {
@@ -162,35 +160,16 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 				settings.sourceImageResolution + 1);
 
 			terrainCreationWork.push_back(TerrainCreationData(
-				resourceMan, renderer, camera, terrainVulkanTextureArray,
+				resourceMan, renderer, camera->Position, terrainVulkanTextureArray,
 				terrainQuadPool, protoGraph,
 				settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale,
 				coord));
 
-			std::lock_guard<std::mutex> lk(workerMutex);
-			workerConditionVariable.notify_one();
 		}
 	}
+	std::lock_guard<std::mutex> lk(workerMutex);
+	workerConditionVariable.notify_one();
 	
-
-	//WaterMesh.reset();
-	//WaterModel.destroy(renderer->device); 
-	//WaterMesh = createFlatPlane(settings.numCells, glm::vec3(settings.width, 0, settings.width));
-	//WaterModel.loadFromMesh(WaterMesh, renderer->device, renderer->device.graphics_queue);
-
-
-
-	//instancedWaters->CleanUp();
-	//instancedWaters.release();
-	//instancedWaters = std::make_unique<InstancedSceneObject>(renderer);
-	//instancedWaters->SetBlendMode(VK_TRUE);
-	//instancedWaters->SetCullMode(VK_CULL_MODE_NONE);
-	//instancedWaters->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
-	//instancedWaters->LoadModel(createFlatPlane(settings.numCells, glm::vec3(settings.width, 0, settings.width)));
-	//instancedWaters->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg"));
-	//instancedWaters->InitInstancedSceneObject(renderer);
-
-
 	std::vector<InstancedSceneObject::InstanceData> waterData;
 	for (int i = 0; i < settings.gridDimentions; i++) {
 		for (int j = 0; j < settings.gridDimentions; j++) {
@@ -200,15 +179,6 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 			id.rot = glm::vec3(0, 0, 0);
 			id.scale = settings.width;
 			waterData.push_back(id);
-			//instancedWaters->AddInstance(id);
-
-			//auto water = std::make_shared< Water>
-			//	(64, (i - settings.gridDimentions / 2) * settings.width - settings.width / 2, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2, settings.width, settings.width);
-			//
-			////WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
-			//water->InitWater(renderer, WaterVulkanTexture);
-			//
-			//waters.push_back(water);
 		}
 	}
 	instancedWaters->ReplaceAllInstances(waterData);
@@ -216,24 +186,97 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 	recreateTerrain = false;
 }
 
-void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager) {
-	this->renderer = renderer;
+void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan, 
+	glm::vec3 cameraPos) 
+{
 	if (recreateTerrain) {
+		StopWorkerThreads();
 		CleanUpTerrain();
-		GenerateTerrain(resourceMan, renderer, camera);
+		StartWorkerThreads();
+		//need to rework to involve remaking the graph
+		//GenerateTerrain(resourceMan, renderer, camera);
 	}
 
 	terrainUpdateTimer.StartTimer();
+
+	std::vector<std::vector<std::shared_ptr<Terrain>>::iterator> terToDelete;
+	
+	//delete terrains to far away
+	terrain_mutex.lock();
+
+
+	for (auto it = std::begin(terrains); it != std::end(terrains); it++) {
+		glm::vec3 center = glm::vec3((*it)->coordinateData.pos.x, 0, (*it)->coordinateData.pos.y);
+		float distanceToViewer = glm::distance(cameraPos, center);
+		if(distanceToViewer > settings.viewDistance * settings.width){
+			terToDelete.push_back(it);
+			Log::Debug << "deleting terrain at x:" << (*it)->coordinateData.noisePos.x/(*it)->coordinateData.sourceImageResolution 
+			<< " z: " << (*it)->coordinateData.noisePos.y/(*it)->coordinateData.sourceImageResolution << "\n";
+		}
+	}
+	while(terToDelete.size() > 0){
+		terrains.erase(terToDelete.back());
+		terToDelete.pop_back();
+	}
+
+	terrain_mutex.unlock();
+
+	//make new closer terrains
+
+	int camGridX = (double)cameraPos.x / (settings.width);
+	int camGridZ = (double)cameraPos.z / (settings.width);
+	//Log::Debug << "cam grid x: " << camGridX << " z: " << camGridZ << "\n";
+	for(int i = 0; i < settings.viewDistance; i++){ 
+		for(int j = 0; j < settings.viewDistance; j++){
+
+			//Log::Debug << "noisePosX " << ter->coordinateData.noisePos.x/ter->coordinateData.sourceImageResolution << "\n";
+			Log::Debug << "relX " << camGridX + i - settings.viewDistance/2.0 << "\n";
+				
+
+			bool found = false;
+			for (auto& ter : terrains) {
+				if(ter->coordinateData.noisePos.x/ter->coordinateData.sourceImageResolution == camGridX + i - settings.viewDistance/2.0
+				&& ter->coordinateData.noisePos.y/ter->coordinateData.sourceImageResolution == camGridZ + j - settings.viewDistance/2.0)
+				{
+					Log::Debug << "creating new terrain at x:" << (camGridX + i - settings.viewDistance/2.0) << " z: " << (camGridZ + j - settings.viewDistance/2.0) << "\n";
+
+					//found = true;
+				}
+			}
+			if(!found){
+				Log::Debug << "creating new terrain at x:" << (camGridX + i - settings.viewDistance/2.0) << " z: " << (camGridZ + j - settings.viewDistance/2.0) << "\n";
+
+				TerrainCoordinateData coord = TerrainCoordinateData(
+				glm::vec2((camGridX + i - settings.viewDistance/2.0) * settings.width - settings.width / 2, 
+					(camGridZ + j - settings.viewDistance/2.0) * settings.width - settings.width / 2), //position
+				glm::vec2(settings.width, settings.width), //size
+				glm::i32vec2((camGridX + i - settings.viewDistance/2.0)*settings.sourceImageResolution, 
+					(camGridZ + j - settings.viewDistance/2.0)*settings.sourceImageResolution), //noise position
+				glm::vec2(1.0 / (float)settings.sourceImageResolution, 1.0f / (float)settings.sourceImageResolution),//noiseSize 
+				settings.sourceImageResolution + 1);
+
+				terrain_mutex.lock();
+				terrainCreationWork.push_back(TerrainCreationData(
+					resourceMan, renderer, cameraPos, terrainVulkanTextureArray,
+					terrainQuadPool, protoGraph,
+					settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale,
+					coord));
+				terrain_mutex.unlock();
+			}
+		}
+	}
+
+
+	//update all terrains
 	terrain_mutex.lock();
 	for (auto& ter : terrains) {
-
-		ter->UpdateTerrain(camera->Position);
-
-		//if (terrainUpdateTimer.GetElapsedTimeMicroSeconds() > 1000) {
-		//	Log::Debug << terrainUpdateTimer.GetElapsedTimeMicroSeconds() << "\n";
-		//}
+		ter->UpdateTerrain(cameraPos);
 	}
 	terrain_mutex.unlock();
+
+	//if (terrainUpdateTimer.GetElapsedTimeMicroSeconds() > 1000) {
+	//	Log::Debug << terrainUpdateTimer.GetElapsedTimeMicroSeconds() << "\n";
+	//}
 	terrainUpdateTimer.EndTimer();
 
 }

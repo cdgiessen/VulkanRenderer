@@ -30,7 +30,7 @@ struct GeneralSettings {
 	float heightScale = 100.0f;
 	int maxLevels = 4;
 	int gridDimentions = 1;
-	int viewDistance = 4; //terrain chunks to load away from camera;
+	int viewDistance = 2; //terrain chunks to load away from camera;
 	int sourceImageResolution = 512;
 	int numCells = 64; //compile time currently
 };
@@ -45,7 +45,7 @@ struct TerrainTextureNamedHandle {
 struct TerrainCreationData {
 	std::shared_ptr<ResourceManager> resourceMan;
 	std::shared_ptr<VulkanRenderer> renderer;
-	std::shared_ptr<Camera> camera;
+	glm::vec3 cameraPos;
 	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray;
 	std::shared_ptr<MemoryPool<TerrainQuad>> pool;
 	InternalGraph::GraphPrototype& protoGraph;
@@ -57,7 +57,7 @@ struct TerrainCreationData {
 	TerrainCreationData(
 		std::shared_ptr<ResourceManager> resourceMan,
 		std::shared_ptr<VulkanRenderer> renderer,
-		std::shared_ptr<Camera> camera,
+		glm::vec3 cameraPos,
 		std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
 		std::shared_ptr<MemoryPool<TerrainQuad>> pool,
 		InternalGraph::GraphPrototype& protoGraph,
@@ -75,7 +75,7 @@ public:
 
 	void GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera);
 
-	void UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera, std::shared_ptr<TimeManager> timeManager);
+	void UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan, glm::vec3 cameraPos);
 
 	void RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe);
 
@@ -83,8 +83,6 @@ public:
 	void DrawTerrainTextureViewer();
 
 	void CleanUpTerrain();
-
-	void ResetWorkerThreads();
 
 	float GetTerrainHeightAtLocation(float x, float z);
 
@@ -106,7 +104,8 @@ private:
 	void SaveSettingsToFile();
 	void LoadSettingsFromFile();
 
-
+	void StopWorkerThreads();
+	void StartWorkerThreads();
 
 	InternalGraph::GraphPrototype& protoGraph;
 	//NewNodeGraph::TerGenNodeGraph& nodeGraph;
