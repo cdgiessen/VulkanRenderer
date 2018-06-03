@@ -14,7 +14,7 @@ VulkanShader::VulkanShader(const VulkanDevice &device) : device(device)
 
 VulkanShader::~VulkanShader()
 {
-	for (auto item : shaderModules) {
+	for (auto& item : shaderModules) {
 
 		vkDestroyShaderModule(device.device, item, nullptr);
 	}

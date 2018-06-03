@@ -18,7 +18,7 @@ VulkanApp::VulkanApp()
 	window = std::make_shared<Window>();
 	window->createWindow(isFullscreen, glm::ivec2(screenWidth, screenHeight), glm::ivec2(10,10));
 	Input::SetupInputDirector(window->getWindowContext());
-	Input::SetMouseControlStatus(true);
+	//Input::SetMouseControlStatus(true);
 
 	resourceManager = std::make_shared<ResourceManager>();
 

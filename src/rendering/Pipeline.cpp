@@ -68,11 +68,11 @@ VkPipelineCache VulkanPipeline::GetPipelineCache() {
 }
 
 void VulkanPipeline::CleanUp() {
-	for (auto manPipe : pipes){
+	for (auto& manPipe : pipes){
 		vkDestroyPipelineLayout(device.device, manPipe->layout, nullptr);
 
-		for (auto it = manPipe->pipelines->begin(); it != manPipe->pipelines->end(); it++){
-			vkDestroyPipeline(device.device, (*it), nullptr);
+		for (auto& pipe : *manPipe->pipelines){
+			vkDestroyPipeline(device.device, pipe, nullptr);
 		}
 
 	}

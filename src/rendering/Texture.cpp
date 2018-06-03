@@ -830,7 +830,7 @@ VulkanTextureManager::VulkanTextureManager(VulkanDevice &device)
 	: device(device) {}
 
 VulkanTextureManager::~VulkanTextureManager() {
-	for (auto tex : vulkanTextures) {
+	for (auto& tex : vulkanTextures) {
 		tex.destroy();
 	}
 }

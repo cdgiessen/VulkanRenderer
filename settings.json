@@ -1,7 +1,7 @@
 {
   "initial-screen-size": {
-    "width": 1600,
-    "height": 900
+    "width": 800,
+    "height": 600
   },
 
   "use-validation-layers": true,

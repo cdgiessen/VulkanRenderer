@@ -133,7 +133,7 @@ std::shared_ptr<TextureArray> TextureManager::loadTextureArrayFromFile(std::stri
 	bool sameSize = true;
 	int width = textures.at(0)->width;
 	int height = textures.at(0)->height;
-	for (auto tex : textures) {
+	for (auto& tex : textures) {
 		if (tex->width != width || tex->height != height)
 			sameSize = false;
 	}
@@ -167,7 +167,7 @@ std::shared_ptr<CubeMap> TextureManager::loadCubeMapFromFile(std::string filenam
 	bool sameSize = true;
 	int width = faces.at(0)->width;
 	int height = faces.at(0)->height;
-	for (auto tex : faces) {
+	for (auto& tex : faces) {
 		if (tex->width != width || tex->height != height)
 			sameSize = false;
 	}

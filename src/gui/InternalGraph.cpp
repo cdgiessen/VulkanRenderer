@@ -187,7 +187,7 @@ namespace InternalGraph {
 	}
 
 	void AddNodeInputLinks(std::vector<InputLink>& links, std::vector<LinkType> types) {
-		for (auto t : types) {
+		for (auto& t : types) {
 			switch (t) {
 			case LinkType::Float:
 				links.push_back(0.0f);
@@ -736,10 +736,10 @@ namespace InternalGraph {
 	}
 
 	void Node::SetupInputLinks(NodeMap* map) {
-		for (auto it = inputLinks.begin(); it != inputLinks.end(); it++) {
-			if (it->HasInputNode()) {
-				Node* ptr = &(map->at(it->GetInputNode()));
-				it->SetInputNodePointer(ptr);
+		for (auto& link : inputLinks) {
+			if (link.HasInputNode()) {
+				Node* ptr = &(map->at(link.GetInputNode()));
+				link.SetInputNodePointer(ptr);
 			}
 		}
 	}

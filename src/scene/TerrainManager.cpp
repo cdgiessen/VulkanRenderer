@@ -38,15 +38,7 @@ void TerrainCreationWorker(TerrainManager* man) {
 
 	while (man->isCreatingTerrain) {
 
-		std::unique_lock<std::mutex> lock(man->workerMutex);
-		man->workerConditionVariable.wait_for(lock, std::chrono::milliseconds(100));
-		lock.unlock();
-
-		if (!man->isCreatingTerrain)
-			break;
-
-		std::optional<TerrainCreationData> data = man->terrainCreationWork.pop_if();
-
+		auto data = man->terrainCreationWork.pop_if();
 		if (data.has_value()) {
 
 			auto terrain = std::make_shared<Terrain>(data->pool, data->protoGraph, data->numCells, data->maxLevels, data->heightScale, data->coord);
@@ -57,20 +49,14 @@ void TerrainCreationWorker(TerrainManager* man) {
 
 			terrain->InitTerrain(data->renderer, data->camera->Position, data->terrainVulkanTextureArray);
 
-			//shouldn't need to check if I am still doing work, as the program should wait until all workers are finished before starting more
-			//if (!man->isCreatingTerrain)
-			//	break;
-
 			{
 				std::lock_guard<std::mutex> lk(man->terrain_mutex);
-				man->terrains.push_back(terrain);
+				man->terrains.push_back(std::move(terrain));
 			}
-			if (!man->isCreatingTerrain)
-				break;
 		}
-		else {
 
-		}
+		std::unique_lock<std::mutex> lock(man->workerMutex);
+		man->workerConditionVariable.wait(lock);
 
 		/*std::unique_lock<std::mutex> queue_lock(man->creationDataQueueMutex);
 		if (!man->terrainCreationWork.empty()) {
@@ -123,19 +109,21 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph) : prot
 TerrainManager::~TerrainManager()
 {
 	isCreatingTerrain = false;
+	workerConditionVariable.notify_all();
 	for (auto& thread : terrainCreationWorkers) {
 		thread.join();
 	}
 	terrainCreationWorkers.clear();
-	//Log::Debug << "terrain manager deleted\n";
 }
 
 void TerrainManager::ResetWorkerThreads() {
 	isCreatingTerrain = false;
+	workerConditionVariable.notify_all();
 	for (auto& thread : terrainCreationWorkers) {
 		thread.join();
 	}
 	terrainCreationWorkers.clear();
+	
 	isCreatingTerrain = true;
 	for (int i = 0; i < WorkerThreads; i++) {
 		terrainCreationWorkers.push_back(std::thread(TerrainCreationWorker, this));
@@ -144,7 +132,7 @@ void TerrainManager::ResetWorkerThreads() {
 
 void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer) {
 
-	for (auto item : terrainTextureFileNames) {
+	for (auto& item : terrainTextureFileNames) {
 		terrainTextureHandles.push_back(
 			TerrainTextureNamedHandle(
 				item,
@@ -207,14 +195,7 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 			workerConditionVariable.notify_one();
 		}
 	}
-	//for (auto& thread : terrainCreators) {
-	//	thread.join();
-
-	//}
-
-	//for (auto ter : terrains) {
-	//	ter->InitTerrain(renderer, camera->Position, terrainVulkanTextureArray);
-	//}
+	
 
 	//WaterMesh.reset();
 	//WaterModel.destroy(renderer->device); 
@@ -268,7 +249,7 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 
 	terrainUpdateTimer.StartTimer();
 	terrain_mutex.lock();
-	for (auto ter : terrains) {
+	for (auto& ter : terrains) {
 
 		ter->UpdateTerrain(camera->Position);
 
@@ -282,19 +263,19 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 }
 
 void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe) {
-	terrain_mutex.lock();
-	for (auto ter : terrains) {
-		ter->DrawTerrain(commandBuffer, wireframe);
+	{
+		std::lock_guard<std::mutex> lock(terrain_mutex);
+		for (auto& ter : terrains) {
+			ter->DrawTerrain(commandBuffer, wireframe);
+		}
 	}
-	terrain_mutex.unlock();
 
 	instancedWaters->WriteToCommandBuffer(commandBuffer, wireframe);
-
 }
 
 //TODO : Reimplement getting height at terrain location
 float TerrainManager::GetTerrainHeightAtLocation(float x, float z) {
-	for (auto terrain : terrains)
+	for (auto& terrain : terrains)
 	{
 		glm::vec2 pos = terrain->coordinateData.pos;
 		glm::vec2 size = terrain->coordinateData.size;
@@ -369,7 +350,7 @@ void TerrainManager::UpdateTerrainGUI() {
 		}
 
 		ImGui::Text("All terrains update Time: %u(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
-		for (auto ter : terrains)
+		for (auto& ter : terrains)
 		{
 			ImGui::Text("Terrain Draw Time: %u(uS)", ter->drawTimer.GetElapsedTimeMicroSeconds());
 			ImGui::Text("Terrain Quad Count %d", ter->numQuads);

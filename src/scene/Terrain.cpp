@@ -172,7 +172,8 @@ void Terrain::SetupImage()
 	if (terrainSplatMap != nullptr) {
 
 		terrainVulkanSplatMap->loadFromTexture(terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, *renderer,
-			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
 
 	}
 	else {
@@ -262,7 +263,7 @@ void Terrain::SetupPipeline()
 	//pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
 	//pipeMan.CleanShaderResources(mvp);
 
-
+	Log::Debug << "Terrain Pipeline = " << mvp->pipelines->at(0) << "\n";
 }
 
 void Terrain::UpdateMeshBuffer() {
@@ -352,12 +353,12 @@ void Terrain::UpdateMeshBuffer() {
 
 		transfer.work = std::function<void(VkCommandBuffer)>(
 			[=](const VkCommandBuffer cmdBuf) {
-			vkCmdCopyBuffer(cmdBuf, vertexStaging.buffer.buffer, vbuf, (uint32_t)vertexCopyRegions.size(), vertexCopyRegions.data());
+				vkCmdCopyBuffer(cmdBuf, vertexStaging.buffer.buffer, vbuf, (uint32_t)vertexCopyRegions.size(), vertexCopyRegions.data());
 
-			//copyRegion.size = indexBuffer->size;
-			vkCmdCopyBuffer(cmdBuf, indexStaging.buffer.buffer, ibuf, (uint32_t)indexCopyRegions.size(), indexCopyRegions.data());
+				//copyRegion.size = indexBuffer->size;
+				vkCmdCopyBuffer(cmdBuf, indexStaging.buffer.buffer, ibuf, (uint32_t)indexCopyRegions.size(), indexCopyRegions.data());
 
-		}
+			}
 		);
 		transfer.buffersToClean.push_back(vertexStaging);
 		transfer.buffersToClean.push_back(indexStaging);
@@ -544,13 +545,8 @@ void Terrain::UnSubdivide(std::shared_ptr<TerrainQuad> quad) {
 void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
 	VkDeviceSize offsets[] = { 0 };
 
-	//return;//DEBUG ONLY
-
 	if (!terrainVulkanSplatMap->readyToUse)
 		return;
-
-	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
-	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &descriptorSet.set, 0, nullptr);
 
 	std::vector<VkDeviceSize> vertexOffsettings(quadHandles.size());
 	std::vector<VkDeviceSize> indexOffsettings(quadHandles.size());
@@ -568,6 +564,9 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
 	//	sizeof(TerrainPushConstant),
 	//	&modelMatrixData);
 
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &descriptorSet.set, 0, nullptr);
+
 	drawTimer.StartTimer();
 	for (int i = 0; i < quadHandles.size(); ++i) {
 		if ((!quadHandles[i]->isSubdivided && (*(quadHandles[i]->isReady)) == true )
@@ -576,6 +575,7 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
 				|| *quadHandles[i]->subQuads.DownRight->isReady == true
 				|| *quadHandles[i]->subQuads.UpLeft->isReady == true
 				|| *quadHandles[i]->subQuads.UpRight->isReady == true))) {
+
 
 
 			vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vertexBuffer->buffer.buffer, &vertexOffsettings[i]);

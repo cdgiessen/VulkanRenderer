@@ -74,6 +74,10 @@ VkQueue CommandQueue::GetQueue() {
 	return queue;
 }
 
+std::mutex& CommandQueue::GetQueueMutex(){
+	return submissionMutex;
+}
+
 void CommandQueue::WaitForFences(VkFence fence) {
 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 }
@@ -670,7 +674,6 @@ QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice physDevice, 
 	//if (indices.presentFamily == -1) {
 	//	indices.presentFamily = 0;
 	//}
-
 	return indices;
 }
 
@@ -733,16 +736,15 @@ void VulkanDevice::CreateQueues() {
 	if (familyIndices.graphicsFamily != familyIndices.transferFamily)
 		transfer_queue = std::make_unique<CommandQueue>(*this, familyIndices.transferFamily);
 	
-	if (familyIndices.graphicsFamily != familyIndices.presentFamily)
+	if (familyIndices.graphicsFamily != familyIndices.presentFamily){
 		present_queue = std::make_unique<CommandQueue>(*this, familyIndices.presentFamily);
+		//Log::Debug << "Seperate present queue\n";
+	}
 
-	
 	//vkGetDeviceQueue(device, familyIndices.graphicsFamily, 0, &graphics_queue);
 	//vkGetDeviceQueue(device, familyIndices.presentFamily, 0, &present_queue);
 	//vkGetDeviceQueue(device, familyIndices.computeFamily, 0, &compute_queue);
-	//
-	//if (!separateTransferQueue)
-	//	vkGetDeviceQueue(device, familyIndices.transferFamily, 0, &transfer_queue);
+
 }
 
 CommandQueue& VulkanDevice::GetCommandQueue(CommandQueueType queueType) {
@@ -781,8 +783,10 @@ CommandQueue& VulkanDevice::TransferQueue() {
 	return GraphicsQueue();
 }
 CommandQueue& VulkanDevice::PresentQueue() {
-	if (transfer_queue)
+	if (present_queue) {
 		return *present_queue;
+
+	}
 	return GraphicsQueue();
 }
 

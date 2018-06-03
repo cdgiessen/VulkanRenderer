@@ -90,6 +90,7 @@ public:
 		std::vector<VkSemaphore> signalSemaphores = std::vector<VkSemaphore>());
 
 	int GetQueueFamily();
+	std::mutex& GetQueueMutex();
 	VkQueue GetQueue();
 
 	void WaitForFences(VkFence fence);

@@ -104,6 +104,10 @@ namespace Input {
 		glfwGetCursorPos(window, &xpos, &ypos);
 		mousePosition = mousePositionPrevious = glm::dvec2(xpos, ypos);
 
+		mouseControlStatus = true; 
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		
+
 		for (int i = 0; i < 16; i++) {
 			joystickData[i].joystickIndex = i;
 			if (glfwJoystickPresent(i)) {
@@ -140,7 +144,7 @@ namespace Input {
 	std::vector<int> InputDirector::GetConnectedJoysticks() {
 		std::vector<int> joys;
 
-		for (auto possible : joystickData)
+		for (auto& possible : joystickData)
 			if (possible.IsConnected())
 				joys.push_back(possible.joystickIndex);
 

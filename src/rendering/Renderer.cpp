@@ -620,6 +620,7 @@ void VulkanRenderer::SubmitFrame() {
 	presentInfo.pImageIndices = &frameIndex;
 	VkResult result;
 	{
+		std::lock_guard<std::mutex> lock(device.PresentQueue().GetQueueMutex());
 		result = vkQueuePresentKHR(device.PresentQueue().GetQueue(), &presentInfo);
 	}
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
@@ -629,6 +630,7 @@ void VulkanRenderer::SubmitFrame() {
 		throw std::runtime_error("failed to present swap chain image!");
 	}
 
+	std::lock_guard<std::mutex> lock(device.PresentQueue().GetQueueMutex());
 	vkQueueWaitIdle(device.PresentQueue().GetQueue());
 }
 

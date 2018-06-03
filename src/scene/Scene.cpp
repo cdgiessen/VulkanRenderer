@@ -130,7 +130,6 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	treesInstanced->AddInstances(data);
 	//rocksInstanced = std::make_shared<InstancedSceneObject>(renderer);
 
-	Log::Debug << "5\n";
 	// gltf2 integration
 	//std::shared_ptr< gltf2::Asset> tree_test = std::make_shared<gltf2::Asset>();
 	//*tree_test = gltf2::load("Resources/Assets/tree_test.gltf");
@@ -209,6 +208,7 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	VkDeviceSize offsets[] = { 0 };
 
+	
 	for (auto& obj : gameObjects) {
 		obj->Draw(commandBuffer, wireframe, drawNormals);
 	}
@@ -317,7 +317,7 @@ void Scene::UpdateSceneGUI(){
 void Scene::CleanUpScene() {
 
 	skybox->CleanUp();
-	for (auto obj : gameObjects){
+	for (auto& obj : gameObjects){
 		obj->CleanUp();
 	}
 

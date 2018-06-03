@@ -82,7 +82,7 @@ void VulkanDescriptor::SetupLayout(std::vector<VkDescriptorSetLayoutBinding> bin
 void VulkanDescriptor::SetupPool(std::vector<DescriptorPoolSize> poolSizes, int maxSets) {
 
 	std::vector<VkDescriptorPoolSize> poolMembers;
-	for (auto member : poolSizes) {
+	for (auto& member : poolSizes) {
 		poolMembers.push_back(member.GetPoolSize());
 	}
 
