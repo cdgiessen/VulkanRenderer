@@ -33,9 +33,9 @@ public:
 		{}
 
 		bool operator==(const InstanceData& rhs) {
-			return this->pos == rhs.pos 
-				&& this->rot == rhs.rot 
-				&& this->scale == rhs.scale 
+			return this->pos == rhs.pos
+				&& this->rot == rhs.rot
+				&& this->scale == rhs.scale
 				&& this->texIndex == rhs.texIndex;
 		}
 	};
@@ -63,12 +63,15 @@ public:
 	void SetupDescriptor();
 
 	void AddInstance(InstanceData data);
+	void RemoveInstance(InstanceData data);
 
-	void AddInstances(std::vector<InstanceData> instances);
-	void RemoveInstances(std::vector<InstanceData> instances);
+	void AddInstances(std::vector<InstanceData>& instances);
+	void RemoveInstances(std::vector<InstanceData>& instances);
+
+	void RemoveAllInstances();
 
 	//Resets all current instances and puts new ones in its place
-	void ReplaceAllInstances(std::vector<InstanceData> instances);
+	void ReplaceAllInstances(std::vector<InstanceData>& instances);
 
 	void UploadInstances();
 
@@ -90,14 +93,13 @@ private:
 	std::shared_ptr<Texture> texture;
 	std::shared_ptr<VulkanTexture2D> vulkanTexture;
 
-	std::vector<InstanceData> instancesData;
-	std::vector<glm::vec3> modelPositions;
-
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
-	std::shared_ptr<VulkanBufferInstance> instanceBuffer;
 
 	int instanceCount = 0;
 	int maxInstanceCount = 16384;
+	std::vector<InstanceData> instancesData;
+	std::shared_ptr<VulkanBufferInstance> instanceBuffer;
+
 
 	VkShaderModule fragShaderModule;
 	VkCullModeFlagBits cullModeFlagBits = VK_CULL_MODE_BACK_BIT;

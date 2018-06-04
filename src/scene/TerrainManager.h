@@ -98,6 +98,7 @@ public:
 
 	std::mutex terrain_mutex;
 	std::vector<std::shared_ptr<Terrain>> terrains;
+	std::vector<glm::i32vec2> activeTerrains;
 
 private:
 
@@ -139,7 +140,7 @@ private:
 	bool drawWindow;
 	int selectedTexture;
 
-	int WorkerThreads = 1;
+	int WorkerThreads = 4;
 
 	std::vector<TerrainTextureNamedHandle> terrainTextureHandles;
 

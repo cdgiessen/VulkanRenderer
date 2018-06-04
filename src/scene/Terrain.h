@@ -45,22 +45,23 @@ struct TerrainCoordinateData {
 	glm::i32vec2 noisePos;
 	glm::vec2 noiseSize;
 	int sourceImageResolution;
-
-	TerrainCoordinateData(glm::vec2 pos, glm::vec2 size, 
-		glm::i32vec2 noisePos, glm::vec2 noiseSize, int imageRes)
-		: pos(pos), size(size), noisePos(noisePos), noiseSize(noiseSize), sourceImageResolution(imageRes) {
+	glm::ivec2 gridPos;
+	TerrainCoordinateData(glm::vec2 pos, glm::vec2 size,
+		glm::i32vec2 noisePos, glm::vec2 noiseSize, int imageRes, glm::ivec2 gridPos)
+		: pos(pos), size(size), noisePos(noisePos), noiseSize(noiseSize),
+		sourceImageResolution(imageRes), gridPos(gridPos) {
 
 	}
 };
 
 struct TerrainQuad {
-	TerrainQuad(glm::vec2 pos, glm::vec2 size, 
-		glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, 
+	TerrainQuad(glm::vec2 pos, glm::vec2 size,
+		glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,
 		int level, glm::i32vec2 subDivPos, float centerHeightValue);
 	~TerrainQuad();
 
 	static float GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos);
-	
+
 	glm::vec2 pos; //position of corner
 	glm::vec2 size; //width and length
 	glm::i32vec2 logicalPos; //where in the proc-gen space it is (for noise images)
@@ -120,7 +121,7 @@ public:
 	//TerrainPushConstant modelMatrixData;
 
 	//std::shared_ptr<Texture> maillerFace;
-	
+
 	InternalGraph::GraphUser fastGraphUser;
 
 	Gradient splatmapTextureGradient;
@@ -130,10 +131,10 @@ public:
 	std::vector<std::thread *> terrainGenerationWorkers;
 
 	Terrain(std::shared_ptr<MemoryPool<TerrainQuad>> pool, InternalGraph::GraphPrototype& protoGraph,
-		int numCells, int maxLevels, float heightScale,	TerrainCoordinateData coordinateData);
+		int numCells, int maxLevels, float heightScale, TerrainCoordinateData coordinateData);
 	~Terrain();
 
-	void InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos, 
+	void InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos,
 		std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray);
 
 	void UpdateTerrain(glm::vec3 viewerPos);

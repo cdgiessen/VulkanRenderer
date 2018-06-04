@@ -49,8 +49,8 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	skybox->vulkanCubeMap = std::make_shared<VulkanCubeMap>(renderer->device);
 	skybox->skyboxCubeMap = resourceMan->texManager.loadCubeMapFromFile("assets/Textures/Skybox/Skybox2", ".png");
 	skybox->model = std::make_shared<VulkanModel>(renderer->device);
-	skybox->model->loadFromMesh(createCube(),  *renderer);
-	skybox->InitSkybox(renderer);	
+	skybox->model->loadFromMesh(createCube(), *renderer);
+	skybox->InitSkybox(renderer);
 
 	//std::shared_ptr<GameObject> cubeObject = std::make_shared<GameObject>();
 	//cubeObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
@@ -116,9 +116,9 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	treesInstanced->LoadModel(createCube());
 	treesInstanced->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/grass.jpg"));
 	treesInstanced->InitInstancedSceneObject(renderer);
-	
+
 	//treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(20,0,10), glm::vec3(10,0,40), glm::vec3(10,0,-40), glm::vec3(100,0,40) });
-	
+
 	std::vector< InstancedSceneObject::InstanceData> data;
 	int size = 2;
 	for (int i = 0; i < size; i++)
@@ -141,7 +141,7 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 	if (walkOnGround) {
 		float groundHeight = terrainManager->GetTerrainHeightAtLocation(camera->Position.x, camera->Position.z) + 2.0f;
 		float height = camera->Position.y;
-	
+
 		if (pressedControllerJumpButton && !releasedControllerJumpButton) {
 			if (Input::IsJoystickConnected(0) && Input::GetControllerButton(0, 0)) {
 				pressedControllerJumpButton = false;
@@ -155,7 +155,7 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 		if (Input::IsJoystickConnected(0) && !Input::GetControllerButton(0, 0)) {
 			releasedControllerJumpButton = false;
 		}
-		
+
 		if (Input::GetKeyDown(Input::KeyCode::SPACE)) {
 			verticalVelocity += 0.15f;
 		}
@@ -200,7 +200,7 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 	//directionalLights.at(0) = DirectionalLight(skySettings.sun);
 	//directionalLights.at(1) = DirectionalLight(skySettings.moon);
 
-	skybox->UpdateUniform(proj, cd.view );
+	skybox->UpdateUniform(proj, cd.view);
 	renderer->UpdateRenderResources(gd, cd, directionalLights, pointLights, spotLights);
 
 }
@@ -208,13 +208,13 @@ void Scene::UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::share
 void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	VkDeviceSize offsets[] = { 0 };
 
-	
+
 	for (auto& obj : gameObjects) {
 		obj->Draw(commandBuffer, wireframe, drawNormals);
 	}
-	
+
 	treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
-	
+
 	terrainManager->RenderTerrain(commandBuffer, wireframe);
 
 	skybox->WriteToCommandBuffer(commandBuffer);
@@ -247,7 +247,7 @@ void Scene::DrawSkySettingsGui() {
 	ImGui::End();
 }
 
-void Scene::UpdateSceneGUI(){
+void Scene::UpdateSceneGUI() {
 	terrainManager->UpdateTerrainGUI();
 	terrainManager->DrawTerrainTextureViewer();
 
@@ -257,7 +257,7 @@ void Scene::UpdateSceneGUI(){
 		ImGui::Text("Directional Lights");
 		for (int i = 0; i < directionalLights.size(); i++)
 		{
-		
+
 			ImGui::DragFloat3(std::string("Direction##" + std::to_string(i)).c_str(), (float*)glm::value_ptr(directionalLights[i].direction), 0.01f);
 			ImGui::SliderFloat3(std::string("Color##" + std::to_string(i)).c_str(), (float*)glm::value_ptr(directionalLights[i].color), 0.0f, 1.0f);
 			ImGui::DragFloat(std::string("Intensity##" + std::to_string(i)).c_str(), &directionalLights[i].intensity, 0.01f);
@@ -274,16 +274,16 @@ void Scene::UpdateSceneGUI(){
 		}
 	}
 	ImGui::End();
-	
+
 	if (ImGui::Begin("instance tester", &value)) {
 		ImGui::DragFloat3("Position", ((float*)glm::value_ptr(testInstanceData.pos)));
 		ImGui::DragFloat3("Rotation", ((float*)glm::value_ptr(testInstanceData.rot)));
 		ImGui::DragFloat("Scale", &testInstanceData.scale);
 		if (ImGui::Button("Add instance")) {
-			treesInstanced->AddInstances({ testInstanceData });
+			treesInstanced->AddInstance(testInstanceData);
 		}
 		if (ImGui::Button("Remove Instance")) {
-			treesInstanced->RemoveInstances({ testInstanceData });
+			treesInstanced->RemoveInstance(testInstanceData);
 		}
 	}
 	ImGui::End();
@@ -296,7 +296,7 @@ void Scene::UpdateSceneGUI(){
 			sphereObject->usePBR = true;
 			sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
 			sphereObject->LoadModel(createSphere(10));
-			sphereObject->position = glm::vec3(x++, 3, 2.2 );
+			sphereObject->position = glm::vec3(x++, 3, 2.2);
 			//sphereObject->pbr_mat.albedo = glm::vec3(0.8, 0.2, 0.2);
 			sphereObject->pbr_mat.metallic = 0.1f + (float)5 / 10.0f;
 			sphereObject->pbr_mat.roughness = 0.1f + (float)5 / 10.0f;
@@ -317,7 +317,7 @@ void Scene::UpdateSceneGUI(){
 void Scene::CleanUpScene() {
 
 	skybox->CleanUp();
-	for (auto& obj : gameObjects){
+	for (auto& obj : gameObjects) {
 		obj->CleanUp();
 	}
 

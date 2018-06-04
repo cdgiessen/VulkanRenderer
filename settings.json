@@ -1,7 +1,7 @@
 {
   "initial-screen-size": {
-    "width": 800,
-    "height": 600
+    "width": 1600,
+    "height": 900
   },
 
   "use-validation-layers": true,
@@ -9,5 +9,5 @@
   "fullscreen": false,
 
   "is-frame-rate-capped": true,
-  "max-fps" : 70
+  "max-fps": 70
 }

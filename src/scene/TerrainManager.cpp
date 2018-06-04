@@ -41,10 +41,10 @@ void TerrainCreationWorker(TerrainManager* man) {
 			std::unique_lock<std::mutex> lock(man->workerMutex);
 			man->workerConditionVariable.wait(lock);
 		}
-		
-		while(!man->terrainCreationWork.empty()) {
+
+		while (!man->terrainCreationWork.empty()) {
 			auto data = man->terrainCreationWork.pop_if();
-			if(data.has_value())
+			if (data.has_value())
 			{
 				auto terrain = std::make_shared<Terrain>(data->pool, data->protoGraph, data->numCells, data->maxLevels, data->heightScale, data->coord);
 
@@ -61,8 +61,8 @@ void TerrainCreationWorker(TerrainManager* man) {
 
 			}
 			//break out of loop if work shouldn't be continued
-			if(!man->isCreatingTerrain) 
-				return;	
+			if (!man->isCreatingTerrain)
+				return;
 		}
 	}
 
@@ -87,7 +87,7 @@ TerrainManager::~TerrainManager()
 	StopWorkerThreads();
 }
 
-void TerrainManager::StartWorkerThreads(){
+void TerrainManager::StartWorkerThreads() {
 	isCreatingTerrain = true;
 	for (int i = 0; i < WorkerThreads; i++) {
 		terrainCreationWorkers.push_back(std::thread(TerrainCreationWorker, this));
@@ -118,7 +118,8 @@ void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan
 
 	terrainVulkanTextureArray = std::make_shared<VulkanTexture2DArray>(renderer->device);
 	terrainVulkanTextureArray->loadTextureArray(terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, *renderer,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 4);
 
 	//WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
 	//WaterVulkanTexture.loadFromTexture(renderer->device, WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
@@ -151,13 +152,15 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 	for (int i = 0; i < settings.gridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
 		for (int j = 0; j < settings.gridDimentions; j++) {
 
+			glm::ivec2 terGrid(i - settings.gridDimentions / 2, j - settings.gridDimentions / 2);
 
 			TerrainCoordinateData coord = TerrainCoordinateData(
 				glm::vec2((i - settings.gridDimentions / 2) * settings.width - settings.width / 2, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2), //position
 				glm::vec2(settings.width, settings.width), //size
 				glm::i32vec2(i*settings.sourceImageResolution, j*settings.sourceImageResolution), //noise position
 				glm::vec2(1.0 / (float)settings.sourceImageResolution, 1.0f / (float)settings.sourceImageResolution),//noiseSize 
-				settings.sourceImageResolution + 1);
+				settings.sourceImageResolution + 1,
+				terGrid);
 
 			terrainCreationWork.push_back(TerrainCreationData(
 				resourceMan, renderer, camera->Position, terrainVulkanTextureArray,
@@ -169,7 +172,7 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 	}
 	std::lock_guard<std::mutex> lk(workerMutex);
 	workerConditionVariable.notify_one();
-	
+
 	std::vector<InstancedSceneObject::InstanceData> waterData;
 	for (int i = 0; i < settings.gridDimentions; i++) {
 		for (int j = 0; j < settings.gridDimentions; j++) {
@@ -186,8 +189,8 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 	recreateTerrain = false;
 }
 
-void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan, 
-	glm::vec3 cameraPos) 
+void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan,
+	glm::vec3 cameraPos)
 {
 	if (recreateTerrain) {
 		StopWorkerThreads();
@@ -195,26 +198,31 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 		StartWorkerThreads();
 		//need to rework to involve remaking the graph
 		//GenerateTerrain(resourceMan, renderer, camera);
+		recreateTerrain = false;
 	}
 
 	terrainUpdateTimer.StartTimer();
 
 	std::vector<std::vector<std::shared_ptr<Terrain>>::iterator> terToDelete;
-	
-	//delete terrains to far away
+
+	//delete terrains too far away
 	terrain_mutex.lock();
 
 
 	for (auto it = std::begin(terrains); it != std::end(terrains); it++) {
-		glm::vec3 center = glm::vec3((*it)->coordinateData.pos.x, 0, (*it)->coordinateData.pos.y);
+		glm::vec3 center = glm::vec3((*it)->coordinateData.pos.x, cameraPos.y, (*it)->coordinateData.pos.y);
 		float distanceToViewer = glm::distance(cameraPos, center);
-		if(distanceToViewer > settings.viewDistance * settings.width){
+		if (distanceToViewer > settings.viewDistance * settings.width * 1.5) {
+
 			terToDelete.push_back(it);
-			Log::Debug << "deleting terrain at x:" << (*it)->coordinateData.noisePos.x/(*it)->coordinateData.sourceImageResolution 
-			<< " z: " << (*it)->coordinateData.noisePos.y/(*it)->coordinateData.sourceImageResolution << "\n";
+			Log::Debug << "deleting terrain at x:" << (*it)->coordinateData.noisePos.x / (*it)->coordinateData.sourceImageResolution
+				<< " z: " << (*it)->coordinateData.noisePos.y / (*it)->coordinateData.sourceImageResolution << "\n";
+			auto activeIt = std::find(std::begin(activeTerrains), std::end(activeTerrains), (*it)->coordinateData.gridPos);
+			activeTerrains.erase(activeIt);
+
 		}
 	}
-	while(terToDelete.size() > 0){
+	while (terToDelete.size() > 0) {
 		terrains.erase(terToDelete.back());
 		terToDelete.pop_back();
 	}
@@ -223,37 +231,46 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 
 	//make new closer terrains
 
-	int camGridX = (double)cameraPos.x / (settings.width);
-	int camGridZ = (double)cameraPos.z / (settings.width);
+	glm::ivec2 camGrid((int)((cameraPos.x + settings.width / 2.0) / settings.width),
+		(int)((cameraPos.z + settings.width / 2.0) / settings.width));
+
+
 	//Log::Debug << "cam grid x: " << camGridX << " z: " << camGridZ << "\n";
-	for(int i = 0; i < settings.viewDistance; i++){ 
-		for(int j = 0; j < settings.viewDistance; j++){
+	for (int i = 0; i < settings.viewDistance; i++) {
+		for (int j = 0; j < settings.viewDistance; j++) {
 
-			//Log::Debug << "noisePosX " << ter->coordinateData.noisePos.x/ter->coordinateData.sourceImageResolution << "\n";
-			Log::Debug << "relX " << camGridX + i - settings.viewDistance/2.0 << "\n";
-				
+			glm::ivec2 terGrid(camGrid.x + i - settings.viewDistance / 2, camGrid.y + j - settings.viewDistance / 2);
 
+			glm::vec3 center = glm::vec3(terGrid.x * settings.width, cameraPos.y, terGrid.y * settings.width);
+			float distanceToViewer = glm::distance(cameraPos, center);
+
+			//if (distanceToViewer <= settings.viewDistance * settings.width* 1.5) {
+
+				//Log::Debug << "noisePosX " << ter->coordinateData.noisePos.x/ter->coordinateData.sourceImageResolution << "\n";
+				//Log::Debug << "relX " << camGridX + i - settings.viewDistance / 2.0 << "\n";
+
+				//see if there are any terrains already there
 			bool found = false;
-			for (auto& ter : terrains) {
-				if(ter->coordinateData.noisePos.x/ter->coordinateData.sourceImageResolution == camGridX + i - settings.viewDistance/2.0
-				&& ter->coordinateData.noisePos.y/ter->coordinateData.sourceImageResolution == camGridZ + j - settings.viewDistance/2.0)
+			for (auto& ter : activeTerrains) {
+				if (ter.x == terGrid.x && ter.y == terGrid.y)
 				{
-					Log::Debug << "creating new terrain at x:" << (camGridX + i - settings.viewDistance/2.0) << " z: " << (camGridZ + j - settings.viewDistance/2.0) << "\n";
-
-					//found = true;
+					found = true;
 				}
 			}
-			if(!found){
-				Log::Debug << "creating new terrain at x:" << (camGridX + i - settings.viewDistance/2.0) << " z: " << (camGridZ + j - settings.viewDistance/2.0) << "\n";
+			if (!found) {
+				Log::Debug << "creating new terrain at x:" << terGrid.x << " z: " << terGrid.y << "\n";
+
+				activeTerrains.push_back(terGrid);
 
 				TerrainCoordinateData coord = TerrainCoordinateData(
-				glm::vec2((camGridX + i - settings.viewDistance/2.0) * settings.width - settings.width / 2, 
-					(camGridZ + j - settings.viewDistance/2.0) * settings.width - settings.width / 2), //position
-				glm::vec2(settings.width, settings.width), //size
-				glm::i32vec2((camGridX + i - settings.viewDistance/2.0)*settings.sourceImageResolution, 
-					(camGridZ + j - settings.viewDistance/2.0)*settings.sourceImageResolution), //noise position
-				glm::vec2(1.0 / (float)settings.sourceImageResolution, 1.0f / (float)settings.sourceImageResolution),//noiseSize 
-				settings.sourceImageResolution + 1);
+					glm::vec2((terGrid.x)* settings.width - settings.width / 2,
+					(terGrid.y)* settings.width - settings.width / 2), //position
+					glm::vec2(settings.width, settings.width), //size
+					glm::i32vec2((terGrid.x)*settings.sourceImageResolution,
+					(terGrid.y)*settings.sourceImageResolution), //noise position
+					glm::vec2(1.0 / (float)settings.sourceImageResolution, 1.0f / (float)settings.sourceImageResolution),//noiseSize 
+					settings.sourceImageResolution + 1,
+					terGrid);
 
 				terrain_mutex.lock();
 				terrainCreationWork.push_back(TerrainCreationData(
@@ -262,7 +279,9 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 					settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale,
 					coord));
 				terrain_mutex.unlock();
+				workerConditionVariable.notify_one();
 			}
+			//}
 		}
 	}
 
@@ -367,7 +386,7 @@ void TerrainManager::UpdateTerrainGUI() {
 		if (ImGui::Button("Recreate Terrain", ImVec2(130, 20))) {
 			recreateTerrain = true;
 		}
-
+		ImGui::Text("Terrain Count %i", terrains.size());
 		ImGui::Text("All terrains update Time: %u(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
 		for (auto& ter : terrains)
 		{
@@ -444,7 +463,9 @@ void TerrainManager::RecreateTerrain() {
 void TerrainManager::CleanUpTerrain() {
 
 	terrains.clear();
-	waters.clear();
+	//waters.clear();
+	instancedWaters->RemoveAllInstances();
+	activeTerrains.clear();
 	//delete terrainQuadPool;
 	//terrainQuadPool = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
 }
