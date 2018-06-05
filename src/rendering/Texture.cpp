@@ -42,7 +42,7 @@ void VulkanTexture::destroy() {
 		vkDestroySampler(device.device, textureSampler, nullptr);
 }
 
-void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image, 
+void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image,
 	VkImageLayout finalImageLayout,
 	int width, int height, int depth,
 	int layers, int mipLevels) {
@@ -105,7 +105,7 @@ void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image,
 	// After the loop, all mip layers are in TRANSFER_SRC layout, so transition
 	// all to SHADER_READ
 
-if(finalImageLayout == VK_IMAGE_LAYOUT_UNDEFINED) Log::Debug << "final layout is undefined!\n";
+	if (finalImageLayout == VK_IMAGE_LAYOUT_UNDEFINED) Log::Debug << "final layout is undefined!\n";
 	setImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		finalImageLayout, subresourceRange);
 
@@ -189,7 +189,7 @@ void AlignedTextureMemcpy(int layers, int dst_layer_width, int height,
 	}
 }
 
-void SetLayoutTransferRegions(
+void SetLayoutAndTransferRegions(
 	VkCommandBuffer transferCmdBuf, VkImage image, VkBuffer stagingBuffer,
 	const VkImageSubresourceRange subresourceRange,
 	std::vector<VkBufferImageCopy> bufferCopyRegions) {
@@ -246,76 +246,76 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
 		VK_IMAGE_USAGE_SAMPLED_BIT);
 
-	 /*VkImageCreateInfo stagingImageCreateInfo = initializers::imageCreateInfo(
-		VK_IMAGE_TYPE_2D,
-		format,
-		(uint32_t)mipLevels,
-		(uint32_t)1,
-		VK_SAMPLE_COUNT_1_BIT,
-		VK_IMAGE_TILING_LINEAR,
-		VK_SHARING_MODE_EXCLUSIVE,
-		VK_IMAGE_LAYOUT_PREINITIALIZED,
-		imageExtent,
-		VK_IMAGE_USAGE_TRANSFER_SRC_BIT	); */
+	/*VkImageCreateInfo stagingImageCreateInfo = initializers::imageCreateInfo(
+	   VK_IMAGE_TYPE_2D,
+	   format,
+	   (uint32_t)mipLevels,
+	   (uint32_t)1,
+	   VK_SAMPLE_COUNT_1_BIT,
+	   VK_IMAGE_TILING_LINEAR,
+	   VK_SHARING_MODE_EXCLUSIVE,
+	   VK_IMAGE_LAYOUT_PREINITIALIZED,
+	   imageExtent,
+	   VK_IMAGE_USAGE_TRANSFER_SRC_BIT	); */
 
-		// VmaAllocationInfo stagingImageAllocInfo = {};
-		// device.CreateStagingImage2D(stagingImageCreateInfo, stagingImage)
-		// VkSubresourceLayout sub
-		// const VkImageSubresource imSub =
-		// initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
-		// vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub,
-		// &sub);
-		//
-		// char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
-		// AlignedTextureMemcpy(1, 0, texture->height, texture->width, texture->width
-		// * 4, sub.rowPitch, (char*)texture->pixels.data(), stagingPointer)
-		// VmaBuffer stagingBuffer;
-		// device.CreateStagingImageBuffer(stagingBuffer, texture->pixels.data(),
-		// texture->texImageSize)
-		// device.CreateImage2D(imageCreateInfo, image)
-		// VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer()
-		// transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
-		// VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-		// copyBufferToImage(stagingBuffer, textureImage,
-		// static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-		// transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
-		// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		// VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-		// VkImageSubresourceRange subresourceRange =
-		//	initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT,
-		// mipLevels)
-		// setImageLayout(
-		//	transferCmdBuf,
-		//	image.image,
-		//	VK_IMAGE_LAYOUT_UNDEFINED,
-		//	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		//	subresourceRange);
-		//
-		// VkBufferImageCopy bufferCopyRegion = {};
-		//	bufferCopyRegion.imageSubresource.aspectMask =
-		// VK_IMAGE_ASPECT_COLOR_BIT; 	bufferCopyRegion.imageSubresource.mipLevel
-		// = 0; 	bufferCopyRegion.imageSubresource.baseArrayLayer = 0; //layer
-		// count
-		//	bufferCopyRegion.imageSubresource.layerCount = 1;
-		//	bufferCopyRegion.imageExtent.width =
-		// static_cast<uint32_t>(texture->width);
-		// bufferCopyRegion.imageExtent.height =
-		// static_cast<uint32_t>(texture->height);
-		// bufferCopyRegion.imageExtent.depth = 1; 	bufferCopyRegion.bufferOffset =
-		// 0
-		// vkCmdCopyBufferToImage(transferCmdBuf, stagingBuffer.buffer, image.image,
-		// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1/*copy region counts*/,
-		// &bufferCopyRegion/*data*/)
-		// setImageLayout(
-		//	transferCmdBuf,
-		//	image.image,
-		//	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		//	VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		//	subresourceRange)
-		// SetLayoutCopyImage(transferCmdBuf, image.image, stagingImage.image,
-		// mipLevels, imageExtent)
-		// renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
-		
+	   // VmaAllocationInfo stagingImageAllocInfo = {};
+	   // device.CreateStagingImage2D(stagingImageCreateInfo, stagingImage)
+	   // VkSubresourceLayout sub
+	   // const VkImageSubresource imSub =
+	   // initializers::imageSubresourceCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+	   // vkGetImageSubresourceLayout(device.device, stagingImage.image, &imSub,
+	   // &sub);
+	   //
+	   // char* stagingPointer = (char*)stagingImage.allocationInfo.pMappedData;
+	   // AlignedTextureMemcpy(1, 0, texture->height, texture->width, texture->width
+	   // * 4, sub.rowPitch, (char*)texture->pixels.data(), stagingPointer)
+	   // VmaBuffer stagingBuffer;
+	   // device.CreateStagingImageBuffer(stagingBuffer, texture->pixels.data(),
+	   // texture->texImageSize)
+	   // device.CreateImage2D(imageCreateInfo, image)
+	   // VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer()
+	   // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
+	   // VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	   // copyBufferToImage(stagingBuffer, textureImage,
+	   // static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+	   // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
+	   // VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	   // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	   // VkImageSubresourceRange subresourceRange =
+	   //	initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT,
+	   // mipLevels)
+	   // setImageLayout(
+	   //	transferCmdBuf,
+	   //	image.image,
+	   //	VK_IMAGE_LAYOUT_UNDEFINED,
+	   //	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	   //	subresourceRange);
+	   //
+	   // VkBufferImageCopy bufferCopyRegion = {};
+	   //	bufferCopyRegion.imageSubresource.aspectMask =
+	   // VK_IMAGE_ASPECT_COLOR_BIT; 	bufferCopyRegion.imageSubresource.mipLevel
+	   // = 0; 	bufferCopyRegion.imageSubresource.baseArrayLayer = 0; //layer
+	   // count
+	   //	bufferCopyRegion.imageSubresource.layerCount = 1;
+	   //	bufferCopyRegion.imageExtent.width =
+	   // static_cast<uint32_t>(texture->width);
+	   // bufferCopyRegion.imageExtent.height =
+	   // static_cast<uint32_t>(texture->height);
+	   // bufferCopyRegion.imageExtent.depth = 1; 	bufferCopyRegion.bufferOffset =
+	   // 0
+	   // vkCmdCopyBufferToImage(transferCmdBuf, stagingBuffer.buffer, image.image,
+	   // VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1/*copy region counts*/,
+	   // &bufferCopyRegion/*data*/)
+	   // setImageLayout(
+	   //	transferCmdBuf,
+	   //	image.image,
+	   //	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	   //	VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+	   //	subresourceRange)
+	   // SetLayoutCopyImage(transferCmdBuf, image.image, stagingImage.image,
+	   // mipLevels, imageExtent)
+	   // renderer.SubmitTransferCommandBufferAndWait(transferCmdBuf);
+
 	VulkanBufferStagingResource buffer(device, texture->pixels.data(),
 		texture->texImageSize);
 
@@ -339,44 +339,31 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 	bufferCopyRegions.push_back(bufferCopyRegion);
 	// Increase offset into staging buffer for next level / face
 
-	VkSemaphore sem;
+	VulkanSemaphore sem(device);
 
 	TransferCommandWork transfer;
 	VkImage rawImage = image.image;//not sure why I have to do this. Lambdas are weird
-	//Log::Debug << "Tex2D handle value "<< rawImage << "\n";
-
-	//VkEvent waitEvent;
-	//VkEventCreateInfo eventInfo = initializers::eventCreateInfo();
-	//VK_CHECK_RESULT(vkCreateEvent(device.device, &eventInfo, nullptr, &waitEvent));
-
-	//vkCmdSetEvent(cmdBuf, waitEvent, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-	// vkCmdWaitEvents(cmdBuf, 1,
-	//     &waitEvent,
-	//     VK_PIPELINE_STAGE_TRANSFER_BIT,
-	//     VK_PIPELINE_STAGE_TRANSFER_BIT,
-	//     0, nullptr,
-	//     0, nullptr,
-	//     0, nullptr);
-	//vkDestroyEvent(device.device, waitEvent, nullptr);
-		
 
 	transfer.work = std::function<void(const VkCommandBuffer)>(
 		[=](const VkCommandBuffer cmdBuf) {
-		SetLayoutTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
+		SetLayoutAndTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
 			subresourceRange, bufferCopyRegions);
-
-		//setTransferBarrier(cmdBuf, buffer.buffer.buffer, buffer.Size());
-
-		GenerateMipMaps(cmdBuf, rawImage, imageLayout, texture->width, texture->height, 1, 1, mipLevels);
-		
 	});
 	transfer.buffersToClean.push_back(buffer);
 	transfer.flags.push_back(readyToUse);
+	transfer.signalSemaphores.push_back(sem);
 
 	renderer.SubmitTransferWork(std::move(transfer));
 
-	this->textureImageLayout = imageLayout;
+	CommandBufferWork mipWork;
+	mipWork.work = std::function<void(const VkCommandBuffer)>(
+		[=](const VkCommandBuffer cmdBuf) {
+		GenerateMipMaps(cmdBuf, rawImage, imageLayout, texture->width, texture->height, 1, 1, mipLevels);
+	});
+	mipWork.waitSemaphores.push_back(sem);
+	mipWork.flags.push_back(readyToUse);
+
+	renderer.SubmitGraphicsSetupWork(std::move(mipWork));
 
 	// device.DestroyVmaAllocatedImage(stagingImage);
 	// device.DestroyVmaAllocatedBuffer(stagingBuffer);
@@ -509,23 +496,32 @@ void VulkanTexture2DArray::loadTextureArray(
 		offset += textures->texImageSizePerTex;
 	}
 
+	VulkanSemaphore sem(device);
+
 	TransferCommandWork work;
 	VkImage rawImage = image.image;//not sure why I have to do this. Lambdas are weird
 
 	work.work = std::function<void(const VkCommandBuffer)>(
 		[=](const VkCommandBuffer cmdBuf) {
-		SetLayoutTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
+		SetLayoutAndTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
 			subresourceRange, bufferCopyRegions);
-
-		//setTransferBarrier(cmdBuf, buffer.buffer.buffer, buffer.Size());
-
-		GenerateMipMaps(cmdBuf, rawImage, imageLayout,
-			textures->width, textures->height, 1, textures->layerCount, mipLevels);
 	});
 	work.buffersToClean.push_back(buffer);
 	work.flags.push_back(readyToUse);
+	work.signalSemaphores.push_back(sem);
 
 	renderer.SubmitTransferWork(std::move(work));
+
+	CommandBufferWork mipWork;
+	mipWork.work = std::function<void(const VkCommandBuffer)>(
+		[=](const VkCommandBuffer cmdBuf) {
+		GenerateMipMaps(cmdBuf, rawImage, imageLayout,
+			textures->width, textures->height, 1, textures->layerCount, mipLevels);
+	});
+	mipWork.waitSemaphores.push_back(sem);
+	mipWork.flags.push_back(readyToUse);
+
+	renderer.SubmitGraphicsSetupWork(std::move(mipWork));
 
 	// VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
 
@@ -601,7 +597,7 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 	VkFormat format, VulkanRenderer &renderer,
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout, bool genMipMaps,
-	int mipMapLevelsToGen) 
+	int mipMapLevelsToGen)
 {
 	this->cubeMap = cubeMap;
 	int mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
@@ -662,21 +658,17 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 	stagingImageLayout.offset; uint8_t* pRowData = (uint8_t*)pMipLevelData; for
 	(uint32_t y = 0; y < cubeMap->height; ++y)
 	{
-									uint32_t* pPixelData = (uint32_t*)pRowData;
-									for (uint32_t x = 0; x < cubeMap->width; ++x)
-									{
-																	*pPixelData =
-																									((x & 0x18) == 0x08 ?
-	0x000000FF : 0x00000000) |
-																									((x & 0x18) == 0x10 ?
-	0x0000FFFF : 0x00000000) |
-																									((y & 0x18) == 0x08 ?
-	0x0000FF00 : 0x00000000) |
-																									((y & 0x18) == 0x10 ?
-	0x00FF0000 : 0x00000000);
-																	++pPixelData;
-									}
-									pRowData += stagingImageLayout.rowPitch;
+	uint32_t* pPixelData = (uint32_t*)pRowData;
+	for (uint32_t x = 0; x < cubeMap->width; ++x)
+	{
+		*pPixelData = 			((x & 0x18) == 0x08 ?
+		0x000000FF : 0x00000000) |((x & 0x18) == 0x10 ?
+		0x0000FFFF : 0x00000000) |((y & 0x18) == 0x08 ?
+		0x0000FF00 : 0x00000000) |((y & 0x18) == 0x10 ?
+		0x00FF0000 : 0x00000000);
+							++pPixelData;
+		}
+		pRowData += stagingImageLayout.rowPitch;
 	}
 	*/
 
@@ -711,21 +703,30 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 
 	VkImage rawImage = image.image;//not sure why I have to do this. Lambdas are weird
 
+	VulkanSemaphore sem(device);
+
 	TransferCommandWork work;
 	work.work = std::function<void(const VkCommandBuffer)>(
 		[=](const VkCommandBuffer cmdBuf) {
-		SetLayoutTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
+		SetLayoutAndTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
 			subresourceRange, bufferCopyRegions);
-
-		//setTransferBarrier(cmdBuf, buffer.buffer.buffer, buffer.Size());
-
-		GenerateMipMaps(cmdBuf, rawImage, imageLayout,
-			cubeMap->width, cubeMap->height, 1, 6, mipLevels);
 	});
 	work.buffersToClean.push_back(buffer);
 	work.flags.push_back(readyToUse);
+	work.signalSemaphores.push_back(sem);
 
 	renderer.SubmitTransferWork(std::move(work));
+
+	CommandBufferWork mipWork;
+	mipWork.work = std::function<void(const VkCommandBuffer)>(
+		[=](const VkCommandBuffer cmdBuf) {
+		GenerateMipMaps(cmdBuf, rawImage, imageLayout,
+			cubeMap->width, cubeMap->height, 1, 6, mipLevels);
+	});
+	mipWork.waitSemaphores.push_back(sem);
+	mipWork.flags.push_back(readyToUse);
+
+	renderer.SubmitGraphicsSetupWork(std::move(mipWork));
 
 	// VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
 
@@ -802,24 +803,39 @@ void VulkanTextureDepthBuffer::CreateDepthImage(VulkanRenderer &renderer,
 						   VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
 		1, 1);
 
-	Signal wait = std::make_shared<bool>(false);
 
-	CommandBufferWork cmdWork;
-	cmdWork.work = std::function<void(VkCommandBuffer cmdBuf)>(
-		[=](VkCommandBuffer cmdBuf){
-			VkImageSubresourceRange subresourceRange =
-				initializers::imageSubresourceRangeCreateInfo(
-				VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+	VkImageSubresourceRange subresourceRange =
+		initializers::imageSubresourceRangeCreateInfo(
+			VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-			setImageLayout(cmdBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED,
-				VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-				subresourceRange);
-		}
-	);
-	cmdWork.flags.push_back(wait);
-	renderer.SubmitGraphicsSetupWork(std::move(cmdWork));
+	VkCommandBuffer cmdBuf = renderer.GetGraphicsCommandBuffer();
 
-	while(*wait == false) {};
+	setImageLayout(cmdBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+		subresourceRange);
+
+	renderer.SubmitGraphicsCommandBufferAndWait(cmdBuf);
+
+	//Signal wait = std::make_shared<bool>(false);
+
+	//CommandBufferWork cmdWork;
+	//cmdWork.work = std::function<void(VkCommandBuffer cmdBuf)>(
+	//	[=](VkCommandBuffer cmdBuf) {
+	//	VkImageSubresourceRange subresourceRange =
+	//		initializers::imageSubresourceRangeCreateInfo(
+	//			VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+	//
+	//	setImageLayout(cmdBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED,
+	//		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+	//		subresourceRange);
+	//}
+	//);
+	//cmdWork.flags.push_back(wait);
+	//renderer.SubmitGraphicsSetupWork(std::move(cmdWork));
+	//Log::Debug << "Waiting for depth buffer\n";
+	//while (*wait == false) {};
+
+	//Log::Debug << "finished waiting\n";
 
 	//VkCommandBuffer copyBuf = renderer.GetSingleUseGraphicsCommandBuffer();
 

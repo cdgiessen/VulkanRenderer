@@ -8,7 +8,6 @@
 #include <functional>
 
 #include <vulkan/vulkan.h>
-//#include <vulkan/vulkan.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -18,6 +17,7 @@
 
 #include "RenderTools.h"
 #include "RenderStructs.h"
+#include "Wrappers.h"
 
 
 const std::vector<const char*> VALIDATION_LAYERS = {
@@ -40,148 +40,6 @@ struct QueueFamilyIndices {
 	}
 };
 
-struct VmaBuffer {
-	VkBuffer buffer = VK_NULL_HANDLE;
-	VmaAllocation allocation = VK_NULL_HANDLE;
-	VmaAllocationInfo allocationInfo;
-	VmaAllocator* allocator = nullptr;
-};
-
-struct VmaImage {
-	VkImage image = VK_NULL_HANDLE;
-	VmaAllocation allocation = VK_NULL_HANDLE;
-	VmaAllocationInfo allocationInfo;
-	VmaAllocator* allocator = nullptr;
-};
-
-class VulkanDevice;
-
-class VulkanFence {
-public:
-	VulkanFence(const VulkanDevice& device, 
-		long int timeout = DEFAULT_FENCE_TIMEOUT, 
-		VkFenceCreateFlags flags = VK_FLAGS_NONE);
-	~VulkanFence();
-	
-	void WaitTillTrue();
-	void WaitTillFalse();
-	//void CleanUp();
-	VkFence GetFence();
-
-private:
-	const VulkanDevice& device;
-	VkFence fence;
-	int timeout;
-};
-
-class VulkanBuffer;
-
-class CommandQueue {
-public:
-	CommandQueue(const VulkanDevice&  device, int queueFamily);
-	CommandQueue(const CommandQueue& cmd) = delete;
-	CommandQueue& operator=(const CommandQueue& cmd) = delete;
-	CommandQueue(CommandQueue&& cmd) = delete;
-	CommandQueue& operator=(CommandQueue&& cmd) = delete;
-
-	void Submit(VkSubmitInfo info, VkFence fence);
-	void SubmitCommandBuffer(VkCommandBuffer buf, VkFence fence,
-		std::vector<VkSemaphore> waitSemaphores = std::vector<VkSemaphore>(),
-		std::vector<VkSemaphore> signalSemaphores = std::vector<VkSemaphore>());
-
-	int GetQueueFamily();
-	std::mutex& GetQueueMutex();
-	VkQueue GetQueue();
-
-	void WaitForFences(VkFence fence);
-
-private:
-	const VulkanDevice & device;
-	std::mutex submissionMutex;
-	VkQueue queue;
-	int queueFamily;
-};
-
-class CommandPool {
-public:
-	CommandPool(VulkanDevice& device);
-
-	VkBool32 Setup(VkCommandPoolCreateFlags flags, CommandQueue* queue);
-	VkBool32 CleanUp();
-
-	VkBool32 ResetPool();
-
-	VkCommandBuffer GetOneTimeUseCommandBuffer();
-	VkCommandBuffer GetPrimaryCommandBuffer(bool beginBufferRecording = true);
-	VkCommandBuffer GetSecondaryCommandBuffer(bool beginBufferRecording = true);
-
-	VkBool32 SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence = nullptr);
-	VkBool32 SubmitPrimaryCommandBuffer(VkCommandBuffer buf, VkFence fence = nullptr);
-
-	VkCommandBuffer AllocateCommandBuffer(VkCommandBufferLevel level);
-
-	void BeginBufferRecording(VkCommandBuffer buf, VkCommandBufferUsageFlagBits flags = (VkCommandBufferUsageFlagBits)(0));
-	void EndBufferRecording(VkCommandBuffer buf);
-	void FreeCommandBuffer(VkCommandBuffer buf);
-
-private:
-	VulkanDevice & device;
-	std::mutex poolLock;
-	VkCommandPool commandPool;
-	CommandQueue* queue;
-
-	//std::vector<VkCommandBuffer> cmdBuffers;
-};
-
-
-// class NotTransferQueue {
-// public:
-// 	NotTransferQueue(VulkanDevice& device, CommandQueue& transferQueue);
-// 	void CleanUp();
-
-// 	CommandPool& GetCommandPool();
-// 	//std::mutex& GetTransferMutex();
-
-// 	VkCommandBuffer GetTransferCommandBuffer();
-// 	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
-// 	void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
-// 	void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
-
-// private:
-// 	VulkanDevice& device;
-// 	CommandQueue& transferQueue;
-// 	//VkQueue transfer_queue;
-// 	CommandPool transferCommandPool;
-// 	//VkCommandPool transfer_queue_command_pool;
-// 	//std::mutex transferMutex;
-// };
-
-
-
-//struct CommandBufferWork {
-//	std::function<void(VkCommandBuffer)> work; //function to run (preferably a lambda) 
-//	std::vector<Signal> flags;
-//};
-//
-//class CommandBufferWorker {
-//public:
-//	CommandBufferWorker(VulkanDevice& device,
-//		CommandQueue queue, ConcurrentQueue<CommandBufferWorker>& workQueue,
-//		bool startActive = true);
-//	~CommandBufferWorker();
-//	//void AddWork(CommandBufferWork work);
-//
-//
-//private:
-//	void Work();
-//	std::thread workingThread;
-//
-//	bool keepWorking = true; //default to start working
-//	ConcurrentQueue<CommandBufferWorker>& workQueue;
-//	std::condition_variable waitVar;
-//	CommandPool pool;
-//};
-
 class VulkanDevice {
 public:
 	GLFWwindow * window;
@@ -190,18 +48,8 @@ public:
 	VkDebugReportCallbackEXT callback;
 	VkDevice device;
 
-	//VDeleter<VkSurfaceKHR> window_surface{ instance, vkDestroySurfaceKHR };
-
 	VkPhysicalDevice physical_device;
 
-	//CommandQueue graphics_queue;
-	//CommandQueue compute_queue;
-	//CommandQueue present_queue;
-	//
-	//CommandPool graphics_command_pool;
-
-	//std::mutex graphics_lock;
-	//std::mutex graphics_command_pool_lock;
 
 	enum class CommandQueueType {
 		graphics,
@@ -218,9 +66,6 @@ public:
 	VmaAllocator linear_allocator;
 	VmaAllocator optimal_allocator;
 
-	//VkMemoryPropertyFlags uniformBufferMemPropertyFlags = 
-	//	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
 	VulkanDevice(bool validationLayers);
 
 	~VulkanDevice();
@@ -230,8 +75,6 @@ public:
 	void Cleanup(VkSurfaceKHR &surface);
 
 	const QueueFamilyIndices GetFamilyIndices() const;
-
-	CommandQueue& GetCommandQueue(CommandQueueType queueType);
 
 	CommandQueue& GraphicsQueue();
 	CommandQueue& ComputeQueue();
@@ -264,31 +107,6 @@ public:
 
 	void DestroyVmaAllocatedImage(VmaImage& image);
 
-	//VkCommandBuffer GetGraphicsCommandBuffer();
-	//VkCommandBuffer GetSingleUseGraphicsCommandBuffer();
-	//void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);
-
-	//VkCommandBuffer GetTransferCommandBuffer();
-
-	//void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
-	//void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
-	//void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
-
-
-	/**
-	* Get the index of a memory type that has all the requested property bits set
-	*
-	* @param typeBits Bitmask with bits set for each memory type supported by the resource to request for (from VkMemoryRequirements)
-	* @param properties Bitmask of properties for the memory type to request
-	* @param (Optional) memTypeFound Pointer to a bool that is set to true if a matching memory type has been found
-	*
-	* @return Index of the requested memory type
-	*
-	* @throw Throws an exception if memTypeFound is null and no memory type could be found that supports the requested properties
-	*/
-	uint32_t getMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties, VkBool32 *memTypeFound = nullptr);
-
-	bool separateTransferQueue = false;
 private:
 	QueueFamilyIndices familyIndices;
 
@@ -299,27 +117,22 @@ private:
 
 	bool enableValidationLayers = false;
 
+	void CreateInstance(std::string appName);
 
+	bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface);
 
-	//std::unique_ptr<TransferQueue> transferQueue;
+	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
 
-	void createInstance(std::string appName);
+	bool CheckValidationLayerSupport();
 
-	bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface);
+	void SetupDebugCallback();
 
-	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+	void CreateSurface(VkSurfaceKHR &surface);
 
-	bool checkValidationLayerSupport();
-
-	void setupDebugCallback();
-
-	void createSurface(VkSurfaceKHR &surface);
-
-	void pickPhysicalDevice(VkSurfaceKHR &surface);
+	void PickPhysicalDevice(VkSurfaceKHR &surface);
 
 	void CreateLogicalDevice();
 	void CreateQueues();
-	//void CreateCommandPools();
 
 	void CreateVulkanAllocator();
 

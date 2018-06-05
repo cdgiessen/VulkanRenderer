@@ -2,357 +2,11 @@
 
 #include "Initializers.h"
 #include "SwapChain.h"
-//#include "Buffer.h"
 
 #include "../core/Logger.h"
 
-VulkanFence::VulkanFence(const VulkanDevice& device, 
-	long int timeout, 
-	VkFenceCreateFlags flags)  		:device(device), timeout(timeout) {
-		VkFenceCreateInfo fenceInfo =
-			initializers::fenceCreateInfo(VK_FLAGS_NONE);
-		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 
-	}
-VulkanFence::~VulkanFence()
-{
-	vkDestroyFence(device.device, fence, nullptr);
-}
 
-void VulkanFence::WaitTillTrue() {
-	vkWaitForFences(device.device, 1, &fence, VK_TRUE, timeout);
-}
-void VulkanFence::WaitTillFalse() {
-	vkWaitForFences(device.device, 1, &fence, VK_FALSE, timeout);
-}
-VkFence VulkanFence::GetFence(){
-	return fence;
-}
-
-//void CleanUp() {
-//	vkDestroyFence(device.device, fence, nullptr);	//}	VkFence VulkanFence::GetFence() {return fence;};
-
-CommandQueue::CommandQueue(const VulkanDevice& device, int queueFamily) :
-	device(device)
-{
-	vkGetDeviceQueue(device.device, queueFamily, 0, &queue);
-	this->queueFamily = queueFamily;
-	//Log::Debug << "Queue on " << queueFamily << " type\n";
-}
-
-//void CommandQueue::SetupQueue(int queueFamily) {
-//	vkGetDeviceQueue(device.device, queueFamily, 0, &queue);
-//	this->queueFamily = queueFamily;
-//}
-
-void CommandQueue::SubmitCommandBuffer(VkCommandBuffer buffer, VkFence fence,
-	std::vector<VkSemaphore> waitSemaphores,
-	std::vector<VkSemaphore> signalSemaphores)
-{
-	const auto stageMasks = std::vector<VkPipelineStageFlags>{ VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
-	auto submitInfo = initializers::submitInfo();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &buffer;
-	submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size();
-	submitInfo.pSignalSemaphores = signalSemaphores.data();
-	submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
-	submitInfo.pWaitSemaphores = waitSemaphores.data();
-	submitInfo.pWaitDstStageMask = stageMasks.data();
-	Submit(submitInfo, fence);
-}
-
-void CommandQueue::Submit(VkSubmitInfo submitInfo, VkFence fence) {
-	std::lock_guard<std::mutex> lock(submissionMutex);
-	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
-}
-
-int CommandQueue::GetQueueFamily() {
-	return queueFamily;
-}
-
-VkQueue CommandQueue::GetQueue() {
-	return queue;
-}
-
-std::mutex& CommandQueue::GetQueueMutex(){
-	return submissionMutex;
-}
-
-void CommandQueue::WaitForFences(VkFence fence) {
-	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-}
-
-CommandPool::CommandPool(VulkanDevice& device) :
-	device(device)
-{
-
-}
-
-VkBool32 CommandPool::Setup(VkCommandPoolCreateFlags flags, CommandQueue* queue)
-{
-	this->queue = queue;
-
-	VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
-	cmd_pool_info.queueFamilyIndex = queue->GetQueueFamily();
-	cmd_pool_info.flags = flags;
-
-	if (vkCreateCommandPool(device.device, &cmd_pool_info, nullptr, &commandPool) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create graphics command pool!");
-	}
-
-	return VK_TRUE;
-}
-
-VkBool32 CommandPool::CleanUp() {
-	std::lock_guard<std::mutex> lock(poolLock);
-	vkDestroyCommandPool(device.device, commandPool, nullptr);
-	return VK_TRUE;
-}
-
-VkBool32 CommandPool::ResetPool() {
-
-	std::lock_guard<std::mutex> lock(poolLock);
-	vkResetCommandPool(device.device, commandPool, 0);
-	return VK_TRUE;
-}
-
-VkCommandBuffer CommandPool::AllocateCommandBuffer(VkCommandBufferLevel level)
-{
-	VkCommandBuffer buf;
-
-	VkCommandBufferAllocateInfo allocInfo =
-		initializers::commandBufferAllocateInfo(commandPool, level, 1);
-
-	std::lock_guard<std::mutex> lock(poolLock);
-	vkAllocateCommandBuffers(device.device, &allocInfo, &buf);
-
-	return buf;
-}
-
-void CommandPool::BeginBufferRecording(VkCommandBuffer buf, VkCommandBufferUsageFlagBits flags) {
-
-	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
-	beginInfo.flags = flags;
-
-	vkBeginCommandBuffer(buf, &beginInfo);
-}
-
-void CommandPool::EndBufferRecording(VkCommandBuffer buf) {
-	vkEndCommandBuffer(buf);
-}
-
-void CommandPool::FreeCommandBuffer(VkCommandBuffer buf) {
-	{
-		std::lock_guard<std::mutex> lock(poolLock);
-		vkFreeCommandBuffers(device.device, commandPool, 1, &buf);
-	}
-}
-
-VkCommandBuffer CommandPool::GetOneTimeUseCommandBuffer() {
-	VkCommandBuffer cmdBuffer = AllocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
-	BeginBufferRecording(cmdBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-	return cmdBuffer;
-}
-
-VkCommandBuffer CommandPool::GetPrimaryCommandBuffer(bool beginBufferRecording) {
-
-	VkCommandBuffer cmdBuffer = AllocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
-	if (beginBufferRecording == true)
-		BeginBufferRecording(cmdBuffer);
-
-	return cmdBuffer;
-}
-
-VkCommandBuffer CommandPool::GetSecondaryCommandBuffer(bool beginBufferRecording) {
-	VkCommandBuffer cmdBuffer = AllocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-
-	if (beginBufferRecording == true)
-		BeginBufferRecording(cmdBuffer);
-
-	return cmdBuffer;
-}
-
-VkBool32 CommandPool::SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence) {
-	EndBufferRecording(cmdBuffer);
-
-	VkSubmitInfo submitInfo = initializers::submitInfo();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &cmdBuffer;
-
-	if (fence == nullptr) {
-		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
-		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
-	}
-
-	queue->SubmitCommandBuffer(cmdBuffer, fence);
-
-	return VK_TRUE;
-}
-
-VkBool32 CommandPool::SubmitPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence) {
-	EndBufferRecording(cmdBuffer);
-
-	VkSubmitInfo submitInfo = initializers::submitInfo();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &cmdBuffer;
-
-	if (fence == nullptr) {
-		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
-		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
-	}
-
-	queue->SubmitCommandBuffer(cmdBuffer, fence);
-
-
-	return VK_TRUE;
-}
-
-//VkBool32 CommandPool::SubmitSecondaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence){
-//	EndBufferRecording(cmdBuffer);
-//
-//	VkSubmitInfo submitInfo = initializers::submitInfo();
-//	submitInfo.commandBufferCount = 1;
-//	submitInfo.pCommandBuffers = &cmdBuffer;
-//
-//	if (fence == nullptr) {
-//		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
-//		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
-//	}
-//
-//	queue.SubmitCommandBuffer(cmdBuffer, fence);
-//
-//
-//	return VK_TRUE;	
-//}
-
-
-
-// TransferQueue::TransferQueue(VulkanDevice& device, CommandQueue& transferQueue) :
-// 	device(device),
-// 	transferQueue(transferQueue),
-// 	transferCommandPool(device, transferQueue, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)
-// {
-// }
-
-// void TransferQueue::CleanUp() {
-// 	transferCommandPool.CleanUp();
-// }
-
-// CommandPool& TransferQueue::GetCommandPool() {
-// 	return transferCommandPool;
-// }
-
-
-
-// VkCommandBuffer TransferQueue::GetTransferCommandBuffer() {
-
-// 	return transferCommandPool.GetOneTimeUseCommandBuffer();
-// }
-
-// void WaitForSubmissionFinish(VkDevice device, TransferQueue* queue, 
-// 	VkCommandBuffer buf, VkFence fence, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
-
-// 	vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-// 	if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
-// 		for (auto& sig : readySignal)
-// 			*sig = true;		
-// 	}
-// 	else if (vkGetFenceStatus(device, fence) == VK_NOT_READY) {
-// 		Log::Error << "Transfer exeeded maximum fence timeout! Is too much stuff happening?\n";
-// 		vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-// 		if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
-// 			for (auto& sig : readySignal)
-// 				*sig = true;
-// 		}
-// 	}
-// 	else if (vkGetFenceStatus(device, fence) == VK_ERROR_DEVICE_LOST){
-// 		Log::Error << "AAAAAAAAAAAHHHHHHHHHHHHH EVERYTHING IS ONE FIRE\n";
-// 		throw std::runtime_error("Fence lost device!\n");
-// 	}
-
-
-// 	vkDestroyFence(device, fence, nullptr);
-
-// 	queue->GetCommandPool().FreeCommandBuffer(buf);
-
-// 	for (auto& buffer : bufsToClean) {
-// 		buffer.CleanBuffer();
-// 	}
-// }
-
-// void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean) {
-
-// 	VkFence fence;
-// 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
-// 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
-
-// 	transferCommandPool.SubmitOneTimeUseCommandBuffer(buf, fence);
-
-// 	std::thread submissionCompletion = std::thread(WaitForSubmissionFinish, device.device, this, buf, fence, readySignal, bufsToClean);
-// 	submissionCompletion.detach();
-// }
-
-// void TransferQueue::SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal) {
-// 	SubmitTransferCommandBuffer(buf, readySignal, {});
-// }
-
-// void TransferQueue::SubmitTransferCommandBufferAndWait(VkCommandBuffer buf) {
-
-// 	VkFence fence;
-// 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
-// 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
-
-// 	transferCommandPool.SubmitOneTimeUseCommandBuffer(buf, fence);
-
-// 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-// 	vkDestroyFence(device.device, fence, nullptr);
-
-// 	transferCommandPool.FreeCommandBuffer(buf);
-// }
-
-
-
-//CommandBufferWorker::CommandBufferWorker(VulkanDevice& device, 
-//	CommandQueue queue, ConcurrentQueue<CommandBufferWorker>& workQueue, 
-//	bool startActive)
-//:pool(device, queue), workQueue(workQueue)
-//{
-//	
-//	workingThread = std::thread(this->Work);
-//	
-//}
-//
-//CommandBufferWorker::~CommandBufferWorker(){
-//	workingThread.join();
-//}
-//
-//void CommandBufferWorker::Work(){
-//
-//	while(keepWorking){
-//		auto pos_work = workQueue.pop_if();
-//		if(pos_work.has_value()){
-//			VkCommandBuffer buf = pool.GetOneTimeUseCommandBuffer();
-//	
-//			pos_work->get().work(buf);
-//	
-//			pool.SubmitCommandBuffer(buf);
-//	
-//			/*Do I wait for work to finish or start new work?
-//			Cause I want to get as much going on as possible.
-//			Or should I batch a bunch of work together by waiting for submission
-//			also, where to put fences/semaphores? 
-//			Should I create a buffer object that holds those resources,
-//			since I *should* be recycling buffers instead of recreating them.
-//			the joys of a threaded renderer.*/
-//		} 
-//
-//
-//	}
-//
-//}
 
 VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(validationLayers)
 {
@@ -381,25 +35,16 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debugCallback(
 
 void VulkanDevice::InitVulkanDevice(VkSurfaceKHR &surface)
 {
-	createInstance("My Vulkan App");
-	setupDebugCallback();
-	createSurface(surface);
-	pickPhysicalDevice(surface);
+	CreateInstance("My Vulkan App");
+	SetupDebugCallback();
+	CreateSurface(surface);
+	PickPhysicalDevice(surface);
 	FindQueueFamilies(surface);
 
 	CreateLogicalDevice();
 
-	if (familyIndices.graphicsFamily != familyIndices.transferFamily) {
-		//transferQueue = std::make_unique<TransferQueue>(*this, transfer_queue);
-		separateTransferQueue = true;
-	}
-	else
-		separateTransferQueue = false;
-
-	//when the hardware doesn't have a separate transfer queue ( can't do asynchronous submissions)
-
 	CreateQueues();
-	//CreateCommandPools();
+
 	CreateVulkanAllocator();
 }
 
@@ -407,13 +52,6 @@ void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
 	vmaDestroyAllocator(allocator);
 	vmaDestroyAllocator(linear_allocator);
 	vmaDestroyAllocator(optimal_allocator);
-	//vkDestroyCommandPool(device, graphics_queue_command_pool, nullptr);
-	//vkDestroyCommandPool(device, compute_queue_command_pool, nullptr);
-	//if (!separateTransferQueue)
-	//	vkDestroyCommandPool(device, transfer_queue_command_pool, nullptr);
-	//else
-	//transferQueue->CleanUp();
-
 
 	vkDestroyDevice(device, nullptr);
 	DestroyDebugReportCallbackEXT(instance, callback, nullptr);
@@ -421,11 +59,11 @@ void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
 	vkDestroyInstance(instance, nullptr);
 }
 
-bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) {
+bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) {
 
 	QueueFamilyIndices indices = FindQueueFamilies(device, surface);
 
-	bool extensionsSupported = checkDeviceExtensionSupport(device);
+	bool extensionsSupported = CheckDeviceExtensionSupport(device);
 
 	bool swapChainAdequate = false;
 	if (extensionsSupported) {
@@ -438,7 +76,7 @@ bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surfac
 	return indices.isComplete() && extensionsSupported && physical_device_features.samplerAnisotropy;
 }
 
-bool VulkanDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
+bool VulkanDevice::CheckDeviceExtensionSupport(VkPhysicalDevice device) {
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
@@ -454,7 +92,7 @@ bool VulkanDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
 	return requiredExtensions.empty();
 }
 
-bool VulkanDevice::checkValidationLayerSupport() {
+bool VulkanDevice::CheckValidationLayerSupport() {
 	uint32_t layerCount;
 	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
@@ -498,8 +136,8 @@ void VulkanDevice::DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugRep
 
 
 
-void VulkanDevice::createInstance(std::string appName) {
-	if (enableValidationLayers && !checkValidationLayerSupport()) {
+void VulkanDevice::CreateInstance(std::string appName) {
+	if (enableValidationLayers && !CheckValidationLayerSupport()) {
 		Log::Debug << "validation layers requested, but not available! " << "\n";
 		enableValidationLayers = false;
 		//throw std::runtime_error("validation layers requested, but not available!");
@@ -547,7 +185,7 @@ void VulkanDevice::createInstance(std::string appName) {
 
 
 
-void VulkanDevice::setupDebugCallback() {
+void VulkanDevice::SetupDebugCallback() {
 	if (!enableValidationLayers) return;
 
 	VkDebugReportCallbackCreateInfoEXT createInfo = {};
@@ -562,7 +200,7 @@ void VulkanDevice::setupDebugCallback() {
 
 
 
-void VulkanDevice::createSurface(VkSurfaceKHR &surface) {
+void VulkanDevice::CreateSurface(VkSurfaceKHR &surface) {
 	//VK_CHECK_RESULT(glfwCreateWindowSurface(instance, window, nullptr, &surface));
 	VkResult res = glfwCreateWindowSurface(instance, window, nullptr, &surface);
 	if (res != VK_SUCCESS) {
@@ -572,7 +210,7 @@ void VulkanDevice::createSurface(VkSurfaceKHR &surface) {
 }
 
 
-void VulkanDevice::pickPhysicalDevice(VkSurfaceKHR &surface) {
+void VulkanDevice::PickPhysicalDevice(VkSurfaceKHR &surface) {
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -584,7 +222,7 @@ void VulkanDevice::pickPhysicalDevice(VkSurfaceKHR &surface) {
 	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
 	for (const auto& device : devices) {
-		if (isDeviceSuitable(device, surface)) {
+		if (IsDeviceSuitable(device, surface)) {
 			physical_device = device;
 			break;
 		}
@@ -728,15 +366,15 @@ void VulkanDevice::CreateLogicalDevice() {
 
 void VulkanDevice::CreateQueues() {
 	graphics_queue = std::make_unique<CommandQueue>(*this, familyIndices.graphicsFamily);
-	
+
 	//Make sure it is a unique queue, else don't make anything (empty pointer means it isn't unique)
 	if (familyIndices.graphicsFamily != familyIndices.computeFamily)
 		compute_queue = std::make_unique<CommandQueue>(*this, familyIndices.computeFamily);
 
 	if (familyIndices.graphicsFamily != familyIndices.transferFamily)
 		transfer_queue = std::make_unique<CommandQueue>(*this, familyIndices.transferFamily);
-	
-	if (familyIndices.graphicsFamily != familyIndices.presentFamily){
+
+	if (familyIndices.graphicsFamily != familyIndices.presentFamily) {
 		present_queue = std::make_unique<CommandQueue>(*this, familyIndices.presentFamily);
 		//Log::Debug << "Seperate present queue\n";
 	}
@@ -746,28 +384,6 @@ void VulkanDevice::CreateQueues() {
 	//vkGetDeviceQueue(device, familyIndices.computeFamily, 0, &compute_queue);
 
 }
-
-CommandQueue& VulkanDevice::GetCommandQueue(CommandQueueType queueType) {
-	switch (queueType)
-	{
-	case VulkanDevice::CommandQueueType::graphics:
-		return GraphicsQueue();
-
-	case VulkanDevice::CommandQueueType::compute:
-		return ComputeQueue();
-
-	case VulkanDevice::CommandQueueType::transfer:
-		return TransferQueue();
-
-	case VulkanDevice::CommandQueueType::present:
-	 	return PresentQueue();
-
-	default:
-		break;
-	}
-	return GraphicsQueue();
-}
-
 
 CommandQueue& VulkanDevice::GraphicsQueue() {
 	return *graphics_queue;
@@ -1007,51 +623,6 @@ void VulkanDevice::CreateStagingImageBuffer(VmaBuffer& buffer, void* data, VkDev
 
 
 void VulkanDevice::DestroyVmaAllocatedImage(VmaImage& image) {
-	
+
 	vmaDestroyImage(*image.allocator, image.image, image.allocation);
-}
-
-
-
-/**
-* Get the index of a memory type that has all the requested property bits set
-*
-* @param typeBits Bitmask with bits set for each memory type supported by the resource to request for (from VkMemoryRequirements)
-* @param properties Bitmask of properties for the memory type to request
-* @param (Optional) memTypeFound Pointer to a bool that is set to true if a matching memory type has been found
-*
-* @return Index of the requested memory type
-*
-* @throw Throws an exception if memTypeFound is null and no memory type could be found that supports the requested properties
-*/
-uint32_t VulkanDevice::getMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties, VkBool32 *memTypeFound)
-{
-
-	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
-	{
-		if ((typeBits & 1) == 1)
-		{
-			if ((memoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
-			{
-				if (memTypeFound)
-				{
-					*memTypeFound = true;
-				}
-				return i;
-			}
-		}
-		typeBits >>= 1;
-	}
-
-
-	if (memTypeFound)
-	{
-		*memTypeFound = false;
-		return 0;
-	}
-	else
-	{
-		throw std::runtime_error("Could not find a matching memory type");
-	}
-
 }

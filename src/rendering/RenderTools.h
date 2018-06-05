@@ -6,8 +6,21 @@
 
 #include "../core/Logger.h"
 
-//#define VMA_IMPLEMENTATION
-//#include <vk_mem_alloc.h>
+#include "../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+
+struct VmaBuffer {
+	VkBuffer buffer = VK_NULL_HANDLE;
+	VmaAllocation allocation = VK_NULL_HANDLE;
+	VmaAllocationInfo allocationInfo;
+	VmaAllocator* allocator = nullptr;
+};
+
+struct VmaImage {
+	VkImage image = VK_NULL_HANDLE;
+	VmaAllocation allocation = VK_NULL_HANDLE;
+	VmaAllocationInfo allocationInfo;
+	VmaAllocator* allocator = nullptr;
+};
 
 VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath);
 

@@ -8,8 +8,9 @@
 #include <array>
 #include <set>
 
-#include "../core/CoreTools.h"
 #include "Initializers.h"
+
+#include "../core/CoreTools.h"
 
 VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath) {
 	auto shaderCode = readFile(codePath);

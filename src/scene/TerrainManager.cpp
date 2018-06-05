@@ -119,7 +119,7 @@ void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan
 	terrainVulkanTextureArray = std::make_shared<VulkanTexture2DArray>(renderer->device);
 	terrainVulkanTextureArray->loadTextureArray(terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, *renderer,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 4);
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
 
 	//WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
 	//WaterVulkanTexture.loadFromTexture(renderer->device, WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
@@ -215,8 +215,8 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 		if (distanceToViewer > settings.viewDistance * settings.width * 1.5) {
 
 			terToDelete.push_back(it);
-			Log::Debug << "deleting terrain at x:" << (*it)->coordinateData.noisePos.x / (*it)->coordinateData.sourceImageResolution
-				<< " z: " << (*it)->coordinateData.noisePos.y / (*it)->coordinateData.sourceImageResolution << "\n";
+			//Log::Debug << "deleting terrain at x:" << (*it)->coordinateData.noisePos.x / (*it)->coordinateData.sourceImageResolution
+			//	<< " z: " << (*it)->coordinateData.noisePos.y / (*it)->coordinateData.sourceImageResolution << "\n";
 			auto activeIt = std::find(std::begin(activeTerrains), std::end(activeTerrains), (*it)->coordinateData.gridPos);
 			activeTerrains.erase(activeIt);
 
@@ -231,20 +231,20 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 
 	//make new closer terrains
 
-	glm::ivec2 camGrid((int)((cameraPos.x + settings.width / 2.0) / settings.width),
-		(int)((cameraPos.z + settings.width / 2.0) / settings.width));
+	glm::ivec2 camGrid((int)((cameraPos.x + 0 * settings.width / 2.0) / settings.width),
+		(int)((cameraPos.z + 0 * settings.width / 2.0) / settings.width));
 
 
 	//Log::Debug << "cam grid x: " << camGridX << " z: " << camGridZ << "\n";
-	for (int i = 0; i < settings.viewDistance; i++) {
-		for (int j = 0; j < settings.viewDistance; j++) {
+	for (int i = 0; i < settings.viewDistance * 2; i++) {
+		for (int j = 0; j < settings.viewDistance * 2; j++) {
 
-			glm::ivec2 terGrid(camGrid.x + i - settings.viewDistance / 2, camGrid.y + j - settings.viewDistance / 2);
+			glm::ivec2 terGrid(camGrid.x + i - settings.viewDistance, camGrid.y + j - settings.viewDistance);
 
 			glm::vec3 center = glm::vec3(terGrid.x * settings.width, cameraPos.y, terGrid.y * settings.width);
 			float distanceToViewer = glm::distance(cameraPos, center);
 
-			//if (distanceToViewer <= settings.viewDistance * settings.width* 1.5) {
+			//if (distanceToViewer <= settings.viewDistance * settings.width) {
 
 				//Log::Debug << "noisePosX " << ter->coordinateData.noisePos.x/ter->coordinateData.sourceImageResolution << "\n";
 				//Log::Debug << "relX " << camGridX + i - settings.viewDistance / 2.0 << "\n";
@@ -258,7 +258,7 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 				}
 			}
 			if (!found) {
-				Log::Debug << "creating new terrain at x:" << terGrid.x << " z: " << terGrid.y << "\n";
+				// Log::Debug << "creating new terrain at x:" << terGrid.x << " z: " << terGrid.y << "\n";
 
 				activeTerrains.push_back(terGrid);
 
@@ -284,6 +284,7 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 			//}
 		}
 	}
+
 
 
 	//update all terrains
@@ -382,11 +383,13 @@ void TerrainManager::UpdateTerrainGUI() {
 		ImGui::SliderInt("Grid Width", &settings.gridDimentions, 1, 10);
 		ImGui::SliderFloat("Height Scale", &settings.heightScale, 1, 1000);
 		ImGui::SliderInt("Image Resolution", &settings.sourceImageResolution, 32, 2048);
+		ImGui::SliderInt("View Distance", &settings.viewDistance, 1, 32);
 
 		if (ImGui::Button("Recreate Terrain", ImVec2(130, 20))) {
 			recreateTerrain = true;
 		}
 		ImGui::Text("Terrain Count %i", terrains.size());
+		ImGui::Text("Generating %i Terrains", terrainCreationWork.size());
 		ImGui::Text("All terrains update Time: %u(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
 		for (auto& ter : terrains)
 		{

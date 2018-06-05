@@ -11,12 +11,9 @@
 
 #include <vulkan/vulkan.h>
 
-#include "../util/ConcurrentQueue.h"
-
 #include "RenderTools.h"
 #include "RenderStructs.h"
 #include "Initializers.h"
-
 #include "Device.h"
 #include "Buffer.h"
 #include "Pipeline.h"
@@ -41,78 +38,6 @@
 //	std::shared_ptr<ManagedVulkanPipeline> mvp;
 //	std::shared_ptr<VulkanModel> model;
 //};
-
-//class ThreadedWorker {
-//public:
-//	ThreadedWorker();
-//
-//
-//	
-//private:
-//	bool active = true;
-//	std::thread thread;
-//};
-
-struct CommandBufferWork {
-	std::function<void(const VkCommandBuffer)> work;
-	std::vector<Signal> flags;
-};
-
-struct TransferCommandWork {
-	std::function<void(const VkCommandBuffer)> work;
-	std::vector<Signal> flags;
-	std::vector<VulkanBuffer> buffersToClean;
-};
-
-template<typename WorkType>
-class CommandBufferWorkQueue {
-public:
-	CommandBufferWorkQueue();
-
-	~CommandBufferWorkQueue();
-
-	void AddWork(WorkType data);
-	void AddWork(WorkType&& data);
-
-	bool HasWork();
-
-	std::optional<WorkType> GetWork();
-
-	std::mutex lock;
-	std::condition_variable condVar;
-
-private:
-	ConcurrentQueue<WorkType> workQueue;
-};
-
-template<typename WorkType>
-class CommandBufferWorker {
-public:
-	CommandBufferWorker(VulkanDevice& device,
-		CommandQueue* queue, CommandBufferWorkQueue<WorkType>& workQueue,
-		bool startActive = true);
-
-	CommandBufferWorker(const CommandBufferWorker& other) = delete; //copy
-	CommandBufferWorker(CommandBufferWorker&& other) = delete; //move
-	CommandBufferWorker& operator=(const CommandBufferWorker&) = default;
-	CommandBufferWorker& operator=(CommandBufferWorker&&) = default;
-
-	~CommandBufferWorker();
-
-	void CleanUp();
-
-	void StopWork();
-
-private:
-	VulkanDevice & device;
-	void Work();
-	std::thread workingThread;
-
-	bool keepWorking = true; //default to start working
-	CommandBufferWorkQueue<WorkType>& workQueue;
-	std::condition_variable waitVar;
-	CommandPool pool;
-};
 
 class Scene;
 
@@ -152,6 +77,9 @@ public:
 
 	void ReloadRenderer(GLFWwindow *window);
 
+	void CreateWorkerThreads();
+	void DestroyWorkerThreads();
+
 	//void InitSwapchain();
 	void RecreateSwapChain();
 
@@ -164,7 +92,7 @@ public:
 	void CreatePrimaryCommandBuffer(); //testing out multiple command buffers
 
 	void CreateCommandBuffers();
-	void CreateSemaphores();
+	//void CreateSemaphores();
 
 	void PrepareFrame();
 	void SubmitFrame();
@@ -247,8 +175,8 @@ private:
 	//Command buffer per frame
 	std::vector<VkCommandBuffer> commandBuffers;
 
-	VkSemaphore imageAvailableSemaphore;
-	VkSemaphore renderFinishedSemaphore;
+	std::unique_ptr<VulkanSemaphore> imageAvailableSemaphore;
+	std::unique_ptr<VulkanSemaphore> renderFinishedSemaphore;
 
 	std::vector<std::shared_ptr<VulkanDescriptor>> descriptors;
 

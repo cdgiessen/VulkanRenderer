@@ -4,13 +4,10 @@
 
 #include <vulkan/vulkan.h>
 
-#include "Device.h"
 #include "Descriptor.h"
+#include "RenderTools.h"
 
-/**
-* @brief Encapsulates access to a Vulkan buffer backed up by device memory
-* @note To be filled by an external source like the VulkanDevice
-*/
+class VulkanDevice;
 
 class VulkanBuffer {
 public:

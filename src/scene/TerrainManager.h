@@ -140,7 +140,7 @@ private:
 	bool drawWindow;
 	int selectedTexture;
 
-	int WorkerThreads = 4;
+	int WorkerThreads = 6;
 
 	std::vector<TerrainTextureNamedHandle> terrainTextureHandles;
 

@@ -6,8 +6,6 @@
 
 #include <glm/glm.hpp>
 
-//#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
-
 class VulkanTexture;
 
 
@@ -29,7 +27,7 @@ struct CameraData {
 	glm::vec3 cameraDir;
 	float dummy;
 	glm::vec3 cameraPos;
-} ;
+};
 
 /* Lighting */
 
@@ -123,7 +121,7 @@ struct PBR_Mat_Tex {
 };
 
 struct PBR_Material {
-	glm::vec3 albedo = glm::vec3(0.5,0.5,0.5);
+	glm::vec3 albedo = glm::vec3(0.5, 0.5, 0.5);
 	float metallic = 0.1f;
 	float roughness = 0.5f;
 	float ao = 1;
