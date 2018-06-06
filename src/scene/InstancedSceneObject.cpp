@@ -214,6 +214,8 @@ void InstancedSceneObject::SetupPipeline()
 }
 
 void InstancedSceneObject::UploadInstances() {
+	//std::lock_guard<std::mutex> lk(instanceDataLock);
+
 	size_t instanceBufferSize = instancesData.size() * sizeof(InstanceData);
 
 	VulkanBufferInstance stagingBuffer(renderer->device);
@@ -256,6 +258,7 @@ void InstancedSceneObject::UploadInstances() {
 
 
 void InstancedSceneObject::AddInstance(InstanceData data) {
+	std::lock_guard<std::mutex> lk(instanceDataLock);
 	if (instanceCount < maxInstanceCount) {
 		instancesData.at(instanceCount) = data;
 		instanceCount++;
@@ -283,7 +286,7 @@ void InstancedSceneObject::AddInstances(std::vector<InstanceData>& newInstances)
 		id.scale = 1.0f;
 		instancesData.push_back(id);
 	}*/
-
+	std::lock_guard<std::mutex> lk(instanceDataLock);
 	for (int i = instanceCount; i < newInstances.size(); i++) {
 		if (instanceCount < maxInstanceCount) {
 			instancesData.at(instanceCount + i) = newInstances.at(i);
@@ -295,6 +298,7 @@ void InstancedSceneObject::AddInstances(std::vector<InstanceData>& newInstances)
 }
 
 void InstancedSceneObject::RemoveInstance(InstanceData instance) {
+	std::lock_guard<std::mutex> lk(instanceDataLock);
 	auto foundInstance = std::find(std::begin(instancesData), std::end(instancesData), instance);
 	if (foundInstance != std::end(instancesData)) {
 		instancesData.erase(foundInstance);
@@ -303,7 +307,7 @@ void InstancedSceneObject::RemoveInstance(InstanceData instance) {
 }
 
 void InstancedSceneObject::RemoveInstances(std::vector<InstanceData>& instances) {
-
+	std::lock_guard<std::mutex> lk(instanceDataLock);
 	std::vector<std::vector<InstanceData>::iterator> indexesToDelete(instances.size());
 	for (auto& instance : instances) {
 
@@ -321,6 +325,7 @@ void InstancedSceneObject::RemoveInstances(std::vector<InstanceData>& instances)
 }
 
 void InstancedSceneObject::ReplaceAllInstances(std::vector<InstanceData>& instances) {
+	std::lock_guard<std::mutex> lk(instanceDataLock);
 	instancesData.clear();
 	instanceCount = 0;
 
@@ -336,6 +341,7 @@ void InstancedSceneObject::ReplaceAllInstances(std::vector<InstanceData>& instan
 }
 
 void InstancedSceneObject::RemoveAllInstances() {
+	std::lock_guard<std::mutex> lk(instanceDataLock);
 	instancesData.clear();
 	instanceCount = 0;
 
@@ -393,13 +399,14 @@ void InstancedSceneObject::ImGuiShowInstances() {
 		if (ImGui::Button("UploadInstance")) {
 			UploadInstances();
 		}
-
+		/*
 		for (auto& instance : instancesData) {
 			ImGui::DragFloat3("Position", ((float*)glm::value_ptr(instance.pos)));
 			ImGui::DragFloat3("Rotation", ((float*)glm::value_ptr(instance.rot)));
 			ImGui::DragFloat("Scale", &instance.scale);
 			ImGui::Separator();
-		}
+	}
+		*/
 
 	}
 	ImGui::End();

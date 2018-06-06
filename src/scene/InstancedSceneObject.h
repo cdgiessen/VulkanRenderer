@@ -13,6 +13,7 @@
 #include "../resources/Mesh.h"
 #include "../resources/Texture.h"
 
+#include "../util/DoubleBuffer.h"
 
 class InstancedSceneObject
 {
@@ -95,6 +96,7 @@ private:
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 
+	std::mutex instanceDataLock;
 	int instanceCount = 0;
 	int maxInstanceCount = 16384;
 	std::vector<InstanceData> instancesData;

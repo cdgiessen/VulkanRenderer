@@ -220,6 +220,12 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 			auto activeIt = std::find(std::begin(activeTerrains), std::end(activeTerrains), (*it)->coordinateData.gridPos);
 			activeTerrains.erase(activeIt);
 
+			InstancedSceneObject::InstanceData water;
+			water.pos = glm::vec3((*it)->coordinateData.pos.x, 0, (*it)->coordinateData.pos.y);
+			water.rot = glm::vec3(0, 0, 0);
+			water.scale = settings.width;
+			instancedWaters->RemoveInstance(water);
+
 		}
 	}
 	while (terToDelete.size() > 0) {
@@ -262,9 +268,11 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 
 				activeTerrains.push_back(terGrid);
 
+				auto pos = glm::vec2((terGrid.x)* settings.width - settings.width / 2,
+					(terGrid.y)* settings.width - settings.width / 2);
+
 				TerrainCoordinateData coord = TerrainCoordinateData(
-					glm::vec2((terGrid.x)* settings.width - settings.width / 2,
-					(terGrid.y)* settings.width - settings.width / 2), //position
+					pos, //position
 					glm::vec2(settings.width, settings.width), //size
 					glm::i32vec2((terGrid.x)*settings.sourceImageResolution,
 					(terGrid.y)*settings.sourceImageResolution), //noise position
@@ -280,6 +288,12 @@ void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan
 					coord));
 				terrain_mutex.unlock();
 				workerConditionVariable.notify_one();
+
+				InstancedSceneObject::InstanceData water;
+				water.pos = glm::vec3(pos.x, 0, pos.y);
+				water.rot = glm::vec3(0, 0, 0);
+				water.scale = settings.width;
+				instancedWaters->AddInstance(water);
 			}
 			//}
 		}
