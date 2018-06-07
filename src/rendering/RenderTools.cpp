@@ -87,7 +87,7 @@ void setTransferBarrier(VkCommandBuffer cmdbuffer, VkBuffer buffer,
 		0, nullptr);
 }
 
-void setImageLayout(
+void SetImageLayout(
 	VkCommandBuffer cmdbuffer,
 	VkImage image,
 	VkImageLayout oldImageLayout,
@@ -211,7 +211,7 @@ void setImageLayout(
 }
 
 // Fixed sub resource on first mip level and layer
-void setImageLayout(
+void SetImageLayout(
 	VkCommandBuffer cmdbuffer,
 	VkImage image,
 	VkImageAspectFlags aspectMask,
@@ -225,5 +225,24 @@ void setImageLayout(
 	subresourceRange.baseMipLevel = 0;
 	subresourceRange.levelCount = 1;
 	subresourceRange.layerCount = 1;
-	setImageLayout(cmdbuffer, image, oldImageLayout, newImageLayout, subresourceRange, srcStageMask, dstStageMask);
+	SetImageLayout(cmdbuffer, image, oldImageLayout, newImageLayout, subresourceRange, srcStageMask, dstStageMask);
+}
+
+
+void SetMemoryBarrier(
+	VkCommandBuffer cmdBuf,
+	VkAccessFlags srcAccessMask,
+	VkAccessFlags dstAccessMask,
+	VkPipelineStageFlags srcStageFlags,
+	VkPipelineStageFlags dstStageFlags
+) {
+	VkMemoryBarrier memoryBarrier = initializers::memoryBarrier();
+		memoryBarrier.pNext = nullptr;
+		memoryBarrier.srcAccessMask = srcAccessMask;
+		memoryBarrier.dstAccessMask = dstAccessMask;
+		VkDependencyFlags dependencyFlags = 0;
+		// need a memory barrier before result can be used
+		vkCmdPipelineBarrier(cmdBuf, srcStageFlags, 
+			dstStageFlags, dependencyFlags, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
+
 }

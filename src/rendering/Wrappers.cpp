@@ -26,8 +26,16 @@ void VulkanFence::WaitTillTrue() {
 void VulkanFence::WaitTillFalse() {
 	vkWaitForFences(device.device, 1, &fence, VK_FALSE, timeout);
 }
-VkFence VulkanFence::GetFence() {
+VkFence VulkanFence::Get() {
 	return fence;
+}
+
+std::vector<VkFence> CreateFenceArray(std::vector<VulkanFence> fences)
+{
+	std::vector<VkFence> outFences(fences.size());
+	for(auto& fence : fences)
+		outFences.push_back(fence.Get());
+	return outFences;
 }
 
 VulkanSemaphore::VulkanSemaphore(const VulkanDevice& device) {
@@ -49,8 +57,17 @@ VkSemaphore* VulkanSemaphore::GetPtr() {
 	return &semaphore;
 }
 
+std::vector<VkSemaphore> CreateSemaphoreArray(std::vector<VulkanSemaphore> sems)
+{
+	std::vector<VkSemaphore> outSems;
+	for(auto& sem : sems)
+		outSems.push_back(sem.Get());
+	
+	return outSems;
+}
+
 //void CleanUp() {
-//	vkDestroyFence(device.device, fence, nullptr);	//}	VkFence VulkanFence::GetFence() {return fence;};
+//	vkDestroyFence(device.device, fence, nullptr);	//}	VkFence VulkanFence::Get() {return fence;};
 
 
 CommandQueue::CommandQueue(const VulkanDevice& device, int queueFamily) :
@@ -95,7 +112,7 @@ void CommandQueue::SubmitCommandBuffer(VkCommandBuffer buffer,
 	submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
 	submitInfo.pWaitSemaphores = waitSemaphores.data();
 	submitInfo.pWaitDstStageMask = stageMasks.data();
-	Submit(submitInfo, fence.GetFence());
+	Submit(submitInfo, fence.Get());
 }
 
 
@@ -279,6 +296,8 @@ template <> void CommandBufferWorker<CommandBufferWork>::Work() {
 
 			pool.FreeCommandBuffer(buf);
 
+			fence.CleanUp();
+
 			pos_work = workQueue.GetWork();
 		}
 	}
@@ -322,7 +341,7 @@ template <> void CommandBufferWorker<TransferCommandWork>::Work() {
 				buffer.CleanBuffer();
 
 
-
+			fence.CleanUp();
 
 			pool.FreeCommandBuffer(buf);
 

@@ -32,13 +32,15 @@ public:
 	void WaitTillTrue();
 	void WaitTillFalse();
 	//void CleanUp();
-	VkFence GetFence();
+	VkFence Get();
 
 private:
 	const VulkanDevice& device;
 	VkFence fence;
 	int timeout;
 };
+
+std::vector<VkFence> CreateFenceArray(std::vector<VulkanFence> fences);
 
 class VulkanSemaphore {
 public:
@@ -53,9 +55,13 @@ private:
 	VkSemaphore semaphore;
 };
 
+std::vector<VkSemaphore> CreateSemaphoreArray(std::vector<VulkanSemaphore> sems);
+
 class CommandQueue {
 public:
 	CommandQueue(const VulkanDevice&  device, int queueFamily);
+	
+	//No copy or move construction (so that it won't get duplicated)
 	CommandQueue(const CommandQueue& cmd) = delete;
 	CommandQueue& operator=(const CommandQueue& cmd) = delete;
 	CommandQueue(CommandQueue&& cmd) = delete;
@@ -81,6 +87,14 @@ private:
 	std::mutex submissionMutex;
 	VkQueue queue;
 	int queueFamily;
+};
+
+class CommandBuffer {
+public:
+	CommandBuffer();
+
+private:
+	VulkanFence fence;
 };
 
 class CommandPool {

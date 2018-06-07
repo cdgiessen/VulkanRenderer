@@ -5,5 +5,5 @@
   "show_window": true,
   "souce_iamge_resolution": 512,
   "terrain_width": 1000.0,
-  "view_distance": 16
+  "view_distance": 1
 }

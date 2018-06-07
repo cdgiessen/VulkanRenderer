@@ -81,7 +81,7 @@ void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image,
 		mipSubRange.baseMipLevel = i;
 
 		// Transiton current mip level to transfer dest
-		setImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_UNDEFINED,
+		SetImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipSubRange,
 			VK_PIPELINE_STAGE_TRANSFER_BIT,
 			VK_PIPELINE_STAGE_TRANSFER_BIT);
@@ -92,7 +92,7 @@ void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image,
 			VK_FILTER_LINEAR);
 
 		// Transiton current mip level to transfer source for read in next iteration
-		setImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		SetImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, mipSubRange,
 			VK_PIPELINE_STAGE_TRANSFER_BIT,
 			VK_PIPELINE_STAGE_TRANSFER_BIT);
@@ -106,7 +106,7 @@ void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image,
 	// all to SHADER_READ
 
 	if (finalImageLayout == VK_IMAGE_LAYOUT_UNDEFINED) Log::Debug << "final layout is undefined!\n";
-	setImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+	SetImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		finalImageLayout, subresourceRange);
 
 	// renderer.SubmitGraphicsCommandBufferAndWait(blitCmd);
@@ -194,14 +194,14 @@ void SetLayoutAndTransferRegions(
 	const VkImageSubresourceRange subresourceRange,
 	std::vector<VkBufferImageCopy> bufferCopyRegions) {
 
-	setImageLayout(transferCmdBuf, image, VK_IMAGE_LAYOUT_UNDEFINED,
+	SetImageLayout(transferCmdBuf, image, VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
 
 	vkCmdCopyBufferToImage(transferCmdBuf, stagingBuffer, image,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		bufferCopyRegions.size(), bufferCopyRegions.data());
 
-	setImageLayout(transferCmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	SetImageLayout(transferCmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresourceRange);
 }
 
@@ -284,7 +284,7 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 	   // VkImageSubresourceRange subresourceRange =
 	   //	initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT,
 	   // mipLevels)
-	   // setImageLayout(
+	   // SetImageLayout(
 	   //	transferCmdBuf,
 	   //	image.image,
 	   //	VK_IMAGE_LAYOUT_UNDEFINED,
@@ -306,7 +306,7 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 	   // vkCmdCopyBufferToImage(transferCmdBuf, stagingBuffer.buffer, image.image,
 	   // VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1/*copy region counts*/,
 	   // &bufferCopyRegion/*data*/)
-	   // setImageLayout(
+	   // SetImageLayout(
 	   //	transferCmdBuf,
 	   //	image.image,
 	   //	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -339,7 +339,7 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 	bufferCopyRegions.push_back(bufferCopyRegion);
 	// Increase offset into staging buffer for next level / face
 
-	VulkanSemaphore sem(device);
+	//VulkanSemaphore sem(device);
 
 	TransferCommandWork transfer;
 	VkImage rawImage = image.image;//not sure why I have to do this. Lambdas are weird
@@ -348,13 +348,24 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 		[=](const VkCommandBuffer cmdBuf) {
 		SetLayoutAndTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
 			subresourceRange, bufferCopyRegions);
+
+		VkMemoryBarrier memoryBarrier = initializers::memoryBarrier();
+		memoryBarrier.pNext = nullptr;
+		memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		memoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		VkDependencyFlags dependencyFlags = 0;
+		// need a memory barrier before result can be used
+		vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_TRANSFER_BIT, 
+			VK_PIPELINE_STAGE_TRANSFER_BIT, dependencyFlags, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
+		
+		GenerateMipMaps(cmdBuf, rawImage, imageLayout, texture->width, texture->height, 1, 1, mipLevels);
 	});
 	transfer.buffersToClean.push_back(buffer);
 	transfer.flags.push_back(readyToUse);
-	transfer.signalSemaphores.push_back(sem);
+	//transfer.signalSemaphores.push_back(sem);
 
 	renderer.SubmitTransferWork(std::move(transfer));
-
+/*
 	CommandBufferWork mipWork;
 	mipWork.work = std::function<void(const VkCommandBuffer)>(
 		[=](const VkCommandBuffer cmdBuf) {
@@ -364,7 +375,7 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 	mipWork.flags.push_back(readyToUse);
 
 	renderer.SubmitGraphicsSetupWork(std::move(mipWork));
-
+*/
 	// device.DestroyVmaAllocatedImage(stagingImage);
 	// device.DestroyVmaAllocatedBuffer(stagingBuffer);
 
@@ -496,7 +507,7 @@ void VulkanTexture2DArray::loadTextureArray(
 		offset += textures->texImageSizePerTex;
 	}
 
-	VulkanSemaphore sem(device);
+	//VulkanSemaphore sem(device);
 
 	TransferCommandWork work;
 	VkImage rawImage = image.image;//not sure why I have to do this. Lambdas are weird
@@ -505,13 +516,28 @@ void VulkanTexture2DArray::loadTextureArray(
 		[=](const VkCommandBuffer cmdBuf) {
 		SetLayoutAndTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
 			subresourceRange, bufferCopyRegions);
+
+		SetMemoryBarrier(cmdBuf, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+		//VkMemoryBarrier memoryBarrier = initializers::memoryBarrier();
+		//memoryBarrier.pNext = nullptr;
+		//memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		//memoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		//VkDependencyFlags dependencyFlags = 0;
+		//// need a memory barrier before result can be used
+		//vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_TRANSFER_BIT, 
+		//	VK_PIPELINE_STAGE_TRANSFER_BIT, dependencyFlags, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
+
+		GenerateMipMaps(cmdBuf, rawImage, imageLayout,
+			textures->width, textures->height, 1, textures->layerCount, mipLevels);
 	});
 	work.buffersToClean.push_back(buffer);
 	work.flags.push_back(readyToUse);
-	work.signalSemaphores.push_back(sem);
+	//work.signalSemaphores.push_back(sem);
 
 	renderer.SubmitTransferWork(std::move(work));
-
+/*
 	CommandBufferWork mipWork;
 	mipWork.work = std::function<void(const VkCommandBuffer)>(
 		[=](const VkCommandBuffer cmdBuf) {
@@ -522,10 +548,10 @@ void VulkanTexture2DArray::loadTextureArray(
 	mipWork.flags.push_back(readyToUse);
 
 	renderer.SubmitGraphicsSetupWork(std::move(mipWork));
-
+*/
 	// VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
 
-	// setImageLayout(
+	// SetImageLayout(
 	//	transferCmdBuf,
 	//	image.image,
 	//	VK_IMAGE_LAYOUT_UNDEFINED,
@@ -537,7 +563,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	//	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 	//	bufferCopyRegions.size(), bufferCopyRegions.data());
 
-	// setImageLayout(
+	// SetImageLayout(
 	//	transferCmdBuf,
 	//	image.image,
 	//	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -703,20 +729,33 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 
 	VkImage rawImage = image.image;//not sure why I have to do this. Lambdas are weird
 
-	VulkanSemaphore sem(device);
+	//VulkanSemaphore sem(device);
 
 	TransferCommandWork work;
 	work.work = std::function<void(const VkCommandBuffer)>(
 		[=](const VkCommandBuffer cmdBuf) {
 		SetLayoutAndTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
 			subresourceRange, bufferCopyRegions);
+
+		VkMemoryBarrier memoryBarrier = initializers::memoryBarrier();
+		memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		memoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		VkDependencyFlags dependencyFlags = 0;
+		// need a memory barrier before result can be used
+		vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_TRANSFER_BIT, 
+			VK_PIPELINE_STAGE_TRANSFER_BIT, dependencyFlags, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
+
+		GenerateMipMaps(cmdBuf, rawImage, imageLayout,
+			cubeMap->width, cubeMap->height, 1, 6, mipLevels);
+
 	});
 	work.buffersToClean.push_back(buffer);
 	work.flags.push_back(readyToUse);
-	work.signalSemaphores.push_back(sem);
+	//work.signalSemaphores.push_back(sem);
 
 	renderer.SubmitTransferWork(std::move(work));
 
+/*
 	CommandBufferWork mipWork;
 	mipWork.work = std::function<void(const VkCommandBuffer)>(
 		[=](const VkCommandBuffer cmdBuf) {
@@ -727,6 +766,7 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 	mipWork.flags.push_back(readyToUse);
 
 	renderer.SubmitGraphicsSetupWork(std::move(mipWork));
+*/
 
 	// VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
 
@@ -810,7 +850,7 @@ void VulkanTextureDepthBuffer::CreateDepthImage(VulkanRenderer &renderer,
 
 	VkCommandBuffer cmdBuf = renderer.GetGraphicsCommandBuffer();
 
-	setImageLayout(cmdBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED,
+	SetImageLayout(cmdBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 		subresourceRange);
 
@@ -825,7 +865,7 @@ void VulkanTextureDepthBuffer::CreateDepthImage(VulkanRenderer &renderer,
 	//		initializers::imageSubresourceRangeCreateInfo(
 	//			VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 	//
-	//	setImageLayout(cmdBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED,
+	//	SetImageLayout(cmdBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED,
 	//		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 	//		subresourceRange);
 	//}

@@ -291,9 +291,11 @@ void VulkanApp::HandleInputs() {
 		}
 
 		if(Input::GetKeyDown(Input::KeyCode::DIGIT_0) && Input::GetKey(Input::KeyCode::DIGIT_9)){
+			CleanUpImgui();
 			scene->CleanUpScene();
 			vulkanRenderer->ReloadRenderer(window->getWindowContext());
 			scene->PrepareScene(resourceManager, vulkanRenderer, imgui_nodeGraph_terrain.GetGraph());
+			PrepareImGui(window, vulkanRenderer);
 		}
 	}
 	else {

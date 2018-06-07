@@ -39,7 +39,7 @@ private:
 
 template<typename T, size_t size>
 DoubleBufferArray<T, size>::DoubleBufferArray() :
-	which(false),
+	which(false)
 {
 
 }
