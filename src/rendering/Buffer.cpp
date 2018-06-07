@@ -178,3 +178,13 @@ void VulkanBufferInstance::BindInstanceBuffer(VkCommandBuffer cmdBuf) {
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(cmdBuf, INSTANCE_BUFFER_BIND_ID, 1, &buffer.buffer, offsets);
 }
+
+void VulkanBufferInstance::CreatePersistantInstanceBuffer(
+	uint32_t count, uint32_t indexElementCount)
+{
+	persistantlyMapped = true;
+	CreateInstanceBuffer(count, indexElementCount);
+	Map(&mapped);
+
+
+}

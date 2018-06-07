@@ -93,8 +93,8 @@ void InstancedSceneObject::SetupUniformBuffer() {
 	//uniformBuffer.copyTo(&ubo, sizeof(ModelBufferObject));
 	//uniformBuffer.unmap();
 
-	instanceBuffer->CreateInstanceBuffer(sizeof(InstanceData) * maxInstanceCount, instanceMemberSize);
-
+	instanceBuffer->CreatePersistantInstanceBuffer(maxInstanceCount, instanceMemberSize);
+	UploadData();
 }
 
 void InstancedSceneObject::SetupImage() {
@@ -216,44 +216,51 @@ void InstancedSceneObject::SetupPipeline()
 void InstancedSceneObject::UploadInstances() {
 	//std::lock_guard<std::mutex> lk(instanceDataLock);
 
-	size_t instanceBufferSize = instancesData.size() * sizeof(InstanceData);
+	if (isDirty) {
 
-	VulkanBufferInstance stagingBuffer(renderer->device);
-	stagingBuffer.CreateStagingInstanceBuffer(instancesData.data(), instancesData.size(), instanceMemberSize);
 
-	TransferCommandWork transfer;
-	transfer.work = std::function<void(VkCommandBuffer cmdBuf)>(
-		[=](VkCommandBuffer cmdBuf) {
-		VkBufferCopy copyRegion = {};
-		copyRegion.size = instanceBufferSize;
-		vkCmdCopyBuffer(
-			cmdBuf,
-			stagingBuffer.buffer.buffer,
-			instanceBuffer->buffer.buffer,
-			1,
-			&copyRegion);
-	});
-	transfer.buffersToClean.push_back(stagingBuffer);
-	transfer.flags.push_back(isFinishedTransfer);
-	renderer->SubmitTransferWork(std::move(transfer));
+		size_t instanceBufferSize = instancesData.size() * sizeof(InstanceData);
+		/*
 
-	//auto copyCmd = renderer->GetTransferCommandBuffer();
+		VulkanBufferInstance stagingBuffer(renderer->device);
+		stagingBuffer.CreateStagingInstanceBuffer(instancesData.data(), instancesData.size(), instanceMemberSize);
 
-	//VkBufferCopy copyRegion = {};
-	//copyRegion.size = instanceBufferSize;
-	//vkCmdCopyBuffer(
-	//	copyCmd,
-	//	stagingBuffer.buffer.buffer,
-	//	instanceBuffer->buffer.buffer,
-	//	1,
-	//	&copyRegion);
-	//
-	//renderer->SubmitTransferCommandBufferAndWait(copyCmd);
+		TransferCommandWork transfer;
+		transfer.work = std::function<void(VkCommandBuffer cmdBuf)>(
+			[=](VkCommandBuffer cmdBuf) {
+			VkBufferCopy copyRegion = {};
+			copyRegion.size = instanceBufferSize;
+			vkCmdCopyBuffer(
+				cmdBuf,
+				stagingBuffer.buffer.buffer,
+				instanceBuffer->buffer.buffer,
+				1,
+				&copyRegion);
+		});
+		transfer.buffersToClean.push_back(stagingBuffer);
+		transfer.flags.push_back(isFinishedTransfer);
+		renderer->SubmitTransferWork(std::move(transfer));*/
 
-	instanceBuffer->resource.FillResource(instanceBuffer->buffer.buffer, 0, instanceBufferSize);
+		//auto copyCmd = renderer->GetTransferCommandBuffer();
 
-	// Destroy staging resources
-	//stagingBuffer.CleanBuffer();
+		//VkBufferCopy copyRegion = {};
+		//copyRegion.size = instanceBufferSize;
+		//vkCmdCopyBuffer(
+		//	copyCmd,
+		//	stagingBuffer.buffer.buffer,
+		//	instanceBuffer->buffer.buffer,
+		//	1,
+		//	&copyRegion);
+		//
+		//renderer->SubmitTransferCommandBufferAndWait(copyCmd);
+
+		//Not sure if needed since the amount of data should be baked in, not current instance count
+		//instanceBuffer->resource.FillResource(instanceBuffer->buffer.buffer, 0, instanceBufferSize);
+
+		// Destroy staging resources
+		//stagingBuffer.CleanBuffer();
+		isDirty = false;
+	}
 }
 
 
@@ -263,7 +270,7 @@ void InstancedSceneObject::AddInstance(InstanceData data) {
 		instancesData.at(instanceCount) = data;
 		instanceCount++;
 	}
-	UploadInstances();
+	isDirty = true;
 }
 
 void InstancedSceneObject::AddInstances(std::vector<InstanceData>& newInstances) {
@@ -293,8 +300,7 @@ void InstancedSceneObject::AddInstances(std::vector<InstanceData>& newInstances)
 		}
 	}
 	instanceCount += newInstances.size();
-
-	UploadInstances();
+	isDirty = true;
 }
 
 void InstancedSceneObject::RemoveInstance(InstanceData instance) {
@@ -304,6 +310,7 @@ void InstancedSceneObject::RemoveInstance(InstanceData instance) {
 		instancesData.erase(foundInstance);
 		instanceCount--;
 	}
+	isDirty = true;
 }
 
 void InstancedSceneObject::RemoveInstances(std::vector<InstanceData>& instances) {
@@ -320,8 +327,7 @@ void InstancedSceneObject::RemoveInstances(std::vector<InstanceData>& instances)
 	for (auto& index : indexesToDelete) {
 		instancesData.erase(index);
 	}
-
-	UploadInstances();
+	isDirty = true;
 }
 
 void InstancedSceneObject::ReplaceAllInstances(std::vector<InstanceData>& instances) {
@@ -334,20 +340,17 @@ void InstancedSceneObject::ReplaceAllInstances(std::vector<InstanceData>& instan
 			instancesData.push_back(instance);
 
 	}
-
-
-	UploadInstances();
-
+	isDirty = true;
 }
 
 void InstancedSceneObject::RemoveAllInstances() {
 	std::lock_guard<std::mutex> lk(instanceDataLock);
 	instancesData.clear();
 	instanceCount = 0;
-
+	isDirty = true;
 }
 
-void InstancedSceneObject::UpdateUniformBuffer()
+void InstancedSceneObject::UploadData()
 {
 	//for (auto it = modelUniforms.begin(); it != modelUniforms.end(); it++) {
 		//ModelBufferObject ubo = {};
@@ -357,11 +360,11 @@ void InstancedSceneObject::UpdateUniformBuffer()
 		//ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 	//}
 
-	//modelUniformsBuffer.map(renderer->device.device);
-	//modelUniformsBuffer.copyTo(&modelUniforms, modelUniforms.size() * sizeof(ModelBufferObject));
-	//modelUniformsBuffer.unmap();
+	//instanceBuffer->map(renderer->device.device);
+	instanceBuffer->CopyToBuffer(instancesData.data(), instancesData.size());
+	//instanceBuffer->unmap();
 
-
+	//UploadInstances();
 }
 
 void InstancedSceneObject::WriteToCommandBuffer(VkCommandBuffer commandBuffer, bool wireframe) {
@@ -397,7 +400,7 @@ void InstancedSceneObject::ImGuiShowInstances() {
 	bool value = true;
 	if (ImGui::Begin("instance data", &value)) {
 		if (ImGui::Button("UploadInstance")) {
-			UploadInstances();
+			//UploadInstances();
 		}
 		/*
 		for (auto& instance : instancesData) {

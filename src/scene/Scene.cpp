@@ -109,13 +109,13 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 	terrainManager->SetupResources(resourceMan, renderer);
 	//terrainManager->GenerateTerrain(resourceMan, renderer, camera);
 
-	treesInstanced = std::make_shared<InstancedSceneObject>(renderer);
-	treesInstanced->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/instancedSceneObject.frag.spv"));
-	treesInstanced->SetBlendMode(VK_FALSE);
-	treesInstanced->SetCullMode(VK_CULL_MODE_BACK_BIT);
-	treesInstanced->LoadModel(createCube());
-	treesInstanced->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/grass.jpg"));
-	treesInstanced->InitInstancedSceneObject(renderer);
+	//treesInstanced = std::make_shared<InstancedSceneObject>(renderer);
+	//treesInstanced->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/instancedSceneObject.frag.spv"));
+	//treesInstanced->SetBlendMode(VK_FALSE);
+	//treesInstanced->SetCullMode(VK_CULL_MODE_BACK_BIT);
+	//treesInstanced->LoadModel(createCube());
+	//treesInstanced->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/grass.jpg"));
+	//treesInstanced->InitInstancedSceneObject(renderer);
 
 	//treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(20,0,10), glm::vec3(10,0,40), glm::vec3(10,0,-40), glm::vec3(100,0,40) });
 
@@ -127,7 +127,7 @@ void Scene::PrepareScene(std::shared_ptr<ResourceManager> resourceMan, std::shar
 			{
 				data.push_back(InstancedSceneObject::InstanceData(glm::vec3(i * 2, k * 2, j * 2), glm::vec3(0, 0, 0), 1, 0));
 			}
-	treesInstanced->AddInstances(data);
+	//treesInstanced->AddInstances(data);
 	//rocksInstanced = std::make_shared<InstancedSceneObject>(renderer);
 
 	// gltf2 integration
@@ -213,7 +213,7 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 		obj->Draw(commandBuffer, wireframe, drawNormals);
 	}
 
-	treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
+	//treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
 
 	terrainManager->RenderTerrain(commandBuffer, wireframe);
 
@@ -323,7 +323,8 @@ void Scene::CleanUpScene() {
 
 	terrainManager->CleanUpResources();
 	terrainManager->CleanUpTerrain();
-	treesInstanced->CleanUp();
+
+	//treesInstanced->CleanUp();
 
 }
 

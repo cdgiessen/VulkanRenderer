@@ -86,7 +86,10 @@ public:
 	void CreateInstanceBuffer(uint32_t count, uint32_t indexElementCount);
 	void CreateStagingInstanceBuffer(void* pData, uint32_t count, uint32_t indexElementCount);
 
+	void CreatePersistantInstanceBuffer(uint32_t count, uint32_t indexElementCount);
+
 	void BindInstanceBuffer(VkCommandBuffer cmdBuf);
 
 
 };
+

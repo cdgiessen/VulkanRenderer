@@ -46,7 +46,7 @@ public:
 
 	void InitInstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer);
 	void CleanUp();
-	void UpdateUniformBuffer();
+	void UploadData();
 
 	void LoadTexture(std::shared_ptr<Texture> tex);
 	void LoadModel(std::string fileName);
@@ -101,6 +101,8 @@ private:
 	int maxInstanceCount = 16384;
 	std::vector<InstanceData> instancesData;
 	std::shared_ptr<VulkanBufferInstance> instanceBuffer;
+
+	bool isDirty = false;
 
 
 	VkShaderModule fragShaderModule;
