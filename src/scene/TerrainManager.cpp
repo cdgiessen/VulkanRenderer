@@ -405,12 +405,12 @@ void TerrainManager::UpdateTerrainGUI() {
 		if (ImGui::Button("Recreate Terrain", ImVec2(130, 20))) {
 			recreateTerrain = true;
 		}
-		ImGui::Text("Terrain Count %i", terrains.size());
+		ImGui::Text("Terrain Count %lu", terrains.size());
 		ImGui::Text("Generating %i Terrains", terrainCreationWork.size());
-		ImGui::Text("All terrains update Time: %u(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
+		ImGui::Text("All terrains update Time: %lu(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
 		for (auto& ter : terrains)
 		{
-			ImGui::Text("Terrain Draw Time: %u(uS)", ter->drawTimer.GetElapsedTimeMicroSeconds());
+			ImGui::Text("Terrain Draw Time: %lu(uS)", ter->drawTimer.GetElapsedTimeMicroSeconds());
 			ImGui::Text("Terrain Quad Count %d", ter->numQuads);
 		}
 	}

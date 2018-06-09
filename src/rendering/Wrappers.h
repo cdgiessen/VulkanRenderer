@@ -238,7 +238,7 @@ CommandBufferWorker<WorkType>::CommandBufferWorker(
 
 template <typename WorkType>
 CommandBufferWorker<WorkType>::~CommandBufferWorker() {
-	workingThread.join();
+	//workingThread.join();
 }
 
 template <typename WorkType>

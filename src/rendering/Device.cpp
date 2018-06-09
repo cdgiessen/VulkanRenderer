@@ -46,8 +46,6 @@ void VulkanDevice::InitVulkanDevice(VkSurfaceKHR &surface)
 	CreateQueues();
 
 	CreateVulkanAllocator();
-
-	Log::Debug << "Device of Device " << device << "\n";
 }
 
 void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
@@ -55,7 +53,6 @@ void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
 	vmaDestroyAllocator(linear_allocator);
 	vmaDestroyAllocator(optimal_allocator);
 
-	Log::Debug << "Device being destroyed " << device << "\n";
 	vkDestroyDevice(device, nullptr);
 	DestroyDebugReportCallbackEXT(instance, callback, nullptr);
 	vkDestroySurfaceKHR(instance, surface, nullptr);
