@@ -370,11 +370,13 @@ void TerrainManager::LoadSettingsFromFile() {
 		settings.viewDistance = j["view_distance"];
 		settings.sourceImageResolution = j["souce_iamge_resolution"];
 		settings.workerThreads = j["worker_threads"];
-		if(settings.workerThreads < 1)
+		if (settings.workerThreads < 1)
 			settings.workerThreads = 1;
 	}
 	else {
+
 		settings = GeneralSettings{};
+		SaveSettingsToFile();
 	}
 }
 
