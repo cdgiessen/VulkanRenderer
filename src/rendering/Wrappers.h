@@ -40,14 +40,13 @@ private:
 	int timeout;
 };
 
-std::vector<VkFence> CreateFenceArray(std::vector<VulkanFence> fences);
+std::vector<VkFence> CreateFenceArray(std::vector<VulkanFence>& fences);
 
 class VulkanSemaphore {
 public:
 	VulkanSemaphore(const VulkanDevice& device);
 
 	VkSemaphore Get();
-	VkSemaphore* GetPtr();
 
 	void CleanUp(const VulkanDevice & device);
 
@@ -55,7 +54,7 @@ private:
 	VkSemaphore semaphore;
 };
 
-std::vector<VkSemaphore> CreateSemaphoreArray(std::vector<VulkanSemaphore> sems);
+std::vector<VkSemaphore> CreateSemaphoreArray(std::vector<VulkanSemaphore>& sems);
 
 class CommandQueue {
 public:
@@ -72,9 +71,9 @@ public:
 	void SubmitCommandBuffer(VkCommandBuffer buf, VkFence fence);
 
 	void SubmitCommandBuffer(VkCommandBuffer buffer,
-		VulkanFence fence,
-		std::vector<VkSemaphore>& waitSemaphores,
-		std::vector<VkSemaphore>& signalSemaphores);
+		VulkanFence& fence,
+		std::vector<VulkanSemaphore>& waitSemaphores,
+		std::vector<VulkanSemaphore>& signalSemaphores);
 
 	int GetQueueFamily();
 	std::mutex& GetQueueMutex();
@@ -110,8 +109,10 @@ public:
 	VkCommandBuffer GetPrimaryCommandBuffer(bool beginBufferRecording = true);
 	VkCommandBuffer GetSecondaryCommandBuffer(bool beginBufferRecording = true);
 
-	VkBool32 SubmitCommandBuffer(VkCommandBuffer, VulkanFence fence,
-		std::vector<VkSemaphore>& waitSemaphores, std::vector<VkSemaphore>& signalSemaphores);
+	//VkBool32 SubmitCommandBuffer(VkCommandBuffer, VulkanFence& fence,
+	//	std::vector<VkSemaphore>& waitSemaphores, std::vector<VkSemaphore>& signalSemaphores);
+	VkBool32 SubmitCommandBuffer(VkCommandBuffer, VulkanFence& fence,
+		std::vector<VulkanSemaphore>& waitSemaphores, std::vector<VulkanSemaphore>& signalSemaphores);
 
 	VkBool32 SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence = nullptr);
 	VkBool32 SubmitPrimaryCommandBuffer(VkCommandBuffer buf, VkFence fence = nullptr);

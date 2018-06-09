@@ -1,9 +1,12 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 #include "Device.h"
 #include <vulkan/vulkan.h>
+
+VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath);
 
 //Manages Shaderlife times
 class VulkanShader
@@ -19,7 +22,7 @@ public:
 		tesselation
 	};
 
-	VkShaderModule loadShaderModule(std::shared_ptr<VulkanDevice> device, const std::string& codePath, VulkanShader::ShaderType type);
+	VkShaderModule loadShaderModule(VulkanDevice& device, const std::string& codePath, VulkanShader::ShaderType type);
 
 private:
 	const VulkanDevice &device;

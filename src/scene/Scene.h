@@ -32,35 +32,34 @@ struct SkySettings {
 class Scene
 {
 public:
-	Scene();
+	Scene(ResourceManager* resourceMan,  VulkanRenderer* renderer, InternalGraph::GraphPrototype& graph);
 	~Scene();
 
-	void PrepareScene(std::shared_ptr<ResourceManager> resourceMan,  std::shared_ptr<VulkanRenderer> renderer, InternalGraph::GraphPrototype& graph);
-	void UpdateScene(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<TimeManager> timeManager);
+	void UpdateScene(ResourceManager* resourceMan, TimeManager* timeManager);
 	void RenderScene(VkCommandBuffer commandBuffer, bool wireframe);
 	void UpdateSceneGUI();
-	void CleanUpScene();
 
-	std::shared_ptr<Camera> GetCamera();
+	Camera* GetCamera();
 
 	bool drawNormals = false;
 	bool walkOnGround = false;
 private:
 
-	std::shared_ptr<VulkanRenderer> renderer;
+	VulkanRenderer* renderer;
+	ResourceManager* resourceMan;
 
 	std::vector<DirectionalLight> directionalLights;
 	std::vector<PointLight> pointLights;
 	std::vector<SpotLight> spotLights;
 
-	std::vector<std::shared_ptr<GameObject>> gameObjects;
-	std::shared_ptr<TerrainManager> terrainManager;
-	std::shared_ptr<InstancedSceneObject> treesInstanced;
-	std::shared_ptr<InstancedSceneObject> rocksInstanced;
+	std::vector<std::unique_ptr<GameObject>> gameObjects;
+	std::unique_ptr<TerrainManager> terrainManager;
+	std::unique_ptr<InstancedSceneObject> treesInstanced;
+	std::unique_ptr<InstancedSceneObject> rocksInstanced;
 
-	std::shared_ptr<Skybox> skybox;
+	std::unique_ptr<Skybox> skybox;
 
-	std::shared_ptr<Camera> camera;
+	std::unique_ptr<Camera> camera;
 
 	float verticalVelocity = 0;
 	float gravity = -0.25f;

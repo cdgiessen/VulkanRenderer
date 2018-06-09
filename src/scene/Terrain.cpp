@@ -101,7 +101,7 @@ void Terrain::CleanUp()
 }
 
 
-void Terrain::InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos, std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray)
+void Terrain::InitTerrain(VulkanRenderer* renderer, glm::vec3 cameraPos, std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray)
 {
 	this->renderer = renderer;
 

@@ -17,7 +17,7 @@ public:
 	glm::vec3 size; //width and length
 	std::shared_ptr<Mesh> mesh;
 
-	std::shared_ptr<VulkanRenderer> renderer;
+	VulkanRenderer* renderer;
 
 	std::shared_ptr<ManagedVulkanPipeline> mvp;
 
@@ -32,7 +32,7 @@ public:
 	Water(int numCells, float posX, float posY, float sizeX, float sizeY);
 	~Water();
 
-	void InitWater(std::shared_ptr<VulkanRenderer> renderer, VulkanTexture2D& WaterVulkanTexture);
+	void InitWater(VulkanRenderer* renderer, VulkanTexture2D& WaterVulkanTexture);
 	void CleanUp();
 	
 	//void UpdateUniformBuffer(float time, glm::mat4 view);

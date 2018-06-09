@@ -9,7 +9,7 @@
 #define INSTANCE_BUFFER_BIND_ID 1
 
 
-InstancedSceneObject::InstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer, int maxInstances)
+InstancedSceneObject::InstancedSceneObject(VulkanRenderer* renderer, int maxInstances)
 	: maxInstanceCount(maxInstances), instanceCount(0), instancesData(maxInstances)
 {
 
@@ -29,7 +29,7 @@ InstancedSceneObject::~InstancedSceneObject()
 }
 
 
-void InstancedSceneObject::InitInstancedSceneObject(std::shared_ptr<VulkanRenderer> renderer)
+void InstancedSceneObject::InitInstancedSceneObject(VulkanRenderer* renderer)
 {
 	this->renderer = renderer;
 

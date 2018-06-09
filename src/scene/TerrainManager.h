@@ -33,6 +33,7 @@ struct GeneralSettings {
 	int viewDistance = 2; //terrain chunks to load away from camera;
 	int sourceImageResolution = 512;
 	int numCells = 64; //compile time currently
+	int workerThreads = 1;
 };
 
 struct TerrainTextureNamedHandle {
@@ -43,8 +44,8 @@ struct TerrainTextureNamedHandle {
 };
 
 struct TerrainCreationData {
-	std::shared_ptr<ResourceManager> resourceMan;
-	std::shared_ptr<VulkanRenderer> renderer;
+	ResourceManager* resourceMan;
+	VulkanRenderer* renderer;
 	glm::vec3 cameraPos;
 	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray;
 	std::shared_ptr<MemoryPool<TerrainQuad>> pool;
@@ -55,8 +56,8 @@ struct TerrainCreationData {
 	TerrainCoordinateData coord;
 
 	TerrainCreationData(
-		std::shared_ptr<ResourceManager> resourceMan,
-		std::shared_ptr<VulkanRenderer> renderer,
+		ResourceManager* resourceMan,
+		VulkanRenderer* renderer,
 		glm::vec3 cameraPos,
 		std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
 		std::shared_ptr<MemoryPool<TerrainQuad>> pool,
@@ -70,12 +71,12 @@ public:
 	TerrainManager(InternalGraph::GraphPrototype& protoGraph);
 	~TerrainManager();
 
-	void SetupResources(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer);
+	void SetupResources(ResourceManager* resourceMan, VulkanRenderer* renderer);
 	void CleanUpResources();
 
-	void GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera);
+	void GenerateTerrain(ResourceManager* resourceMan, VulkanRenderer* renderer, std::shared_ptr<Camera> camera);
 
-	void UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan, glm::vec3 cameraPos);
+	void UpdateTerrains(ResourceManager* resourceMan, glm::vec3 cameraPos);
 
 	void RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe);
 
@@ -111,7 +112,7 @@ private:
 	InternalGraph::GraphPrototype& protoGraph;
 	//NewNodeGraph::TerGenNodeGraph& nodeGraph;
 
-	std::shared_ptr<VulkanRenderer> renderer;
+	VulkanRenderer* renderer;
 
 	std::shared_ptr<MemoryPool<TerrainQuad>> terrainQuadPool;
 

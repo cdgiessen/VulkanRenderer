@@ -358,7 +358,7 @@ void ProcTerrainNodeGraph::DrawNodes(ImDrawList* imDrawList) {
 			verticalOffset += node->inputSlots[i].Draw(imDrawList, *this, *node, verticalOffset);
 		}
 		node->size = ImVec2(node->size.x, verticalOffset);
-		//		for (auto slot : node->inputSlots) {
+		//		for (auto& slot : node->inputSlots) {
 		//			slot.Draw(imDrawList, *this, *node);
 		//		}
 

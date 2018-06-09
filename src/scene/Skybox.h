@@ -25,7 +25,7 @@ public:
 	Skybox();
 	~Skybox();
 
-	std::shared_ptr<VulkanRenderer> renderer;
+	VulkanRenderer* renderer;
 
 	std::shared_ptr<ManagedVulkanPipeline> mvp;
 
@@ -40,7 +40,7 @@ public:
 	std::shared_ptr<VulkanBufferUniform> skyboxUniformBuffer;
 
 
-	void InitSkybox(std::shared_ptr<VulkanRenderer> renderer);
+	void InitSkybox(VulkanRenderer* renderer);
 	
 	void CleanUp();
 

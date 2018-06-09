@@ -11,6 +11,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "../core/CoreTools.h"
+
 #include "RenderTools.h"
 #include "RenderStructs.h"
 #include "Initializers.h"
@@ -41,8 +43,8 @@
 
 class Scene;
 
-struct RenderSettings {
-
+class RenderSettings {
+public:
 	int graphicsSetupWorkerCount = 1;
 	int transferWorkerCount = 1;
 
@@ -51,36 +53,41 @@ struct RenderSettings {
 	int directionalLightCount = 5;
 	int pointLightCount = 16;
 	int spotLightCount = 8;
+
+	RenderSettings(std::string fileName);
+
+	void Load();
+	void Save();
+private:
+	std::string fileName;
 };
 
 class VulkanRenderer
 {
 public:
-	VulkanRenderer(bool enableValidationLayer, std::shared_ptr<Scene> scene);
-	VulkanRenderer(const VulkanRenderer& other) = default; //copy
-	VulkanRenderer(VulkanRenderer&& other) = default; //move
-	VulkanRenderer& operator=(const VulkanRenderer&) = default;
-	VulkanRenderer& operator=(VulkanRenderer&&) = default;
+	VulkanRenderer(bool enableValidationLayer, GLFWwindow *window);
+	
+	VulkanRenderer(const VulkanRenderer& other) = delete; //copy
+	VulkanRenderer(VulkanRenderer&& other) = delete; //move
+	VulkanRenderer& operator=(const VulkanRenderer&) = delete;
+	VulkanRenderer& operator=(VulkanRenderer&&) = delete;
 	~VulkanRenderer();
 
-	void LoadRenderSettings();
-	void SaveRenderSettings();
+	//void LoadRenderSettings();
+	//void SaveRenderSettings();
 
-	void InitVulkanRenderer(GLFWwindow* window);
 	void UpdateRenderResources(GlobalData globalData,
 		CameraData cameraData,
 		std::vector<DirectionalLight> directionalLights,
 		std::vector<PointLight> pointLights,
 		std::vector<SpotLight> spotLights);
 	void RenderFrame();
-	void CleanVulkanResources();
 
-	void ReloadRenderer(GLFWwindow *window);
+	//void ReloadRenderer(GLFWwindow *window);
 
 	void CreateWorkerThreads();
 	void DestroyWorkerThreads();
 
-	//void InitSwapchain();
 	void RecreateSwapChain();
 
 	void CreateRenderPass();
@@ -115,17 +122,12 @@ public:
 	VkCommandBuffer GetSingleUseGraphicsCommandBuffer();
 	void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);
 
-	//VkCommandBuffer GetTransferCommandBuffer();
-
-	//void SubmitTransferCommandBufferAndWait(VkCommandBuffer buf);
-	//void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal);
-	//void SubmitTransferCommandBuffer(VkCommandBuffer buf, std::vector<Signal> readySignal, std::vector<VulkanBuffer> bufsToClean);
-
-
 	void SaveScreenshotNextFrame();
 	void SetWireframe(bool wireframe);
 
 	void DeviceWaitTillIdle();
+
+	RenderSettings settings;
 
 	VulkanDevice device;
 	VulkanSwapChain vulkanSwapChain;
@@ -135,11 +137,9 @@ public:
 	VulkanPipeline pipelineManager;
 	VulkanTextureManager textureManager;
 
-	std::shared_ptr<Scene> scene;
+	Scene* scene;
 
 private:
-	RenderSettings settings;
-
 	void SetupGlobalDescriptorSet();
 	void SetupLightingDescriptorSet();
 
@@ -160,9 +160,7 @@ private:
 
 	VulkanBufferUniformDynamic entityPositions;
 
-	//uint32_t frameIndex = 1; // which frame of the swapchain it is on
-
-	std::shared_ptr<VulkanTextureDepthBuffer> depthBuffer;
+	std::unique_ptr<VulkanTextureDepthBuffer> depthBuffer;
 
 	CommandBufferWorkQueue<CommandBufferWork> graphicsSetupWorkQueue;
 	std::vector<std::unique_ptr<CommandBufferWorker<CommandBufferWork>>> graphicsSetupWorkers;
@@ -180,7 +178,7 @@ private:
 
 	std::vector<std::shared_ptr<VulkanDescriptor>> descriptors;
 
-	uint32_t frameIndex; //which of the swapchain images the app is rendering to
+	uint32_t frameIndex = 0; //which of the swapchain images the app is rendering to
 	bool wireframe = false; //whether or not to use the wireframe pipeline for the scene.
 	bool saveScreenshot = false;
 

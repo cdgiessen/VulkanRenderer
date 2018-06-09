@@ -11,8 +11,8 @@
 constexpr auto TerrainSettingsFileName = "terrain_settings.json";
 
 TerrainCreationData::TerrainCreationData(
-	std::shared_ptr<ResourceManager> resourceMan,
-	std::shared_ptr<VulkanRenderer> renderer,
+	ResourceManager* resourceMan,
+	VulkanRenderer* renderer,
 	glm::vec3 cameraPos,
 	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
 	std::shared_ptr<MemoryPool<TerrainQuad>> pool,
@@ -31,7 +31,6 @@ TerrainCreationData::TerrainCreationData(
 	heightScale(heightScale),
 	coord(coord)
 {
-
 }
 
 void TerrainCreationWorker(TerrainManager* man) {
@@ -78,7 +77,7 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph) : prot
 		maxNumQuads = 1 + 16 + 50 * settings.maxLevels; //with current quad density this is the average upper bound
 											   //maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads
 	}
-
+	LoadSettingsFromFile();
 	//terrainQuadPool = std::make_shared<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>>();
 }
 
@@ -102,7 +101,7 @@ void TerrainManager::StopWorkerThreads() {
 	terrainCreationWorkers.clear();
 }
 
-void TerrainManager::SetupResources(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer) {
+void TerrainManager::SetupResources(ResourceManager* resourceMan, VulkanRenderer* renderer) {
 
 	this->renderer = renderer;
 
@@ -142,7 +141,7 @@ void TerrainManager::CleanUpResources() {
 	//just for now-instancedWaters->CleanUp();
 }
 
-void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMan, std::shared_ptr<VulkanRenderer> renderer, std::shared_ptr<Camera> camera) {
+void TerrainManager::GenerateTerrain(ResourceManager* resourceMan, VulkanRenderer* renderer, std::shared_ptr<Camera> camera) {
 	this->renderer = renderer;
 	settings.width = nextTerrainWidth;
 
@@ -188,7 +187,7 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<ResourceManager> resourceMa
 	recreateTerrain = false;
 }
 
-void TerrainManager::UpdateTerrains(std::shared_ptr<ResourceManager> resourceMan,
+void TerrainManager::UpdateTerrains(ResourceManager* resourceMan,
 	glm::vec3 cameraPos)
 {
 	if (recreateTerrain) {
@@ -349,6 +348,7 @@ void TerrainManager::SaveSettingsToFile() {
 	j["grid_dimentions"] = settings.gridDimentions;
 	j["view_distance"] = settings.viewDistance;
 	j["souce_iamge_resolution"] = settings.sourceImageResolution;
+	j["worker_threads"] = settings.workerThreads;
 
 	std::ofstream outFile(TerrainSettingsFileName);
 	outFile << std::setw(4) << j;
@@ -369,6 +369,9 @@ void TerrainManager::LoadSettingsFromFile() {
 		settings.gridDimentions = j["grid_dimentions"];
 		settings.viewDistance = j["view_distance"];
 		settings.sourceImageResolution = j["souce_iamge_resolution"];
+		settings.workerThreads = j["worker_threads"];
+		if(settings.workerThreads < 1)
+			settings.workerThreads = 1;
 	}
 	else {
 		settings = GeneralSettings{};

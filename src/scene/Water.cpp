@@ -12,7 +12,7 @@ Water::~Water() {
 }
 
 
-void Water::InitWater(std::shared_ptr<VulkanRenderer> renderer, VulkanTexture2D& WaterVulkanTexture)
+void Water::InitWater(VulkanRenderer* renderer, VulkanTexture2D& WaterVulkanTexture)
 {
 	this->renderer = renderer;
 

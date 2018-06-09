@@ -47,4 +47,4 @@ void        ImGui_ImplGlfwVulkan_ScrollCallback(GLFWwindow* window, double xoffs
 void        ImGui_ImplGlfwVulkan_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void        ImGui_ImplGlfwVulkan_CharCallback(GLFWwindow* window, unsigned int c);
 
-void PrepareImGui(std::shared_ptr<Window> window, std::shared_ptr<VulkanRenderer> vulkanRenderer);
+void PrepareImGui(GLFWwindow* window, VulkanRenderer* vulkanRenderer);

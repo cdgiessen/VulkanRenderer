@@ -6,7 +6,7 @@ GameObject::GameObject() {}
 
 GameObject::~GameObject() { Log::Debug << "game object deleted\n"; }
 
-void GameObject::InitGameObject(std::shared_ptr<VulkanRenderer> renderer)
+void GameObject::InitGameObject(VulkanRenderer* renderer)
 {
     this->renderer = renderer;
 

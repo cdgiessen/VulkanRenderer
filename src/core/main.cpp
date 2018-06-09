@@ -41,13 +41,6 @@ int main(int argc, char* argv[]) {
 		Log::Error << "ENGINE FAILED IN MAIN LOOP\n" << std::string(e.what()) << "\n";
 		return EXIT_FAILURE;
 	}
-	try {
-		vkApp->clean();
-	} 
-	catch (const std::runtime_error& e) {
-		Log::Error << "ENGINE FAILED TO CLEAN RESOURCES\n" << std::string(e.what()) << "\n";
-		return EXIT_FAILURE;
-	}
 
 	try {
 		vkApp.reset();

@@ -103,7 +103,7 @@ public:
 	TerrainCoordinateData coordinateData;
 	float heightScale = 100;
 
-	std::shared_ptr<VulkanRenderer> renderer;
+	VulkanRenderer* renderer;
 
 	std::shared_ptr<ManagedVulkanPipeline> mvp;
 
@@ -134,7 +134,7 @@ public:
 		int numCells, int maxLevels, float heightScale, TerrainCoordinateData coordinateData);
 	~Terrain();
 
-	void InitTerrain(std::shared_ptr<VulkanRenderer> renderer, glm::vec3 cameraPos,
+	void InitTerrain(VulkanRenderer* renderer, glm::vec3 cameraPos,
 		std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray);
 
 	void UpdateTerrain(glm::vec3 viewerPos);

@@ -21,7 +21,7 @@ class GameObject
     GameObject();
     ~GameObject();
 
-    void InitGameObject(std::shared_ptr<VulkanRenderer> renderer);
+    void InitGameObject(VulkanRenderer* renderer);
     void CleanUp();
 
     void LoadModel(std::string fileName);
@@ -38,7 +38,7 @@ class GameObject
 
 	void Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNormals);
 
-	std::shared_ptr<VulkanRenderer> renderer;
+	VulkanRenderer* renderer;
 
 	std::shared_ptr<ManagedVulkanPipeline> mvp;
 

@@ -11,44 +11,49 @@
 #include <json.hpp>
 #include <fstream>
 
+RenderSettings::RenderSettings(std::string fileName) : fileName(fileName){
+	Load();
+}
 
-constexpr auto RenderSettingsFileName = "render_settings.json";
-
-void VulkanRenderer::LoadRenderSettings() {
-	if (fileExists(RenderSettingsFileName)) {
-		std::ifstream input(RenderSettingsFileName);
+void RenderSettings::Load() {
+	if (fileExists(fileName)) {
+		std::ifstream input(fileName);
 		nlohmann::json j;
 		input >> j;
 
-		settings.graphicsSetupWorkerCount = j["graphics_worker_count"];
-		settings.transferWorkerCount = j["transfer_worker_count"];
-		settings.directionalLightCount = j["directional_light_count"];
-		settings.pointLightCount = j["point_light_count"];
-		settings.spotLightCount = j["spot_light_count"];
+		graphicsSetupWorkerCount = j["graphics_worker_count"];
+		transferWorkerCount = j["transfer_worker_count"];
+		directionalLightCount = j["directional_light_count"];
+		pointLightCount = j["point_light_count"];
+		spotLightCount = j["spot_light_count"];
+	} else {
+		Log::Debug << "Render Settings file didn't exist, creating one";
+		Save();
 	}
 }
-void VulkanRenderer::SaveRenderSettings() {
+void RenderSettings::Save() {
 	nlohmann::json j;
 
-	j["graphics_worker_count"] = settings.graphicsSetupWorkerCount;
-	j["transfer_worker_count"] = settings.transferWorkerCount;
+	j["graphics_worker_count"] = graphicsSetupWorkerCount;
+	j["transfer_worker_count"] = transferWorkerCount;
 
-	j["directional_light_count"] = settings.directionalLightCount;
-	j["point_light_count"] = settings.pointLightCount;
-	j["spot_light_count"] = settings.spotLightCount;
+	j["directional_light_count"] = directionalLightCount;
+	j["point_light_count"] = pointLightCount;
+	j["spot_light_count"] = spotLightCount;
 
-	std::ofstream outFile(RenderSettingsFileName);
+	std::ofstream outFile(fileName);
 	outFile << std::setw(4) << j;
 	outFile.close();
 }
 
 VulkanRenderer::VulkanRenderer(bool validationLayer,
-	std::shared_ptr<Scene> scene)
-	: device(validationLayer),
+	GLFWwindow* window)
+
+	:settings("render_settings.json"),
+	device(validationLayer),
 	vulkanSwapChain(device),
 	shaderManager(device),
 	pipelineManager(device),
-	scene(scene),
 	textureManager(device),
 	globalVariableBuffer(device),
 	cameraDataBuffer(device),
@@ -59,25 +64,6 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 	graphicsPrimaryCommandPool(device)
 
 {
-
-	LoadRenderSettings();
-}
-
-VulkanRenderer::~VulkanRenderer() {
-	Log::Debug << "renderer deleted\n";
-	// CleanVulkanResources();
-}
-
-void VulkanRenderer::ReloadRenderer(GLFWwindow *window) {
-	DeviceWaitTillIdle();
-	CleanVulkanResources();
-	LoadRenderSettings();
-	InitVulkanRenderer(window);
-}
-
-void VulkanRenderer::DeviceWaitTillIdle() { vkDeviceWaitIdle(device.device); }
-
-void VulkanRenderer::InitVulkanRenderer(GLFWwindow *window) {
 	device.window = window;
 
 	device.InitVulkanDevice(vulkanSwapChain.surface);
@@ -89,9 +75,9 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow *window) {
 
 	pipelineManager.InitPipelineCache();
 
-	if (settings.graphicsSetupWorkerCount <= 0)
+	if (settings.graphicsSetupWorkerCount < 1)
 		settings.graphicsSetupWorkerCount = 1;
-	if (settings.transferWorkerCount <= 0)
+	if (settings.transferWorkerCount < 1)
 		settings.transferWorkerCount = 1;
 
 	for (int i = 0; i < settings.graphicsSetupWorkerCount; i++) {
@@ -117,31 +103,14 @@ void VulkanRenderer::InitVulkanRenderer(GLFWwindow *window) {
 
 	imageAvailableSemaphore = std::make_unique<VulkanSemaphore>(device);
 	renderFinishedSemaphore = std::make_unique<VulkanSemaphore>(device);
+
+
+	PrepareImGui(window, this);
 }
 
-void VulkanRenderer::UpdateRenderResources(
-	GlobalData globalData, CameraData cameraData,
-	std::vector<DirectionalLight> directionalLights,
-	std::vector<PointLight> pointLights, std::vector<SpotLight> spotLights) {
-	globalVariableBuffer.CopyToBuffer(&globalData, sizeof(GlobalData));
-	cameraDataBuffer.CopyToBuffer(&cameraData, sizeof(CameraData));
-	sunBuffer.CopyToBuffer(directionalLights.data(),
-		directionalLights.size() * sizeof(DirectionalLight));
-	pointLightsBuffer.CopyToBuffer(pointLights.data(),
-		pointLights.size() * sizeof(PointLight));
-	spotLightsBuffer.CopyToBuffer(spotLights.data(),
-		spotLights.size() * sizeof(SpotLight));
-}
+VulkanRenderer::~VulkanRenderer() {
+	ImGui_ImplGlfwVulkan_Shutdown();
 
-void VulkanRenderer::RenderFrame() {
-
-	PrepareFrame();
-	BuildCommandBuffers();
-	SubmitFrame();
-	SaveScreenshot();
-}
-
-void VulkanRenderer::CleanVulkanResources() {
 	globalVariableBuffer.CleanBuffer();
 	cameraDataBuffer.CleanBuffer();
 	sunBuffer.CleanBuffer();
@@ -151,7 +120,7 @@ void VulkanRenderer::CleanVulkanResources() {
 	vkDestroyPipelineLayout(device.device, frameDataDescriptorLayout, nullptr);
 	vkDestroyPipelineLayout(device.device, lightingDescriptorLayout, nullptr);
 
-	for (auto descriptor : descriptors)
+	for (auto& descriptor : descriptors)
 		descriptor->CleanUpResources();
 
 	depthBuffer->destroy();
@@ -173,6 +142,32 @@ void VulkanRenderer::CleanVulkanResources() {
 	pipelineManager.CleanUp();
 
 	device.Cleanup(vulkanSwapChain.surface);
+
+	Log::Debug << "renderer deleted\n";
+}
+
+void VulkanRenderer::DeviceWaitTillIdle() { vkDeviceWaitIdle(device.device); }
+
+void VulkanRenderer::UpdateRenderResources(
+	GlobalData globalData, CameraData cameraData,
+	std::vector<DirectionalLight> directionalLights,
+	std::vector<PointLight> pointLights, std::vector<SpotLight> spotLights) {
+	globalVariableBuffer.CopyToBuffer(&globalData, sizeof(GlobalData));
+	cameraDataBuffer.CopyToBuffer(&cameraData, sizeof(CameraData));
+	sunBuffer.CopyToBuffer(directionalLights.data(),
+		directionalLights.size() * sizeof(DirectionalLight));
+	pointLightsBuffer.CopyToBuffer(pointLights.data(),
+		pointLights.size() * sizeof(PointLight));
+	spotLightsBuffer.CopyToBuffer(spotLights.data(),
+		spotLights.size() * sizeof(SpotLight));
+}
+
+void VulkanRenderer::RenderFrame() {
+
+	PrepareFrame();
+	BuildCommandBuffers();
+	SubmitFrame();
+	SaveScreenshot();
 }
 
 void VulkanRenderer::CreateWorkerThreads() {
@@ -310,7 +305,7 @@ void VulkanRenderer::CreateRenderPass() {
 void VulkanRenderer::CreateDepthResources() {
 	VkFormat depthFormat = FindDepthFormat();
 	depthFormat = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
-	depthBuffer = std::make_shared<VulkanTextureDepthBuffer>(device);
+	depthBuffer = std::make_unique<VulkanTextureDepthBuffer>(device);
 	depthBuffer->CreateDepthImage(*this, depthFormat,
 		vulkanSwapChain.swapChainExtent.width,
 		vulkanSwapChain.swapChainExtent.height);
@@ -349,7 +344,7 @@ void VulkanRenderer::CreateCommandBuffers() {
 
 	commandBuffers.resize(vulkanSwapChain.swapChainFramebuffers.size());
 
-	for (auto &cmdBuf : commandBuffers) {
+	for (auto& cmdBuf : commandBuffers) {
 		cmdBuf = graphicsPrimaryCommandPool.GetPrimaryCommandBuffer(false);
 	}
 
@@ -426,7 +421,7 @@ void VulkanRenderer::CreatePrimaryCommandBuffer() {
 	allocate command buffers!");
 			}
 	}*/
-	for (auto &cmdBuf : commandBuffers) {
+	for (auto& cmdBuf : commandBuffers) {
 		cmdBuf = graphicsPrimaryCommandPool.GetPrimaryCommandBuffer(false);
 	}
 
@@ -814,7 +809,7 @@ void WaitForSubmissionFinish(VkDevice device, CommandPool *pool,
 
 	vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 	if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
-		for (auto &sig : readySignal)
+		for (auto& sig : readySignal)
 			*sig = true;
 	}
 	else if (vkGetFenceStatus(device, fence) == VK_NOT_READY) {
@@ -822,7 +817,7 @@ void WaitForSubmissionFinish(VkDevice device, CommandPool *pool,
 			"happening?\n";
 		vkWaitForFences(device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 		if (vkGetFenceStatus(device, fence) == VK_SUCCESS) {
-			for (auto &sig : readySignal)
+			for (auto& sig : readySignal)
 				*sig = true;
 		}
 	}
@@ -835,7 +830,7 @@ void WaitForSubmissionFinish(VkDevice device, CommandPool *pool,
 
 	pool->FreeCommandBuffer(buf);
 
-	for (auto &buffer : bufsToClean) {
+	for (auto& buffer : bufsToClean) {
 		buffer.CleanBuffer();
 	}
 }
@@ -905,7 +900,7 @@ void WaitForSubmissionFinish(VkDevice device, CommandPool *pool,
 // 		// vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
 // 		// vkQueueWaitIdle(graphics_queue);
 
-// 		for (auto &buffer : bufsToClean) {
+// 		for (auto& buffer : bufsToClean) {
 // 			buffer.CleanBuffer();
 // 		}
 // 		graphicsPrimaryCommandPool.FreeCommandBuffer(buf);
@@ -913,7 +908,7 @@ void WaitForSubmissionFinish(VkDevice device, CommandPool *pool,
 // 		//	std::lock_guard<std::mutex> lock(graphics_command_pool_lock);
 // 		//	vkFreeCommandBuffers(device, graphicsPrimaryCommandPool, 1, &buf);
 // 		//}
-// 		for (auto &sig : readySignal)
+// 		for (auto& sig : readySignal)
 // 			*sig = true;
 // 	}
 // }

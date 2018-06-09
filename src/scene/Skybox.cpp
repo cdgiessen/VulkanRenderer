@@ -17,7 +17,7 @@ void Skybox::CleanUp() {
 	skyboxUniformBuffer->CleanBuffer();
 }
 
-void Skybox::InitSkybox(std::shared_ptr<VulkanRenderer> renderer) {
+void Skybox::InitSkybox(VulkanRenderer* renderer) {
 	this->renderer = renderer;
 
 	SetupUniformBuffer();

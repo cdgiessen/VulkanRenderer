@@ -9,42 +9,78 @@
 
 #include <json.hpp>
 
-VulkanApp::VulkanApp()
-{
-	ReadSettings();
+VulkanAppSettings::VulkanAppSettings(std::string fileName)
+	:fileName(fileName)
+{ 
+	Load();
+}
 
-	timeManager = std::make_shared<TimeManager>();
+void VulkanAppSettings::Load() {
+	if (fileExists(fileName)) {	
+		std::ifstream input(fileName);
+		nlohmann::json settings;
+		input >> settings;
 
-	window = std::make_shared<Window>();
-	window->createWindow(isFullscreen, glm::ivec2(screenWidth, screenHeight), glm::ivec2(10,10));
-	Input::SetupInputDirector(window->getWindowContext());
-	//Input::SetMouseControlStatus(true);
+		screenWidth = settings["initial-screen-size"]["width"];
+		screenHeight = settings["initial-screen-size"]["height"];
 
-	resourceManager = std::make_shared<ResourceManager>();
+		useValidationLayers = settings["use-validation-layers"];
 
-	scene = std::make_shared<Scene>();
+		isFullscreen = settings["fullscreen"];
 
-	vulkanRenderer = std::make_shared<VulkanRenderer>(useValidationLayers, scene);
-	vulkanRenderer->InitVulkanRenderer(window->getWindowContext());
+		isFrameCapped = settings["is-frame-rate-capped"];
+		MaxFPS = settings["max-fps"];
+	} else {
+		Log::Debug << "Settings file didn't exist, creating one";
+		Save();
+	}
+}
+
+void VulkanAppSettings::Save() {
+	nlohmann::json j;
+
+	j["initial-screen-size"]["width"] = screenWidth;
+	j["initial-screen-size"]["height"] = screenHeight;
+
+	j["use-validation-layers"] = useValidationLayers;
+
+	j["fullscreen"] = isFullscreen;
+
+	j["is-frame-rate-capped"] = isFrameCapped;
+	j["max-fps"] = MaxFPS;
 	
-	scene->PrepareScene(resourceManager, vulkanRenderer, imgui_nodeGraph_terrain.GetGraph());
+	std::ofstream outFile(fileName);
+	outFile << std::setw(4) << j;
+	outFile.close();
+}
 
-	PrepareImGui(window, vulkanRenderer);
+VulkanApp::VulkanApp():
+	settings("settings.json")
+{
+
+
+	timeManager = std::make_unique<TimeManager>();
+
+	window = std::make_unique<Window>();
+	window->createWindow(settings.isFullscreen, glm::ivec2(settings.screenWidth, settings.screenHeight), glm::ivec2(10,10));
+	Input::SetupInputDirector(window->getWindowContext());
+	
+	resourceManager = std::make_unique<ResourceManager>();
+
+
+	vulkanRenderer = std::make_unique<VulkanRenderer>(settings.useValidationLayers, window->getWindowContext());
+	
+	scene = std::make_unique<Scene>(resourceManager.get(), vulkanRenderer.get(), imgui_nodeGraph_terrain.GetGraph());
+	
+	vulkanRenderer->scene = scene.get();
 }
 
 
 VulkanApp::~VulkanApp()
 {
-}
-
-
-void VulkanApp::clean() {
-	CleanUpImgui();
-
-	scene->CleanUpScene();
-
-	vulkanRenderer->CleanVulkanResources();
-
+	scene.reset();
+	vulkanRenderer.reset();
+	
 	window->destroyWindow();
 }
 
@@ -61,14 +97,14 @@ void VulkanApp::mainLoop() {
 		timeManager->StartFrameTimer();
 		Input::inputDirector.UpdateInputs();
 		HandleInputs();
-		scene->UpdateScene(resourceManager, timeManager);
+		scene->UpdateScene(resourceManager.get(), timeManager.get());
 		BuildImgui();
 		vulkanRenderer->RenderFrame();
 		Input::inputDirector.ResetReleasedInput();
 
-		if (isFrameCapped) {
-			if (timeManager->ExactTimeSinceFrameStart() < 1.0 / MaxFPS) {
-				std::this_thread::sleep_for(std::chrono::duration<double>(1.0 / MaxFPS - timeManager->ExactTimeSinceFrameStart()));
+		if (settings.isFrameCapped) {
+			if (timeManager->ExactTimeSinceFrameStart() < 1.0 / settings.MaxFPS) {
+				std::this_thread::sleep_for(std::chrono::duration<double>(1.0 / settings.MaxFPS - timeManager->ExactTimeSinceFrameStart()));
 			}
 		}
 		timeManager->EndFrameTimer();
@@ -76,23 +112,6 @@ void VulkanApp::mainLoop() {
 
 	vulkanRenderer->DeviceWaitTillIdle();
 
-}
-
-void VulkanApp::ReadSettings() {
-
-	std::ifstream input("settings.json");
-	nlohmann::json settings;
-	input >> settings;
-
-	screenWidth = settings["initial-screen-size"]["width"];
-	screenHeight = settings["initial-screen-size"]["height"];
-
-	useValidationLayers = settings["use-validation-layers"];
-
-	isFullscreen = settings["fullscreen"];
-
-	isFrameCapped = settings["is-frame-rate-capped"];
-	MaxFPS = settings["max-fps"];
 }
 
 void VulkanApp::RecreateSwapChain() {
@@ -136,7 +155,7 @@ void VulkanApp::CameraWindow(bool* show_camera_window) {
 	ImGui::DragFloat3("Pos", &scene->GetCamera()->Position.x, 2);
 	ImGui::DragFloat3("Rot", &scene->GetCamera()->Front.x, 2);
 	ImGui::Text("Camera Movement Speed");
-	ImGui::Text(std::to_string(scene->GetCamera()->MovementSpeed).c_str());
+	ImGui::Text("%f", scene->GetCamera()->MovementSpeed);
 	ImGui::SliderFloat("##camMovSpeed", &(scene->GetCamera()->MovementSpeed), 0.1f, 100.0f);
 	ImGui::End();
 }
@@ -218,11 +237,6 @@ void VulkanApp::BuildImgui() {
 
 }
 
-//Release associated resources and shutdown imgui
-void VulkanApp::CleanUpImgui() {
-	ImGui_ImplGlfwVulkan_Shutdown();
-}
-
 void VulkanApp::HandleInputs() {
 	//Log::Debug << camera->Position.x << " " << camera->Position.y << " " << camera->Position.z << "\n";
 
@@ -291,11 +305,16 @@ void VulkanApp::HandleInputs() {
 		}
 
 		if(Input::GetKeyDown(Input::KeyCode::DIGIT_0) && Input::GetKey(Input::KeyCode::DIGIT_9)){
-			CleanUpImgui();
-			scene->CleanUpScene();
-			vulkanRenderer->ReloadRenderer(window->getWindowContext());
-			scene->PrepareScene(resourceManager, vulkanRenderer, imgui_nodeGraph_terrain.GetGraph());
-			PrepareImGui(window, vulkanRenderer);
+			scene.reset();
+			Log::Debug << "Scene reset\n";
+
+			vulkanRenderer.reset();
+			Log::Debug << "Renderer reset\n";
+
+			vulkanRenderer = std::make_unique<VulkanRenderer>(settings.useValidationLayers, window->getWindowContext());
+			
+			scene = std::make_unique<Scene>(resourceManager.get(), vulkanRenderer.get(), imgui_nodeGraph_terrain.GetGraph());
+			vulkanRenderer->scene = scene.get();
 		}
 	}
 	else {

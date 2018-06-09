@@ -30,7 +30,7 @@ VkFence VulkanFence::Get() {
 	return fence;
 }
 
-std::vector<VkFence> CreateFenceArray(std::vector<VulkanFence> fences)
+std::vector<VkFence> CreateFenceArray(std::vector<VulkanFence>& fences)
 {
 	std::vector<VkFence> outFences(fences.size());
 	for(auto& fence : fences)
@@ -53,11 +53,7 @@ VkSemaphore VulkanSemaphore::Get() {
 	return semaphore;
 }
 
-VkSemaphore* VulkanSemaphore::GetPtr() {
-	return &semaphore;
-}
-
-std::vector<VkSemaphore> CreateSemaphoreArray(std::vector<VulkanSemaphore> sems)
+std::vector<VkSemaphore> CreateSemaphoreArray(std::vector<VulkanSemaphore>& sems)
 {
 	std::vector<VkSemaphore> outSems;
 	for(auto& sem : sems)
@@ -98,19 +94,22 @@ void CommandQueue::SubmitCommandBuffer(VkCommandBuffer buffer, VkFence fence)
 	Submit(submitInfo, fence);
 }
 
-void CommandQueue::SubmitCommandBuffer(VkCommandBuffer buffer,
-	VulkanFence fence,
-	std::vector<VkSemaphore>& waitSemaphores,
-	std::vector<VkSemaphore>& signalSemaphores)
+void CommandQueue::SubmitCommandBuffer(VkCommandBuffer cmdBuffer,
+	VulkanFence& fence,
+	std::vector<VulkanSemaphore>& waitSemaphores,
+	std::vector<VulkanSemaphore>& signalSemaphores)
 {
+	auto waits = CreateSemaphoreArray(waitSemaphores);
+	auto sigs = CreateSemaphoreArray(signalSemaphores);
+
 	const auto stageMasks = std::vector<VkPipelineStageFlags>{ VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
 	auto submitInfo = initializers::submitInfo();
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &buffer;
-	submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size();
-	submitInfo.pSignalSemaphores = signalSemaphores.data();
-	submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
-	submitInfo.pWaitSemaphores = waitSemaphores.data();
+	submitInfo.pCommandBuffers = &cmdBuffer;
+	submitInfo.signalSemaphoreCount = (uint32_t)sigs.size();
+	submitInfo.pSignalSemaphores = sigs.data();
+	submitInfo.waitSemaphoreCount = (uint32_t)waits.size();
+	submitInfo.pWaitSemaphores = waits.data();
 	submitInfo.pWaitDstStageMask = stageMasks.data();
 	Submit(submitInfo, fence.Get());
 }
@@ -225,14 +224,25 @@ VkCommandBuffer CommandPool::GetSecondaryCommandBuffer(bool beginBufferRecording
 	return cmdBuffer;
 }
 
-VkBool32 CommandPool::SubmitCommandBuffer(VkCommandBuffer cmdBuffer, VulkanFence fence,
-	std::vector<VkSemaphore>& waitSemaphores, std::vector<VkSemaphore>& signalSemaphores)
+// VkBool32 CommandPool::SubmitCommandBuffer(VkCommandBuffer cmdBuffer, VulkanFence& fence,
+// 	std::vector<VkSemaphore>& waitSemaphores, std::vector<VkSemaphore>& signalSemaphores)
+// {
+// 	EndBufferRecording(cmdBuffer);
+// 	queue->SubmitCommandBuffer(cmdBuffer, fence, waitSemaphores, signalSemaphores);
+
+// 	return VK_TRUE;
+// }
+
+VkBool32 CommandPool::SubmitCommandBuffer(VkCommandBuffer cmdBuffer, VulkanFence& fence,
+		std::vector<VulkanSemaphore>& waitSemaphores, 
+		std::vector<VulkanSemaphore>& signalSemaphores)
 {
 	EndBufferRecording(cmdBuffer);
 	queue->SubmitCommandBuffer(cmdBuffer, fence, waitSemaphores, signalSemaphores);
 
 	return VK_TRUE;
 }
+
 
 VkBool32 CommandPool::SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence) {
 	EndBufferRecording(cmdBuffer);
@@ -278,18 +288,18 @@ template <> void CommandBufferWorker<CommandBufferWork>::Work() {
 
 			VulkanFence fence(device);
 
-			std::vector<VkSemaphore> waits;
-			for (auto& w : pos_work->waitSemaphores)
-				waits.push_back(w.Get());
-			std::vector<VkSemaphore> signals;
-			for (auto& s : pos_work->signalSemaphores)
-				signals.push_back(s.Get());
+			//std::vector<VkSemaphore> waits;
+			//for (auto& w : pos_work->waitSemaphores)
+			//	waits.push_back(w.Get());
+			//std::vector<VkSemaphore> signals;
+			//for (auto& s : pos_work->signalSemaphores)
+			//	signals.push_back(s.Get());
 
-			pool.SubmitCommandBuffer(buf, fence, waits, signals);
+			pool.SubmitCommandBuffer(buf, fence, pos_work->waitSemaphores, pos_work->signalSemaphores);
 
 			fence.WaitTillTrue();
 
-			for (auto &flag : pos_work->flags)
+			for (auto& flag : pos_work->flags)
 				*flag = true;
 			for (auto& sem : pos_work->waitSemaphores)
 				sem.CleanUp(device);
@@ -320,24 +330,24 @@ template <> void CommandBufferWorker<TransferCommandWork>::Work() {
 
 			VulkanFence fence(device);
 
-			std::vector<VkSemaphore> waits;
-			for (auto& w : pos_work->waitSemaphores)
-				waits.push_back(w.Get());
-			std::vector<VkSemaphore> signals;
-			for (auto& s : pos_work->signalSemaphores)
-				signals.push_back(s.Get());
+			//std::vector<VkSemaphore> waits;
+			//for (auto& w : pos_work->waitSemaphores)
+			//	waits.push_back(w.Get());
+			//std::vector<VkSemaphore> signals;
+			//for (auto& s : pos_work->signalSemaphores)
+			//	signals.push_back(s.Get());
 
-			pool.SubmitCommandBuffer(buf, fence, waits, signals);
+			pool.SubmitCommandBuffer(buf, fence, pos_work->waitSemaphores, pos_work->signalSemaphores);
 
 			fence.WaitTillTrue();
 
-			for (auto &flag : pos_work->flags)
+			for (auto& flag : pos_work->flags)
 				*flag = true;
 
 			for (auto& sem : pos_work->waitSemaphores)
 				sem.CleanUp(device);
 
-			for (auto &buffer : pos_work->buffersToClean)
+			for (auto& buffer : pos_work->buffersToClean)
 				buffer.CleanBuffer();
 
 
