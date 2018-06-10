@@ -15,7 +15,6 @@ TerrainCreationData::TerrainCreationData(
 	VulkanRenderer* renderer,
 	glm::vec3 cameraPos,
 	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
-	std::shared_ptr<MemoryPool<TerrainQuad>> pool,
 	InternalGraph::GraphPrototype& protoGraph,
 	int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord) :
 
@@ -23,7 +22,6 @@ TerrainCreationData::TerrainCreationData(
 	renderer(renderer),
 	cameraPos(cameraPos),
 	terrainVulkanTextureArray(terrainVulkanTextureArray),
-	pool(pool),
 	protoGraph(protoGraph),
 	numCells(numCells),
 	maxLevels(maxLevels),
@@ -45,7 +43,10 @@ void TerrainCreationWorker(TerrainManager* man) {
 			auto data = man->terrainCreationWork.pop_if();
 			if (data.has_value())
 			{
-				auto terrain = std::make_shared<Terrain>(data->pool, data->protoGraph, data->numCells, data->maxLevels, data->heightScale, data->coord);
+				auto terrain = std::make_unique<Terrain>(
+					man->poolMesh_vertices, man->poolMesh_indices, 
+					data->protoGraph, data->numCells, data->maxLevels, 
+					data->heightScale, data->coord);
 
 				std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
 
@@ -68,7 +69,8 @@ void TerrainCreationWorker(TerrainManager* man) {
 }
 
 
-TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph) : protoGraph(protoGraph)
+TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph) 
+: protoGraph(protoGraph), poolMesh_vertices(500), poolMesh_indices(500)
 {
 	if (settings.maxLevels < 0) {
 		maxNumQuads = 1;
@@ -79,6 +81,9 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph) : prot
 	}
 	LoadSettingsFromFile();
 	//terrainQuadPool = std::make_shared<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>>();
+	//poolMesh_vertices = MemoryPool<TerrainMeshVertices>(500);
+	//poolMesh_indices = MemoryPool<TerrainMeshIndices(500);
+
 }
 
 TerrainManager::~TerrainManager()
@@ -162,7 +167,7 @@ void TerrainManager::GenerateTerrain(ResourceManager* resourceMan, VulkanRendere
 
 			terrainCreationWork.push_back(TerrainCreationData(
 				resourceMan, renderer, camera->Position, terrainVulkanTextureArray,
-				terrainQuadPool, protoGraph,
+				protoGraph,
 				settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale,
 				coord));
 
@@ -201,7 +206,7 @@ void TerrainManager::UpdateTerrains(ResourceManager* resourceMan,
 
 	terrainUpdateTimer.StartTimer();
 
-	std::vector<std::vector<std::shared_ptr<Terrain>>::iterator> terToDelete;
+	std::vector<std::vector<std::unique_ptr<Terrain>>::iterator> terToDelete;
 
 	//delete terrains too far away
 	terrain_mutex.lock();
@@ -281,7 +286,7 @@ void TerrainManager::UpdateTerrains(ResourceManager* resourceMan,
 				terrain_mutex.lock();
 				terrainCreationWork.push_back(TerrainCreationData(
 					resourceMan, renderer, cameraPos, terrainVulkanTextureArray,
-					terrainQuadPool, protoGraph,
+					protoGraph,
 					settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale,
 					coord));
 				terrain_mutex.unlock();

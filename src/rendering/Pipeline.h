@@ -49,17 +49,6 @@ public:
 
 	ShaderModuleSet shaderSet;
 
-	//bool geomShader;
-	//bool tessShader;
-	//VkShaderModule vertShaderModule;
-	//VkShaderModule fragShaderModule;
-	//VkShaderModule geomShaderModule;
-	//VkShaderModule tessShaderModule;
-	//VkPipelineShaderStageCreateInfo vertShaderStageInfo;
-	//VkPipelineShaderStageCreateInfo fragShaderStageInfo;
-	//VkPipelineShaderStageCreateInfo geomShaderStageInfo;
-	//VkPipelineShaderStageCreateInfo tessShaderStageInfo;
-
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo;
 	std::unique_ptr<std::vector<VkVertexInputBindingDescription>> vertexInputBindingDescription;
 	std::unique_ptr<std::vector<VkVertexInputAttributeDescription>> vertexInputAttributeDescriptions;
@@ -107,12 +96,6 @@ public:
 	void BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> pco, VkRenderPass renderPass, VkPipelineCreateFlags flags);
 
 	void SetShaderModuleSet(std::shared_ptr<ManagedVulkanPipeline> pco, ShaderModuleSet set);
-
-	//void SetVertexShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule vert);
-	//void SetFragmentShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule frag);
-	//void SetGeometryShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule geom);
-	//void SetTesselationShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule tess);
-	//void CleanShaderResources(std::shared_ptr<ManagedVulkanPipeline> pco); //destroys the shader modules after pipeline creation is finished
 
 	void SetVertexInput(std::shared_ptr<ManagedVulkanPipeline> pco,
 		std::vector<VkVertexInputBindingDescription> bindingDescription,

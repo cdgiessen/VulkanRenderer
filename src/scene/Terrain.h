@@ -57,7 +57,9 @@ struct TerrainCoordinateData {
 struct TerrainQuad {
 	TerrainQuad(glm::vec2 pos, glm::vec2 size,
 		glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,
-		int level, glm::i32vec2 subDivPos, float centerHeightValue);
+		int level, glm::i32vec2 subDivPos, float centerHeightValue,
+		TerrainMeshVertices* verts, TerrainMeshIndices* inds,
+		VulkanDevice& device);
 	~TerrainQuad();
 
 	static float GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos);
@@ -72,14 +74,17 @@ struct TerrainQuad {
 	bool isSubdivided = false;
 	bool isUploaded = false;
 
-	std::shared_ptr<TerrainMeshVertices> vertices;
-	std::shared_ptr<TerrainMeshIndices> indices;
+	TerrainMeshVertices* vertices;
+	TerrainMeshIndices* indices;
+
+	VulkanBufferVertex deviceVertices;
+	VulkanBufferIndex deviceIndices;
 
 	struct SubQuads {
-		std::shared_ptr<TerrainQuad> UpLeft;
-		std::shared_ptr<TerrainQuad> DownLeft;
-		std::shared_ptr<TerrainQuad> UpRight;
-		std::shared_ptr<TerrainQuad> DownRight;
+		TerrainQuad* UpLeft;
+		TerrainQuad* DownLeft;
+		TerrainQuad* UpRight;
+		TerrainQuad* DownRight;
 	} subQuads;
 
 	Signal isReady;
@@ -87,15 +92,17 @@ struct TerrainQuad {
 
 class Terrain {
 public:
-	//std::shared_ptr<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>> terrainQuads;
+	MemoryPool<TerrainMeshVertices>& meshPool_vertices;
+	MemoryPool<TerrainMeshIndices>& meshPool_indices;
+
 
 	//Refence to all of the quads
-	std::vector<std::shared_ptr<TerrainQuad>> quadHandles;
-	std::vector<std::shared_ptr<TerrainQuad>> PrevQuadHandles;
-	std::vector<TerrainMeshVertices> verts;
-	std::vector<TerrainMeshIndices> inds;
+	std::vector<std::unique_ptr<TerrainQuad>> quadHandles;
+	std::vector<TerrainQuad*> PrevQuadHandles;
+	//std::vector<TerrainMeshVertices> verts;
+	//std::vector<TerrainMeshIndices> inds;
 
-	std::shared_ptr<TerrainQuad> rootQuad;
+	TerrainQuad* rootQuad;
 	int maxLevels;
 	int maxNumQuads;
 	int numQuads = 1;
@@ -109,8 +116,8 @@ public:
 
 	std::shared_ptr<VulkanDescriptor> descriptor;
 
-	std::shared_ptr<VulkanBufferVertex> vertexBuffer;
-	std::shared_ptr<VulkanBufferIndex> indexBuffer;
+	//std::vector<VulkanBufferVertex> vertexBuffers;
+	//std::vector<VulkanBufferIndex> indexBuffers;
 
 	DescriptorSet descriptorSet;
 
@@ -130,7 +137,10 @@ public:
 
 	std::vector<std::thread *> terrainGenerationWorkers;
 
-	Terrain(std::shared_ptr<MemoryPool<TerrainQuad>> pool, InternalGraph::GraphPrototype& protoGraph,
+	Terrain(
+		MemoryPool<TerrainMeshVertices>& meshPool_vertices,
+		MemoryPool<TerrainMeshIndices>& meshPool_indices, 
+		InternalGraph::GraphPrototype& protoGraph,
 		int numCells, int maxLevels, float heightScale, TerrainCoordinateData coordinateData);
 	~Terrain();
 
@@ -148,9 +158,9 @@ public:
 private:
 
 	void InitTerrainQuad(
-		std::shared_ptr<TerrainQuad> quad, Corner_Enum corner, glm::vec3 viewerPos);
+		TerrainQuad* quad, Corner_Enum corner, glm::vec3 viewerPos);
 
-	bool UpdateTerrainQuad(std::shared_ptr<TerrainQuad> quad, glm::vec3 viewerPos);
+	bool UpdateTerrainQuad(TerrainQuad* quad, glm::vec3 viewerPos);
 
 	void SetupMeshbuffers();
 	void SetupUniformBuffer();
@@ -161,10 +171,10 @@ private:
 
 	void UpdateMeshBuffer();
 
-	void SubdivideTerrain(std::shared_ptr<TerrainQuad> quad, glm::vec3 viewerPos);
-	void UnSubdivide(std::shared_ptr<TerrainQuad> quad);
+	void SubdivideTerrain(TerrainQuad* quad, glm::vec3 viewerPos);
+	void UnSubdivide(TerrainQuad* quad);
 };
 
 
 //Create a mesh chunk for rendering using fastgraph as the input data
-void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, std::shared_ptr<TerrainQuad> terrainQuad, Corner_Enum corner, float heightScale, float widthScale, int maxSubDivLevels);
+void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, TerrainQuad* terrainQuad, Corner_Enum corner, float heightScale, float widthScale, int maxSubDivLevels);

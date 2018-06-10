@@ -153,46 +153,6 @@ void VulkanPipeline::SetShaderModuleSet(std::shared_ptr<ManagedVulkanPipeline> m
 }
 
 
-/*
-void VulkanPipeline::SetVertexShader(std::shared_ptr<ManagedVulkanPipeline> mvp, VkShaderModule vert)
-{
-	mvp->pco.vertShaderStageInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vert);
-	mvp->pco.vertShaderStageInfo.pName = "main";
-	mvp->pco.vertShaderModule = vert;
-}
-
-void VulkanPipeline::SetFragmentShader(std::shared_ptr<ManagedVulkanPipeline> mvp, VkShaderModule frag)
-{
-	mvp->pco.fragShaderStageInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, frag);
-	mvp->pco.fragShaderStageInfo.pName = "main";
-	mvp->pco.fragShaderModule = frag;
-}
-
-void VulkanPipeline::SetGeometryShader(std::shared_ptr<ManagedVulkanPipeline> mvp, VkShaderModule geom)
-{
-	mvp->pco.geomShaderStageInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, geom);
-	mvp->pco.geomShaderStageInfo.pName = "main";
-	mvp->pco.geomShader = true;
-	mvp->pco.geomShaderModule = geom;
-}
-
-//this shouldn't work (cause I have no clue how tess shaders work...)
-void VulkanPipeline::SetTesselationShader(std::shared_ptr<ManagedVulkanPipeline> mvp, VkShaderModule tess)
-{
-	mvp->pco.tessShaderStageInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, tess);
-	mvp->pco.tessShaderStageInfo.pName = "main";
-	mvp->pco.tessShader = true;
-	mvp->pco.tessShaderModule = tess;
-}
-
-void VulkanPipeline::CleanShaderResources(std::shared_ptr<ManagedVulkanPipeline> mvp) {
-	vkDestroyShaderModule(device.device, mvp->pco.vertShaderModule, nullptr);
-	vkDestroyShaderModule(device.device, mvp->pco.fragShaderModule, nullptr);
-	vkDestroyShaderModule(device.device, mvp->pco.geomShaderModule, nullptr);
-	vkDestroyShaderModule(device.device, mvp->pco.tessShaderModule, nullptr);
-}
-*/
-
 void VulkanPipeline::SetVertexInput(std::shared_ptr<ManagedVulkanPipeline> mvp, 
 	std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescriptions)
 {

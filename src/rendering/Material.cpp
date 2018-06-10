@@ -66,3 +66,9 @@ void VulkanMaterial::Setup(){
 	//writes.push_back(DescriptorUse(1, 1, gameObjectVulkanTexture->resource));
 	descriptor.UpdateDescriptorSet(descriptorSet, writes);
 }
+
+void VulkanMaterial::Bind(VkCommandBuffer cmdBuf){
+
+
+
+}

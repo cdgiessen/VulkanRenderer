@@ -48,7 +48,6 @@ struct TerrainCreationData {
 	VulkanRenderer* renderer;
 	glm::vec3 cameraPos;
 	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray;
-	std::shared_ptr<MemoryPool<TerrainQuad>> pool;
 	InternalGraph::GraphPrototype& protoGraph;
 	int numCells; int maxLevels;
 	int sourceImageResolution;
@@ -60,7 +59,6 @@ struct TerrainCreationData {
 		VulkanRenderer* renderer,
 		glm::vec3 cameraPos,
 		std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
-		std::shared_ptr<MemoryPool<TerrainQuad>> pool,
 		InternalGraph::GraphPrototype& protoGraph,
 		int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord);
 };
@@ -89,6 +87,10 @@ public:
 
 	void RecreateTerrain();
 
+	MemoryPool<TerrainMeshVertices> poolMesh_vertices;
+	MemoryPool<TerrainMeshIndices> poolMesh_indices;
+
+
 	std::mutex workerMutex;
 	std::condition_variable workerConditionVariable;
 
@@ -98,7 +100,7 @@ public:
 	bool isCreatingTerrain = true; //while condition for worker threads
 
 	std::mutex terrain_mutex;
-	std::vector<std::shared_ptr<Terrain>> terrains;
+	std::vector<std::unique_ptr<Terrain>> terrains;
 	std::vector<glm::i32vec2> activeTerrains;
 
 private:
@@ -114,8 +116,8 @@ private:
 
 	VulkanRenderer* renderer;
 
-	std::shared_ptr<MemoryPool<TerrainQuad>> terrainQuadPool;
-
+	//std::shared_ptr<MemoryPool<TerrainQuad>> terrainQuadPool;
+	
 	std::unique_ptr<InstancedSceneObject> instancedWaters;
 
 	std::vector<std::shared_ptr<Water>> waters;

@@ -20,6 +20,15 @@
 
 using MaterialOptions = std::variant<Phong_Material, PBR_Mat_Value>;
 
+
+struct MaterialResource {
+
+	//MaterialResource(std::shared_ptr<UniformBuffer> buffer);
+	//MaterialResource(std::shared_ptr<Texture> texture);
+	
+
+};
+
 class VulkanMaterial {
 public:
 	VulkanMaterial(VulkanDevice& device);
@@ -32,7 +41,7 @@ public:
 
 	void Setup();
 
-	void Bind();
+	void Bind(VkCommandBuffer cmdBuf);
 
 
 private:

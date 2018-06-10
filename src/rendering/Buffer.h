@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <functional>
 
 #include <vulkan/vulkan.h>
 
@@ -13,6 +14,9 @@ class VulkanBuffer {
 public:
 	VulkanBuffer(VulkanDevice& device);
 	VulkanBuffer(VulkanDevice& device, VkDescriptorType type);
+
+	VulkanBuffer(const VulkanBuffer& buf) = default;
+	VulkanBuffer& operator=(const VulkanBuffer& buf) = default;
 
 	void CleanBuffer();
 
@@ -27,7 +31,7 @@ public:
 	DescriptorResource resource;
 
 protected:
-	VulkanDevice & device;
+	VulkanDevice* device;
 
 	void SetupResource();
 
