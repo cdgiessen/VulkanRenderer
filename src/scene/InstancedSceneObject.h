@@ -52,7 +52,7 @@ public:
 	void LoadModel(std::string fileName);
 	void LoadModel(std::shared_ptr<Mesh> mesh);
 
-	void SetFragmentShaderToUse(VkShaderModule shaderModule);
+	void SetFragmentShaderToUse(std::string frag);
 	void SetCullMode(VkCullModeFlagBits cullMode);
 	void SetBlendMode(VkBool32 blendEnable);
 
@@ -104,8 +104,8 @@ private:
 
 	bool isDirty = false;
 
-
-	VkShaderModule fragShaderModule;
+	std::string fragShaderPath;
+	//VkShaderModule fragShaderModule;
 	VkCullModeFlagBits cullModeFlagBits = VK_CULL_MODE_BACK_BIT;
 	VkBool32 enableBlending = VK_FALSE;
 

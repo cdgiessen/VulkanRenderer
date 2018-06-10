@@ -60,7 +60,7 @@ public:
 	void SetupLayout(std::vector<VkDescriptorSetLayoutBinding> bindings);
 	void SetupPool(std::vector<DescriptorPoolSize> poolSizes, int maxSets = 1);
 	
-	void CleanUpResources();
+	void CleanUp();
 
 	static VkDescriptorSetLayoutBinding CreateBinding(VkDescriptorType type, VkShaderStageFlags stages, uint32_t binding, uint32_t descriptorCount);
 

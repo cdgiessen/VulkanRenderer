@@ -84,8 +84,15 @@ void Water::SetupPipeline()
 	VulkanPipeline &pipeMan = renderer->pipelineManager;
 	mvp = pipeMan.CreateManagedPipeline();
 
-	pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/water.vert.spv"));
-	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
+	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/water.vert.spv"));
+	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
+	auto vert = renderer->shaderManager.loadShaderModule("assets/shaders/water.vert.spv", ShaderModuleType::vertex);
+	auto frag = renderer->shaderManager.loadShaderModule("assets/shaders/water.frag.spv", ShaderModuleType::fragment);
+
+	ShaderModuleSet set(vert, frag, {}, {}, {});
+	pipeMan.SetShaderModuleSet(mvp, set);
+	
+	
 	pipeMan.SetVertexInput(mvp, Vertex_PosNormTexColor::getBindingDescription(), Vertex_PosNormTexColor::getAttributeDescriptions());
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width, (float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
@@ -119,13 +126,13 @@ void Water::SetupPipeline()
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
 
-	pipeMan.CleanShaderResources(mvp);
-	pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/Seascape.vert.spv"));
-	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/Seascape.frag.spv"));
+	//pipeMan.CleanShaderResources(mvp);
+	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/Seascape.vert.spv"));
+	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/Seascape.frag.spv"));
 	
-	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
+	//pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
 		
-	pipeMan.CleanShaderResources(mvp);
+	//pipeMan.CleanShaderResources(mvp);
 	
 }
 

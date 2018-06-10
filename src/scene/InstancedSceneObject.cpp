@@ -66,8 +66,8 @@ void InstancedSceneObject::LoadTexture(std::shared_ptr<Texture> tex) {
 	this->texture = tex;
 }
 
-void InstancedSceneObject::SetFragmentShaderToUse(VkShaderModule shaderModule) {
-	fragShaderModule = shaderModule;
+void InstancedSceneObject::SetFragmentShaderToUse(std::string frag) {
+	fragShaderPath = frag;
 }
 
 void InstancedSceneObject::SetCullMode(VkCullModeFlagBits cullMode) {
@@ -135,8 +135,15 @@ void InstancedSceneObject::SetupPipeline()
 	VulkanPipeline &pipeMan = renderer->pipelineManager;
 	mvp = pipeMan.CreateManagedPipeline();
 
-	pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/instancedSceneObject.vert.spv"));
-	pipeMan.SetFragmentShader(mvp, fragShaderModule);
+	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/instancedSceneObject.vert.spv"));
+	//pipeMan.SetFragmentShader(mvp, fragShaderModule);
+	
+	auto vert = renderer->shaderManager.loadShaderModule("assets/shaders/instancedSceneObject.vert.spv", ShaderModuleType::vertex);
+	auto frag = renderer->shaderManager.loadShaderModule(fragShaderPath, ShaderModuleType::fragment);
+
+	ShaderModuleSet set(vert, frag, {}, {}, {});
+	pipeMan.SetShaderModuleSet(mvp, set);
+	
 	//pipeMan.SetVertexInput(mvp, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width, (float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
@@ -203,7 +210,7 @@ void InstancedSceneObject::SetupPipeline()
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
 
-	pipeMan.CleanShaderResources(mvp);
+	//pipeMan.CleanShaderResources(mvp);
 	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.vert.spv"));
 	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.frag.spv"));
 	//pipeMan.SetGeometryShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.geom.spv"));

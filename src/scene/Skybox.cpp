@@ -62,8 +62,14 @@ void Skybox::SetupPipeline()
 	VulkanPipeline &pipeMan = renderer->pipelineManager;
 	mvp = pipeMan.CreateManagedPipeline();
 
-	pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/skybox.vert.spv"));
-	pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/skybox.frag.spv"));
+	auto vert = renderer->shaderManager.loadShaderModule("assets/shaders/skybox.vert.spv", ShaderModuleType::vertex);
+	auto frag = renderer->shaderManager.loadShaderModule("assets/shaders/skybox.frag.spv", ShaderModuleType::fragment);
+
+	ShaderModuleSet set(vert, frag, {}, {}, {});
+	pipeMan.SetShaderModuleSet(mvp, set);
+	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/skybox.vert.spv"));
+	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/skybox.frag.spv"));
+	
 	pipeMan.SetVertexInput(mvp, Vertex_PosNormTexColor::getBindingDescription(), Vertex_PosNormTexColor::getAttributeDescriptions());
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width, (float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
@@ -94,7 +100,7 @@ void Skybox::SetupPipeline()
 	pipeMan.BuildPipelineLayout(mvp);
 	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
 
-	pipeMan.CleanShaderResources(mvp);
+	//pipeMan.CleanShaderResources(mvp);
 	
 }
 

@@ -111,15 +111,17 @@ void VulkanPipeline::BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> mvp, V
 {
 
 	//Deals with possible geometry or tessilation shaders
-	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-	shaderStages.push_back(mvp->pco.vertShaderStageInfo);
-	shaderStages.push_back(mvp->pco.fragShaderStageInfo);
-	if (mvp->pco.geomShader) {
-		shaderStages.push_back(mvp->pco.geomShaderStageInfo);
-	}
-	if (mvp->pco.tessShader) {
-		shaderStages.push_back(mvp->pco.tessShaderStageInfo);
-	}
+	//std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+	//shaderStages.push_back(mvp->pco.vertShaderStageInfo);
+	//shaderStages.push_back(mvp->pco.fragShaderStageInfo);
+	//if (mvp->pco.geomShader) {
+	//	shaderStages.push_back(mvp->pco.geomShaderStageInfo);
+	//}
+	//if (mvp->pco.tessShader) {
+	//	shaderStages.push_back(mvp->pco.tessShaderStageInfo);
+	//}
+	
+	auto shaderStages = mvp->pco.shaderSet.ShaderStageCreateInfos();
 
 	mvp->pco.pipelineInfo = initializers::pipelineCreateInfo(mvp->layout, renderPass, flags);
 	mvp->pco.pipelineInfo.stageCount = (uint32_t)shaderStages.size();
@@ -146,8 +148,12 @@ void VulkanPipeline::BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> mvp, V
 	mvp->pipelines->push_back(pipeline);
 }
 
+void VulkanPipeline::SetShaderModuleSet(std::shared_ptr<ManagedVulkanPipeline> mvp, ShaderModuleSet set){
+	mvp->pco.shaderSet = set;
+}
 
 
+/*
 void VulkanPipeline::SetVertexShader(std::shared_ptr<ManagedVulkanPipeline> mvp, VkShaderModule vert)
 {
 	mvp->pco.vertShaderStageInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vert);
@@ -185,6 +191,7 @@ void VulkanPipeline::CleanShaderResources(std::shared_ptr<ManagedVulkanPipeline>
 	vkDestroyShaderModule(device.device, mvp->pco.geomShaderModule, nullptr);
 	vkDestroyShaderModule(device.device, mvp->pco.tessShaderModule, nullptr);
 }
+*/
 
 void VulkanPipeline::SetVertexInput(std::shared_ptr<ManagedVulkanPipeline> mvp, 
 	std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescriptions)

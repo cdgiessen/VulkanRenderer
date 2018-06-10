@@ -119,26 +119,40 @@ void GameObject::SetupDescriptor()
 
 void GameObject::SetupPipeline()
 {
-
-    VulkanPipeline &pipeMan = renderer->pipelineManager;
+	VulkanPipeline &pipeMan = renderer->pipelineManager;
 	mvp = pipeMan.CreateManagedPipeline();
-	if (usePBR) {
 
-    pipeMan.SetVertexShader(
-        mvp, loadShaderModule(renderer->device.device,
-                              "assets/shaders/pbr.vert.spv"));
-    pipeMan.SetFragmentShader(
-        mvp, loadShaderModule(renderer->device.device,
-                              "assets/shaders/pbr.frag.spv"));
-	}
-	else {
-		pipeMan.SetVertexShader(
-			mvp, loadShaderModule(renderer->device.device,
-				"assets/shaders/gameObject_shader.vert.spv"));
-		pipeMan.SetFragmentShader(
-			mvp, loadShaderModule(renderer->device.device,
-				"assets/shaders/gameObject_shader.frag.spv"));
-	}
+	auto pbr_vert = renderer->shaderManager.loadShaderModule("assets/shaders/pbr.vert.spv", ShaderModuleType::vertex);
+	auto pbr_frag = renderer->shaderManager.loadShaderModule("assets/shaders/pbr.frag.spv", ShaderModuleType::fragment);
+    
+	auto go_vert = renderer->shaderManager.loadShaderModule("assets/shaders/gameObject_shader.vert.spv", ShaderModuleType::vertex);
+	auto go_frag = renderer->shaderManager.loadShaderModule("assets/shaders/gameObject_shader.frag.spv", ShaderModuleType::fragment);
+    
+	auto geom = renderer->shaderManager.loadShaderModule("assets/shaders/normalVecDebug.geom.spv", ShaderModuleType::geometry);
+
+	ShaderModuleSet pbr_set(pbr_vert, pbr_frag, {}, {}, {});
+	ShaderModuleSet go_set(go_vert, go_frag, {}, {}, {});
+
+	if (usePBR)
+		pipeMan.SetShaderModuleSet(mvp, pbr_set);
+	else
+		pipeMan.SetShaderModuleSet(mvp, go_set);
+	//
+    //pipeMan.SetVertexShader(
+    //    mvp, loadShaderModule(renderer->device.device,
+    //                          "assets/shaders/pbr.vert.spv"));
+    //pipeMan.SetFragmentShader(
+    //    mvp, loadShaderModule(renderer->device.device,
+    //                          "assets/shaders/pbr.frag.spv"));
+	//}
+	//else {
+	//	pipeMan.SetVertexShader(
+	//		mvp, loadShaderModule(renderer->device.device,
+	//			"assets/shaders/gameObject_shader.vert.spv"));
+	//	pipeMan.SetFragmentShader(
+	//		mvp, loadShaderModule(renderer->device.device,
+	//			"assets/shaders/gameObject_shader.frag.spv"));
+	
     pipeMan.SetVertexInput(mvp, Vertex_PosNormTex::getBindingDescription(),
                            Vertex_PosNormTex::getAttributeDescriptions());
     pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0,
@@ -193,19 +207,27 @@ void GameObject::SetupPipeline()
                           1.0f, VK_TRUE);
     pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
 
-    pipeMan.CleanShaderResources(mvp);
-    pipeMan.SetVertexShader(
-        mvp, loadShaderModule(renderer->device.device,
-                              "assets/shaders/normalVecDebug.vert.spv"));
-    pipeMan.SetFragmentShader(
-        mvp, loadShaderModule(renderer->device.device,
-                              "assets/shaders/normalVecDebug.frag.spv"));
-    pipeMan.SetGeometryShader(
-        mvp, loadShaderModule(renderer->device.device,
-                              "assets/shaders/normalVecDebug.geom.spv"));
+    //pipeMan.CleanShaderResources(mvp);
+//    pipeMan.SetVertexShader(
+//        mvp, loadShaderModule(renderer->device.device,
+//                              "assets/shaders/normalVecDebug.vert.spv"));
+//    pipeMan.SetFragmentShader(
+//        mvp, loadShaderModule(renderer->device.device,
+//                              "assets/shaders/normalVecDebug.frag.spv"));
+//    pipeMan.SetGeometryShader(
+//        mvp, loadShaderModule(renderer->device.device,
+//                              "assets/shaders/normalVecDebug.geom.spv"));
+//
+	ShaderModuleSet pbr_geom_set(pbr_vert, pbr_frag, geom, {}, {});
+	ShaderModuleSet go_geom_set(go_vert, go_frag, geom, {}, {});
+
+	if(usePBR)
+		pipeMan.SetShaderModuleSet(mvp, pbr_geom_set);
+	else 
+		pipeMan.SetShaderModuleSet(mvp, go_geom_set);
 
     pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
-	    pipeMan.CleanShaderResources(mvp);
+   // pipeMan.CleanShaderResources(mvp);
 }
 
 void GameObject::UpdateUniformBuffer(float time)

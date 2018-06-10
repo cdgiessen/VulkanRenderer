@@ -482,6 +482,7 @@ namespace initializers
 		shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStageCreateInfo.stage = shaderStage;
 		shaderStageCreateInfo.module = module;
+		shaderStageCreateInfo.pName = "main";
 		return shaderStageCreateInfo;
 	}
 

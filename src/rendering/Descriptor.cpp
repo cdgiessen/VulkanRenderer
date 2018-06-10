@@ -62,7 +62,7 @@ VulkanDescriptor::VulkanDescriptor(VulkanDevice& device) : device(device) {
 
 }
 
-void VulkanDescriptor::CleanUpResources() {
+void VulkanDescriptor::CleanUp() {
 	vkDestroyDescriptorSetLayout(device.device, layout, nullptr);
 	vkDestroyDescriptorPool(device.device, pool, nullptr);
 }

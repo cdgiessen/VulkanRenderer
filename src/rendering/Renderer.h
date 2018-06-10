@@ -133,7 +133,7 @@ public:
 	VulkanSwapChain vulkanSwapChain;
 	VkRenderPass renderPass;
 
-	VulkanShader shaderManager;
+	ShaderManager shaderManager;
 	VulkanPipeline pipelineManager;
 	VulkanTextureManager textureManager;
 

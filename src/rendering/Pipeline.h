@@ -7,6 +7,9 @@
 
 #include <vulkan/vulkan.h>
 
+#include "Device.h"
+#include "Shader.h"
+
 //class PipelineCreationData {
 //public:
 //	
@@ -44,17 +47,18 @@ public:
 	//PipelineCreationObject(PipelineCreationData data);
 	//PipelineCreationObject();
 
+	ShaderModuleSet shaderSet;
 
-	bool geomShader;
-	bool tessShader;
-	VkShaderModule vertShaderModule;
-	VkShaderModule fragShaderModule;
-	VkShaderModule geomShaderModule;
-	VkShaderModule tessShaderModule;
-	VkPipelineShaderStageCreateInfo vertShaderStageInfo;
-	VkPipelineShaderStageCreateInfo fragShaderStageInfo;
-	VkPipelineShaderStageCreateInfo geomShaderStageInfo;
-	VkPipelineShaderStageCreateInfo tessShaderStageInfo;
+	//bool geomShader;
+	//bool tessShader;
+	//VkShaderModule vertShaderModule;
+	//VkShaderModule fragShaderModule;
+	//VkShaderModule geomShaderModule;
+	//VkShaderModule tessShaderModule;
+	//VkPipelineShaderStageCreateInfo vertShaderStageInfo;
+	//VkPipelineShaderStageCreateInfo fragShaderStageInfo;
+	//VkPipelineShaderStageCreateInfo geomShaderStageInfo;
+	//VkPipelineShaderStageCreateInfo tessShaderStageInfo;
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo;
 	std::unique_ptr<std::vector<VkVertexInputBindingDescription>> vertexInputBindingDescription;
@@ -102,11 +106,13 @@ public:
 	void BuildPipelineLayout(std::shared_ptr<ManagedVulkanPipeline> pco); //returns the pipeline layout of the pco (must have done SetDescriptorSetLayout
 	void BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> pco, VkRenderPass renderPass, VkPipelineCreateFlags flags);
 
-	void SetVertexShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule vert);
-	void SetFragmentShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule frag);
-	void SetGeometryShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule geom);
-	void SetTesselationShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule tess);
-	void CleanShaderResources(std::shared_ptr<ManagedVulkanPipeline> pco); //destroys the shader modules after pipeline creation is finished
+	void SetShaderModuleSet(std::shared_ptr<ManagedVulkanPipeline> pco, ShaderModuleSet set);
+
+	//void SetVertexShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule vert);
+	//void SetFragmentShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule frag);
+	//void SetGeometryShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule geom);
+	//void SetTesselationShader(std::shared_ptr<ManagedVulkanPipeline> pco, VkShaderModule tess);
+	//void CleanShaderResources(std::shared_ptr<ManagedVulkanPipeline> pco); //destroys the shader modules after pipeline creation is finished
 
 	void SetVertexInput(std::shared_ptr<ManagedVulkanPipeline> pco,
 		std::vector<VkVertexInputBindingDescription> bindingDescription,

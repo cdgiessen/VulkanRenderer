@@ -105,7 +105,7 @@ Scene::Scene(ResourceManager* resourceMan,
 	//terrainManager->GenerateTerrain(resourceMan, renderer, camera);
 
 	//treesInstanced = std::make_shared<InstancedSceneObject>(renderer);
-	//treesInstanced->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/instancedSceneObject.frag.spv"));
+	//treesInstanced->SetFragmentShaderToUse("assets/shaders/instancedSceneObject.frag.spv"));
 	//treesInstanced->SetBlendMode(VK_FALSE);
 	//treesInstanced->SetCullMode(VK_CULL_MODE_BACK_BIT);
 	//treesInstanced->LoadModel(createCube());

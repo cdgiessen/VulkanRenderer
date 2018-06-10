@@ -121,7 +121,7 @@ VulkanRenderer::~VulkanRenderer() {
 	vkDestroyPipelineLayout(device.device, lightingDescriptorLayout, nullptr);
 
 	for (auto& descriptor : descriptors)
-		descriptor->CleanUpResources();
+		descriptor->CleanUp();
 
 	depthBuffer->destroy();
 
@@ -578,13 +578,6 @@ void VulkanRenderer::AddGlobalLayouts(
 	layouts.push_back(lightingDescriptor->GetLayout());
 }
 
-// std::vector<DescriptorPoolSize> VulkanRenderer::GetGlobalPoolSize(int
-// poolSize) { 	std::vector<DescriptorPoolSize> poolSizes;
-//	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-//poolSize));
-//
-//	return poolSizes;
-//}
 
 void VulkanRenderer::SetupGlobalDescriptorSet() {
 	frameDataDescriptor = GetVulkanDescriptor();
