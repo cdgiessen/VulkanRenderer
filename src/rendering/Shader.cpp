@@ -50,7 +50,7 @@ static uint32_t defaultVertexShader[] = {
 		0x0000001d, 0x0000001c, 0x00050092, 0x0000000d, 0x0000001e, 0x00000018, 0x0000001d, 0x0004003d, 0x0000000e, 0x00000021, 0x00000020, 0x00050051, 0x00000006, 0x00000023, 0x00000021, 0x00000000,
 		0x00050051, 0x00000006, 0x00000024, 0x00000021, 0x00000001, 0x00050051, 0x00000006, 0x00000025, 0x00000021, 0x00000002, 0x00070050, 0x00000007, 0x00000026, 0x00000023, 0x00000024, 0x00000025,
 		0x00000022, 0x00050091, 0x00000007, 0x00000027, 0x0000001e, 0x00000026, 0x00050041, 0x00000028, 0x00000029, 0x0000000a, 0x0000000c, 0x0003003e, 0x00000029, 0x00000027, 0x000100fd, 0x00010038
-	};
+};
 static uint32_t defaultFragmentShader[] = {
 		0x07230203, 0x00010000, 0x00080002, 0x0000000d, 0x00000000, 0x00020011, 0x00000001, 0x0006000b, 0x00000001, 0x4c534c47, 0x6474732e, 0x3035342e, 0x00000000, 0x0003000e, 0x00000000, 0x00000001,
 		0x0006000f, 0x00000004, 0x00000004, 0x6e69616d, 0x00000000, 0x00000009, 0x00030010, 0x00000004, 0x00000007, 0x00030003, 0x00000002, 0x000001c2, 0x00090004, 0x415f4c47, 0x735f4252, 0x72617065,
@@ -66,60 +66,60 @@ ShaderModule::ShaderModule() {}
 ShaderModule::ShaderModule(ShaderModuleType type, VkShaderModule module)
 	: type(type), module(module)
 {
-	switch(type) {
-		case(ShaderModuleType::vertex):
+	switch (type) {
+	case(ShaderModuleType::vertex):
 		createInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, module);
 		break;
 
-		case(ShaderModuleType::fragment):
+	case(ShaderModuleType::fragment):
 		createInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, module);
 		break;
 
-		case(ShaderModuleType::geometry):
+	case(ShaderModuleType::geometry):
 		createInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, module);
 		break;
 
-		case(ShaderModuleType::tessEval):
+	case(ShaderModuleType::tessEval):
 		createInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, module);
 		break;
-		
-		case(ShaderModuleType::tessControl):
+
+	case(ShaderModuleType::tessControl):
 		createInfo = initializers::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, module);
 		break;
 	}
 };
 
-ShaderModuleSet::ShaderModuleSet() {}; 
+ShaderModuleSet::ShaderModuleSet() {};
 
 
 ShaderModuleSet::ShaderModuleSet(
-	ShaderModule vert, 
-	ShaderModule frag, 
-	std::optional<ShaderModule> geom, 
+	ShaderModule vert,
+	ShaderModule frag,
+	std::optional<ShaderModule> geom,
 	std::optional<ShaderModule> tessEval,
 	std::optional<ShaderModule> tessControl)
 {
 	vertexModule = vert;
 	fragmentModule = frag;
 
-	if(geom.has_value()){
+	if (geom.has_value()) {
 		geomPresent = true;
 		geometryModule = geom.value();
 	}
 
-	if(tessEval.has_value()){
+	if (tessEval.has_value()) {
 		tessEvalPresent = true;
 		tessEvalModule = tessEval.value();
 	}
 
-	if(tessControl.has_value()){
+	if (tessControl.has_value()) {
 		tessControlPresent = true;
 		tessControlModule = tessControl.value();
 
 	}
 }
 
-std::vector<VkPipelineShaderStageCreateInfo> ShaderModuleSet::ShaderStageCreateInfos(){
+std::vector<VkPipelineShaderStageCreateInfo> ShaderModuleSet::ShaderStageCreateInfos() {
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 	shaderStages.push_back(vertexModule.createInfo);
 	shaderStages.push_back(fragmentModule.createInfo);
@@ -142,14 +142,14 @@ ShaderManager::ShaderManager(VulkanDevice & device)
 
 }
 
-ShaderManager::~ShaderManager()
-{
-	for(auto& module : shaderModules) {
+void ShaderManager::CleanUp() {
+
+	for (auto& module : shaderModules) {
 		vkDestroyShaderModule(device.device, module.module, nullptr);
 	}
 }
 
-ShaderModule ShaderManager::loadShaderModule( 
+ShaderModule ShaderManager::loadShaderModule(
 	const std::string& codePath, ShaderModuleType type)
 {
 	VkShaderModuleCreateInfo createInfo = {};
@@ -157,10 +157,10 @@ ShaderModule ShaderManager::loadShaderModule(
 
 	std::vector<char> shaderCode;
 
-	auto pos_shaderCode = readShaderFile(codePath);	
-	if(	!pos_shaderCode.has_value()){
+	auto pos_shaderCode = readShaderFile(codePath);
+	if (!pos_shaderCode.has_value()) {
 		Log::Debug << "Shader unable to load, using defaults instead\n";
-		
+
 		switch (type) {
 		case(ShaderModuleType::vertex):
 			createInfo.codeSize = sizeof(defaultVertexShader);
@@ -170,12 +170,13 @@ ShaderModule ShaderManager::loadShaderModule(
 		case(ShaderModuleType::fragment):
 			createInfo.codeSize = sizeof(defaultFragmentShader);
 			createInfo.pCode = (uint32_t*)defaultFragmentShader;
-					
+
 			break;
 		default:
 			throw std::runtime_error("shader type does not exist! (no default geometry or tess shaders");
 		}
-	} else {
+	}
+	else {
 		shaderCode = pos_shaderCode.value();
 
 		createInfo.codeSize = shaderCode.size();
@@ -183,7 +184,7 @@ ShaderModule ShaderManager::loadShaderModule(
 		std::vector<uint32_t> codeAligned(shaderCode.size() / 4 + 1);
 		memcpy(codeAligned.data(), shaderCode.data(), shaderCode.size());
 
-		createInfo.pCode = codeAligned.data();
+		createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
 	}
 
 	VkShaderModule vk_shaderModule;
@@ -192,7 +193,7 @@ ShaderModule ShaderManager::loadShaderModule(
 		throw std::runtime_error("failed to create shader module!");
 	}
 
-	ShaderModule module{type, vk_shaderModule};
+	ShaderModule module{ type, vk_shaderModule };
 
 	shaderModules.push_back(module);
 	return module;

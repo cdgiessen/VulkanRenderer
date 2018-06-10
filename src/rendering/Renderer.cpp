@@ -11,7 +11,7 @@
 #include <json.hpp>
 #include <fstream>
 
-RenderSettings::RenderSettings(std::string fileName) : fileName(fileName){
+RenderSettings::RenderSettings(std::string fileName) : fileName(fileName) {
 	Load();
 }
 
@@ -26,7 +26,8 @@ void RenderSettings::Load() {
 		directionalLightCount = j["directional_light_count"];
 		pointLightCount = j["point_light_count"];
 		spotLightCount = j["spot_light_count"];
-	} else {
+	}
+	else {
 		Log::Debug << "Render Settings file didn't exist, creating one";
 		Save();
 	}
@@ -138,6 +139,8 @@ VulkanRenderer::~VulkanRenderer() {
 
 	renderFinishedSemaphore->CleanUp(device);
 	imageAvailableSemaphore->CleanUp(device);
+
+	shaderManager.CleanUp();
 
 	pipelineManager.CleanUp();
 

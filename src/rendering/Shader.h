@@ -10,7 +10,7 @@
 VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath);
 
 enum class ShaderModuleType {
-	vertex,	
+	vertex,
 	fragment,
 	geometry,
 	tessControl,
@@ -22,7 +22,7 @@ struct ShaderModule
 {
 	ShaderModule();
 
-	ShaderModule(ShaderModuleType type, 
+	ShaderModule(ShaderModuleType type,
 		VkShaderModule module);
 
 	ShaderModule(const ShaderModule& mod) = default;
@@ -31,20 +31,20 @@ struct ShaderModule
 	ShaderModuleType type;
 	VkShaderModule module;
 	VkPipelineShaderStageCreateInfo createInfo;
-	
+
 };
 
 class ShaderModuleSet {
 public:
 	//default, no data set.
-	ShaderModuleSet(); 
+	ShaderModuleSet();
 
 	//initializes data members
-	ShaderModuleSet( 
-		ShaderModule vert, 
-		ShaderModule frag, 
-		std::optional<ShaderModule> geom, 
-		std::optional<ShaderModule> tessControl, 
+	ShaderModuleSet(
+		ShaderModule vert,
+		ShaderModule frag,
+		std::optional<ShaderModule> geom,
+		std::optional<ShaderModule> tessControl,
 		std::optional<ShaderModule> tessEval);
 
 	ShaderModuleSet(const ShaderModuleSet& set) = default;
@@ -56,10 +56,10 @@ public:
 private:
 	ShaderModule vertexModule;
 	ShaderModule fragmentModule;
-	
+
 	bool geomPresent = false;
 	ShaderModule geometryModule;
-	
+
 	bool tessEvalPresent = false;
 	ShaderModule tessEvalModule;
 
@@ -70,7 +70,7 @@ private:
 class ShaderManager {
 public:
 	ShaderManager(VulkanDevice & device);
-	~ShaderManager();
+	void CleanUp();
 
 	ShaderModule loadShaderModule(const std::string& codePath, ShaderModuleType type);
 
@@ -78,7 +78,7 @@ public:
 private:
 	const VulkanDevice &device;
 	std::vector<ShaderModule> shaderModules;
-	
+
 
 	std::optional<std::vector<char>> readShaderFile(const std::string& filename);
 
