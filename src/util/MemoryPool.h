@@ -2,18 +2,19 @@
 
 #include <vector>
 #include <variant>
+#include <atomic>
 
 template<typename T>
 class MemoryPool {
 public:
-	
+
 	MemoryPool(int chunkCount);
-	
+
 	T* allocate();
 	void deallocate(T* chunkToBeFreed);
 
 private:
-
+	std::atomic_int counter = 0;
 	std::vector<std::variant<T*, T>> data;
 	int usedCount;
 
@@ -25,15 +26,15 @@ template<typename T>
 MemoryPool<T>::MemoryPool(int chunkCount) :
 	data(chunkCount)
 {
-//	if (chunkCount > 1) {
-//
-//		for (int i = 0; i < chunkCount - 1; i++) {
-//			data[i] = &(data[i + 1]);
-//		}
-//		freeChunk = &data[0];
-//		lastFreeChunk = &data[chunkCount - 1];
-//	}
-//
+	//	if (chunkCount > 1) {
+	//
+	//		for (int i = 0; i < chunkCount - 1; i++) {
+	//			data[i] = &(data[i + 1]);
+	//		}
+	//		freeChunk = &data[0];
+	//		lastFreeChunk = &data[chunkCount - 1];
+	//	}
+	//
 }
 
 template<typename T>
@@ -45,6 +46,7 @@ T* MemoryPool<T>::allocate() {
 	// T* thingToReturn = freeChunk;
 	// freeChunk = &(*freeChunk);
 	// return thingToReturn;
+	counter++;
 	return new T();
 }
 
@@ -56,6 +58,7 @@ void MemoryPool<T>::deallocate(T* chunkToBeFreed) {
 	// usedCount--;
 	// *lastFreeChunk = chunkToBeFreed;
 	// lastFreeChunk = chunkToBeFreed;
+	counter--;
 	delete chunkToBeFreed;
 }
 
@@ -71,7 +74,7 @@ MemoryPool<T>::MemoryPool(int chunkCount)
 template<typename T>
 MemoryPool<T>::~MemoryPool()
 {
-	
+
 }
 
 template<typename T>

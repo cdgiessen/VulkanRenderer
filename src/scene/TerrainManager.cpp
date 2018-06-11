@@ -43,9 +43,9 @@ void TerrainCreationWorker(TerrainManager* man) {
 			auto data = man->terrainCreationWork.pop_if();
 			if (data.has_value())
 			{
-				auto terrain = std::make_unique<Terrain>(
-					man->poolMesh_vertices, man->poolMesh_indices, 
-					data->protoGraph, data->numCells, data->maxLevels, 
+				auto terrain = std::make_unique<Terrain>(man->renderer,
+					man->poolMesh_vertices, man->poolMesh_indices,
+					data->protoGraph, data->numCells, data->maxLevels,
 					data->heightScale, data->coord);
 
 				std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
@@ -69,8 +69,8 @@ void TerrainCreationWorker(TerrainManager* man) {
 }
 
 
-TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph) 
-: protoGraph(protoGraph), poolMesh_vertices(500), poolMesh_indices(500)
+TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph)
+	: protoGraph(protoGraph), poolMesh_vertices(500), poolMesh_indices(500)
 {
 	if (settings.maxLevels < 0) {
 		maxNumQuads = 1;

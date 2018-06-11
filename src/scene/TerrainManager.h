@@ -89,6 +89,7 @@ public:
 
 	MemoryPool<TerrainMeshVertices> poolMesh_vertices;
 	MemoryPool<TerrainMeshIndices> poolMesh_indices;
+	VulkanRenderer* renderer;
 
 
 	std::mutex workerMutex;
@@ -114,10 +115,8 @@ private:
 	InternalGraph::GraphPrototype& protoGraph;
 	//NewNodeGraph::TerGenNodeGraph& nodeGraph;
 
-	VulkanRenderer* renderer;
-
 	//std::shared_ptr<MemoryPool<TerrainQuad>> terrainQuadPool;
-	
+
 	std::unique_ptr<InstancedSceneObject> instancedWaters;
 
 	std::vector<std::shared_ptr<Water>> waters;
