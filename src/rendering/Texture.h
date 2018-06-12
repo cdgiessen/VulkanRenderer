@@ -49,6 +49,9 @@ public:
 	VulkanDevice& device;
 
 	Signal readyToUse;
+protected:
+	int mipLevels;
+	int layers;
 
 };
 

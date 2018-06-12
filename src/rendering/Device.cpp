@@ -366,22 +366,23 @@ void VulkanDevice::CreateLogicalDevice() {
 
 void VulkanDevice::CreateQueues() {
 	graphics_queue = std::make_unique<CommandQueue>(*this, familyIndices.graphicsFamily);
+	singleQueueDevice = true;
 
 	//Make sure it is a unique queue, else don't make anything (empty pointer means it isn't unique)
-	if (familyIndices.graphicsFamily != familyIndices.computeFamily)
+	if (familyIndices.graphicsFamily != familyIndices.computeFamily) {
 		compute_queue = std::make_unique<CommandQueue>(*this, familyIndices.computeFamily);
+		singleQueueDevice = false;
+	}
 
-	if (familyIndices.graphicsFamily != familyIndices.transferFamily)
+	if (familyIndices.graphicsFamily != familyIndices.transferFamily) {
 		transfer_queue = std::make_unique<CommandQueue>(*this, familyIndices.transferFamily);
+		singleQueueDevice = false;
+	}
 
 	if (familyIndices.graphicsFamily != familyIndices.presentFamily) {
 		present_queue = std::make_unique<CommandQueue>(*this, familyIndices.presentFamily);
-		//Log::Debug << "Seperate present queue\n";
+		singleQueueDevice = false;
 	}
-
-	//vkGetDeviceQueue(device, familyIndices.graphicsFamily, 0, &graphics_queue);
-	//vkGetDeviceQueue(device, familyIndices.presentFamily, 0, &present_queue);
-	//vkGetDeviceQueue(device, familyIndices.computeFamily, 0, &compute_queue);
 
 }
 

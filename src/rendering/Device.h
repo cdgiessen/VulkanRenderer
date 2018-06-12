@@ -50,7 +50,7 @@ public:
 
 	VkPhysicalDevice physical_device;
 
-
+	bool singleQueueDevice; //for devices with only 1 queue (intel integrated specifically)
 	enum class CommandQueueType {
 		graphics,
 		compute,
