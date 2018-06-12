@@ -349,15 +349,31 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 		SetLayoutAndTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
 			subresourceRange, bufferCopyRegions);
 
-		VkMemoryBarrier memoryBarrier = initializers::memoryBarrier();
-		memoryBarrier.pNext = nullptr;
-		memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		memoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-		VkDependencyFlags dependencyFlags = 0;
-		// need a memory barrier before result can be used
-		vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_TRANSFER_BIT, 
-			VK_PIPELINE_STAGE_TRANSFER_BIT, dependencyFlags, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
-		
+		//SetMemoryBarrier(cmdBuf, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+		//	VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+		VkImageMemoryBarrier imageMemoryBarrier = initializers::imageMemoryBarrier();
+		imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		imageMemoryBarrier.image = rawImage;
+		imageMemoryBarrier.subresourceRange = subresourceRange;
+
+		vkCmdPipelineBarrier(
+			cmdBuf,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_HOST_BIT | VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			0,
+			0, nullptr,
+			0, nullptr,
+			1, &imageMemoryBarrier);
+
+		/*SetImageLayout(cmdBuf, rawImage,
+			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			subresourceRange,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+*/
 		GenerateMipMaps(cmdBuf, rawImage, imageLayout, texture->width, texture->height, 1, 1, mipLevels);
 	});
 	transfer.buffersToClean.push_back(buffer);
@@ -365,17 +381,17 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 	//transfer.signalSemaphores.push_back(sem);
 
 	renderer.SubmitTransferWork(std::move(transfer));
-/*
-	CommandBufferWork mipWork;
-	mipWork.work = std::function<void(const VkCommandBuffer)>(
-		[=](const VkCommandBuffer cmdBuf) {
-		GenerateMipMaps(cmdBuf, rawImage, imageLayout, texture->width, texture->height, 1, 1, mipLevels);
-	});
-	mipWork.waitSemaphores.push_back(sem);
-	mipWork.flags.push_back(readyToUse);
+	/*
+		CommandBufferWork mipWork;
+		mipWork.work = std::function<void(const VkCommandBuffer)>(
+			[=](const VkCommandBuffer cmdBuf) {
+			GenerateMipMaps(cmdBuf, rawImage, imageLayout, texture->width, texture->height, 1, 1, mipLevels);
+		});
+		mipWork.waitSemaphores.push_back(sem);
+		mipWork.flags.push_back(readyToUse);
 
-	renderer.SubmitGraphicsSetupWork(std::move(mipWork));
-*/
+		renderer.SubmitGraphicsSetupWork(std::move(mipWork));
+	*/
 	// device.DestroyVmaAllocatedImage(stagingImage);
 	// device.DestroyVmaAllocatedBuffer(stagingBuffer);
 
@@ -517,17 +533,30 @@ void VulkanTexture2DArray::loadTextureArray(
 		SetLayoutAndTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
 			subresourceRange, bufferCopyRegions);
 
-		SetMemoryBarrier(cmdBuf, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
-			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+		//SetMemoryBarrier(cmdBuf, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+		//	VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-		//VkMemoryBarrier memoryBarrier = initializers::memoryBarrier();
-		//memoryBarrier.pNext = nullptr;
-		//memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		//memoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-		//VkDependencyFlags dependencyFlags = 0;
-		//// need a memory barrier before result can be used
-		//vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_TRANSFER_BIT, 
-		//	VK_PIPELINE_STAGE_TRANSFER_BIT, dependencyFlags, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
+		VkImageMemoryBarrier imageMemoryBarrier = initializers::imageMemoryBarrier();
+		imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		imageMemoryBarrier.image = rawImage;
+		imageMemoryBarrier.subresourceRange = subresourceRange;
+
+		vkCmdPipelineBarrier(
+			cmdBuf,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_HOST_BIT | VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			0,
+			0, nullptr,
+			0, nullptr,
+			1, &imageMemoryBarrier);
+
+		//SetImageLayout(cmdBuf, rawImage,
+		//	VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		//	subresourceRange,
+		//	VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
 		GenerateMipMaps(cmdBuf, rawImage, imageLayout,
 			textures->width, textures->height, 1, textures->layerCount, mipLevels);
@@ -537,18 +566,18 @@ void VulkanTexture2DArray::loadTextureArray(
 	//work.signalSemaphores.push_back(sem);
 
 	renderer.SubmitTransferWork(std::move(work));
-/*
-	CommandBufferWork mipWork;
-	mipWork.work = std::function<void(const VkCommandBuffer)>(
-		[=](const VkCommandBuffer cmdBuf) {
-		GenerateMipMaps(cmdBuf, rawImage, imageLayout,
-			textures->width, textures->height, 1, textures->layerCount, mipLevels);
-	});
-	mipWork.waitSemaphores.push_back(sem);
-	mipWork.flags.push_back(readyToUse);
+	/*
+		CommandBufferWork mipWork;
+		mipWork.work = std::function<void(const VkCommandBuffer)>(
+			[=](const VkCommandBuffer cmdBuf) {
+			GenerateMipMaps(cmdBuf, rawImage, imageLayout,
+				textures->width, textures->height, 1, textures->layerCount, mipLevels);
+		});
+		mipWork.waitSemaphores.push_back(sem);
+		mipWork.flags.push_back(readyToUse);
 
-	renderer.SubmitGraphicsSetupWork(std::move(mipWork));
-*/
+		renderer.SubmitGraphicsSetupWork(std::move(mipWork));
+	*/
 	// VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
 
 	// SetImageLayout(
@@ -737,13 +766,30 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 		SetLayoutAndTransferRegions(cmdBuf, rawImage, buffer.buffer.buffer,
 			subresourceRange, bufferCopyRegions);
 
-		VkMemoryBarrier memoryBarrier = initializers::memoryBarrier();
-		memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		memoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-		VkDependencyFlags dependencyFlags = 0;
-		// need a memory barrier before result can be used
-		vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_TRANSFER_BIT, 
-			VK_PIPELINE_STAGE_TRANSFER_BIT, dependencyFlags, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
+		/*SetImageLayout(cmdBuf, rawImage,
+			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			subresourceRange,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);*/
+
+		VkImageMemoryBarrier imageMemoryBarrier = initializers::imageMemoryBarrier();
+		imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		imageMemoryBarrier.image = rawImage;
+		imageMemoryBarrier.subresourceRange = subresourceRange;
+
+		vkCmdPipelineBarrier(
+			cmdBuf,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_HOST_BIT | VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			0,
+			0, nullptr,
+			0, nullptr,
+			1, &imageMemoryBarrier);
+
+		//SetMemoryBarrier(cmdBuf, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+		//	VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
 		GenerateMipMaps(cmdBuf, rawImage, imageLayout,
 			cubeMap->width, cubeMap->height, 1, 6, mipLevels);
@@ -755,18 +801,18 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 
 	renderer.SubmitTransferWork(std::move(work));
 
-/*
-	CommandBufferWork mipWork;
-	mipWork.work = std::function<void(const VkCommandBuffer)>(
-		[=](const VkCommandBuffer cmdBuf) {
-		GenerateMipMaps(cmdBuf, rawImage, imageLayout,
-			cubeMap->width, cubeMap->height, 1, 6, mipLevels);
-	});
-	mipWork.waitSemaphores.push_back(sem);
-	mipWork.flags.push_back(readyToUse);
+	/*
+		CommandBufferWork mipWork;
+		mipWork.work = std::function<void(const VkCommandBuffer)>(
+			[=](const VkCommandBuffer cmdBuf) {
+			GenerateMipMaps(cmdBuf, rawImage, imageLayout,
+				cubeMap->width, cubeMap->height, 1, 6, mipLevels);
+		});
+		mipWork.waitSemaphores.push_back(sem);
+		mipWork.flags.push_back(readyToUse);
 
-	renderer.SubmitGraphicsSetupWork(std::move(mipWork));
-*/
+		renderer.SubmitGraphicsSetupWork(std::move(mipWork));
+	*/
 
 	// VkCommandBuffer transferCmdBuf = renderer.GetTransferCommandBuffer();
 
