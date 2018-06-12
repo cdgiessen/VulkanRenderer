@@ -42,6 +42,13 @@ TerrainQuad::TerrainQuad(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos,
 
 TerrainQuad::~TerrainQuad()
 {
+
+	//if (!deviceVertices.IsCreated() || !deviceIndices.IsCreated()) {
+	//	Log::Error << "Failed to clean device buffers!\n";
+	//}
+}
+
+void TerrainQuad::CleanUp() {
 	deviceVertices.CleanBuffer();
 	deviceIndices.CleanBuffer();
 }
@@ -102,6 +109,12 @@ Terrain::~Terrain() {
 
 void Terrain::CleanUp()
 {
+	for (auto& quad : quadHandles) {
+		meshPool_vertices.deallocate(quad->vertices);
+		meshPool_indices.deallocate(quad->indices);
+		quad->CleanUp();
+	}
+	quadHandles.clear();
 	uniformBuffer->CleanBuffer();
 	//for(auto& buf : vertexBuffers)
 	//	buf.CleanBuffer();
@@ -115,15 +128,6 @@ void Terrain::CleanUp()
 void Terrain::InitTerrain(VulkanRenderer* renderer, glm::vec3 cameraPos, std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray)
 {
 	this->renderer = renderer;
-
-	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
-	uniformBuffer->CreateUniformBufferPersitantlyMapped(sizeof(ModelBufferObject));
-
-	ModelBufferObject mbo;
-	mbo.model = glm::mat4();
-	mbo.model = glm::translate(mbo.model, glm::vec3(coordinateData.pos.x, 0, coordinateData.pos.y));
-
-	uniformBuffer->CopyToBuffer(&mbo, sizeof(ModelBufferObject));
 
 	SetupMeshbuffers();
 	SetupUniformBuffer();
@@ -177,6 +181,16 @@ void Terrain::SetupUniformBuffer()
 	//modelUniformBuffer.CreateUniformBuffer(renderer->device, sizeof(ModelBufferObject));
 	//renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
 	//	&modelUniformBuffer, sizeof(ModelBufferObject) * maxNumQuads);
+
+	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
+	uniformBuffer->CreateUniformBufferPersitantlyMapped(sizeof(ModelBufferObject));
+
+	ModelBufferObject mbo;
+	mbo.model = glm::mat4();
+	mbo.model = glm::translate(mbo.model, glm::vec3(coordinateData.pos.x, 0, coordinateData.pos.y));
+
+	uniformBuffer->CopyToBuffer(&mbo, sizeof(ModelBufferObject));
+
 }
 
 void Terrain::SetupImage()
@@ -291,23 +305,16 @@ struct CopyCommand {
 	VkBufferCopy region;
 
 	CopyCommand(VkBuffer src, VkBuffer dst, VkDeviceSize size) :
-		src(src), dst(dst)
+		src(src), dst(dst), region(initializers::bufferCopyCreate(size, 0, 0))
 	{
-		region = initializers::bufferCopyCreate(size, 0, 0);
-	}
-
-	void Copy(VkCommandBuffer cmdBuf)
-	{
-		vkCmdCopyBuffer(cmdBuf, src, dst, 1, &region);
-
 	}
 };
 
 void Terrain::UpdateMeshBuffer() {
 
 	while (terrainGenerationWorkers.size() > 0) {
-		terrainGenerationWorkers.front()->join();
-		terrainGenerationWorkers.front() = std::move(terrainGenerationWorkers.back());
+		terrainGenerationWorkers.back()->join();
+		//terrainGenerationWorkers.front() = std::move(terrainGenerationWorkers.back());
 		terrainGenerationWorkers.pop_back();
 	}
 
@@ -327,8 +334,8 @@ void Terrain::UpdateMeshBuffer() {
 	for (auto& quad : quadHandles) {
 		if (PrevQuadHandles.size() == 0 || quad.get() != *prevQuadIter) {
 
-			//quad->deviceVertices.CleanBuffer();
-			//quad->deviceIndices.CleanBuffer();
+			quad->deviceVertices.CleanBuffer();
+			quad->deviceIndices.CleanBuffer();
 
 			vertexStagingBuffers.push_back(VulkanBufferVertex(renderer->device));
 			indexStagingBuffers.push_back(VulkanBufferIndex(renderer->device));
@@ -614,6 +621,7 @@ void Terrain::UnSubdivide(TerrainQuad* quad) {
 			UnSubdivide((*delUR).get());
 			meshPool_vertices.deallocate((*delUR)->vertices);
 			meshPool_indices.deallocate((*delUR)->indices);
+			(*delUR)->CleanUp();
 			//delUR->reset();
 			quadHandles.erase(delUR);
 			numQuads--;
@@ -628,6 +636,7 @@ void Terrain::UnSubdivide(TerrainQuad* quad) {
 			UnSubdivide((*delDR).get());
 			meshPool_vertices.deallocate((*delDR)->vertices);
 			meshPool_indices.deallocate((*delDR)->indices);
+			(*delDR)->CleanUp();
 			//delDR->reset();
 			quadHandles.erase(delDR);
 			numQuads--;
@@ -641,6 +650,7 @@ void Terrain::UnSubdivide(TerrainQuad* quad) {
 			UnSubdivide((*delUL).get());
 			meshPool_vertices.deallocate((*delUL)->vertices);
 			meshPool_indices.deallocate((*delUL)->indices);
+			(*delUL)->CleanUp();
 			//delUL->reset();
 			quadHandles.erase(delUL);
 			numQuads--;
@@ -654,6 +664,7 @@ void Terrain::UnSubdivide(TerrainQuad* quad) {
 			UnSubdivide((*delDL).get());
 			meshPool_vertices.deallocate((*delDL)->vertices);
 			meshPool_indices.deallocate((*delDL)->indices);
+			(*delDL)->CleanUp();
 			//delDL->reset();
 			quadHandles.erase(delDL);
 			numQuads--;

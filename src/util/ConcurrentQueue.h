@@ -70,7 +70,7 @@ std::optional<T> ConcurrentQueue<T>::pop_if()
 	if (!m_queue.empty()) {
 		auto ret = m_queue.front();
 		m_queue.pop_front();
-		return (ret);
+		return std::move(ret);
 	}
 	return {};
 }

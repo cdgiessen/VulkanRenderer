@@ -62,6 +62,8 @@ struct TerrainQuad {
 		VulkanDevice& device);
 	~TerrainQuad();
 
+	void CleanUp();
+
 	static float GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos);
 
 	glm::vec2 pos; //position of corner
@@ -149,7 +151,6 @@ public:
 
 	void UpdateTerrain(glm::vec3 viewerPos);
 	void DrawTerrain(VkCommandBuffer cmdBuff, bool wireframe);
-	void BuildCommandBuffer(std::shared_ptr<Terrain> curTerrain, bool ifWireframe);
 	void CleanUp();
 
 	std::vector<RGBA_pixel>* LoadSplatMapFromGenerator();

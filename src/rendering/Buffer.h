@@ -18,6 +18,8 @@ public:
 	VulkanBuffer(const VulkanBuffer& buf) = default;
 	VulkanBuffer& operator=(const VulkanBuffer& buf) = default;
 
+	virtual ~VulkanBuffer();
+
 	void CleanBuffer();
 
 	void Map(void** pData);
@@ -27,11 +29,16 @@ public:
 
 	VkDeviceSize Size() const;
 
+	bool IsCreated() const;
+
 	VmaBuffer buffer;
 	DescriptorResource resource;
 
+
 protected:
-	VulkanDevice* device;
+	bool created = false;
+
+	VulkanDevice * device;
 
 	void SetupResource();
 
