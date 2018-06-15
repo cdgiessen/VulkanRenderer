@@ -38,7 +38,7 @@ public:
 
 	void AddTexture(std::shared_ptr<VulkanTexture> tex);
 	void AddTextureArray(std::shared_ptr<VulkanTexture2DArray> texArr);
-	void SetMaterialValue(MaterialOptions value);
+	void AddValue(MaterialOptions value);
 
 	void Setup();
 
@@ -55,7 +55,7 @@ private:
 
 	std::vector<std::shared_ptr<VulkanTexture>> textures;
 	std::vector<std::shared_ptr<VulkanTexture2DArray>> textureArrays;
-	MaterialOptions value_var;
+	std::vector<MaterialOptions> value_var;
 	std::shared_ptr<VulkanBufferUniform> value_data;
 
 };
