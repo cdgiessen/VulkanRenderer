@@ -6,68 +6,115 @@
 
 #include <json.hpp>
 
-VulkanMaterial::VulkanMaterial(VulkanDevice& device) 
-    :device(device),
-    descriptor(device)
+VulkanMaterial::VulkanMaterial(VulkanDevice& device)
+	:device(device),
+	descriptor(device)
 {
 
 
 
 }
 
-void VulkanMaterial::CleanUp(){
-    descriptor.CleanUp();
+void VulkanMaterial::CleanUp() {
+	descriptor.CleanUp();
+	value_data->CleanBuffer();
+
+	for (auto& tex : textures) {
+		tex->destroy();
+	}
+
+	for (auto& texArr : textureArrays) {
+		texArr->destroy();
+	}
 }
 
-//VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath) {
-//	auto shaderCode = readFile(codePath);
-//
-//	VkShaderModuleCreateInfo createInfo = {};
-//	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-//	createInfo.codeSize = shaderCode.size();
-//
-//	std::vector<uint32_t> codeAligned(shaderCode.size() / 4 + 1);
-//	memcpy(codeAligned.data(), shaderCode.data(), shaderCode.size());
-//
-//	createInfo.pCode = codeAligned.data();
-//
-//	VkShaderModule shaderModule;
-//	if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-//		throw std::runtime_error("failed to create shader module!");
-//	}
-//
-//	return shaderModule;
-//}
+void VulkanMaterial::SetShaders(ShaderModuleSet set) {
+	shaderModules = set;
+}
+
+void VulkanMaterial::AddTexture(std::shared_ptr<VulkanTexture> tex) {
+	textures.push_back(tex);
+}
+
+void VulkanMaterial::AddTextureArray(std::shared_ptr<VulkanTexture2DArray> texArr) {
+	textureArrays.push_back(texArr);
+}
+
+void VulkanMaterial::SetMaterialValue(MaterialOptions value) {
+	value_var = value;
+
+	value_data.reset();
+	value_data = std::make_shared<VulkanBufferUniform>(device);
+
+	if (value_var.index() == 0) {
+		value_data->CreateUniformBufferPersitantlyMapped(sizeof(Phong_Material));
+	}
+
+	else if (value_var.index() == 1) {
+		value_data->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Mat_Value));
+	}
+
+	else if (value_var.index() == 2) {
+		value_data->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Mat_Tex));
+	}
+
+}
 
 
 
-void VulkanMaterial::Setup(){
-    //descriptor = renderer->GetVulkanDescriptor();
+
+void VulkanMaterial::Setup() {
+	//descriptor = renderer->GetVulkanDescriptor();
    // descriptor = VulkanDescriptor(device);
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
-	//m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
+	int index = 0;
+
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, index, 1));
+
+
+	//is a contiguous set of bindings (index can't be repeated)
+	for (; index < textures.size(); index++) {
+		m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, index, 1));
+	}
+	for (; index < textureArrays.size(); index++) {
+		m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, index, 1));
+	}
 
 	descriptor.SetupLayout(m_bindings);
 
 	std::vector<DescriptorPoolSize> poolSizes;
+
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-	//poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+
+	for (int i = 0; i < textures.size(); i++) {
+		poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	}
+	for (int i = 0; i < textureArrays.size(); i++) {
+		poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	}
 	descriptor.SetupPool(poolSizes);
 
 	descriptorSet = descriptor.CreateDescriptorSet();
 
 	std::vector<DescriptorUse> writes;
+
+	writes.push_back(DescriptorUse(0, 1, value_data->resource));
+
+	//is a contiguous set of bindings (index can't be repeated)
+	for (index = 1; index < textures.size(); index++) {
+		writes.push_back(DescriptorUse(index, 1, textures.at(index)->resource));
+	}
+	for (; index < textureArrays.size(); index++) {
+		writes.push_back(DescriptorUse(index, 1, textureArrays.at(index)->resource));
+	}
 	//writes.push_back(DescriptorUse(0, 1, uniformBuffer->resource));
 	//writes.push_back(DescriptorUse(1, 1, materialBuffer->resource));
 	//writes.push_back(DescriptorUse(1, 1, gameObjectVulkanTexture->resource));
 	descriptor.UpdateDescriptorSet(descriptorSet, writes);
 }
 
-void VulkanMaterial::Bind(VkCommandBuffer cmdBuf){
+void VulkanMaterial::Bind(VkCommandBuffer cmdBuf) {
 
 
 

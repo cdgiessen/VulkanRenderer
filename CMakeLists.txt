@@ -19,6 +19,14 @@ find_package(glm REQUIRED)
 
 find_package(Vulkan REQUIRED)
 
+if(MSVC)
+
+endif(MSVC)
+
+set ( BULLET_LIBRARY BulletDynamics BulletCollision LinearMath )
+
+find_package(bullet) 
+
 #gtk include for linux
 if(UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
@@ -103,6 +111,12 @@ if(VULKAN_FOUND)
 	target_include_directories(VulkanApp PRIVATE ${Vulkan_INCLUDE_DIRS})
 	target_link_libraries(VulkanApp PRIVATE ${Vulkan_LIBRARIES})
 endif (VULKAN_FOUND)
+
+#target_link_libraries(VulkanApp
+#   ${CMAKE_CURRENT_SOURCE_DIR}/bullet/BulletDynamics/libBulletDynamics.a
+#   ${CMAKE_CURRENT_SOURCE_DIR}/bullet/BulletCollision/libBulletCollision.a
+#	${CMAKE_CURRENT_SOURCE_DIR}/bullet/LinearMath/libLinearMath.a
+#	-lGL -lGLU)
 
 #gtk
 if(UNIX)

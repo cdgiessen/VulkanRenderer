@@ -10,31 +10,33 @@
 #include "../rendering/Model.h"
 #include "../rendering/Renderer.h"
 #include "../rendering/Texture.h"
-#include "../rendering/Descriptor.h"
+#include "../rendering/Material.h"
+
 
 #include "../resources/Mesh.h"
 #include "../resources/Texture.h"
 
 class GameObject
 {
-  public:
-    GameObject();
-    ~GameObject();
+public:
+	GameObject();
+	~GameObject();
 
-    void InitGameObject(VulkanRenderer* renderer);
-    void CleanUp();
+	void InitGameObject(VulkanRenderer* renderer);
+	void CleanUp();
 
-    void LoadModel(std::string fileName);
-    void LoadModel(std::shared_ptr<Mesh> mesh);
+	void LoadModel(std::string fileName);
+	void LoadModel(std::shared_ptr<Mesh> mesh);
 
 	void SetupUniformBuffer();
-    void SetupImage();
-    void SetupModel();
-    void SetupPipeline();
-    void SetupDescriptor();
+	void SetupImage();
+	void SetupModel();
+	void SetupDescriptor();
+	void SetupMaterial();
+	void SetupPipeline();
 
 
-    void UpdateUniformBuffer(float time);
+	void UpdateUniformBuffer(float time);
 
 	void Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNormals);
 
@@ -44,6 +46,8 @@ class GameObject
 
 	std::shared_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;
+
+	std::shared_ptr<VulkanMaterial> mat;
 
 	std::shared_ptr<VulkanDescriptor> materialDescriptor;
 	DescriptorSet material_descriptorSet;
@@ -63,7 +67,7 @@ class GameObject
 	Phong_Material phong_mat;
 	PBR_Material pbr_mat;
 	PBR_Mat_Tex pbr_mat_tex;
-	
+
 	std::shared_ptr<VulkanBufferUniform> materialBuffer;
 
 	glm::vec3 position;

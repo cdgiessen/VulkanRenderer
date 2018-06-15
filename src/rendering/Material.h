@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 
 #include "Device.h"
+#include "Buffer.h"
 #include "Texture.h"
 #include "Descriptor.h"
 #include "Pipeline.h"
@@ -18,16 +19,15 @@
 //VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath);
 
 
-using MaterialOptions = std::variant<Phong_Material, PBR_Mat_Value>;
+using MaterialOptions = std::variant<Phong_Material, PBR_Mat_Value, PBR_Mat_Tex>;
 
-
-struct MaterialResource {
-
-	//MaterialResource(std::shared_ptr<UniformBuffer> buffer);
-	//MaterialResource(std::shared_ptr<Texture> texture);
-	
-
-};
+//struct MaterialResource {
+//
+//	MaterialResource(std::shared_ptr<VulkanBufferUniform> buffer);
+//	MaterialResource(std::shared_ptr<Texture> texture);
+//
+//
+//};
 
 class VulkanMaterial {
 public:
@@ -37,7 +37,8 @@ public:
 	void SetShaders(ShaderModuleSet set);
 
 	void AddTexture(std::shared_ptr<VulkanTexture> tex);
-	void AddMaterialValues(MaterialOptions value);
+	void AddTextureArray(std::shared_ptr<VulkanTexture2DArray> texArr);
+	void SetMaterialValue(MaterialOptions value);
 
 	void Setup();
 
@@ -45,7 +46,7 @@ public:
 
 
 private:
-	VulkanDevice& device;
+	VulkanDevice & device;
 
 	DescriptorSet descriptorSet;
 	VulkanDescriptor descriptor;
@@ -53,7 +54,8 @@ private:
 	ShaderModuleSet shaderModules;
 
 	std::vector<std::shared_ptr<VulkanTexture>> textures;
-	std::vector<MaterialOptions> values; 
-
+	std::vector<std::shared_ptr<VulkanTexture2DArray>> textureArrays;
+	MaterialOptions value_var;
+	std::shared_ptr<VulkanBufferUniform> value_data;
 
 };
