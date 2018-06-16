@@ -40,21 +40,21 @@ void VulkanMaterial::AddTextureArray(std::shared_ptr<VulkanTexture2DArray> texAr
 	textureArrays.push_back(texArr);
 }
 
-void VulkanMaterial::SetMaterialValue(MaterialOptions value) {
-	value_var = value;
+void VulkanMaterial::AddValue(MaterialOptions value) {
+	//value_var = value;
 
 	value_data.reset();
 	value_data = std::make_shared<VulkanBufferUniform>(device);
 
-	if (value_var.index() == 0) {
+	if (value.index() == 0) {
 		value_data->CreateUniformBufferPersitantlyMapped(sizeof(Phong_Material));
 	}
 
-	else if (value_var.index() == 1) {
+	else if (value.index() == 1) {
 		value_data->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Mat_Value));
 	}
 
-	else if (value_var.index() == 2) {
+	else if (value.index() == 2) {
 		value_data->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Mat_Tex));
 	}
 

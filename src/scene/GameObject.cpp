@@ -72,7 +72,7 @@ void GameObject::SetupModel()
 }
 
 void GameObject::SetupMaterial() {
-
+	
 	mat->AddTexture(gameObjectVulkanTexture);
 	mat->Setup();
 }

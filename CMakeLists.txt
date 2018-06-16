@@ -9,7 +9,7 @@ endif(MSVC)
 
 project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
 
-#list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 #include(cotire)
 
@@ -23,9 +23,7 @@ if(MSVC)
 
 endif(MSVC)
 
-set ( BULLET_LIBRARY BulletDynamics BulletCollision LinearMath )
-
-find_package(bullet) 
+find_package(Bullet) 
 
 #gtk include for linux
 if(UNIX)
@@ -112,12 +110,10 @@ if(VULKAN_FOUND)
 	target_link_libraries(VulkanApp PRIVATE ${Vulkan_LIBRARIES})
 endif (VULKAN_FOUND)
 
-#target_link_libraries(VulkanApp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/bullet/BulletDynamics/libBulletDynamics.a
-#   ${CMAKE_CURRENT_SOURCE_DIR}/bullet/BulletCollision/libBulletCollision.a
-#	${CMAKE_CURRENT_SOURCE_DIR}/bullet/LinearMath/libLinearMath.a
-#	-lGL -lGLU)
-
+if(BULLET_FOUND)
+	target_include_directories(VulkanApp PRIVATE ${BULLET_INCLUDE_DIRS})
+	target_link_libraries(VulkanApp PRIVATE ${BULLET_LIBRARIES})
+endif(BULLET_FOUND)
 #gtk
 if(UNIX)
 	target_link_libraries(VulkanApp PRIVATE ${GTK3_LIBRARIES})
@@ -136,15 +132,6 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
 endif(MSVC)
 
-# copy settings.json
-add_custom_command(TARGET VulkanApp PRE_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different
-		${PROJECT_SOURCE_DIR}/settings.json $<TARGET_FILE_DIR:VulkanApp>/settings.json)
-
-add_custom_command(TARGET VulkanApp PRE_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different
-		${PROJECT_SOURCE_DIR}/render_settings.json $<TARGET_FILE_DIR:VulkanApp>/render_settings.json)
-	
 
 # copy files over
 add_custom_command(TARGET VulkanApp POST_BUILD

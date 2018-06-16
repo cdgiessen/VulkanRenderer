@@ -1,5 +1,4 @@
 {
-  // See https://go.microsoft.com//fwlink//?linkid=834763 for more information about this file.
   "configurations": [
     {
       "name": "x64-Debug",
@@ -7,15 +6,12 @@
       "configurationType": "Debug",
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
-      "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
-      "cmakeCommandArgs": "-DCMAKE_TOOLCHAIN_FILE=C:\\src\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
+      "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
-      "variables": [
-        //{
-        //  "name": "CMAKE_TOOLCHAIN_FILE",
-        //  "value": "C:/src/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        //}
-      ],
+      "variables": [{
+        "name": "CMAKE_TOOLCHAIN_FILE",
+        "value": "C:\\src\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
+      }],
       "ctestCommandArgs": ""
     },
     {
@@ -24,15 +20,12 @@
       "configurationType": "RelWithDebInfo",
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
-      "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
-      "cmakeCommandArgs": "-DCMAKE_TOOLCHAIN_FILE=C:\\src\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
+      "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
-      "variables": [
-        //{
-        //  "name": "CMAKE_TOOLCHAIN_FILE",
-        //  "value": "C:/src/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        //}
-      ],
+      "variables": [{
+        "name": "CMAKE_TOOLCHAIN_FILE",
+        "value": "C:\\src\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
+      }],
       "ctestCommandArgs": ""
     },
     {
@@ -41,15 +34,12 @@
       "configurationType": "Release",
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
-      "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
-      "cmakeCommandArgs": "-DCMAKE_TOOLCHAIN_FILE=C:\\src\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
+      "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
-      "variables": [
-        //{
-        //  "name": "CMAKE_TOOLCHAIN_FILE",
-        //  "value": "C:/src/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        //}
-      ],
+      "variables": [{
+        "name": "CMAKE_TOOLCHAIN_FILE",
+        "value": "C:\\src\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
+      }],
       "ctestCommandArgs": ""
     }
   ]
