@@ -33,7 +33,7 @@ void VulkanMaterial::SetShaders(ShaderModuleSet set) {
 }
 
 void VulkanMaterial::AddTexture(std::shared_ptr<VulkanTexture> tex) {
-	textures.push_back(tex);
+	//textures.push_back(tex);
 }
 
 void VulkanMaterial::AddTextureArray(std::shared_ptr<VulkanTexture2DArray> texArr) {

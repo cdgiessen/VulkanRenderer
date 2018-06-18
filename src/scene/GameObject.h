@@ -61,12 +61,12 @@ public:
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 	//ModelPushConstant modelPushConstant;
 
-	// bool usePBR;
-	// bool usePBR_Tex;
+	bool usePBR;
+	bool usePBR_Tex;
 
-	// Phong_Material phong_mat;
-	// PBR_Material pbr_mat;
-	// PBR_Mat_Tex pbr_mat_tex;
+	Phong_Material phong_mat;
+	PBR_Material pbr_mat;
+	PBR_Mat_Tex pbr_mat_tex;
 
 	std::shared_ptr<VulkanBufferUniform> materialBuffer;
 

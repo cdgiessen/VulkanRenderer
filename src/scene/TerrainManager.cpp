@@ -390,7 +390,7 @@ void TerrainManager::UpdateTerrainGUI() {
 
 	ImGui::SetNextWindowSize(ImVec2(200, 220), ImGuiSetCond_FirstUseEver);
 	ImGui::SetNextWindowPos(ImVec2(220, 0), ImGuiSetCond_FirstUseEver);
-	if (ImGui::Begin("Debug Info", &settings.show_terrain_manager_window)) {
+	if (ImGui::Begin("Terrain Info", &settings.show_terrain_manager_window)) {
 
 		ImGui::BeginGroup();
 		if (ImGui::Button("Save")) {

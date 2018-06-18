@@ -7,8 +7,7 @@
       "name": "x64-Debug",
       "includePath": [
         "${env.INCLUDE}",
-        "F:\\USERS\\CHARLES\\DOCUMENTS\\PROJECTS\\VULKAN-STUFF\\VULKANRENDERER-MASTER\\THIRD-PARTY\\IMGUI",
-        "F:\\USERS\\CHARLES\\DOCUMENTS\\PROJECTS\\VULKAN-STUFF\\VULKANRENDERER-MASTER\\"
+        "${env.VULKAN_SDK}/Include"
       ],
       "defines": [
         "WIN32",
@@ -25,8 +24,7 @@
       "name": "x64-Release",
       "includePath": [
         "${env.INCLUDE}",
-        "F:\\USERS\\CHARLES\\DOCUMENTS\\PROJECTS\\VULKAN-STUFF\\VULKANRENDERER-MASTER\\THIRD-PARTY\\IMGUI",
-        "F:\\USERS\\CHARLES\\DOCUMENTS\\PROJECTS\\VULKAN-STUFF\\VULKANRENDERER-MASTER\\"
+        "${env.VULKAN_SDK}/Include"
       ],
       "defines": [
         "WIN32",

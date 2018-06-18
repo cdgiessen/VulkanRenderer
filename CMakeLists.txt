@@ -13,19 +13,17 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 #include(cotire)
 
+#libraries
+
 find_package(glfw3 REQUIRED)
 
 find_package(glm REQUIRED)
 
 find_package(Vulkan REQUIRED)
 
-if(MSVC)
-
-endif(MSVC)
-
 find_package(Bullet) 
 
-#gtk include for linux
+#gtk include for linux file window
 if(UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
 
@@ -36,6 +34,16 @@ if(UNIX)
 	link_directories(${GTK3_LIBRARY_DIRS})
 	add_definitions(${GTK3_CFLAGS_OTHER}) 
 endif(UNIX)
+
+#memory
+
+set(FOONATHAN_MEMORY_BUILD_EXAMPLES OFF)
+set(FOONATHAN_MEMORY_BUILD_TESTS OFF)
+set(FOONATHAN_MEMORY_BUILD_TOOLS OFF)
+
+add_subdirectory(ext/memory)
+
+# main files to compile
 
 add_executable(VulkanApp 
 
@@ -110,14 +118,19 @@ if(VULKAN_FOUND)
 	target_link_libraries(VulkanApp PRIVATE ${Vulkan_LIBRARIES})
 endif (VULKAN_FOUND)
 
+#bullet physics
 if(BULLET_FOUND)
 	target_include_directories(VulkanApp PRIVATE ${BULLET_INCLUDE_DIRS})
 	target_link_libraries(VulkanApp PRIVATE ${BULLET_LIBRARIES})
 endif(BULLET_FOUND)
+
 #gtk
 if(UNIX)
 	target_link_libraries(VulkanApp PRIVATE ${GTK3_LIBRARIES})
 endif(UNIX)
+
+#memory
+target_link_libraries(VulkanApp PUBLIC foonathan_memory)
 
 #set_target_properties(VulkanApp PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
 #cotire(VulkanApp)
