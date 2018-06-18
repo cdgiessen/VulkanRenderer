@@ -7,7 +7,7 @@
 #include <atomic>
 #include <shared_mutex>
 
-template<typename T, size_t size>
+template<typename T, int size>
 class DoubleBufferArray {
 public:
 	DoubleBufferArray();
@@ -37,7 +37,7 @@ private:
 	std::shared_mutex writeLock;
 };
 
-template<typename T, size_t size>
+template<typename T, int size>
 DoubleBufferArray<T, size>::DoubleBufferArray() :
 	which(false)
 {
@@ -45,21 +45,21 @@ DoubleBufferArray<T, size>::DoubleBufferArray() :
 }
 
 
-template<typename T, size_t size>
+template<typename T, int size>
 T DoubleBufferArray<T, size>::Read(int index)
 {
 	std::shared_lock<std::shared_mutex> lock(writeLock);
 	return currentRead[index];
 }
 
-template<typename T, size_t size>
+template<typename T, int size>
 std::array<T, size>* DoubleBufferArray<T, size>::ReadAll()
 {
 	std::shared_lock<std::shared_mutex> lock(writeLock);
 	return currentRead;
 }
 
-template<typename T, size_t size>
+template<typename T, int size>
 void DoubleBufferArray<T, size>::Write(int index, T data)
 {
 	//while (swapInProgress) { } //spin-lock (I know its bad)
@@ -71,7 +71,7 @@ void DoubleBufferArray<T, size>::Write(int index, T data)
 	//this->writeUsers--;
 }
 
-template<typename T, size_t size>
+template<typename T, int size>
 void DoubleBufferArray<T, size>::Swap()
 {
 	//swapInProgress = true;

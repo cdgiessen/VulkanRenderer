@@ -158,6 +158,7 @@ private:
 	VkPipelineLayout frameDataDescriptorLayout;
 	VkPipelineLayout lightingDescriptorLayout;
 
+	
 	VulkanBufferUniformDynamic entityPositions;
 
 	std::unique_ptr<VulkanTextureDepthBuffer> depthBuffer;
