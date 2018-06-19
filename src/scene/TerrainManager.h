@@ -6,6 +6,9 @@
 #include <mutex>
 #include <queue>
 
+#include <foonathan/memory/container.hpp> // vector, list, list_node_size
+#include <foonathan/memory/memory_pool.hpp> // memory_pool
+
 #include "../core/CoreTools.h"
 #include "../core/TimeManager.h"
 
@@ -87,6 +90,12 @@ public:
 
 	void RecreateTerrain();
 
+	foonathan::memory::memory_pool<> memPool_vertices;
+	foonathan::memory::memory_pool<> memPool_indices;
+
+	//foonathan::memory::list<int, decltype(memPool_vertices)> list_vertices;
+	//foonathan::memory::list<int, decltype(memPool_indices)> list_indices;
+	
 	MemoryPool<TerrainMeshVertices> poolMesh_vertices;
 	MemoryPool<TerrainMeshIndices> poolMesh_indices;
 	VulkanRenderer* renderer;

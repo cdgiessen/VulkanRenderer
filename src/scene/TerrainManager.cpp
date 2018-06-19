@@ -70,7 +70,11 @@ void TerrainCreationWorker(TerrainManager* man) {
 
 
 TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph)
-	: protoGraph(protoGraph), poolMesh_vertices(500), poolMesh_indices(500)
+	: protoGraph(protoGraph), poolMesh_vertices(500), poolMesh_indices(500),
+	memPool_vertices(sizeof(TerrainMeshVertices), 1024),
+	memPool_indices(sizeof(TerrainMeshIndices), 1024),
+	list_vertices(memPool_vertices),
+	list_indices(mempPool_indices)
 {
 	if (settings.maxLevels < 0) {
 		maxNumQuads = 1;
@@ -83,6 +87,8 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph)
 	//terrainQuadPool = std::make_shared<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>>();
 	//poolMesh_vertices = MemoryPool<TerrainMeshVertices>(500);
 	//poolMesh_indices = MemoryPool<TerrainMeshIndices(500);
+
+
 
 }
 
