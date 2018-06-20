@@ -90,14 +90,8 @@ public:
 
 	void RecreateTerrain();
 
-	foonathan::memory::memory_pool<> memPool_vertices;
-	foonathan::memory::memory_pool<> memPool_indices;
-
-	//foonathan::memory::list<int, decltype(memPool_vertices)> list_vertices;
-	//foonathan::memory::list<int, decltype(memPool_indices)> list_indices;
-	
-	MemoryPool<TerrainMeshVertices> poolMesh_vertices;
-	MemoryPool<TerrainMeshIndices> poolMesh_indices;
+	MemoryPool<TerrainMeshVertices, 1024> poolMesh_vertices;
+	MemoryPool<TerrainMeshIndices, 1024> poolMesh_indices;
 	VulkanRenderer* renderer;
 
 

@@ -277,6 +277,7 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 
 		transfer.work = std::function<void(const VkCommandBuffer)>(
 			[=](const VkCommandBuffer cmdBuf) {
+
 			SetLayoutAndTransferRegions(cmdBuf, image.image, buffer.buffer.buffer,
 				subresourceRange, bufferCopyRegions);
 

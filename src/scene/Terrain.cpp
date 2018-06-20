@@ -59,8 +59,8 @@ float TerrainQuad::GetUVvalueFromLocalIndex(float i, int numCells, int level, in
 
 Terrain::Terrain(
 	VulkanRenderer* renderer,
-	MemoryPool<TerrainMeshVertices>& meshPool_vertices,
-	MemoryPool<TerrainMeshIndices>& meshPool_indices,
+	MemoryPool<TerrainMeshVertices, 1024>& meshPool_vertices,
+	MemoryPool<TerrainMeshIndices, 1024>& meshPool_indices,
 	InternalGraph::GraphPrototype& protoGraph,
 	int numCells, int maxLevels, float heightScale,
 	TerrainCoordinateData coords)

@@ -70,11 +70,8 @@ void TerrainCreationWorker(TerrainManager* man) {
 
 
 TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph)
-	: protoGraph(protoGraph), poolMesh_vertices(500), poolMesh_indices(500),
-	memPool_vertices(sizeof(TerrainMeshVertices), 1024),
-	memPool_indices(sizeof(TerrainMeshIndices), 1024),
-	list_vertices(memPool_vertices),
-	list_indices(mempPool_indices)
+	: protoGraph(protoGraph), poolMesh_vertices(), poolMesh_indices()
+
 {
 	if (settings.maxLevels < 0) {
 		maxNumQuads = 1;
