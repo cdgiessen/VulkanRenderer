@@ -32,8 +32,6 @@ private:
 	std::array<T, size>* currentRead; //ptr references
 	std::array<T, size>* currentWrite;//ptr references
 
-	//std::atomic_int writeUsers;
-	//std::atomic_bool swapInProgress = false;
 	std::shared_mutex writeLock;
 };
 
@@ -62,20 +60,18 @@ std::array<T, size>* DoubleBufferArray<T, size>::ReadAll()
 template<typename T, int size>
 void DoubleBufferArray<T, size>::Write(int index, T data)
 {
-	//while (swapInProgress) { } //spin-lock (I know its bad)
+
 	std::unique_lock<std::shared_mutex> lock(writeLock);
-	//this->writeUsers++;
+
 
 	currentWrite[index] = data;
 
-	//this->writeUsers--;
 }
 
 template<typename T, int size>
 void DoubleBufferArray<T, size>::Swap()
 {
-	//swapInProgress = true;
-	//while (writeUsers > 0) {} //spin-lock (I know its bad)
+
 	std::unique_lock<std::shared_mutex> lock(writeLock);
 
 	which = !which;
@@ -88,5 +84,4 @@ void DoubleBufferArray<T, size>::Swap()
 		currentRead = &b;
 		currentWrite = &a;
 	}
-	//swapInProgress = false;
 }

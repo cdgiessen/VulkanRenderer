@@ -84,6 +84,8 @@ public:
 	void VmaMapMemory(VmaBuffer& buffer, void** pData);
 	void VmaUnmapMemory(VmaBuffer& buffer);
 
+	void FlushBuffer(VmaBuffer& buffer);
+
 	void CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
 	void CreateUniformBufferMapped(VmaBuffer& buffer, VkDeviceSize bufferSize);
 	void CreateStagingUniformBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
@@ -96,6 +98,7 @@ public:
 
 	void CreateInstancingBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
 	void CreateStagingInstancingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
+	void CreateMappedInstancingBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
 
 	//void DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation);
 	void DestroyVmaAllocatedBuffer(VmaBuffer& buffer);

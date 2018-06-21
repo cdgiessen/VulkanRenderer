@@ -130,14 +130,14 @@ void TerrainManager::SetupResources(ResourceManager* resourceMan, VulkanRenderer
 	//WaterTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg");
 	//WaterVulkanTexture.loadFromTexture(renderer->device, WaterTexture, VK_FORMAT_R8G8B8A8_UNORM, renderer->device.graphics_queue, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, true, 4, true);
 
-	//just for now-instancedWaters = std::make_unique<InstancedSceneObject>(renderer);
-	//just for now-instancedWaters->SetFragmentShaderToUse(loadShaderModule(renderer->device.device, "assets/shaders/water.frag.spv"));
-	//just for now-instancedWaters->SetBlendMode(VK_TRUE);
-	//just for now-instancedWaters->SetCullMode(VK_CULL_MODE_NONE);
-	//just for now-instancedWaters->LoadModel(createFlatPlane(settings.numCells, glm::vec3(1, 0, 1)));
-	//just for now-instancedWaters->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg"));
+	instancedWaters = std::make_unique<InstancedSceneObject>(renderer);
+	instancedWaters->SetFragmentShaderToUse("assets/shaders/water.frag.spv");
+	instancedWaters->SetBlendMode(VK_TRUE);
+	instancedWaters->SetCullMode(VK_CULL_MODE_NONE);
+	instancedWaters->LoadModel(createFlatPlane(settings.numCells, glm::vec3(1, 0, 1)));
+	instancedWaters->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg"));
 
-	//just for now-instancedWaters->InitInstancedSceneObject(renderer);
+	instancedWaters->InitInstancedSceneObject(renderer);
 
 	StartWorkerThreads();
 
@@ -146,7 +146,7 @@ void TerrainManager::SetupResources(ResourceManager* resourceMan, VulkanRenderer
 void TerrainManager::CleanUpResources() {
 	terrainVulkanTextureArray->destroy();
 
-	//just for now-instancedWaters->CleanUp();
+	instancedWaters->CleanUp();
 }
 
 void TerrainManager::GenerateTerrain(ResourceManager* resourceMan, VulkanRenderer* renderer, std::shared_ptr<Camera> camera) {
@@ -190,7 +190,7 @@ void TerrainManager::GenerateTerrain(ResourceManager* resourceMan, VulkanRendere
 			waterData.push_back(id);
 		}
 	}
-	//just for now-instancedWaters->ReplaceAllInstances(waterData);
+	instancedWaters->ReplaceAllInstances(waterData);
 	//instancedWaters->UploadInstances();
 	recreateTerrain = false;
 }
@@ -230,7 +230,7 @@ void TerrainManager::UpdateTerrains(ResourceManager* resourceMan,
 			water.pos = glm::vec3((*it)->coordinateData.pos.x, 0, (*it)->coordinateData.pos.y);
 			water.rot = glm::vec3(0, 0, 0);
 			water.scale = settings.width;
-			//just for now-instancedWaters->RemoveInstance(water);
+			instancedWaters->RemoveInstance(water);
 
 		}
 	}
@@ -299,7 +299,7 @@ void TerrainManager::UpdateTerrains(ResourceManager* resourceMan,
 				water.pos = glm::vec3(pos.x, 0, pos.y);
 				water.rot = glm::vec3(0, 0, 0);
 				water.scale = settings.width;
-				//just for now-instancedWaters->AddInstance(water);
+				instancedWaters->AddInstance(water);
 			}
 			//}
 		}
@@ -319,7 +319,7 @@ void TerrainManager::UpdateTerrains(ResourceManager* resourceMan,
 	//}
 	terrainUpdateTimer.EndTimer();
 
-	//just for now-instancedWaters->UploadData();
+	instancedWaters->UploadData();
 }
 
 void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe) {
@@ -330,7 +330,7 @@ void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe
 		}
 	}
 
-	//just for now-instancedWaters->WriteToCommandBuffer(commandBuffer, wireframe);
+	instancedWaters->WriteToCommandBuffer(commandBuffer, wireframe);
 }
 
 //TODO : Reimplement getting height at terrain location
@@ -495,8 +495,8 @@ void TerrainManager::CleanUpTerrain() {
 	StopWorkerThreads();
 	terrains.clear();
 	//waters.clear();
-	//just for now-instancedWaters->RemoveAllInstances();
-	//just for now-instancedWaters->CleanUp();
+	//instancedWaters->RemoveAllInstances();
+	//instancedWaters->CleanUp();
 	activeTerrains.clear();
 
 

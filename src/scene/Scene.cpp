@@ -10,9 +10,9 @@
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
 
-Scene::Scene(ResourceManager* resourceMan, 
-	VulkanRenderer* renderer, 
-	InternalGraph::GraphPrototype& graph) 
+Scene::Scene(ResourceManager* resourceMan,
+	VulkanRenderer* renderer,
+	InternalGraph::GraphPrototype& graph)
 {
 	this->renderer = renderer;
 	this->resourceMan = resourceMan;

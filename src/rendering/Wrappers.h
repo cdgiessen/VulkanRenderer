@@ -59,7 +59,7 @@ std::vector<VkSemaphore> CreateSemaphoreArray(std::vector<VulkanSemaphore>& sems
 class CommandQueue {
 public:
 	CommandQueue(const VulkanDevice&  device, int queueFamily);
-	
+
 	//No copy or move construction (so that it won't get duplicated)
 	CommandQueue(const CommandQueue& cmd) = delete;
 	CommandQueue& operator=(const CommandQueue& cmd) = delete;
@@ -88,13 +88,6 @@ private:
 	int queueFamily;
 };
 
-class CommandBuffer {
-public:
-	CommandBuffer();
-
-private:
-	VulkanFence fence;
-};
 
 class CommandPool {
 public:

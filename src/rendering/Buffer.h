@@ -25,6 +25,8 @@ public:
 	void Map(void** pData);
 	void Unmap();
 
+	void Flush();
+
 	void CopyToBuffer(void* pData, VkDeviceSize size);
 
 	VkDeviceSize Size() const;

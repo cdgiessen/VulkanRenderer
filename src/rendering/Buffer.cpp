@@ -54,10 +54,14 @@ VulkanBuffer::~VulkanBuffer() {
 }
 
 void VulkanBuffer::Map(void** pData) {
-	device->VmaMapMemory(buffer, pData);
+	device->VmaMapMemory(buffer, &mapped);
 }
 void VulkanBuffer::Unmap() {
 	device->VmaUnmapMemory(buffer);
+}
+
+void VulkanBuffer::Flush() {
+	device->FlushBuffer(buffer);
 }
 
 void VulkanBuffer::SetupResource() {
@@ -228,7 +232,10 @@ void VulkanBufferInstance::CreatePersistantInstanceBuffer(
 	uint32_t count, uint32_t indexElementCount)
 {
 	persistantlyMapped = true;
-	CreateInstanceBuffer(count, indexElementCount);
+	VkDeviceSize size = count * indexElementCount * sizeof(float);
+	m_size = size;
+	device->CreateMappedInstancingBuffer(buffer, size);
+	SetupResource();
 	Map(&mapped);
 	created = true;
 

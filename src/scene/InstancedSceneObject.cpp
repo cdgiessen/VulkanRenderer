@@ -94,7 +94,7 @@ void InstancedSceneObject::SetupUniformBuffer() {
 	//uniformBuffer.unmap();
 
 	instanceBuffer->CreatePersistantInstanceBuffer(maxInstanceCount, instanceMemberSize);
-	UploadData();
+	//UploadData();
 }
 
 void InstancedSceneObject::SetupImage() {
@@ -137,13 +137,13 @@ void InstancedSceneObject::SetupPipeline()
 
 	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/instancedSceneObject.vert.spv"));
 	//pipeMan.SetFragmentShader(mvp, fragShaderModule);
-	
+
 	auto vert = renderer->shaderManager.loadShaderModule("assets/shaders/instancedSceneObject.vert.spv", ShaderModuleType::vertex);
 	auto frag = renderer->shaderManager.loadShaderModule(fragShaderPath, ShaderModuleType::fragment);
 
 	ShaderModuleSet set(vert, frag, {}, {}, {});
 	pipeMan.SetShaderModuleSet(mvp, set);
-	
+
 	//pipeMan.SetVertexInput(mvp, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width, (float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
@@ -266,6 +266,7 @@ void InstancedSceneObject::UploadInstances() {
 
 		// Destroy staging resources
 		//stagingBuffer.CleanBuffer();
+		instanceBuffer->Flush();
 		isDirty = false;
 	}
 }
@@ -369,9 +370,10 @@ void InstancedSceneObject::UploadData()
 
 	//instanceBuffer->map(renderer->device.device);
 	instanceBuffer->CopyToBuffer(instancesData.data(), instancesData.size());
+
 	//instanceBuffer->unmap();
 
-	//UploadInstances();
+	UploadInstances();
 }
 
 void InstancedSceneObject::WriteToCommandBuffer(VkCommandBuffer commandBuffer, bool wireframe) {
@@ -380,7 +382,7 @@ void InstancedSceneObject::WriteToCommandBuffer(VkCommandBuffer commandBuffer, b
 	//	isReadyToRender = true;
 	//
 
-	if ((*vulkanModel->readyToUse != true) || *vulkanTexture->readyToUse != true || *isFinishedTransfer != true)
+	if ((*vulkanModel->readyToUse != true) || *vulkanTexture->readyToUse != true)//|| *isFinishedTransfer != true)
 		return;
 
 	VkDeviceSize offsets[] = { 0 };
