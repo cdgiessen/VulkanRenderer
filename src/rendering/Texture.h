@@ -36,8 +36,12 @@ public:
 		int mipLevels,
 		int layers);
 
-
-	VmaImage image;
+	struct VmaImage {
+		VkImage image = VK_NULL_HANDLE;
+		VmaAllocation allocation = VK_NULL_HANDLE;
+		VmaAllocationInfo allocationInfo;
+		VmaAllocator allocator = nullptr;
+	} image;
 
 	VkImageView textureImageView = VK_NULL_HANDLE;
 	VkSampler textureSampler = VK_NULL_HANDLE;
@@ -46,13 +50,18 @@ public:
 	//VkDescriptorImageInfo descriptor;
 	DescriptorResource resource;
 
-	VulkanDevice& device;
 
 	Signal readyToUse;
 protected:
+	VulkanDevice& device;
+	
 	int mipLevels;
 	int layers;
 
+	void InitImage2D(VkImageCreateInfo imageInfo);
+	void InitDepthImage(VkImageCreateInfo imageInfo);
+	void InitStagingImage2D(VkImageCreateInfo imageInfo);
+	
 };
 
 

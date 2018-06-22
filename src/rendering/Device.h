@@ -81,37 +81,6 @@ public:
 	VmaAllocator GetImageLinearAllocator();
 	VmaAllocator GetImageOptimalAllocator();
 
-	// void VmaMapMemory(VmaBuffer& buffer, void** pData);
-	// void VmaUnmapMemory(VmaBuffer& buffer);
-
-	// void FlushBuffer(VmaBuffer& buffer);
-
-	// void CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
-	// void CreateUniformBufferMapped(VmaBuffer& buffer, VkDeviceSize bufferSize);
-	// void CreateStagingUniformBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
-
-	// void CreateDynamicUniformBuffer(VmaBuffer& buffer, uint32_t count, VkDeviceSize sizeOfData);
-
-	// void CreateDataBuffer(VmaBuffer& buffer, VkDeviceSize size);
-
-	// void CreateMeshBufferVertex(VmaBuffer& buffer, VkDeviceSize bufferSize);
-	// void CreateMeshBufferIndex(VmaBuffer& buffer, VkDeviceSize bufferSize);
-	// void CreateMeshStagingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
-
-	// void CreateInstancingBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
-	// void CreateStagingInstancingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
-	// void CreateMappedInstancingBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
-
-	//void DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation);
-	//void DestroyVmaAllocatedBuffer(VmaBuffer& buffer);
-
-	void CreateImage2D(VkImageCreateInfo imageInfo, VmaImage& image);
-	void CreateDepthImage(VkImageCreateInfo imageInfo, VmaImage& image);
-	void CreateStagingImage2D(VkImageCreateInfo imageInfo, VmaImage& image);
-	//void CreateStagingImageBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
-
-	void DestroyVmaAllocatedImage(VmaImage& image);
-
 private:
 	QueueFamilyIndices familyIndices;
 

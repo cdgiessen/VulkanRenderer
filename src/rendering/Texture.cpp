@@ -34,8 +34,8 @@ void VulkanTexture::updateDescriptor() {
 }
 
 void VulkanTexture::destroy() {
-	device.DestroyVmaAllocatedImage(image);
-
+	vmaDestroyImage(image.allocator, image.image, image.allocation);
+	
 	if (textureImageView != VK_NULL_HANDLE)
 		vkDestroyImageView(device.device, textureImageView, nullptr);
 	if (textureSampler != VK_NULL_HANDLE)
@@ -189,6 +189,48 @@ void AlignedTextureMemcpy(int layers, int dst_layer_width, int height,
 	}
 }
 
+void VulkanTexture::InitImage2D(VkImageCreateInfo imageInfo) {
+
+	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
+		| VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+		| VK_IMAGE_USAGE_SAMPLED_BIT;
+
+	VmaAllocationCreateInfo imageAllocCreateInfo = {};
+	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+	if (imageInfo.tiling == VK_IMAGE_TILING_OPTIMAL) {
+		image.allocator = device.GetImageOptimalAllocator();
+	}
+	else if (imageInfo.tiling == VK_IMAGE_TILING_LINEAR) {
+		image.allocator = device.GetImageLinearAllocator();
+	}
+		VK_CHECK_RESULT(vmaCreateImage(image.allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
+
+}
+
+void VulkanTexture::InitDepthImage(VkImageCreateInfo imageInfo) {
+	imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+	VmaAllocationCreateInfo imageAllocCreateInfo = {};
+	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+	image.allocator = device.GetImageOptimalAllocator();
+	VK_CHECK_RESULT(vmaCreateImage(image.allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
+}
+
+void VulkanTexture::InitStagingImage2D(VkImageCreateInfo imageInfo) {
+
+	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+	VmaAllocationCreateInfo stagingImageAllocCreateInfo = {};
+	stagingImageAllocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+	stagingImageAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+	image.allocator = device.GetGeneralAllocator();
+	VK_CHECK_RESULT(vmaCreateImage(image.allocator, &imageInfo, &stagingImageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
+
+}
+
 void SetLayoutAndTransferRegions(
 	VkCommandBuffer transferCmdBuf, VkImage image, VkBuffer stagingBuffer,
 	const VkImageSubresourceRange subresourceRange,
@@ -253,7 +295,7 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 	buffer.CreateStagingResourceBuffer(texture->pixels.data(),
 		texture->texImageSize);
 
-	device.CreateImage2D(imageCreateInfo, image);
+	InitImage2D(imageCreateInfo);
 
 	VkImageSubresourceRange subresourceRange =
 		initializers::imageSubresourceRangeCreateInfo(VK_IMAGE_ASPECT_COLOR_BIT,
@@ -363,7 +405,7 @@ void VulkanTexture2DArray::loadTextureArray(
 	buffer.CreateStagingResourceBuffer(textures->pixels.data(),
 		textures->texImageSize);
 
-	device.CreateImage2D(imageCreateInfo, image);
+	InitImage2D(imageCreateInfo);
 
 	VkImageSubresourceRange subresourceRange =
 		initializers::imageSubresourceRangeCreateInfo(
@@ -471,7 +513,7 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 		VK_IMAGE_USAGE_SAMPLED_BIT);
 	imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
-	device.CreateImage2D(imageCreateInfo, image);
+	InitImage2D(imageCreateInfo);
 
 	VulkanBufferStagingResource buffer(device);
 	
@@ -572,7 +614,7 @@ void VulkanTextureDepthBuffer::CreateDepthImage(VulkanRenderer &renderer,
 		VkExtent3D{ (uint32_t)width, (uint32_t)height, (uint32_t)1 },
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-	device.CreateDepthImage(imageInfo, image);
+	InitDepthImage(imageInfo);
 
 	textureImageView = VulkanTexture::CreateImageView(
 		image.image, VK_IMAGE_VIEW_TYPE_2D, depthFormat,

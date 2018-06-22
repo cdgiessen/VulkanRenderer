@@ -33,7 +33,12 @@ public:
 
 	bool IsCreated() const;
 
-	VmaBuffer buffer;
+	struct VmaBuffer {
+		VkBuffer buffer = VK_NULL_HANDLE;
+		VmaAllocation allocation = VK_NULL_HANDLE;
+		VmaAllocationInfo allocationInfo;
+		VmaAllocator allocator = nullptr;
+	} buffer;
 	DescriptorResource resource;
 
 	//Give the desired prperties (usage specifiers), and optionally the allocation flags
