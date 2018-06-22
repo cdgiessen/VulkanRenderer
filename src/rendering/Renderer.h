@@ -170,7 +170,7 @@ private:
 
 	CommandPool graphicsPrimaryCommandPool;
 
-	std::vector<FrameObject> frameObjects;
+	std::vector<std::unique_ptr<FrameObject>> frameObjects;
 
 	//Command buffer per frame
 	std::vector<VkCommandBuffer> commandBuffers;

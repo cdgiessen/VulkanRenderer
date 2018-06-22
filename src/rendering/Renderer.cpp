@@ -75,7 +75,7 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 	vulkanSwapChain.InitSwapChain(device.window);
 
 	for(int i = 0; i < vulkanSwapChain.swapChainImages.size(); i++){
-		frameObjects.push_back(FrameObject(device, i));
+		frameObjects.push_back(std::make_unique<FrameObject>(device, i));
 	}
 
 	pipelineManager.InitPipelineCache();
@@ -172,7 +172,7 @@ void VulkanRenderer::UpdateRenderResources(
 void VulkanRenderer::RenderFrame() {
 
 	PrepareFrame(frameIndex);
-	BuildCommandBuffers(frameObjects.at(frameIndex).GetPrimaryCmdBuf());
+	BuildCommandBuffers(frameObjects.at(frameIndex)->GetPrimaryCmdBuf());
 	SubmitFrame(frameIndex);
 
 	frameIndex = (frameIndex + 1)%frameObjects.size();
@@ -239,7 +239,7 @@ void VulkanRenderer::ReBuildCommandBuffers() {
 	graphicsPrimaryCommandPool.ResetPool();
 
 	CreateCommandBuffers();
-	BuildCommandBuffers(frameObjects.at(frameIndex).GetPrimaryCmdBuf());
+	BuildCommandBuffers(frameObjects.at(frameIndex)->GetPrimaryCmdBuf());
 }
 
 void VulkanRenderer::SetWireframe(bool wireframe) {
@@ -452,7 +452,7 @@ std::array<VkClearValue, 2> VulkanRenderer::GetFramebufferClearValues() {
 
 void VulkanRenderer::PrepareFrame(int curFrameIndex) {
 	VkResult result = 
-		frameObjects.at(curFrameIndex).AquireNextSwapchainImage(vulkanSwapChain.swapchain);
+		frameObjects.at(curFrameIndex)->AquireNextSwapchainImage(vulkanSwapChain.swapChain);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || (result == VK_SUBOPTIMAL_KHR)) {
 		RecreateSwapChain();
@@ -462,20 +462,20 @@ void VulkanRenderer::PrepareFrame(int curFrameIndex) {
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 
-	frameObjects.at(curFrameIndex).PrepareFrame();
+	frameObjects.at(curFrameIndex)->PrepareFrame();
 }
 
 void VulkanRenderer::SubmitFrame(int curFrameIndex) {
-	frameObjects.at(curFrameIndex).SubmitFrame();
+	frameObjects.at(curFrameIndex)->SubmitFrame();
 
-	auto curSubmitInfo = frameObjects.at(curFrameIndex).GetSubmitInfo();
+	auto curSubmitInfo = frameObjects.at(curFrameIndex)->GetSubmitInfo();
 	
 	VkPipelineStageFlags stageMasks = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 	curSubmitInfo.pWaitDstStageMask = &stageMasks;
 
 	device.GraphicsQueue().Submit(curSubmitInfo, VK_NULL_HANDLE);
 	
-	auto curPresentInfo = frameObjects.at(curFrameIndex).GetPresentInfo();
+	auto curPresentInfo = frameObjects.at(curFrameIndex)->GetPresentInfo();
 	
 	VkSwapchainKHR swapChains[] = { vulkanSwapChain.swapChain };
 	curPresentInfo.swapchainCount = 1;
@@ -484,7 +484,7 @@ void VulkanRenderer::SubmitFrame(int curFrameIndex) {
 	VkResult result;
 	{
 		std::lock_guard<std::mutex> lock(device.PresentQueue().GetQueueMutex());
-		result = vkQueuePresentKHR(device.PresentQueue().GetQueue(), &curSubmitInfo);
+		result = vkQueuePresentKHR(device.PresentQueue().GetQueue(), &curPresentInfo);
 	}
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
 		RecreateSwapChain();

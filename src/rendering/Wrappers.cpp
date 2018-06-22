@@ -53,6 +53,10 @@ VkSemaphore VulkanSemaphore::Get() {
 	return semaphore;
 }
 
+VkSemaphore* VulkanSemaphore::GetPtr(){
+	return &semaphore;
+}
+
 std::vector<VkSemaphore> CreateSemaphoreArray(std::vector<VulkanSemaphore>& sems)
 {
 	std::vector<VkSemaphore> outSems;
@@ -412,9 +416,9 @@ VkSubmitInfo FrameObject::GetSubmitInfo(){
 
 	VkSubmitInfo submitInfo = initializers::submitInfo();
 	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &renderFinishSem.Get();
+	submitInfo.pSignalSemaphores = renderFinishSem.GetPtr();
 	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = &imageAvailSem.Get();
+	submitInfo.pWaitSemaphores = imageAvailSem.GetPtr();
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &primaryCmdBuf;
 
@@ -426,11 +430,7 @@ VkPresentInfoKHR FrameObject::GetPresentInfo(){
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &renderFinishSem.Get();
-
-	VkSwapchainKHR swapChains[] = { vulkanSwapChain.swapChain };
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
+	presentInfo.pWaitSemaphores = renderFinishSem.GetPtr();
 
 	presentInfo.pImageIndices = &swapChainIndex;
 }

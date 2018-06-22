@@ -47,6 +47,7 @@ public:
 	VulkanSemaphore(const VulkanDevice& device);
 
 	VkSemaphore Get();
+	VkSemaphore* GetPtr();
 
 	void CleanUp(const VulkanDevice & device);
 
@@ -248,7 +249,7 @@ template <typename WorkType> void CommandBufferWorker<WorkType>::StopWork() {
 
 class FrameObject {
 public:
-	FrameObject(VulkanDevice& device, int frameIndex);
+	FrameObject(VulkanDevice& device, int frameD);
 	~FrameObject();
 
 	VkResult AquireNextSwapchainImage(VkSwapchainKHR swapchain);
@@ -265,9 +266,9 @@ public:
 
 private:
 	VulkanDevice& device;
-	int frameIndex = -1; //which frame in the queue it is
+	uint32_t frameIndex; //which frame in the queue it is
 
-	int swapChainIndex = -1; // which frame to render to
+	uint32_t swapChainIndex; // which frame to render to
 
 	VulkanSemaphore imageAvailSem;
 	VulkanSemaphore renderFinishSem;
