@@ -33,7 +33,7 @@ VkFence VulkanFence::Get() {
 std::vector<VkFence> CreateFenceArray(std::vector<VulkanFence>& fences)
 {
 	std::vector<VkFence> outFences(fences.size());
-	for(auto& fence : fences)
+	for (auto& fence : fences)
 		outFences.push_back(fence.Get());
 	return outFences;
 }
@@ -53,16 +53,16 @@ VkSemaphore VulkanSemaphore::Get() {
 	return semaphore;
 }
 
-VkSemaphore* VulkanSemaphore::GetPtr(){
+VkSemaphore* VulkanSemaphore::GetPtr() {
 	return &semaphore;
 }
 
 std::vector<VkSemaphore> CreateSemaphoreArray(std::vector<VulkanSemaphore>& sems)
 {
 	std::vector<VkSemaphore> outSems;
-	for(auto& sem : sems)
+	for (auto& sem : sems)
 		outSems.push_back(sem.Get());
-	
+
 	return outSems;
 }
 
@@ -169,6 +169,12 @@ VkBool32 CommandPool::ResetPool() {
 	return VK_TRUE;
 }
 
+VkBool32 CommandPool::ResetCommandBuffer(VkCommandBuffer cmdBuf) {
+	std::lock_guard<std::mutex> lock(poolLock);
+	vkResetCommandBuffer(cmdBuf, {});
+	return VK_TRUE;
+}
+
 VkCommandBuffer CommandPool::AllocateCommandBuffer(VkCommandBufferLevel level)
 {
 	VkCommandBuffer buf;
@@ -238,8 +244,8 @@ VkCommandBuffer CommandPool::GetSecondaryCommandBuffer(bool beginBufferRecording
 // }
 
 VkBool32 CommandPool::SubmitCommandBuffer(VkCommandBuffer cmdBuffer, VulkanFence& fence,
-		std::vector<VulkanSemaphore>& waitSemaphores, 
-		std::vector<VulkanSemaphore>& signalSemaphores)
+	std::vector<VulkanSemaphore>& waitSemaphores,
+	std::vector<VulkanSemaphore>& signalSemaphores)
 {
 	EndBufferRecording(cmdBuffer);
 	queue->SubmitCommandBuffer(cmdBuffer, fence, waitSemaphores, signalSemaphores);
@@ -365,8 +371,8 @@ template <> void CommandBufferWorker<TransferCommandWork>::Work() {
 }
 
 
-FrameObject::FrameObject(VulkanDevice& device, int frameIndex):
-	device(device), 
+FrameObject::FrameObject(VulkanDevice& device, int frameIndex) :
+	device(device),
 	frameIndex(frameIndex),
 	commandPool(device),
 	imageAvailSem(device),
@@ -374,45 +380,40 @@ FrameObject::FrameObject(VulkanDevice& device, int frameIndex):
 
 {
 	commandPool.Setup(
-		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, 
+		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
 		&device.GraphicsQueue());
-
+	primaryCmdBuf = commandPool.GetPrimaryCommandBuffer(false);
 }
 
-FrameObject::~FrameObject(){
+FrameObject::~FrameObject() {
 	commandPool.CleanUp();
 	imageAvailSem.CleanUp(device);
 	renderFinishSem.CleanUp(device);
 }
 
-VkResult FrameObject::AquireNextSwapchainImage(VkSwapchainKHR swapchain){
+VkResult FrameObject::AquireNextSwapchainImage(VkSwapchainKHR swapchain) {
 	return vkAcquireNextImageKHR(
 		device.device, swapchain,
 		std::numeric_limits<uint64_t>::max(), imageAvailSem.Get(),
 		VK_NULL_HANDLE, &swapChainIndex);
 }
 
-void FrameObject::PrepareFrame(){
-	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-
-	vkBeginCommandBuffer(primaryCmdBuf, &beginInfo);
+void FrameObject::PrepareFrame() {
 
 
+	commandPool.BeginBufferRecording(primaryCmdBuf, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
 }
 
 void FrameObject::SubmitFrame()
 {
-	if (vkEndCommandBuffer(primaryCmdBuf) != VK_SUCCESS) {
-		throw std::runtime_error("failed to record command buffer!");
-	}
+	commandPool.EndBufferRecording(primaryCmdBuf);
 
 	auto submitInfo = GetSubmitInfo();
 
 }
 
-VkSubmitInfo FrameObject::GetSubmitInfo(){
+VkSubmitInfo FrameObject::GetSubmitInfo() {
 
 	VkSubmitInfo submitInfo = initializers::submitInfo();
 	submitInfo.signalSemaphoreCount = 1;
@@ -425,7 +426,7 @@ VkSubmitInfo FrameObject::GetSubmitInfo(){
 	return submitInfo;
 }
 
-VkPresentInfoKHR FrameObject::GetPresentInfo(){
+VkPresentInfoKHR FrameObject::GetPresentInfo() {
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
@@ -433,9 +434,10 @@ VkPresentInfoKHR FrameObject::GetPresentInfo(){
 	presentInfo.pWaitSemaphores = renderFinishSem.GetPtr();
 
 	presentInfo.pImageIndices = &swapChainIndex;
+	return presentInfo;
 }
 
 
-VkCommandBuffer FrameObject::GetPrimaryCmdBuf(){
+VkCommandBuffer FrameObject::GetPrimaryCmdBuf() {
 	return primaryCmdBuf;
 }

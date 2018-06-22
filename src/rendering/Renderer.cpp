@@ -74,7 +74,7 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 
 	vulkanSwapChain.InitSwapChain(device.window);
 
-	for(int i = 0; i < vulkanSwapChain.swapChainImages.size(); i++){
+	for (int i = 0; i < vulkanSwapChain.swapChainImages.size(); i++) {
 		frameObjects.push_back(std::make_unique<FrameObject>(device, i));
 	}
 
@@ -144,6 +144,8 @@ VulkanRenderer::~VulkanRenderer() {
 	renderFinishedSemaphore->CleanUp(device);
 	imageAvailableSemaphore->CleanUp(device);
 
+	frameObjects.clear();
+
 	shaderManager.CleanUp();
 
 	pipelineManager.CleanUp();
@@ -175,7 +177,7 @@ void VulkanRenderer::RenderFrame() {
 	BuildCommandBuffers(frameObjects.at(frameIndex)->GetPrimaryCmdBuf());
 	SubmitFrame(frameIndex);
 
-	frameIndex = (frameIndex + 1)%frameObjects.size();
+	frameIndex = (frameIndex + 1) % frameObjects.size();
 
 	SaveScreenshot();
 }
@@ -400,7 +402,7 @@ void VulkanRenderer::BuildCommandBuffers(VkCommandBuffer cmdBuf) {
 	//if (vkEndCommandBuffer(cmdBuf) != VK_SUCCESS) {
 	//	throw std::runtime_error("failed to record command buffer!");
 	//}
-	
+
 }
 
 // Meant to be used in conjunction with secondary command buffers
@@ -451,7 +453,7 @@ std::array<VkClearValue, 2> VulkanRenderer::GetFramebufferClearValues() {
 }
 
 void VulkanRenderer::PrepareFrame(int curFrameIndex) {
-	VkResult result = 
+	VkResult result =
 		frameObjects.at(curFrameIndex)->AquireNextSwapchainImage(vulkanSwapChain.swapChain);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || (result == VK_SUBOPTIMAL_KHR)) {
@@ -469,18 +471,18 @@ void VulkanRenderer::SubmitFrame(int curFrameIndex) {
 	frameObjects.at(curFrameIndex)->SubmitFrame();
 
 	auto curSubmitInfo = frameObjects.at(curFrameIndex)->GetSubmitInfo();
-	
+
 	VkPipelineStageFlags stageMasks = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 	curSubmitInfo.pWaitDstStageMask = &stageMasks;
 
 	device.GraphicsQueue().Submit(curSubmitInfo, VK_NULL_HANDLE);
-	
+
 	auto curPresentInfo = frameObjects.at(curFrameIndex)->GetPresentInfo();
-	
+
 	VkSwapchainKHR swapChains[] = { vulkanSwapChain.swapChain };
 	curPresentInfo.swapchainCount = 1;
 	curPresentInfo.pSwapchains = swapChains;
-	
+
 	VkResult result;
 	{
 		std::lock_guard<std::mutex> lock(device.PresentQueue().GetQueueMutex());
@@ -492,9 +494,9 @@ void VulkanRenderer::SubmitFrame(int curFrameIndex) {
 	else if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to present swap chain image!");
 	}
-
-	std::lock_guard<std::mutex> lock(device.PresentQueue().GetQueueMutex());
-	vkQueueWaitIdle(device.PresentQueue().GetQueue());
+	//FINALLY!!!!
+	//std::lock_guard<std::mutex> lock(device.PresentQueue().GetQueueMutex());
+	//vkQueueWaitIdle(device.PresentQueue().GetQueue());
 
 
 	return;
@@ -704,7 +706,7 @@ void VulkanRenderer::SubmitGraphicsCommandBufferAndWait(
 
 	vkDestroyFence(device.device, fence, nullptr);
 	graphicsPrimaryCommandPool.FreeCommandBuffer(commandBuffer);
-	
+
 }
 
 void WaitForSubmissionFinish(VkDevice device, CommandPool *pool,

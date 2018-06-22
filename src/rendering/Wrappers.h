@@ -98,6 +98,7 @@ public:
 	VkBool32 CleanUp();
 
 	VkBool32 ResetPool();
+	VkBool32 ResetCommandBuffer(VkCommandBuffer cmdBuf);
 
 	VkCommandBuffer GetOneTimeUseCommandBuffer();
 	VkCommandBuffer GetPrimaryCommandBuffer(bool beginBufferRecording = true);
@@ -265,7 +266,7 @@ public:
 	VkCommandBuffer GetPrimaryCmdBuf();
 
 private:
-	VulkanDevice& device;
+	VulkanDevice & device;
 	uint32_t frameIndex; //which frame in the queue it is
 
 	uint32_t swapChainIndex; // which frame to render to
