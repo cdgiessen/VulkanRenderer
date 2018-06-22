@@ -50,8 +50,6 @@ void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image,
 	// An alternative way would be to always blit from the first mip level and
 	// sample that one down
 
-	// VkCommandBuffer blitCmd = renderer.GetSingleUseGraphicsCommandBuffer();
-
 	// Copy down mips from n-1 to n
 	for (int32_t i = 1; i < mipLevels; i++) {
 
@@ -109,7 +107,6 @@ void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image,
 	SetImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		finalImageLayout, subresourceRange);
 
-	// renderer.SubmitGraphicsCommandBufferAndWait(blitCmd);
 }
 
 VkSampler VulkanTexture::CreateImageSampler(

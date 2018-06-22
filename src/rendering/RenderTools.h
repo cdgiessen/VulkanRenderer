@@ -8,8 +8,6 @@
 
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
-//VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath);
-
 void setTransferBarrier(VkCommandBuffer cmdbuffer, VkBuffer bufferr,
 	VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 

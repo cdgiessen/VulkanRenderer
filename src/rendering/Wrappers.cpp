@@ -359,3 +359,83 @@ template <> void CommandBufferWorker<TransferCommandWork>::Work() {
 		}
 	}
 }
+
+
+FrameObject::FrameObject(VulkanDevice& device, int frameIndex):
+	device(device), 
+	frameIndex(frameIndex),
+	commandPool(device),
+	imageAvailSem(device),
+	renderFinishSem(device)
+
+{
+	commandPool.Setup(
+		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, 
+		&device.GraphicsQueue());
+
+}
+
+FrameObject::~FrameObject(){
+	commandPool.CleanUp();
+	imageAvailSem.CleanUp(device);
+	renderFinishSem.CleanUp(device);
+}
+
+VkResult FrameObject::AquireNextSwapchainImage(VkSwapchainKHR swapchain){
+	return vkAcquireNextImageKHR(
+		device.device, swapchain,
+		std::numeric_limits<uint64_t>::max(), imageAvailSem.Get(),
+		VK_NULL_HANDLE, &swapChainIndex);
+}
+
+void FrameObject::PrepareFrame(){
+	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+	vkBeginCommandBuffer(primaryCmdBuf, &beginInfo);
+
+
+
+}
+
+void FrameObject::SubmitFrame()
+{
+	if (vkEndCommandBuffer(primaryCmdBuf) != VK_SUCCESS) {
+		throw std::runtime_error("failed to record command buffer!");
+	}
+
+	auto submitInfo = GetSubmitInfo();
+
+}
+
+VkSubmitInfo FrameObject::GetSubmitInfo(){
+
+	VkSubmitInfo submitInfo = initializers::submitInfo();
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &renderFinishSem.Get();
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = &imageAvailSem.Get();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &primaryCmdBuf;
+
+	return submitInfo;
+}
+
+VkPresentInfoKHR FrameObject::GetPresentInfo(){
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = &renderFinishSem.Get();
+
+	VkSwapchainKHR swapChains[] = { vulkanSwapChain.swapChain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+
+	presentInfo.pImageIndices = &swapChainIndex;
+}
+
+
+VkCommandBuffer FrameObject::GetPrimaryCmdBuf(){
+	return primaryCmdBuf;
+}

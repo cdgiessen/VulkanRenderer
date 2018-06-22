@@ -39,12 +39,13 @@ public:
 	VkSwapchainKHR swapChain = VK_NULL_HANDLE;
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
-
+	
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
-	// Active frame buffer index
-	uint32_t currentBuffer = 0;
+
+	// Active frame buffer index -- not likely needed (as having multiple in flight is useful)
+	//uint32_t currentBuffer = 0;
 
 private:
 

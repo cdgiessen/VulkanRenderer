@@ -246,3 +246,34 @@ template <typename WorkType> void CommandBufferWorker<WorkType>::StopWork() {
 	keepWorking = false;
 }
 
+class FrameObject {
+public:
+	FrameObject(VulkanDevice& device, int frameIndex);
+	~FrameObject();
+
+	VkResult AquireNextSwapchainImage(VkSwapchainKHR swapchain);
+	void PrepareFrame();
+	void SubmitFrame();
+
+	VkSubmitInfo GetSubmitInfo();
+	VkPresentInfoKHR GetPresentInfo();
+
+	VulkanSemaphore& GetImageAvailSem();
+	VulkanSemaphore& GetRenderFinishSem();
+
+	VkCommandBuffer GetPrimaryCmdBuf();
+
+private:
+	VulkanDevice& device;
+	int frameIndex = -1; //which frame in the queue it is
+
+	int swapChainIndex = -1; // which frame to render to
+
+	VulkanSemaphore imageAvailSem;
+	VulkanSemaphore renderFinishSem;
+
+	CommandPool commandPool;
+	VkCommandBuffer primaryCmdBuf;
+	//std::vector<VkCommandBuffer> secondCmdBufs;
+
+};

@@ -93,7 +93,7 @@ public:
 	void CreateRenderPass();
 	void CreateDepthResources();
 
-	void BuildCommandBuffers();
+	void BuildCommandBuffers(VkCommandBuffer cmdBuf);
 	void ReBuildCommandBuffers();
 
 	void CreatePrimaryCommandBuffer(); //testing out multiple command buffers
@@ -101,8 +101,8 @@ public:
 	void CreateCommandBuffers();
 	//void CreateSemaphores();
 
-	void PrepareFrame();
-	void SubmitFrame();
+	void PrepareFrame(int curFrameIndex);
+	void SubmitFrame(int curFrameIndex);
 
 	void PrepareResources();
 
@@ -119,7 +119,6 @@ public:
 	void SubmitTransferWork(TransferCommandWork&& data);
 
 	VkCommandBuffer GetGraphicsCommandBuffer();
-	VkCommandBuffer GetSingleUseGraphicsCommandBuffer();
 	void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);
 
 	void SaveScreenshotNextFrame();
@@ -170,6 +169,8 @@ private:
 	std::vector<std::unique_ptr<CommandBufferWorker<TransferCommandWork>>> transferWorkers;
 
 	CommandPool graphicsPrimaryCommandPool;
+
+	std::vector<FrameObject> frameObjects;
 
 	//Command buffer per frame
 	std::vector<VkCommandBuffer> commandBuffers;
