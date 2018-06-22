@@ -113,8 +113,8 @@ public:
 	MemoryPool<TerrainMeshIndices, MaxChunkCount> poolMesh_indices;
 	VulkanRenderer* renderer;
 
-	//ChunkBuffer<sizeof(TerrainMeshVertices) * MaxChunkCount> buffChunks_vets;
-	//ChunkBuffer<sizeof(TerrainMeshIndices) * MaxChunkCount> buffChunks_inds;
+	ChunkBuffer<sizeof(TerrainMeshVertices) * MaxChunkCount> buffChunks_verts;
+	ChunkBuffer<sizeof(TerrainMeshIndices) * MaxChunkCount> buffChunks_inds;
 
 	std::mutex workerMutex;
 	std::condition_variable workerConditionVariable;
@@ -138,8 +138,6 @@ private:
 
 	InternalGraph::GraphPrototype& protoGraph;
 	//NewNodeGraph::TerGenNodeGraph& nodeGraph;
-
-	//std::shared_ptr<MemoryPool<TerrainQuad>> terrainQuadPool;
 
 	std::unique_ptr<InstancedSceneObject> instancedWaters;
 

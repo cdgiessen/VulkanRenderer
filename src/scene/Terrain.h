@@ -59,10 +59,7 @@ struct TerrainQuad {
 		glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,
 		int level, glm::i32vec2 subDivPos, float centerHeightValue,
 		TerrainMeshVertices* verts, TerrainMeshIndices* inds,
-		VulkanDevice& device);
-	~TerrainQuad();
-
-	void CleanUp();
+		int buf_vertex, int buf_index);
 
 	static float GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos);
 
@@ -79,8 +76,11 @@ struct TerrainQuad {
 	TerrainMeshVertices* vertices;
 	TerrainMeshIndices* indices;
 
-	VulkanBufferVertex deviceVertices;
-	VulkanBufferIndex deviceIndices;
+	int buf_vertex;
+	int buf_index;
+
+	//VulkanBufferVertex deviceVertices;
+	//VulkanBufferIndex deviceIndices;
 
 	struct SubQuads {
 		TerrainQuad* UpLeft;

@@ -8,15 +8,12 @@
 TerrainQuad::TerrainQuad(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,
 	int level, glm::i32vec2 subDivPos, float centerHeightValue,
 	TerrainMeshVertices* verts, TerrainMeshIndices* inds,
-	VulkanDevice& device) :
+	int buf_vertex, int buf_index) :
 
 	pos(pos), size(size),
 	logicalPos(logicalPos), logicalSize(logicalSize),
 	subDivPos(subDivPos), isSubdivided(false),
-	level(level), heightValAtCenter(0),
-
-	deviceVertices(device),
-	deviceIndices(device)
+	level(level), heightValAtCenter(0)
 {
 	isReady = std::make_shared<bool>();
 	*isReady = false;
@@ -25,33 +22,6 @@ TerrainQuad::TerrainQuad(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos,
 	indices = inds;
 }
 
-//void TerrainQuad::init(glm::vec2 pos, glm::vec2 size, glm::i32vec2 logicalPos, glm::i32vec2 logicalSize, int level, glm::i32vec2 subDivPos, float centerHeightValue) 
-//{
-//	this->pos = pos;
-//	this->size = size;
-//	this->logicalPos = logicalPos;
-//	this->logicalSize = logicalSize;
-//	this->subDivPos = subDivPos;
-//	this->level = level;
-//	isSubdivided = false;
-//	heightValAtCenter = centerHeightValue;
-//	modelUniformObject.model = glm::translate(glm::mat4(), glm::vec3(pos.x, 0, pos.y));
-//	modelUniformObject.normal = glm::mat4();// glm::transpose(glm::inverse(glm::mat3(modelUniformObject.model))));
-//
-//}
-
-TerrainQuad::~TerrainQuad()
-{
-
-	//if (!deviceVertices.IsCreated() || !deviceIndices.IsCreated()) {
-	//	Log::Error << "Failed to clean device buffers!\n";
-	//}
-}
-
-void TerrainQuad::CleanUp() {
-	deviceVertices.CleanBuffer();
-	deviceIndices.CleanBuffer();
-}
 
 float TerrainQuad::GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos) {
 	return glm::clamp((float)(i) / ((1 << level) * (float)(numCells)) + (float)(subDivPos) / (float)(1 << level), 0.0f, 1.0f);
@@ -95,7 +65,8 @@ Terrain::Terrain(
 		GetHeightAtLocation(TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, 0, 0),
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, 0, 0)),
 		meshPool_vertices.allocate(), meshPool_indices.allocate(),
-		renderer->device));
+		buffChunks_verts.Allocate(), buffChunks_inds.Allocate()
+		));
 
 	rootQuad = quadHandles.at(0).get();
 
@@ -137,7 +108,7 @@ void Terrain::InitTerrain(VulkanRenderer* renderer, glm::vec3 cameraPos, std::sh
 
 	InitTerrainQuad(rootQuad, Corner_Enum::uR, cameraPos);
 
-	UpdateMeshBuffer();
+	//UpdateMeshBuffer();
 }
 
 void Terrain::UpdateTerrain(glm::vec3 viewerPos) {
@@ -146,8 +117,8 @@ void Terrain::UpdateTerrain(glm::vec3 viewerPos) {
 
 	bool shouldUpdateBuffers = UpdateTerrainQuad(rootQuad, viewerPos);
 
-	if (shouldUpdateBuffers)
-		UpdateMeshBuffer();
+	//if (shouldUpdateBuffers)
+	//	UpdateMeshBuffer();
 
 	PrevQuadHandles.clear();
 	for (auto& quad : quadHandles)
