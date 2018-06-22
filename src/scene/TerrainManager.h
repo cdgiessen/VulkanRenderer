@@ -66,6 +66,24 @@ struct TerrainCreationData {
 		int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord);
 };
 
+template<size_t size>
+class ChunkBuffer {
+public:
+	ChunkBuffer(VulkanDevice& device, int count);
+	~ChunkBuffer();
+
+	int Allocate();
+	void Free(int index);
+
+
+
+private:
+	VulkanBufferData buffer;
+	std::vector<bool> freeList = { false };
+};
+
+constexpr int MaxChunkCount = 1024; 
+
 class TerrainManager
 {
 public:
@@ -90,10 +108,12 @@ public:
 
 	void RecreateTerrain();
 
-	MemoryPool<TerrainMeshVertices, 1024> poolMesh_vertices;
-	MemoryPool<TerrainMeshIndices, 1024> poolMesh_indices;
+	MemoryPool<TerrainMeshVertices, MaxChunkCount> poolMesh_vertices;
+	MemoryPool<TerrainMeshIndices, MaxChunkCount> poolMesh_indices;
 	VulkanRenderer* renderer;
 
+	//ChunkBuffer<sizeof(TerrainMeshVertices) * MaxChunkCount> buffChunks_vets;
+	//ChunkBuffer<sizeof(TerrainMeshIndices) * MaxChunkCount> buffChunks_inds;
 
 	std::mutex workerMutex;
 	std::condition_variable workerConditionVariable;

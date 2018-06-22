@@ -1,12 +1,40 @@
 #include "TerrainManager.h"
 
 #include <chrono>
+#include <algorithm>
 
 #include <json.hpp>
 
 #include "../../third-party/ImGui/imgui.h"
 
 #include "../core/Logger.h"
+
+template<size_t size>
+ChunkBuffer<size>::ChunkBuffer(VulkanDevice& device, int count):
+	buffer(device)
+{
+	buffer.CreateDataBuffer(count * size);
+}
+
+template<size_t size>
+ChunkBuffer<size>::~ChunkBuffer(){
+	buffer.CleanBuffer();
+}
+	
+template<size_t size>
+int ChunkBuffer<size>::Allocate(){
+	for(int i = 0; i < freeList.size(); i++){
+		if(freeList[i] == false){
+			freeList[i] = true;
+			return i;
+		}
+	}
+}
+
+template<size_t size>
+void ChunkBuffer<size>::Free(int index){
+	freeList[index] = false;
+}
 
 constexpr auto TerrainSettingsFileName = "terrain_settings.json";
 
@@ -70,7 +98,11 @@ void TerrainCreationWorker(TerrainManager* man) {
 
 
 TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph)
-	: protoGraph(protoGraph), poolMesh_vertices(), poolMesh_indices()
+	: protoGraph(protoGraph), 
+	poolMesh_vertices(), poolMesh_indices()
+	//,
+	// buffChunks_vets(renderer->device, MaxChunkCount),
+	// buffChunks_inds(renderer->device, MaxChunkCount)
 
 {
 	if (settings.maxLevels < 0) {
@@ -147,6 +179,9 @@ void TerrainManager::CleanUpResources() {
 	terrainVulkanTextureArray->destroy();
 
 	instancedWaters->CleanUp();
+
+	//buffChunks_vets.CleanUp();
+	//buffChunks_inds.CleanUp();
 }
 
 void TerrainManager::GenerateTerrain(ResourceManager* resourceMan, VulkanRenderer* renderer, std::shared_ptr<Camera> camera) {

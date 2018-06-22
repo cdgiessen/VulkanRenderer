@@ -248,7 +248,9 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 		VK_IMAGE_USAGE_SAMPLED_BIT);
 
 
-	VulkanBufferStagingResource buffer(device, texture->pixels.data(),
+	VulkanBufferStagingResource buffer(device);
+	
+	buffer.CreateStagingResourceBuffer(texture->pixels.data(),
 		texture->texImageSize);
 
 	device.CreateImage2D(imageCreateInfo, image);
@@ -356,7 +358,9 @@ void VulkanTexture2DArray::loadTextureArray(
 		VK_IMAGE_USAGE_SAMPLED_BIT);
 
 
-	VulkanBufferStagingResource buffer(device, textures->pixels.data(),
+	VulkanBufferStagingResource buffer(device);
+	
+	buffer.CreateStagingResourceBuffer(textures->pixels.data(),
 		textures->texImageSize);
 
 	device.CreateImage2D(imageCreateInfo, image);
@@ -469,7 +473,9 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 
 	device.CreateImage2D(imageCreateInfo, image);
 
-	VulkanBufferStagingResource buffer(device, cubeMap->pixels.data(),
+	VulkanBufferStagingResource buffer(device);
+	
+	buffer.CreateStagingResourceBuffer(cubeMap->pixels.data(),
 		cubeMap->texImageSize);
 
 	VkImageSubresourceRange subresourceRange =

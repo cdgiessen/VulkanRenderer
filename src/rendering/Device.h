@@ -62,10 +62,6 @@ public:
 	VkPhysicalDeviceFeatures physical_device_features;
 	VkPhysicalDeviceMemoryProperties memoryProperties;
 
-	VmaAllocator allocator;
-	VmaAllocator linear_allocator;
-	VmaAllocator optimal_allocator;
-
 	VulkanDevice(bool validationLayers);
 
 	~VulkanDevice();
@@ -81,32 +77,38 @@ public:
 	CommandQueue& TransferQueue();
 	CommandQueue& PresentQueue();
 
-	void VmaMapMemory(VmaBuffer& buffer, void** pData);
-	void VmaUnmapMemory(VmaBuffer& buffer);
+	VmaAllocator GetGeneralAllocator();
+	VmaAllocator GetImageLinearAllocator();
+	VmaAllocator GetImageOptimalAllocator();
 
-	void FlushBuffer(VmaBuffer& buffer);
+	// void VmaMapMemory(VmaBuffer& buffer, void** pData);
+	// void VmaUnmapMemory(VmaBuffer& buffer);
 
-	void CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
-	void CreateUniformBufferMapped(VmaBuffer& buffer, VkDeviceSize bufferSize);
-	void CreateStagingUniformBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
+	// void FlushBuffer(VmaBuffer& buffer);
 
-	void CreateDynamicUniformBuffer(VmaBuffer& buffer, uint32_t count, VkDeviceSize sizeOfData);
+	// void CreateUniformBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
+	// void CreateUniformBufferMapped(VmaBuffer& buffer, VkDeviceSize bufferSize);
+	// void CreateStagingUniformBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
 
-	void CreateMeshBufferVertex(VmaBuffer& buffer, VkDeviceSize bufferSize);
-	void CreateMeshBufferIndex(VmaBuffer& buffer, VkDeviceSize bufferSize);
-	void CreateMeshStagingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
+	// void CreateDynamicUniformBuffer(VmaBuffer& buffer, uint32_t count, VkDeviceSize sizeOfData);
 
-	void CreateInstancingBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
-	void CreateStagingInstancingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
-	void CreateMappedInstancingBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
+	// void CreateDataBuffer(VmaBuffer& buffer, VkDeviceSize size);
+
+	// void CreateMeshBufferVertex(VmaBuffer& buffer, VkDeviceSize bufferSize);
+	// void CreateMeshBufferIndex(VmaBuffer& buffer, VkDeviceSize bufferSize);
+	// void CreateMeshStagingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
+
+	// void CreateInstancingBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
+	// void CreateStagingInstancingBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
+	// void CreateMappedInstancingBuffer(VmaBuffer& buffer, VkDeviceSize bufferSize);
 
 	//void DestroyVmaAllocatedBuffer(VkBuffer* buffer, VmaAllocation* allocation);
-	void DestroyVmaAllocatedBuffer(VmaBuffer& buffer);
+	//void DestroyVmaAllocatedBuffer(VmaBuffer& buffer);
 
 	void CreateImage2D(VkImageCreateInfo imageInfo, VmaImage& image);
 	void CreateDepthImage(VkImageCreateInfo imageInfo, VmaImage& image);
 	void CreateStagingImage2D(VkImageCreateInfo imageInfo, VmaImage& image);
-	void CreateStagingImageBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
+	//void CreateStagingImageBuffer(VmaBuffer& buffer, void* data, VkDeviceSize bufferSize);
 
 	void DestroyVmaAllocatedImage(VmaImage& image);
 
@@ -119,6 +121,10 @@ private:
 	std::unique_ptr<CommandQueue> present_queue;
 
 	bool enableValidationLayers = false;
+
+	VmaAllocator allocator;
+	VmaAllocator linear_allocator;
+	VmaAllocator optimal_allocator;
 
 	void CreateInstance(std::string appName);
 

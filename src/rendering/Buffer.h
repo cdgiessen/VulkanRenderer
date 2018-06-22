@@ -36,6 +36,13 @@ public:
 	VmaBuffer buffer;
 	DescriptorResource resource;
 
+	//Give the desired prperties (usage specifiers), and optionally the allocation flags
+	//if memToCopy is not a nullprt, then it will attempt to copy the data at memToCopy into the
+	//newly created buffer 
+	void SetupBuffer(VkDeviceSize bufferSize, 
+		VkBufferUsageFlags bufferUsage, VmaMemoryUsage allocUsage, 
+		VmaAllocationCreateFlags allocFlags = (VmaAllocationCreateFlagBits)(0), 
+		void* memToCopy = nullptr);
 
 protected:
 	bool created = false;
@@ -68,8 +75,16 @@ public:
 
 class VulkanBufferStagingResource : public VulkanBuffer {
 public:
-	VulkanBufferStagingResource(VulkanDevice& device, void* pData, VkDeviceSize size);
+	VulkanBufferStagingResource(VulkanDevice& device);
 
+	void CreateStagingResourceBuffer(void* pData, VkDeviceSize size);
+};
+
+class VulkanBufferData : public VulkanBuffer {
+public:
+	VulkanBufferData(VulkanDevice& device);
+
+	void CreateDataBuffer(VkDeviceSize size);
 };
 
 class VulkanBufferVertex : public VulkanBuffer {
