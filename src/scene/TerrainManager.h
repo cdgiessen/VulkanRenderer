@@ -78,11 +78,12 @@ public:
 
 
 private:
+	std::mutex lock;
 	VulkanBufferData buffer;
 	std::vector<bool> freeList = { false };
 };
 
-constexpr int MaxChunkCount = 1024; 
+constexpr int MaxChunkCount = 1024;
 
 class TerrainManager
 {

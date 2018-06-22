@@ -253,6 +253,8 @@ public:
 	FrameObject(VulkanDevice& device, int frameD);
 	~FrameObject();
 
+
+
 	VkResult AquireNextSwapchainImage(VkSwapchainKHR swapchain);
 	void PrepareFrame();
 	void SubmitFrame();

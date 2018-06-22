@@ -66,7 +66,7 @@ class VulkanRenderer
 {
 public:
 	VulkanRenderer(bool enableValidationLayer, GLFWwindow *window);
-	
+
 	VulkanRenderer(const VulkanRenderer& other) = delete; //copy
 	VulkanRenderer(VulkanRenderer&& other) = delete; //move
 	VulkanRenderer& operator=(const VulkanRenderer&) = delete;
@@ -94,12 +94,6 @@ public:
 	void CreateDepthResources();
 
 	void BuildCommandBuffers(VkCommandBuffer cmdBuf);
-	void ReBuildCommandBuffers();
-
-	void CreatePrimaryCommandBuffer(); //testing out multiple command buffers
-
-	void CreateCommandBuffers();
-	//void CreateSemaphores();
 
 	void PrepareFrame(int curFrameIndex);
 	void SubmitFrame(int curFrameIndex);
@@ -157,7 +151,7 @@ private:
 	VkPipelineLayout frameDataDescriptorLayout;
 	VkPipelineLayout lightingDescriptorLayout;
 
-	
+
 	VulkanBufferUniformDynamic entityPositions;
 
 	std::unique_ptr<VulkanTextureDepthBuffer> depthBuffer;
@@ -171,12 +165,6 @@ private:
 	CommandPool graphicsPrimaryCommandPool;
 
 	std::vector<std::unique_ptr<FrameObject>> frameObjects;
-
-	//Command buffer per frame
-	std::vector<VkCommandBuffer> commandBuffers;
-
-	std::unique_ptr<VulkanSemaphore> imageAvailableSemaphore;
-	std::unique_ptr<VulkanSemaphore> renderFinishedSemaphore;
 
 	std::vector<std::shared_ptr<VulkanDescriptor>> descriptors;
 

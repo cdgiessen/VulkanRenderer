@@ -10,21 +10,22 @@
 #include "../core/Logger.h"
 
 template<size_t size>
-ChunkBuffer<size>::ChunkBuffer(VulkanDevice& device, int count):
+ChunkBuffer<size>::ChunkBuffer(VulkanDevice& device, int count) :
 	buffer(device)
 {
 	buffer.CreateDataBuffer(count * size);
 }
 
 template<size_t size>
-ChunkBuffer<size>::~ChunkBuffer(){
+ChunkBuffer<size>::~ChunkBuffer() {
 	buffer.CleanBuffer();
 }
-	
+
 template<size_t size>
-int ChunkBuffer<size>::Allocate(){
-	for(int i = 0; i < freeList.size(); i++){
-		if(freeList[i] == false){
+int ChunkBuffer<size>::Allocate() {
+	std::lock_guard<std::mutex> guard(lock);
+	for (int i = 0; i < freeList.size(); i++) {
+		if (freeList[i] == false) {
 			freeList[i] = true;
 			return i;
 		}
@@ -32,7 +33,8 @@ int ChunkBuffer<size>::Allocate(){
 }
 
 template<size_t size>
-void ChunkBuffer<size>::Free(int index){
+void ChunkBuffer<size>::Free(int index) {
+	std::lock_guard<std::mutex> guard(lock);
 	freeList[index] = false;
 }
 
@@ -98,7 +100,7 @@ void TerrainCreationWorker(TerrainManager* man) {
 
 
 TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph)
-	: protoGraph(protoGraph), 
+	: protoGraph(protoGraph),
 	poolMesh_vertices(), poolMesh_indices()
 	//,
 	// buffChunks_vets(renderer->device, MaxChunkCount),

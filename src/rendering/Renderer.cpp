@@ -102,13 +102,7 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 	CreateDepthResources();
 	vulkanSwapChain.CreateFramebuffers(depthBuffer->textureImageView, renderPass);
 
-	CreateCommandBuffers();
-
 	PrepareResources();
-
-	imageAvailableSemaphore = std::make_unique<VulkanSemaphore>(device);
-	renderFinishedSemaphore = std::make_unique<VulkanSemaphore>(device);
-
 
 	PrepareImGui(window, this);
 }
@@ -140,9 +134,6 @@ VulkanRenderer::~VulkanRenderer() {
 
 	vkDestroyRenderPass(device.device, renderPass, nullptr);
 	vulkanSwapChain.CleanUp();
-
-	renderFinishedSemaphore->CleanUp(device);
-	imageAvailableSemaphore->CleanUp(device);
 
 	frameObjects.clear();
 
@@ -225,24 +216,22 @@ void VulkanRenderer::RecreateSwapChain() {
 
 	vkDestroyRenderPass(device.device, renderPass, nullptr);
 
+	frameIndex = 0;
+	frameObjects.clear();
 	vulkanSwapChain.RecreateSwapChain(device.window);
+
 
 	CreateRenderPass();
 	CreateDepthResources();
 	vulkanSwapChain.CreateFramebuffers(depthBuffer->textureImageView, renderPass);
 
-	// frameIndex = 1; //cause it needs it to be synced back to zero (yes I know
-	// it says one, thats intended, build command buffers uses the "next" frame
-	// index since it has to sync with the swapchain so it starts at one....)
-	ReBuildCommandBuffers();
+	for (int i = 0; i < vulkanSwapChain.swapChainImages.size(); i++) {
+		frameObjects.push_back(std::make_unique<FrameObject>(device, i));
+	}
+
 }
 
-void VulkanRenderer::ReBuildCommandBuffers() {
-	graphicsPrimaryCommandPool.ResetPool();
 
-	CreateCommandBuffers();
-	BuildCommandBuffers(frameObjects.at(frameIndex)->GetPrimaryCmdBuf());
-}
 
 void VulkanRenderer::SetWireframe(bool wireframe) {
 	this->wireframe = wireframe;
@@ -347,16 +336,6 @@ VkFormat VulkanRenderer::FindDepthFormat() {
 		VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
-// 20
-void VulkanRenderer::CreateCommandBuffers() {
-
-	commandBuffers.resize(vulkanSwapChain.swapChainImages.size());
-
-	for (auto& cmdBuf : commandBuffers) {
-		cmdBuf = graphicsPrimaryCommandPool.GetPrimaryCommandBuffer(false);
-	}
-}
-
 void VulkanRenderer::BuildCommandBuffers(VkCommandBuffer cmdBuf) {
 
 	// for (size_t i = 0; i < commandBuffers.size(); i++) {
@@ -403,46 +382,6 @@ void VulkanRenderer::BuildCommandBuffers(VkCommandBuffer cmdBuf) {
 	//	throw std::runtime_error("failed to record command buffer!");
 	//}
 
-}
-
-// Meant to be used in conjunction with secondary command buffers
-void VulkanRenderer::CreatePrimaryCommandBuffer() {
-	commandBuffers.resize(vulkanSwapChain.swapChainImages.size());
-
-	for (auto& cmdBuf : commandBuffers) {
-		cmdBuf = graphicsPrimaryCommandPool.GetPrimaryCommandBuffer(false);
-	}
-
-	for (size_t i = 0; i < commandBuffers.size(); i++) {
-		VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-
-		VkRenderPassBeginInfo renderPassInfo = initializers::renderPassBeginInfo(
-			renderPass, vulkanSwapChain.swapChainFramebuffers[i], { 0, 0 },
-			vulkanSwapChain.swapChainExtent, GetFramebufferClearValues());
-
-		vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
-
-		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo,
-			VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-
-		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo,
-			VK_SUBPASS_CONTENTS_INLINE);
-
-		// Render stuff
-
-		// Contains the list of secondary command buffers to be executed
-		std::vector<VkCommandBuffer> secondaryCommandBuffers;
-
-		vkCmdExecuteCommands(commandBuffers[i], (uint32_t)commandBuffers.size(),
-			commandBuffers.data());
-
-		vkCmdEndRenderPass(commandBuffers[i]);
-
-		if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to record command buffer!");
-		}
-	}
 }
 
 std::array<VkClearValue, 2> VulkanRenderer::GetFramebufferClearValues() {
@@ -497,67 +436,6 @@ void VulkanRenderer::SubmitFrame(int curFrameIndex) {
 	//FINALLY!!!!
 	//std::lock_guard<std::mutex> lock(device.PresentQueue().GetQueueMutex());
 	//vkQueueWaitIdle(device.PresentQueue().GetQueue());
-
-
-	return;
-
-	/*std::vector<VkSemaphore> waitSemaphores = { imageAvailableSemaphore->Get() };
-	std::vector<VkSemaphore> signalSemaphores = { renderFinishedSemaphore->Get() };
-
-	const auto stageMasks =
-		std::vector<VkPipelineStageFlags>{ VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
-	VkSubmitInfo submitInfo = initializers::submitInfo();
-	submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size();
-	submitInfo.pSignalSemaphores = signalSemaphores.data();
-	submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
-	submitInfo.pWaitSemaphores = waitSemaphores.data();
-	submitInfo.pWaitDstStageMask = stageMasks.data();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffers[frameIndex];
-	// VkPipelineStageFlags waitStages[] = {
-	// VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	// submitInfo.waitSemaphoreCount = 1;
-	// submitInfo.pWaitSemaphores = waitSemaphores;
-	// submitInfo.pWaitDstStageMask = waitStages;
-
-	// submitInfo.commandBufferCount = 1;
-	// submitInfo.pCommandBuffers = &commandBuffers[frameIndex];
-
-	device.GraphicsQueue().Submit(submitInfo, VK_NULL_HANDLE);
-	//{
-	//	std::lock_guard<std::mutex> lock(device.graphics_lock);
-	//	if (vkQueueSubmit(device.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE)
-	//!= VK_SUCCESS) { 		throw std::runtime_error("failed to submit draw command
-	//buffer!");
-	//	}
-	//}
-
-	VkPresentInfoKHR presentInfo = {};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = signalSemaphores.data();
-
-	VkSwapchainKHR swapChains[] = { vulkanSwapChain.swapChain };
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-
-	presentInfo.pImageIndices = &frameIndex;
-	VkResult result;
-	{
-		std::lock_guard<std::mutex> lock(device.PresentQueue().GetQueueMutex());
-		result = vkQueuePresentKHR(device.PresentQueue().GetQueue(), &presentInfo);
-	}
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-		RecreateSwapChain();
-	}
-	else if (result != VK_SUCCESS) {
-		throw std::runtime_error("failed to present swap chain image!");
-	}
-
-	std::lock_guard<std::mutex> lock(device.PresentQueue().GetQueueMutex());
-	vkQueueWaitIdle(device.PresentQueue().GetQueue());
-	*/
 }
 
 void VulkanRenderer::PrepareResources() {
