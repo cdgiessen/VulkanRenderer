@@ -273,6 +273,9 @@ void InstancedSceneObject::UploadInstances() {
 
 
 void InstancedSceneObject::AddInstance(InstanceData data) {
+
+	//Log::Debug << "Adding instance at " << data.pos.x << " " << data.pos.z << "\n";
+
 	std::lock_guard<std::mutex> lk(instanceDataLock);
 	if (instanceCount < maxInstanceCount) {
 		instancesData.at(instanceCount) = data;
@@ -301,10 +304,14 @@ void InstancedSceneObject::AddInstances(std::vector<InstanceData>& newInstances)
 		id.scale = 1.0f;
 		instancesData.push_back(id);
 	}*/
+	//for (auto& val : newInstances)
+	//	Log::Debug << "Adding instance at " << val.pos.x << " " << val.pos.z << "\n";
+
 	std::lock_guard<std::mutex> lk(instanceDataLock);
-	for (int i = instanceCount; i < newInstances.size(); i++) {
+	int curFree = instanceCount;
+	for (int i = 0; i < newInstances.size(); i++) {
 		if (instanceCount < maxInstanceCount) {
-			instancesData.at(instanceCount + i) = newInstances.at(i);
+			instancesData.at(i + curFree) = newInstances.at(i);
 		}
 	}
 	instanceCount += newInstances.size();
@@ -312,6 +319,10 @@ void InstancedSceneObject::AddInstances(std::vector<InstanceData>& newInstances)
 }
 
 void InstancedSceneObject::RemoveInstance(InstanceData instance) {
+
+
+	//Log::Debug << "Removing instance at " << instance.pos.x << " " << instance.pos.z << "\n";
+
 	std::lock_guard<std::mutex> lk(instanceDataLock);
 	auto foundInstance = std::find(std::begin(instancesData), std::end(instancesData), instance);
 	if (foundInstance != std::end(instancesData)) {
@@ -322,8 +333,13 @@ void InstancedSceneObject::RemoveInstance(InstanceData instance) {
 }
 
 void InstancedSceneObject::RemoveInstances(std::vector<InstanceData>& instances) {
+
+	//for (auto& val : instances)
+	//	Log::Debug << "Removing instance at " << val.pos.x << " " << val.pos.z << "\n";
+
 	std::lock_guard<std::mutex> lk(instanceDataLock);
 	std::vector<std::vector<InstanceData>::iterator> indexesToDelete(instances.size());
+
 	for (auto& instance : instances) {
 
 		auto foundInstance = std::find(std::begin(instancesData), std::end(instancesData), instance);
@@ -369,7 +385,7 @@ void InstancedSceneObject::UploadData()
 	//}
 
 	//instanceBuffer->map(renderer->device.device);
-	instanceBuffer->CopyToBuffer(instancesData.data(), instancesData.size());
+	instanceBuffer->CopyToBuffer(instancesData.data(), instancesData.size() * instanceMemberSize);
 
 	//instanceBuffer->unmap();
 

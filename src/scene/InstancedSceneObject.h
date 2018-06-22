@@ -41,7 +41,7 @@ public:
 		}
 	};
 
-	InstancedSceneObject(VulkanRenderer* renderer, int maxInstances = 256);
+	InstancedSceneObject(VulkanRenderer* renderer, int maxInstances = 16384);
 	~InstancedSceneObject();
 
 	void InitInstancedSceneObject(VulkanRenderer* renderer);
@@ -81,7 +81,7 @@ public:
 	void WriteToCommandBuffer(VkCommandBuffer commandBuffer, bool wireframe);
 private:
 
-	VulkanRenderer* renderer;
+	VulkanRenderer * renderer;
 
 	std::shared_ptr<ManagedVulkanPipeline> mvp;
 

@@ -53,11 +53,11 @@ VulkanBuffer::~VulkanBuffer() {
 	//CleanBuffer();
 }
 
-void VulkanBuffer::SetupBuffer(VkDeviceSize bufferSize, 
-	VkBufferUsageFlags bufferUsage, VmaMemoryUsage allocUsage, 
+void VulkanBuffer::SetupBuffer(VkDeviceSize bufferSize,
+	VkBufferUsageFlags bufferUsage, VmaMemoryUsage allocUsage,
 	VmaAllocationCreateFlags allocFlags, void* memToCopy)
 {
-	
+
 	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 	bufferInfo.size = bufferSize;
 	bufferInfo.usage = bufferUsage;
@@ -68,11 +68,11 @@ void VulkanBuffer::SetupBuffer(VkDeviceSize bufferSize,
 
 	buffer.allocator = device->GetGeneralAllocator();
 	//Log::Debug << buffer.allocator << "\n";
-	if(buffer.allocator == nullptr)
+	if (buffer.allocator == nullptr)
 		throw std::runtime_error("Allocator was null!");
 	VK_CHECK_RESULT(vmaCreateBuffer(buffer.allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
 
-	if(memToCopy != nullptr){
+	if (memToCopy != nullptr) {
 		memcpy(buffer.allocationInfo.pMappedData, memToCopy, bufferSize);
 	}
 }
@@ -167,6 +167,7 @@ void VulkanBufferUniform::CreateUniformBufferPersitantlyMapped(VkDeviceSize size
 
 	Map(&mapped);
 	created = true;
+	SetupResource();
 }
 
 void VulkanBufferUniform::CreateStagingUniformBuffer(void* pData, VkDeviceSize size) {
@@ -190,14 +191,14 @@ void VulkanBufferUniformDynamic::CreateDynamicUniformBuffer(uint32_t count, VkDe
 	if (minUboAlignment > 0) {
 		dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
 	}
-	
+
 	m_size = count * dynamicAlignment;
 
 	SetupBuffer(dynamicAlignment, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
 		VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-
 	//device->CreateDynamicUniformBuffer(buffer, count, size);
+	SetupResource();
 	created = true;
 }
 
@@ -208,20 +209,21 @@ VulkanBufferStagingResource::VulkanBufferStagingResource(VulkanDevice& device) :
 
 void VulkanBufferStagingResource::CreateStagingResourceBuffer(void* pData, VkDeviceSize size)
 {
-		m_size = size;
-	SetupBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-	VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData);
+	m_size = size;
+	SetupBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData);
 
 	//device->CreateStagingImageBuffer(buffer, pData, size);
 	created = true;
+	SetupResource();
 }
 
 
-VulkanBufferData::VulkanBufferData(VulkanDevice& device):
+VulkanBufferData::VulkanBufferData(VulkanDevice& device) :
 	VulkanBuffer(device)
 {}
 
-void VulkanBufferData::CreateDataBuffer(VkDeviceSize size){
+void VulkanBufferData::CreateDataBuffer(VkDeviceSize size) {
 	m_size = size;
 
 	SetupBuffer(size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
@@ -229,6 +231,7 @@ void VulkanBufferData::CreateDataBuffer(VkDeviceSize size){
 
 	//device->CreateDataBuffer(buffer, size);
 	created = true;
+	SetupResource();
 }
 
 
@@ -244,8 +247,8 @@ void VulkanBufferVertex::CreateVertexBuffer(uint32_t count, uint32_t vertexEleme
 	SetupBuffer(size, (VmaMemoryUsage)(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	//device->CreateMeshBufferVertex(buffer, size);
-	
-	
+
+
 	SetupResource();
 	created = true;
 }
@@ -257,7 +260,7 @@ void VulkanBufferVertex::CreateStagingVertexBuffer(void* pData, uint32_t count, 
 	SetupBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData);
 	//device->CreateMeshStagingBuffer(buffer, pData, size);
-	
+
 	SetupResource();
 	created = true;
 }
@@ -307,7 +310,7 @@ VulkanBufferInstance::VulkanBufferInstance(VulkanDevice& device) : VulkanBuffer(
 void VulkanBufferInstance::CreateInstanceBuffer(uint32_t count, uint32_t indexElementCount) {
 
 	VkDeviceSize size = count * indexElementCount * sizeof(float);
-	m_size = size;	
+	m_size = size;
 	//device->CreateInstancingBuffer(buffer, size);
 
 	SetupBuffer(size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
