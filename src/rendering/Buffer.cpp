@@ -14,25 +14,6 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDescriptorType type)
 	: device(&device), resource(type) {
 }
 
-// VulkanBuffer::VulkanBuffer(const VulkanBuffer& buf)
-// :buffer(buf.buffer), resource(buf.resource),
-// device(buf.device), m_size(buf.m_size), 
-// persistantlyMapped(buf.persistantlyMapped),
-// mapped(buf.mapped)
-// {
-
-// }
-// VulkanBuffer& VulkanBuffer::operator=(const VulkanBuffer& buf)
-// {
-// 	buffer = buf.buffer;
-// 	resource = buf.resource;
-// 	device = buf.device; 
-// 	m_size = buf.m_size;
-// 	persistantlyMapped = buf.persistantlyMapped;
-// 	mapped = buf.mapped;
-
-// }
-
 void VulkanBuffer::CleanBuffer() {
 	if (created) {
 		if (persistantlyMapped) {

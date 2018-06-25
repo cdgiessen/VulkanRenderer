@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <atomic>
 
 #include <foonathan/memory/container.hpp> // vector, list, list_node_size
 #include <foonathan/memory/memory_pool.hpp> // memory_pool
@@ -27,6 +28,10 @@
 
 #include "InstancedSceneObject.h"
 
+constexpr size_t vert_size = sizeof(TerrainMeshVertices);
+constexpr size_t ind_size = sizeof(TerrainMeshIndices);
+constexpr int MaxChunkCount = 1024;
+
 struct GeneralSettings {
 	bool show_terrain_manager_window = true;
 	float width = 1000;
@@ -43,7 +48,8 @@ struct TerrainTextureNamedHandle {
 	std::string name;
 	std::shared_ptr<Texture> handle;
 
-	TerrainTextureNamedHandle(std::string name, std::shared_ptr<Texture> handle) : name(name), handle(handle) {}
+	TerrainTextureNamedHandle(std::string name, std::shared_ptr<Texture> handle):
+		name(name), handle(handle) {}
 };
 
 struct TerrainCreationData {
@@ -66,24 +72,54 @@ struct TerrainCreationData {
 		int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord);
 };
 
-template<size_t size>
-class ChunkBuffer {
+struct ChunkCreationData {
+	TerrainQuad* quad;
+
+	ChunkCreationData(TerrainQuad* quad):
+		quad(quad) {}
+	
+};
+
+class TerrainChunkBuffer {
 public:
-	ChunkBuffer(VulkanDevice& device, int count);
-	~ChunkBuffer();
+	TerrainChunkBuffer(VulkanRenderer* renderer, int count,
+		ConcurrentQueue<ChunkCreationData>& chunkCreationWork);
+	~TerrainChunkBuffer();
 
 	int Allocate();
 	void Free(int index);
 
+	void UpdateChunks();
+	void Upload();
 
+	void DrawChunks(VkCommandBuffer);
+
+	TerrainQuad* GetChunk(int index);
+	TerrainQuad::ChunkState GetChunkState();
+
+	void SetChunkState(int index, TerrainQuad::ChunkState state);
+
+	void* GetDeviceVertexBufferPtr(int index);
+	void* GetDeviceIndexBufferPtr(int index);
 
 private:
 	std::mutex lock;
-	VulkanBufferData buffer;
-	std::vector<bool> freeList = { false };
-};
 
-constexpr int MaxChunkCount = 1024;
+	VulkanRenderer* renderer;
+	
+    VulkanBufferVertex vert_buffer;
+	VulkanBufferIndex index_buffer;
+
+	VulkanBufferData vert_staging;
+	void* vert_staging_ptr;
+	VulkanBufferData index_staging;
+	void* index_staging_ptr;
+
+	std::vector<TerrainQuad> chunks;
+	ConcurrentQueue<ChunkCreationData>& chunkCreationWork;
+
+	std::atomic_int chunkCount = 0;
+};
 
 class TerrainManager
 {
@@ -109,18 +145,20 @@ public:
 
 	void RecreateTerrain();
 
-	MemoryPool<TerrainMeshVertices, MaxChunkCount> poolMesh_vertices;
-	MemoryPool<TerrainMeshIndices, MaxChunkCount> poolMesh_indices;
 	VulkanRenderer* renderer;
 
-	ChunkBuffer<sizeof(TerrainMeshVertices) * MaxChunkCount> buffChunks_verts;
-	ChunkBuffer<sizeof(TerrainMeshIndices) * MaxChunkCount> buffChunks_inds;
-
+	std::unique_ptr<TerrainChunkBuffer> chunkBuffer;
+	
 	std::mutex workerMutex;
 	std::condition_variable workerConditionVariable;
 
-	std::mutex creationDataQueueMutex;
 	ConcurrentQueue<TerrainCreationData> terrainCreationWork;
+
+	std::mutex chunkConditionMutex;
+	std::condition_variable chunkConditionVariable;
+
+	ConcurrentQueue<ChunkCreationData> chunkCreationWork;
+
 
 	bool isCreatingTerrain = true; //while condition for worker threads
 
@@ -153,6 +191,7 @@ private:
 	std::shared_ptr<VulkanTexture2D> WaterVulkanTexture;
 
 	std::vector<std::thread> terrainCreationWorkers;
+	std::vector<std::thread> chunkCreationWorkers;
 
 	GeneralSettings settings;
 	bool recreateTerrain = false;
