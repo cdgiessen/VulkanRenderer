@@ -48,7 +48,7 @@ struct TerrainTextureNamedHandle {
 	std::string name;
 	std::shared_ptr<Texture> handle;
 
-	TerrainTextureNamedHandle(std::string name, std::shared_ptr<Texture> handle):
+	TerrainTextureNamedHandle(std::string name, std::shared_ptr<Texture> handle) :
 		name(name), handle(handle) {}
 };
 
@@ -75,15 +75,17 @@ struct TerrainCreationData {
 struct ChunkCreationData {
 	TerrainQuad* quad;
 
-	ChunkCreationData(TerrainQuad* quad):
+	ChunkCreationData(TerrainQuad* quad) :
 		quad(quad) {}
-	
+
 };
+
+class TerrainManager;
 
 class TerrainChunkBuffer {
 public:
 	TerrainChunkBuffer(VulkanRenderer* renderer, int count,
-		ConcurrentQueue<ChunkCreationData>& chunkCreationWork);
+		TerrainManager* man);
 	~TerrainChunkBuffer();
 
 	int Allocate();
@@ -92,31 +94,29 @@ public:
 	void UpdateChunks();
 	void Upload();
 
-	void DrawChunks(VkCommandBuffer);
-
 	TerrainQuad* GetChunk(int index);
-	TerrainQuad::ChunkState GetChunkState();
+	TerrainQuad::ChunkState GetChunkState(int index);
 
 	void SetChunkState(int index, TerrainQuad::ChunkState state);
 
-	void* GetDeviceVertexBufferPtr(int index);
-	void* GetDeviceIndexBufferPtr(int index);
+	TerrainMeshVertices* GetDeviceVertexBufferPtr(int index);
+	TerrainMeshIndices* GetDeviceIndexBufferPtr(int index);
 
 private:
 	std::mutex lock;
 
 	VulkanRenderer* renderer;
-	
-    VulkanBufferVertex vert_buffer;
+
+	VulkanBufferVertex vert_buffer;
 	VulkanBufferIndex index_buffer;
 
 	VulkanBufferData vert_staging;
-	void* vert_staging_ptr;
+	TerrainMeshVertices* vert_staging_ptr;
 	VulkanBufferData index_staging;
-	void* index_staging_ptr;
+	TerrainMeshIndices* index_staging_ptr;
 
 	std::vector<TerrainQuad> chunks;
-	ConcurrentQueue<ChunkCreationData>& chunkCreationWork;
+	TerrainManager* man;
 
 	std::atomic_int chunkCount = 0;
 };
@@ -148,7 +148,7 @@ public:
 	VulkanRenderer* renderer;
 
 	std::unique_ptr<TerrainChunkBuffer> chunkBuffer;
-	
+
 	std::mutex workerMutex;
 	std::condition_variable workerConditionVariable;
 

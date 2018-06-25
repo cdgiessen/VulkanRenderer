@@ -72,10 +72,8 @@ struct TerrainQuad {
 	static float GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos);
 
 	//Create a mesh chunk for rendering using fastgraph as the input data
-	void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, 
+	void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser,
 		float heightScale, float widthScale);
-
-	void Draw();
 
 	enum class ChunkState {
 		free,//nobody owns me
@@ -98,7 +96,7 @@ struct TerrainQuad {
 	Terrain* terrain; //who owns it
 	TerrainChunkBuffer& chunkBuffer;
 	int index = -1;
-	
+
 	TerrainMeshVertices* vertices;
 	TerrainMeshIndices* indices;
 
@@ -114,7 +112,8 @@ class Terrain {
 public:
 	// MemoryPool<TerrainMeshVertices, 1024>& meshPool_vertices;
 	// MemoryPool<TerrainMeshIndices, 1024>& meshPool_indices;
-	TerrainChunkBuffer& chunkBuffer;
+
+	TerrainChunkBuffer & chunkBuffer;
 
 	//Refence to all of the quads
 	//std::vector<int> quadHandles;
@@ -123,7 +122,7 @@ public:
 	//std::vector<TerrainMeshIndices> inds;
 
 	int rootQuadIndex = -1;
-	TerrainQuad* rootQuad; 
+	TerrainQuad* rootQuad;
 
 	int maxLevels;
 	int maxNumQuads;

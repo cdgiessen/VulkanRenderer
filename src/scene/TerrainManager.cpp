@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <algorithm>
+#include <functional>
 
 #include <json.hpp>
 
@@ -46,7 +47,7 @@ void TerrainCreationWorker(TerrainManager* man) {
 			if (data.has_value())
 			{
 				auto terrain = std::make_unique<Terrain>(man->renderer,
-					man->chunkBuffer,
+					*(man->chunkBuffer),
 					data->protoGraph, data->numCells, data->maxLevels,
 					data->heightScale, data->coord);
 
@@ -70,7 +71,7 @@ void TerrainCreationWorker(TerrainManager* man) {
 
 }
 
-void ChunkCreationWorker(TerrainManager* man){
+void ChunkCreationWorker(TerrainManager* man) {
 	while (man->isCreatingTerrain) {
 		{
 			std::unique_lock<std::mutex> lock(man->chunkConditionMutex);
@@ -81,10 +82,9 @@ void ChunkCreationWorker(TerrainManager* man){
 			auto data = man->chunkCreationWork.pop_if();
 			if (data.has_value())
 			{
-				data->quad.GenerateTerrainChunk(std::ref(data->terrain.fastGraphUser, 
-					data->terrain.heightScale, data->terrain.coordinateData.size.x));
-				data->quad.state = ChunkState::waiting_upload
-
+				data->quad->GenerateTerrainChunk(std::ref(data->quad->terrain->fastGraphUser),
+					data->quad->terrain->heightScale, data->quad->terrain->coordinateData.size.x);
+				data->quad->state = TerrainQuad::ChunkState::waiting_upload;
 			}
 			//break out of loop if work shouldn't be continued
 			if (!man->isCreatingTerrain)
@@ -94,45 +94,45 @@ void ChunkCreationWorker(TerrainManager* man){
 }
 
 TerrainChunkBuffer::TerrainChunkBuffer(VulkanRenderer* renderer, int count,
-	ConcurrentQueue<ChunkCreationData>& chunkCreationWork) :
-	renderer(renderer), chunkCreationWork(chunkCreationWork)
-	vert_buffer(renderer->device),  index_buffer(renderer->device), 
+	TerrainManager* man) :
+	renderer(renderer), man(man),
+	vert_buffer(renderer->device), index_buffer(renderer->device),
 	vert_staging(renderer->device), index_staging(renderer->device)
 {
 	vert_buffer.CreateVertexBuffer(vertCount * count, vertElementCount);
 	index_buffer.CreateIndexBuffer(indCount * count);
 
 	vert_staging.CreateDataBuffer(sizeof(TerrainMeshVertices) * count);
-	vert_stating_ptr = vert_staging.buffer.allocationInfo.pMappedData;
+	vert_staging_ptr = (TerrainMeshVertices*)vert_staging.buffer.allocationInfo.pMappedData;
 
 	index_staging.CreateDataBuffer(sizeof(TerrainMeshIndices) * count);
-	index_stating_ptr = index_staging.buffer.allocationInfo.pMappedData;
-	
+	index_staging_ptr = (TerrainMeshIndices*)index_staging.buffer.allocationInfo.pMappedData;
+
 	chunks.reserve(count);
 
-	for(int i = 0; i < count; i++){
-		chunks.emplace(*this, i);//double check for compile support
+	for (int i = 0; i < count; i++) {
+		chunks.push_back(TerrainQuad(*this, i));
 	}
 }
 
 
 TerrainChunkBuffer::~TerrainChunkBuffer() {
-	if(chunkCount <= 0)
+	if (chunkCount <= 0)
 		throw std::runtime_error("Not all terrain chunks were freed!");
 
-	vert_buffer.CleanBuffer();  
+	vert_buffer.CleanBuffer();
 	index_buffer.CleanBuffer();
 
-	vert_staging.CleanBuffer(); 
+	vert_staging.CleanBuffer();
 	index_staging.CleanBuffer();
 }
 
 
 int TerrainChunkBuffer::Allocate() {
 	std::lock_guard<std::mutex> guard(lock);
-	for (int i = 0; i < freeList.size(); i++) {
-		if (chunkStates[i] == ChunkState::free) {
-			chunkStates[i] = ChunkState::waiting_create;
+	for (int i = 0; i < chunks.size(); i++) {
+		if (chunks.at(i).state == TerrainQuad::ChunkState::free) {
+			chunks.at(i).state = TerrainQuad::ChunkState::waiting_create;
 			chunkCount++;
 			return i;
 		}
@@ -145,116 +145,90 @@ int TerrainChunkBuffer::Allocate() {
 void TerrainChunkBuffer::Free(int index) {
 	chunkCount--;
 	std::lock_guard<std::mutex> guard(lock);
-	chunks[index].state = ChunkState::free;
+	chunks[index].state = TerrainQuad::ChunkState::free;
 }
 
-TerrainChunkBuffer::ChunkState TerrainChunkBuffer::GetChunkState(int index){
+TerrainQuad::ChunkState TerrainChunkBuffer::GetChunkState(int index) {
 	std::lock_guard<std::mutex> guard(lock);
-	return chunks[i].state;
+	return chunks[index].state;
 }
 
-void TerrainChunkBuffer::SetChunkState(int index, TerrainQuad::ChunkState state){
+void TerrainChunkBuffer::SetChunkState(int index, TerrainQuad::ChunkState state) {
 	std::lock_guard<std::mutex> guard(lock);
-	chunks[i].state = state;
+	chunks[index].state = state;
 }
 
-TerrainQuad* TerrainChunkBuffer::GetChunk(int index){
-	return &chunks[i];
+TerrainQuad* TerrainChunkBuffer::GetChunk(int index) {
+	return &chunks[index];
 }
 
 void TerrainChunkBuffer::UpdateChunks() {
 	std::lock_guard<std::mutex> guard(lock);
 
-	std::vector<VkCopyRegion> vertexCopyRegions;
-	std::vector<VkCopyRegion> indexCopyRegions;
+	std::vector<VkBufferCopy> vertexCopyRegions;
+	std::vector<VkBufferCopy> indexCopyRegions;
 
-	for(int i = 0; i < chunkStates.size(); i++){
-		switch(chunks[i].state){
-			case(ChunkState::free): break;
+	ChunkCreationData data{ nullptr };
+
+	for (int i = 0; i < chunks.size(); i++) {
+		switch (chunks.at(i).state) {
+		case(TerrainQuad::ChunkState::free): break;
 
 			//needs to have its cpu data made
-			case(ChunkState::waiting_create):
+		case(TerrainQuad::ChunkState::waiting_create):
 
-				ChunkCreationData data{&chunks.at(i)};
+			data = ChunkCreationData{ &chunks.at(i) };
 
-				chunkCreationWork.AddWork(std::move(data));
+			man->chunkCreationWork.push_back(std::move(data));
+			man->chunkConditionVariable.notify_one();
 
-				chunks[i] = ChunkState::creating;
+			chunks.at(i).state = TerrainQuad::ChunkState::creating;
 			break;
 
 			//in progress making data
-			case(ChunkState::creating): break;
+		case(TerrainQuad::ChunkState::creating): break;
 
 			//needs to have its data uploaded
-			case(ChunkState::waiting_upload):
+		case(TerrainQuad::ChunkState::waiting_upload):
 
-				vertexCopyRegions = initializers::bufferCopyCreate(vert_size, i * vert_size, i * vert_size)
-				indexCopyRegions = initializers::bufferCopyCreate(ind_size, i * ind_size, i * ind_size)
+			vertexCopyRegions.push_back(initializers::bufferCopyCreate(vert_size, i * vert_size, i * vert_size));
+			indexCopyRegions.push_back(initializers::bufferCopyCreate(ind_size, i * ind_size, i * ind_size));
 
-				chunks[i] = ChunkState::uploading;
+			chunks.at(i).state = TerrainQuad::ChunkState::uploading;
 			break;
 
 			//is having data uploaded
-			case(ChunkState::uploading): break;
+		case(TerrainQuad::ChunkState::uploading): break;
 
 
 			//data is on gpu, ready to draw
-			case(ChunkState::ready): break;
+		case(TerrainQuad::ChunkState::ready): break;
 		}
 
 	}
 	TransferCommandWork transfer;
 	transfer.work = std::function<void(VkCommandBuffer)>(
 		[=](const VkCommandBuffer cmdBuf) {
-			vkCmdCopyBuffer(cmdBuf, vert_staging.buffer.buffer, vert_buffer.buffer.buffer, 
-				vertexCopyRegions.size(), vertexCopyRegions.data());
-			vkCmdCopyBuffer(cmdBuf, index_staging.buffer.buffer, index_buffer.buffer.buffer, 
-				indexCopyRegions.size(), indexCopyRegions.data());	
-		}
+		vkCmdCopyBuffer(cmdBuf, vert_staging.buffer.buffer, vert_buffer.buffer.buffer,
+			vertexCopyRegions.size(), vertexCopyRegions.data());
+		vkCmdCopyBuffer(cmdBuf, index_staging.buffer.buffer, index_buffer.buffer.buffer,
+			indexCopyRegions.size(), indexCopyRegions.data());
+	}
 	);
 	renderer->SubmitTransferWork(std::move(transfer));
 
 }
 
-void* TerrainChunkBuffer::GetDeviceVertexBufferPtr(int index){
-	return vert_staging_ptr + vert_size*index;
+TerrainMeshVertices* TerrainChunkBuffer::GetDeviceVertexBufferPtr(int index) {
+	return vert_staging_ptr + index;
 }
-void* TerrainChunkBuffer::GetDeviceIndexBufferPtr(int index){
-	return index_staging_ptr + ind_size*index;
+TerrainMeshIndices* TerrainChunkBuffer::GetDeviceIndexBufferPtr(int index) {
+	return index_staging_ptr + index;
 }
-
-void TerrainQuad::DrawChunks(VkCommandBuffer){
-	std::vector<VkDeviceSize> vertexOffsettings(count);
-	std::vector<VkDeviceSize> indexOffsettings(count);
-
-	int chunksToDraw = 0;
-	for (int i = 0; i < count; i++) {
-		if(chunks[i].state == ChunkState::ready){
-			chunksToDraw++;
-			vertexOffsettings[i] = (i * sizeof(TerrainMeshVertices));
-			indexOffsettings[i] = (i * sizeof(TerrainMeshIndices));
-		}
-	}
-
-	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
-	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &descriptorSet.set, 0, nullptr);
-	
-	for (int i = 0; i < chunksToDraw; i++) {
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vert_buffer->buffer.buffer, &vertexOffsettings[i]);
-		vkCmdBindIndexBuffer(cmdBuff, index_buffer->buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
-
-		vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
-	}
-	//vkCmdBindVertexBuffers(cmdBuff, 0, 1, &(quadHandles[i]->deviceVertices.buffer.buffer), offsets);
-	//vkCmdBindIndexBuffer(cmdBuff, quadHandles[i]->deviceIndices.buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-	
-}
-
 
 TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph)
 	: protoGraph(protoGraph), chunkBuffer()
-	
+
 	//,
 	// buffChunks_vets(renderer->device, MaxChunkCount),
 	// buffChunks_inds(renderer->device, MaxChunkCount)
@@ -293,6 +267,8 @@ void TerrainManager::StartWorkerThreads() {
 void TerrainManager::StopWorkerThreads() {
 	isCreatingTerrain = false;
 	workerConditionVariable.notify_all();
+	chunkConditionVariable.notify_all();
+
 	for (auto& thread : terrainCreationWorkers) {
 		thread.join();
 	}
@@ -308,7 +284,7 @@ void TerrainManager::SetupResources(ResourceManager* resourceMan, VulkanRenderer
 
 	this->renderer = renderer;
 
-	chunkBuffer = std::make_unique<ChunkBuffer>(renderer, 1024)
+	chunkBuffer = std::make_unique<TerrainChunkBuffer>(renderer, 256, this);
 
 	for (auto& item : terrainTextureFileNames) {
 		terrainTextureHandles.push_back(
@@ -520,6 +496,8 @@ void TerrainManager::UpdateTerrains(ResourceManager* resourceMan,
 	terrainUpdateTimer.EndTimer();
 
 	instancedWaters->UploadData();
+
+	chunkBuffer->UpdateChunks();
 }
 
 void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe) {
@@ -656,8 +634,8 @@ void TerrainManager::DrawTerrainTextureViewer() {
 		for (int i = 0; i < terrainTextureHandles.size(); i++)
 		{
 			//char label[128];
-			//sprintf(label, "%s", terrainTextureHandles[i].name.c_str());
-			if (ImGui::Selectable(terrainTextureHandles[i].name.c_str(), selectedTexture == i))
+			//sprintf(label, "%s", terrainTextureHandles.at(i).name.c_str());
+			if (ImGui::Selectable(terrainTextureHandles.at(i).name.c_str(), selectedTexture == i))
 				selectedTexture = i;
 		}
 

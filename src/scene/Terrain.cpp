@@ -7,13 +7,13 @@
 
 #include "TerrainManager.h"
 
-TerrainQuad::TerrainQuad(TerrainChunkBuffer& chunkBuffer, int index) : 
+TerrainQuad::TerrainQuad(TerrainChunkBuffer& chunkBuffer, int index) :
 	state(ChunkState::free), chunkBuffer(chunkBuffer), index(index)
 {
 
 }
 
-void TerrainQuad::Setup(glm::vec2 pos, glm::vec2 size, 
+void TerrainQuad::Setup(glm::vec2 pos, glm::vec2 size,
 	glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,
 	int level, glm::i32vec2 subDivPos, float centerHeightValue,
 	Terrain* terrain)
@@ -27,24 +27,24 @@ void TerrainQuad::Setup(glm::vec2 pos, glm::vec2 size,
 	// indices(chunkBuffer.GetDeviceIndexBufferPtr(index))
 {
 	this->state = ChunkState::waiting_create;
-	this->pos = pos; 
+	this->pos = pos;
 	this->size = size;
-	this->logicalPos = logicalPos; 
+	this->logicalPos = logicalPos;
 	this->logicalSize = logicalSize;
-	this->subDivPos = subDivPos; 
+	this->subDivPos = subDivPos;
 	this->isSubdivided = false;
-	this->level = level; 
+	this->level = level;
 	this->heightValAtCenter = 0;
 	this->terrain = terrain;
-	this->vertices = chunkBuffer.GetDeviceVertexBufferPtr(index);
-	this->indices = chunkBuffer.GetDeviceIndexBufferPtr(index);
+	this->vertices = (TerrainMeshVertices*)chunkBuffer.GetDeviceVertexBufferPtr(index);
+	this->indices = (TerrainMeshIndices*)chunkBuffer.GetDeviceIndexBufferPtr(index);
 
 
 	//isReady = std::make_shared<bool>(false);
 }
 
 //Manual reset... (shouldtn' be needed but hey, better safe than sorry)
-void TerrainQuad::CleanUp(){
+void TerrainQuad::CleanUp() {
 	state = ChunkState::free;
 	isSubdivided = false;
 	subQuads.UpLeft = -1;
@@ -53,11 +53,13 @@ void TerrainQuad::CleanUp(){
 	subQuads.DownRight = -1;
 }
 
-void TerrainQuad::RecursiveCleanUp(){
-	chunkBuffer.GetChunk(subQuads.UpLeft)->RecursiveCleanUp();
-	chunkBuffer.GetChunk(subQuads.DownLeft)->RecursiveCleanUp();
-	chunkBuffer.GetChunk(subQuads.UpRight)->RecursiveCleanUp();
-	chunkBuffer.GetChunk(subQuads.DownRight)->RecursiveCleanUp();
+void TerrainQuad::RecursiveCleanUp() {
+	if (isSubdivided) {
+		chunkBuffer.GetChunk(subQuads.UpLeft)->RecursiveCleanUp();
+		chunkBuffer.GetChunk(subQuads.DownLeft)->RecursiveCleanUp();
+		chunkBuffer.GetChunk(subQuads.UpRight)->RecursiveCleanUp();
+		chunkBuffer.GetChunk(subQuads.DownRight)->RecursiveCleanUp();
+	}
 	CleanUp();
 }
 
@@ -66,7 +68,7 @@ float TerrainQuad::GetUVvalueFromLocalIndex(float i, int numCells, int level, in
 }
 
 
-void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser,	float heightScale, float widthScale) 
+void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, float heightScale, float widthScale)
 {
 
 	const int numCells = NumCells;
@@ -129,47 +131,15 @@ void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser,	floa
 	}
 }
 
-
-void TerrainQuad::Draw(VkCommandBuffer cmdBuf) {
-
-	std::vector<VkDeviceSize> vertexOffsettings(count);
-	std::vector<VkDeviceSize> indexOffsettings(count);
-
-	int chunksToDraw = 0;
-	for (int i = 0; i < count; i++) {
-		if(chunks[i].state == ChunkState::ready){
-			chunksToDraw++;
-			vertexOffsettings[i] = (i * sizeof(TerrainMeshVertices));
-			indexOffsettings[i] = (i * sizeof(TerrainMeshIndices));
-		}
-	}
-
-	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
-	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &descriptorSet.set, 0, nullptr);
-	
-	for (int i = 0; i < chunksToDraw; i++) {
-		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vert_buffer->buffer.buffer, &vertexOffsettings[i]);
-		vkCmdBindIndexBuffer(cmdBuff, index_buffer->buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
-
-		vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
-	}
-	//vkCmdBindVertexBuffers(cmdBuff, 0, 1, &(quadHandles[i]->deviceVertices.buffer.buffer), offsets);
-	//vkCmdBindIndexBuffer(cmdBuff, quadHandles[i]->deviceIndices.buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-	
-}
-
-
-
 Terrain::Terrain(VulkanRenderer* renderer,
 	TerrainChunkBuffer& chunkBuffer,
 	InternalGraph::GraphPrototype& protoGraph,
 	int numCells, int maxLevels, float heightScale,
 	TerrainCoordinateData coords)
-	:	
-	renderer(renderer)
+	:
+	renderer(renderer),
 	chunkBuffer(chunkBuffer),
-	maxLevels(maxLevels), heightScale(heightScale), 
+	maxLevels(maxLevels), heightScale(heightScale),
 	coordinateData(coords),
 	fastGraphUser(protoGraph, 1337, coords.sourceImageResolution, coords.noisePos, coords.noiseSize.x)
 
@@ -191,8 +161,8 @@ Terrain::Terrain(VulkanRenderer* renderer,
 
 	//TerrainQuad* test = terrainQuadPool->allocate();
 	//test->init(posX, posY, sizeX, sizeY, 0, meshVertexPool->allocate(), meshIndexPool->allocate());
-	
-	rootQuadIndex = chunkBuffer.Allocate());
+
+	rootQuadIndex = chunkBuffer.Allocate();
 	rootQuad = chunkBuffer.GetChunk(rootQuadIndex);
 
 	rootQuad->Setup(coordinateData.pos, coordinateData.size,
@@ -220,7 +190,7 @@ Terrain::~Terrain() {
 
 void Terrain::CleanUp()
 {
-	rootQuad.RecursiveCleanUp();
+	rootQuad->RecursiveCleanUp();
 	//for (auto& quad : quadHandles) {
 	//	//meshPool_vertices.deallocate(quad->vertices);
 	//	//meshPool_indices.deallocate(quad->indices);
@@ -261,9 +231,9 @@ void Terrain::UpdateTerrain(glm::vec3 viewerPos) {
 	//if (shouldUpdateBuffers)
 	//	UpdateMeshBuffer();
 
-	PrevQuadHandles.clear();
-	for (auto& quad : quadHandles)
-		PrevQuadHandles.push_back(quad.get());
+	//PrevQuadHandles.clear();
+	//for (auto& quad : quadHandles)
+	//	PrevQuadHandles.push_back(quad.get());
 
 	updateTime.EndTimer();
 
@@ -662,7 +632,7 @@ void Terrain::SubdivideTerrain(TerrainQuad* quad, glm::vec3 viewerPos) {
 	glm::i32vec2 new_lsize = glm::i32vec2(quad->logicalSize.x / 2.0, quad->logicalSize.y / 2.0);
 
 	quad->subQuads.UpRight = chunkBuffer.Allocate();
-	chunkBuffer.GetChunk(quad->subQuads.UpRight).Setup(
+	chunkBuffer.GetChunk(quad->subQuads.UpRight)->Setup(
 		glm::vec2(new_pos.x, new_pos.y),
 		new_size,
 		glm::i32vec2(new_lpos.x, new_lpos.y),
@@ -675,7 +645,7 @@ void Terrain::SubdivideTerrain(TerrainQuad* quad, glm::vec3 viewerPos) {
 		this);
 
 	quad->subQuads.UpLeft = chunkBuffer.Allocate();
-	chunkBuffer.GetChunk(quad->subQuads.UpLeft).Setup(
+	chunkBuffer.GetChunk(quad->subQuads.UpLeft)->Setup(
 		glm::vec2(new_pos.x, new_pos.y + new_size.y),
 		new_size,
 		glm::i32vec2(new_lpos.x, new_lpos.y + new_lsize.y),
@@ -688,7 +658,7 @@ void Terrain::SubdivideTerrain(TerrainQuad* quad, glm::vec3 viewerPos) {
 		this);
 
 	quad->subQuads.DownRight = chunkBuffer.Allocate();
-	chunkBuffer.GetChunk(quad->subQuads.DownRight).Setup(
+	chunkBuffer.GetChunk(quad->subQuads.DownRight)->Setup(
 		glm::vec2(new_pos.x + new_size.x, new_pos.y), new_size,
 		glm::i32vec2(new_lpos.x + new_lsize.x, new_lpos.y),
 		new_lsize,
@@ -700,7 +670,7 @@ void Terrain::SubdivideTerrain(TerrainQuad* quad, glm::vec3 viewerPos) {
 		this);
 
 	quad->subQuads.DownLeft = chunkBuffer.Allocate();
-	chunkBuffer.GetChunk(quad->subQuads.DownLeft).Setup(
+	chunkBuffer.GetChunk(quad->subQuads.DownLeft)->Setup(
 		glm::vec2(new_pos.x + new_size.x, new_pos.y + new_size.y),
 		new_size,
 		glm::i32vec2(new_lpos.x + new_lsize.x, new_lpos.y + new_lsize.y),
@@ -782,7 +752,7 @@ void Terrain::UnSubdivide(TerrainQuad* quad) {
 	if (quad->isSubdivided)
 	{
 		quad->isSubdivided = false;
-		
+
 		auto urDel = chunkBuffer.GetChunk(quad->subQuads.UpRight);
 		auto ulDel = chunkBuffer.GetChunk(quad->subQuads.UpLeft);
 		auto drDel = chunkBuffer.GetChunk(quad->subQuads.DownRight);
@@ -792,7 +762,7 @@ void Terrain::UnSubdivide(TerrainQuad* quad) {
 		ulDel->RecursiveCleanUp();
 		drDel->RecursiveCleanUp();
 		dlDel->RecursiveCleanUp();
-		
+
 		numQuads -= 4;
 
 		// auto delUR = std::find_if(quadHandles.begin(), quadHandles.end(),
@@ -853,7 +823,7 @@ void Terrain::UnSubdivide(TerrainQuad* quad) {
 		// 	numQuads--;
 		// }
 	}
-	
+
 	//Log::Debug << "Terrain un-subdivided: Level: " << quad->level << " Position: " << quad->pos.x << ", " << quad->pos.z << " Size: " << quad->size.x << ", " << quad->size.z << "\n";
 }
 
