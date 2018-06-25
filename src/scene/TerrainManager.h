@@ -102,13 +102,13 @@ public:
 	TerrainMeshVertices* GetDeviceVertexBufferPtr(int index);
 	TerrainMeshIndices* GetDeviceIndexBufferPtr(int index);
 
+	VulkanBufferVertex vert_buffer;
+	VulkanBufferIndex index_buffer;
+
 private:
 	std::mutex lock;
 
 	VulkanRenderer* renderer;
-
-	VulkanBufferVertex vert_buffer;
-	VulkanBufferIndex index_buffer;
 
 	VulkanBufferData vert_staging;
 	TerrainMeshVertices* vert_staging_ptr;

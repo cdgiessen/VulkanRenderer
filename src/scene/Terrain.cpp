@@ -70,6 +70,9 @@ float TerrainQuad::GetUVvalueFromLocalIndex(float i, int numCells, int level, in
 
 void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, float heightScale, float widthScale)
 {
+	//no work to do -- not a good solution
+	if (state == ChunkState::free)
+		return;
 
 	const int numCells = NumCells;
 
@@ -751,6 +754,9 @@ void Terrain::SubdivideTerrain(TerrainQuad* quad, glm::vec3 viewerPos) {
 void Terrain::UnSubdivide(TerrainQuad* quad) {
 	if (quad->isSubdivided)
 	{
+		quad->RecursiveCleanUp();
+		numQuads -= 4;
+		/*
 		quad->isSubdivided = false;
 
 		auto urDel = chunkBuffer.GetChunk(quad->subQuads.UpRight);
@@ -761,9 +767,8 @@ void Terrain::UnSubdivide(TerrainQuad* quad) {
 		urDel->RecursiveCleanUp();
 		ulDel->RecursiveCleanUp();
 		drDel->RecursiveCleanUp();
-		dlDel->RecursiveCleanUp();
+		dlDel->RecursiveCleanUp();*/
 
-		numQuads -= 4;
 
 		// auto delUR = std::find_if(quadHandles.begin(), quadHandles.end(),
 		// 	[&](std::unique_ptr<TerrainQuad>& q)
@@ -823,8 +828,23 @@ void Terrain::UnSubdivide(TerrainQuad* quad) {
 		// 	numQuads--;
 		// }
 	}
-
+	numQuads -= 1;
 	//Log::Debug << "Terrain un-subdivided: Level: " << quad->level << " Position: " << quad->pos.x << ", " << quad->pos.z << " Size: " << quad->size.x << ", " << quad->size.z << "\n";
+}
+
+void populateQuadOffsets(TerrainQuad* quad, std::vector<VkDeviceSize>& vert, std::vector<VkDeviceSize>& ind);
+
+void populateQuadOffsets(TerrainQuad* quad, std::vector<VkDeviceSize>& vert, std::vector<VkDeviceSize>& ind) {
+	if (quad->isSubdivided) {
+		populateQuadOffsets(quad->chunkBuffer.GetChunk(quad->subQuads.UpRight), vert, ind);
+		populateQuadOffsets(quad->chunkBuffer.GetChunk(quad->subQuads.UpLeft), vert, ind);
+		populateQuadOffsets(quad->chunkBuffer.GetChunk(quad->subQuads.DownRight), vert, ind);
+		populateQuadOffsets(quad->chunkBuffer.GetChunk(quad->subQuads.DownLeft), vert, ind);
+	}
+	else {
+		vert.push_back(quad->index * sizeof(TerrainMeshVertices));
+		ind.push_back(quad->index * sizeof(TerrainMeshIndices));
+	}
 }
 
 void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
@@ -832,50 +852,56 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
 	//return;
 	if (!terrainVulkanSplatMap->readyToUse)
 		return;
-	//	std::vector<VkDeviceSize> vertexOffsettings(quadHandles.size());
-	//	std::vector<VkDeviceSize> indexOffsettings(quadHandles.size());
-	//
-	//	for (int i = 0; i < quadHandles.size(); i++) {
-	//		vertexOffsettings[i] = (i * sizeof(TerrainMeshVertices));
-	//		indexOffsettings[i] = (i * sizeof(TerrainMeshIndices));
+
+	std::vector<VkDeviceSize> vertexOffsettings;
+	std::vector<VkDeviceSize> indexOffsettings;
+
+	populateQuadOffsets(rootQuad, vertexOffsettings, indexOffsettings);
+
+	/*vkCmdPushConstants(
+		cmdBuff,
+		mvp->layout,
+		VK_SHADER_STAGE_VERTEX_BIT,
+		0,
+		sizeof(TerrainPushConstant),
+		&modelMatrixData);*/
+
+	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
+	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &descriptorSet.set, 0, nullptr);
+
+	drawTimer.StartTimer();
+
+	for (int i = 0; i < vertexOffsettings.size(); i++) {
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &chunkBuffer.vert_buffer.buffer.buffer, &vertexOffsettings[i]);
+		vkCmdBindIndexBuffer(cmdBuff, chunkBuffer.index_buffer.buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
+
+		vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
+	}
+
+	//for (int i = 0; i < quadHandles.size(); ++i) {
+	//	if ((!quadHandles[i]->isSubdivided && (*(quadHandles[i]->isReady)) == true)
+	//		|| (quadHandles[i]->isSubdivided &&
+	//			!(*quadHandles[i]->subQuads.DownLeft->isReady == true //note the inverse logic: (!a & !b) = !(a | b)
+	//				|| *quadHandles[i]->subQuads.DownRight->isReady == true
+	//				|| *quadHandles[i]->subQuads.UpLeft->isReady == true
+	//				|| *quadHandles[i]->subQuads.UpRight->isReady == true))) {
+
+
+
+	//		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vertexBuffer->buffer.buffer, &vertexOffsettings[i]);
+	//		vkCmdBindIndexBuffer(cmdBuff, indexBuffer->buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
+
+	//		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &(quadHandles[i]->deviceVertices.buffer.buffer), offsets);
+	//		vkCmdBindIndexBuffer(cmdBuff, quadHandles[i]->deviceIndices.buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+	//		vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
+
+	//		Vertex normals(yay geometry shaders!)
+	//			vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(2));
+	//		vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
 	//	}
-
-		//vkCmdPushConstants(
-		//	cmdBuff,
-		//	mvp->layout,
-		//	VK_SHADER_STAGE_VERTEX_BIT,
-		//	0,
-		//	sizeof(TerrainPushConstant),
-		//	&modelMatrixData);
-
-	// vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
-	// vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &descriptorSet.set, 0, nullptr);
-
-	// drawTimer.StartTimer();
-	// for (int i = 0; i < quadHandles.size(); ++i) {
-	// 	if ((!quadHandles[i]->isSubdivided && (*(quadHandles[i]->isReady)) == true)
-	// 		|| (quadHandles[i]->isSubdivided &&
-	// 			!(*quadHandles[i]->subQuads.DownLeft->isReady == true //note the inverse logic: (!a & !b) = !(a | b)
-	// 				|| *quadHandles[i]->subQuads.DownRight->isReady == true
-	// 				|| *quadHandles[i]->subQuads.UpLeft->isReady == true
-	// 				|| *quadHandles[i]->subQuads.UpRight->isReady == true))) {
-
-
-
-			//vkCmdBindVertexBuffers(cmdBuff, 0, 1, &vertexBuffer->buffer.buffer, &vertexOffsettings[i]);
-			//vkCmdBindIndexBuffer(cmdBuff, indexBuffer->buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
-
-			// vkCmdBindVertexBuffers(cmdBuff, 0, 1, &(quadHandles[i]->deviceVertices.buffer.buffer), offsets);
-			// vkCmdBindIndexBuffer(cmdBuff, quadHandles[i]->deviceIndices.buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-			// vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
-
-			//Vertex normals (yay geometry shaders!)
-			//vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(2));
-			//vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
-	// 	}
-	// }
-	// drawTimer.EndTimer();
+	//}
+	drawTimer.EndTimer();
 
 
 
