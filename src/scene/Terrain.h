@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <thread>
+#include <unordered_map>
+#include <utility>
 
 #include <glm/common.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -59,15 +61,12 @@ class TerrainChunkBuffer;
 class Terrain;
 
 struct TerrainQuad {
-	TerrainQuad(TerrainChunkBuffer& chunkBuffer, int index);
-
-	void Setup(glm::vec2 pos, glm::vec2 size,
+	TerrainQuad(TerrainChunkBuffer& chunkBuffer, 
+		glm::vec2 pos, glm::vec2 size,
 		glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,
 		int level, glm::i32vec2 subDivPos, float centerHeightValue,
 		Terrain* terrain);
-
-	void CleanUp();
-	void RecursiveCleanUp();
+	~TerrainQuad();
 
 	static float GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos);
 
@@ -75,7 +74,7 @@ struct TerrainQuad {
 	void GenerateTerrainChunk(InternalGraph::GraphUser& graphUser,
 		float heightScale, float widthScale);
 
-	enum class ChunkState {
+	enum class State {
 		free,//nobody owns me
 		waiting_create, //writing to device buffer
 		creating,
@@ -95,11 +94,12 @@ struct TerrainQuad {
 
 	Terrain* terrain; //who owns it
 	TerrainChunkBuffer& chunkBuffer;
-	int index = -1;
+	int index = -1; //index into chunkBuffer
 
 	TerrainMeshVertices* vertices;
 	TerrainMeshIndices* indices;
 
+	//index into terrain's quadMap
 	struct SubQuads {
 		int UpLeft = -1;
 		int DownLeft = -1;
@@ -107,6 +107,7 @@ struct TerrainQuad {
 		int DownRight = -1;
 	} subQuads;
 };
+
 
 class Terrain {
 public:
@@ -116,13 +117,13 @@ public:
 	TerrainChunkBuffer & chunkBuffer;
 
 	//Refence to all of the quads
-	//std::vector<int> quadHandles;
 	//std::vector<TerrainQuad*> PrevQuadHandles;
 	//std::vector<TerrainMeshVertices> verts;
 	//std::vector<TerrainMeshIndices> inds;
 
-	int rootQuadIndex = -1;
-	TerrainQuad* rootQuad;
+	std::unordered_map<int, TerrainQuad> quadMap;
+	
+	int rootQuad;
 
 	int maxLevels;
 	int maxNumQuads;
@@ -175,11 +176,13 @@ public:
 
 	float GetHeightAtLocation(float x, float z);
 private:
+	int curEmptyIndex = 0; 
+	int FindEmptyIndex();
 
 	void InitTerrainQuad(
-		TerrainQuad* quad, glm::vec3 viewerPos);
+		int quad, glm::vec3 viewerPos);
 
-	bool UpdateTerrainQuad(TerrainQuad* quad, glm::vec3 viewerPos);
+	bool UpdateTerrainQuad(int quad, glm::vec3 viewerPos);
 
 	void SetupMeshbuffers();
 	void SetupUniformBuffer();
@@ -190,6 +193,9 @@ private:
 
 	void UpdateMeshBuffer();
 
-	void SubdivideTerrain(TerrainQuad* quad, glm::vec3 viewerPos);
-	void UnSubdivide(TerrainQuad* quad);
+	void SubdivideTerrain(int quad, glm::vec3 viewerPos);
+	void UnSubdivide(int quad);
+
+	void PopulateQuadOffsets(int quad, std::vector<VkDeviceSize>& vert, std::vector<VkDeviceSize>& ind);
+
 };

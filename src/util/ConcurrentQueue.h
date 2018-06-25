@@ -27,6 +27,8 @@ public:
 
 	void push_back(T&& item);
 
+	void remove(T& item);
+
 	int size();
 
 	bool empty();
@@ -93,6 +95,13 @@ void ConcurrentQueue<T>::push_back(T&& item)
 	mlock.unlock();     // unlock before notificiation to minimize mutex con
 	m_cond.notify_one(); // notify one waiting thread
 
+}
+
+template <typename T>
+void ConcurrentQueue<T>::remove(T& item){
+	std::unique_lock<std::mutex> mlock(m_mutex);
+	auto iter = std::find(std::begin(m_queue), std::end(m_queue), item);
+	m_queue.erase(iter);
 }
 
 template <typename T>

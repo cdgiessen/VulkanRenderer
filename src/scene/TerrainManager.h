@@ -6,6 +6,7 @@
 #include <mutex>
 #include <queue>
 #include <atomic>
+#include <unordered_map>
 
 #include <foonathan/memory/container.hpp> // vector, list, list_node_size
 #include <foonathan/memory/memory_pool.hpp> // memory_pool
@@ -72,18 +73,17 @@ struct TerrainCreationData {
 		int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord);
 };
 
-struct ChunkCreationData {
-	TerrainQuad* quad;
-
-	ChunkCreationData(TerrainQuad* quad) :
-		quad(quad) {}
-
-};
-
 class TerrainManager;
 
 class TerrainChunkBuffer {
 public:
+
+	enum class ChunkState {
+		free,
+		allocated,
+		ready,
+	} state;
+
 	TerrainChunkBuffer(VulkanRenderer* renderer, int count,
 		TerrainManager* man);
 	~TerrainChunkBuffer();
@@ -92,18 +92,19 @@ public:
 	void Free(int index);
 
 	void UpdateChunks();
-	void Upload();
+	
+	int ActiveQuadCount();
 
-	TerrainQuad* GetChunk(int index);
-	TerrainQuad::ChunkState GetChunkState(int index);
-
-	void SetChunkState(int index, TerrainQuad::ChunkState state);
+	//TerrainQuad* GetChunk(int index);
+	ChunkState GetChunkState(int index);
 
 	TerrainMeshVertices* GetDeviceVertexBufferPtr(int index);
 	TerrainMeshIndices* GetDeviceIndexBufferPtr(int index);
 
 	VulkanBufferVertex vert_buffer;
 	VulkanBufferIndex index_buffer;
+
+	TerrainManager* man;
 
 private:
 	std::mutex lock;
@@ -115,8 +116,7 @@ private:
 	VulkanBufferData index_staging;
 	TerrainMeshIndices* index_staging_ptr;
 
-	std::vector<TerrainQuad> chunks;
-	TerrainManager* man;
+	std::vector<ChunkState> chunkStates;
 
 	std::atomic_int chunkCount = 0;
 };
@@ -153,12 +153,6 @@ public:
 	std::condition_variable workerConditionVariable;
 
 	ConcurrentQueue<TerrainCreationData> terrainCreationWork;
-
-	std::mutex chunkConditionMutex;
-	std::condition_variable chunkConditionVariable;
-
-	ConcurrentQueue<ChunkCreationData> chunkCreationWork;
-
 
 	bool isCreatingTerrain = true; //while condition for worker threads
 
