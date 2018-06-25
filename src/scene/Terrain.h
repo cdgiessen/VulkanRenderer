@@ -61,12 +61,13 @@ class TerrainChunkBuffer;
 class Terrain;
 
 struct TerrainQuad {
-	TerrainQuad(TerrainChunkBuffer& chunkBuffer, 
+	TerrainQuad(TerrainChunkBuffer& chunkBuffer,
 		glm::vec2 pos, glm::vec2 size,
 		glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,
 		int level, glm::i32vec2 subDivPos, float centerHeightValue,
 		Terrain* terrain);
-	~TerrainQuad();
+	void Setup();
+	void CleanUp();
 
 	static float GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos);
 
@@ -122,8 +123,8 @@ public:
 	//std::vector<TerrainMeshIndices> inds;
 
 	std::unordered_map<int, TerrainQuad> quadMap;
-	
-	int rootQuad;
+
+	int rootQuad = 0;
 
 	int maxLevels;
 	int maxNumQuads;
@@ -176,11 +177,10 @@ public:
 
 	float GetHeightAtLocation(float x, float z);
 private:
-	int curEmptyIndex = 0; 
+	int curEmptyIndex = 0;
 	int FindEmptyIndex();
 
-	void InitTerrainQuad(
-		int quad, glm::vec3 viewerPos);
+	void InitTerrainQuad(int quad, glm::vec3 viewerPos);
 
 	bool UpdateTerrainQuad(int quad, glm::vec3 viewerPos);
 

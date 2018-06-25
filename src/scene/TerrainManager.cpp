@@ -92,7 +92,7 @@ TerrainChunkBuffer::TerrainChunkBuffer(VulkanRenderer* renderer, int count,
 
 TerrainChunkBuffer::~TerrainChunkBuffer() {
 	if (chunkCount <= 0)
-		throw std::runtime_error("Not all terrain chunks were freed!");
+		Log::Error << "Not all terrain chunks were freed!\n";
 
 	vert_buffer.CleanBuffer();
 	index_buffer.CleanBuffer();
@@ -118,8 +118,8 @@ int TerrainChunkBuffer::Allocate() {
 
 void TerrainChunkBuffer::Free(int index) {
 	std::lock_guard<std::mutex> guard(lock);
-	//if(chunkStates.at(index) == TerrainChunkBuffer::ChunkState::free)
-	//	throw std::runtime_error("Trying to free a free chunk! What?");
+	if (chunkStates.at(index) == TerrainChunkBuffer::ChunkState::free)
+		throw std::runtime_error("Trying to free a free chunk! What?");
 	chunkStates.at(index) = TerrainChunkBuffer::ChunkState::free;
 	chunkCount--;
 }
@@ -129,7 +129,12 @@ TerrainChunkBuffer::ChunkState TerrainChunkBuffer::GetChunkState(int index) {
 	return chunkStates.at(index);
 }
 
-int TerrainChunkBuffer::ActiveQuadCount(){
+void TerrainChunkBuffer::SetChunkWritten(int index) {
+	std::lock_guard<std::mutex> guard(lock);
+	chunkStates.at(index) = TerrainChunkBuffer::ChunkState::written;
+}
+
+int TerrainChunkBuffer::ActiveQuadCount() {
 	return chunkCount;
 }
 
@@ -143,8 +148,10 @@ void TerrainChunkBuffer::UpdateChunks() {
 		switch (chunkStates.at(i)) {
 		case(TerrainChunkBuffer::ChunkState::free): break;
 
+		case(TerrainChunkBuffer::ChunkState::allocated): break;
+
 			//needs to have its data uploaded
-		case(TerrainChunkBuffer::ChunkState::allocated):
+		case(TerrainChunkBuffer::ChunkState::written):
 
 			vertexCopyRegions.push_back(initializers::bufferCopyCreate(vert_size, i * vert_size, i * vert_size));
 			indexCopyRegions.push_back(initializers::bufferCopyCreate(ind_size, i * ind_size, i * ind_size));

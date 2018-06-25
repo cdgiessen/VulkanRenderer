@@ -11,28 +11,34 @@ TerrainQuad::TerrainQuad(TerrainChunkBuffer& chunkBuffer,
 	glm::vec2 pos, glm::vec2 size,
 	glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,
 	int level, glm::i32vec2 subDivPos, float centerHeightValue,
-	Terrain* terrain):
+	Terrain* terrain) :
 
 	pos(pos), size(size),
 	logicalPos(logicalPos), logicalSize(logicalSize),
 	subDivPos(subDivPos), isSubdivided(false),
 	level(level), heightValAtCenter(0),
 	terrain(terrain),
-	chunkBuffer(chunkBuffer), 
-	index(chunkBuffer.Allocate()),
-	vertices((TerrainMeshVertices*)chunkBuffer.GetDeviceVertexBufferPtr(index)),
-	indices((TerrainMeshIndices*)chunkBuffer.GetDeviceIndexBufferPtr(index))
+	chunkBuffer(chunkBuffer)
 {
+
+}
+
+void TerrainQuad::Setup() {
+	index = chunkBuffer.Allocate();
+
+	vertices = (TerrainMeshVertices*)chunkBuffer.GetDeviceVertexBufferPtr(index);
+	indices = (TerrainMeshIndices*)chunkBuffer.GetDeviceIndexBufferPtr(index);
+
 	GenerateTerrainChunk(std::ref(terrain->fastGraphUser),
 		terrain->heightScale, terrain->coordinateData.size.x);
-					
+	chunkBuffer.SetChunkWritten(index);
 
-	//isReady = std::make_shared<bool>(false);
 }
 
-TerrainQuad::~TerrainQuad() {
+void TerrainQuad::CleanUp() {
 	chunkBuffer.Free(index);
 }
+
 
 float TerrainQuad::GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos) {
 	return glm::clamp((float)(i) / ((1 << level) * (float)(numCells)) + (float)(subDivPos) / (float)(1 << level), 0.0f, 1.0f);
@@ -152,6 +158,9 @@ Terrain::~Terrain() {
 
 void Terrain::CleanUp()
 {
+	UnSubdivide(rootQuad);
+	quadMap.at(rootQuad).CleanUp();
+	numQuads--;
 	quadMap.clear();
 	//rootQuad->RecursiveCleanUp();
 	//for (auto& quad : quadHandles) {
@@ -169,7 +178,7 @@ void Terrain::CleanUp()
 	terrainVulkanSplatMap->destroy();
 }
 
-int Terrain::FindEmptyIndex(){
+int Terrain::FindEmptyIndex() {
 	return curEmptyIndex++; //always gets an index one higher
 }
 
@@ -183,14 +192,14 @@ void Terrain::InitTerrain(VulkanRenderer* renderer, glm::vec3 cameraPos, std::sh
 	SetupDescriptorSets(terrainVulkanTextureArray);
 	SetupPipeline();
 
-	quadMap.emplace(std::make_pair(FindEmptyIndex(), TerrainQuad(chunkBuffer,
+	quadMap.emplace(std::make_pair<int, TerrainQuad>(FindEmptyIndex(), TerrainQuad(chunkBuffer,
 		coordinateData.pos, coordinateData.size,
 		coordinateData.noisePos, coordinateData.noiseSize,
 		0, glm::i32vec2(0, 0),
 		GetHeightAtLocation(TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, 0, 0),
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, 0, 0)),
 		this)));
-
+	quadMap.at(rootQuad).Setup();
 	InitTerrainQuad(rootQuad, cameraPos);
 
 	//UpdateMeshBuffer();
@@ -569,7 +578,7 @@ bool Terrain::UpdateTerrainQuad(int quad, glm::vec3 viewerPos) {
 
 	float SubdivideDistanceBias = 2.0f;
 
-	glm::vec3 center = glm::vec3(quadMap.at(quad).pos.x + quadMap.at(quad).size.x / 2.0f, 
+	glm::vec3 center = glm::vec3(quadMap.at(quad).pos.x + quadMap.at(quad).size.x / 2.0f,
 		quadMap.at(quad).heightValAtCenter, quadMap.at(quad).pos.y + quadMap.at(quad).size.y / 2.0f);
 	float distanceToViewer = glm::distance(viewerPos, center);
 
@@ -606,8 +615,8 @@ void Terrain::SubdivideTerrain(int quad, glm::vec3 viewerPos) {
 	glm::i32vec2 new_lpos = glm::i32vec2(quadMap.at(quad).logicalPos.x, quadMap.at(quad).logicalPos.y);
 	glm::i32vec2 new_lsize = glm::i32vec2(quadMap.at(quad).logicalSize.x / 2.0, quadMap.at(quad).logicalSize.y / 2.0);
 
-	quadMap.at(rootQuad).subQuads.UpRight = FindEmptyIndex();
-	quadMap.emplace(std::make_pair(quadMap.at(rootQuad).subQuads.UpRight, TerrainQuad(
+	quadMap.at(quad).subQuads.UpRight = FindEmptyIndex();
+	quadMap.emplace(std::make_pair(quadMap.at(quad).subQuads.UpRight, TerrainQuad(
 		chunkBuffer,
 		glm::vec2(new_pos.x, new_pos.y),
 		new_size,
@@ -620,9 +629,10 @@ void Terrain::SubdivideTerrain(int quad, glm::vec3 viewerPos) {
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, quadMap.at(quad).level + 1, quadMap.at(quad).subDivPos.y * 2)),
 		this
 	)));
+	quadMap.at(quadMap.at(quad).subQuads.UpRight).Setup();
 
-	quadMap.at(rootQuad).subQuads.UpLeft = FindEmptyIndex();
-	quadMap.emplace(std::make_pair(quadMap.at(rootQuad).subQuads.UpLeft, TerrainQuad(
+	quadMap.at(quad).subQuads.UpLeft = FindEmptyIndex();
+	quadMap.emplace(std::make_pair(quadMap.at(quad).subQuads.UpLeft, TerrainQuad(
 		chunkBuffer,
 		glm::vec2(new_pos.x, new_pos.y + new_size.y),
 		new_size,
@@ -635,9 +645,10 @@ void Terrain::SubdivideTerrain(int quad, glm::vec3 viewerPos) {
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, quadMap.at(quad).level + 1, quadMap.at(quad).subDivPos.y * 2 + 1)),
 		this
 	)));
+	quadMap.at(quadMap.at(quad).subQuads.UpLeft).Setup();
 
-	quadMap.at(rootQuad).subQuads.DownRight = FindEmptyIndex();
-	quadMap.emplace(std::make_pair(quadMap.at(rootQuad).subQuads.DownRight, TerrainQuad(
+	quadMap.at(quad).subQuads.DownRight = FindEmptyIndex();
+	quadMap.emplace(std::make_pair(quadMap.at(quad).subQuads.DownRight, TerrainQuad(
 		chunkBuffer,
 		glm::vec2(new_pos.x + new_size.x, new_pos.y), new_size,
 		glm::i32vec2(new_lpos.x + new_lsize.x, new_lpos.y),
@@ -649,9 +660,10 @@ void Terrain::SubdivideTerrain(int quad, glm::vec3 viewerPos) {
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, quadMap.at(quad).level + 1, quadMap.at(quad).subDivPos.y * 2)),
 		this
 	)));
+	quadMap.at(quadMap.at(quad).subQuads.DownRight).Setup();
 
-	quadMap.at(rootQuad).subQuads.DownLeft = FindEmptyIndex();
-	quadMap.emplace(std::make_pair(quadMap.at(rootQuad).subQuads.DownLeft, TerrainQuad(
+	quadMap.at(quad).subQuads.DownLeft = FindEmptyIndex();
+	quadMap.emplace(std::make_pair(quadMap.at(quad).subQuads.DownLeft, TerrainQuad(
 		chunkBuffer,
 		glm::vec2(new_pos.x + new_size.x, new_pos.y + new_size.y),
 		new_size,
@@ -664,6 +676,7 @@ void Terrain::SubdivideTerrain(int quad, glm::vec3 viewerPos) {
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, quadMap.at(quad).level + 1, quadMap.at(quad).subDivPos.y * 2 + 1)),
 		this
 	)));
+	quadMap.at(quadMap.at(quad).subQuads.DownLeft).Setup();
 
 	InitTerrainQuad(quadMap.at(quad).subQuads.UpRight, viewerPos);
 	InitTerrainQuad(quadMap.at(quad).subQuads.UpLeft, viewerPos);
@@ -739,11 +752,18 @@ void Terrain::UnSubdivide(int quad) {
 		UnSubdivide(quadMap.at(quad).subQuads.DownRight);
 		UnSubdivide(quadMap.at(quad).subQuads.DownLeft);
 
+		quadMap.at(quadMap.at(quad).subQuads.UpRight).CleanUp();
+		quadMap.at(quadMap.at(quad).subQuads.UpLeft).CleanUp();
+		quadMap.at(quadMap.at(quad).subQuads.DownRight).CleanUp();
+		quadMap.at(quadMap.at(quad).subQuads.DownLeft).CleanUp();
+
 		quadMap.erase(quadMap.at(quad).subQuads.UpRight);
 		quadMap.erase(quadMap.at(quad).subQuads.UpLeft);
 		quadMap.erase(quadMap.at(quad).subQuads.DownRight);
 		quadMap.erase(quadMap.at(quad).subQuads.DownLeft);
 		numQuads -= 4;
+
+		quadMap.at(quad).isSubdivided = false;
 		//quad->RecursiveCleanUp();
 		/*
 		quad->isSubdivided = false;

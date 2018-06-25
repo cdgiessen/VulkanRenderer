@@ -81,6 +81,7 @@ public:
 	enum class ChunkState {
 		free,
 		allocated,
+		written,
 		ready,
 	} state;
 
@@ -92,11 +93,12 @@ public:
 	void Free(int index);
 
 	void UpdateChunks();
-	
+
 	int ActiveQuadCount();
 
 	//TerrainQuad* GetChunk(int index);
 	ChunkState GetChunkState(int index);
+	void SetChunkWritten(int index);
 
 	TerrainMeshVertices* GetDeviceVertexBufferPtr(int index);
 	TerrainMeshIndices* GetDeviceIndexBufferPtr(int index);
