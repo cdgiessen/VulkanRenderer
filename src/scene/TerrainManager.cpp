@@ -47,13 +47,16 @@ void TerrainCreationWorker(TerrainManager* man) {
 			if (data.has_value())
 			{
 				auto terrain = std::make_unique<Terrain>(man->renderer,
-					*(man->chunkBuffer),
+					man->chunkBuffer,
 					data->protoGraph, data->numCells, data->maxLevels,
 					data->heightScale, data->coord);
 
 				std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
 
-				terrain->terrainSplatMap = data->resourceMan->texManager.loadTextureFromRGBAPixelData(data->sourceImageResolution + 1, data->sourceImageResolution + 1, imgData);
+				terrain->terrainSplatMap = data->resourceMan->
+					texManager.loadTextureFromRGBAPixelData(
+						data->sourceImageResolution + 1, 
+						data->sourceImageResolution + 1, imgData);
 
 				terrain->InitTerrain(data->renderer, data->cameraPos, data->terrainVulkanTextureArray);
 
@@ -184,57 +187,15 @@ TerrainMeshIndices* TerrainChunkBuffer::GetDeviceIndexBufferPtr(int index) {
 	return index_staging_ptr + index;
 }
 
-TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph)
-	: protoGraph(protoGraph), chunkBuffer()
-
-	//,
-	// buffChunks_vets(renderer->device, MaxChunkCount),
-	// buffChunks_inds(renderer->device, MaxChunkCount)
-
+TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph, 
+	ResourceManager* resourceMan, VulkanRenderer* renderer)
+	: protoGraph(protoGraph), renderer(renderer), chunkBuffer(renderer, 512, this)
 {
 	if (settings.maxLevels < 0) {
-		maxNumQuads = 1;
-	}
-	else {
-		maxNumQuads = 1 + 16 + 50 * settings.maxLevels; //with current quad density this is the average upper bound
-											   //maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads
+		settings.maxLevels = 0;
 	}
 	LoadSettingsFromFile();
-	//terrainQuadPool = std::make_shared<MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>>();
-	//poolMesh_vertices = MemoryPool<TerrainMeshVertices>(500);
-	//poolMesh_indices = MemoryPool<TerrainMeshIndices(500);
-
-
-
-}
-
-TerrainManager::~TerrainManager()
-{
-}
-
-void TerrainManager::StartWorkerThreads() {
-	isCreatingTerrain = true;
-	for (int i = 0; i < WorkerThreads; i++) {
-		terrainCreationWorkers.push_back(std::thread(TerrainCreationWorker, this));
-	}
-}
-
-void TerrainManager::StopWorkerThreads() {
-	isCreatingTerrain = false;
-	workerConditionVariable.notify_all();
-
-	for (auto& thread : terrainCreationWorkers) {
-		thread.join();
-	}
-	terrainCreationWorkers.clear();
-}
-
-void TerrainManager::SetupResources(ResourceManager* resourceMan, VulkanRenderer* renderer) {
-
-	this->renderer = renderer;
-
-	chunkBuffer = std::make_unique<TerrainChunkBuffer>(renderer, 512, this);
-
+	
 	for (auto& item : terrainTextureFileNames) {
 		terrainTextureHandles.push_back(
 			TerrainTextureNamedHandle(
@@ -265,13 +226,53 @@ void TerrainManager::SetupResources(ResourceManager* resourceMan, VulkanRenderer
 
 }
 
+TerrainManager::~TerrainManager()
+{
+	CleanUpTerrain();
+
+	CleanUpResources();
+}
+
+void TerrainManager::StartWorkerThreads() {
+	isCreatingTerrain = true;
+	for (int i = 0; i < WorkerThreads; i++) {
+		terrainCreationWorkers.push_back(std::thread(TerrainCreationWorker, this));
+	}
+}
+
+void TerrainManager::StopWorkerThreads() {
+	isCreatingTerrain = false;
+	workerConditionVariable.notify_all();
+
+	for (auto& thread : terrainCreationWorkers) {
+		thread.join();
+	}
+	terrainCreationWorkers.clear();
+}
+
 void TerrainManager::CleanUpResources() {
+
 	terrainVulkanTextureArray->destroy();
 
 	instancedWaters->CleanUp();
+}
 
-	//buffChunks_vets.CleanUp();
-	//buffChunks_inds.CleanUp();
+void TerrainManager::CleanUpTerrain() {
+
+	StopWorkerThreads();
+	terrains.clear();
+	//waters.clear();
+	//instancedWaters->RemoveAllInstances();
+	//instancedWaters->CleanUp();
+	activeTerrains.clear();
+
+
+	//delete terrainQuadPool;
+	//terrainQuadPool = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
+}
+
+void TerrainManager::RecreateTerrain() {
+	recreateTerrain = true;
 }
 
 void TerrainManager::GenerateTerrain(ResourceManager* resourceMan, VulkanRenderer* renderer, std::shared_ptr<Camera> camera) {
@@ -446,7 +447,7 @@ void TerrainManager::UpdateTerrains(ResourceManager* resourceMan,
 
 	instancedWaters->UploadData();
 
-	chunkBuffer->UpdateChunks();
+	chunkBuffer.UpdateChunks();
 }
 
 void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe) {
@@ -544,7 +545,7 @@ void TerrainManager::UpdateTerrainGUI() {
 		}
 		ImGui::Text("Terrain Count %lu", terrains.size());
 		ImGui::Text("Generating %i Terrains", terrainCreationWork.size());
-		ImGui::Text("Quad Count %i", chunkBuffer->ActiveQuadCount());
+		ImGui::Text("Quad Count %i", chunkBuffer.ActiveQuadCount());
 		ImGui::Text("All terrains update Time: %lu(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
 		for (auto& ter : terrains)
 		{
@@ -612,23 +613,5 @@ void TerrainManager::DrawTerrainTextureViewer() {
 	}
 	ImGui::End();
 
-}
-
-void TerrainManager::RecreateTerrain() {
-	recreateTerrain = true;
-}
-
-void TerrainManager::CleanUpTerrain() {
-
-	StopWorkerThreads();
-	terrains.clear();
-	//waters.clear();
-	//instancedWaters->RemoveAllInstances();
-	//instancedWaters->CleanUp();
-	activeTerrains.clear();
-
-
-	//delete terrainQuadPool;
-	//terrainQuadPool = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
 }
 

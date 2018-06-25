@@ -24,23 +24,6 @@
 #include "Texture.h"
 #include "Descriptor.h"
 
-////Custom Rendering Implementation
-//class RenderableCustomImpl {
-//public:
-//	RenderableCustomImpl(std::function<void(VkCommandBuffer cmdBuff, bool wireframe)> callable);
-//	void WriteToCmdBuffer(VkCommandBuffer cmdBuff, bool wireframe);
-//
-//};
-//
-//class RenderableGameObject {
-//public:
-//	RenderableGameObject(std::shared_ptr<ManagedVulkanPipeline> pipeline, std::shared_ptr<VulkanModel> model);
-//	void WriteToCmdBuffer(VkCommandBuffer cmdBuff, bool wireframe);
-//private:
-//	std::shared_ptr<ManagedVulkanPipeline> mvp;
-//	std::shared_ptr<VulkanModel> model;
-//};
-
 class Scene;
 
 class RenderSettings {

@@ -99,9 +99,9 @@ Scene::Scene(ResourceManager* resourceMan,
 	//pbr_test->usePBR = true;
 
 
-	terrainManager = std::make_unique<TerrainManager>(graph);
+	terrainManager = std::make_unique<TerrainManager>(graph, resourceMan, renderer);
 
-	terrainManager->SetupResources(resourceMan, renderer);
+	//terrainManager->SetupResources(resourceMan, renderer);
 	//terrainManager->GenerateTerrain(resourceMan, renderer, camera);
 
 	//treesInstanced = std::make_shared<InstancedSceneObject>(renderer);
@@ -137,9 +137,6 @@ Scene::~Scene()
 	for (auto& obj : gameObjects) {
 		obj->CleanUp();
 	}
-
-	terrainManager->CleanUpResources();
-	terrainManager->CleanUpTerrain();
 
 	//treesInstanced->CleanUp();
 

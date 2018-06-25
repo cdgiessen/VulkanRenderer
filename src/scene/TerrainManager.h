@@ -83,7 +83,7 @@ public:
 		allocated,
 		written,
 		ready,
-	} state;
+	};
 
 	TerrainChunkBuffer(VulkanRenderer* renderer, int count,
 		TerrainManager* man);
@@ -96,7 +96,6 @@ public:
 
 	int ActiveQuadCount();
 
-	//TerrainQuad* GetChunk(int index);
 	ChunkState GetChunkState(int index);
 	void SetChunkWritten(int index);
 
@@ -126,11 +125,11 @@ private:
 class TerrainManager
 {
 public:
-	TerrainManager(InternalGraph::GraphPrototype& protoGraph);
+	TerrainManager(InternalGraph::GraphPrototype& protoGraph, ResourceManager* resourceMan, VulkanRenderer* renderer);
 	~TerrainManager();
 
-	void SetupResources(ResourceManager* resourceMan, VulkanRenderer* renderer);
 	void CleanUpResources();
+	void CleanUpTerrain();
 
 	void GenerateTerrain(ResourceManager* resourceMan, VulkanRenderer* renderer, std::shared_ptr<Camera> camera);
 
@@ -141,15 +140,13 @@ public:
 	void UpdateTerrainGUI();
 	void DrawTerrainTextureViewer();
 
-	void CleanUpTerrain();
-
 	float GetTerrainHeightAtLocation(float x, float z);
 
 	void RecreateTerrain();
 
 	VulkanRenderer* renderer;
 
-	std::unique_ptr<TerrainChunkBuffer> chunkBuffer;
+	TerrainChunkBuffer chunkBuffer;
 
 	std::mutex workerMutex;
 	std::condition_variable workerConditionVariable;
@@ -171,8 +168,7 @@ private:
 	void StartWorkerThreads();
 
 	InternalGraph::GraphPrototype& protoGraph;
-	//NewNodeGraph::TerGenNodeGraph& nodeGraph;
-
+	
 	std::unique_ptr<InstancedSceneObject> instancedWaters;
 
 	std::vector<std::shared_ptr<Water>> waters;
@@ -187,8 +183,7 @@ private:
 	std::shared_ptr<VulkanTexture2D> WaterVulkanTexture;
 
 	std::vector<std::thread> terrainCreationWorkers;
-	std::vector<std::thread> chunkCreationWorkers;
-
+	
 	GeneralSettings settings;
 	bool recreateTerrain = false;
 	float nextTerrainWidth = 1000;

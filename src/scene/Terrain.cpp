@@ -158,9 +158,14 @@ Terrain::~Terrain() {
 
 void Terrain::CleanUp()
 {
-	UnSubdivide(rootQuad);
-	quadMap.at(rootQuad).CleanUp();
-	numQuads--;
+	for(auto& pair : quadMap){
+		pair.second.CleanUp();
+	}
+
+	//UnSubdivide(rootQuad);
+	//quadMap.at(rootQuad).CleanUp();
+	//numQuads--;
+
 	quadMap.clear();
 	//rootQuad->RecursiveCleanUp();
 	//for (auto& quad : quadHandles) {
