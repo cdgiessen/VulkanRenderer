@@ -315,7 +315,7 @@ void VulkanRenderer::BuildCommandBuffers(VkCommandBuffer cmdBuf) {
 	ImGui_ImplGlfwVulkan_Render(cmdBuf);
 
 	renderPass->EndRenderPass(cmdBuf);
-	
+		
 
 }
 

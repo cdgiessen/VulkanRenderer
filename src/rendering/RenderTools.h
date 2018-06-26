@@ -38,6 +38,8 @@ void SetMemoryBarrier(
 	VkPipelineStageFlags dstStageFlags
 );
 
+VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDeviceProperties properties);
+
 /** @brief Returns an error code as a string */
 std::string errorString(const VkResult errorCode);
 
