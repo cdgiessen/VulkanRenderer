@@ -205,17 +205,17 @@ void InstancedSceneObject::SetupPipeline()
 	pipeMan.SetVertexInput(mvp, bindingDescriptions, attributeDescriptions);
 
 	pipeMan.BuildPipelineLayout(mvp);
-	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
+	pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
 
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
+	pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
 
 	//pipeMan.CleanShaderResources(mvp);
 	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.vert.spv"));
 	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.frag.spv"));
 	//pipeMan.SetGeometryShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.geom.spv"));
 	//
-	//pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
+	//pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
 	//pipeMan.CleanShaderResources(mvp);
 
 }

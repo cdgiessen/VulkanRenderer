@@ -15,7 +15,6 @@
 
 #include "RenderTools.h"
 #include "RenderStructs.h"
-#include "Initializers.h"
 #include "Device.h"
 #include "Buffer.h"
 #include "Pipeline.h"
@@ -23,6 +22,7 @@
 #include "SwapChain.h"
 #include "Texture.h"
 #include "Descriptor.h"
+#include "RenderPass.h"
 
 class Scene;
 
@@ -107,7 +107,7 @@ public:
 
 	VulkanDevice device;
 	VulkanSwapChain vulkanSwapChain;
-	VkRenderPass renderPass;
+	std::unique_ptr<RenderPass> renderPass;
 
 	ShaderManager shaderManager;
 	VulkanPipeline pipelineManager;

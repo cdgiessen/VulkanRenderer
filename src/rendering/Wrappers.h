@@ -213,7 +213,8 @@ void CommandBufferWorkQueue<WorkType>::AddWork(WorkType &&data) {
 	condVar.notify_one();
 }
 
-template <typename WorkType> bool CommandBufferWorkQueue<WorkType>::HasWork() {
+template <typename WorkType> 
+bool CommandBufferWorkQueue<WorkType>::HasWork() {
 	return workQueue.empty();
 }
 

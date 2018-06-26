@@ -98,7 +98,7 @@ void Skybox::SetupPipeline()
 	pipeMan.SetDescriptorSetLayout(mvp, layouts);
 
 	pipeMan.BuildPipelineLayout(mvp);
-	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
+	pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
 
 	//pipeMan.CleanShaderResources(mvp);
 	

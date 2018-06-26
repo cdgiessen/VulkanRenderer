@@ -192,12 +192,12 @@ void GameObject::SetupPipeline()
 	//pipeMan.SetModelPushConstant(mvp, pushConstantRange);
 
 	pipeMan.BuildPipelineLayout(mvp);
-	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
+	pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
 
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE,
 		VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE,
 		1.0f, VK_TRUE);
-	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
+	pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
 
 	ShaderModuleSet pbr_geom_set(pbr_vert, pbr_frag, geom, {}, {});
 	ShaderModuleSet go_geom_set(go_vert, go_frag, geom, {}, {});
@@ -207,7 +207,7 @@ void GameObject::SetupPipeline()
 	else
 		pipeMan.SetShaderModuleSet(mvp, go_geom_set);
 
-	pipeMan.BuildPipeline(mvp, renderer->renderPass, 0);
+	pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
 	// pipeMan.CleanShaderResources(mvp);
 }
 

@@ -248,6 +248,10 @@ VkPhysicalDeviceFeatures VulkanDevice::QueryDeviceFeatures() {
 	if (physical_device_features.tessellationShader)
 		deviceFeatures.tessellationShader = VK_TRUE;
 
+	if (physical_device_features.sampleRateShading) 
+		deviceFeatures.sampleRateShading = VK_TRUE;
+	
+
 	return deviceFeatures;
 }
 
