@@ -98,8 +98,8 @@ Scene::Scene(ResourceManager* resourceMan,
 	//std::shared_ptr<GameObject> pbr_test = std::make_shared<GameObject>();
 	//pbr_test->usePBR = true;
 
-
-	terrainManager = std::make_unique<TerrainManager>(graph, resourceMan, renderer);
+	//UNTIL FURTHER NOTICE!
+	//terrainManager = std::make_unique<TerrainManager>(graph, resourceMan, renderer);
 
 	//terrainManager->SetupResources(resourceMan, renderer);
 	//terrainManager->GenerateTerrain(resourceMan, renderer, camera);
@@ -222,7 +222,8 @@ void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 
 	//treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
 
-	terrainManager->RenderTerrain(commandBuffer, wireframe);
+	if (terrainManager != nullptr)
+		terrainManager->RenderTerrain(commandBuffer, wireframe);
 
 	skybox->WriteToCommandBuffer(commandBuffer);
 }
@@ -255,8 +256,10 @@ void Scene::DrawSkySettingsGui() {
 }
 
 void Scene::UpdateSceneGUI() {
-	terrainManager->UpdateTerrainGUI();
-	terrainManager->DrawTerrainTextureViewer();
+	if (terrainManager != nullptr){
+		terrainManager->UpdateTerrainGUI();
+		terrainManager->DrawTerrainTextureViewer();
+	}
 
 	DrawSkySettingsGui();
 	bool value;
