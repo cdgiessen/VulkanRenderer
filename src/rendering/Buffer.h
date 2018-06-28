@@ -44,9 +44,9 @@ public:
 	//Give the desired prperties (usage specifiers), and optionally the allocation flags
 	//if memToCopy is not a nullprt, then it will attempt to copy the data at memToCopy into the
 	//newly created buffer 
-	void SetupBuffer(VkDeviceSize bufferSize, 
-		VkBufferUsageFlags bufferUsage, VmaMemoryUsage allocUsage, 
-		VmaAllocationCreateFlags allocFlags = (VmaAllocationCreateFlagBits)(0), 
+	void SetupBuffer(VkDeviceSize bufferSize,
+		VkBufferUsageFlags bufferUsage, VmaMemoryUsage allocUsage,
+		VmaAllocationCreateFlags allocFlags = (VmaAllocationCreateFlagBits)(0),
 		void* memToCopy = nullptr);
 
 protected:
@@ -75,7 +75,6 @@ public:
 	VulkanBufferUniformDynamic(VulkanDevice& device);
 
 	void CreateDynamicUniformBuffer(uint32_t count, VkDeviceSize size);
-
 };
 
 class VulkanBufferStagingResource : public VulkanBuffer {

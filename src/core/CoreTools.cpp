@@ -6,11 +6,11 @@ std::string executableFilePath;
 
 std::string GetFilePathFromFullPath(std::string file) {
 	std::string path = file;
-	#ifdef _WIN32
+#ifdef _WIN32
 	auto pos = path.rfind("\\");
-	#else
+#else
 	auto pos = path.rfind("/");
-	#endif // _WIN32
+#endif // _WIN32
 	path.erase(pos, path.size() - pos);
 
 	return path;

@@ -57,12 +57,6 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 	shaderManager(device),
 	pipelineManager(device),
 	textureManager(device),
-	globalVariableBuffer(device),
-	cameraDataBuffer(device),
-	sunBuffer(device),
-	pointLightsBuffer(device),
-	spotLightsBuffer(device),
-	entityPositions(device),
 	graphicsPrimaryCommandPool(device)
 
 {
@@ -111,11 +105,11 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 VulkanRenderer::~VulkanRenderer() {
 	ImGui_ImplGlfwVulkan_Shutdown();
 
-	globalVariableBuffer.CleanBuffer();
-	cameraDataBuffer.CleanBuffer();
-	sunBuffer.CleanBuffer();
-	pointLightsBuffer.CleanBuffer();
-	spotLightsBuffer.CleanBuffer();
+	globalVariableBuffer->CleanBuffer();
+	cameraDataBuffer->CleanBuffer();
+	sunBuffer->CleanBuffer();
+	pointLightsBuffer->CleanBuffer();
+	spotLightsBuffer->CleanBuffer();
 
 	vkDestroyPipelineLayout(device.device, frameDataDescriptorLayout, nullptr);
 	vkDestroyPipelineLayout(device.device, lightingDescriptorLayout, nullptr);
@@ -154,13 +148,13 @@ void VulkanRenderer::UpdateRenderResources(
 	GlobalData globalData, CameraData cameraData,
 	std::vector<DirectionalLight> directionalLights,
 	std::vector<PointLight> pointLights, std::vector<SpotLight> spotLights) {
-	globalVariableBuffer.CopyToBuffer(&globalData, sizeof(GlobalData));
-	cameraDataBuffer.CopyToBuffer(&cameraData, sizeof(CameraData));
-	sunBuffer.CopyToBuffer(directionalLights.data(),
+	globalVariableBuffer->CopyToBuffer(&globalData, sizeof(GlobalData));
+	cameraDataBuffer->CopyToBuffer(&cameraData, sizeof(CameraData));
+	sunBuffer->CopyToBuffer(directionalLights.data(),
 		directionalLights.size() * sizeof(DirectionalLight));
-	pointLightsBuffer.CopyToBuffer(pointLights.data(),
+	pointLightsBuffer->CopyToBuffer(pointLights.data(),
 		pointLights.size() * sizeof(PointLight));
-	spotLightsBuffer.CopyToBuffer(spotLights.data(),
+	spotLightsBuffer->CopyToBuffer(spotLights.data(),
 		spotLights.size() * sizeof(SpotLight));
 }
 
@@ -217,7 +211,7 @@ void VulkanRenderer::RecreateSwapChain() {
 	depthBuffer->destroy();
 
 	renderPass.reset();
-	
+
 	frameIndex = 0;
 	frameObjects.clear();
 	vulkanSwapChain.RecreateSwapChain(device.window);
@@ -288,7 +282,7 @@ void VulkanRenderer::BuildCommandBuffers(VkCommandBuffer cmdBuf) {
 		vulkanSwapChain.swapChainFramebuffers[frameIndex], { 0, 0 },
 		vulkanSwapChain.swapChainExtent, GetFramebufferClearValues(),
 		VK_SUBPASS_CONTENTS_INLINE);
-	
+
 
 	vkCmdBindDescriptorSets(
 		cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -315,7 +309,7 @@ void VulkanRenderer::BuildCommandBuffers(VkCommandBuffer cmdBuf) {
 	ImGui_ImplGlfwVulkan_Render(cmdBuf);
 
 	renderPass->EndRenderPass(cmdBuf);
-		
+
 
 }
 
@@ -374,15 +368,42 @@ void VulkanRenderer::SubmitFrame(int curFrameIndex) {
 }
 
 void VulkanRenderer::PrepareResources() {
-	globalVariableBuffer.CreateUniformBuffer(sizeof(GlobalData));
-	cameraDataBuffer.CreateUniformBuffer(sizeof(CameraData) * settings.cameraCount);
-	sunBuffer.CreateUniformBuffer(sizeof(DirectionalLight) *
+
+	globalVariableBuffer = std::make_unique<VulkanBufferUniform>(device);
+	cameraDataBuffer = std::make_unique<VulkanBufferUniform>(device);
+	sunBuffer = std::make_unique<VulkanBufferUniform>(device);
+	pointLightsBuffer = std::make_unique<VulkanBufferUniform>(device);
+	spotLightsBuffer = std::make_unique<VulkanBufferUniform>(device);
+
+	globalVariableBuffer->CreateUniformBuffer(sizeof(GlobalData));
+	cameraDataBuffer->CreateUniformBuffer(sizeof(CameraData) * settings.cameraCount);
+	sunBuffer->CreateUniformBuffer(sizeof(DirectionalLight) *
 		settings.directionalLightCount);
-	pointLightsBuffer.CreateUniformBuffer(sizeof(PointLight) * settings.pointLightCount);
-	spotLightsBuffer.CreateUniformBuffer(sizeof(SpotLight) * settings.spotLightCount);
+	pointLightsBuffer->CreateUniformBuffer(sizeof(PointLight) * settings.pointLightCount);
+	spotLightsBuffer->CreateUniformBuffer(sizeof(SpotLight) * settings.spotLightCount);
 
 	SetupGlobalDescriptorSet();
 	SetupLightingDescriptorSet();
+
+
+	dynamicTransformBuffer = std::make_unique<VulkanBufferUniformDynamic>(device);
+	dynamicTransformBuffer->CreateDynamicUniformBuffer(MaxTransformCount, sizeof(TransformMatrixData));
+
+	dynamicTransformDescriptor = std::make_unique<VulkanDescriptor>(device);
+
+	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
+	dynamicTransformDescriptor->SetupLayout(m_bindings);
+
+	std::vector<DescriptorPoolSize> poolSizes;
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1));
+	dynamicTransformDescriptor->SetupPool(poolSizes);
+
+	dynamicTransformDescriptorSet = dynamicTransformDescriptor->CreateDescriptorSet();
+
+	std::vector<DescriptorUse> writes;
+	writes.push_back(DescriptorUse(0, 1, dynamicTransformBuffer->resource));
+	dynamicTransformDescriptor->UpdateDescriptorSet(dynamicTransformDescriptorSet, writes);
 }
 
 std::shared_ptr<VulkanDescriptor> VulkanRenderer::GetVulkanDescriptor() {
@@ -400,7 +421,7 @@ void VulkanRenderer::AddGlobalLayouts(
 
 
 void VulkanRenderer::SetupGlobalDescriptorSet() {
-	frameDataDescriptor = GetVulkanDescriptor();
+	frameDataDescriptor = std::make_unique<VulkanDescriptor>(device);
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(
@@ -417,8 +438,8 @@ void VulkanRenderer::SetupGlobalDescriptorSet() {
 	frameDataDescriptorSet = frameDataDescriptor->CreateDescriptorSet();
 
 	std::vector<DescriptorUse> writes;
-	writes.push_back(DescriptorUse(0, 1, globalVariableBuffer.resource));
-	writes.push_back(DescriptorUse(1, 1, cameraDataBuffer.resource));
+	writes.push_back(DescriptorUse(0, 1, globalVariableBuffer->resource));
+	writes.push_back(DescriptorUse(1, 1, cameraDataBuffer->resource));
 	frameDataDescriptor->UpdateDescriptorSet(frameDataDescriptorSet, writes);
 
 	auto desLayout = frameDataDescriptor->GetLayout();
@@ -432,7 +453,7 @@ void VulkanRenderer::SetupGlobalDescriptorSet() {
 }
 
 void VulkanRenderer::SetupLightingDescriptorSet() {
-	lightingDescriptor = GetVulkanDescriptor();
+	lightingDescriptor = std::make_unique<VulkanDescriptor>(device);
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(
@@ -452,9 +473,9 @@ void VulkanRenderer::SetupLightingDescriptorSet() {
 	lightingDescriptorSet = lightingDescriptor->CreateDescriptorSet();
 
 	std::vector<DescriptorUse> writes;
-	writes.push_back(DescriptorUse(0, 1, sunBuffer.resource));
-	writes.push_back(DescriptorUse(1, 1, pointLightsBuffer.resource));
-	writes.push_back(DescriptorUse(2, 1, spotLightsBuffer.resource));
+	writes.push_back(DescriptorUse(0, 1, sunBuffer->resource));
+	writes.push_back(DescriptorUse(1, 1, pointLightsBuffer->resource));
+	writes.push_back(DescriptorUse(2, 1, spotLightsBuffer->resource));
 	lightingDescriptor->UpdateDescriptorSet(lightingDescriptorSet, writes);
 
 	std::vector<VkDescriptorSetLayout> layouts;

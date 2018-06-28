@@ -119,14 +119,14 @@ private:
 	void SetupGlobalDescriptorSet();
 	void SetupLightingDescriptorSet();
 
-	VulkanBufferUniform globalVariableBuffer;
-	VulkanBufferUniform cameraDataBuffer;
-	VulkanBufferUniform sunBuffer;
-	VulkanBufferUniform pointLightsBuffer;
-	VulkanBufferUniform spotLightsBuffer;
+	std::unique_ptr<VulkanBufferUniform> globalVariableBuffer;
+	std::unique_ptr<VulkanBufferUniform> cameraDataBuffer;
+	std::unique_ptr<VulkanBufferUniform> sunBuffer;
+	std::unique_ptr<VulkanBufferUniform> pointLightsBuffer;
+	std::unique_ptr<VulkanBufferUniform> spotLightsBuffer;
 
-	std::shared_ptr<VulkanDescriptor> frameDataDescriptor;
-	std::shared_ptr<VulkanDescriptor> lightingDescriptor;
+	std::unique_ptr<VulkanDescriptor> frameDataDescriptor;
+	std::unique_ptr<VulkanDescriptor> lightingDescriptor;
 
 	DescriptorSet frameDataDescriptorSet;
 	DescriptorSet lightingDescriptorSet;
@@ -134,8 +134,9 @@ private:
 	VkPipelineLayout frameDataDescriptorLayout;
 	VkPipelineLayout lightingDescriptorLayout;
 
-
-	VulkanBufferUniformDynamic entityPositions;
+	std::unique_ptr<VulkanDescriptor> dynamicTransformDescriptor;
+	DescriptorSet dynamicTransformDescriptorSet;
+	std::unique_ptr<VulkanBufferUniformDynamic> dynamicTransformBuffer;
 
 	std::unique_ptr<VulkanTextureDepthBuffer> depthBuffer;
 

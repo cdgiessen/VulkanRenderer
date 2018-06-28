@@ -44,3 +44,19 @@ private:
 
 	std::chrono::nanoseconds elapsedTime;
 };
+
+class Job {
+public:
+
+private:
+
+};
+
+class Task {
+public:
+	void AddJob(Job&& newJob);
+
+	void operator()();
+private:
+	std::vector<Job> jobs;
+};

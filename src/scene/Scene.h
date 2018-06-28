@@ -16,6 +16,8 @@
 #include "TerrainManager.h"
 #include "InstancedSceneObject.h"
 
+#include "Transform.h"
+
 //#include <gltf2\glTF2.hpp>
 
 struct SkySettings {
@@ -32,7 +34,7 @@ struct SkySettings {
 class Scene
 {
 public:
-	Scene(ResourceManager* resourceMan,  VulkanRenderer* renderer, InternalGraph::GraphPrototype& graph);
+	Scene(ResourceManager* resourceMan, VulkanRenderer* renderer, InternalGraph::GraphPrototype& graph);
 	~Scene();
 
 	void UpdateScene(ResourceManager* resourceMan, TimeManager* timeManager);
@@ -45,8 +47,10 @@ public:
 	bool walkOnGround = false;
 private:
 
-	VulkanRenderer* renderer;
+	VulkanRenderer * renderer;
 	ResourceManager* resourceMan;
+
+	TransformManager transformManager;
 
 	std::vector<DirectionalLight> directionalLights;
 	std::vector<PointLight> pointLights;

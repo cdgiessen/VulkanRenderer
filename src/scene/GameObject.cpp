@@ -72,13 +72,16 @@ void GameObject::SetupModel()
 }
 
 void GameObject::SetupMaterial() {
-	
+
 	mat->AddTexture(gameObjectVulkanTexture);
 	mat->Setup();
 }
 
 void GameObject::SetupDescriptor()
 {
+
+
+
 	descriptor = renderer->GetVulkanDescriptor();
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;

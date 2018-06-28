@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <memory>
-#include <functional>
 
 #include <glm/glm.hpp>
 
@@ -71,6 +70,11 @@ struct  SpotLight {
 };
 
 /* Model and Normal matrices */
+
+struct TransformMatrixData {
+	glm::mat4 model;
+	glm::mat4 normal;
+};
 
 struct ModelBufferObject {
 	glm::mat4 model;
