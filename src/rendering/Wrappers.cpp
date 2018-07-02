@@ -280,6 +280,40 @@ VkBool32 CommandPool::SubmitPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFe
 	return VK_TRUE;
 }
 
+
+void CommandPool::WriteToBuffer(VkCommandBuffer buf, std::function<void(VkCommandBuffer)> cmds)
+{
+	std::lock_guard<std::mutex> lock(poolLock);
+	cmds(buf);
+}
+
+CommandBuffer::CommandBuffer(VulkanDevice device, CommandPool& pool):
+	fence(device), pool(pool),
+	buf(pool.GetOneTimeUseCommandBuffer())
+{
+
+}
+
+void CommandBuffer::CleanUp(){
+	pool.FreeCommandBuffer(buf);
+}
+
+void CommandBuffer::Begin(){
+	pool.BeginBufferRecording(buf);
+}
+void CommandBuffer::End(){
+	pool.EndBufferRecording(buf);
+}
+void CommandBuffer::Submit(std::vector<VulkanSemaphore>& waitSemaphores, 
+	std::vector<VulkanSemaphore>& signalSemaphores){
+	pool.SubmitOneTimeUseCommandBuffer(buf, fence.Get());
+}
+
+void CommandBuffer::Write(std::function<void(VkCommandBuffer)> cmds){
+	pool.WriteToBuffer(buf, cmds);
+}
+
+
 template <> void CommandBufferWorker<CommandBufferWork>::Work() {
 
 	while (keepWorking)
@@ -297,13 +331,6 @@ template <> void CommandBufferWorker<CommandBufferWork>::Work() {
 			pos_work->work(buf);
 
 			VulkanFence fence(device);
-
-			//std::vector<VkSemaphore> waits;
-			//for (auto& w : pos_work->waitSemaphores)
-			//	waits.push_back(w.Get());
-			//std::vector<VkSemaphore> signals;
-			//for (auto& s : pos_work->signalSemaphores)
-			//	signals.push_back(s.Get());
 
 			pool.SubmitCommandBuffer(buf, fence, pos_work->waitSemaphores, pos_work->signalSemaphores);
 
@@ -339,13 +366,6 @@ template <> void CommandBufferWorker<TransferCommandWork>::Work() {
 			pos_work->work(buf);
 
 			VulkanFence fence(device);
-
-			//std::vector<VkSemaphore> waits;
-			//for (auto& w : pos_work->waitSemaphores)
-			//	waits.push_back(w.Get());
-			//std::vector<VkSemaphore> signals;
-			//for (auto& s : pos_work->signalSemaphores)
-			//	signals.push_back(s.Get());
 
 			pool.SubmitCommandBuffer(buf, fence, pos_work->waitSemaphores, pos_work->signalSemaphores);
 

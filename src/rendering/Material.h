@@ -16,8 +16,21 @@
 #include "Shader.h"
 #include "RenderStructs.h"
 
-//VkShaderModule loadShaderModule(VkDevice device, const std::string& codePath);
+struct Phong_Material {
+	glm::vec4 color = glm::vec4(0.5, 0.5, 0.5, 1.0);
+	float diffuse = 0.8f;
+	float specular = 0.2f;
+	float reflectivity = 4;
+	float padding = 0;
+};
 
+struct PBR_Mat_Value {
+	glm::vec3 albedo = glm::vec3(0.5, 0.5, 0.5);
+	float metallic = 0.1f;
+	float roughness = 0.5f;
+	float ao = 1;
+	glm::vec3 emmisive = glm::vec3(0.0, 0.0, 0.0);
+};
 
 using MaterialOptions = std::variant<Phong_Material, PBR_Mat_Value, PBR_Mat_Tex>;
 

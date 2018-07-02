@@ -118,12 +118,31 @@ public:
 	void EndBufferRecording(VkCommandBuffer buf);
 	void FreeCommandBuffer(VkCommandBuffer buf);
 
+	void WriteToBuffer(VkCommandBuffer buf, std::function<void(VkCommandBuffer)> cmd);
+
 private:
 	VulkanDevice & device;
 	std::mutex poolLock;
 	VkCommandPool commandPool;
 	CommandQueue* queue;
 
+};
+
+class CommandBuffer{
+private:
+	CommandBuffer(VulkanDevice device, CommandPool& pool);
+	void CleanUp();
+
+	void Begin();
+	void End();
+
+	void Write(std::function<void(VkCommandBuffer)> cmds);
+
+	void Submit(std::vector<VulkanSemaphore>& waitSemaphores, std::vector<VulkanSemaphore>& signalSemaphores);
+public:
+	CommandPool& pool;
+	VkCommandBuffer buf;
+	VulkanFence fence;
 };
 
 struct CommandBufferWork {
