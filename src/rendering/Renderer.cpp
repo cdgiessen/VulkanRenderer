@@ -166,6 +166,7 @@ void VulkanRenderer::RenderFrame() {
 	for (auto& work : finishQueue) {
 		if (work.cmdBuf.CheckFence() && work.cleanUp) {
 			work.cleanUp();
+			work.cmdBuf.CleanUp();
 		}
 	}
 	finishQueue.clear();

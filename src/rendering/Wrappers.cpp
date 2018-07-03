@@ -42,15 +42,16 @@ std::vector<VkFence> CreateFenceArray(std::vector<VulkanFence>& fences)
 	return outFences;
 }
 
-VulkanSemaphore::VulkanSemaphore(const VulkanDevice& device) {
+VulkanSemaphore::VulkanSemaphore(VulkanDevice& device)
+	:device(&device) {
 	VkSemaphoreCreateInfo semaphoreInfo = initializers::semaphoreCreateInfo();
 
 	VK_CHECK_RESULT(vkCreateSemaphore(device.device, &semaphoreInfo, nullptr, &semaphore));
 
 }
 
-void VulkanSemaphore::CleanUp(const VulkanDevice & device) {
-	vkDestroySemaphore(device.device, semaphore, nullptr);
+void VulkanSemaphore::CleanUp() {
+	vkDestroySemaphore(device->device, semaphore, nullptr);
 }
 
 VkSemaphore VulkanSemaphore::Get() {
@@ -302,6 +303,12 @@ void CommandBuffer::Create() {
 
 void CommandBuffer::CleanUp() {
 	pool.FreeCommandBuffer(buf);
+	for (auto& sem : waitSemaphores) {
+		sem.CleanUp();
+	}
+	for (auto& sem : waitSemaphores) {
+		sem.CleanUp();
+	}
 }
 
 void CommandBuffer::Begin() {
@@ -448,8 +455,8 @@ FrameObject::FrameObject(VulkanDevice& device, int frameIndex) :
 
 FrameObject::~FrameObject() {
 	commandPool.CleanUp();
-	imageAvailSem.CleanUp(device);
-	renderFinishSem.CleanUp(device);
+	imageAvailSem.CleanUp();
+	renderFinishSem.CleanUp();
 }
 
 VkResult FrameObject::AquireNextSwapchainImage(VkSwapchainKHR swapchain) {

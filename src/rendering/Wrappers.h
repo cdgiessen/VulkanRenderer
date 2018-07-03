@@ -46,14 +46,15 @@ std::vector<VkFence> CreateFenceArray(std::vector<VulkanFence>& fences);
 
 class VulkanSemaphore {
 public:
-	VulkanSemaphore(const VulkanDevice& device);
+	VulkanSemaphore(VulkanDevice& device);
 
 	VkSemaphore Get();
 	VkSemaphore* GetPtr();
 
-	void CleanUp(const VulkanDevice & device);
+	void CleanUp();
 
 private:
+	VulkanDevice * device;
 	VkSemaphore semaphore;
 };
 

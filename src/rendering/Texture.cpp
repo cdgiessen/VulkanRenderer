@@ -297,6 +297,7 @@ void BeginTransferAndMipMapGenWork(
 
 		renderer.SubmitTransferWork(transferWork, [=]() {
 			CleanBuffersAndSignal({ buffer }, {}); }, {}, { sem });
+
 		renderer.SubmitGraphicsWork(mipMapGenWork, [=]() {
 			CleanBuffersAndSignal({}, { signal }); }, { sem }, {});
 
