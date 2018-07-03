@@ -287,105 +287,134 @@ void CommandPool::WriteToBuffer(VkCommandBuffer buf, std::function<void(VkComman
 	cmds(buf);
 }
 
-CommandBuffer::CommandBuffer(VulkanDevice device, CommandPool& pool):
-	fence(device), pool(pool),
-	buf(pool.GetOneTimeUseCommandBuffer())
+CommandBuffer::CommandBuffer(VulkanDevice& device, CommandPool& pool) :
+	fence(device), pool(pool)
 {
-
 }
 
-void CommandBuffer::CleanUp(){
+void CommandBuffer::Create() {
+	buf = pool.GetOneTimeUseCommandBuffer();
+}
+
+void CommandBuffer::CleanUp() {
 	pool.FreeCommandBuffer(buf);
 }
 
-void CommandBuffer::Begin(){
+void CommandBuffer::Begin() {
 	pool.BeginBufferRecording(buf);
 }
-void CommandBuffer::End(){
+void CommandBuffer::End() {
 	pool.EndBufferRecording(buf);
 }
-void CommandBuffer::Submit(std::vector<VulkanSemaphore>& waitSemaphores, 
-	std::vector<VulkanSemaphore>& signalSemaphores){
-	pool.SubmitOneTimeUseCommandBuffer(buf, fence.Get());
+void CommandBuffer::Submit() {
+	pool.SubmitCommandBuffer(buf, fence, waitSemaphores, signalSemaphores);
 }
 
-void CommandBuffer::Write(std::function<void(VkCommandBuffer)> cmds){
+void CommandBuffer::Write(std::function<void(VkCommandBuffer)> cmds) {
 	pool.WriteToBuffer(buf, cmds);
 }
 
-
-template <> void CommandBufferWorker<CommandBufferWork>::Work() {
-
-	while (keepWorking)
-	{
-		{
-			std::unique_lock<std::mutex> uniqueLock(workQueue.lock);
-			workQueue.condVar.wait(uniqueLock);
-		}
-
-		auto pos_work = workQueue.GetWork();
-		while (pos_work.has_value())
-		{
-			VkCommandBuffer buf = pool.GetOneTimeUseCommandBuffer();
-
-			pos_work->work(buf);
-
-			VulkanFence fence(device);
-
-			pool.SubmitCommandBuffer(buf, fence, pos_work->waitSemaphores, pos_work->signalSemaphores);
-
-			fence.WaitTillTrue();
-
-			for (auto& flag : pos_work->flags)
-				*flag = true;
-			for (auto& sem : pos_work->waitSemaphores)
-				sem.CleanUp(device);
-
-			pool.FreeCommandBuffer(buf);
-
-			fence.CleanUp();
-
-			pos_work = workQueue.GetWork();
-		}
-	}
+void CommandBuffer::AddSynchronization(std::vector<VulkanSemaphore> waitSemaphores,
+	std::vector<VulkanSemaphore> signalSemaphores) {
+	this->waitSemaphores = waitSemaphores;
+	this->signalSemaphores = signalSemaphores;
 }
 
-template <> void CommandBufferWorker<TransferCommandWork>::Work() {
+
+
+GraphicsCommandWorker::GraphicsCommandWorker(
+	VulkanDevice &device, CommandQueue *queue,
+	ConcurrentQueue<GraphicsWork>& workQueue,
+	ConcurrentQueue<GraphicsWork>& finishQueue,
+	bool startActive)
+	:
+	device(device), workQueue(workQueue), finishQueue(finishQueue)
+{
+	workingThread = std::thread{ &GraphicsCommandWorker::Work, this };
+}
+
+GraphicsCommandWorker::~GraphicsCommandWorker() {
+	//workingThread.join();
+}
+
+void GraphicsCommandWorker::CleanUp() {
+	StopWork();
+	workingThread.join();
+}
+
+void GraphicsCommandWorker::StopWork() {
+	keepWorking = false;
+}
+
+//template <> void GraphicsCommandWorker::Work() {
+//
+//	while (keepWorking)
+//	{
+//		{
+//			std::unique_lock<std::mutex> uniqueLock(workQueue.lock);
+//			workQueue.condVar.wait(uniqueLock);
+//		}
+//
+//		auto pos_work = workQueue.GetWork();
+//		while (pos_work.has_value())
+//		{
+//			VkCommandBuffer buf = pool.GetOneTimeUseCommandBuffer();
+//
+//			pos_work->work(buf);
+//
+//			VulkanFence fence(device);
+//
+//			pool.SubmitCommandBuffer(buf, fence, pos_work->waitSemaphores, pos_work->signalSemaphores);
+//
+//			fence.WaitTillTrue();
+//
+//			for (auto& flag : pos_work->flags)
+//				*flag = true;
+//			for (auto& sem : pos_work->waitSemaphores)
+//				sem.CleanUp(device);
+//
+//			pool.FreeCommandBuffer(buf);
+//
+//			fence.CleanUp();
+//
+//			pos_work = workQueue.GetWork();
+//		}
+//	}
+//}
+
+void GraphicsCommandWorker::Work() {
 	while (keepWorking)
 	{
-		{
-			std::unique_lock<std::mutex> uniqueLock(workQueue.lock);
-			workQueue.condVar.wait(uniqueLock);
-		}
 
-		auto pos_work = workQueue.GetWork();
+		workQueue.wait_on_value();
+
+		auto pos_work = workQueue.pop_if();
 		while (pos_work.has_value())
 		{
-			VkCommandBuffer buf = pool.GetOneTimeUseCommandBuffer();
+			pos_work->cmdBuf.Create();
+			pos_work->cmdBuf.Begin();
+			pos_work->cmdBuf.Write(pos_work->work);
+			pos_work->cmdBuf.End();
+			pos_work->cmdBuf.Submit();
 
-			pos_work->work(buf);
+			finishQueue.push_back(std::move(*pos_work));
+			//fence.WaitTillTrue();
 
-			VulkanFence fence(device);
-
-			pool.SubmitCommandBuffer(buf, fence, pos_work->waitSemaphores, pos_work->signalSemaphores);
-
-			fence.WaitTillTrue();
-
-			for (auto& flag : pos_work->flags)
+			/*for (auto& flag : pos_work->flags)
 				*flag = true;
 
 			for (auto& sem : pos_work->waitSemaphores)
 				sem.CleanUp(device);
 
 			for (auto& buffer : pos_work->buffersToClean)
-				buffer.CleanBuffer();
+				buffer.CleanBuffer();*/
 
 
-			fence.CleanUp();
+				//fence.CleanUp();
 
-			pool.FreeCommandBuffer(buf);
+				//pool.FreeCommandBuffer(buf);
 
-			pos_work = workQueue.GetWork();
+			pos_work.emplace(workQueue.pop_if());
 		}
 	}
 }

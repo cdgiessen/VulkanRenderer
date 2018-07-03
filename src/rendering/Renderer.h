@@ -28,8 +28,6 @@ class Scene;
 
 class RenderSettings {
 public:
-	int graphicsSetupWorkerCount = 1;
-	int transferWorkerCount = 1;
 
 	//Lighting?
 	int cameraCount = 1;
@@ -68,9 +66,6 @@ public:
 
 	//void ReloadRenderer(GLFWwindow *window);
 
-	void CreateWorkerThreads();
-	void DestroyWorkerThreads();
-
 	void RecreateSwapChain();
 
 	void CreateRenderPass();
@@ -92,8 +87,12 @@ public:
 	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat FindDepthFormat();
 
-	void SubmitGraphicsSetupWork(CommandBufferWork&& data);
-	void SubmitTransferWork(TransferCommandWork&& data);
+	void SubmitGraphicsWork(GraphicsWork&& data);
+	void SubmitGraphicsWork(
+		std::function<void(const VkCommandBuffer)> work,
+		std::function<void()> cleanUp,
+		std::vector<VulkanSemaphore> waitSemaphores,
+		std::vector<VulkanSemaphore> signalSemaphores);
 
 	VkCommandBuffer GetGraphicsCommandBuffer();
 	void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);
@@ -140,11 +139,18 @@ private:
 
 	std::unique_ptr<VulkanTextureDepthBuffer> depthBuffer;
 
-	CommandBufferWorkQueue<CommandBufferWork> graphicsSetupWorkQueue;
-	std::vector<std::unique_ptr<CommandBufferWorker<CommandBufferWork>>> graphicsSetupWorkers;
+	int workerThreadCount = 1;
 
-	CommandBufferWorkQueue<TransferCommandWork> transferWorkQueue;
-	std::vector<std::unique_ptr<CommandBufferWorker<TransferCommandWork>>> transferWorkers;
+	CommandPool asyncGraphicsPool;
+
+	ConcurrentQueue<GraphicsWork> workQueue;
+	ConcurrentQueue<GraphicsWork> finishQueue;
+	std::vector < std::unique_ptr<GraphicsCommandWorker>> graphicsWorkers;
+
+	//CommandBufferWorkQueue<CommandBufferWork> graphicsSetupWorkQueue;
+
+	//CommandBufferWorkQueue<TransferCommandWork> transferWorkQueue;
+	//std::vector<std::unique_ptr<CommandBufferWorker<TransferCommandWork>>> transferWorkers;
 
 	CommandPool graphicsPrimaryCommandPool;
 

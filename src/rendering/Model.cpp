@@ -2,7 +2,7 @@
 
 #include "Renderer.h"
 
-VulkanModel::VulkanModel(VulkanDevice &device): device(device),
+VulkanModel::VulkanModel(VulkanDevice &device) : device(device),
 vmaVertices(device), vmaIndicies(device)
 {
 	readyToUse = std::make_shared<bool>(false);
@@ -12,10 +12,10 @@ void CopyMeshBuffers(
 	const VkCommandBuffer copyCmd,
 	const VkBuffer vertexStagingBuffer,
 	const VkBuffer vertexBuffer,
-	const uint32_t vBufferSize, 
+	const uint32_t vBufferSize,
 	const VkBuffer indexStagingBuffer,
 	const VkBuffer indexBuffer,
-	const uint32_t iBufferSize) 
+	const uint32_t iBufferSize)
 {
 	VkBufferCopy copyRegion{};
 	copyRegion.size = vBufferSize;
@@ -35,37 +35,38 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	vertexElementCount = mesh->vertexElementCount;
 	vertexBuffer.resize(vertexCount * vertexElementCount);
 
-	if(vertexElementCount == 6){
+	if (vertexElementCount == 6) {
 		vertexCount = static_cast<uint32_t>(std::get<Vertices_PosNorm>(mesh->vertices).size());
 		vertexBuffer.resize(vertexCount * mesh->vertexElementCount);
 
 		for (int i = 0; i < (int)vertexCount; i++)
-			{
-				vertexBuffer[i * 6 + 0] = std::get<Vertices_PosNorm>(mesh->vertices)[i].pos[0];
-				vertexBuffer[i * 6 + 1] = std::get<Vertices_PosNorm>(mesh->vertices)[i].pos[1];
-				vertexBuffer[i * 6 + 2] = std::get<Vertices_PosNorm>(mesh->vertices)[i].pos[2];
-				vertexBuffer[i * 6 + 3] = std::get<Vertices_PosNorm>(mesh->vertices)[i].normal[0];
-				vertexBuffer[i * 6 + 4] = std::get<Vertices_PosNorm>(mesh->vertices)[i].normal[1];
-				vertexBuffer[i * 6 + 5] = std::get<Vertices_PosNorm>(mesh->vertices)[i].normal[2];
-			}
-		} 
-	else if (vertexElementCount == 8){
+		{
+			vertexBuffer[i * 6 + 0] = std::get<Vertices_PosNorm>(mesh->vertices)[i].pos[0];
+			vertexBuffer[i * 6 + 1] = std::get<Vertices_PosNorm>(mesh->vertices)[i].pos[1];
+			vertexBuffer[i * 6 + 2] = std::get<Vertices_PosNorm>(mesh->vertices)[i].pos[2];
+			vertexBuffer[i * 6 + 3] = std::get<Vertices_PosNorm>(mesh->vertices)[i].normal[0];
+			vertexBuffer[i * 6 + 4] = std::get<Vertices_PosNorm>(mesh->vertices)[i].normal[1];
+			vertexBuffer[i * 6 + 5] = std::get<Vertices_PosNorm>(mesh->vertices)[i].normal[2];
+		}
+	}
+	else if (vertexElementCount == 8) {
 		vertexCount = static_cast<uint32_t>(std::get<Vertices_PosNormTex>(mesh->vertices).size());
 		vertexBuffer.resize(vertexCount * mesh->vertexElementCount);
 
 		for (int i = 0; i < (int)vertexCount; i++)
-			{
-				vertexBuffer[i * 8 + 0] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].pos[0];
-				vertexBuffer[i * 8 + 1] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].pos[1];
-				vertexBuffer[i * 8 + 2] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].pos[2];
-				vertexBuffer[i * 8 + 3] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].normal[0];
-				vertexBuffer[i * 8 + 4] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].normal[1];
-				vertexBuffer[i * 8 + 5] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].normal[2];
-				vertexBuffer[i * 8 + 6] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].texCoord[0];
-				vertexBuffer[i * 8 + 7] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].texCoord[1];
-			}
-	
-	} else {
+		{
+			vertexBuffer[i * 8 + 0] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].pos[0];
+			vertexBuffer[i * 8 + 1] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].pos[1];
+			vertexBuffer[i * 8 + 2] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].pos[2];
+			vertexBuffer[i * 8 + 3] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].normal[0];
+			vertexBuffer[i * 8 + 4] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].normal[1];
+			vertexBuffer[i * 8 + 5] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].normal[2];
+			vertexBuffer[i * 8 + 6] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].texCoord[0];
+			vertexBuffer[i * 8 + 7] = std::get<Vertices_PosNormTex>(mesh->vertices)[i].texCoord[1];
+		}
+
+	}
+	else {
 		vertexCount = static_cast<uint32_t>(std::get<Vertices_PosNormTexColor>(mesh->vertices).size());
 		vertexBuffer.resize(vertexCount * vertexElementCount);
 
@@ -83,9 +84,9 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 			vertexBuffer[i * 12 + 9] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).color[1];
 			vertexBuffer[i * 12 + 10] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).color[2];
 			vertexBuffer[i * 12 + 11] = (std::get<Vertices_PosNormTexColor>(mesh->vertices)).at(i).color[3];
-		
-		
-        }
+
+
+		}
 	}
 
 	indexBuffer.resize(indexCount);
@@ -107,20 +108,33 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	vertexStagingBuffer.CreateStagingVertexBuffer(vertexBuffer.data(), (uint32_t)vertexCount, vertexElementCount);
 	indexStagingBuffer.CreateStagingIndexBuffer(indexBuffer.data(), (uint32_t)indexCount);
 
-	TransferCommandWork work;
-	work.work = std::function<void(const VkCommandBuffer )>(
-		[=]	(const VkCommandBuffer copyCmd) {
-			CopyMeshBuffers(copyCmd,
+	std::function<void(const VkCommandBuffer)> work =
+		[=](const VkCommandBuffer copyCmd) {
+		CopyMeshBuffers(copyCmd,
 			vertexStagingBuffer.buffer.buffer, vmaVertices.buffer.buffer, vBufferSize,
-			indexStagingBuffer.buffer.buffer, vmaIndicies.buffer.buffer, iBufferSize); 
-		}
+			indexStagingBuffer.buffer.buffer, vmaIndicies.buffer.buffer, iBufferSize);
+	};
+
+	std::function<void()> cleanUp = [=]() {
+		vertexStagingBuffer.CleanBuffer();
+		indexStagingBuffer.CleanBuffer();
+		*readyToUse = true;
+	};
+
+	/*TransferCommandWork work;
+	work.work = std::function<void(const VkCommandBuffer)>(
+		[=](const VkCommandBuffer copyCmd) {
+		CopyMeshBuffers(copyCmd,
+			vertexStagingBuffer.buffer.buffer, vmaVertices.buffer.buffer, vBufferSize,
+			indexStagingBuffer.buffer.buffer, vmaIndicies.buffer.buffer, iBufferSize);
+	}
 	);
 
 	work.buffersToClean.push_back(vertexStagingBuffer);
 	work.buffersToClean.push_back(indexStagingBuffer);
-	work.flags.push_back(readyToUse);
+	work.flags.push_back(readyToUse);*/
 
-	renderer.SubmitTransferWork(std::move(work));
+	renderer.SubmitGraphicsWork(work, cleanUp, {}, {});
 
 	//VkCommandBuffer copyCmd = renderer.GetTransferCommandBuffer();
 	//

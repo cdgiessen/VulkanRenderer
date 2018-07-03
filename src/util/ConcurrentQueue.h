@@ -33,10 +33,15 @@ public:
 
 	bool empty();
 
+	void wait_on_value();
+
+	void notify_all();
+
 private:
 	std::deque<T> m_queue;
 	std::mutex m_mutex;
 	std::condition_variable m_cond;
+	std::mutex m_cond_lock;
 };
 
 
@@ -50,11 +55,15 @@ template <typename T>
 T ConcurrentQueue<T>::front()
 {
 	std::unique_lock<std::mutex> mlock(m_mutex);
-	while (m_queue.empty())
-	{
+	if (m_queue.empty()) {
+		std::unique_lock<std::mutex> lk(m_cond_lock);
 		m_cond.wait(mlock);
+		return  m_queue.front();
 	}
-	return m_queue.front();
+	else {
+		return m_queue.front();
+	}
+
 }
 
 template <typename T>
@@ -98,7 +107,7 @@ void ConcurrentQueue<T>::push_back(T&& item)
 }
 
 template <typename T>
-void ConcurrentQueue<T>::remove(T& item){
+void ConcurrentQueue<T>::remove(T& item) {
 	std::unique_lock<std::mutex> mlock(m_mutex);
 	auto iter = std::find(std::begin(m_queue), std::end(m_queue), item);
 	m_queue.erase(iter);
@@ -120,4 +129,15 @@ bool ConcurrentQueue<T>::empty()
 	bool empty = m_queue.empty();
 	mlock.unlock();
 	return empty;
+}
+
+template <typename T>
+void ConcurrentQueue<T>::wait_on_value() {
+	std::unique_lock<std::mutex> lk(m_cond_lock);
+	m_cond.wait(mlock);
+}
+
+template <typename T>
+void ConcurrentQueue<T>::notify_all() {
+	m_cond.notify_all();
 }

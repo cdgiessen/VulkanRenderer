@@ -22,8 +22,6 @@ void RenderSettings::Load() {
 		nlohmann::json j;
 		input >> j;
 
-		graphicsSetupWorkerCount = j["graphics_worker_count"];
-		transferWorkerCount = j["transfer_worker_count"];
 		directionalLightCount = j["directional_light_count"];
 		pointLightCount = j["point_light_count"];
 		spotLightCount = j["spot_light_count"];
@@ -36,8 +34,6 @@ void RenderSettings::Load() {
 void RenderSettings::Save() {
 	nlohmann::json j;
 
-	j["graphics_worker_count"] = graphicsSetupWorkerCount;
-	j["transfer_worker_count"] = transferWorkerCount;
 
 	j["directional_light_count"] = directionalLightCount;
 	j["point_light_count"] = pointLightCount;
@@ -57,7 +53,8 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 	shaderManager(device),
 	pipelineManager(device),
 	textureManager(device),
-	graphicsPrimaryCommandPool(device)
+	graphicsPrimaryCommandPool(device),
+	asyncGraphicsPool(device)
 
 {
 	device.window = window;
@@ -67,6 +64,10 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 	graphicsPrimaryCommandPool.Setup(
 		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue());
 
+	asyncGraphicsPool.Setup(
+		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue());
+
+
 	vulkanSwapChain.InitSwapChain(device.window);
 
 	for (int i = 0; i < vulkanSwapChain.swapChainImages.size(); i++) {
@@ -75,21 +76,10 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 
 	pipelineManager.InitPipelineCache();
 
-	if (settings.graphicsSetupWorkerCount < 1)
-		settings.graphicsSetupWorkerCount = 1;
-	if (settings.transferWorkerCount < 1)
-		settings.transferWorkerCount = 1;
-
-	for (int i = 0; i < settings.graphicsSetupWorkerCount; i++) {
-		graphicsSetupWorkers.push_back(
-			std::make_unique<CommandBufferWorker<CommandBufferWork>>(
-				device, &device.GraphicsQueue(), graphicsSetupWorkQueue));
-	}
-
-	for (int i = 0; i < settings.transferWorkerCount; i++) {
-		transferWorkers.push_back(
-			std::make_unique<CommandBufferWorker<TransferCommandWork>>(
-				device, &device.TransferQueue(), transferWorkQueue));
+	for (int i = 0; i < workerThreadCount; i++) {
+		graphicsWorkers.push_back(
+			std::make_unique < GraphicsCommandWorker>(
+				device, &device.GraphicsQueue(), workQueue, finishQueue));
 	}
 
 	CreateRenderPass();
@@ -119,10 +109,7 @@ VulkanRenderer::~VulkanRenderer() {
 
 	depthBuffer->destroy();
 
-	for (auto& worker : graphicsSetupWorkers)
-		worker->CleanUp();
-
-	for (auto& worker : transferWorkers)
+	for (auto& worker : graphicsWorkers)
 		worker->CleanUp();
 
 	graphicsPrimaryCommandPool.CleanUp();
@@ -167,41 +154,6 @@ void VulkanRenderer::RenderFrame() {
 	frameIndex = (frameIndex + 1) % frameObjects.size();
 
 	SaveScreenshot();
-}
-
-void VulkanRenderer::CreateWorkerThreads() {
-
-	if (settings.graphicsSetupWorkerCount <= 0)
-		settings.graphicsSetupWorkerCount = 1;
-	if (settings.transferWorkerCount <= 0)
-		settings.transferWorkerCount = 1;
-
-	for (int i = 0; i < settings.graphicsSetupWorkerCount; i++) {
-		graphicsSetupWorkers.push_back(
-			std::make_unique<CommandBufferWorker<CommandBufferWork>>(
-				device, &device.GraphicsQueue(), graphicsSetupWorkQueue));
-	}
-
-	for (int i = 0; i < settings.transferWorkerCount; i++) {
-		transferWorkers.push_back(
-			std::make_unique<CommandBufferWorker<TransferCommandWork>>(
-				device, &device.TransferQueue(), transferWorkQueue));
-	}
-}
-
-void VulkanRenderer::DestroyWorkerThreads() {
-
-	for (auto& thread : graphicsSetupWorkers) {
-		thread->StopWork();
-	}
-
-	for (auto& thread : transferWorkers) {
-		thread->StopWork();
-	}
-
-	for (auto& thread : graphicsSetupWorkers) {
-		thread->StopWork();
-	}
 }
 
 void VulkanRenderer::RecreateSwapChain() {
@@ -491,12 +443,20 @@ void VulkanRenderer::SetupLightingDescriptorSet() {
 	}
 }
 
-void VulkanRenderer::SubmitTransferWork(TransferCommandWork &&data) {
-	transferWorkQueue.AddWork(data);
+void VulkanRenderer::SubmitGraphicsWork(GraphicsWork&& data) {
+	workQueue.push_back(data);
+	//TODO:
 }
 
-void VulkanRenderer::SubmitGraphicsSetupWork(CommandBufferWork &&data) {
-	graphicsSetupWorkQueue.AddWork(data);
+void VulkanRenderer::SubmitGraphicsWork(
+	std::function<void(const VkCommandBuffer)> work,
+	std::function<void()> cleanUp,
+	std::vector<VulkanSemaphore> waitSemaphores,
+	std::vector<VulkanSemaphore> signalSemaphores)
+{
+	CommandBuffer cmdBuf(device, asyncGraphicsPool);
+	cmdBuf.AddSynchronization(waitSemaphores, signalSemaphores);
+	workQueue.push_back(std::move(GraphicsWork(work, cleanUp, cmdBuf)));
 }
 
 VkCommandBuffer VulkanRenderer::GetGraphicsCommandBuffer() {

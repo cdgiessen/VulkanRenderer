@@ -128,74 +128,52 @@ private:
 
 };
 
-class CommandBuffer{
-private:
-	CommandBuffer(VulkanDevice device, CommandPool& pool);
+class CommandBuffer {
+public:
+	CommandBuffer(VulkanDevice& device, CommandPool& pool);
+	void Create();
 	void CleanUp();
 
 	void Begin();
 	void End();
 
+	void AddSynchronization(std::vector<VulkanSemaphore> waitSemaphores, std::vector<VulkanSemaphore> signalSemaphores);
 	void Write(std::function<void(VkCommandBuffer)> cmds);
 
-	void Submit(std::vector<VulkanSemaphore>& waitSemaphores, std::vector<VulkanSemaphore>& signalSemaphores);
-public:
-	CommandPool& pool;
+	void Submit();
+private:
+	CommandPool & pool;
 	VkCommandBuffer buf;
 	VulkanFence fence;
-};
-
-struct CommandBufferWork {
-	std::function<void(const VkCommandBuffer)> work;
-	std::vector<Signal> flags;
 	std::vector<VulkanSemaphore> waitSemaphores;
 	std::vector<VulkanSemaphore> signalSemaphores;
 };
 
-struct TransferCommandWork {
+struct GraphicsWork {
 	std::function<void(const VkCommandBuffer)> work;
-	std::vector<Signal> flags;
-	std::vector<VulkanSemaphore> waitSemaphores;
-	std::vector<VulkanSemaphore> signalSemaphores;
+	std::function<void()> cleanUp;
+	CommandBuffer cmdBuf;
 
-	//Optional buffers to clean once 
-	std::vector<VulkanBuffer> buffersToClean;
+	GraphicsWork(std::function<void(const VkCommandBuffer)> work,
+		std::function<void()> cleanUp, CommandBuffer cmdBuf) :
+		work(work), cleanUp(cleanUp), cmdBuf(cmdBuf)
+	{}
 };
 
-template<typename WorkType>
-class CommandBufferWorkQueue {
+class GraphicsCommandWorker {
 public:
-	CommandBufferWorkQueue();
-
-	~CommandBufferWorkQueue();
-
-	void AddWork(WorkType data);
-	void AddWork(WorkType&& data);
-
-	bool HasWork();
-
-	std::optional<WorkType> GetWork();
-
-	std::mutex lock;
-	std::condition_variable condVar;
-
-private:
-	ConcurrentQueue<WorkType> workQueue;
-};
-
-template<typename WorkType>
-class CommandBufferWorker {
-public:
-	CommandBufferWorker(VulkanDevice& device,
-		CommandQueue* queue, CommandBufferWorkQueue<WorkType>& workQueue,
+	GraphicsCommandWorker(VulkanDevice& device,
+		CommandQueue* queue,
+		ConcurrentQueue<GraphicsWork>& workQueue,
+		ConcurrentQueue<GraphicsWork>& finishQueue,
 		bool startActive = true);
 
-	CommandBufferWorker(const CommandBufferWorker& other) = delete; //copy
-	CommandBufferWorker(CommandBufferWorker&& other) = delete; //move
-	CommandBufferWorker& operator=(const CommandBufferWorker&) = default;
-	CommandBufferWorker& operator=(CommandBufferWorker&&) = default;
+	GraphicsCommandWorker(const GraphicsCommandWorker& other) = delete; //copy
+	GraphicsCommandWorker(GraphicsCommandWorker&& other) = delete; //move
+	GraphicsCommandWorker& operator=(const GraphicsCommandWorker&) = default;
+	GraphicsCommandWorker& operator=(GraphicsCommandWorker&&) = default;
 
-	~CommandBufferWorker();
+	~GraphicsCommandWorker();
 
 	void CleanUp();
 
@@ -207,66 +185,11 @@ private:
 	std::thread workingThread;
 
 	bool keepWorking = true; //default to start working
-	CommandBufferWorkQueue<WorkType>& workQueue;
-	std::condition_variable waitVar;
-	CommandPool pool;
+	ConcurrentQueue<GraphicsWork>& workQueue;
+	ConcurrentQueue<GraphicsWork>& finishQueue;
 };
 
-template <typename WorkType>
-CommandBufferWorkQueue<WorkType>::CommandBufferWorkQueue() {}
 
-template <typename WorkType>
-CommandBufferWorkQueue<WorkType>::~CommandBufferWorkQueue() {
-	condVar.notify_all();
-}
-
-template <typename WorkType>
-void CommandBufferWorkQueue<WorkType>::AddWork(WorkType data) {
-	workQueue.push_back(data);
-	condVar.notify_one();
-}
-
-template <typename WorkType>
-void CommandBufferWorkQueue<WorkType>::AddWork(WorkType &&data) {
-	workQueue.push_back(std::move(data));
-	condVar.notify_one();
-}
-
-template <typename WorkType> 
-bool CommandBufferWorkQueue<WorkType>::HasWork() {
-	return workQueue.empty();
-}
-
-template <typename WorkType>
-std::optional<WorkType> CommandBufferWorkQueue<WorkType>::GetWork() {
-	return workQueue.pop_if();
-}
-
-template <typename WorkType>
-CommandBufferWorker<WorkType>::CommandBufferWorker(
-	VulkanDevice &device, CommandQueue *queue,
-	CommandBufferWorkQueue<WorkType> &workQueue, bool startActive)
-	: device(device), pool(device), workQueue(workQueue) {
-	pool.Setup(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, queue);
-	workingThread = std::thread{ &CommandBufferWorker::Work, this };
-}
-
-template <typename WorkType>
-CommandBufferWorker<WorkType>::~CommandBufferWorker() {
-	//workingThread.join();
-}
-
-template <typename WorkType>
-void CommandBufferWorker<WorkType>::CleanUp() {
-	StopWork();
-	workQueue.condVar.notify_all();//Get everyone to wake up
-	workingThread.join();
-	pool.CleanUp();
-}
-
-template <typename WorkType> void CommandBufferWorker<WorkType>::StopWork() {
-	keepWorking = false;
-}
 
 class FrameObject {
 public:
@@ -281,9 +204,6 @@ public:
 
 	VkSubmitInfo GetSubmitInfo();
 	VkPresentInfoKHR GetPresentInfo();
-
-	VulkanSemaphore& GetImageAvailSem();
-	VulkanSemaphore& GetRenderFinishSem();
 
 	VkCommandBuffer GetPrimaryCmdBuf();
 
