@@ -20,6 +20,10 @@ void VulkanFence::CleanUp()
 	vkDestroyFence(device.device, fence, nullptr);
 }
 
+bool  VulkanFence::Check() {
+	return vkGetFenceStatus(device.device, fence);
+}
+
 void VulkanFence::WaitTillTrue() {
 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, timeout);
 }
@@ -320,12 +324,16 @@ void CommandBuffer::AddSynchronization(std::vector<VulkanSemaphore> waitSemaphor
 	this->signalSemaphores = signalSemaphores;
 }
 
+bool CommandBuffer::CheckFence() {
+	return fence.Check();
+}
+
 
 
 GraphicsCommandWorker::GraphicsCommandWorker(
 	VulkanDevice &device, CommandQueue *queue,
 	ConcurrentQueue<GraphicsWork>& workQueue,
-	ConcurrentQueue<GraphicsWork>& finishQueue,
+	std::vector<GraphicsWork>& finishQueue,
 	bool startActive)
 	:
 	device(device), workQueue(workQueue), finishQueue(finishQueue)
@@ -389,7 +397,7 @@ void GraphicsCommandWorker::Work() {
 		workQueue.wait_on_value();
 
 		auto pos_work = workQueue.pop_if();
-		while (pos_work.has_value())
+		while (keepWorking && pos_work.has_value())
 		{
 			pos_work->cmdBuf.Create();
 			pos_work->cmdBuf.Begin();
@@ -414,7 +422,11 @@ void GraphicsCommandWorker::Work() {
 
 				//pool.FreeCommandBuffer(buf);
 
-			pos_work.emplace(workQueue.pop_if());
+
+			if (auto val = workQueue.pop_if(); val.has_value())
+				pos_work.emplace(val.value());
+			else
+				break;
 		}
 	}
 }

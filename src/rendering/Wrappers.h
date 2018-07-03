@@ -29,6 +29,8 @@ public:
 		VkFenceCreateFlags flags = VK_FLAGS_NONE);
 	void CleanUp();
 
+	bool Check();
+
 	void WaitTillTrue();
 	void WaitTillFalse();
 	//void CleanUp();
@@ -141,6 +143,8 @@ public:
 	void Write(std::function<void(VkCommandBuffer)> cmds);
 
 	void Submit();
+
+	bool CheckFence();
 private:
 	CommandPool & pool;
 	VkCommandBuffer buf;
@@ -165,7 +169,7 @@ public:
 	GraphicsCommandWorker(VulkanDevice& device,
 		CommandQueue* queue,
 		ConcurrentQueue<GraphicsWork>& workQueue,
-		ConcurrentQueue<GraphicsWork>& finishQueue,
+		std::vector<GraphicsWork>& finishQueue,
 		bool startActive = true);
 
 	GraphicsCommandWorker(const GraphicsCommandWorker& other) = delete; //copy
@@ -186,7 +190,7 @@ private:
 
 	bool keepWorking = true; //default to start working
 	ConcurrentQueue<GraphicsWork>& workQueue;
-	ConcurrentQueue<GraphicsWork>& finishQueue;
+	std::vector<GraphicsWork>& finishQueue;
 };
 
 

@@ -94,6 +94,12 @@ public:
 		std::vector<VulkanSemaphore> waitSemaphores,
 		std::vector<VulkanSemaphore> signalSemaphores);
 
+	void SubmitTransferWork(
+		std::function<void(const VkCommandBuffer)> work,
+		std::function<void()> cleanUp,
+		std::vector<VulkanSemaphore> waitSemaphores,
+		std::vector<VulkanSemaphore> signalSemaphores);
+
 	VkCommandBuffer GetGraphicsCommandBuffer();
 	void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);
 
@@ -139,12 +145,13 @@ private:
 
 	std::unique_ptr<VulkanTextureDepthBuffer> depthBuffer;
 
-	int workerThreadCount = 1;
+	int workerThreadCount = 3;
 
 	CommandPool asyncGraphicsPool;
+	CommandPool asyncTransferPool;
 
 	ConcurrentQueue<GraphicsWork> workQueue;
-	ConcurrentQueue<GraphicsWork> finishQueue;
+	std::vector<GraphicsWork> finishQueue;
 	std::vector < std::unique_ptr<GraphicsCommandWorker>> graphicsWorkers;
 
 	//CommandBufferWorkQueue<CommandBufferWork> graphicsSetupWorkQueue;

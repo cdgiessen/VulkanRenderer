@@ -55,7 +55,7 @@ void TerrainCreationWorker(TerrainManager* man) {
 
 				terrain->terrainSplatMap = data->resourceMan->
 					texManager.loadTextureFromRGBAPixelData(
-						data->sourceImageResolution + 1, 
+						data->sourceImageResolution + 1,
 						data->sourceImageResolution + 1, imgData);
 
 				terrain->InitTerrain(data->renderer, data->cameraPos, data->terrainVulkanTextureArray);
@@ -167,7 +167,7 @@ void TerrainChunkBuffer::UpdateChunks() {
 		}
 
 	}
-	TransferCommandWork transfer;
+	/*TransferCommandWork transfer;
 	transfer.work = std::function<void(VkCommandBuffer)>(
 		[=](const VkCommandBuffer cmdBuf) {
 		vkCmdCopyBuffer(cmdBuf, vert_staging.buffer.buffer, vert_buffer.buffer.buffer,
@@ -175,8 +175,14 @@ void TerrainChunkBuffer::UpdateChunks() {
 		vkCmdCopyBuffer(cmdBuf, index_staging.buffer.buffer, index_buffer.buffer.buffer,
 			indexCopyRegions.size(), indexCopyRegions.data());
 	}
-	);
-	renderer->SubmitTransferWork(std::move(transfer));
+	);*/
+
+	renderer->SubmitTransferWork([=](const VkCommandBuffer cmdBuf) {
+		vkCmdCopyBuffer(cmdBuf, vert_staging.buffer.buffer, vert_buffer.buffer.buffer,
+			vertexCopyRegions.size(), vertexCopyRegions.data());
+		vkCmdCopyBuffer(cmdBuf, index_staging.buffer.buffer, index_buffer.buffer.buffer,
+			indexCopyRegions.size(), indexCopyRegions.data());
+	}, {}, {}, {});
 
 }
 
@@ -187,7 +193,7 @@ TerrainMeshIndices* TerrainChunkBuffer::GetDeviceIndexBufferPtr(int index) {
 	return index_staging_ptr + index;
 }
 
-TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph, 
+TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
 	ResourceManager* resourceMan, VulkanRenderer* renderer)
 	: protoGraph(protoGraph), renderer(renderer), chunkBuffer(renderer, 512, this)
 {
@@ -195,7 +201,7 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
 		settings.maxLevels = 0;
 	}
 	LoadSettingsFromFile();
-	
+
 	for (auto& item : terrainTextureFileNames) {
 		terrainTextureHandles.push_back(
 			TerrainTextureNamedHandle(

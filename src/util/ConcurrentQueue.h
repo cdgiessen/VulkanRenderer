@@ -134,7 +134,7 @@ bool ConcurrentQueue<T>::empty()
 template <typename T>
 void ConcurrentQueue<T>::wait_on_value() {
 	std::unique_lock<std::mutex> lk(m_cond_lock);
-	m_cond.wait(mlock);
+	m_cond.wait(lk);
 }
 
 template <typename T>

@@ -54,7 +54,8 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 	pipelineManager(device),
 	textureManager(device),
 	graphicsPrimaryCommandPool(device),
-	asyncGraphicsPool(device)
+	asyncGraphicsPool(device),
+	asyncTransferPool(device)
 
 {
 	device.window = window;
@@ -67,6 +68,8 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 	asyncGraphicsPool.Setup(
 		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue());
 
+	asyncTransferPool.Setup(
+		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.TransferQueue());
 
 	vulkanSwapChain.InitSwapChain(device.window);
 
@@ -109,10 +112,15 @@ VulkanRenderer::~VulkanRenderer() {
 
 	depthBuffer->destroy();
 
+	workQueue.notify_all();
+	for (auto& worker : graphicsWorkers)
+		worker->StopWork();
 	for (auto& worker : graphicsWorkers)
 		worker->CleanUp();
 
 	graphicsPrimaryCommandPool.CleanUp();
+	asyncGraphicsPool.CleanUp();
+	asyncTransferPool.CleanUp();
 
 	renderPass.reset();
 
@@ -154,6 +162,13 @@ void VulkanRenderer::RenderFrame() {
 	frameIndex = (frameIndex + 1) % frameObjects.size();
 
 	SaveScreenshot();
+
+	for (auto& work : finishQueue) {
+		if (work.cmdBuf.CheckFence() && work.cleanUp) {
+			work.cleanUp();
+		}
+	}
+	finishQueue.clear();
 }
 
 void VulkanRenderer::RecreateSwapChain() {
@@ -455,6 +470,17 @@ void VulkanRenderer::SubmitGraphicsWork(
 	std::vector<VulkanSemaphore> signalSemaphores)
 {
 	CommandBuffer cmdBuf(device, asyncGraphicsPool);
+	cmdBuf.AddSynchronization(waitSemaphores, signalSemaphores);
+	workQueue.push_back(std::move(GraphicsWork(work, cleanUp, cmdBuf)));
+}
+
+void VulkanRenderer::SubmitTransferWork(
+	std::function<void(const VkCommandBuffer)> work,
+	std::function<void()> cleanUp,
+	std::vector<VulkanSemaphore> waitSemaphores,
+	std::vector<VulkanSemaphore> signalSemaphores)
+{
+	CommandBuffer cmdBuf(device, asyncTransferPool);
 	cmdBuf.AddSynchronization(waitSemaphores, signalSemaphores);
 	workQueue.push_back(std::move(GraphicsWork(work, cleanUp, cmdBuf)));
 }
