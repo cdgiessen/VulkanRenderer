@@ -99,7 +99,7 @@ Scene::Scene(ResourceManager* resourceMan,
 	//pbr_test->usePBR = true;
 
 	//UNTIL FURTHER NOTICE!
-	//terrainManager = std::make_unique<TerrainManager>(graph, resourceMan, renderer);
+	terrainManager = std::make_unique<TerrainManager>(graph, resourceMan, renderer);
 
 	//terrainManager->SetupResources(resourceMan, renderer);
 	//terrainManager->GenerateTerrain(resourceMan, renderer, camera);

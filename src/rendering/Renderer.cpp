@@ -52,24 +52,15 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 	vulkanSwapChain(device),
 	shaderManager(device),
 	pipelineManager(device),
-	textureManager(device),
-	graphicsPrimaryCommandPool(device),
-	asyncGraphicsPool(device),
-	asyncTransferPool(device)
+	textureManager(device)
 
 {
 	device.window = window;
 
 	device.InitVulkanDevice(vulkanSwapChain.surface);
 
-	graphicsPrimaryCommandPool.Setup(
+	graphicsPrimaryCommandPool = std::make_unique<CommandPool>(device,
 		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue());
-
-	asyncGraphicsPool.Setup(
-		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue());
-
-	asyncTransferPool.Setup(
-		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.TransferQueue());
 
 	vulkanSwapChain.InitSwapChain(device.window);
 
@@ -82,7 +73,7 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 	for (int i = 0; i < workerThreadCount; i++) {
 		graphicsWorkers.push_back(
 			std::make_unique < GraphicsCommandWorker>(
-				device, &device.GraphicsQueue(), workQueue, finishQueue));
+				device, workQueue, finishQueue));
 	}
 
 	CreateRenderPass();
@@ -118,9 +109,7 @@ VulkanRenderer::~VulkanRenderer() {
 	for (auto& worker : graphicsWorkers)
 		worker->CleanUp();
 
-	graphicsPrimaryCommandPool.CleanUp();
-	asyncGraphicsPool.CleanUp();
-	asyncTransferPool.CleanUp();
+	graphicsPrimaryCommandPool->CleanUp();
 
 	renderPass.reset();
 
@@ -163,13 +152,19 @@ void VulkanRenderer::RenderFrame() {
 
 	SaveScreenshot();
 
+	std::vector<GraphicsCleanUpWork> nextFramesWork;
+
 	for (auto& work : finishQueue) {
-		if (work.cmdBuf.CheckFence() && work.cleanUp) {
+		if (work.fence.Check() && work.cleanUp) {
 			work.cleanUp();
-			work.cmdBuf.CleanUp();
+			work.pool->FreeCommandBuffer(work.cmdBuf);
+			work.fence.CleanUp();
+		} else {
+			nextFramesWork.push_back(work);
 		}
 	}
 	finishQueue.clear();
+	finishQueue = std::move(nextFramesWork);
 }
 
 void VulkanRenderer::RecreateSwapChain() {
@@ -470,9 +465,8 @@ void VulkanRenderer::SubmitGraphicsWork(
 	std::vector<VulkanSemaphore> waitSemaphores,
 	std::vector<VulkanSemaphore> signalSemaphores)
 {
-	CommandBuffer cmdBuf(device, asyncGraphicsPool);
-	cmdBuf.AddSynchronization(waitSemaphores, signalSemaphores);
-	workQueue.push_back(std::move(GraphicsWork(work, cleanUp, cmdBuf)));
+	workQueue.push_back({work, cleanUp, CommandPoolType::graphics,
+		device, std::move(waitSemaphores), std::move(signalSemaphores)});
 }
 
 void VulkanRenderer::SubmitTransferWork(
@@ -481,14 +475,14 @@ void VulkanRenderer::SubmitTransferWork(
 	std::vector<VulkanSemaphore> waitSemaphores,
 	std::vector<VulkanSemaphore> signalSemaphores)
 {
-	CommandBuffer cmdBuf(device, asyncTransferPool);
-	cmdBuf.AddSynchronization(waitSemaphores, signalSemaphores);
-	workQueue.push_back(std::move(GraphicsWork(work, cleanUp, cmdBuf)));
+	workQueue.push_back({std::move(work), std::move(cleanUp), CommandPoolType::transfer,
+		device, std::move(waitSemaphores), std::move(signalSemaphores)});
+
 }
 
 VkCommandBuffer VulkanRenderer::GetGraphicsCommandBuffer() {
 
-	return graphicsPrimaryCommandPool.GetPrimaryCommandBuffer();
+	return graphicsPrimaryCommandPool->GetPrimaryCommandBuffer();
 }
 
 void VulkanRenderer::SubmitGraphicsCommandBufferAndWait(
@@ -499,12 +493,12 @@ void VulkanRenderer::SubmitGraphicsCommandBufferAndWait(
 	VkFence fence;
 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence));
-	graphicsPrimaryCommandPool.SubmitPrimaryCommandBuffer(commandBuffer, fence);
+	graphicsPrimaryCommandPool->SubmitPrimaryCommandBuffer(commandBuffer, fence);
 
 	device.GraphicsQueue().WaitForFences(fence);
 
 	vkDestroyFence(device.device, fence, nullptr);
-	graphicsPrimaryCommandPool.FreeCommandBuffer(commandBuffer);
+	graphicsPrimaryCommandPool->FreeCommandBuffer(commandBuffer);
 
 }
 
