@@ -7,20 +7,20 @@
 #include <json.hpp>
 
 
-VkDescriptorType GetVulkanDescriptorType(ResourceType type){
-	switch(type){
-		case(ResourceType::uniform): return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		case(ResourceType::texture2D): return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		case(ResourceType::textureArray): return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		case(ResourceType::cubemap): return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+VkDescriptorType GetVulkanDescriptorType(ResourceType type) {
+	switch (type) {
+	case(ResourceType::uniform): return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	case(ResourceType::texture2D): return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	case(ResourceType::textureArray): return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	case(ResourceType::cubemap): return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	}
 }
 
-VkShaderStageFlags GetVulkanShaderStageFlags(ResourceStages stage){
-	switch(stage){
-		case(ResourceStages::vertex_only): return VK_SHADER_STAGE_VERTEX_BIT;
-		case(ResourceStages::fragment_only): return VK_SHADER_STAGE_FRAGMENT_BIT;
-		case(ResourceStages::vertex_fragment): return VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+VkShaderStageFlags GetVulkanShaderStageFlags(ResourceStages stage) {
+	switch (stage) {
+	case(ResourceStages::vertex_only): return VK_SHADER_STAGE_VERTEX_BIT;
+	case(ResourceStages::fragment_only): return VK_SHADER_STAGE_FRAGMENT_BIT;
+	case(ResourceStages::vertex_fragment): return VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	}
 }
 
@@ -37,15 +37,15 @@ VulkanMaterial::VulkanMaterial(VulkanDevice& device)
 
 void VulkanMaterial::CleanUp() {
 	descriptor.CleanUp();
-	value_data->CleanBuffer();
-
-	for (auto& tex : textures) {
-		tex->destroy();
-	}
-
-	for (auto& texArr : textureArrays) {
-		texArr->destroy();
-	}
+	//value_data->CleanBuffer();
+	//
+	//for (auto& tex : textures) {
+	//	tex->destroy();
+	//}
+	//
+	//for (auto& texArr : textureArrays) {
+	//	texArr->destroy();
+	//}
 }
 
 void VulkanMaterial::SetShaders(ShaderModuleSet set) {
@@ -80,24 +80,24 @@ void VulkanMaterial::AddValue(MaterialOptions value) {
 
 }
 
-void VulkanMaterial::AddMaterialDataSlot(MaterialDataSlot slot){
+void VulkanMaterial::AddMaterialDataSlot(MaterialDataSlot slot) {
 	dataSlots.push_back(slot);
 }
 
 
 void VulkanMaterial::Setup() {
 	//descriptor = renderer->GetVulkanDescriptor();
-   	//descriptor = VulkanDescriptor(device);
+	//descriptor = VulkanDescriptor(device);
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
 	int index = 0;
 
-	for(int i = 0; i < dataSlots.size(); i++){
+	for (int i = 0; i < dataSlots.size(); i++) {
 		m_bindings.push_back(VulkanDescriptor::CreateBinding(
-		GetVulkanDescriptorType(dataSlots.at(i).type),
-		GetVulkanShaderStageFlags(dataSlots.at(i).stage), 
-		i, 
-		dataSlots.at(i).count));
+			GetVulkanDescriptorType(dataSlots.at(i).type),
+			GetVulkanShaderStageFlags(dataSlots.at(i).stage),
+			i,
+			dataSlots.at(i).count));
 	}
 
 	descriptor.SetupLayout(m_bindings);
@@ -115,7 +115,7 @@ void VulkanMaterial::Setup() {
 
 	std::vector<DescriptorPoolSize> poolSizes;
 
-	for(int i = 0; i < dataSlots.size(); i++){
+	for (int i = 0; i < dataSlots.size(); i++) {
 		poolSizes.push_back(DescriptorPoolSize(
 			GetVulkanDescriptorType(dataSlots.at(i).type),
 			dataSlots.at(i).count));
@@ -131,13 +131,12 @@ void VulkanMaterial::Setup() {
 	// for (int i = 0; i < textureArrays.size(); i++) {
 	// 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	// }
-	descriptor.SetupPool(poolSizes);
 
 	descriptorSet = descriptor.CreateDescriptorSet();
 
 	std::vector<DescriptorUse> writes;
 
-	for(int i = 0; i < dataSlots.size(); i++){
+	for (int i = 0; i < dataSlots.size(); i++) {
 		writes.push_back(DescriptorUse(i, dataSlots.at(i).count, dataSlots.at(i).resource));
 
 	}
@@ -158,7 +157,7 @@ void VulkanMaterial::Setup() {
 	descriptor.UpdateDescriptorSet(descriptorSet, writes);
 }
 
-VkDescriptorSetLayout VulkanMaterial::GetDescriptorSetLayout(){
+VkDescriptorSetLayout VulkanMaterial::GetDescriptorSetLayout() {
 	return descriptor.GetLayout();
 }
 

@@ -41,8 +41,8 @@ struct MaterialDataSlot {
 
 	MaterialDataSlot(ResourceType type, ResourceStages stage,
 		DescriptorResource resources) :
-		type(type), stage(stage), count(count), resource(resource)
-		{}
+		type(type), stage(stage), resource(resource)
+	{}
 	const int count = 1; //only one resource for now
 };
 

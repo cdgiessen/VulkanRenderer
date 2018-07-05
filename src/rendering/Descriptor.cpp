@@ -43,12 +43,12 @@ VkWriteDescriptorSet DescriptorUse::GetWriteDescriptorSet(VkDescriptorSet set) {
 	writeDescriptorSet.descriptorType = resource.type;
 	writeDescriptorSet.dstBinding = bindPoint;
 	writeDescriptorSet.descriptorCount = count;
-	
+
 	if (resource.info.index() == 0)
 		writeDescriptorSet.pBufferInfo = std::get_if<VkDescriptorBufferInfo>(&resource.info);
 	else
 		writeDescriptorSet.pImageInfo = std::get_if<VkDescriptorImageInfo>(&resource.info);
-	
+
 	return writeDescriptorSet;
 }
 
@@ -91,10 +91,9 @@ void VulkanDescriptor::SetupPool(std::vector<DescriptorPoolSize> poolSizes, int 
 
 	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-	if (vkCreateDescriptorPool(device.device, &poolInfo, nullptr,
-		&pool) != VK_SUCCESS)
+	if (vkCreateDescriptorPool(device.device, &poolInfo, nullptr, &pool) != VK_SUCCESS)
 	{
-		throw std::runtime_error("failed to create descriptor pool!");
+		//throw std::runtime_error("failed to create descriptor pool!");
 	}
 }
 
@@ -110,7 +109,7 @@ DescriptorSet VulkanDescriptor::CreateDescriptorSet() {
 	VkDescriptorSetAllocateInfo allocInfo =
 		initializers::descriptorSetAllocateInfo(pool, layouts, 1);
 
-	if (vkAllocateDescriptorSets(device.device, &allocInfo,	&(set.set)) != VK_SUCCESS)
+	if (vkAllocateDescriptorSets(device.device, &allocInfo, &(set.set)) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate descriptor set!");
 	}

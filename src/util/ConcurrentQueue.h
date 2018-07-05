@@ -139,5 +139,6 @@ void ConcurrentQueue<T>::wait_on_value() {
 
 template <typename T>
 void ConcurrentQueue<T>::notify_all() {
+	std::unique_lock<std::mutex> lk(m_cond_lock);
 	m_cond.notify_all();
 }

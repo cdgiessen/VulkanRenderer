@@ -39,7 +39,7 @@ VkFence VulkanFence::Get() {
 	return fence;
 }
 
-void VulkanFence::Reset(){
+void VulkanFence::Reset() {
 	vkResetFences(device, 1, &fence);
 }
 
@@ -149,7 +149,7 @@ void CommandQueue::WaitForFences(VkFence fence) {
 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 }
 
-CommandPool::CommandPool(VulkanDevice& device, 
+CommandPool::CommandPool(VulkanDevice& device,
 	VkCommandPoolCreateFlags flags, CommandQueue* queue) :
 	device(device)
 {
@@ -363,7 +363,7 @@ GraphicsCommandWorker::GraphicsCommandWorker(
 	std::vector<GraphicsCleanUpWork>& finishQueue,
 	bool startActive)
 	:
-	device(device), 
+	device(device),
 	graphicsPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue()),
 	transferPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.TransferQueue()),
 	computePool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.ComputeQueue()),
@@ -433,20 +433,20 @@ void GraphicsCommandWorker::Work() {
 		workQueue.wait_on_value();
 
 		auto pos_work = workQueue.pop_if();
-		while (keepWorking && pos_work.has_value())
+		while (pos_work.has_value())
 		{
 			VkCommandBuffer cmdBuf;
 			CommandPool* pool;
 
-			switch(pos_work->type){
-				case(CommandPoolType::graphics):
-					pool = &graphicsPool;
+			switch (pos_work->type) {
+			case(CommandPoolType::graphics):
+				pool = &graphicsPool;
 				break;
-				case(CommandPoolType::transfer):
-					pool = &transferPool;
+			case(CommandPoolType::transfer):
+				pool = &transferPool;
 				break;
-				case(CommandPoolType::compute):
-					pool = &computePool;
+			case(CommandPoolType::compute):
+				pool = &computePool;
 				break;
 			}
 			pos_work->fence.Create();
@@ -458,8 +458,8 @@ void GraphicsCommandWorker::Work() {
 			pool->SubmitCommandBuffer(cmdBuf, pos_work->fence,
 				pos_work->waitSemaphores, pos_work->signalSemaphores);
 
-			finishQueue.push_back(GraphicsCleanUpWork{pos_work->cleanUp, 
-				pos_work->fence, pool, pos_work->cmdBuf});
+			finishQueue.push_back(GraphicsCleanUpWork{ pos_work->cleanUp,
+				pos_work->fence, pool, pos_work->cmdBuf });
 			//fence.WaitTillTrue();
 
 			/*for (auto& flag : pos_work->flags)
@@ -516,10 +516,11 @@ VkResult FrameObject::AquireNextSwapchainImage(VkSwapchainKHR swapchain) {
 }
 
 void FrameObject::PrepareFrame() {
-	if(!firstUse){
+	if (!firstUse) {
 		commandFence.WaitTillTrue();
 		commandFence.Reset();
-	} else {
+	}
+	else {
 		firstUse = false;
 	}
 	commandPool.BeginBufferRecording(primaryCmdBuf, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
