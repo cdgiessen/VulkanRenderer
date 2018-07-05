@@ -16,6 +16,37 @@
 #include "Shader.h"
 #include "RenderStructs.h"
 
+enum class ResourceType {
+	uniform,
+	texture2D,
+	textureArray,
+	cubemap,
+};
+
+VkDescriptorType GetVulkanDescriptorType(ResourceType type);
+
+
+enum class ResourceStages {
+	vertex_only,
+	fragment_only,
+	vertex_fragment,
+};
+
+VkShaderStageFlags GetVulkanShaderStageFlags(ResourceStages stage);
+
+struct MaterialDataSlot {
+	ResourceType type;
+	ResourceStages stage;
+	DescriptorResource resource;
+
+	MaterialDataSlot(ResourceType type, ResourceStages stage,
+		DescriptorResource resources) :
+		type(type), stage(stage), count(count), resource(resource)
+		{}
+	const int count = 1; //only one resource for now
+};
+
+
 struct Phong_Material {
 	glm::vec4 color = glm::vec4(0.5, 0.5, 0.5, 1.0);
 	float diffuse = 0.8f;
@@ -53,18 +84,23 @@ public:
 	void AddTextureArray(std::shared_ptr<VulkanTexture2DArray> texArr);
 	void AddValue(MaterialOptions value);
 
+	void AddMaterialDataSlot(MaterialDataSlot slot);
+
 	void Setup();
 
-	void Bind(VkCommandBuffer cmdBuf);
+	void Bind(VkCommandBuffer cmdBuf, VkPipelineLayout layout);
 
-
+	VkDescriptorSetLayout GetDescriptorSetLayout();
 private:
 	VulkanDevice & device;
 
 	DescriptorSet descriptorSet;
 	VulkanDescriptor descriptor;
 
+
 	ShaderModuleSet shaderModules;
+
+	std::vector<MaterialDataSlot> dataSlots;
 
 	std::vector<std::shared_ptr<VulkanTexture>> textures;
 	std::vector<std::shared_ptr<VulkanTexture2DArray>> textureArrays;
