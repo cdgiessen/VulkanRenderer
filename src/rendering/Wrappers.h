@@ -96,6 +96,10 @@ private:
 class CommandPool {
 public:
 	CommandPool(VulkanDevice& device);
+	CommandPool(const CommandPool& cmd) = default;
+	CommandPool& operator=(const CommandPool& cmd) = default;
+	CommandPool(CommandPool&& cmd) = default;
+	CommandPool& operator=(CommandPool&& cmd) = default;
 
 	VkBool32 Setup(VkCommandPoolCreateFlags flags, CommandQueue* queue);
 	VkBool32 CleanUp();
@@ -134,6 +138,11 @@ private:
 class CommandBuffer {
 public:
 	CommandBuffer(VulkanDevice& device, CommandPool& pool);
+	CommandBuffer(const CommandBuffer& cmd) = default;
+	CommandBuffer& operator=(const CommandBuffer& cmd) = default;
+	CommandBuffer(CommandBuffer&& cmd) = default;
+	CommandBuffer& operator=(CommandBuffer&& cmd) = default;
+
 	void Create();
 	void CleanUp();
 
@@ -163,6 +172,10 @@ struct GraphicsWork {
 		std::function<void()> cleanUp, CommandBuffer cmdBuf) :
 		work(work), cleanUp(cleanUp), cmdBuf(cmdBuf)
 	{}
+	GraphicsWork(const GraphicsWork& cmd) = default;
+	GraphicsWork& operator=(const GraphicsWork& cmd) = default;
+	GraphicsWork(GraphicsWork&& cmd) = default;
+	GraphicsWork& operator=(GraphicsWork&& cmd) = default;
 };
 
 class GraphicsCommandWorker {

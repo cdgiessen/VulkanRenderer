@@ -430,10 +430,11 @@ void GraphicsCommandWorker::Work() {
 				//pool.FreeCommandBuffer(buf);
 
 
-			if (auto val = workQueue.pop_if(); val.has_value())
+			/*if (auto val = workQueue.pop_if(); val.has_value())
 				pos_work.emplace(val.value());
 			else
-				break;
+				break;*/
+			pos_work = workQueue.pop_if();
 		}
 	}
 }
