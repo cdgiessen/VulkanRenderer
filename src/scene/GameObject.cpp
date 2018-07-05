@@ -27,6 +27,8 @@ void GameObject::CleanUp()
 
 	uniformBuffer->CleanBuffer();
 	materialBuffer->CleanBuffer();
+
+	mat->CleanUp();
 }
 
 void GameObject::LoadModel(std::string filename)

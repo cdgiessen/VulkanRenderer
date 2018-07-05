@@ -24,8 +24,9 @@ class VulkanDevice;
 
 class VulkanFence {
 public:
-	VulkanFence(VulkanDevice& device,
-		long int timeout = DEFAULT_FENCE_TIMEOUT,
+	VulkanFence(VulkanDevice& device);
+	
+	void Create(long int timeout = DEFAULT_FENCE_TIMEOUT,
 		VkFenceCreateFlags flags = VK_FLAGS_NONE);
 	void CleanUp();
 
@@ -35,6 +36,9 @@ public:
 	void WaitTillFalse();
 	//void CleanUp();
 	VkFence Get();
+
+	void Reset();
+
 
 private:
 	VkDevice device;
@@ -197,7 +201,7 @@ struct GraphicsCleanUpWork {
 	VkCommandBuffer cmdBuf;
 
 	GraphicsCleanUpWork(std::function<void()> cleanUp,
-		VulkanFence fence, CommandPool* pool, VkCommandBuffer cmdBuf):
+		VulkanFence& fence, CommandPool* pool, VkCommandBuffer cmdBuf):
 		cleanUp(cleanUp), fence(fence), 
 		pool(pool), cmdBuf(cmdBuf) 
 	{} 
@@ -260,6 +264,8 @@ public:
 
 	VkCommandBuffer GetPrimaryCmdBuf();
 
+	VkFence GetCommandFence();
+
 private:
 	VulkanDevice & device;
 	uint32_t frameIndex; //which frame in the queue it is
@@ -268,6 +274,9 @@ private:
 
 	VulkanSemaphore imageAvailSem;
 	VulkanSemaphore renderFinishSem;
+
+	VulkanFence commandFence;
+	bool firstUse = true;
 
 	CommandPool commandPool;
 	VkCommandBuffer primaryCmdBuf;

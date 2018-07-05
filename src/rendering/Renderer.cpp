@@ -98,6 +98,11 @@ VulkanRenderer::~VulkanRenderer() {
 	vkDestroyPipelineLayout(device.device, frameDataDescriptorLayout, nullptr);
 	vkDestroyPipelineLayout(device.device, lightingDescriptorLayout, nullptr);
 
+
+	frameDataDescriptor->CleanUp();
+	lightingDescriptor->CleanUp();
+	dynamicTransformDescriptor->CleanUp();
+
 	for (auto& descriptor : descriptors)
 		descriptor->CleanUp();
 
@@ -108,6 +113,14 @@ VulkanRenderer::~VulkanRenderer() {
 		worker->StopWork();
 	for (auto& worker : graphicsWorkers)
 		worker->CleanUp();
+
+	for (auto& work : finishQueue) {
+		work.fence.WaitTillTrue();
+		work.cleanUp();
+		work.pool->FreeCommandBuffer(work.cmdBuf);
+		work.fence.CleanUp();
+	}
+
 
 	graphicsPrimaryCommandPool->CleanUp();
 
@@ -306,7 +319,7 @@ void VulkanRenderer::SubmitFrame(int curFrameIndex) {
 	VkPipelineStageFlags stageMasks = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 	curSubmitInfo.pWaitDstStageMask = &stageMasks;
 
-	device.GraphicsQueue().Submit(curSubmitInfo, VK_NULL_HANDLE);
+	device.GraphicsQueue().Submit(curSubmitInfo, frameObjects.at(curFrameIndex)->GetCommandFence());
 
 	auto curPresentInfo = frameObjects.at(curFrameIndex)->GetPresentInfo();
 

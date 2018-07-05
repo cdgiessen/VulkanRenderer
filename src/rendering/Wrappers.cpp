@@ -5,14 +5,19 @@
 #include "Device.h"
 #include "Buffer.h"
 
-VulkanFence::VulkanFence(VulkanDevice& device,
+VulkanFence::VulkanFence(VulkanDevice& device)
+	:device(device.device)
+{
+}
+
+void VulkanFence::Create(
 	long int timeout,
 	VkFenceCreateFlags flags)
-	:device(device.device), timeout(timeout)
 {
+	this->timeout = timeout;
 	VkFenceCreateInfo fenceInfo =
 		initializers::fenceCreateInfo(flags);
-	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+	VK_CHECK_RESULT(vkCreateFence(device, &fenceInfo, nullptr, &fence))
 
 }
 void VulkanFence::CleanUp()
@@ -32,6 +37,10 @@ void VulkanFence::WaitTillFalse() {
 }
 VkFence VulkanFence::Get() {
 	return fence;
+}
+
+void VulkanFence::Reset(){
+	vkResetFences(device, 1, &fence);
 }
 
 std::vector<VkFence> CreateFenceArray(std::vector<VulkanFence>& fences)
@@ -440,12 +449,12 @@ void GraphicsCommandWorker::Work() {
 					pool = &computePool;
 				break;
 			}
+			pos_work->fence.Create();
 
 			cmdBuf = pool->GetOneTimeUseCommandBuffer();
-			
-			pool->BeginBufferRecording(cmdBuf);
+			//pool->BeginBufferRecording(cmdBuf);
 			pos_work->work(cmdBuf);
-			pool->EndBufferRecording(cmdBuf);
+			//pool->EndBufferRecording(cmdBuf);
 			pool->SubmitCommandBuffer(cmdBuf, pos_work->fence,
 				pos_work->waitSemaphores, pos_work->signalSemaphores);
 
@@ -483,16 +492,19 @@ FrameObject::FrameObject(VulkanDevice& device, int frameIndex) :
 	commandPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
 		&device.GraphicsQueue()),
 	imageAvailSem(device),
-	renderFinishSem(device)
-
+	renderFinishSem(device),
+	commandFence(device)
 {
 	primaryCmdBuf = commandPool.GetPrimaryCommandBuffer(false);
+	commandFence.Create();
 }
 
 FrameObject::~FrameObject() {
+	commandPool.FreeCommandBuffer(primaryCmdBuf);
 	commandPool.CleanUp();
 	imageAvailSem.CleanUp();
 	renderFinishSem.CleanUp();
+	commandFence.CleanUp();
 }
 
 VkResult FrameObject::AquireNextSwapchainImage(VkSwapchainKHR swapchain) {
@@ -503,8 +515,12 @@ VkResult FrameObject::AquireNextSwapchainImage(VkSwapchainKHR swapchain) {
 }
 
 void FrameObject::PrepareFrame() {
-
-
+	if(!firstUse){
+		commandFence.WaitTillTrue();
+		commandFence.Reset();
+	} else {
+		firstUse = false;
+	}
 	commandPool.BeginBufferRecording(primaryCmdBuf, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
 }
@@ -544,4 +560,8 @@ VkPresentInfoKHR FrameObject::GetPresentInfo() {
 
 VkCommandBuffer FrameObject::GetPrimaryCmdBuf() {
 	return primaryCmdBuf;
+}
+
+VkFence FrameObject::GetCommandFence() {
+	return commandFence.Get();
 }
