@@ -147,11 +147,8 @@ private:
 
 	int workerThreadCount = 3;
 
-	CommandPool asyncGraphicsPool;
-	CommandPool asyncTransferPool;
-
 	ConcurrentQueue<GraphicsWork> workQueue;
-	std::vector<GraphicsWork> finishQueue;
+	std::vector<GraphicsCleanUpWork> finishQueue;
 	std::vector < std::unique_ptr<GraphicsCommandWorker>> graphicsWorkers;
 
 	//CommandBufferWorkQueue<CommandBufferWork> graphicsSetupWorkQueue;
@@ -159,7 +156,7 @@ private:
 	//CommandBufferWorkQueue<TransferCommandWork> transferWorkQueue;
 	//std::vector<std::unique_ptr<CommandBufferWorker<TransferCommandWork>>> transferWorkers;
 
-	CommandPool graphicsPrimaryCommandPool;
+	std::unique_ptr<CommandPool> graphicsPrimaryCommandPool;
 
 	std::vector<std::unique_ptr<FrameObject>> frameObjects;
 

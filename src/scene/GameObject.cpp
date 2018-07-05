@@ -11,10 +11,10 @@ void GameObject::InitGameObject(VulkanRenderer* renderer)
 	this->renderer = renderer;
 
 	SetupUniformBuffer();
-	//SetupImage();
+	SetupImage();
 	SetupModel();
+	//SetupDescriptor();
 	SetupMaterial();
-	SetupDescriptor();
 	SetupPipeline();
 }
 
@@ -27,6 +27,8 @@ void GameObject::CleanUp()
 
 	uniformBuffer->CleanBuffer();
 	materialBuffer->CleanBuffer();
+
+	mat->CleanUp();
 }
 
 void GameObject::LoadModel(std::string filename)
@@ -72,38 +74,43 @@ void GameObject::SetupModel()
 }
 
 void GameObject::SetupMaterial() {
+	mat = std::make_shared<VulkanMaterial>(renderer->device);
 
-	mat->AddTexture(gameObjectVulkanTexture);
+	mat->AddMaterialDataSlot({ResourceType::uniform, 
+		ResourceStages::fragment_only, materialBuffer->resource});
+	
+	mat->AddMaterialDataSlot({ResourceType::texture2D, 
+		ResourceStages::fragment_only, gameObjectVulkanTexture->resource});
+
+	//mat->AddTexture(gameObjectVulkanTexture);
 	mat->Setup();
 }
 
 void GameObject::SetupDescriptor()
 {
 
+	// descriptor = renderer->GetVulkanDescriptor();
 
-
-	descriptor = renderer->GetVulkanDescriptor();
-
-	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
+	// std::vector<VkDescriptorSetLayoutBinding> m_bindings;
+	// m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
 	//m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
-	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
+	// m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
 
-	descriptor->SetupLayout(m_bindings);
+	// descriptor->SetupLayout(m_bindings);
 
-	std::vector<DescriptorPoolSize> poolSizes;
-	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
-	//poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
-	descriptor->SetupPool(poolSizes);
+	// std::vector<DescriptorPoolSize> poolSizes;
+	// poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	// poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	// //poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	// descriptor->SetupPool(poolSizes);
 
-	m_descriptorSet = descriptor->CreateDescriptorSet();
+	// m_descriptorSet = descriptor->CreateDescriptorSet();
 
-	std::vector<DescriptorUse> writes;
-	writes.push_back(DescriptorUse(0, 1, uniformBuffer->resource));
-	writes.push_back(DescriptorUse(1, 1, materialBuffer->resource));
-	//writes.push_back(DescriptorUse(1, 1, gameObjectVulkanTexture->resource));
-	descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
+	// std::vector<DescriptorUse> writes;
+	// writes.push_back(DescriptorUse(0, 1, uniformBuffer->resource));
+	// writes.push_back(DescriptorUse(1, 1, materialBuffer->resource));
+	// //writes.push_back(DescriptorUse(1, 1, gameObjectVulkanTexture->resource));
+	// descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
 
 	//materialDescriptor = renderer->GetVulkanDescriptor();
 	//
@@ -152,11 +159,14 @@ void GameObject::SetupPipeline()
 		Vertex_PosNormTex::getAttributeDescriptions());
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0,
 		VK_FALSE);
+	
 	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width,
 		(float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f,
 		1.0f, 0.0f, 0.0f);
+	
 	pipeMan.SetScissor(mvp, renderer->vulkanSwapChain.swapChainExtent.width,
 		renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);
+	
 	pipeMan.SetViewportState(mvp, 1, 1, 0);
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT,
 		VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE,
@@ -183,7 +193,7 @@ void GameObject::SetupPipeline()
 
 	std::vector<VkDescriptorSetLayout> layouts;
 	renderer->AddGlobalLayouts(layouts);
-	layouts.push_back(descriptor->GetLayout());
+	layouts.push_back(mat->GetDescriptorSetLayout());
 	//layouts.push_back(materialDescriptor->GetLayout());
 	pipeMan.SetDescriptorSetLayout(mvp, layouts);
 
@@ -269,7 +279,9 @@ void GameObject::Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNo
 		sizeof(ModelPushConstant),
 		&modelPushConstant);*/
 
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &m_descriptorSet.set, 0, nullptr);
+	mat->Bind(commandBuffer, mvp->layout);
+
+	//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &m_descriptorSet.set, 0, nullptr);
 	//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 3, 1, &material_descriptorSet.set, 0, nullptr);
 
 	mvp->BindPipelineOptionalWireframe(commandBuffer, wireframe);

@@ -5,33 +5,42 @@
 #include "Device.h"
 #include "Buffer.h"
 
-VulkanFence::VulkanFence(const VulkanDevice& device,
+VulkanFence::VulkanFence(VulkanDevice& device)
+	:device(device.device)
+{
+}
+
+void VulkanFence::Create(
 	long int timeout,
 	VkFenceCreateFlags flags)
-	:device(device), timeout(timeout)
 {
+	this->timeout = timeout;
 	VkFenceCreateInfo fenceInfo =
 		initializers::fenceCreateInfo(flags);
-	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
+	VK_CHECK_RESULT(vkCreateFence(device, &fenceInfo, nullptr, &fence))
 
 }
 void VulkanFence::CleanUp()
 {
-	vkDestroyFence(device.device, fence, nullptr);
+	vkDestroyFence(device, fence, nullptr);
 }
 
 bool  VulkanFence::Check() {
-	return vkGetFenceStatus(device.device, fence);
+	return vkGetFenceStatus(device, fence);
 }
 
 void VulkanFence::WaitTillTrue() {
-	vkWaitForFences(device.device, 1, &fence, VK_TRUE, timeout);
+	vkWaitForFences(device, 1, &fence, VK_TRUE, timeout);
 }
 void VulkanFence::WaitTillFalse() {
-	vkWaitForFences(device.device, 1, &fence, VK_FALSE, timeout);
+	vkWaitForFences(device, 1, &fence, VK_FALSE, timeout);
 }
 VkFence VulkanFence::Get() {
 	return fence;
+}
+
+void VulkanFence::Reset(){
+	vkResetFences(device, 1, &fence);
 }
 
 std::vector<VkFence> CreateFenceArray(std::vector<VulkanFence>& fences)
@@ -140,13 +149,9 @@ void CommandQueue::WaitForFences(VkFence fence) {
 	vkWaitForFences(device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 }
 
-CommandPool::CommandPool(VulkanDevice& device) :
+CommandPool::CommandPool(VulkanDevice& device, 
+	VkCommandPoolCreateFlags flags, CommandQueue* queue) :
 	device(device)
-{
-
-}
-
-VkBool32 CommandPool::Setup(VkCommandPoolCreateFlags flags, CommandQueue* queue)
 {
 	this->queue = queue;
 
@@ -158,8 +163,23 @@ VkBool32 CommandPool::Setup(VkCommandPoolCreateFlags flags, CommandQueue* queue)
 		throw std::runtime_error("failed to create graphics command pool!");
 	}
 
-	return VK_TRUE;
+	//return VK_TRUE;
 }
+
+// VkBool32 CommandPool::Setup(VkCommandPoolCreateFlags flags, CommandQueue* queue)
+// {
+// 	this->queue = queue;
+
+// 	VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo();
+// 	cmd_pool_info.queueFamilyIndex = queue->GetQueueFamily();
+// 	cmd_pool_info.flags = flags;
+
+// 	if (vkCreateCommandPool(device.device, &cmd_pool_info, nullptr, &commandPool) != VK_SUCCESS) {
+// 		throw std::runtime_error("failed to create graphics command pool!");
+// 	}
+
+// 	return VK_TRUE;
+// }
 
 VkBool32 CommandPool::CleanUp() {
 	std::lock_guard<std::mutex> lock(poolLock);
@@ -292,60 +312,65 @@ void CommandPool::WriteToBuffer(VkCommandBuffer buf, std::function<void(VkComman
 	cmds(buf);
 }
 
-CommandBuffer::CommandBuffer(VulkanDevice& device, CommandPool& pool) :
-	fence(device), pool(pool)
-{
-}
+// CommandBuffer::CommandBuffer(VulkanDevice& device, CommandPool& pool) :
+// 	fence(device), pool(pool)
+// {
+// }
 
-void CommandBuffer::Create() {
-	buf = pool.GetOneTimeUseCommandBuffer();
-}
+// void CommandBuffer::Create() {
+// 	buf = pool.GetOneTimeUseCommandBuffer();
+// }
 
-void CommandBuffer::CleanUp() {
-	pool.FreeCommandBuffer(buf);
-	for (auto& sem : waitSemaphores) {
-		sem.CleanUp();
-	}
-	for (auto& sem : waitSemaphores) {
-		sem.CleanUp();
-	}
-}
+// void CommandBuffer::CleanUp() {
+// 	pool.FreeCommandBuffer(buf);
+// 	for (auto& sem : waitSemaphores) {
+// 		sem.CleanUp();
+// 	}
+// 	for (auto& sem : waitSemaphores) {
+// 		sem.CleanUp();
+// 	}
+// }
 
-void CommandBuffer::Begin() {
-	pool.BeginBufferRecording(buf);
-}
-void CommandBuffer::End() {
-	pool.EndBufferRecording(buf);
-}
-void CommandBuffer::Submit() {
-	pool.SubmitCommandBuffer(buf, fence, waitSemaphores, signalSemaphores);
-}
+// void CommandBuffer::Begin() {
+// 	pool.BeginBufferRecording(buf);
+// }
+// void CommandBuffer::End() {
+// 	pool.EndBufferRecording(buf);
+// }
+// void CommandBuffer::Submit() {
+// 	pool.SubmitCommandBuffer(buf, fence, waitSemaphores, signalSemaphores);
+// }
 
-void CommandBuffer::Write(std::function<void(VkCommandBuffer)> cmds) {
-	pool.WriteToBuffer(buf, cmds);
-}
+// void CommandBuffer::Write(std::function<void(VkCommandBuffer)> cmds) {
+// 	pool.WriteToBuffer(buf, cmds);
+// }
 
-void CommandBuffer::AddSynchronization(std::vector<VulkanSemaphore> waitSemaphores,
-	std::vector<VulkanSemaphore> signalSemaphores) {
-	this->waitSemaphores = waitSemaphores;
-	this->signalSemaphores = signalSemaphores;
-}
+// void CommandBuffer::AddSynchronization(std::vector<VulkanSemaphore> waitSemaphores,
+// 	std::vector<VulkanSemaphore> signalSemaphores) {
+// 	this->waitSemaphores = waitSemaphores;
+// 	this->signalSemaphores = signalSemaphores;
+// }
 
-bool CommandBuffer::CheckFence() {
-	return fence.Check();
-}
+// bool CommandBuffer::CheckFence() {
+// 	return fence.Check();
+// }
 
 
 
 GraphicsCommandWorker::GraphicsCommandWorker(
-	VulkanDevice &device, CommandQueue *queue,
+	VulkanDevice &device,
 	ConcurrentQueue<GraphicsWork>& workQueue,
-	std::vector<GraphicsWork>& finishQueue,
+	std::vector<GraphicsCleanUpWork>& finishQueue,
 	bool startActive)
 	:
-	device(device), workQueue(workQueue), finishQueue(finishQueue)
+	device(device), 
+	graphicsPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue()),
+	transferPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.TransferQueue()),
+	computePool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.ComputeQueue()),
+	workQueue(workQueue), finishQueue(finishQueue)
 {
 	workingThread = std::thread{ &GraphicsCommandWorker::Work, this };
+
 }
 
 GraphicsCommandWorker::~GraphicsCommandWorker() {
@@ -355,6 +380,10 @@ GraphicsCommandWorker::~GraphicsCommandWorker() {
 void GraphicsCommandWorker::CleanUp() {
 	StopWork();
 	workingThread.join();
+
+	graphicsPool.CleanUp();
+	transferPool.CleanUp();
+	computePool.CleanUp();
 }
 
 void GraphicsCommandWorker::StopWork() {
@@ -406,13 +435,31 @@ void GraphicsCommandWorker::Work() {
 		auto pos_work = workQueue.pop_if();
 		while (keepWorking && pos_work.has_value())
 		{
-			pos_work->cmdBuf.Create();
-			pos_work->cmdBuf.Begin();
-			pos_work->cmdBuf.Write(pos_work->work);
-			pos_work->cmdBuf.End();
-			pos_work->cmdBuf.Submit();
+			VkCommandBuffer cmdBuf;
+			CommandPool* pool;
 
-			finishQueue.push_back(std::move(*pos_work));
+			switch(pos_work->type){
+				case(CommandPoolType::graphics):
+					pool = &graphicsPool;
+				break;
+				case(CommandPoolType::transfer):
+					pool = &transferPool;
+				break;
+				case(CommandPoolType::compute):
+					pool = &computePool;
+				break;
+			}
+			pos_work->fence.Create();
+
+			cmdBuf = pool->GetOneTimeUseCommandBuffer();
+			//pool->BeginBufferRecording(cmdBuf);
+			pos_work->work(cmdBuf);
+			//pool->EndBufferRecording(cmdBuf);
+			pool->SubmitCommandBuffer(cmdBuf, pos_work->fence,
+				pos_work->waitSemaphores, pos_work->signalSemaphores);
+
+			finishQueue.push_back(GraphicsCleanUpWork{pos_work->cleanUp, 
+				pos_work->fence, pool, pos_work->cmdBuf});
 			//fence.WaitTillTrue();
 
 			/*for (auto& flag : pos_work->flags)
@@ -443,21 +490,22 @@ void GraphicsCommandWorker::Work() {
 FrameObject::FrameObject(VulkanDevice& device, int frameIndex) :
 	device(device),
 	frameIndex(frameIndex),
-	commandPool(device),
+	commandPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+		&device.GraphicsQueue()),
 	imageAvailSem(device),
-	renderFinishSem(device)
-
+	renderFinishSem(device),
+	commandFence(device)
 {
-	commandPool.Setup(
-		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-		&device.GraphicsQueue());
 	primaryCmdBuf = commandPool.GetPrimaryCommandBuffer(false);
+	commandFence.Create();
 }
 
 FrameObject::~FrameObject() {
+	commandPool.FreeCommandBuffer(primaryCmdBuf);
 	commandPool.CleanUp();
 	imageAvailSem.CleanUp();
 	renderFinishSem.CleanUp();
+	commandFence.CleanUp();
 }
 
 VkResult FrameObject::AquireNextSwapchainImage(VkSwapchainKHR swapchain) {
@@ -468,8 +516,12 @@ VkResult FrameObject::AquireNextSwapchainImage(VkSwapchainKHR swapchain) {
 }
 
 void FrameObject::PrepareFrame() {
-
-
+	if(!firstUse){
+		commandFence.WaitTillTrue();
+		commandFence.Reset();
+	} else {
+		firstUse = false;
+	}
 	commandPool.BeginBufferRecording(primaryCmdBuf, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
 }
@@ -509,4 +561,8 @@ VkPresentInfoKHR FrameObject::GetPresentInfo() {
 
 VkCommandBuffer FrameObject::GetPrimaryCmdBuf() {
 	return primaryCmdBuf;
+}
+
+VkFence FrameObject::GetCommandFence() {
+	return commandFence.Get();
 }

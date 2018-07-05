@@ -24,8 +24,9 @@ class VulkanDevice;
 
 class VulkanFence {
 public:
-	VulkanFence(const VulkanDevice& device,
-		long int timeout = DEFAULT_FENCE_TIMEOUT,
+	VulkanFence(VulkanDevice& device);
+	
+	void Create(long int timeout = DEFAULT_FENCE_TIMEOUT,
 		VkFenceCreateFlags flags = VK_FLAGS_NONE);
 	void CleanUp();
 
@@ -36,8 +37,11 @@ public:
 	//void CleanUp();
 	VkFence Get();
 
+	void Reset();
+
+
 private:
-	const VulkanDevice& device;
+	VkDevice device;
 	VkFence fence;
 	int timeout;
 };
@@ -95,13 +99,10 @@ private:
 
 class CommandPool {
 public:
-	CommandPool(VulkanDevice& device);
-	CommandPool(const CommandPool& cmd) = default;
-	CommandPool& operator=(const CommandPool& cmd) = default;
-	CommandPool(CommandPool&& cmd) = default;
-	CommandPool& operator=(CommandPool&& cmd) = default;
+	CommandPool(VulkanDevice& device, 
+		VkCommandPoolCreateFlags flags, CommandQueue* queue);
 
-	VkBool32 Setup(VkCommandPoolCreateFlags flags, CommandQueue* queue);
+	//VkBool32 Setup(VkCommandPoolCreateFlags flags, CommandQueue* queue);
 	VkBool32 CleanUp();
 
 	VkBool32 ResetPool();
@@ -135,55 +136,88 @@ private:
 
 };
 
-class CommandBuffer {
-public:
-	CommandBuffer(VulkanDevice& device, CommandPool& pool);
-	CommandBuffer(const CommandBuffer& cmd) = default;
-	CommandBuffer& operator=(const CommandBuffer& cmd) = default;
-	CommandBuffer(CommandBuffer&& cmd) = default;
-	CommandBuffer& operator=(CommandBuffer&& cmd) = default;
+// class CommandBuffer {
+// public:
+// 	CommandBuffer(VulkanDevice& device, CommandPool& pool);
+// 	void Create();
+// 	void CleanUp();
 
-	void Create();
-	void CleanUp();
+// 	void Begin();
+// 	void End();
 
-	void Begin();
-	void End();
+// 	void AddSynchronization(std::vector<VulkanSemaphore> waitSemaphores, std::vector<VulkanSemaphore> signalSemaphores);
+// 	void Write(std::function<void(VkCommandBuffer)> cmds);
 
-	void AddSynchronization(std::vector<VulkanSemaphore> waitSemaphores, std::vector<VulkanSemaphore> signalSemaphores);
-	void Write(std::function<void(VkCommandBuffer)> cmds);
+// 	void Submit();
 
-	void Submit();
+// 	bool CheckFence();
+// private:
+// 	CommandPool & pool;
+// 	VkCommandBuffer buf;
+// 	VulkanFence fence;
+// 	std::vector<VulkanSemaphore> waitSemaphores;
+// 	std::vector<VulkanSemaphore> signalSemaphores;
+// };
 
-	bool CheckFence();
-private:
-	CommandPool & pool;
-	VkCommandBuffer buf;
-	VulkanFence fence;
-	std::vector<VulkanSemaphore> waitSemaphores;
-	std::vector<VulkanSemaphore> signalSemaphores;
+enum class CommandPoolType {
+	graphics,
+	transfer,
+	compute,
 };
 
 struct GraphicsWork {
 	std::function<void(const VkCommandBuffer)> work;
 	std::function<void()> cleanUp;
-	CommandBuffer cmdBuf;
+	
+	VulkanFence fence;
+	CommandPoolType type;
+	VkCommandBuffer cmdBuf;
+
+	std::vector<VulkanSemaphore> waitSemaphores;
+ 	std::vector<VulkanSemaphore> signalSemaphores;
 
 	GraphicsWork(std::function<void(const VkCommandBuffer)> work,
-		std::function<void()> cleanUp, CommandBuffer cmdBuf) :
-		work(work), cleanUp(cleanUp), cmdBuf(cmdBuf)
+		std::function<void()> cleanUp, CommandPoolType type,
+		VulkanDevice& device, 
+		std::vector<VulkanSemaphore> waitSemaphores,
+		std::vector<VulkanSemaphore> signalSemaphores) :
+		work(work), cleanUp(cleanUp), type(type), 
+		fence(device), 
+		waitSemaphores(waitSemaphores),
+		signalSemaphores(signalSemaphores)
 	{}
-	GraphicsWork(const GraphicsWork& cmd) = default;
-	GraphicsWork& operator=(const GraphicsWork& cmd) = default;
-	GraphicsWork(GraphicsWork&& cmd) = default;
-	GraphicsWork& operator=(GraphicsWork&& cmd) = default;
+
+	GraphicsWork(const GraphicsWork& work) = default;
+	GraphicsWork& operator=(const GraphicsWork& work) = default;
+	GraphicsWork(GraphicsWork&& work) = default;
+	GraphicsWork& operator=(GraphicsWork&& work) = default;
+
+};
+
+struct GraphicsCleanUpWork {
+	std::function<void()> cleanUp;
+	VulkanFence fence;
+	CommandPool* pool;
+	VkCommandBuffer cmdBuf;
+
+	GraphicsCleanUpWork(std::function<void()> cleanUp,
+		VulkanFence& fence, CommandPool* pool, VkCommandBuffer cmdBuf):
+		cleanUp(cleanUp), fence(fence), 
+		pool(pool), cmdBuf(cmdBuf) 
+	{} 
+
+
+	GraphicsCleanUpWork(const GraphicsCleanUpWork& work) = default;
+	GraphicsCleanUpWork& operator=(const GraphicsCleanUpWork& work) = default;
+	GraphicsCleanUpWork(GraphicsCleanUpWork&& work) = default;
+	GraphicsCleanUpWork& operator=(GraphicsCleanUpWork&& work) = default;
 };
 
 class GraphicsCommandWorker {
 public:
 	GraphicsCommandWorker(VulkanDevice& device,
-		CommandQueue* queue,
 		ConcurrentQueue<GraphicsWork>& workQueue,
-		std::vector<GraphicsWork>& finishQueue,
+		std::vector<GraphicsCleanUpWork>& finishQueue,
 		bool startActive = true);
 
 	GraphicsCommandWorker(const GraphicsCommandWorker& other) = delete; //copy
@@ -204,7 +238,12 @@ private:
 
 	bool keepWorking = true; //default to start working
 	ConcurrentQueue<GraphicsWork>& workQueue;
-	std::vector<GraphicsWork>& finishQueue;
+	std::vector<GraphicsCleanUpWork>& finishQueue;
+
+	CommandPool graphicsPool;
+	CommandPool transferPool;
+	CommandPool computePool;
+
 };
 
 
@@ -225,6 +264,8 @@ public:
 
 	VkCommandBuffer GetPrimaryCmdBuf();
 
+	VkFence GetCommandFence();
+
 private:
 	VulkanDevice & device;
 	uint32_t frameIndex; //which frame in the queue it is
@@ -233,6 +274,9 @@ private:
 
 	VulkanSemaphore imageAvailSem;
 	VulkanSemaphore renderFinishSem;
+
+	VulkanFence commandFence;
+	bool firstUse = true;
 
 	CommandPool commandPool;
 	VkCommandBuffer primaryCmdBuf;

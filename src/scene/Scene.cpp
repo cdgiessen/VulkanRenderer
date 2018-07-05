@@ -311,8 +311,8 @@ void Scene::UpdateSceneGUI() {
 			sphereObject->pbr_mat.metallic = 0.1f + (float)5 / 10.0f;
 			sphereObject->pbr_mat.roughness = 0.1f + (float)5 / 10.0f;
 
-			//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
-			//sphereObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/Red.png");
+			sphereObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/Red.png");
+			sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
 			sphereObject->InitGameObject(renderer);
 			gameObjects.push_back(std::move(sphereObject));
 		}
