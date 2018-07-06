@@ -5,7 +5,7 @@
 
 #include "../core/Logger.h"
 
-
+#include <GLFW/glfw3.h>
 
 
 VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(validationLayers)

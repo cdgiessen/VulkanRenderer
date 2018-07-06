@@ -9,7 +9,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <GLFW/glfw3.h>
+struct GLFWwindow;
 
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
