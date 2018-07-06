@@ -8,8 +8,8 @@
 #include <atomic>
 #include <unordered_map>
 
-#include <foonathan/memory/container.hpp> // vector, list, list_node_size
-#include <foonathan/memory/memory_pool.hpp> // memory_pool
+//#include <foonathan/memory/container.hpp> // vector, list, list_node_size
+//#include <foonathan/memory/memory_pool.hpp> // memory_pool
 
 #include "../core/CoreTools.h"
 #include "../core/TimeManager.h"
@@ -168,7 +168,7 @@ private:
 	void StartWorkerThreads();
 
 	InternalGraph::GraphPrototype& protoGraph;
-	
+
 	std::unique_ptr<InstancedSceneObject> instancedWaters;
 
 	std::vector<std::shared_ptr<Water>> waters;
@@ -183,7 +183,7 @@ private:
 	std::shared_ptr<VulkanTexture2D> WaterVulkanTexture;
 
 	std::vector<std::thread> terrainCreationWorkers;
-	
+
 	GeneralSettings settings;
 	bool recreateTerrain = false;
 	float nextTerrainWidth = 1000;

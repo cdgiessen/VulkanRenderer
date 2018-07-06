@@ -37,11 +37,11 @@ endif(UNIX)
 
 #memory
 
-set(FOONATHAN_MEMORY_BUILD_EXAMPLES OFF)
-set(FOONATHAN_MEMORY_BUILD_TESTS OFF)
-set(FOONATHAN_MEMORY_BUILD_TOOLS OFF)
+#set(FOONATHAN_MEMORY_BUILD_EXAMPLES OFF)
+#set(FOONATHAN_MEMORY_BUILD_TESTS OFF)
+#set(FOONATHAN_MEMORY_BUILD_TOOLS OFF)
 
-add_subdirectory(ext/memory)
+#add_subdirectory(ext/memory)
 
 # main files to compile
 
@@ -132,7 +132,7 @@ if(UNIX)
 endif(UNIX)
 
 #memory
-target_link_libraries(VulkanApp PUBLIC foonathan_memory)
+#target_link_libraries(VulkanApp PUBLIC foonathan_memory)
 
 #set_target_properties(VulkanApp PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
 #cotire(VulkanApp)

@@ -158,7 +158,7 @@ Terrain::~Terrain() {
 
 void Terrain::CleanUp()
 {
-	for(auto& pair : quadMap){
+	for (auto& pair : quadMap) {
 		pair.second.CleanUp();
 	}
 
