@@ -82,9 +82,8 @@ public:
 class VulkanPipeline
 {
 public:
-	VulkanPipeline(const VulkanDevice &device);
+	VulkanPipeline(VulkanDevice &device);
 	~VulkanPipeline();
-	void CleanUp();
 
 	void InitPipelineCache();
 	VkPipelineCache GetPipelineCache();
@@ -136,7 +135,7 @@ public:
 		std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateFlags flags = 0);
 
 private:
-	const VulkanDevice &device;
+	VulkanDevice &device;
 	VkPipelineCache pipeCache;
 	std::vector<std::shared_ptr<ManagedVulkanPipeline>> pipes;
 };

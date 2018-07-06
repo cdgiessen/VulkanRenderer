@@ -92,7 +92,7 @@ src/scene/Skybox.cpp
 src/scene/Terrain.cpp
 src/scene/TerrainManager.cpp
 src/scene/Transform.cpp
-src/scene/Water.cpp
+#src/scene/Water.cpp
 
 third-party/ImGui/imgui.cpp
 third-party/ImGui/imgui_draw.cpp

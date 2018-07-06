@@ -66,9 +66,9 @@ private:
 	std::unique_ptr<ResourceManager> resourceManager;
 	std::unique_ptr<TimeManager> timeManager;
 
-	std::unique_ptr<Scene> scene;
-	
 	std::unique_ptr<VulkanRenderer> vulkanRenderer;
+	
+	std::unique_ptr<Scene> scene;
 
 	//Input stuff
 	//bool mouseControlEnabled = true;

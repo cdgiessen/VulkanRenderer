@@ -1,25 +1,18 @@
 #include "SwapChain.h"
 #include "RenderTools.h"
 
+#include "../core/Window.h"
+
 #include "../core/Logger.h"
+
 
 #include <limits>
 
-VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device) : device(device) {
-
-}
-
-VulkanSwapChain::~VulkanSwapChain()
-{
-	Log::Debug << "swapchain deleted\n";
-	//CleanUp();
-}
-
-void VulkanSwapChain::InitSwapChain(GLFWwindow* window) {
+VulkanSwapChain::VulkanSwapChain(VulkanDevice& device, Window* window) : device(device) {
 
 	this->instance = device.instance;
 	this->physicalDevice = device.physical_device;
-	this->window = window;
+	//this->window = window;
 
 	// QueueFamilyIndices indices = device.GetFamilyIndices();
 	// present_queue = std::make_unique<CommandQueue>(device, indices.presentFamily);
@@ -28,8 +21,14 @@ void VulkanSwapChain::InitSwapChain(GLFWwindow* window) {
 	createImageViews();
 }
 
-void VulkanSwapChain::RecreateSwapChain(GLFWwindow* window) {
-	CleanUp();
+VulkanSwapChain::~VulkanSwapChain()
+{
+	//Log::Debug << "swapchain deleted\n";
+	DestroySwapchainResources();
+}
+
+void VulkanSwapChain::RecreateSwapChain(Window* window) {
+	DestroySwapchainResources();
 	this->window = window;
 
 	createSwapChain();
@@ -37,7 +36,7 @@ void VulkanSwapChain::RecreateSwapChain(GLFWwindow* window) {
 }
 
 void VulkanSwapChain::createSwapChain() {
-	details = querySwapChainSupport(physicalDevice, surface);
+	details = querySwapChainSupport(physicalDevice, device.GetSurface());
 
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat();
 	VkPresentModeKHR presentMode = chooseSwapPresentMode();
@@ -53,7 +52,7 @@ void VulkanSwapChain::createSwapChain() {
 
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface = surface;
+	createInfo.surface = device.GetSurface();
 
 	createInfo.minImageCount = imageCount;
 	createInfo.imageFormat = surfaceFormat.format;
@@ -141,7 +140,7 @@ void VulkanSwapChain::CreateFramebuffers(VkImageView depthImageView, VkRenderPas
 	}
 }
 
-void VulkanSwapChain::CleanUp() {
+void VulkanSwapChain::DestroySwapchainResources() {
 
 
 	for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
@@ -190,12 +189,11 @@ VkExtent2D VulkanSwapChain::chooseSwapExtent() {
 		return details.capabilities.currentExtent;
 	}
 	else {
-		int width, height;
-		glfwGetWindowSize(window, &width, &height);
+		auto size = window->GetWindowSize();
 
 		VkExtent2D actualExtent = {
-			static_cast<uint32_t>(width),
-			static_cast<uint32_t>(height)
+			static_cast<uint32_t>(size.x),
+			static_cast<uint32_t>(size.y)
 		};
 
 		actualExtent.width = std::max(details.capabilities.minImageExtent.width, std::min(details.capabilities.maxImageExtent.width, actualExtent.width));

@@ -44,7 +44,10 @@ void ManagedVulkanPipeline::BindPipelineOptionalWireframe(VkCommandBuffer cmdBuf
 	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? pipelines->at(1) : pipelines->at(0));
 }
 
-VulkanPipeline::VulkanPipeline(const VulkanDevice &device) :device(device) {
+VulkanPipeline::VulkanPipeline(VulkanDevice &device):
+	device(device) 
+{
+	InitPipelineCache();
 }
 
 VulkanPipeline::~VulkanPipeline()
@@ -67,18 +70,18 @@ VkPipelineCache VulkanPipeline::GetPipelineCache() {
 	return pipeCache;
 }
 
-void VulkanPipeline::CleanUp() {
-	for (auto& manPipe : pipes){
-		vkDestroyPipelineLayout(device.device, manPipe->layout, nullptr);
+// void VulkanPipeline::CleanUp() {
+// 	for (auto& manPipe : pipes){
+// 		vkDestroyPipelineLayout(device.device, manPipe->layout, nullptr);
 
-		for (auto& pipe : *manPipe->pipelines){
-			vkDestroyPipeline(device.device, pipe, nullptr);
-		}
+// 		for (auto& pipe : *manPipe->pipelines){
+// 			vkDestroyPipeline(device.device, pipe, nullptr);
+// 		}
 
-	}
+// 	}
 
-	vkDestroyPipelineCache(device.device, pipeCache, nullptr);
-}
+// 	vkDestroyPipelineCache(device.device, pipeCache, nullptr);
+// }
 
 std::shared_ptr<ManagedVulkanPipeline> VulkanPipeline::CreateManagedPipeline() {
 	std::shared_ptr<ManagedVulkanPipeline> mvp = std::make_shared<ManagedVulkanPipeline>();
