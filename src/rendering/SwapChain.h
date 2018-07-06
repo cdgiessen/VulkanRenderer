@@ -7,10 +7,10 @@
 
 #include <vulkan/vulkan.h>
 
-#include <GLFW/glfw3.h>
-
 #include "Initializers.h"
 #include "Device.h"
+
+class Window;
 
 struct SwapChainSupportDetails
 {
@@ -21,20 +21,18 @@ struct SwapChainSupportDetails
 
 class VulkanSwapChain {
 public:
-	VulkanSwapChain(const VulkanDevice& device);
+	VulkanSwapChain(VulkanDevice& device, Window* window);
 	~VulkanSwapChain();
 
-	void InitSwapChain(GLFWwindow* window);
+	//void InitSwapChain(Window* window);
 
-	void RecreateSwapChain(GLFWwindow* window);
+	void RecreateSwapChain(Window* window);
 	
 	void CreateFramebuffers(VkImageView depthImageView, VkRenderPass renderPass);
 
-	void CleanUp();
+	void DestroySwapchainResources();
 
 	static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
-
-	VkSurfaceKHR surface;
 
 	VkSwapchainKHR swapChain = VK_NULL_HANDLE;
 	VkFormat swapChainImageFormat;
@@ -49,10 +47,11 @@ public:
 
 private:
 
-	const VulkanDevice& device; 
+	VulkanDevice& device; 
 	VkInstance instance;
 	VkPhysicalDevice physicalDevice;
-	GLFWwindow *window;
+	
+	Window* window;
 
 	SwapChainSupportDetails details;
 

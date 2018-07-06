@@ -21,7 +21,7 @@ enum class ShaderModuleType {
 struct ShaderModule
 {
 	ShaderModule();
-
+	
 	ShaderModule(ShaderModuleType type,
 		VkShaderModule module);
 
@@ -70,7 +70,7 @@ private:
 class ShaderManager {
 public:
 	ShaderManager(VulkanDevice & device);
-	void CleanUp();
+	~ShaderManager();
 
 	ShaderModule loadShaderModule(const std::string& codePath, ShaderModuleType type);
 

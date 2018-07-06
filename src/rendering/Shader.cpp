@@ -142,7 +142,7 @@ ShaderManager::ShaderManager(VulkanDevice & device)
 
 }
 
-void ShaderManager::CleanUp() {
+ShaderManager::~ShaderManager() {
 
 	for (auto& module : shaderModules) {
 		vkDestroyShaderModule(device.device, module.module, nullptr);

@@ -6,7 +6,7 @@
 #include <array>
 #include <vector>
 
-struct GLFWwindow;
+#include "Window.h"
 
 namespace Input {
 
@@ -137,7 +137,7 @@ namespace Input {
 
 	};
 
-	void SetupInputDirector(GLFWwindow* window);
+	void SetupInputDirector(Window* window);
 
 	bool GetKey(KeyCode code);
 	bool GetKeyDown(KeyCode code);
@@ -169,7 +169,7 @@ namespace Input {
 	class InputDirector {
 	public:
 		InputDirector();
-		void SetupInputDirector(GLFWwindow* window);
+		void SetupInputDirector(Window* window);
 		void SetupJoysticks(); //find controllers already plugged in
 
 		bool GetKey(KeyCode code);
@@ -210,7 +210,7 @@ namespace Input {
 		void UpdateInputs();
 
 	private:
-		GLFWwindow* window;
+		Window* window;
 
 		//contains joystick info, such as if it's connected, how many axes and buttons there are, and pointers to the data of the axes and buttons
 		struct JoystickData {

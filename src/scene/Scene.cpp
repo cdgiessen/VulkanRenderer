@@ -140,7 +140,7 @@ Scene::~Scene()
 
 	//treesInstanced->CleanUp();
 
-	Log::Debug << "scene deleted\n";
+	//Log::Debug << "scene deleted\n";
 }
 
 void Scene::UpdateScene(ResourceManager* resourceMan, TimeManager* timeManager) {

@@ -1,25 +1,15 @@
 #pragma once
 
-#include <memory>
-
 #include <glm/vec2.hpp>
-#include <GLFW/glfw3.h>
+#include <vector>
 
-
-struct Destroyer {
-
-	~Destroyer() {
-		glfwTerminate();
-	}
-};
-
-static std::shared_ptr<Destroyer> DESTROYER;
+struct GLFWwindow;
 
 class Window {
 public:
-	Window();                                                                                                                                                                                            
+	Window(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position = { 0, 0 });                                                                                                                                                                                            
 
-	void createWindow(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position = { 0, 0 });
+	//void createWindow(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position = { 0, 0 });
 	void showWindow(bool show = true);
 	void setSizeLimits(const glm::ivec2& minSize, const glm::ivec2& maxSize = {});
 	void destroyWindow();
@@ -62,3 +52,4 @@ protected:
 	bool isWindowFocused = false;
 };
 
+std::vector<const char*> GetWindowExtensions();

@@ -1,13 +1,21 @@
 #include "Renderer.h"
+
 #include "Initializers.h"
+
+#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../../third-party/stb_image/stb_image_write.h"
 
 #include "../gui/ImGuiImpl.h"
+
+#include "../core/Window.h"
+#include "../core/Logger.h"
+
 #include "../scene/Scene.h"
 
-#include "../core/Logger.h"
+
 
 #include <json.hpp>
 #include <fstream>
@@ -45,30 +53,30 @@ void RenderSettings::Save() {
 }
 
 VulkanRenderer::VulkanRenderer(bool validationLayer,
-	GLFWwindow* window)
+	Window* window)
 
 	:settings("render_settings.json"),
-	device(validationLayer),
-	vulkanSwapChain(device),
+	device(validationLayer, window),
+	vulkanSwapChain(device, device.window),
 	shaderManager(device),
 	pipelineManager(device),
-	textureManager(device)
+	textureManager(device),
+	graphicsPrimaryCommandPool(device,
+		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue())
 
 {
-	device.window = window;
+	//device.InitVulkanDevice();
 
-	device.InitVulkanDevice(vulkanSwapChain.surface);
+	// graphicsPrimaryCommandPool = std::make_unique<CommandPool>(device,
+	// 	VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue());
 
-	graphicsPrimaryCommandPool = std::make_unique<CommandPool>(device,
-		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue());
-
-	vulkanSwapChain.InitSwapChain(device.window);
+	//vulkanSwapChain.InitSwapChain(device.window);
 
 	for (int i = 0; i < vulkanSwapChain.swapChainImages.size(); i++) {
 		frameObjects.push_back(std::make_unique<FrameObject>(device, i));
 	}
 
-	pipelineManager.InitPipelineCache();
+	//pipelineManager.InitPipelineCache();
 
 	for (int i = 0; i < workerThreadCount; i++) {
 		graphicsWorkers.push_back(
@@ -108,12 +116,6 @@ VulkanRenderer::~VulkanRenderer() {
 
 	depthBuffer->destroy();
 
-	workQueue.notify_all();
-	for (auto& worker : graphicsWorkers)
-		worker->StopWork();
-	for (auto& worker : graphicsWorkers)
-		worker->CleanUp();
-
 	for (auto& work : finishQueue) {
 		work.fence.WaitTillTrue();
 		work.cleanUp();
@@ -121,22 +123,27 @@ VulkanRenderer::~VulkanRenderer() {
 		work.fence.CleanUp();
 	}
 
+	workQueue.notify_all();
+	for (auto& worker : graphicsWorkers)
+		worker->StopWork();
+	for (auto& worker : graphicsWorkers)
+		worker->CleanUp();
 
-	graphicsPrimaryCommandPool->CleanUp();
+	//graphicsPrimaryCommandPool->CleanUp();
 
-	renderPass.reset();
+	//renderPass.reset();
 
-	vulkanSwapChain.CleanUp();
+	//frameObjects.clear();
 
-	frameObjects.clear();
+	//vulkanSwapChain.CleanUp();
 
-	shaderManager.CleanUp();
+	//shaderManager.CleanUp();
 
-	pipelineManager.CleanUp();
+	//pipelineManager.CleanUp();
 
-	device.Cleanup(vulkanSwapChain.surface);
+	//device.CleanUp();
 
-	Log::Debug << "renderer deleted\n";
+	//Log::Debug << "renderer deleted\n";
 }
 
 void VulkanRenderer::DeviceWaitTillIdle() { vkDeviceWaitIdle(device.device); }
@@ -495,7 +502,7 @@ void VulkanRenderer::SubmitTransferWork(
 
 VkCommandBuffer VulkanRenderer::GetGraphicsCommandBuffer() {
 
-	return graphicsPrimaryCommandPool->GetPrimaryCommandBuffer();
+	return graphicsPrimaryCommandPool.GetPrimaryCommandBuffer();
 }
 
 void VulkanRenderer::SubmitGraphicsCommandBufferAndWait(
@@ -506,12 +513,12 @@ void VulkanRenderer::SubmitGraphicsCommandBufferAndWait(
 	VkFence fence;
 	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
 	VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence));
-	graphicsPrimaryCommandPool->SubmitPrimaryCommandBuffer(commandBuffer, fence);
+	graphicsPrimaryCommandPool.SubmitPrimaryCommandBuffer(commandBuffer, fence);
 
 	device.GraphicsQueue().WaitForFences(fence);
 
 	vkDestroyFence(device.device, fence, nullptr);
-	graphicsPrimaryCommandPool->FreeCommandBuffer(commandBuffer);
+	graphicsPrimaryCommandPool.FreeCommandBuffer(commandBuffer);
 
 }
 

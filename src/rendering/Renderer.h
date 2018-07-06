@@ -46,7 +46,7 @@ private:
 class VulkanRenderer
 {
 public:
-	VulkanRenderer(bool enableValidationLayer, GLFWwindow *window);
+	VulkanRenderer(bool enableValidationLayer, Window *window);
 
 	VulkanRenderer(const VulkanRenderer& other) = delete; //copy
 	VulkanRenderer(VulkanRenderer&& other) = delete; //move
@@ -121,8 +121,12 @@ public:
 	Scene* scene;
 
 private:
-	void SetupGlobalDescriptorSet();
-	void SetupLightingDescriptorSet();
+
+	CommandPool graphicsPrimaryCommandPool;
+
+	std::vector<std::unique_ptr<FrameObject>> frameObjects;
+
+	std::vector<std::shared_ptr<VulkanDescriptor>> descriptors;
 
 	std::unique_ptr<VulkanBufferUniform> globalVariableBuffer;
 	std::unique_ptr<VulkanBufferUniform> cameraDataBuffer;
@@ -156,8 +160,6 @@ private:
 	//CommandBufferWorkQueue<TransferCommandWork> transferWorkQueue;
 	//std::vector<std::unique_ptr<CommandBufferWorker<TransferCommandWork>>> transferWorkers;
 
-	std::unique_ptr<CommandPool> graphicsPrimaryCommandPool;
-
 	std::vector<std::unique_ptr<FrameObject>> frameObjects;
 
 	std::vector<std::shared_ptr<VulkanDescriptor>> descriptors;
@@ -172,6 +174,9 @@ private:
 
 	std::array<VkClearValue, 2> GetFramebufferClearValues();
 
+
+	void SetupGlobalDescriptorSet();
+	void SetupLightingDescriptorSet();
 	void SaveScreenshot();
 };
 

@@ -25,7 +25,6 @@
 
 #include "Camera.h"
 #include "Terrain.h"
-#include "Water.h"
 
 #include "InstancedSceneObject.h"
 
@@ -170,8 +169,6 @@ private:
 	InternalGraph::GraphPrototype& protoGraph;
 
 	std::unique_ptr<InstancedSceneObject> instancedWaters;
-
-	std::vector<std::shared_ptr<Water>> waters;
 
 	std::shared_ptr<Mesh> WaterMesh;
 	std::shared_ptr<VulkanModel> WaterModel;

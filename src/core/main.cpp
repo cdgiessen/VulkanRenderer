@@ -9,9 +9,6 @@
 #define VMA_IMPLEMENTATION
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
 #define TINYGLTF_IMPLEMENTATION //needs stb_image & stb_image_write to be defined above 
 #include "../../third-party/tinygltf/tiny_gltf.h"
 

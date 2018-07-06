@@ -8,6 +8,8 @@
 
 #include "../../third-party/ImGui/imgui.h"
 
+#include "../core/Window.h"
+
 // GLFW
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
@@ -864,7 +866,7 @@ void ImGui_ImplGlfwVulkan_Render(VkCommandBuffer command_buffer)
 }
 
 
-void PrepareImGui(GLFWwindow* window, VulkanRenderer* vulkanRenderer)
+void PrepareImGui(Window* window, VulkanRenderer* vulkanRenderer)
 {
 	ImGui_ImplGlfwVulkan_Init_Data init_data = {};
 
@@ -900,7 +902,7 @@ void PrepareImGui(GLFWwindow* window, VulkanRenderer* vulkanRenderer)
 			abort();
 	};
 
-	ImGui_ImplGlfwVulkan_Init(window, false, &init_data);
+	ImGui_ImplGlfwVulkan_Init(window->getWindowContext(), false, &init_data);
 
 	VkCommandBuffer cmdBuf = vulkanRenderer->GetGraphicsCommandBuffer();
 	ImGui_ImplGlfwVulkan_CreateFontsTexture(cmdBuf);

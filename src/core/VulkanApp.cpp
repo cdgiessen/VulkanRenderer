@@ -58,17 +58,17 @@ VulkanApp::VulkanApp():
 	settings("settings.json")
 {
 
-
 	timeManager = std::make_unique<TimeManager>();
 
-	window = std::make_unique<Window>();
-	window->createWindow(settings.isFullscreen, glm::ivec2(settings.screenWidth, settings.screenHeight), glm::ivec2(10,10));
-	Input::SetupInputDirector(window->getWindowContext());
+	window = std::make_unique<Window>(settings.isFullscreen, 
+		glm::ivec2(settings.screenWidth, settings.screenHeight), 
+		glm::ivec2(10,10));
+	Input::SetupInputDirector(window.get());
 	
 	resourceManager = std::make_unique<ResourceManager>();
 
 
-	vulkanRenderer = std::make_unique<VulkanRenderer>(settings.useValidationLayers, window->getWindowContext());
+	vulkanRenderer = std::make_unique<VulkanRenderer>(settings.useValidationLayers, window.get());
 	
 	scene = std::make_unique<Scene>(resourceManager.get(), vulkanRenderer.get(), imgui_nodeGraph_terrain.GetGraph());
 	
@@ -311,7 +311,7 @@ void VulkanApp::HandleInputs() {
 			vulkanRenderer.reset();
 			Log::Debug << "Renderer reset\n";
 
-			vulkanRenderer = std::make_unique<VulkanRenderer>(settings.useValidationLayers, window->getWindowContext());
+			vulkanRenderer = std::make_unique<VulkanRenderer>(settings.useValidationLayers, window.get());
 			
 			scene = std::make_unique<Scene>(resourceManager.get(), vulkanRenderer.get(), imgui_nodeGraph_terrain.GetGraph());
 			vulkanRenderer->scene = scene.get();

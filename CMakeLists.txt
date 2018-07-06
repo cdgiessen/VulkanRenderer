@@ -7,11 +7,14 @@ if(MSVC)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
 endif(MSVC)
 
-project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+#list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+#set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 #include(cotire)
+
+project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
+
 
 #libraries
 
@@ -89,7 +92,7 @@ src/scene/Skybox.cpp
 src/scene/Terrain.cpp
 src/scene/TerrainManager.cpp
 src/scene/Transform.cpp
-src/scene/Water.cpp
+#src/scene/Water.cpp
 
 third-party/ImGui/imgui.cpp
 third-party/ImGui/imgui_draw.cpp

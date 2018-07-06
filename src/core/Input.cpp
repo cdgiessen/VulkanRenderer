@@ -1,6 +1,7 @@
 #include "Input.h"
 
 #include <algorithm>
+
 #include <GLFW/glfw3.h>
 
 #include <glm/fwd.hpp>
@@ -18,7 +19,7 @@ namespace Input {
 
 	InputDirector inputDirector;
 
-	void SetupInputDirector(GLFWwindow* window) {
+	void SetupInputDirector(Window* window) {
 		inputDirector.SetupInputDirector(window);
 	}
 
@@ -97,15 +98,15 @@ namespace Input {
 	{
 	}
 
-	void InputDirector::SetupInputDirector(GLFWwindow* window) {
+	void InputDirector::SetupInputDirector(Window* window) {
 		this->window = window;
 
 		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
+		glfwGetCursorPos(window->getWindowContext(), &xpos, &ypos);
 		mousePosition = mousePositionPrevious = glm::dvec2(xpos, ypos);
 
 		mouseControlStatus = true; 
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		
 
 		for (int i = 0; i < 16; i++) {
@@ -220,10 +221,10 @@ namespace Input {
 		mouseControlStatus = value; 
 		Log::Debug << "Mouse control status " << value << "\n";
 		if (mouseControlStatus) {
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		}
 		else {
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
 		
 	}

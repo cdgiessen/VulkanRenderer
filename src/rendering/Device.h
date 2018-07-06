@@ -9,11 +9,9 @@
 
 #include <vulkan/vulkan.h>
 
-#include <GLFW/glfw3.h>
-
-#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
-
 #include "../util/ConcurrentQueue.h"
+
+class Window;
 
 #include "RenderTools.h"
 #include "RenderStructs.h"
@@ -42,7 +40,7 @@ struct QueueFamilyIndices {
 
 class VulkanDevice {
 public:
-	GLFWwindow * window;
+	Window* window;
 
 	VkInstance instance;
 	VkDebugReportCallbackEXT callback;
@@ -62,13 +60,13 @@ public:
 	VkPhysicalDeviceFeatures physical_device_features;
 	VkPhysicalDeviceMemoryProperties memoryProperties;
 
-	VulkanDevice(bool validationLayers);
+	VulkanDevice(bool validationLayers, Window* window);
 
 	~VulkanDevice();
 
-	void InitVulkanDevice(VkSurfaceKHR &surface);
+	//void InitVulkanDevice();
 
-	void Cleanup(VkSurfaceKHR &surface);
+	void CleanUp();
 
 	const QueueFamilyIndices GetFamilyIndices() const;
 
@@ -80,6 +78,8 @@ public:
 	VmaAllocator GetGeneralAllocator();
 	VmaAllocator GetImageLinearAllocator();
 	VmaAllocator GetImageOptimalAllocator();
+
+	VkSurfaceKHR GetSurface();
 
 private:
 	QueueFamilyIndices familyIndices;
@@ -94,6 +94,8 @@ private:
 	VmaAllocator allocator;
 	VmaAllocator linear_allocator;
 	VmaAllocator optimal_allocator;
+
+	VkSurfaceKHR surface;
 
 	void CreateInstance(std::string appName);
 
@@ -114,7 +116,6 @@ private:
 
 	void CreateVulkanAllocator();
 
-	void FindQueueFamilies(VkSurfaceKHR windowSurface);
 	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physDevice, VkSurfaceKHR windowSurface);
 
 	VkPhysicalDeviceFeatures QueryDeviceFeatures();

@@ -1,7 +1,10 @@
 #include "Window.h"
 
-#include <glm/glm.hpp>
 #include <mutex>
+
+#include <GLFW/glfw3.h>
+
+#include <glm/glm.hpp>
 
 #include "../../third-party/ImGui/imgui.h"
 #include "../gui/ImGuiImpl.h"
@@ -9,16 +12,7 @@
 #include "Input.h"
 #include "Logger.h"
 
-Window::Window() {
-	static std::once_flag once;
-	std::call_once(once, [] {
-		if (GLFW_TRUE == glfwInit()) {
-			DESTROYER.reset(new Destroyer());
-		}
-	});
-}
-
-void Window::createWindow(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position) {
+Window::Window(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position) {
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	if (isFullscreen) {
@@ -79,8 +73,8 @@ void Window::showWindow(bool show) {
 
 void Window::destroyWindow() {
 	glfwDestroyWindow(window);
-	window = nullptr;
 	glfwTerminate();
+	window = nullptr;
 }
 
 GLFWwindow* Window::getWindowContext() {
@@ -206,4 +200,19 @@ void Window::WindowFocusHandler(GLFWwindow* window, int focused) {
 	{
 		w->isWindowFocused = false;
 	}
+}
+
+std::vector<const char*> GetWindowExtensions() {
+
+	std::vector<const char*> extensions;
+
+	unsigned int glfwExtensionCount = 0;
+	const char** glfwExtensions;
+	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+	for (unsigned int i = 0; i < glfwExtensionCount; i++) {
+		extensions.push_back(glfwExtensions[i]);
+	}
+
+	return extensions;
 }

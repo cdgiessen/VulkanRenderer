@@ -1,21 +1,46 @@
 #include "Device.h"
 
+#include <GLFW/glfw3.h>
+
 #include "Initializers.h"
 #include "SwapChain.h"
 
 #include "../core/Logger.h"
+#include "../core/Window.h"
 
 
 
 
-VulkanDevice::VulkanDevice(bool validationLayers) : enableValidationLayers(validationLayers)
+VulkanDevice::VulkanDevice(bool validationLayers, Window* window) 
+	: enableValidationLayers(validationLayers),
+	window(window)
 {
+	CreateInstance("My Vulkan App");
+	SetupDebugCallback();
+	CreateSurface(surface);
+	PickPhysicalDevice(surface);
 
+	familyIndices = FindQueueFamilies(physical_device, surface);
+
+	CreateLogicalDevice();
+
+	CreateQueues();
+
+	CreateVulkanAllocator();
 }
 
 VulkanDevice::~VulkanDevice()
 {
-	Log::Debug << "device deleted\n";
+	//Log::Debug << "device deleted\n";
+
+	vmaDestroyAllocator(allocator);
+	vmaDestroyAllocator(linear_allocator);
+	vmaDestroyAllocator(optimal_allocator);
+
+	vkDestroyDevice(device, nullptr);
+	DestroyDebugReportCallbackEXT(instance, callback, nullptr);
+	vkDestroySurfaceKHR(instance, surface, nullptr);
+	vkDestroyInstance(instance, nullptr);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debugCallback(
@@ -33,22 +58,23 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debugCallback(
 	return VK_FALSE;
 }
 
-void VulkanDevice::InitVulkanDevice(VkSurfaceKHR &surface)
-{
-	CreateInstance("My Vulkan App");
-	SetupDebugCallback();
-	CreateSurface(surface);
-	PickPhysicalDevice(surface);
-	FindQueueFamilies(surface);
+// void VulkanDevice::InitVulkanDevice()
+// {
+// 	CreateInstance("My Vulkan App");
+// 	SetupDebugCallback();
+// 	CreateSurface(surface);
+// 	PickPhysicalDevice(surface);
 
-	CreateLogicalDevice();
+// 	familyIndices = FindQueueFamilies(physical_device, surface);
 
-	CreateQueues();
+// 	CreateLogicalDevice();
 
-	CreateVulkanAllocator();
-}
+// 	CreateQueues();
 
-void VulkanDevice::Cleanup(VkSurfaceKHR &surface) {
+// 	CreateVulkanAllocator();
+// }
+
+void VulkanDevice::CleanUp() {
 	vmaDestroyAllocator(allocator);
 	vmaDestroyAllocator(linear_allocator);
 	vmaDestroyAllocator(optimal_allocator);
@@ -155,15 +181,7 @@ void VulkanDevice::CreateInstance(std::string appName) {
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
 
-	std::vector<const char*> extensions;
-
-	unsigned int glfwExtensionCount = 0;
-	const char** glfwExtensions;
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-	for (unsigned int i = 0; i < glfwExtensionCount; i++) {
-		extensions.push_back(glfwExtensions[i]);
-	}
+	auto extensions = GetWindowExtensions();
 
 	if (enableValidationLayers) {
 		extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
@@ -202,7 +220,7 @@ void VulkanDevice::SetupDebugCallback() {
 
 void VulkanDevice::CreateSurface(VkSurfaceKHR &surface) {
 	//VK_CHECK_RESULT(glfwCreateWindowSurface(instance, window, nullptr, &surface));
-	VkResult res = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+	VkResult res = glfwCreateWindowSurface(instance, window->getWindowContext(), nullptr, &surface);
 	if (res != VK_SUCCESS) {
 		Log::Error << errorString(res) << "\n";
 		throw std::runtime_error("failed to create window surface!");
@@ -255,11 +273,9 @@ VkPhysicalDeviceFeatures VulkanDevice::QueryDeviceFeatures() {
 	return deviceFeatures;
 }
 
-void VulkanDevice::FindQueueFamilies(VkSurfaceKHR windowSurface) {
-	familyIndices = FindQueueFamilies(physical_device, windowSurface);
-}
-
-QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice physDevice, VkSurfaceKHR windowSurface) {
+QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice physDevice, 
+	VkSurfaceKHR surface)
+{
 	QueueFamilyIndices indices;
 
 	uint32_t queueFamilyCount = 0;
@@ -289,7 +305,7 @@ QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice physDevice, 
 		}
 
 		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(physDevice, i, windowSurface, &presentSupport);
+		vkGetPhysicalDeviceSurfaceSupportKHR(physDevice, i, surface, &presentSupport);
 
 		if (queueFamily.queueCount > 0 && presentSupport) {
 			indices.presentFamily = i;
@@ -434,4 +450,8 @@ VmaAllocator VulkanDevice::GetImageLinearAllocator(){
 
 VmaAllocator VulkanDevice::GetImageOptimalAllocator(){
 	return optimal_allocator;
+}
+
+VkSurfaceKHR VulkanDevice::GetSurface(){
+	return surface;
 }
