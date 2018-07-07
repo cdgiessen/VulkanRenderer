@@ -23,7 +23,7 @@ public:
 	};
 
 	//VulkanBuffer(VulkanDevice& device);
-	VulkanBuffer(VulkanDevice& device, VkDescriptorType type, VkDeviceSize bufferSize,
+	explicit VulkanBuffer(VulkanDevice& device, VkDescriptorType type, VkDeviceSize bufferSize,
 		VkBufferUsageFlags bufferUsage, VmaMemoryUsage allocUsage,
 		VmaAllocationCreateFlags allocFlags = (VmaAllocationCreateFlagBits)(0),
 		void* memToCopy = nullptr,
@@ -39,7 +39,7 @@ public:
 
 	virtual ~VulkanBuffer();
 
-	void CleanBuffer();
+	//void CleanBuffer();
 
 	void Map(void** pData);
 	void Unmap();

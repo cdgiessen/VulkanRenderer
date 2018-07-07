@@ -47,8 +47,8 @@ void InstancedSceneObject::CleanUp()
 	vulkanModel->destroy();
 	vulkanTexture->destroy();
 
-	uniformBuffer->CleanBuffer();
-	instanceBuffer->CleanBuffer();
+	//uniformBuffer->CleanBuffer();
+	//instanceBuffer->CleanBuffer();
 	//vkDestroyBuffer(renderer->device.device, instanceBuffer.buffer, nullptr);
 	//vkFreeMemory(renderer->device.device, instanceBuffer.memory, nullptr);
 }

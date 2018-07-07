@@ -404,7 +404,7 @@ void GraphicsCommandWorker::Work() {
 		workQueue.wait_on_value();
 
 		while (!workQueue.empty()) {
-			auto pos_work = workQueue.pop_if();
+			auto pos_work = std::move(workQueue.pop_if());
 			if (pos_work.has_value()) {
 
 

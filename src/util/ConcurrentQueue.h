@@ -14,10 +14,6 @@ public:
 	ConcurrentQueue();
 	~ConcurrentQueue();
 
-	//Gets the front of the Queue, waits if there isn't anything
-	T front();
-
-	//Pops the front of the queue, if it exists
 	void pop();
 
 	//Optionally returns the front value if it exists, else returns nothing
@@ -52,21 +48,6 @@ template <typename T>
 ConcurrentQueue<T>::~ConcurrentQueue() {};
 
 template <typename T>
-T ConcurrentQueue<T>::front()
-{
-	std::unique_lock<std::mutex> mlock(m_mutex);
-	if (m_queue.empty()) {
-		std::unique_lock<std::mutex> lk(m_cond_lock);
-		m_cond.wait(mlock);
-		return  m_queue.front();
-	}
-	else {
-		return m_queue.front();
-	}
-
-}
-
-template <typename T>
 void ConcurrentQueue<T>::pop()
 {
 	std::unique_lock<std::mutex> mlock(m_mutex);
@@ -79,7 +60,7 @@ std::optional<T> ConcurrentQueue<T>::pop_if()
 {
 	std::unique_lock<std::mutex> mlock(m_mutex);
 	if (!m_queue.empty()) {
-		auto ret = m_queue.front();
+		auto&& ret = m_queue.front();
 		m_queue.pop_front();
 		return std::move(ret);
 	}

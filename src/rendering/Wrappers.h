@@ -5,6 +5,7 @@
 #include <string>
 #include <memory>
 #include <set>
+#include <utility>  
 
 #include <functional>
 #include <mutex>
@@ -150,7 +151,7 @@ struct GraphicsWork {
 
 	std::vector<VulkanSemaphore> waitSemaphores;
 	std::vector<VulkanSemaphore> signalSemaphores;
-	std::vector<VulkanBuffer> buffersToClean;
+	std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean;
 	std::vector<Signal> signals; //signal on cpu completion of work
 
 	explicit GraphicsWork(std::function<void(const VkCommandBuffer)> work,
@@ -158,7 +159,7 @@ struct GraphicsWork {
 		VulkanDevice& device,
 		std::vector<VulkanSemaphore>&& waitSemaphores,
 		std::vector<VulkanSemaphore>&& signalSemaphores,
-		std::vector<VulkanBuffer>&& buffersToClean,
+		std::vector<std::shared_ptr<VulkanBuffer>>&& buffersToClean,
 		std::vector<Signal>&& signals)
 		:
 		work(work), type(type),
@@ -169,8 +170,8 @@ struct GraphicsWork {
 		signals(std::move(signals))
 	{}
 
-	GraphicsWork(const GraphicsWork& work) = delete;
-	GraphicsWork& operator=(const GraphicsWork& work) = delete;
+	GraphicsWork(const GraphicsWork& work) = default;
+	GraphicsWork& operator=(const GraphicsWork& work) = default;
 	GraphicsWork(GraphicsWork&& work) = default;
 	GraphicsWork& operator=(GraphicsWork&& work) = default;
 
@@ -180,7 +181,7 @@ struct GraphicsCleanUpWork {
 	VulkanFence fence;
 	CommandPool* pool;
 	VkCommandBuffer cmdBuf;
-	std::vector<VulkanBuffer> buffers;
+	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
 	std::vector<Signal> signals;
 
 	explicit GraphicsCleanUpWork(GraphicsWork&& work,
@@ -196,7 +197,7 @@ struct GraphicsCleanUpWork {
 	explicit GraphicsCleanUpWork(VulkanFence&& fence,
 		CommandPool* pool,
 		VkCommandBuffer cmdBuf,
-		std::vector<VulkanBuffer>&& buffers,
+		std::vector<std::shared_ptr<VulkanBuffer>>&& buffers,
 		std::vector<Signal>&& signals) :
 		fence(std::move(fence)),
 		pool(pool),
@@ -206,8 +207,8 @@ struct GraphicsCleanUpWork {
 	{}
 
 
-	GraphicsCleanUpWork(const GraphicsCleanUpWork& work) = delete;
-	GraphicsCleanUpWork& operator=(const GraphicsCleanUpWork& work) = delete;
+	GraphicsCleanUpWork(const GraphicsCleanUpWork& work) = default;
+	GraphicsCleanUpWork& operator=(const GraphicsCleanUpWork& work) = default;
 	GraphicsCleanUpWork(GraphicsCleanUpWork&& work) = default;
 	GraphicsCleanUpWork& operator=(GraphicsCleanUpWork&& work) = default;
 };

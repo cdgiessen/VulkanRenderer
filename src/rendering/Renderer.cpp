@@ -103,11 +103,11 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 VulkanRenderer::~VulkanRenderer() {
 	ImGui_ImplGlfwVulkan_Shutdown();
 
-	globalVariableBuffer->CleanBuffer();
-	cameraDataBuffer->CleanBuffer();
-	sunBuffer->CleanBuffer();
-	pointLightsBuffer->CleanBuffer();
-	spotLightsBuffer->CleanBuffer();
+	//globalVariableBuffer->CleanBuffer();
+	//cameraDataBuffer->CleanBuffer();
+	//sunBuffer->CleanBuffer();
+	//pointLightsBuffer->CleanBuffer();
+	//spotLightsBuffer->CleanBuffer();
 
 	vkDestroyPipelineLayout(device.device, frameDataDescriptorLayout, nullptr);
 	vkDestroyPipelineLayout(device.device, lightingDescriptorLayout, nullptr);
@@ -117,7 +117,7 @@ VulkanRenderer::~VulkanRenderer() {
 	lightingDescriptor->CleanUp();
 
 	dynamicTransformDescriptor->CleanUp();
-	dynamicTransformBuffer->CleanBuffer();
+	//dynamicTransformBuffer->CleanBuffer();
 
 	for (auto& descriptor : descriptors)
 		descriptor->CleanUp();
@@ -185,7 +185,7 @@ void VulkanRenderer::RenderFrame() {
 				work.fence.CleanUp();
 			}
 			else {
-				nextFramesWork.push_back(work);
+				nextFramesWork.push_back(std::move(work));
 			}
 		}
 		finishQueue.clear();
@@ -480,7 +480,7 @@ void VulkanRenderer::SetupLightingDescriptorSet() {
 }
 
 void VulkanRenderer::SubmitGraphicsWork(GraphicsWork&& data) {
-	workQueue.push_back(data);
+	workQueue.push_back(std::move(data));
 	//TODO:
 }
 
@@ -488,7 +488,7 @@ void VulkanRenderer::SubmitGraphicsWork(
 	std::function<void(const VkCommandBuffer)> work,
 	std::vector<VulkanSemaphore>&& waitSemaphores,
 	std::vector<VulkanSemaphore>&& signalSemaphores,
-	std::vector<VulkanBuffer>&& buffersToClean,
+	std::vector<std::shared_ptr<VulkanBuffer>>&& buffersToClean,
 	std::vector<Signal>&& signals)
 {
 	workQueue.push_back(std::move(GraphicsWork(std::move(work), CommandPoolType::graphics,
@@ -503,7 +503,7 @@ void VulkanRenderer::SubmitTransferWork(
 	std::function<void(const VkCommandBuffer)> work,
 	std::vector<VulkanSemaphore>&& waitSemaphores,
 	std::vector<VulkanSemaphore>&& signalSemaphores,
-	std::vector<VulkanBuffer>&& buffersToClean,
+	std::vector<std::shared_ptr<VulkanBuffer>>&& buffersToClean,
 	std::vector<Signal>&& signals)
 {
 	workQueue.push_back(std::move(GraphicsWork(std::move(work), CommandPoolType::transfer,
@@ -566,9 +566,9 @@ void WaitForSubmissionFinish(VkDevice device, CommandPool *pool,
 
 	pool->FreeCommandBuffer(buf);
 
-	for (auto& buffer : bufsToClean) {
-		buffer.CleanBuffer();
-	}
+	// for (auto& buffer : bufsToClean) {
+	// 	buffer.CleanBuffer();
+	// }
 }
 
 void InsertImageMemoryBarrier(VkCommandBuffer cmdbuffer, VkImage image,

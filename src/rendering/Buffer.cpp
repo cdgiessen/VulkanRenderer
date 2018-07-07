@@ -32,7 +32,7 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDescriptorType type,
 	}
 
 	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-	bufferInfo.size = bufferSize;
+	bufferInfo.size = m_size;
 	bufferInfo.usage = bufferUsage;
 
 	VmaAllocationCreateInfo allocInfo = {};
@@ -46,7 +46,7 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDescriptorType type,
 	VK_CHECK_RESULT(vmaCreateBuffer(buffer.allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
 
 	if (memToCopy != nullptr) {
-		memcpy(buffer.allocationInfo.pMappedData, memToCopy, bufferSize);
+		memcpy(buffer.allocationInfo.pMappedData, memToCopy, m_size);
 	}
 
 	if (persistantlyMapped == PersistantlyMapped::T) {
@@ -55,37 +55,31 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDescriptorType type,
 	}
 
 	SetupResource();
-	created = true;
-
+	
 	//Log::Debug << "Allocated buffer Memory\n";
 }
 
-void VulkanBuffer::CleanBuffer() {
-	if (created) {
-		if (persistantlyMapped) {
-			Unmap();
-		}
+// void VulkanBuffer::CleanBuffer() {
+	
+// 	//if (persistantlyMapped) {
+// 	//	Unmap();
+// 	//}
 
-		vmaDestroyBuffer(buffer.allocator, buffer.buffer, buffer.allocation);
-		//device->DestroyVmaAllocatedBuffer(buffer);
+// 	//vmaDestroyBuffer(buffer.allocator, buffer.buffer, buffer.allocation);
+// 	//device->DestroyVmaAllocatedBuffer(buffer);
 
-		created = false;
-		//Log::Debug << "Freed buffer Memory\n";
-	}
-	else {
-		//Log::Debug << "Cleaned up buffer!\n";
-	}
-}
+// 	Log::Debug << "This function shouldn't be called!\n";
+	
+// }
 
 VulkanBuffer::VulkanBuffer(VulkanBuffer&& buf) :
-	resource(buf.resource)
+	resource(buf.resource),
+	device(buf.device),
+	m_size(buf.m_size),
+	mapped(buf.mapped),
+	created(buf.created),
+	persistantlyMapped(buf.persistantlyMapped)
 {
-	buffer = buf.buffer;
-	device = buf.device;
-	m_size = buf.m_size;
-	mapped = buf.mapped;
-	created = buf.created;
-	persistantlyMapped = buf.persistantlyMapped;
 	movedFrom = false;
 	buf.movedFrom = true;
 }
@@ -105,7 +99,14 @@ VulkanBuffer& VulkanBuffer::operator=(VulkanBuffer&& buf) {
 
 VulkanBuffer::~VulkanBuffer() {
 	if (!movedFrom) {
-		CleanBuffer();
+		if (persistantlyMapped) {
+			Unmap();
+		}
+
+		vmaDestroyBuffer(buffer.allocator, buffer.buffer, buffer.allocation);
+		//device->DestroyVmaAllocatedBuffer(buffer);
+
+		//Log::Debug << "Freed buffer Memory\n";
 	}
 }
 
@@ -161,6 +162,7 @@ void VulkanBuffer::Flush() {
 
 void VulkanBuffer::SetupResource() {
 	resource.FillResource(buffer.buffer, 0, m_size);
+	//Log::Debug << "Resource details: Size: " << m_size << "\n";
 }
 
 VkDeviceSize VulkanBuffer::Size() const {

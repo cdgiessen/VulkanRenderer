@@ -25,8 +25,8 @@ void GameObject::CleanUp()
 	gameObjectModel->destroy();
 	//gameObjectVulkanTexture->destroy();
 
-	uniformBuffer->CleanBuffer();
-	materialBuffer->CleanBuffer();
+	// uniformBuffer->CleanBuffer();
+	// materialBuffer->CleanBuffer();
 
 	mat->CleanUp();
 }

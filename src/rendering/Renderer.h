@@ -92,14 +92,14 @@ public:
 		std::function<void(const VkCommandBuffer)> work,
 		std::vector<VulkanSemaphore>&& waitSemaphores,
 		std::vector<VulkanSemaphore>&& signalSemaphores,
-		std::vector<VulkanBuffer>&& buffersToClean,
+		std::vector<std::shared_ptr<VulkanBuffer>>&& buffersToClean,
 		std::vector<Signal>&& signals);
 
 	void SubmitTransferWork(
 		std::function<void(const VkCommandBuffer)> work,
 		std::vector<VulkanSemaphore>&& waitSemaphores,
 		std::vector<VulkanSemaphore>&& signalSemaphores,
-		std::vector<VulkanBuffer>&& buffersToClean,
+		std::vector<std::shared_ptr<VulkanBuffer>>&& buffersToClean,
 		std::vector<Signal>&& signals);
 
 	VkCommandBuffer GetGraphicsCommandBuffer();

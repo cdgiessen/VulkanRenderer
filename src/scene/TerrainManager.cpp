@@ -99,11 +99,11 @@ TerrainChunkBuffer::~TerrainChunkBuffer() {
 	if (chunkCount <= 0)
 		Log::Error << "Not all terrain chunks were freed!\n";
 
-	vert_buffer.CleanBuffer();
-	index_buffer.CleanBuffer();
+	// vert_buffer.CleanBuffer();
+	// index_buffer.CleanBuffer();
 
-	vert_staging.CleanBuffer();
-	index_staging.CleanBuffer();
+	// vert_staging.CleanBuffer();
+	// index_staging.CleanBuffer();
 }
 
 

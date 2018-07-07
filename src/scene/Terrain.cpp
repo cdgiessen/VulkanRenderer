@@ -152,7 +152,7 @@ Terrain::Terrain(VulkanRenderer* renderer,
 }
 
 Terrain::~Terrain() {
-	uniformBuffer->CleanBuffer();
+	//uniformBuffer->CleanBuffer();
 	terrainVulkanSplatMap->destroy();
 }
 

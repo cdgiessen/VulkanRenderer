@@ -244,16 +244,16 @@ void SetLayoutAndTransferRegions(
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresourceRange);
 }
 
-void CleanBuffers(std::vector<VulkanBuffer> buffers) {
-	for (auto& buf : buffers) {
-		buf.CleanBuffer();
+// void CleanBuffers(std::vector<VulkanBuffer> buffers) {
+// 	for (auto& buf : buffers) {
+// 		buf.CleanBuffer();
 
-	}
-}
+// 	}
+// }
 
 void BeginTransferAndMipMapGenWork(
 	VulkanRenderer & renderer,
-	VulkanBuffer&& buffer,
+	std::shared_ptr<VulkanBuffer> buffer,
 	const VkImageSubresourceRange subresourceRange,
 	const std::vector<VkBufferImageCopy> bufferCopyRegions,
 	VkImageLayout imageLayout,
@@ -274,7 +274,7 @@ void BeginTransferAndMipMapGenWork(
 			GenerateMipMaps(cmdBuf, image, imageLayout, width, height, 1, layers, mipLevels);
 		};
 
-		renderer.SubmitGraphicsWork(work, {}, {}, { std::move(buffer) }, { signal });
+		renderer.SubmitGraphicsWork(work, {}, {}, {buffer}, { std::move(signal) });
 	}
 	else {
 		VulkanSemaphore sem(renderer.device);
@@ -290,7 +290,7 @@ void BeginTransferAndMipMapGenWork(
 			GenerateMipMaps(cmdBuf, image, imageLayout, width, height, 1, layers, mipLevels);
 		};
 
-		renderer.SubmitTransferWork(transferWork, {}, { sem }, { std::move(buffer) }, {});
+		renderer.SubmitTransferWork(transferWork, {}, { sem },  {buffer}, {});
 
 		renderer.SubmitGraphicsWork(mipMapGenWork, { sem }, {}, {}, { signal });
 
@@ -340,7 +340,8 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 		VK_IMAGE_USAGE_SAMPLED_BIT);
 
 
-	VulkanBufferStagingResource buffer(device, texture->texImageSize, texture->pixels.data());
+	auto buffer = std::make_shared<VulkanBufferStagingResource>(
+		device, texture->texImageSize, texture->pixels.data());
 
 	/*buffer.CreateStagingResourceBuffer(texture->pixels.data(),
 		texture->texImageSize);*/
@@ -365,7 +366,8 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 	bufferCopyRegions.push_back(bufferCopyRegion);
 	// Increase offset into staging buffer for next level / face
 
-	BeginTransferAndMipMapGenWork(renderer, std::move(buffer), subresourceRange, bufferCopyRegions, imageLayout, image.image, buffer.buffer.buffer,
+	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange, bufferCopyRegions, 
+	imageLayout, image.image, buffer->buffer.buffer,
 		texture->width, texture->height, readyToUse, layers, mipLevels);
 
 
@@ -410,7 +412,8 @@ void VulkanTexture2DArray::loadTextureArray(
 		VK_IMAGE_USAGE_SAMPLED_BIT);
 
 
-	VulkanBufferStagingResource buffer(device, textures->texImageSize, textures->pixels.data());
+	auto buffer = std::make_shared<VulkanBufferStagingResource>(
+		device, textures->texImageSize, textures->pixels.data());
 
 	//buffer.CreateStagingResourceBuffer(textures->pixels.data(),
 	//	textures->texImageSize);
@@ -440,7 +443,8 @@ void VulkanTexture2DArray::loadTextureArray(
 		offset += textures->texImageSizePerTex;
 	}
 
-	BeginTransferAndMipMapGenWork(renderer, std::move(buffer), subresourceRange, bufferCopyRegions, imageLayout, image.image, buffer.buffer.buffer,
+	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange, bufferCopyRegions, 
+		imageLayout, image.image, buffer->buffer.buffer,
 		textures->width, textures->height, readyToUse, layers, mipLevels);
 
 	textureSampler = CreateImageSampler(
@@ -482,7 +486,8 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 
 	InitImage2D(imageCreateInfo);
 
-	VulkanBufferStagingResource buffer(device, cubeMap->texImageSize, cubeMap->pixels.data());
+	auto buffer = std::make_shared<VulkanBufferStagingResource>(
+		device, cubeMap->texImageSize, cubeMap->pixels.data());
 
 	//buffer.CreateStagingResourceBuffer(cubeMap->pixels.data(),
 	//	cubeMap->texImageSize);
@@ -510,7 +515,8 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 		offset += cubeMap->texImageSizePerTex;
 	}
 
-	BeginTransferAndMipMapGenWork(renderer, std::move(buffer), subresourceRange, bufferCopyRegions, imageLayout, image.image, buffer.buffer.buffer,
+	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange, 
+		bufferCopyRegions, imageLayout, image.image, buffer->buffer.buffer,
 		cubeMap->width, cubeMap->height, readyToUse, layers, mipLevels);
 
 	textureSampler = CreateImageSampler(

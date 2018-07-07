@@ -10,7 +10,7 @@ Skybox::~Skybox() {
 	model->destroy();
 	vulkanCubeMap->destroy();
 
-	skyboxUniformBuffer->CleanBuffer();
+	//skyboxUniformBuffer->CleanBuffer();
 };
 
 void Skybox::InitSkybox(VulkanRenderer* renderer) {

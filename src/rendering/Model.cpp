@@ -1,5 +1,7 @@
 #include "Model.h"
 
+#include <iterator>
+
 #include "Renderer.h"
 
 VulkanModel::VulkanModel(VulkanDevice &device) : device(device)
@@ -24,11 +26,11 @@ void CopyMeshBuffers(
 	vkCmdCopyBuffer(copyCmd, indexStagingBuffer, indexBuffer, 1, &copyRegion);
 }
 
-void ModelCleanBuffersAndSignal(std::vector<VulkanBuffer>& buffers) {
-	for (auto& buf : buffers) {
-		buf.CleanBuffer();
-	}
-}
+// void ModelCleanBuffersAndSignal(std::vector<VulkanBuffer>& buffers) {
+// 	for (auto& buf : buffers) {
+// 		buf.CleanBuffer();
+// 	}
+// }
 
 bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	VulkanRenderer& renderer) {
@@ -107,16 +109,16 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	vmaVertices = std::make_unique<VulkanBufferVertex>(device, (uint32_t)vertexBuffer.size(), vertexElementCount);
 	vmaIndicies = std::make_unique<VulkanBufferIndex>(device, (uint32_t)indexBuffer.size());
 
-	auto vertexStagingBuffer = VulkanBufferStagingVertex(device, (uint32_t)vertexCount, vertexElementCount, vertexBuffer.data());
-	auto indexStagingBuffer = VulkanBufferStagingIndex(device, (uint32_t)indexCount, indexBuffer.data());
+	auto vertexStagingBuffer = std::make_shared<VulkanBufferStagingVertex>(device, (uint32_t)vertexCount, vertexElementCount, vertexBuffer.data());
+	auto indexStagingBuffer = std::make_shared<VulkanBufferStagingIndex>(device, (uint32_t)indexCount, indexBuffer.data());
 
 	//vertexStagingBuffer.CreateStagingVertexBuffer(vertexBuffer.data(), (uint32_t)vertexCount, vertexElementCount);
 	//indexStagingBuffer.CreateStagingIndexBuffer(indexBuffer.data(), (uint32_t)indexCount);
 
 	VkBuffer vert = vmaVertices->buffer.buffer;
 	VkBuffer index = vmaIndicies->buffer.buffer;
-	VkBuffer v_stage = vertexStagingBuffer.buffer.buffer;
-	VkBuffer i_stage = indexStagingBuffer.buffer.buffer;
+	VkBuffer v_stage = vertexStagingBuffer->buffer.buffer;
+	VkBuffer i_stage = indexStagingBuffer->buffer.buffer;
 
 	std::function<void(const VkCommandBuffer)> work =
 		[=](const VkCommandBuffer copyCmd) {
@@ -131,8 +133,8 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	//buffers.push_back(std::move(indexStagingBuffer));
 
 	renderer.SubmitTransferWork(work,
-		{}, {}, { std::move(vertexStagingBuffer), std::move(indexStagingBuffer) },
-		{ readyToUse });
+		{}, {}, {vertexStagingBuffer, indexStagingBuffer},
+		{ std::move(readyToUse) });
 
 	return true;
 
