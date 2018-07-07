@@ -66,8 +66,9 @@ struct TerrainQuad {
 		glm::i32vec2 logicalPos, glm::i32vec2 logicalSize,
 		int level, glm::i32vec2 subDivPos, float centerHeightValue,
 		Terrain* terrain);
+	~TerrainQuad();
+
 	void Setup();
-	void CleanUp();
 
 	static float GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos);
 
@@ -171,7 +172,6 @@ public:
 
 	void UpdateTerrain(glm::vec3 viewerPos);
 	void DrawTerrain(VkCommandBuffer cmdBuff, bool wireframe);
-	void CleanUp();
 
 	std::vector<RGBA_pixel>* LoadSplatMapFromGenerator();
 

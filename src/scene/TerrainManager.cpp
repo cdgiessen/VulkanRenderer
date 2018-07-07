@@ -267,7 +267,6 @@ void TerrainManager::CleanUpTerrain() {
 
 	StopWorkerThreads();
 	terrains.clear();
-	//waters.clear();
 	//instancedWaters->RemoveAllInstances();
 	//instancedWaters->CleanUp();
 	activeTerrains.clear();
@@ -323,7 +322,7 @@ void TerrainManager::GenerateTerrain(ResourceManager* resourceMan, VulkanRendere
 		}
 	}
 	instancedWaters->ReplaceAllInstances(waterData);
-	//instancedWaters->UploadInstances();
+	instancedWaters->UploadInstances();
 	recreateTerrain = false;
 }
 

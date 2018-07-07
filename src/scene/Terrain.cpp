@@ -23,6 +23,11 @@ TerrainQuad::TerrainQuad(TerrainChunkBuffer& chunkBuffer,
 
 }
 
+TerrainQuad::~TerrainQuad() {
+	if (index >= 0) //was setup
+		chunkBuffer.Free(index);
+}
+
 void TerrainQuad::Setup() {
 	index = chunkBuffer.Allocate();
 
@@ -34,11 +39,6 @@ void TerrainQuad::Setup() {
 	chunkBuffer.SetChunkWritten(index);
 
 }
-
-void TerrainQuad::CleanUp() {
-	chunkBuffer.Free(index);
-}
-
 
 float TerrainQuad::GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos) {
 	return glm::clamp((float)(i) / ((1 << level) * (float)(numCells)) + (float)(subDivPos) / (float)(1 << level), 0.0f, 1.0f);
@@ -152,34 +152,7 @@ Terrain::Terrain(VulkanRenderer* renderer,
 }
 
 Terrain::~Terrain() {
-	CleanUp();
-
-}
-
-void Terrain::CleanUp()
-{
-	for (auto& pair : quadMap) {
-		pair.second.CleanUp();
-	}
-
-	//UnSubdivide(rootQuad);
-	//quadMap.at(rootQuad).CleanUp();
-	//numQuads--;
-
-	quadMap.clear();
-	//rootQuad->RecursiveCleanUp();
-	//for (auto& quad : quadHandles) {
-	//	//meshPool_vertices.deallocate(quad->vertices);
-	//	//meshPool_indices.deallocate(quad->indices);
-	//	chunkBuffer.GetChunk(quad)->CleanUp();
-	//}
-	//quadHandles.clear();
 	uniformBuffer->CleanBuffer();
-	//for(auto& buf : vertexBuffers)
-	//	buf.CleanBuffer();
-	//for(auto& buf : indexBuffers)
-	//	buf.CleanBuffer();
-
 	terrainVulkanSplatMap->destroy();
 }
 
@@ -197,13 +170,13 @@ void Terrain::InitTerrain(VulkanRenderer* renderer, glm::vec3 cameraPos, std::sh
 	SetupDescriptorSets(terrainVulkanTextureArray);
 	SetupPipeline();
 
-	quadMap.emplace(std::make_pair<int, TerrainQuad>(FindEmptyIndex(), TerrainQuad(chunkBuffer,
+	quadMap.emplace(std::make_pair(FindEmptyIndex(), TerrainQuad{ chunkBuffer,
 		coordinateData.pos, coordinateData.size,
 		coordinateData.noisePos, coordinateData.noiseSize,
 		0, glm::i32vec2(0, 0),
 		GetHeightAtLocation(TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, 0, 0),
 			TerrainQuad::GetUVvalueFromLocalIndex(NumCells / 2, NumCells, 0, 0)),
-		this)));
+		this }));
 	quadMap.at(rootQuad).Setup();
 	InitTerrainQuad(rootQuad, cameraPos);
 
@@ -757,10 +730,10 @@ void Terrain::UnSubdivide(int quad) {
 		UnSubdivide(quadMap.at(quad).subQuads.DownRight);
 		UnSubdivide(quadMap.at(quad).subQuads.DownLeft);
 
-		quadMap.at(quadMap.at(quad).subQuads.UpRight).CleanUp();
-		quadMap.at(quadMap.at(quad).subQuads.UpLeft).CleanUp();
-		quadMap.at(quadMap.at(quad).subQuads.DownRight).CleanUp();
-		quadMap.at(quadMap.at(quad).subQuads.DownLeft).CleanUp();
+		//quadMap.at(quadMap.at(quad).subQuads.UpRight).CleanUp();
+		//quadMap.at(quadMap.at(quad).subQuads.UpLeft).CleanUp();
+		//quadMap.at(quadMap.at(quad).subQuads.DownRight).CleanUp();
+		//quadMap.at(quadMap.at(quad).subQuads.DownLeft).CleanUp();
 
 		quadMap.erase(quadMap.at(quad).subQuads.UpRight);
 		quadMap.erase(quadMap.at(quad).subQuads.UpLeft);
@@ -783,64 +756,6 @@ void Terrain::UnSubdivide(int quad) {
 		drDel->RecursiveCleanUp();
 		dlDel->RecursiveCleanUp();*/
 
-
-		// auto delUR = std::find_if(quadHandles.begin(), quadHandles.end(),
-		// 	[&](std::unique_ptr<TerrainQuad>& q)
-		// {return q.get() == quad->subQuads.UpRight; });
-
-		// if (delUR != quadHandles.end())
-		// {
-		// 	UnSubdivide((*delUR).get());
-		// 	meshPool_vertices.deallocate((*delUR)->vertices);
-		// 	meshPool_indices.deallocate((*delUR)->indices);
-		// 	//(*delUR)->CleanUp();
-		// 	//delUR->reset();
-		// 	quadHandles.erase(delUR);
-		// 	numQuads--;
-		// }
-
-		// auto delDR = std::find_if(quadHandles.begin(), quadHandles.end(),
-		// 	[&](std::unique_ptr<TerrainQuad>& q)
-		// {return q.get() == quad->subQuads.DownRight; });
-
-		// if (delDR != quadHandles.end())
-		// {
-		// 	UnSubdivide((*delDR).get());
-		// 	meshPool_vertices.deallocate((*delDR)->vertices);
-		// 	meshPool_indices.deallocate((*delDR)->indices);
-		// 	//(*delDR)->CleanUp();
-		// 	//delDR->reset();
-		// 	quadHandles.erase(delDR);
-		// 	numQuads--;
-		// }
-
-		// auto delUL = std::find_if(quadHandles.begin(), quadHandles.end(),
-		// 	[&](std::unique_ptr<TerrainQuad>& q)
-		// {return q.get() == quad->subQuads.UpLeft; });
-		// if (delUL != quadHandles.end())
-		// {
-		// 	UnSubdivide((*delUL).get());
-		// 	meshPool_vertices.deallocate((*delUL)->vertices);
-		// 	meshPool_indices.deallocate((*delUL)->indices);
-		// 	//(*delUL)->CleanUp();
-		// 	//delUL->reset();
-		// 	quadHandles.erase(delUL);
-		// 	numQuads--;
-		// }
-
-		// auto delDL = std::find_if(quadHandles.begin(), quadHandles.end(),
-		// 	[&](std::unique_ptr<TerrainQuad>& q)
-		// { return q.get() == quad->subQuads.DownLeft; });
-		// if (delDL != quadHandles.end())
-		// {
-		// 	UnSubdivide((*delDL).get());
-		// 	meshPool_vertices.deallocate((*delDL)->vertices);
-		// 	meshPool_indices.deallocate((*delDL)->indices);
-		// 	//(*delDL)->CleanUp();
-		// 	//delDL->reset();
-		// 	quadHandles.erase(delDL);
-		// 	numQuads--;
-		// }
 	}
 	//numQuads -= 1;
 	//Log::Debug << "Terrain un-subdivided: Level: " << quad->level << " Position: " << quad->pos.x << ", " << quad->pos.z << " Size: " << quad->size.x << ", " << quad->size.z << "\n";
