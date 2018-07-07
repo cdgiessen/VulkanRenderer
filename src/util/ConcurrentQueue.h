@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <optional>
 
+
 template <typename T>
 class ConcurrentQueue
 {

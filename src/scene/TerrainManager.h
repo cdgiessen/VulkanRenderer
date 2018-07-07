@@ -163,8 +163,8 @@ private:
 	void SaveSettingsToFile();
 	void LoadSettingsFromFile();
 
-	void StopWorkerThreads();
 	void StartWorkerThreads();
+	void StopWorkerThreads();
 
 	InternalGraph::GraphPrototype& protoGraph;
 
@@ -191,7 +191,7 @@ private:
 	bool drawWindow;
 	int selectedTexture;
 
-	int WorkerThreads = 6;
+	int WorkerThreads = 2;
 
 	std::vector<TerrainTextureNamedHandle> terrainTextureHandles;
 

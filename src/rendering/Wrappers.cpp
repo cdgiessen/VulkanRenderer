@@ -403,38 +403,39 @@ void GraphicsCommandWorker::Work() {
 
 		workQueue.wait_on_value();
 
-		auto pos_work = workQueue.pop_if();
-		while (pos_work.has_value())
-		{
-			VkCommandBuffer cmdBuf;
-			CommandPool* pool;
+		while (!workQueue.empty()) {
+			auto pos_work = workQueue.pop_if();
+			if (pos_work.has_value()) {
 
-			switch (pos_work->type) {
-			case(CommandPoolType::graphics):
-				pool = &graphicsPool;
-				break;
-			case(CommandPoolType::transfer):
-				pool = &transferPool;
-				break;
-			case(CommandPoolType::compute):
-				pool = &computePool;
-				break;
+
+				VkCommandBuffer cmdBuf;
+				CommandPool* pool;
+
+				switch (pos_work->type) {
+				case(CommandPoolType::graphics):
+					pool = &graphicsPool;
+					break;
+				case(CommandPoolType::transfer):
+					pool = &transferPool;
+					break;
+				case(CommandPoolType::compute):
+					pool = &computePool;
+					break;
+				}
+				pos_work->fence.Create();
+
+				cmdBuf = pool->GetOneTimeUseCommandBuffer();
+				//pool->BeginBufferRecording(cmdBuf);
+				pos_work->work(cmdBuf);
+				//pool->EndBufferRecording(cmdBuf);
+				pool->SubmitCommandBuffer(cmdBuf, pos_work->fence,
+					pos_work->waitSemaphores, pos_work->signalSemaphores);
+				{
+					std::lock_guard<std::mutex>lk(finishQueueLock);
+					finishQueue.push_back(GraphicsCleanUpWork{ pos_work->cleanUp,
+						pos_work->fence, pool, cmdBuf, pos_work->signals });
+				}
 			}
-			pos_work->fence.Create();
-
-			cmdBuf = pool->GetOneTimeUseCommandBuffer();
-			//pool->BeginBufferRecording(cmdBuf);
-			pos_work->work(cmdBuf);
-			//pool->EndBufferRecording(cmdBuf);
-			pool->SubmitCommandBuffer(cmdBuf, pos_work->fence,
-				pos_work->waitSemaphores, pos_work->signalSemaphores);
-			{
-				std::lock_guard<std::mutex>lk(finishQueueLock);
-				finishQueue.push_back(GraphicsCleanUpWork{ pos_work->cleanUp,
-					pos_work->fence, pool, cmdBuf, pos_work->signals });
-			}
-
-			pos_work = workQueue.pop_if();
 		}
 	}
 }

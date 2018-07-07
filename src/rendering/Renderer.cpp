@@ -135,20 +135,6 @@ VulkanRenderer::~VulkanRenderer() {
 	for (auto& worker : graphicsWorkers)
 		worker->CleanUp();
 
-	//graphicsPrimaryCommandPool->CleanUp();
-
-	//renderPass.reset();
-
-	//frameObjects.clear();
-
-	//vulkanSwapChain.CleanUp();
-
-	//shaderManager.CleanUp();
-
-	//pipelineManager.CleanUp();
-
-	//device.CleanUp();
-
 	//Log::Debug << "renderer deleted\n";
 }
 
