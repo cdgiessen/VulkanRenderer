@@ -244,20 +244,16 @@ void SetLayoutAndTransferRegions(
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresourceRange);
 }
 
-void CleanBuffersAndSignal(std::vector<VulkanBuffer> buffers, std::vector<Signal> signals) {
+void CleanBuffers(std::vector<VulkanBuffer> buffers) {
 	for (auto& buf : buffers) {
 		buf.CleanBuffer();
 
-	}
-	for (auto& sig : signals) {
-		if (sig != nullptr)
-			*sig = true;
 	}
 }
 
 void BeginTransferAndMipMapGenWork(
 	VulkanRenderer & renderer,
-	const VulkanBuffer buffer,
+	VulkanBuffer& buffer,
 	const VkImageSubresourceRange subresourceRange,
 	const std::vector<VkBufferImageCopy> bufferCopyRegions,
 	VkImageLayout imageLayout,
@@ -279,7 +275,7 @@ void BeginTransferAndMipMapGenWork(
 		};
 
 		renderer.SubmitGraphicsWork(work, [=]() {
-			CleanBuffersAndSignal({ buffer }, { signal }); }, {}, {});
+			CleanBuffers({ buffer }); }, {}, {}, { signal });
 	}
 	else {
 		VulkanSemaphore sem(renderer.device);
@@ -296,10 +292,9 @@ void BeginTransferAndMipMapGenWork(
 		};
 
 		renderer.SubmitTransferWork(transferWork, [=]() {
-			CleanBuffersAndSignal({ buffer }, {}); }, {}, { sem });
+			CleanBuffers({ buffer }); }, {}, { sem }, {});
 
-		renderer.SubmitGraphicsWork(mipMapGenWork, [=]() {
-			CleanBuffersAndSignal({}, { signal }); }, { sem }, {});
+		renderer.SubmitGraphicsWork(mipMapGenWork, {}, { sem }, {}, { signal });
 
 	}
 }
@@ -374,49 +369,6 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 
 	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange, bufferCopyRegions, imageLayout, image.image, buffer.buffer.buffer,
 		texture->width, texture->height, readyToUse, layers, mipLevels);
-
-	/*TransferCommandWork transfer;
-
-	if (device.singleQueueDevice) {
-
-		transfer.work = std::function<void(const VkCommandBuffer)>(
-			[=](const VkCommandBuffer cmdBuf) {
-
-			SetLayoutAndTransferRegions(cmdBuf, image.image, buffer.buffer.buffer,
-				subresourceRange, bufferCopyRegions);
-
-			GenerateMipMaps(cmdBuf, image.image, imageLayout, texture->width, texture->height, 1, 1, mipLevels);
-		});
-		transfer.buffersToClean.push_back(buffer);
-		transfer.flags.push_back(readyToUse);
-		renderer.SubmitTransferWork(std::move(transfer));
-	}
-	else {
-
-		VulkanSemaphore sem(device);
-
-		transfer.work = std::function<void(const VkCommandBuffer)>(
-			[=](const VkCommandBuffer cmdBuf) {
-			SetLayoutAndTransferRegions(cmdBuf, image.image, buffer.buffer.buffer,
-				subresourceRange, bufferCopyRegions);
-
-		});
-		transfer.buffersToClean.push_back(buffer);
-		transfer.flags.push_back(readyToUse);
-		transfer.signalSemaphores.push_back(sem);
-
-		renderer.SubmitTransferWork(std::move(transfer));
-
-		CommandBufferWork mipWork;
-		mipWork.work = std::function<void(const VkCommandBuffer)>(
-			[=](const VkCommandBuffer cmdBuf) {
-			GenerateMipMaps(cmdBuf, image.image, imageLayout, texture->width, texture->height, 1, 1, mipLevels);
-		});
-		mipWork.waitSemaphores.push_back(sem);
-		mipWork.flags.push_back(readyToUse);
-
-		renderer.SubmitGraphicsSetupWork(std::move(mipWork));
-	}*/
 
 
 	// With mip mapping and anisotropic filtering
@@ -493,52 +445,6 @@ void VulkanTexture2DArray::loadTextureArray(
 	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange, bufferCopyRegions, imageLayout, image.image, buffer.buffer.buffer,
 		textures->width, textures->height, readyToUse, layers, mipLevels);
 
-	/*if (device.singleQueueDevice) {
-		TransferCommandWork work;
-
-		work.work = std::function<void(const VkCommandBuffer)>(
-			[=](const VkCommandBuffer cmdBuf) {
-			SetLayoutAndTransferRegions(cmdBuf, image.image, buffer.buffer.buffer,
-				subresourceRange, bufferCopyRegions);
-
-			GenerateMipMaps(cmdBuf, image.image, imageLayout,
-				textures->width, textures->height, 1, layers, mipLevels);
-		});
-		work.buffersToClean.push_back(buffer);
-		work.flags.push_back(readyToUse);
-
-		renderer.SubmitTransferWork(std::move(work));
-	}
-	else {
-
-		VulkanSemaphore sem(device);
-
-		TransferCommandWork work;
-
-		work.work = std::function<void(const VkCommandBuffer)>(
-			[=](const VkCommandBuffer cmdBuf) {
-			SetLayoutAndTransferRegions(cmdBuf, image.image, buffer.buffer.buffer,
-				subresourceRange, bufferCopyRegions);
-
-		});
-		work.buffersToClean.push_back(buffer);
-		work.flags.push_back(readyToUse);
-		work.signalSemaphores.push_back(sem);
-
-		renderer.SubmitTransferWork(std::move(work));
-
-		CommandBufferWork mipWork;
-		mipWork.work = std::function<void(const VkCommandBuffer)>(
-			[=](const VkCommandBuffer cmdBuf) {
-			GenerateMipMaps(cmdBuf, image.image, imageLayout,
-				textures->width, textures->height, 1, layers, mipLevels);
-		});
-		mipWork.waitSemaphores.push_back(sem);
-		mipWork.flags.push_back(readyToUse);
-
-		renderer.SubmitGraphicsSetupWork(std::move(mipWork));
-	}*/
-
 	textureSampler = CreateImageSampler(
 		VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR,
 		VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, mipLevels, true, 8,
@@ -608,52 +514,6 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 
 	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange, bufferCopyRegions, imageLayout, image.image, buffer.buffer.buffer,
 		cubeMap->width, cubeMap->height, readyToUse, layers, mipLevels);
-
-	/*if (device.singleQueueDevice) {
-		TransferCommandWork work;
-		work.work = std::function<void(const VkCommandBuffer)>(
-			[=](const VkCommandBuffer cmdBuf) {
-			SetLayoutAndTransferRegions(cmdBuf, image.image, buffer.buffer.buffer,
-				subresourceRange, bufferCopyRegions);
-
-			GenerateMipMaps(cmdBuf, image.image, imageLayout,
-				cubeMap->width, cubeMap->height, 1, 6, mipLevels);
-
-		});
-		work.buffersToClean.push_back(buffer);
-		work.flags.push_back(readyToUse);
-
-		renderer.SubmitTransferWork(std::move(work));
-	}
-	else {
-		VulkanSemaphore sem(device);
-
-		TransferCommandWork work;
-		work.work = std::function<void(const VkCommandBuffer)>(
-			[=](const VkCommandBuffer cmdBuf) {
-			SetLayoutAndTransferRegions(cmdBuf, image.image, buffer.buffer.buffer,
-				subresourceRange, bufferCopyRegions);
-
-
-		});
-		work.buffersToClean.push_back(buffer);
-		work.flags.push_back(readyToUse);
-		work.signalSemaphores.push_back(sem);
-
-		renderer.SubmitTransferWork(std::move(work));
-
-
-		CommandBufferWork mipWork;
-		mipWork.work = std::function<void(const VkCommandBuffer)>(
-			[=](const VkCommandBuffer cmdBuf) {
-			GenerateMipMaps(cmdBuf, image.image, imageLayout,
-				cubeMap->width, cubeMap->height, 1, 6, mipLevels);
-		});
-		mipWork.waitSemaphores.push_back(sem);
-		mipWork.flags.push_back(readyToUse);
-
-		renderer.SubmitGraphicsSetupWork(std::move(mipWork));
-	}*/
 
 	textureSampler = CreateImageSampler(
 		VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR,

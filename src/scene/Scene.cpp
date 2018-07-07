@@ -99,7 +99,7 @@ Scene::Scene(ResourceManager* resourceMan,
 	//pbr_test->usePBR = true;
 
 	//UNTIL FURTHER NOTICE!
-	//terrainManager = std::make_unique<TerrainManager>(graph, resourceMan, renderer);
+	terrainManager = std::make_unique<TerrainManager>(graph, resourceMan, renderer);
 
 	//terrainManager->SetupResources(resourceMan, renderer);
 	//terrainManager->GenerateTerrain(resourceMan, renderer, camera);
@@ -145,6 +145,22 @@ Scene::~Scene()
 
 void Scene::UpdateScene(ResourceManager* resourceMan, TimeManager* timeManager) {
 
+	GlobalData gd;
+	gd.time = (float)timeManager->RunningTime();
+
+	glm::mat4 proj = depthReverserMatrix * glm::perspective(glm::radians(45.0f),
+		renderer->vulkanSwapChain.swapChainExtent.width / (float)renderer->vulkanSwapChain.swapChainExtent.height,
+		0.05f, 10000000.0f);
+	proj[1][1] *= -1;
+
+	CameraData cd;
+	cd.view = camera->GetViewMatrix();
+	cd.projView = proj * cd.view;
+	cd.cameraDir = camera->Front;
+	cd.cameraPos = camera->Position;
+
+	renderer->UpdateRenderResources(gd, cd, directionalLights, pointLights, spotLights);
+
 	if (walkOnGround) {
 		float groundHeight = terrainManager->GetTerrainHeightAtLocation(camera->Position.x, camera->Position.z) + 2.0f;
 		float height = camera->Position.y;
@@ -181,34 +197,20 @@ void Scene::UpdateScene(ResourceManager* resourceMan, TimeManager* timeManager) 
 
 	if (Input::GetKeyDown(Input::KeyCode::V))
 		UpdateTerrain = !UpdateTerrain;
-	if (UpdateTerrain && terrainManager != nullptr)
-		terrainManager->UpdateTerrains(resourceMan, camera->Position);
 
 	UpdateSunData();
+
+	skybox->UpdateUniform(proj, cd.view);
 
 	for (auto& obj : gameObjects) {
 		obj->UpdateUniformBuffer((float)timeManager->RunningTime());
 	}
 
-	GlobalData gd;
-	gd.time = (float)timeManager->RunningTime();
+	if (UpdateTerrain && terrainManager != nullptr)
+		terrainManager->UpdateTerrains(resourceMan, camera->Position);
 
-	glm::mat4 proj = depthReverserMatrix * glm::perspective(glm::radians(45.0f),
-		renderer->vulkanSwapChain.swapChainExtent.width / (float)renderer->vulkanSwapChain.swapChainExtent.height,
-		0.05f, 10000000.0f);
-	proj[1][1] *= -1;
 
-	CameraData cd;
-	cd.view = camera->GetViewMatrix();
-	cd.projView = proj * cd.view;
-	cd.cameraDir = camera->Front;
-	cd.cameraPos = camera->Position;
 
-	//directionalLights.at(0) = DirectionalLight(skySettings.sun);
-	//directionalLights.at(1) = DirectionalLight(skySettings.moon);
-
-	skybox->UpdateUniform(proj, cd.view);
-	renderer->UpdateRenderResources(gd, cd, directionalLights, pointLights, spotLights);
 
 }
 

@@ -81,7 +81,7 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 	for (int i = 0; i < workerThreadCount; i++) {
 		graphicsWorkers.push_back(
 			std::make_unique < GraphicsCommandWorker>(
-				device, workQueue, finishQueue));
+				device, workQueue, finishQueue, finishQueueLock));
 	}
 
 	CreateRenderPass();
@@ -109,18 +109,24 @@ VulkanRenderer::~VulkanRenderer() {
 
 	frameDataDescriptor->CleanUp();
 	lightingDescriptor->CleanUp();
+
 	dynamicTransformDescriptor->CleanUp();
+	dynamicTransformBuffer->CleanBuffer();
 
 	for (auto& descriptor : descriptors)
 		descriptor->CleanUp();
 
 	depthBuffer->destroy();
 
-	for (auto& work : finishQueue) {
-		work.fence.WaitTillTrue();
-		work.cleanUp();
-		work.pool->FreeCommandBuffer(work.cmdBuf);
-		work.fence.CleanUp();
+	{
+		std::lock_guard<std::mutex>lk(finishQueueLock);
+		for (auto& work : finishQueue) {
+			work.fence.WaitTillTrue();
+			if (work.cleanUp)
+				work.cleanUp();
+			work.pool->FreeCommandBuffer(work.cmdBuf);
+			work.fence.CleanUp();
+		}
 	}
 
 	workQueue.notify_all();
@@ -173,18 +179,26 @@ void VulkanRenderer::RenderFrame() {
 	SaveScreenshot();
 
 	std::vector<GraphicsCleanUpWork> nextFramesWork;
-
-	for (auto& work : finishQueue) {
-		if (work.fence.Check() && work.cleanUp) {
-			work.cleanUp();
-			work.pool->FreeCommandBuffer(work.cmdBuf);
-			work.fence.CleanUp();
-		} else {
-			nextFramesWork.push_back(work);
+	{
+		std::lock_guard<std::mutex>lk(finishQueueLock);
+		for (auto& work : finishQueue) {
+			if (work.fence.Check()) {
+				for (auto& sig : work.signals) {
+					if (sig != nullptr)
+						*sig = true;
+				}
+				if (work.cleanUp)
+					work.cleanUp();
+				work.pool->FreeCommandBuffer(work.cmdBuf);
+				work.fence.CleanUp();
+			}
+			else {
+				nextFramesWork.push_back(work);
+			}
 		}
+		finishQueue.clear();
+		finishQueue = std::move(nextFramesWork);
 	}
-	finishQueue.clear();
-	finishQueue = std::move(nextFramesWork);
 }
 
 void VulkanRenderer::RecreateSwapChain() {
@@ -283,8 +297,6 @@ void VulkanRenderer::BuildCommandBuffers(VkCommandBuffer cmdBuf) {
 		initializers::rect2D(vulkanSwapChain.swapChainExtent.width,
 			vulkanSwapChain.swapChainExtent.height, 0, 0);
 	vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
-
-	VkDeviceSize offsets[] = { 0 };
 
 	scene->RenderScene(cmdBuf, wireframe);
 
@@ -483,20 +495,22 @@ void VulkanRenderer::SubmitGraphicsWork(
 	std::function<void(const VkCommandBuffer)> work,
 	std::function<void()> cleanUp,
 	std::vector<VulkanSemaphore> waitSemaphores,
-	std::vector<VulkanSemaphore> signalSemaphores)
+	std::vector<VulkanSemaphore> signalSemaphores,
+	std::vector<Signal> signals)
 {
-	workQueue.push_back({work, cleanUp, CommandPoolType::graphics,
-		device, std::move(waitSemaphores), std::move(signalSemaphores)});
+	workQueue.push_back({ std::move(work), std::move(cleanUp), CommandPoolType::graphics,
+		device, std::move(waitSemaphores), std::move(signalSemaphores), std::move(signals) });
 }
 
 void VulkanRenderer::SubmitTransferWork(
 	std::function<void(const VkCommandBuffer)> work,
 	std::function<void()> cleanUp,
 	std::vector<VulkanSemaphore> waitSemaphores,
-	std::vector<VulkanSemaphore> signalSemaphores)
+	std::vector<VulkanSemaphore> signalSemaphores,
+	std::vector<Signal> signals)
 {
-	workQueue.push_back({std::move(work), std::move(cleanUp), CommandPoolType::transfer,
-		device, std::move(waitSemaphores), std::move(signalSemaphores)});
+	workQueue.push_back({ std::move(work), std::move(cleanUp), CommandPoolType::transfer,
+		device, std::move(waitSemaphores), std::move(signalSemaphores), std::move(signals) });
 
 }
 

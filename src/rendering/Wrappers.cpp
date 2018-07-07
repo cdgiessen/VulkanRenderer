@@ -25,8 +25,14 @@ void VulkanFence::CleanUp()
 	vkDestroyFence(device, fence, nullptr);
 }
 
-bool  VulkanFence::Check() {
-	return vkGetFenceStatus(device, fence);
+bool VulkanFence::Check() {
+	VkResult out = vkGetFenceStatus(device, fence);
+	if (out == VK_SUCCESS)
+		return true;
+	else if (out == VK_NOT_READY)
+		return false;
+	throw std::runtime_error("DEVICE_LOST");
+	return false;
 }
 
 void VulkanFence::WaitTillTrue() {
@@ -226,10 +232,10 @@ void CommandPool::EndBufferRecording(VkCommandBuffer buf) {
 }
 
 void CommandPool::FreeCommandBuffer(VkCommandBuffer buf) {
-	{
-		std::lock_guard<std::mutex> lock(poolLock);
-		vkFreeCommandBuffers(device.device, commandPool, 1, &buf);
-	}
+
+	std::lock_guard<std::mutex> lock(poolLock);
+	vkFreeCommandBuffers(device.device, commandPool, 1, &buf);
+
 }
 
 VkCommandBuffer CommandPool::GetOneTimeUseCommandBuffer() {
@@ -361,13 +367,14 @@ GraphicsCommandWorker::GraphicsCommandWorker(
 	VulkanDevice &device,
 	ConcurrentQueue<GraphicsWork>& workQueue,
 	std::vector<GraphicsCleanUpWork>& finishQueue,
-	bool startActive)
-	:
+	std::mutex& finishQueueLock,
+	bool startActive) :
+
 	device(device),
 	graphicsPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue()),
 	transferPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.TransferQueue()),
 	computePool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.ComputeQueue()),
-	workQueue(workQueue), finishQueue(finishQueue)
+	workQueue(workQueue), finishQueue(finishQueue), finishQueueLock(finishQueueLock)
 {
 	workingThread = std::thread{ &GraphicsCommandWorker::Work, this };
 
@@ -389,42 +396,6 @@ void GraphicsCommandWorker::CleanUp() {
 void GraphicsCommandWorker::StopWork() {
 	keepWorking = false;
 }
-
-//template <> void GraphicsCommandWorker::Work() {
-//
-//	while (keepWorking)
-//	{
-//		{
-//			std::unique_lock<std::mutex> uniqueLock(workQueue.lock);
-//			workQueue.condVar.wait(uniqueLock);
-//		}
-//
-//		auto pos_work = workQueue.GetWork();
-//		while (pos_work.has_value())
-//		{
-//			VkCommandBuffer buf = pool.GetOneTimeUseCommandBuffer();
-//
-//			pos_work->work(buf);
-//
-//			VulkanFence fence(device);
-//
-//			pool.SubmitCommandBuffer(buf, fence, pos_work->waitSemaphores, pos_work->signalSemaphores);
-//
-//			fence.WaitTillTrue();
-//
-//			for (auto& flag : pos_work->flags)
-//				*flag = true;
-//			for (auto& sem : pos_work->waitSemaphores)
-//				sem.CleanUp(device);
-//
-//			pool.FreeCommandBuffer(buf);
-//
-//			fence.CleanUp();
-//
-//			pos_work = workQueue.GetWork();
-//		}
-//	}
-//}
 
 void GraphicsCommandWorker::Work() {
 	while (keepWorking)
@@ -457,30 +428,12 @@ void GraphicsCommandWorker::Work() {
 			//pool->EndBufferRecording(cmdBuf);
 			pool->SubmitCommandBuffer(cmdBuf, pos_work->fence,
 				pos_work->waitSemaphores, pos_work->signalSemaphores);
+			{
+				std::lock_guard<std::mutex>lk(finishQueueLock);
+				finishQueue.push_back(GraphicsCleanUpWork{ pos_work->cleanUp,
+					pos_work->fence, pool, cmdBuf, pos_work->signals });
+			}
 
-			finishQueue.push_back(GraphicsCleanUpWork{ pos_work->cleanUp,
-				pos_work->fence, pool, pos_work->cmdBuf });
-			//fence.WaitTillTrue();
-
-			/*for (auto& flag : pos_work->flags)
-				*flag = true;
-
-			for (auto& sem : pos_work->waitSemaphores)
-				sem.CleanUp(device);
-
-			for (auto& buffer : pos_work->buffersToClean)
-				buffer.CleanBuffer();*/
-
-
-				//fence.CleanUp();
-
-				//pool.FreeCommandBuffer(buf);
-
-
-			/*if (auto val = workQueue.pop_if(); val.has_value())
-				pos_work.emplace(val.value());
-			else
-				break;*/
 			pos_work = workQueue.pop_if();
 		}
 	}

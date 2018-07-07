@@ -11,12 +11,12 @@
 
 VulkanAppSettings::VulkanAppSettings(std::string fileName)
 	:fileName(fileName)
-{ 
+{
 	Load();
 }
 
 void VulkanAppSettings::Load() {
-	if (fileExists(fileName)) {	
+	if (fileExists(fileName)) {
 		std::ifstream input(fileName);
 		nlohmann::json settings;
 		input >> settings;
@@ -30,7 +30,8 @@ void VulkanAppSettings::Load() {
 
 		isFrameCapped = settings["is-frame-rate-capped"];
 		MaxFPS = settings["max-fps"];
-	} else {
+	}
+	else {
 		Log::Debug << "Settings file didn't exist, creating one";
 		Save();
 	}
@@ -48,30 +49,30 @@ void VulkanAppSettings::Save() {
 
 	j["is-frame-rate-capped"] = isFrameCapped;
 	j["max-fps"] = MaxFPS;
-	
+
 	std::ofstream outFile(fileName);
 	outFile << std::setw(4) << j;
 	outFile.close();
 }
 
-VulkanApp::VulkanApp():
+VulkanApp::VulkanApp() :
 	settings("settings.json")
 {
 
 	timeManager = std::make_unique<TimeManager>();
 
-	window = std::make_unique<Window>(settings.isFullscreen, 
-		glm::ivec2(settings.screenWidth, settings.screenHeight), 
-		glm::ivec2(10,10));
+	window = std::make_unique<Window>(settings.isFullscreen,
+		glm::ivec2(settings.screenWidth, settings.screenHeight),
+		glm::ivec2(10, 10));
 	Input::SetupInputDirector(window.get());
-	
+
 	resourceManager = std::make_unique<ResourceManager>();
 
 
 	vulkanRenderer = std::make_unique<VulkanRenderer>(settings.useValidationLayers, window.get());
-	
+
 	scene = std::make_unique<Scene>(resourceManager.get(), vulkanRenderer.get(), imgui_nodeGraph_terrain.GetGraph());
-	
+
 	vulkanRenderer->scene = scene.get();
 }
 
@@ -80,7 +81,7 @@ VulkanApp::~VulkanApp()
 {
 	scene.reset();
 	vulkanRenderer.reset();
-	
+
 	window->destroyWindow();
 }
 
@@ -190,7 +191,7 @@ void VulkanApp::BuildImgui() {
 
 		if (panels.debug_overlay) DebugOverlay(&panels.debug_overlay);
 		if (panels.camera_controls) CameraWindow(&panels.camera_controls);
-		if(panels.controls_list) ControlsWindow(&panels.controls_list);
+		if (panels.controls_list) ControlsWindow(&panels.controls_list);
 
 
 		scene->UpdateSceneGUI();
@@ -205,7 +206,7 @@ void VulkanApp::BuildImgui() {
 
 		if (ImGui::Begin("Controller View", &open)) {
 
-			auto joys =	Input::inputDirector.GetConnectedJoysticks();
+			auto joys = Input::inputDirector.GetConnectedJoysticks();
 
 			for (int i = 0; i < 16; i++) {
 				if (Input::IsJoystickConnected(i)) {
@@ -245,8 +246,8 @@ void VulkanApp::HandleInputs() {
 	if (!Input::GetTextInputMode()) {
 
 		if (Input::IsJoystickConnected(0)) {
-			scene->GetCamera()->ProcessJoystickMove(Input::GetControllerAxis(0, 1), Input::GetControllerAxis(0, 0), 
-				(Input::GetControllerAxis(0, 4) + 1)/2.0, (Input::GetControllerAxis(0, 5) + 1)/2.0, deltaTime);
+			scene->GetCamera()->ProcessJoystickMove(Input::GetControllerAxis(0, 1), Input::GetControllerAxis(0, 0),
+				(Input::GetControllerAxis(0, 4) + 1) / 2.0, (Input::GetControllerAxis(0, 5) + 1) / 2.0, deltaTime);
 			scene->GetCamera()->ProcessJoystickLook(Input::GetControllerAxis(0, 3), Input::GetControllerAxis(0, 4), deltaTime);
 
 			if (Input::GetControllerButton(0, 2))
@@ -304,7 +305,7 @@ void VulkanApp::HandleInputs() {
 			vulkanRenderer->SaveScreenshotNextFrame();
 		}
 
-		if(Input::GetKeyDown(Input::KeyCode::DIGIT_0) && Input::GetKey(Input::KeyCode::DIGIT_9)){
+		if (Input::GetKeyDown(Input::KeyCode::DIGIT_0) && Input::GetKey(Input::KeyCode::DIGIT_9)) {
 			scene.reset();
 			Log::Debug << "Scene reset\n";
 
@@ -312,7 +313,7 @@ void VulkanApp::HandleInputs() {
 			Log::Debug << "Renderer reset\n";
 
 			vulkanRenderer = std::make_unique<VulkanRenderer>(settings.useValidationLayers, window.get());
-			
+
 			scene = std::make_unique<Scene>(resourceManager.get(), vulkanRenderer.get(), imgui_nodeGraph_terrain.GetGraph());
 			vulkanRenderer->scene = scene.get();
 		}

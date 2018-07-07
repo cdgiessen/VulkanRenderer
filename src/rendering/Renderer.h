@@ -92,13 +92,15 @@ public:
 		std::function<void(const VkCommandBuffer)> work,
 		std::function<void()> cleanUp,
 		std::vector<VulkanSemaphore> waitSemaphores,
-		std::vector<VulkanSemaphore> signalSemaphores);
+		std::vector<VulkanSemaphore> signalSemaphores,
+		std::vector<Signal> signals);
 
 	void SubmitTransferWork(
 		std::function<void(const VkCommandBuffer)> work,
 		std::function<void()> cleanUp,
 		std::vector<VulkanSemaphore> waitSemaphores,
-		std::vector<VulkanSemaphore> signalSemaphores);
+		std::vector<VulkanSemaphore> signalSemaphores,
+		std::vector<Signal> signals);
 
 	VkCommandBuffer GetGraphicsCommandBuffer();
 	void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);
@@ -153,16 +155,13 @@ private:
 
 	ConcurrentQueue<GraphicsWork> workQueue;
 	std::vector<GraphicsCleanUpWork> finishQueue;
+	std::mutex finishQueueLock;
 	std::vector < std::unique_ptr<GraphicsCommandWorker>> graphicsWorkers;
 
 	//CommandBufferWorkQueue<CommandBufferWork> graphicsSetupWorkQueue;
 
 	//CommandBufferWorkQueue<TransferCommandWork> transferWorkQueue;
 	//std::vector<std::unique_ptr<CommandBufferWorker<TransferCommandWork>>> transferWorkers;
-
-	std::vector<std::unique_ptr<FrameObject>> frameObjects;
-
-	std::vector<std::shared_ptr<VulkanDescriptor>> descriptors;
 
 	uint32_t frameIndex = 0; //which of the swapchain images the app is rendering to
 	bool wireframe = false; //whether or not to use the wireframe pipeline for the scene.

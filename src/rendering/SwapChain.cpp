@@ -217,15 +217,15 @@ SwapChainSupportDetails VulkanSwapChain::querySwapChainSupport(VkPhysicalDevice 
 
 	if (formatCount != 0) {
 		details.formats.resize(formatCount);
-		if(vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data()) != VK_SUCCESS) {
+		if (vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data()) != VK_SUCCESS) {
 			throw std::runtime_error("failed to get physical device surface formats!");
 		}
 	}
 
 	uint32_t presentModeCount;
 	if (vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr) != VK_SUCCESS) {
-			throw std::runtime_error("failed to get physical device surface present modes count!");
-		}
+		throw std::runtime_error("failed to get physical device surface present modes count!");
+	}
 
 	if (presentModeCount != 0) {
 		details.present_modes.resize(presentModeCount);

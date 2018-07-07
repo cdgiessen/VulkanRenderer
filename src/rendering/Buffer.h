@@ -50,15 +50,18 @@ public:
 		void* memToCopy = nullptr);
 
 protected:
+	VulkanDevice * device;
+	VkDeviceSize m_size;
+	void* mapped;
+
 	bool created = false;
 
-	VulkanDevice * device;
+	bool persistantlyMapped = false;
+
 
 	void SetupResource();
 
-	VkDeviceSize m_size;
-	bool persistantlyMapped = false;
-	void* mapped;
+
 };
 
 class VulkanBufferUniform : public VulkanBuffer {

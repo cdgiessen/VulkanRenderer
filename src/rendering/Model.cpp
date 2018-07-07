@@ -25,13 +25,9 @@ void CopyMeshBuffers(
 	vkCmdCopyBuffer(copyCmd, indexStagingBuffer, indexBuffer, 1, &copyRegion);
 }
 
-void ModelCleanBuffersAndSignal(std::vector<VulkanBuffer> buffers, std::vector<Signal> signals) {
+void ModelCleanBuffersAndSignal(std::vector<VulkanBuffer> buffers) {
 	for (auto& buf : buffers) {
 		buf.CleanBuffer();
-	}
-	for (auto& sig : signals) {
-		if (sig != nullptr)
-			*sig = true;
 	}
 }
 
@@ -125,35 +121,9 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 			indexStagingBuffer.buffer.buffer, vmaIndicies.buffer.buffer, iBufferSize);
 	};
 
-	renderer.SubmitGraphicsWork(work, [=]() {
-		ModelCleanBuffersAndSignal({ vertexStagingBuffer, indexStagingBuffer }, { readyToUse });
-	}, {}, {});
-
-	/*TransferCommandWork work;
-	work.work = std::function<void(const VkCommandBuffer)>(
-		[=](const VkCommandBuffer copyCmd) {
-		CopyMeshBuffers(copyCmd,
-			vertexStagingBuffer.buffer.buffer, vmaVertices.buffer.buffer, vBufferSize,
-			indexStagingBuffer.buffer.buffer, vmaIndicies.buffer.buffer, iBufferSize);
-	}
-	);
-
-	work.buffersToClean.push_back(vertexStagingBuffer);
-	work.buffersToClean.push_back(indexStagingBuffer);
-	work.flags.push_back(readyToUse);*/
-
-	//renderer.SubmitGraphicsWork(work, cleanUp, {}, {});
-
-	//VkCommandBuffer copyCmd = renderer.GetTransferCommandBuffer();
-	//
-	//CopyMeshBuffers(copyCmd, 
-	//	vertexStagingBuffer.buffer.buffer, vmaVertices.buffer.buffer, vBufferSize, 
-	//	indexStagingBuffer.buffer.buffer, vmaIndicies.buffer.buffer, iBufferSize);
-	//
-	//renderer.SubmitTransferCommandBufferAndWait(copyCmd);
-	//
-	//vertexStagingBuffer.CleanBuffer();
-	//indexStagingBuffer.CleanBuffer();
+	renderer.SubmitTransferWork(work, [=]() {
+		ModelCleanBuffersAndSignal({ vertexStagingBuffer, indexStagingBuffer });
+	}, {}, {}, { readyToUse });
 
 	return true;
 

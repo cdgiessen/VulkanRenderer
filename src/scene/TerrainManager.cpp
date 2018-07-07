@@ -182,7 +182,7 @@ void TerrainChunkBuffer::UpdateChunks() {
 			vertexCopyRegions.size(), vertexCopyRegions.data());
 		vkCmdCopyBuffer(cmdBuf, index_staging.buffer.buffer, index_buffer.buffer.buffer,
 			indexCopyRegions.size(), indexCopyRegions.data());
-	}, {}, {}, {});
+	}, {}, {}, {}, {});
 
 }
 

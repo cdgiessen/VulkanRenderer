@@ -11,7 +11,7 @@
 
 
 
-VulkanDevice::VulkanDevice(bool validationLayers, Window* window) 
+VulkanDevice::VulkanDevice(bool validationLayers, Window* window)
 	: enableValidationLayers(validationLayers),
 	window(window)
 {
@@ -31,8 +31,6 @@ VulkanDevice::VulkanDevice(bool validationLayers, Window* window)
 
 VulkanDevice::~VulkanDevice()
 {
-	//Log::Debug << "device deleted\n";
-
 	vmaDestroyAllocator(allocator);
 	vmaDestroyAllocator(linear_allocator);
 	vmaDestroyAllocator(optimal_allocator);
@@ -266,14 +264,14 @@ VkPhysicalDeviceFeatures VulkanDevice::QueryDeviceFeatures() {
 	if (physical_device_features.tessellationShader)
 		deviceFeatures.tessellationShader = VK_TRUE;
 
-	if (physical_device_features.sampleRateShading) 
+	if (physical_device_features.sampleRateShading)
 		deviceFeatures.sampleRateShading = VK_TRUE;
-	
+
 
 	return deviceFeatures;
 }
 
-QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice physDevice, 
+QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice physDevice,
 	VkSurfaceKHR surface)
 {
 	QueueFamilyIndices indices;
@@ -440,18 +438,18 @@ void VulkanDevice::CreateVulkanAllocator()
 }
 
 
-VmaAllocator VulkanDevice::GetGeneralAllocator(){
+VmaAllocator VulkanDevice::GetGeneralAllocator() {
 	return allocator;
 }
 
-VmaAllocator VulkanDevice::GetImageLinearAllocator(){
+VmaAllocator VulkanDevice::GetImageLinearAllocator() {
 	return linear_allocator;
 }
 
-VmaAllocator VulkanDevice::GetImageOptimalAllocator(){
+VmaAllocator VulkanDevice::GetImageOptimalAllocator() {
 	return optimal_allocator;
 }
 
-VkSurfaceKHR VulkanDevice::GetSurface(){
+VkSurfaceKHR VulkanDevice::GetSurface() {
 	return surface;
 }
