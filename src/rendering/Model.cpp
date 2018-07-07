@@ -2,8 +2,7 @@
 
 #include "Renderer.h"
 
-VulkanModel::VulkanModel(VulkanDevice &device) : device(device),
-vmaVertices(device), vmaIndicies(device)
+VulkanModel::VulkanModel(VulkanDevice &device) : device(device)
 {
 	readyToUse = std::make_shared<bool>(false);
 }
@@ -25,7 +24,7 @@ void CopyMeshBuffers(
 	vkCmdCopyBuffer(copyCmd, indexStagingBuffer, indexBuffer, 1, &copyRegion);
 }
 
-void ModelCleanBuffersAndSignal(std::vector<VulkanBuffer> buffers) {
+void ModelCleanBuffersAndSignal(std::vector<VulkanBuffer>& buffers) {
 	for (auto& buf : buffers) {
 		buf.CleanBuffer();
 	}
@@ -105,25 +104,35 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	uint32_t iBufferSize = static_cast<uint32_t>(indexBuffer.size()) * sizeof(uint32_t);
 
 
-	vmaVertices.CreateVertexBuffer((uint32_t)vertexBuffer.size(), vertexElementCount);
-	vmaIndicies.CreateIndexBuffer((uint32_t)indexBuffer.size());
+	vmaVertices = std::make_unique<VulkanBufferVertex>(device, (uint32_t)vertexBuffer.size(), vertexElementCount);
+	vmaIndicies = std::make_unique<VulkanBufferIndex>(device, (uint32_t)indexBuffer.size());
 
-	VulkanBufferVertex vertexStagingBuffer(device);
-	VulkanBufferIndex indexStagingBuffer(device);
+	auto vertexStagingBuffer = VulkanBufferStagingVertex(device, (uint32_t)vertexCount, vertexElementCount, vertexBuffer.data());
+	auto indexStagingBuffer = VulkanBufferStagingIndex(device, (uint32_t)indexCount, indexBuffer.data());
 
-	vertexStagingBuffer.CreateStagingVertexBuffer(vertexBuffer.data(), (uint32_t)vertexCount, vertexElementCount);
-	indexStagingBuffer.CreateStagingIndexBuffer(indexBuffer.data(), (uint32_t)indexCount);
+	//vertexStagingBuffer.CreateStagingVertexBuffer(vertexBuffer.data(), (uint32_t)vertexCount, vertexElementCount);
+	//indexStagingBuffer.CreateStagingIndexBuffer(indexBuffer.data(), (uint32_t)indexCount);
+
+	VkBuffer vert = vmaVertices->buffer.buffer;
+	VkBuffer index = vmaIndicies->buffer.buffer;
+	VkBuffer v_stage = vertexStagingBuffer.buffer.buffer;
+	VkBuffer i_stage = indexStagingBuffer.buffer.buffer;
 
 	std::function<void(const VkCommandBuffer)> work =
 		[=](const VkCommandBuffer copyCmd) {
+
 		CopyMeshBuffers(copyCmd,
-			vertexStagingBuffer.buffer.buffer, vmaVertices.buffer.buffer, vBufferSize,
-			indexStagingBuffer.buffer.buffer, vmaIndicies.buffer.buffer, iBufferSize);
+			v_stage, vert, vBufferSize,
+			i_stage, index, iBufferSize);
 	};
 
-	renderer.SubmitTransferWork(work, [=]() {
-		ModelCleanBuffersAndSignal({ vertexStagingBuffer, indexStagingBuffer });
-	}, {}, {}, { readyToUse });
+	//std::vector<VulkanBuffer> buffers;
+	//buffers.push_back(std::move(vertexStagingBuffer));
+	//buffers.push_back(std::move(indexStagingBuffer));
+
+	renderer.SubmitTransferWork(work,
+		{}, {}, { std::move(vertexStagingBuffer), std::move(indexStagingBuffer) },
+		{ readyToUse });
 
 	return true;
 
@@ -412,13 +421,13 @@ bool VulkanModel::loadFromFile(const std::string& filename, VkQueue copyQueue)
 };
 
 void VulkanModel::BindModel(VkCommandBuffer cmdBuf) {
-	vmaVertices.BindVertexBuffer(cmdBuf);
-	vmaIndicies.BindIndexBuffer(cmdBuf);
+	vmaVertices->BindVertexBuffer(cmdBuf);
+	vmaIndicies->BindIndexBuffer(cmdBuf);
 }
 
 /** @brief Release all Vulkan resources of this model */
 void VulkanModel::destroy()
 {
-	vmaVertices.CleanBuffer();
-	vmaIndicies.CleanBuffer();
+	//vmaVertices.CleanBuffer();
+	//vmaIndicies.CleanBuffer();
 }

@@ -1,5 +1,8 @@
 #include "Material.h"
 
+#include <numeric>
+#include <algorithm>
+
 #include "Initializers.h"
 
 #include "../core/CoreTools.h"
@@ -24,6 +27,21 @@ VkShaderStageFlags GetVulkanShaderStageFlags(ResourceStages stage) {
 	}
 }
 
+VariableUniformController::VariableUniformController(
+	std::vector<VariableUniformSlot> input) :
+	data(input)
+{
+
+}
+
+void VariableUniformController::Set(int8_t index, DataTypeVar var) {
+
+}
+
+//VariableUniformController::DataTypeVar VariableUniformController::Get(int8_t index) {
+//	char* src = data.data() + offsets.at(index);
+//	
+//}
 
 
 VulkanMaterial::VulkanMaterial(VulkanDevice& device)
@@ -63,8 +81,8 @@ void VulkanMaterial::AddTextureArray(std::shared_ptr<VulkanTexture2DArray> texAr
 void VulkanMaterial::AddValue(MaterialOptions value) {
 	//value_var = value;
 
-	value_data.reset();
-	value_data = std::make_shared<VulkanBufferUniform>(device);
+	//value_data.reset();
+	/*value_data = std::make_shared<VulkanBufferUniform>(device);
 
 	if (value.index() == 0) {
 		value_data->CreateUniformBufferPersitantlyMapped(sizeof(Phong_Material));
@@ -76,7 +94,7 @@ void VulkanMaterial::AddValue(MaterialOptions value) {
 
 	else if (value.index() == 2) {
 		value_data->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Mat_Tex));
-	}
+	}*/
 
 }
 

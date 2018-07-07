@@ -73,6 +73,28 @@ using MaterialOptions = std::variant<Phong_Material, PBR_Mat_Value, PBR_Mat_Tex>
 //
 //};
 
+using DataTypeVar = std::variant<float, glm::vec2, glm::vec3, glm::vec4, int>;
+
+struct VariableUniformSlot {
+	DataTypeVar data;
+	std::string name;
+
+	VariableUniformSlot(DataTypeVar data, std::string& name) :
+		data(data), name(name) {}
+};
+
+class VariableUniformController {
+public:
+	VariableUniformController(std::vector<VariableUniformSlot> input);
+
+	void Set(int8_t index, DataTypeVar dataTypes);
+
+	DataTypeVar Get(int8_t index);
+
+private:
+	std::vector<VariableUniformSlot> data;
+};
+
 class VulkanMaterial {
 public:
 	VulkanMaterial(VulkanDevice& device);

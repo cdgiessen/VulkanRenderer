@@ -31,8 +31,22 @@ VulkanDevice::VulkanDevice(bool validationLayers, Window* window)
 
 VulkanDevice::~VulkanDevice()
 {
+	bool detailedOutput = false;
+	char* str;
+
+	vmaBuildStatsString(allocator, &str, detailedOutput);
+	Log::Debug << "Allocator output\n" << std::string(str) << "\n";
+	vmaFreeStatsString(allocator, str);
 	vmaDestroyAllocator(allocator);
+
+	vmaBuildStatsString(linear_allocator, &str, detailedOutput);
+	Log::Debug << "Linear Allocator output\n" << std::string(str) << "\n";
+	vmaFreeStatsString(linear_allocator, str);
 	vmaDestroyAllocator(linear_allocator);
+
+	vmaBuildStatsString(optimal_allocator, &str, detailedOutput);
+	Log::Debug << "Optimal Allocator output\n" << std::string(str) << "\n";
+	vmaFreeStatsString(optimal_allocator, str);
 	vmaDestroyAllocator(optimal_allocator);
 
 	vkDestroyDevice(device, nullptr);
@@ -71,17 +85,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debugCallback(
 
 // 	CreateVulkanAllocator();
 // }
-
-void VulkanDevice::CleanUp() {
-	vmaDestroyAllocator(allocator);
-	vmaDestroyAllocator(linear_allocator);
-	vmaDestroyAllocator(optimal_allocator);
-
-	vkDestroyDevice(device, nullptr);
-	DestroyDebugReportCallbackEXT(instance, callback, nullptr);
-	vkDestroySurfaceKHR(instance, surface, nullptr);
-	vkDestroyInstance(instance, nullptr);
-}
 
 bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) {
 

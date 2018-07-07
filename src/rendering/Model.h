@@ -28,8 +28,8 @@ public:
 	uint32_t vertexElementCount = 0;
 	uint32_t indexCount = 0;
 
-	VulkanBufferVertex vmaVertices;
-	VulkanBufferIndex vmaIndicies;
+	std::unique_ptr<VulkanBufferVertex> vmaVertices;
+	std::unique_ptr<VulkanBufferIndex> vmaIndicies;
 
 	Signal readyToUse;
 

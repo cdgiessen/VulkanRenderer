@@ -225,8 +225,8 @@ void Terrain::SetupUniformBuffer()
 	//renderer->device.createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VkMemoryPropertyFlags)(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
 	//	&modelUniformBuffer, sizeof(ModelBufferObject) * maxNumQuads);
 
-	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
-	uniformBuffer->CreateUniformBufferPersitantlyMapped(sizeof(ModelBufferObject));
+	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device, sizeof(ModelBufferObject));
+	//uniformBuffer->CreateUniformBufferPersitantlyMapped(sizeof(ModelBufferObject));
 
 	ModelBufferObject mbo;
 	mbo.model = glm::mat4();

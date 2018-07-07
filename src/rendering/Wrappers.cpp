@@ -430,10 +430,13 @@ void GraphicsCommandWorker::Work() {
 				//pool->EndBufferRecording(cmdBuf);
 				pool->SubmitCommandBuffer(cmdBuf, pos_work->fence,
 					pos_work->waitSemaphores, pos_work->signalSemaphores);
+
+				//GraphicsCleanUpWork cleanUpWork{ std::move(pos_work->fence),
+				//	pool, cmdBuf, std::move(pos_work->buffersToClean),
+				//	std::move(pos_work->signals) };
 				{
 					std::lock_guard<std::mutex>lk(finishQueueLock);
-					finishQueue.push_back(GraphicsCleanUpWork{ pos_work->cleanUp,
-						pos_work->fence, pool, cmdBuf, pos_work->signals });
+					finishQueue.push_back(std::move(GraphicsCleanUpWork(std::move(*pos_work), pool, cmdBuf)));
 				}
 			}
 		}

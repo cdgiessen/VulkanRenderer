@@ -6,12 +6,58 @@
 const uint32_t VERTEX_BUFFER_BIND_ID = 0;
 const uint32_t INSTANCE_BUFFER_BIND_ID = 1;
 
-VulkanBuffer::VulkanBuffer(VulkanDevice& device)
-	: device(&device), resource(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-}
+//VulkanBuffer::VulkanBuffer(VulkanDevice& device)
+//	: device(&device), resource(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) 
+//{
+//}
 
-VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDescriptorType type)
-	: device(&device), resource(type) {
+VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDescriptorType type,
+	VkDeviceSize bufferSize,
+	VkBufferUsageFlags bufferUsage, VmaMemoryUsage allocUsage,
+	VmaAllocationCreateFlags allocFlags, void* memToCopy,
+	PersistantlyMapped persistantlyMapped,
+	DynamicallyAligned dynamicAlignment, int count)
+	: device(&device), resource(type),
+	m_size(bufferSize)
+{
+	if (dynamicAlignment == DynamicallyAligned::T)
+	{
+		size_t minUboAlignment = device.physical_device_properties.limits.minUniformBufferOffsetAlignment;
+		size_t dynamicAlignment = m_size;
+		if (minUboAlignment > 0) {
+			dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+		}
+
+		m_size = count * dynamicAlignment;
+	}
+
+	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+	bufferInfo.size = bufferSize;
+	bufferInfo.usage = bufferUsage;
+
+	VmaAllocationCreateInfo allocInfo = {};
+	allocInfo.usage = allocUsage;
+	allocInfo.flags = allocFlags;
+
+	buffer.allocator = device.GetGeneralAllocator();
+	//Log::Debug << buffer.allocator << "\n";
+	if (buffer.allocator == nullptr)
+		throw std::runtime_error("Allocator was null!");
+	VK_CHECK_RESULT(vmaCreateBuffer(buffer.allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+
+	if (memToCopy != nullptr) {
+		memcpy(buffer.allocationInfo.pMappedData, memToCopy, bufferSize);
+	}
+
+	if (persistantlyMapped == PersistantlyMapped::T) {
+		this->persistantlyMapped = true;
+		Map(&mapped);
+	}
+
+	SetupResource();
+	created = true;
+
+	//Log::Debug << "Allocated buffer Memory\n";
 }
 
 void VulkanBuffer::CleanBuffer() {
@@ -24,39 +70,70 @@ void VulkanBuffer::CleanBuffer() {
 		//device->DestroyVmaAllocatedBuffer(buffer);
 
 		created = false;
+		//Log::Debug << "Freed buffer Memory\n";
 	}
 	else {
 		//Log::Debug << "Cleaned up buffer!\n";
 	}
 }
 
-VulkanBuffer::~VulkanBuffer() {
-	//CleanBuffer();
+VulkanBuffer::VulkanBuffer(VulkanBuffer&& buf) :
+	resource(buf.resource)
+{
+	buffer = buf.buffer;
+	device = buf.device;
+	m_size = buf.m_size;
+	mapped = buf.mapped;
+	created = buf.created;
+	persistantlyMapped = buf.persistantlyMapped;
+	movedFrom = false;
+	buf.movedFrom = true;
 }
 
-void VulkanBuffer::SetupBuffer(VkDeviceSize bufferSize,
-	VkBufferUsageFlags bufferUsage, VmaMemoryUsage allocUsage,
-	VmaAllocationCreateFlags allocFlags, void* memToCopy)
-{
+VulkanBuffer& VulkanBuffer::operator=(VulkanBuffer&& buf) {
+	buffer = buf.buffer;
+	resource = buf.resource;
+	device = buf.device;
+	m_size = buf.m_size;
+	mapped = buf.mapped;
+	created = buf.created;
+	persistantlyMapped = buf.persistantlyMapped;
+	movedFrom = false;
+	buf.movedFrom = true;
+	return *this;
+}
 
-	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-	bufferInfo.size = bufferSize;
-	bufferInfo.usage = bufferUsage;
-
-	VmaAllocationCreateInfo allocInfo = {};
-	allocInfo.usage = allocUsage;
-	allocInfo.flags = allocFlags;
-
-	buffer.allocator = device->GetGeneralAllocator();
-	//Log::Debug << buffer.allocator << "\n";
-	if (buffer.allocator == nullptr)
-		throw std::runtime_error("Allocator was null!");
-	VK_CHECK_RESULT(vmaCreateBuffer(buffer.allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
-
-	if (memToCopy != nullptr) {
-		memcpy(buffer.allocationInfo.pMappedData, memToCopy, bufferSize);
+VulkanBuffer::~VulkanBuffer() {
+	if (!movedFrom) {
+		CleanBuffer();
 	}
 }
+
+//void VulkanBuffer::SetupBuffer(VkDeviceSize bufferSize,
+//	VkBufferUsageFlags bufferUsage, VmaMemoryUsage allocUsage,
+//	VmaAllocationCreateFlags allocFlags, void* memToCopy)
+//{
+//
+//	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+//	bufferInfo.size = bufferSize;
+//	bufferInfo.usage = bufferUsage;
+//
+//	VmaAllocationCreateInfo allocInfo = {};
+//	allocInfo.usage = allocUsage;
+//	allocInfo.flags = allocFlags;
+//
+//	buffer.allocator = device->GetGeneralAllocator();
+//	//Log::Debug << buffer.allocator << "\n";
+//	if (buffer.allocator == nullptr)
+//		throw std::runtime_error("Allocator was null!");
+//	VK_CHECK_RESULT(vmaCreateBuffer(buffer.allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
+//
+//	if (memToCopy != nullptr) {
+//		memcpy(buffer.allocationInfo.pMappedData, memToCopy, bufferSize);
+//	}
+//
+//	//Log::Debug << "Allocated buffer Memory\n";
+//}
 
 void VulkanBuffer::Map(void** pData) {
 	vmaMapMemory(buffer.allocator, buffer.allocation, pData);
@@ -126,124 +203,115 @@ void VulkanBuffer::CopyToBuffer(void* pData, VkDeviceSize size)
 	}
 }
 
-VulkanBufferUniform::VulkanBufferUniform(VulkanDevice& device) : VulkanBuffer(device) {
+VulkanBufferUniform::VulkanBufferUniform(VulkanDevice& device, VkDeviceSize size)
+	: VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+		(VmaMemoryUsage)(VMA_MEMORY_USAGE_CPU_TO_GPU))
+{
 
 }
 
-void VulkanBufferUniform::CreateUniformBuffer(VkDeviceSize size) {
-	m_size = size;
-	SetupBuffer(size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-		(VmaMemoryUsage)(VMA_MEMORY_USAGE_CPU_TO_GPU));
+//void VulkanBufferUniform::CreateUniformBuffer(VkDeviceSize size) {
+//	m_size = size;
+//	SetupBuffer(size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+//		(VmaMemoryUsage)(VMA_MEMORY_USAGE_CPU_TO_GPU));
+//
+//	//device->CreateUniformBuffer(buffer, size);
+//
+//
+//}
 
-	//device->CreateUniformBuffer(buffer, size);
-	SetupResource();
-	created = true;
-}
+VulkanBufferUniformPersistant::VulkanBufferUniformPersistant(VulkanDevice& device, VkDeviceSize size)
+	: VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+		(VmaMemoryUsage)VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT, nullptr, PersistantlyMapped::T)
+{
+	//persistantlyMapped = true;
+	////CreateUniformBuffer(size);
+	//SetupBuffer(size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+	//	(VmaMemoryUsage)VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT);
 
-void VulkanBufferUniform::CreateUniformBufferPersitantlyMapped(VkDeviceSize size) {
-	persistantlyMapped = true;
-	//CreateUniformBuffer(size);
-	SetupBuffer(size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-		(VmaMemoryUsage)VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT);
+	//Map(&mapped);
 
-	Map(&mapped);
-	created = true;
-	SetupResource();
-}
-
-void VulkanBufferUniform::CreateStagingUniformBuffer(void* pData, VkDeviceSize size) {
-	m_size = size;
-	//device->CreateStagingUniformBuffer(buffer, pData, size);
-	SetupBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData);
-
-	SetupResource();
-	created = true;
-}
-
-VulkanBufferUniformDynamic::VulkanBufferUniformDynamic(VulkanDevice& device) :
-	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
 
 }
 
-void VulkanBufferUniformDynamic::CreateDynamicUniformBuffer(uint32_t count, VkDeviceSize size) {
-	size_t minUboAlignment = device->physical_device_properties.limits.minUniformBufferOffsetAlignment;
-	size_t dynamicAlignment = size;
-	if (minUboAlignment > 0) {
-		dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
-	}
+VulkanBufferUniformStaging::VulkanBufferUniformStaging(VulkanDevice& device, VkDeviceSize size, void* pData)
+	: VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT)
+{
+	//m_size = size;
+	////device->CreateStagingUniformBuffer(buffer, pData, size);
+	//SetupBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+	//	VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData);
 
-	m_size = count * dynamicAlignment;
-
-	SetupBuffer(m_size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-		VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT);
-
-	//device->CreateDynamicUniformBuffer(buffer, count, size);
-	SetupResource();
-	created = true;
 }
 
-VulkanBufferStagingResource::VulkanBufferStagingResource(VulkanDevice& device) :
-	VulkanBuffer(device)
+VulkanBufferUniformDynamic::VulkanBufferUniformDynamic(VulkanDevice& device, VkDeviceSize size, uint32_t count) :
+	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+		size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+		VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT, nullptr, PersistantlyMapped::F, DynamicallyAligned::T, count)
+{
+
+}
+
+//void VulkanBufferUniformDynamic::CreateDynamicUniformBuffer(uint32_t count, VkDeviceSize size) {
+//	size_t minUboAlignment = device->physical_device_properties.limits.minUniformBufferOffsetAlignment;
+//	size_t dynamicAlignment = size;
+//	if (minUboAlignment > 0) {
+//		dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+//	}
+//
+//	m_size = count * dynamicAlignment;
+//
+//	SetupBuffer(m_size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+//		VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT);
+//
+//	//device->CreateDynamicUniformBuffer(buffer, count, size);
+//
+//
+//}
+
+VulkanBufferStagingResource::VulkanBufferStagingResource(VulkanDevice& device, VkDeviceSize size, void* pData) :
+	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData)
 {
 }
 
-void VulkanBufferStagingResource::CreateStagingResourceBuffer(void* pData, VkDeviceSize size)
-{
-	m_size = size;
-	SetupBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData);
+//void VulkanBufferStagingResource::CreateStagingResourceBuffer(void* pData, VkDeviceSize size)
+//{
+//	m_size = size;
+//	SetupBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+//		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData);
+//
+//	//device->CreateStagingImageBuffer(buffer, pData, size);
+//
+//
+//}
 
-	//device->CreateStagingImageBuffer(buffer, pData, size);
-	created = true;
-	SetupResource();
-}
 
-
-VulkanBufferData::VulkanBufferData(VulkanDevice& device) :
-	VulkanBuffer(device)
+VulkanBufferData::VulkanBufferData(VulkanDevice& device, VkDeviceSize size) :
+	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+		VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT)
 {}
 
-void VulkanBufferData::CreateDataBuffer(VkDeviceSize size) {
-	m_size = size;
-
-	SetupBuffer(size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-		VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT);
-
-	//device->CreateDataBuffer(buffer, size);
-	created = true;
-	SetupResource();
-}
-
-
-VulkanBufferVertex::VulkanBufferVertex(VulkanDevice& device) : VulkanBuffer(device) {
-
-}
-
-void VulkanBufferVertex::CreateVertexBuffer(uint32_t count, uint32_t vertexElementCount) {
-
-	VkDeviceSize size = count * vertexElementCount * sizeof(float);
-	m_size = size;
-
-	SetupBuffer(size, (VmaMemoryUsage)(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-		VMA_MEMORY_USAGE_GPU_ONLY);
-	//device->CreateMeshBufferVertex(buffer, size);
+//void VulkanBufferData::CreateDataBuffer(VkDeviceSize size) {
+//	m_size = size;
+//
+//	SetupBuffer(size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+//		VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT);
+//
+//	//device->CreateDataBuffer(buffer, size);
+//
+//
+//}
 
 
-	SetupResource();
-	created = true;
-}
+VulkanBufferVertex::VulkanBufferVertex(VulkanDevice& device, uint32_t count, uint32_t vertexElementCount) :
+	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, count * vertexElementCount * sizeof(float),
+	(VmaMemoryUsage)(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+		VMA_MEMORY_USAGE_GPU_ONLY) {
 
-void VulkanBufferVertex::CreateStagingVertexBuffer(void* pData, uint32_t count, uint32_t vertexElementCount) {
-	VkDeviceSize size = count * vertexElementCount * sizeof(float);
-	m_size = size;
-
-	SetupBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData);
-	//device->CreateMeshStagingBuffer(buffer, pData, size);
-
-	SetupResource();
-	created = true;
 }
 
 void VulkanBufferVertex::BindVertexBuffer(VkCommandBuffer cmdBuf) {
@@ -251,66 +319,76 @@ void VulkanBufferVertex::BindVertexBuffer(VkCommandBuffer cmdBuf) {
 	vkCmdBindVertexBuffers(cmdBuf, VERTEX_BUFFER_BIND_ID, 1, &buffer.buffer, offsets);
 }
 
-VulkanBufferIndex::VulkanBufferIndex(VulkanDevice& device) : VulkanBuffer(device) {
+//void VulkanBufferVertex::CreateVertexBuffer(uint32_t count, uint32_t vertexElementCount) {
+//
+//	VkDeviceSize size = count * vertexElementCount * sizeof(float);
+//	m_size = size;
+//
+//	SetupBuffer(size, (VmaMemoryUsage)(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+//		VMA_MEMORY_USAGE_GPU_ONLY);
+//	//device->CreateMeshBufferVertex(buffer, size);
+//
+//
+//
+//
+//}
+
+VulkanBufferStagingVertex::VulkanBufferStagingVertex(VulkanDevice& device, uint32_t count, uint32_t vertexElementCount, void* pData) :
+	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, count * vertexElementCount * sizeof(float),
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData) {
 
 }
 
-void VulkanBufferIndex::CreateIndexBuffer(uint32_t count) {
-	m_size = sizeof(int) * count;
 
-	SetupBuffer(m_size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-		VMA_MEMORY_USAGE_GPU_ONLY);
-	//device->CreateMeshBufferIndex(buffer, sizeof(int) * count);
+//void VulkanBufferVertex::CreateStagingVertexBuffer(void* pData, uint32_t count, uint32_t vertexElementCount) {
+//	VkDeviceSize size = count * vertexElementCount * sizeof(float);
+//	m_size = size;
+//
+//	SetupBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+//		VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData);
+//	//device->CreateMeshStagingBuffer(buffer, pData, size);
+//
+//
+//
+//}
 
-
-	SetupResource();
-	created = true;
-}
-
-void VulkanBufferIndex::CreateStagingIndexBuffer(void* pData, uint32_t count) {
-	m_size = sizeof(int) * count;
-
-	SetupBuffer(m_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData);
-	//device->CreateMeshStagingBuffer(buffer, pData, sizeof(int) * count);
-
-	SetupResource();
-	created = true;
-}
+VulkanBufferIndex::VulkanBufferIndex(VulkanDevice& device, uint32_t count) :
+	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		sizeof(int) * count, (VkBufferUsageFlags)(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+		VMA_MEMORY_USAGE_GPU_ONLY) {}
 
 void VulkanBufferIndex::BindIndexBuffer(VkCommandBuffer cmdBuf) {
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindIndexBuffer(cmdBuf, buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
+//void VulkanBufferIndex::CreateIndexBuffer(uint32_t count) {
+//	m_size = sizeof(int) * count;
+//
+//	SetupBuffer(m_size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+//		VMA_MEMORY_USAGE_GPU_ONLY);
+//	//device->CreateMeshBufferIndex(buffer, sizeof(int) * count);
+//}
 
-VulkanBufferInstance::VulkanBufferInstance(VulkanDevice& device) : VulkanBuffer(device) {
+VulkanBufferStagingIndex::VulkanBufferStagingIndex(VulkanDevice& device, uint32_t count, void* pData) :
+	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		sizeof(int) * count, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData)
+{}
 
-}
+//void VulkanBufferIndex::CreateStagingIndexBuffer(void* pData, uint32_t count) {
+//	m_size = sizeof(int) * count;
+//
+//	SetupBuffer(m_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+//		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData);
+//	//device->CreateMeshStagingBuffer(buffer, pData, sizeof(int) * count);
+//}
 
-void VulkanBufferInstance::CreateInstanceBuffer(uint32_t count, uint32_t indexElementCount) {
-
-	VkDeviceSize size = count * indexElementCount * sizeof(float);
-	m_size = size;
-	//device->CreateInstancingBuffer(buffer, size);
-
-	SetupBuffer(size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-		VMA_MEMORY_USAGE_GPU_ONLY);
-
-	SetupResource();
-	created = true;
-}
-
-void VulkanBufferInstance::CreateStagingInstanceBuffer(void* pData, uint32_t count, uint32_t indexElementCount) {
-	VkDeviceSize size = count * indexElementCount * sizeof(float);
-	m_size = size;
-	//device->CreateStagingInstancingBuffer(buffer, pData, size);
-
-	SetupBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData);
-
-	SetupResource();
-	created = true;
+VulkanBufferInstance::VulkanBufferInstance(VulkanDevice& device, uint32_t count, uint32_t indexElementCount) :
+	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, count * indexElementCount * sizeof(float),
+	(VkBufferUsageFlags)(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+		VMA_MEMORY_USAGE_GPU_ONLY) {
 }
 
 void VulkanBufferInstance::BindInstanceBuffer(VkCommandBuffer cmdBuf) {
@@ -318,20 +396,51 @@ void VulkanBufferInstance::BindInstanceBuffer(VkCommandBuffer cmdBuf) {
 	vkCmdBindVertexBuffers(cmdBuf, INSTANCE_BUFFER_BIND_ID, 1, &buffer.buffer, offsets);
 }
 
-void VulkanBufferInstance::CreatePersistantInstanceBuffer(
-	uint32_t count, uint32_t indexElementCount)
-{
-	persistantlyMapped = true;
-	VkDeviceSize size = count * indexElementCount * sizeof(float);
-	m_size = size;
-	//device->CreateMappedInstancingBuffer(buffer, size);
+//void VulkanBufferInstance::CreateInstanceBuffer(uint32_t count, uint32_t indexElementCount) {
+//
+//	VkDeviceSize size = count * indexElementCount * sizeof(float);
+//	m_size = size;
+//	//device->CreateInstancingBuffer(buffer, size);
+//
+//	SetupBuffer(size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+//		VMA_MEMORY_USAGE_GPU_ONLY);
+//}
 
-	SetupBuffer(size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-		VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT);
-
-	SetupResource();
-	Map(&mapped);
-	created = true;
-
+VulkanBufferStagingInstance::VulkanBufferStagingInstance(VulkanDevice& device, uint32_t count, uint32_t indexElementCount, void* pData) :
+	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, count * indexElementCount * sizeof(float), VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData) {
 
 }
+//void VulkanBufferInstance::CreateStagingInstanceBuffer(void* pData, uint32_t count, uint32_t indexElementCount) {
+//	VkDeviceSize size = count * indexElementCount * sizeof(float);
+//	m_size = size;
+//	//device->CreateStagingInstancingBuffer(buffer, pData, size);
+//
+//	SetupBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+//		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData);
+//
+//
+//
+//}
+VulkanBufferInstancePersistant::VulkanBufferInstancePersistant(VulkanDevice& device, uint32_t count, uint32_t indexElementCount) :
+	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, count * indexElementCount * sizeof(float),
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, nullptr, PersistantlyMapped::T) {}
+
+//	void VulkanBufferInstance::CreatePersistantInstanceBuffer(
+//		uint32_t count, uint32_t indexElementCount)
+//{
+//	persistantlyMapped = true;
+//	VkDeviceSize size = count * indexElementCount * sizeof(float);
+//	m_size = size;
+//	//device->CreateMappedInstancingBuffer(buffer, size);
+//
+//	SetupBuffer(size, (VkBufferUsageFlags)(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+//		VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_MAPPED_BIT);
+//
+//
+//	Map(&mapped);
+//
+//
+//
+//}

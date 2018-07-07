@@ -40,7 +40,7 @@ struct QueueFamilyIndices {
 
 class VulkanDevice {
 public:
-	Window* window;
+	Window * window;
 
 	VkInstance instance;
 	VkDebugReportCallbackEXT callback;
@@ -63,10 +63,6 @@ public:
 	VulkanDevice(bool validationLayers, Window* window);
 
 	~VulkanDevice();
-
-	//void InitVulkanDevice();
-
-	void CleanUp();
 
 	const QueueFamilyIndices GetFamilyIndices() const;
 

@@ -113,6 +113,7 @@ private:
 
 	VulkanBufferData vert_staging;
 	TerrainMeshVertices* vert_staging_ptr;
+
 	VulkanBufferData index_staging;
 	TerrainMeshIndices* index_staging_ptr;
 
@@ -127,7 +128,6 @@ public:
 	TerrainManager(InternalGraph::GraphPrototype& protoGraph, ResourceManager* resourceMan, VulkanRenderer* renderer);
 	~TerrainManager();
 
-	void CleanUpResources();
 	void CleanUpTerrain();
 
 	void GenerateTerrain(ResourceManager* resourceMan, VulkanRenderer* renderer, std::shared_ptr<Camera> camera);
@@ -171,13 +171,9 @@ private:
 	std::unique_ptr<InstancedSceneObject> instancedWaters;
 
 	std::shared_ptr<Mesh> WaterMesh;
-	std::shared_ptr<VulkanModel> WaterModel;
 
 	std::shared_ptr<TextureArray> terrainTextureArray;
 	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray;
-
-	std::shared_ptr<Texture> WaterTexture;
-	std::shared_ptr<VulkanTexture2D> WaterVulkanTexture;
 
 	std::vector<std::thread> terrainCreationWorkers;
 
@@ -201,13 +197,6 @@ private:
 		"rockSmall.jpg",
 		"Snow.jpg",
 	};
-	// Extra splatmap images, starting with just 4 for now
-	//	"OakTreeLeaf.png",
-	//	"Sand.png",
-	//	"DeadOakTreeTrunk.png",
-	//	"OakTreeTrunk.png",
-	//	"SpruceTreeTrunk.png"};
-	//
 
 };
 

@@ -26,13 +26,20 @@ RenderSettings::RenderSettings(std::string fileName) : fileName(fileName) {
 
 void RenderSettings::Load() {
 	if (fileExists(fileName)) {
-		std::ifstream input(fileName);
-		nlohmann::json j;
-		input >> j;
+		try {
 
-		directionalLightCount = j["directional_light_count"];
-		pointLightCount = j["point_light_count"];
-		spotLightCount = j["spot_light_count"];
+			std::ifstream input(fileName);
+			nlohmann::json j;
+			input >> j;
+
+			directionalLightCount = j["directional_light_count"];
+			pointLightCount = j["point_light_count"];
+			spotLightCount = j["spot_light_count"];
+		}
+		catch (std::runtime_error e) {
+			Log::Debug << "Render Settings was incorrect, creating one";
+			Save();
+		}
 	}
 	else {
 		Log::Debug << "Render Settings file didn't exist, creating one";
@@ -41,7 +48,6 @@ void RenderSettings::Load() {
 }
 void RenderSettings::Save() {
 	nlohmann::json j;
-
 
 	j["directional_light_count"] = directionalLightCount;
 	j["point_light_count"] = pointLightCount;
@@ -122,8 +128,8 @@ VulkanRenderer::~VulkanRenderer() {
 		std::lock_guard<std::mutex>lk(finishQueueLock);
 		for (auto& work : finishQueue) {
 			work.fence.WaitTillTrue();
-			if (work.cleanUp)
-				work.cleanUp();
+			//if (work.cleanUp)
+			//	work.cleanUp();
 			work.pool->FreeCommandBuffer(work.cmdBuf);
 			work.fence.CleanUp();
 		}
@@ -173,8 +179,8 @@ void VulkanRenderer::RenderFrame() {
 					if (sig != nullptr)
 						*sig = true;
 				}
-				if (work.cleanUp)
-					work.cleanUp();
+				//if (work.cleanUp)
+				//	work.cleanUp();
 				work.pool->FreeCommandBuffer(work.cmdBuf);
 				work.fence.CleanUp();
 			}
@@ -350,25 +356,26 @@ void VulkanRenderer::SubmitFrame(int curFrameIndex) {
 
 void VulkanRenderer::PrepareResources() {
 
-	globalVariableBuffer = std::make_unique<VulkanBufferUniform>(device);
-	cameraDataBuffer = std::make_unique<VulkanBufferUniform>(device);
-	sunBuffer = std::make_unique<VulkanBufferUniform>(device);
-	pointLightsBuffer = std::make_unique<VulkanBufferUniform>(device);
-	spotLightsBuffer = std::make_unique<VulkanBufferUniform>(device);
-
-	globalVariableBuffer->CreateUniformBuffer(sizeof(GlobalData));
-	cameraDataBuffer->CreateUniformBuffer(sizeof(CameraData) * settings.cameraCount);
-	sunBuffer->CreateUniformBuffer(sizeof(DirectionalLight) *
+	globalVariableBuffer = std::make_unique<VulkanBufferUniform>(device, sizeof(GlobalData));
+	cameraDataBuffer = std::make_unique<VulkanBufferUniform>(device, sizeof(CameraData) * settings.cameraCount);
+	sunBuffer = std::make_unique<VulkanBufferUniform>(device, sizeof(DirectionalLight) *
 		settings.directionalLightCount);
-	pointLightsBuffer->CreateUniformBuffer(sizeof(PointLight) * settings.pointLightCount);
-	spotLightsBuffer->CreateUniformBuffer(sizeof(SpotLight) * settings.spotLightCount);
+	pointLightsBuffer = std::make_unique<VulkanBufferUniform>(device, sizeof(PointLight) * settings.pointLightCount);
+	spotLightsBuffer = std::make_unique<VulkanBufferUniform>(device, sizeof(SpotLight) * settings.spotLightCount);
+
+	//globalVariableBuffer->CreateUniformBuffer(sizeof(GlobalData));
+	//cameraDataBuffer->CreateUniformBuffer(sizeof(CameraData) * settings.cameraCount);
+	//sunBuffer->CreateUniformBuffer(sizeof(DirectionalLight) *
+	//	settings.directionalLightCount);
+	//pointLightsBuffer->CreateUniformBuffer(sizeof(PointLight) * settings.pointLightCount);
+	//spotLightsBuffer->CreateUniformBuffer(sizeof(SpotLight) * settings.spotLightCount);
 
 	SetupGlobalDescriptorSet();
 	SetupLightingDescriptorSet();
 
 
-	dynamicTransformBuffer = std::make_unique<VulkanBufferUniformDynamic>(device);
-	dynamicTransformBuffer->CreateDynamicUniformBuffer(MaxTransformCount, sizeof(TransformMatrixData));
+	dynamicTransformBuffer = std::make_unique<VulkanBufferUniformDynamic>(device, MaxTransformCount, sizeof(TransformMatrixData));
+	//dynamicTransformBuffer->CreateDynamicUniformBuffer(MaxTransformCount, sizeof(TransformMatrixData));
 
 	dynamicTransformDescriptor = std::make_unique<VulkanDescriptor>(device);
 
@@ -479,24 +486,33 @@ void VulkanRenderer::SubmitGraphicsWork(GraphicsWork&& data) {
 
 void VulkanRenderer::SubmitGraphicsWork(
 	std::function<void(const VkCommandBuffer)> work,
-	std::function<void()> cleanUp,
-	std::vector<VulkanSemaphore> waitSemaphores,
-	std::vector<VulkanSemaphore> signalSemaphores,
-	std::vector<Signal> signals)
+	std::vector<VulkanSemaphore>&& waitSemaphores,
+	std::vector<VulkanSemaphore>&& signalSemaphores,
+	std::vector<VulkanBuffer>&& buffersToClean,
+	std::vector<Signal>&& signals)
 {
-	workQueue.push_back({ std::move(work), std::move(cleanUp), CommandPoolType::graphics,
-		device, std::move(waitSemaphores), std::move(signalSemaphores), std::move(signals) });
+	workQueue.push_back(std::move(GraphicsWork(std::move(work), CommandPoolType::graphics,
+		device,
+		std::move(waitSemaphores),
+		std::move(signalSemaphores),
+		std::move(buffersToClean),
+		std::move(signals))));
 }
 
 void VulkanRenderer::SubmitTransferWork(
 	std::function<void(const VkCommandBuffer)> work,
-	std::function<void()> cleanUp,
-	std::vector<VulkanSemaphore> waitSemaphores,
-	std::vector<VulkanSemaphore> signalSemaphores,
-	std::vector<Signal> signals)
+	std::vector<VulkanSemaphore>&& waitSemaphores,
+	std::vector<VulkanSemaphore>&& signalSemaphores,
+	std::vector<VulkanBuffer>&& buffersToClean,
+	std::vector<Signal>&& signals)
 {
-	workQueue.push_back({ std::move(work), std::move(cleanUp), CommandPoolType::transfer,
-		device, std::move(waitSemaphores), std::move(signalSemaphores), std::move(signals) });
+	workQueue.push_back(std::move(GraphicsWork(std::move(work), CommandPoolType::transfer,
+		device,
+		std::move(waitSemaphores),
+		std::move(signalSemaphores),
+		std::move(buffersToClean),
+		std::move(signals))
+	));
 
 }
 

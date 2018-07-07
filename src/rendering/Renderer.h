@@ -90,17 +90,17 @@ public:
 	void SubmitGraphicsWork(GraphicsWork&& data);
 	void SubmitGraphicsWork(
 		std::function<void(const VkCommandBuffer)> work,
-		std::function<void()> cleanUp,
-		std::vector<VulkanSemaphore> waitSemaphores,
-		std::vector<VulkanSemaphore> signalSemaphores,
-		std::vector<Signal> signals);
+		std::vector<VulkanSemaphore>&& waitSemaphores,
+		std::vector<VulkanSemaphore>&& signalSemaphores,
+		std::vector<VulkanBuffer>&& buffersToClean,
+		std::vector<Signal>&& signals);
 
 	void SubmitTransferWork(
 		std::function<void(const VkCommandBuffer)> work,
-		std::function<void()> cleanUp,
-		std::vector<VulkanSemaphore> waitSemaphores,
-		std::vector<VulkanSemaphore> signalSemaphores,
-		std::vector<Signal> signals);
+		std::vector<VulkanSemaphore>&& waitSemaphores,
+		std::vector<VulkanSemaphore>&& signalSemaphores,
+		std::vector<VulkanBuffer>&& buffersToClean,
+		std::vector<Signal>&& signals);
 
 	VkCommandBuffer GetGraphicsCommandBuffer();
 	void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);

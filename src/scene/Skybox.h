@@ -36,13 +36,11 @@ public:
 
 	std::shared_ptr<CubeMap> skyboxCubeMap;
 	std::shared_ptr<VulkanCubeMap> vulkanCubeMap;
-	
+
 	std::shared_ptr<VulkanBufferUniform> skyboxUniformBuffer;
 
 
 	void InitSkybox(VulkanRenderer* renderer);
-	
-	void CleanUp();
 
 	void UpdateUniform(glm::mat4 proj, glm::mat4 view);
 

@@ -104,16 +104,16 @@ Scene::Scene(ResourceManager* resourceMan,
 	//terrainManager->SetupResources(resourceMan, renderer);
 	//terrainManager->GenerateTerrain(resourceMan, renderer, camera);
 
-	treesInstanced = std::make_unique<InstancedSceneObject>(renderer);
-	treesInstanced->SetFragmentShaderToUse("assets/shaders/instancedSceneObject.frag.spv");
-	treesInstanced->SetBlendMode(VK_FALSE);
-	treesInstanced->SetCullMode(VK_CULL_MODE_BACK_BIT);
-	treesInstanced->LoadModel(createCube());
-	treesInstanced->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/grass.jpg"));
-	treesInstanced->InitInstancedSceneObject(renderer);
+	//treesInstanced = std::make_unique<InstancedSceneObject>(renderer);
+	//treesInstanced->SetFragmentShaderToUse("assets/shaders/instancedSceneObject.frag.spv");
+	//treesInstanced->SetBlendMode(VK_FALSE);
+	//treesInstanced->SetCullMode(VK_CULL_MODE_BACK_BIT);
+	//treesInstanced->LoadModel(createCube());
+	//treesInstanced->LoadTexture(resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/grass.jpg"));
+	//treesInstanced->InitInstancedSceneObject(renderer);
 
 	//treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(20,0,10), glm::vec3(10,0,40), glm::vec3(10,0,-40), glm::vec3(100,0,40) });
-	treesInstanced->UploadInstances();
+	//treesInstanced->UploadInstances();
 
 	std::vector< InstancedSceneObject::InstanceData> data;
 	int size = 2;
@@ -134,7 +134,6 @@ Scene::Scene(ResourceManager* resourceMan,
 
 Scene::~Scene()
 {
-	skybox->CleanUp();
 	for (auto& obj : gameObjects) {
 		obj->CleanUp();
 	}

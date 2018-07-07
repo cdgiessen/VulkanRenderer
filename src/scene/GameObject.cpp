@@ -44,14 +44,14 @@ void GameObject::LoadModel(std::shared_ptr<Mesh> mesh)
 
 void GameObject::SetupUniformBuffer()
 {
-	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
-	uniformBuffer->CreateUniformBufferPersitantlyMapped(sizeof(ModelBufferObject));
+	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device, sizeof(ModelBufferObject));
+	//uniformBuffer->CreateUniformBufferPersitantlyMapped(sizeof(ModelBufferObject));
 
-	materialBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
-	if (usePBR)
-		materialBuffer->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Material));
-	else
-		materialBuffer->CreateUniformBufferPersitantlyMapped(sizeof(Phong_Material));
+	materialBuffer = std::make_shared<VulkanBufferUniform>(renderer->device, sizeof(Phong_Material));
+	//	if (usePBR)
+	//		materialBuffer->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Material));
+	//	else
+	//		materialBuffer->CreateUniformBufferPersitantlyMapped(sizeof(Phong_Material));
 	//PBR_Material pbr;
 	//pbr.albedo = glm::vec3(0, 0, 1);
 	//materialBuffer->CopyToBuffer(&pbr, sizeof(PBR_Material));
@@ -76,11 +76,11 @@ void GameObject::SetupModel()
 void GameObject::SetupMaterial() {
 	mat = std::make_shared<VulkanMaterial>(renderer->device);
 
-	mat->AddMaterialDataSlot({ResourceType::uniform, 
-		ResourceStages::fragment_only, materialBuffer->resource});
-	
-	mat->AddMaterialDataSlot({ResourceType::texture2D, 
-		ResourceStages::fragment_only, gameObjectVulkanTexture->resource});
+	mat->AddMaterialDataSlot({ ResourceType::uniform,
+		ResourceStages::fragment_only, materialBuffer->resource });
+
+	mat->AddMaterialDataSlot({ ResourceType::texture2D,
+		ResourceStages::fragment_only, gameObjectVulkanTexture->resource });
 
 	//mat->AddTexture(gameObjectVulkanTexture);
 	mat->Setup();
@@ -159,14 +159,14 @@ void GameObject::SetupPipeline()
 		Vertex_PosNormTex::getAttributeDescriptions());
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0,
 		VK_FALSE);
-	
+
 	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width,
 		(float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f,
 		1.0f, 0.0f, 0.0f);
-	
+
 	pipeMan.SetScissor(mvp, renderer->vulkanSwapChain.swapChainExtent.width,
 		renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);
-	
+
 	pipeMan.SetViewportState(mvp, 1, 1, 0);
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT,
 		VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE,

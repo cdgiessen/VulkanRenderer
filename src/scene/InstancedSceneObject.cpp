@@ -16,8 +16,8 @@ InstancedSceneObject::InstancedSceneObject(VulkanRenderer* renderer, int maxInst
 	vulkanModel = std::make_shared<VulkanModel>(renderer->device);
 	vulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
 
-	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
-	instanceBuffer = std::make_shared<VulkanBufferInstance>(renderer->device);
+	//uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
+	//instanceBuffer = std::make_shared<VulkanBufferInstance>(renderer->device,);
 
 	isFinishedTransfer = std::make_shared<bool>(false);
 }
@@ -79,7 +79,9 @@ void InstancedSceneObject::SetBlendMode(VkBool32 blendEnable) {
 }
 
 void InstancedSceneObject::SetupUniformBuffer() {
-	uniformBuffer->CreateUniformBuffer(sizeof(ModelBufferObject));
+	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device, sizeof(ModelBufferObject));
+
+	/*uniformBuffer->CreateUniformBuffer(sizeof(ModelBufferObject));*/
 
 	ModelBufferObject ubo = {};
 	ubo.model = glm::mat4();
@@ -93,7 +95,8 @@ void InstancedSceneObject::SetupUniformBuffer() {
 	//uniformBuffer.copyTo(&ubo, sizeof(ModelBufferObject));
 	//uniformBuffer.unmap();
 
-	instanceBuffer->CreatePersistantInstanceBuffer(maxInstanceCount, instanceMemberSize);
+	instanceBuffer = std::make_shared<VulkanBufferInstance>(renderer->device, maxInstanceCount, instanceMemberSize);
+	//instanceBuffer->CreatePersistantInstanceBuffer(maxInstanceCount, instanceMemberSize);
 	//UploadData();
 }
 

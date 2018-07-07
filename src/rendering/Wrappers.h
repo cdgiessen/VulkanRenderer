@@ -144,52 +144,70 @@ enum class CommandPoolType {
 
 struct GraphicsWork {
 	std::function<void(const VkCommandBuffer)> work;
-	std::function<void()> cleanUp;
 
 	VulkanFence fence;
 	CommandPoolType type;
 
 	std::vector<VulkanSemaphore> waitSemaphores;
 	std::vector<VulkanSemaphore> signalSemaphores;
+	std::vector<VulkanBuffer> buffersToClean;
 	std::vector<Signal> signals; //signal on cpu completion of work
 
-	GraphicsWork(std::function<void(const VkCommandBuffer)> work,
-		std::function<void()> cleanUp, CommandPoolType type,
+	explicit GraphicsWork(std::function<void(const VkCommandBuffer)> work,
+		CommandPoolType type,
 		VulkanDevice& device,
-		std::vector<VulkanSemaphore> waitSemaphores,
-		std::vector<VulkanSemaphore> signalSemaphores,
-		std::vector<Signal> signals) :
-		work(work), cleanUp(cleanUp), type(type),
+		std::vector<VulkanSemaphore>&& waitSemaphores,
+		std::vector<VulkanSemaphore>&& signalSemaphores,
+		std::vector<VulkanBuffer>&& buffersToClean,
+		std::vector<Signal>&& signals)
+		:
+		work(work), type(type),
 		fence(device),
-		waitSemaphores(waitSemaphores),
-		signalSemaphores(signalSemaphores)
+		waitSemaphores(std::move(waitSemaphores)),
+		signalSemaphores(std::move(signalSemaphores)),
+		buffersToClean(std::move(buffersToClean)),
+		signals(std::move(signals))
 	{}
 
-	GraphicsWork(const GraphicsWork& work) = default;
-	GraphicsWork& operator=(const GraphicsWork& work) = default;
+	GraphicsWork(const GraphicsWork& work) = delete;
+	GraphicsWork& operator=(const GraphicsWork& work) = delete;
 	GraphicsWork(GraphicsWork&& work) = default;
 	GraphicsWork& operator=(GraphicsWork&& work) = default;
 
 };
 
 struct GraphicsCleanUpWork {
-	std::function<void()> cleanUp;
 	VulkanFence fence;
 	CommandPool* pool;
 	VkCommandBuffer cmdBuf;
+	std::vector<VulkanBuffer> buffers;
 	std::vector<Signal> signals;
 
-	GraphicsCleanUpWork(std::function<void()> cleanUp,
-		VulkanFence& fence, CommandPool* pool, VkCommandBuffer cmdBuf,
-		std::vector<Signal> signals) :
-		cleanUp(cleanUp), fence(fence),
-		pool(pool), cmdBuf(cmdBuf),
+	explicit GraphicsCleanUpWork(GraphicsWork&& work,
+		CommandPool* pool,
+		VkCommandBuffer cmdBuf) :
+		pool(pool),
+		cmdBuf(cmdBuf),
+		fence(std::move(work.fence)),
+		buffers(std::move(work.buffersToClean)),
+		signals(std::move(work.signals))
+	{}
+
+	explicit GraphicsCleanUpWork(VulkanFence&& fence,
+		CommandPool* pool,
+		VkCommandBuffer cmdBuf,
+		std::vector<VulkanBuffer>&& buffers,
+		std::vector<Signal>&& signals) :
+		fence(std::move(fence)),
+		pool(pool),
+		cmdBuf(cmdBuf),
+		buffers(std::move(buffers)),
 		signals(std::move(signals))
 	{}
 
 
-	GraphicsCleanUpWork(const GraphicsCleanUpWork& work) = default;
-	GraphicsCleanUpWork& operator=(const GraphicsCleanUpWork& work) = default;
+	GraphicsCleanUpWork(const GraphicsCleanUpWork& work) = delete;
+	GraphicsCleanUpWork& operator=(const GraphicsCleanUpWork& work) = delete;
 	GraphicsCleanUpWork(GraphicsCleanUpWork&& work) = default;
 	GraphicsCleanUpWork& operator=(GraphicsCleanUpWork&& work) = default;
 };

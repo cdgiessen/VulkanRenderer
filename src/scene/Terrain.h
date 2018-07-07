@@ -113,15 +113,7 @@ struct TerrainQuad {
 
 class Terrain {
 public:
-	// MemoryPool<TerrainMeshVertices, 1024>& meshPool_vertices;
-	// MemoryPool<TerrainMeshIndices, 1024>& meshPool_indices;
-
 	TerrainChunkBuffer & chunkBuffer;
-
-	//Refence to all of the quads
-	//std::vector<TerrainQuad*> PrevQuadHandles;
-	//std::vector<TerrainMeshVertices> verts;
-	//std::vector<TerrainMeshIndices> inds;
 
 	std::unordered_map<int, TerrainQuad> quadMap;
 
