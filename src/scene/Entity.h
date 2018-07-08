@@ -11,7 +11,9 @@ struct Entity {
 
 
 class EntityManager {
+public:
 
 
+private:
 
 };

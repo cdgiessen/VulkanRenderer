@@ -56,69 +56,76 @@ void VulkanAppSettings::Save() {
 }
 
 VulkanApp::VulkanApp() :
-	settings("settings.json")
+	settings("settings.json"),
+	timeManager(),
+	window(settings.isFullscreen,
+		glm::ivec2(settings.screenWidth, settings.screenHeight),
+		glm::ivec2(10, 10)),
+	resourceManager(),
+	vulkanRenderer(settings.useValidationLayers, window),
+	imgui_nodeGraph_terrain(),
+	scene(resourceManager, vulkanRenderer,
+		timeManager, imgui_nodeGraph_terrain.GetGraph())
 {
 
-	timeManager = std::make_unique<TimeManager>();
+	/*timeManager = std::make_unique<TimeManager>();
 
 	window = std::make_unique<Window>(settings.isFullscreen,
 		glm::ivec2(settings.screenWidth, settings.screenHeight),
-		glm::ivec2(10, 10));
-	Input::SetupInputDirector(window.get());
+		glm::ivec2(10, 10));*/
+	Input::SetupInputDirector(&window);
 
-	resourceManager = std::make_unique<ResourceManager>();
+	/*resourceManager = std::make_unique<ResourceManager>();
 
 
 	vulkanRenderer = std::make_unique<VulkanRenderer>(settings.useValidationLayers, window.get());
 
-	scene = std::make_unique<Scene>(resourceManager.get(), vulkanRenderer.get(), imgui_nodeGraph_terrain.GetGraph());
-
-	vulkanRenderer->scene = scene.get();
+	scene = std::make_unique<Scene>(*resourceManager.get(), *vulkanRenderer.get(), *timeManager.get(), imgui_nodeGraph_terrain.GetGraph());
+*/
+	vulkanRenderer.scene = &scene;
 }
 
 
 VulkanApp::~VulkanApp()
 {
-	scene.reset();
-	vulkanRenderer.reset();
 
-	window->destroyWindow();
+	window.destroyWindow();
 }
 
 void VulkanApp::mainLoop() {
 
-	while (!window->CheckForWindowClose()) {
-		if (window->CheckForWindowResizing()) {
-			if (!window->CheckForWindowIconified()) {
+	while (!window.CheckForWindowClose()) {
+		if (window.CheckForWindowResizing()) {
+			if (!window.CheckForWindowIconified()) {
 				RecreateSwapChain();
-				window->SetWindowResizeDone();
+				window.SetWindowResizeDone();
 			}
 		}
 
-		timeManager->StartFrameTimer();
+		timeManager.StartFrameTimer();
 		Input::inputDirector.UpdateInputs();
 		HandleInputs();
-		scene->UpdateScene(resourceManager.get(), timeManager.get());
+		scene.UpdateScene();
 		BuildImgui();
-		vulkanRenderer->RenderFrame();
+		vulkanRenderer.RenderFrame();
 		Input::inputDirector.ResetReleasedInput();
 
 		if (settings.isFrameCapped) {
-			if (timeManager->ExactTimeSinceFrameStart() < 1.0 / settings.MaxFPS) {
-				std::this_thread::sleep_for(std::chrono::duration<double>(1.0 / settings.MaxFPS - timeManager->ExactTimeSinceFrameStart()));
+			if (timeManager.ExactTimeSinceFrameStart() < 1.0 / settings.MaxFPS) {
+				std::this_thread::sleep_for(std::chrono::duration<double>(1.0 / settings.MaxFPS - timeManager.ExactTimeSinceFrameStart()));
 			}
 		}
-		timeManager->EndFrameTimer();
+		timeManager.EndFrameTimer();
 	}
 
-	vulkanRenderer->DeviceWaitTillIdle();
+	vulkanRenderer.DeviceWaitTillIdle();
 
 }
 
 void VulkanApp::RecreateSwapChain() {
-	vulkanRenderer->DeviceWaitTillIdle();
+	vulkanRenderer.DeviceWaitTillIdle();
 
-	vulkanRenderer->RecreateSwapChain();
+	vulkanRenderer.RecreateSwapChain();
 }
 
 void VulkanApp::DebugOverlay(bool* show_debug_overlay) {
@@ -131,13 +138,13 @@ void VulkanApp::DebugOverlay(bool* show_debug_overlay) {
 		return;
 	}
 	ImGui::Text("FPS %.3f", ImGui::GetIO().Framerate);
-	ImGui::Text("DeltaT: %f(s)", timeManager->DeltaTime());
+	ImGui::Text("DeltaT: %f(s)", timeManager.DeltaTime());
 	if (ImGui::Button("Toggle Verbose")) {
 		verbose = !verbose;
 	}
-	if (verbose) ImGui::Text("Run Time: %f(s)", timeManager->RunningTime());
-	if (verbose) ImGui::Text("Last frame time%f(s)", timeManager->PreviousFrameTime());
-	if (verbose) ImGui::Text("Last frame time%f(s)", timeManager->PreviousFrameTime());
+	if (verbose) ImGui::Text("Run Time: %f(s)", timeManager.RunningTime());
+	if (verbose) ImGui::Text("Last frame time%f(s)", timeManager.PreviousFrameTime());
+	if (verbose) ImGui::Text("Last frame time%f(s)", timeManager.PreviousFrameTime());
 	ImGui::Separator();
 	ImGui::Text("Mouse Position: (%.1f,%.1f)", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
 	ImGui::End();
@@ -153,11 +160,11 @@ void VulkanApp::CameraWindow(bool* show_camera_window) {
 		return;
 	};
 	ImGui::Text("Camera");
-	ImGui::DragFloat3("Pos", &scene->GetCamera()->Position.x, 2);
-	ImGui::DragFloat3("Rot", &scene->GetCamera()->Front.x, 2);
+	ImGui::DragFloat3("Pos", &scene.GetCamera()->Position.x, 2);
+	ImGui::DragFloat3("Rot", &scene.GetCamera()->Front.x, 2);
 	ImGui::Text("Camera Movement Speed");
-	ImGui::Text("%f", scene->GetCamera()->MovementSpeed);
-	ImGui::SliderFloat("##camMovSpeed", &(scene->GetCamera()->MovementSpeed), 0.1f, 100.0f);
+	ImGui::Text("%f", scene.GetCamera()->MovementSpeed);
+	ImGui::SliderFloat("##camMovSpeed", &(scene.GetCamera()->MovementSpeed), 0.1f, 100.0f);
 	ImGui::End();
 }
 
@@ -194,7 +201,7 @@ void VulkanApp::BuildImgui() {
 		if (panels.controls_list) ControlsWindow(&panels.controls_list);
 
 
-		scene->UpdateSceneGUI();
+		scene.UpdateSceneGUI();
 
 		if (panels.log) {
 			appLog.Draw("Example: Log", &panels.log);
@@ -241,57 +248,57 @@ void VulkanApp::BuildImgui() {
 void VulkanApp::HandleInputs() {
 	//Log::Debug << camera->Position.x << " " << camera->Position.y << " " << camera->Position.z << "\n";
 
-	double deltaTime = timeManager->DeltaTime();
+	double deltaTime = timeManager.DeltaTime();
 
 	if (!Input::GetTextInputMode()) {
 
 		if (Input::IsJoystickConnected(0)) {
-			scene->GetCamera()->ProcessJoystickMove(Input::GetControllerAxis(0, 1), Input::GetControllerAxis(0, 0),
+			scene.GetCamera()->ProcessJoystickMove(Input::GetControllerAxis(0, 1), Input::GetControllerAxis(0, 0),
 				(Input::GetControllerAxis(0, 4) + 1) / 2.0, (Input::GetControllerAxis(0, 5) + 1) / 2.0, deltaTime);
-			scene->GetCamera()->ProcessJoystickLook(Input::GetControllerAxis(0, 3), Input::GetControllerAxis(0, 4), deltaTime);
+			scene.GetCamera()->ProcessJoystickLook(Input::GetControllerAxis(0, 3), Input::GetControllerAxis(0, 4), deltaTime);
 
 			if (Input::GetControllerButton(0, 2))
-				scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::UP, deltaTime);
+				scene.GetCamera()->ChangeCameraSpeed(Camera_Movement::UP, deltaTime);
 			if (Input::GetControllerButton(0, 5))
-				scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::DOWN, deltaTime);
+				scene.GetCamera()->ChangeCameraSpeed(Camera_Movement::DOWN, deltaTime);
 		}
 
 		if (Input::GetKey(Input::KeyCode::W))
-			scene->GetCamera()->ProcessKeyboard(Camera_Movement::FORWARD, deltaTime);
+			scene.GetCamera()->ProcessKeyboard(Camera_Movement::FORWARD, deltaTime);
 		if (Input::GetKey(Input::KeyCode::S))
-			scene->GetCamera()->ProcessKeyboard(Camera_Movement::BACKWARD, deltaTime);
+			scene.GetCamera()->ProcessKeyboard(Camera_Movement::BACKWARD, deltaTime);
 		if (Input::GetKey(Input::KeyCode::A))
-			scene->GetCamera()->ProcessKeyboard(Camera_Movement::LEFT, deltaTime);
+			scene.GetCamera()->ProcessKeyboard(Camera_Movement::LEFT, deltaTime);
 		if (Input::GetKey(Input::KeyCode::D))
-			scene->GetCamera()->ProcessKeyboard(Camera_Movement::RIGHT, deltaTime);
-		if (!scene->walkOnGround) {
+			scene.GetCamera()->ProcessKeyboard(Camera_Movement::RIGHT, deltaTime);
+		if (!scene.walkOnGround) {
 			if (Input::GetKey(Input::KeyCode::SPACE))
-				scene->GetCamera()->ProcessKeyboard(Camera_Movement::UP, deltaTime);
+				scene.GetCamera()->ProcessKeyboard(Camera_Movement::UP, deltaTime);
 			if (Input::GetKey(Input::KeyCode::LEFT_SHIFT))
-				scene->GetCamera()->ProcessKeyboard(Camera_Movement::DOWN, deltaTime);
+				scene.GetCamera()->ProcessKeyboard(Camera_Movement::DOWN, deltaTime);
 		}
 
 		if (Input::GetKeyDown(Input::KeyCode::ESCAPE))
-			window->SetWindowToClose();
+			window.SetWindowToClose();
 		if (Input::GetKeyDown(Input::KeyCode::ENTER))
 			Input::SetMouseControlStatus(!Input::GetMouseControlStatus());
 
 		if (Input::GetKey(Input::KeyCode::E))
-			scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::UP, deltaTime);
+			scene.GetCamera()->ChangeCameraSpeed(Camera_Movement::UP, deltaTime);
 		if (Input::GetKey(Input::KeyCode::Q))
-			scene->GetCamera()->ChangeCameraSpeed(Camera_Movement::DOWN, deltaTime);
+			scene.GetCamera()->ChangeCameraSpeed(Camera_Movement::DOWN, deltaTime);
 
 		if (Input::GetKeyDown(Input::KeyCode::N))
-			scene->drawNormals = !scene->drawNormals;
+			scene.drawNormals = !scene.drawNormals;
 
 		if (Input::GetKeyDown(Input::KeyCode::X)) {
 			wireframe = !wireframe;
-			vulkanRenderer->SetWireframe(wireframe);
+			vulkanRenderer.SetWireframe(wireframe);
 			Log::Debug << "wireframe toggled" << "\n";
 		}
 
 		if (Input::GetKeyDown(Input::KeyCode::F)) {
-			scene->walkOnGround = !scene->walkOnGround;
+			scene.walkOnGround = !scene.walkOnGround;
 			Log::Debug << "flight mode toggled " << "\n";
 		}
 
@@ -302,11 +309,11 @@ void VulkanApp::HandleInputs() {
 
 		if (Input::GetKeyDown(Input::KeyCode::F10)) {
 			Log::Debug << "screenshot taken " << "\n";
-			vulkanRenderer->SaveScreenshotNextFrame();
+			vulkanRenderer.SaveScreenshotNextFrame();
 		}
 
 		if (Input::GetKeyDown(Input::KeyCode::DIGIT_0) && Input::GetKey(Input::KeyCode::DIGIT_9)) {
-			scene.reset();
+			/*scene.reset();
 			Log::Debug << "Scene reset\n";
 
 			vulkanRenderer.reset();
@@ -315,7 +322,7 @@ void VulkanApp::HandleInputs() {
 			vulkanRenderer = std::make_unique<VulkanRenderer>(settings.useValidationLayers, window.get());
 
 			scene = std::make_unique<Scene>(resourceManager.get(), vulkanRenderer.get(), imgui_nodeGraph_terrain.GetGraph());
-			vulkanRenderer->scene = scene.get();
+			vulkanRenderer.scene = scene.get();*/
 		}
 	}
 	else {
@@ -324,8 +331,8 @@ void VulkanApp::HandleInputs() {
 	}
 
 	if (Input::GetMouseControlStatus()) {
-		scene->GetCamera()->ProcessMouseMovement(Input::GetMouseChangeInPosition().x, Input::GetMouseChangeInPosition().y);
-		scene->GetCamera()->ProcessMouseScroll(Input::GetMouseScrollY(), deltaTime);
+		scene.GetCamera()->ProcessMouseMovement(Input::GetMouseChangeInPosition().x, Input::GetMouseChangeInPosition().y);
+		scene.GetCamera()->ProcessMouseScroll(Input::GetMouseScrollY(), deltaTime);
 	}
 
 	if (Input::GetMouseButtonPressed(Input::GetMouseButtonPressed(0))) {

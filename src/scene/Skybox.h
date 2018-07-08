@@ -22,10 +22,10 @@ struct SkyboxUniformBuffer {
 
 class Skybox {
 public:
-	Skybox();
+	Skybox(VulkanRenderer& renderer);
 	~Skybox();
 
-	VulkanRenderer* renderer;
+	VulkanRenderer& renderer;
 
 	std::shared_ptr<ManagedVulkanPipeline> mvp;
 
@@ -40,7 +40,7 @@ public:
 	std::shared_ptr<VulkanBufferUniform> skyboxUniformBuffer;
 
 
-	void InitSkybox(VulkanRenderer* renderer);
+	void InitSkybox();
 
 	void UpdateUniform(glm::mat4 proj, glm::mat4 view);
 

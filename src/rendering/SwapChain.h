@@ -21,12 +21,12 @@ struct SwapChainSupportDetails
 
 class VulkanSwapChain {
 public:
-	VulkanSwapChain(VulkanDevice& device, Window* window);
+	VulkanSwapChain(VulkanDevice& device, Window& window);
 	~VulkanSwapChain();
 
 	//void InitSwapChain(Window* window);
 
-	void RecreateSwapChain(Window* window);
+	void RecreateSwapChain();
 
 	void CreateFramebuffers(VkImageView depthImageView, VkRenderPass renderPass);
 
@@ -49,7 +49,7 @@ private:
 	VkInstance instance;
 	VkPhysicalDevice physicalDevice;
 
-	Window* window;
+	Window& window;
 
 	SwapChainSupportDetails details;
 

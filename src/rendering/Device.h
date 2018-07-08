@@ -40,7 +40,7 @@ struct QueueFamilyIndices {
 
 class VulkanDevice {
 public:
-	Window * window;
+	Window & window;
 
 	VkInstance instance;
 	VkDebugReportCallbackEXT callback;
@@ -60,7 +60,7 @@ public:
 	VkPhysicalDeviceFeatures physical_device_features;
 	VkPhysicalDeviceMemoryProperties memoryProperties;
 
-	VulkanDevice(bool validationLayers, Window* window);
+	VulkanDevice(bool validationLayers, Window& window);
 
 	~VulkanDevice();
 

@@ -8,7 +8,8 @@
 
 #include <limits>
 
-VulkanSwapChain::VulkanSwapChain(VulkanDevice& device, Window* window) : device(device) {
+VulkanSwapChain::VulkanSwapChain(VulkanDevice& device, Window& window)
+	: device(device), window(window) {
 
 	this->instance = device.instance;
 	this->physicalDevice = device.physical_device;
@@ -27,9 +28,8 @@ VulkanSwapChain::~VulkanSwapChain()
 	DestroySwapchainResources();
 }
 
-void VulkanSwapChain::RecreateSwapChain(Window* window) {
+void VulkanSwapChain::RecreateSwapChain() {
 	DestroySwapchainResources();
-	this->window = window;
 
 	createSwapChain();
 	createImageViews();
@@ -189,7 +189,7 @@ VkExtent2D VulkanSwapChain::chooseSwapExtent() {
 		return details.capabilities.currentExtent;
 	}
 	else {
-		auto size = window->GetWindowSize();
+		auto size = window.GetWindowSize();
 
 		VkExtent2D actualExtent = {
 			static_cast<uint32_t>(size.x),

@@ -59,7 +59,7 @@ void RenderSettings::Save() {
 }
 
 VulkanRenderer::VulkanRenderer(bool validationLayer,
-	Window* window)
+	Window& window)
 
 	:settings("render_settings.json"),
 	device(validationLayer, window),
@@ -88,7 +88,7 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 
 	PrepareResources();
 
-	PrepareImGui(window, this);
+	PrepareImGui(&window, this);
 }
 
 VulkanRenderer::~VulkanRenderer() {
@@ -169,7 +169,7 @@ void VulkanRenderer::RecreateSwapChain() {
 
 	frameIndex = 0;
 	frameObjects.clear();
-	vulkanSwapChain.RecreateSwapChain(device.window);
+	vulkanSwapChain.RecreateSwapChain();
 
 
 	CreateRenderPass();
@@ -201,8 +201,7 @@ void VulkanRenderer::CreateDepthResources() {
 		vulkanSwapChain.swapChainExtent.height);
 }
 
-VkFormat
-VulkanRenderer::FindSupportedFormat(const std::vector<VkFormat> &candidates,
+VkFormat VulkanRenderer::FindSupportedFormat(const std::vector<VkFormat> &candidates,
 	VkImageTiling tiling,
 	VkFormatFeatureFlags features) {
 	for (VkFormat format : candidates) {

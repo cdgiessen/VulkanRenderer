@@ -9,8 +9,8 @@
 #define INSTANCE_BUFFER_BIND_ID 1
 
 
-InstancedSceneObject::InstancedSceneObject(VulkanRenderer* renderer, int maxInstances)
-	: maxInstanceCount(maxInstances), instanceCount(0), instancesData(maxInstances)
+InstancedSceneObject::InstancedSceneObject(VulkanRenderer& renderer, int maxInstances)
+	: renderer(renderer), maxInstanceCount(maxInstances), instanceCount(0), instancesData(maxInstances)
 {
 	isFinishedTransfer = std::make_shared<bool>(false);
 }
@@ -18,15 +18,13 @@ InstancedSceneObject::InstancedSceneObject(VulkanRenderer* renderer, int maxInst
 
 InstancedSceneObject::~InstancedSceneObject()
 {
-	renderer->pipelineManager.DeleteManagedPipeline(mvp);
+	renderer.pipelineManager.DeleteManagedPipeline(mvp);
 
 }
 
 
-void InstancedSceneObject::InitInstancedSceneObject(VulkanRenderer* renderer)
+void InstancedSceneObject::InitInstancedSceneObject()
 {
-	this->renderer = renderer;
-
 	SetupUniformBuffer();
 	SetupImage();
 	SetupModel();
@@ -60,7 +58,7 @@ void InstancedSceneObject::SetBlendMode(VkBool32 blendEnable) {
 }
 
 void InstancedSceneObject::SetupUniformBuffer() {
-	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device, sizeof(ModelBufferObject));
+	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer.device, sizeof(ModelBufferObject));
 
 	/*uniformBuffer->CreateUniformBuffer(sizeof(ModelBufferObject));*/
 
@@ -72,28 +70,28 @@ void InstancedSceneObject::SetupUniformBuffer() {
 
 	uniformBuffer->CopyToBuffer(&ubo, sizeof(ModelBufferObject));
 
-	//VK_CHECK_RESULT(uniformBuffer.map(renderer->device.device));
+	//VK_CHECK_RESULT(uniformBuffer.map(renderer.device.device));
 	//uniformBuffer.copyTo(&ubo, sizeof(ModelBufferObject));
 	//uniformBuffer.unmap();
 
-	instanceBuffer = std::make_shared<VulkanBufferInstancePersistant>(renderer->device, maxInstanceCount, instanceMemberSize);
+	instanceBuffer = std::make_shared<VulkanBufferInstancePersistant>(renderer.device, maxInstanceCount, instanceMemberSize);
 	//instanceBuffer->CreatePersistantInstanceBuffer(maxInstanceCount, instanceMemberSize);
 	//UploadData();
 }
 
 void InstancedSceneObject::SetupImage() {
 	//NOTE: long parameter lists of bools & ints are a bad idea (implicit casting between them makes making mistakes easy)
-	vulkanTexture = std::make_unique<VulkanTexture2D>(renderer->device, texture, VK_FORMAT_R8G8B8A8_UNORM, *renderer,
+	vulkanTexture = std::make_unique<VulkanTexture2D>(renderer.device, texture, VK_FORMAT_R8G8B8A8_UNORM, renderer,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		false, true, 8);
 }
 
 void InstancedSceneObject::SetupModel() {
-	vulkanModel = std::make_shared<VulkanModel>(*renderer, mesh);
+	vulkanModel = std::make_shared<VulkanModel>(renderer, mesh);
 }
 
 void InstancedSceneObject::SetupDescriptor() {
-	descriptor = renderer->GetVulkanDescriptor();
+	descriptor = renderer.GetVulkanDescriptor();
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
@@ -116,22 +114,22 @@ void InstancedSceneObject::SetupDescriptor() {
 
 void InstancedSceneObject::SetupPipeline()
 {
-	VulkanPipeline &pipeMan = renderer->pipelineManager;
+	VulkanPipeline &pipeMan = renderer.pipelineManager;
 	mvp = pipeMan.CreateManagedPipeline();
 
-	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/instancedSceneObject.vert.spv"));
+	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer.device.device, "assets/shaders/instancedSceneObject.vert.spv"));
 	//pipeMan.SetFragmentShader(mvp, fragShaderModule);
 
-	auto vert = renderer->shaderManager.loadShaderModule("assets/shaders/instancedSceneObject.vert.spv", ShaderModuleType::vertex);
-	auto frag = renderer->shaderManager.loadShaderModule(fragShaderPath, ShaderModuleType::fragment);
+	auto vert = renderer.shaderManager.loadShaderModule("assets/shaders/instancedSceneObject.vert.spv", ShaderModuleType::vertex);
+	auto frag = renderer.shaderManager.loadShaderModule(fragShaderPath, ShaderModuleType::fragment);
 
 	ShaderModuleSet set(vert, frag, {}, {}, {});
 	pipeMan.SetShaderModuleSet(mvp, set);
 
 	//pipeMan.SetVertexInput(mvp, Vertex::getBindingDescription(), Vertex::getAttributeDescriptions());
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width, (float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
-	pipeMan.SetScissor(mvp, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);
+	pipeMan.SetViewport(mvp, (float)renderer.vulkanSwapChain.swapChainExtent.width, (float)renderer.vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
+	pipeMan.SetScissor(mvp, renderer.vulkanSwapChain.swapChainExtent.width, renderer.vulkanSwapChain.swapChainExtent.height, 0, 0);
 	pipeMan.SetViewportState(mvp, 1, 1, 0);
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_FILL, cullModeFlagBits,
 		VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
@@ -151,7 +149,7 @@ void InstancedSceneObject::SetupPipeline()
 	pipeMan.SetDynamicState(mvp, dynamicStateEnables);
 
 	std::vector<VkDescriptorSetLayout> layouts;
-	renderer->AddGlobalLayouts(layouts);
+	renderer.AddGlobalLayouts(layouts);
 	layouts.push_back(descriptor->GetLayout());
 	pipeMan.SetDescriptorSetLayout(mvp, layouts);
 
@@ -189,17 +187,17 @@ void InstancedSceneObject::SetupPipeline()
 	pipeMan.SetVertexInput(mvp, bindingDescriptions, attributeDescriptions);
 
 	pipeMan.BuildPipelineLayout(mvp);
-	pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
+	pipeMan.BuildPipeline(mvp, renderer.renderPass->Get(), 0);
 
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-	pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
+	pipeMan.BuildPipeline(mvp, renderer.renderPass->Get(), 0);
 
 	//pipeMan.CleanShaderResources(mvp);
-	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.vert.spv"));
-	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.frag.spv"));
-	//pipeMan.SetGeometryShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/normalVecDebug.geom.spv"));
+	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer.device.device, "assets/shaders/normalVecDebug.vert.spv"));
+	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer.device.device, "assets/shaders/normalVecDebug.frag.spv"));
+	//pipeMan.SetGeometryShader(mvp, loadShaderModule(renderer.device.device, "assets/shaders/normalVecDebug.geom.spv"));
 	//
-	//pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
+	//pipeMan.BuildPipeline(mvp, renderer.renderPass->Get(), 0);
 	//pipeMan.CleanShaderResources(mvp);
 
 }
@@ -213,7 +211,7 @@ void InstancedSceneObject::UploadInstances() {
 		size_t instanceBufferSize = instancesData.size() * sizeof(InstanceData);
 		/*
 
-		VulkanBufferInstance stagingBuffer(renderer->device);
+		VulkanBufferInstance stagingBuffer(renderer.device);
 		stagingBuffer.CreateStagingInstanceBuffer(instancesData.data(), instancesData.size(), instanceMemberSize);
 
 		TransferCommandWork transfer;
@@ -230,9 +228,9 @@ void InstancedSceneObject::UploadInstances() {
 		});
 		transfer.buffersToClean.push_back(stagingBuffer);
 		transfer.flags.push_back(isFinishedTransfer);
-		renderer->SubmitTransferWork(std::move(transfer));*/
+		renderer.SubmitTransferWork(std::move(transfer));*/
 
-		//auto copyCmd = renderer->GetTransferCommandBuffer();
+		//auto copyCmd = renderer.GetTransferCommandBuffer();
 
 		//VkBufferCopy copyRegion = {};
 		//copyRegion.size = instanceBufferSize;
@@ -243,7 +241,7 @@ void InstancedSceneObject::UploadInstances() {
 		//	1,
 		//	&copyRegion);
 		//
-		//renderer->SubmitTransferCommandBufferAndWait(copyCmd);
+		//renderer.SubmitTransferCommandBufferAndWait(copyCmd);
 
 		//Not sure if needed since the amount of data should be baked in, not current instance count
 		//instanceBuffer->resource.FillResource(instanceBuffer->buffer.buffer, 0, instanceBufferSize);
@@ -276,7 +274,7 @@ void InstancedSceneObject::AddInstances(std::vector<InstanceData>& newInstances)
 	//	modelUniforms.push_back(ubo);
 	//}
 
-	//modelUniformsBuffer.map(renderer->device.device);
+	//modelUniformsBuffer.map(renderer.device.device);
 	//modelUniformsBuffer.copyTo(&modelUniforms, modelUniforms.size() * sizeof(ModelBufferObject));
 	//modelUniformsBuffer.unmap();
 
@@ -368,7 +366,7 @@ void InstancedSceneObject::UploadData()
 		//ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 	//}
 
-	//instanceBuffer->map(renderer->device.device);
+	//instanceBuffer->map(renderer.device.device);
 	instanceBuffer->CopyToBuffer(instancesData.data(), instancesData.size() * instanceMemberSize);
 
 	//instanceBuffer->unmap();

@@ -8,9 +8,9 @@
 #include "../util/DoubleBuffer.h"
 
 struct TransformData {
-	glm::vec3 pos;
-	glm::quat rot;
-	glm::vec3 scale;
+	glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
+	glm::quat rot = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	bool isDirty = false;
 	bool isStatic = false; //for future use
 

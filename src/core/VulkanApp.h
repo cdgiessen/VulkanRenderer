@@ -62,13 +62,14 @@ public:
 private:
 	VulkanAppSettings settings;
 
-	std::unique_ptr<Window> window;
-	std::unique_ptr<ResourceManager> resourceManager;
-	std::unique_ptr<TimeManager> timeManager;
+	TimeManager timeManager;
+	Window window;
+	ResourceManager resourceManager;
 
-	std::unique_ptr<VulkanRenderer> vulkanRenderer;
+	VulkanRenderer vulkanRenderer;
 
-	std::unique_ptr<Scene> scene;
+	ProcTerrainNodeGraph imgui_nodeGraph_terrain;
+	Scene scene;
 
 	//Input stuff
 	//bool mouseControlEnabled = true;
@@ -85,7 +86,6 @@ private:
 	void ControlsWindow(bool* show_controls_window);
 
 	//ImGui resources
-	ProcTerrainNodeGraph imgui_nodeGraph_terrain;
 	SimpleTimer imGuiTimer;
 	Log::Logger appLog;
 };

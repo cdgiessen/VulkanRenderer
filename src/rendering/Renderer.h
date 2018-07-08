@@ -46,7 +46,7 @@ private:
 class VulkanRenderer
 {
 public:
-	VulkanRenderer(bool enableValidationLayer, Window *window);
+	VulkanRenderer(bool enableValidationLayer, Window& window);
 
 	VulkanRenderer(const VulkanRenderer& other) = delete; //copy
 	VulkanRenderer(VulkanRenderer&& other) = delete; //move

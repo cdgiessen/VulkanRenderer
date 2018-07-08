@@ -41,10 +41,10 @@ public:
 		}
 	};
 
-	InstancedSceneObject(VulkanRenderer* renderer, int maxInstances = 16384);
+	InstancedSceneObject(VulkanRenderer& renderer, int maxInstances = 16384);
 	~InstancedSceneObject();
 
-	void InitInstancedSceneObject(VulkanRenderer* renderer);
+	void InitInstancedSceneObject();
 	void UploadData();
 
 	void LoadTexture(std::shared_ptr<Texture> tex);
@@ -80,7 +80,7 @@ public:
 	void WriteToCommandBuffer(VkCommandBuffer commandBuffer, bool wireframe);
 private:
 
-	VulkanRenderer * renderer;
+	VulkanRenderer & renderer;
 
 	std::shared_ptr<ManagedVulkanPipeline> mvp;
 

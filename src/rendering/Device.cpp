@@ -11,7 +11,7 @@
 
 
 
-VulkanDevice::VulkanDevice(bool validationLayers, Window* window)
+VulkanDevice::VulkanDevice(bool validationLayers, Window& window)
 	: enableValidationLayers(validationLayers),
 	window(window)
 {
@@ -221,7 +221,7 @@ void VulkanDevice::SetupDebugCallback() {
 
 void VulkanDevice::CreateSurface(VkSurfaceKHR &surface) {
 	//VK_CHECK_RESULT(glfwCreateWindowSurface(instance, window, nullptr, &surface));
-	VkResult res = glfwCreateWindowSurface(instance, window->getWindowContext(), nullptr, &surface);
+	VkResult res = glfwCreateWindowSurface(instance, window.getWindowContext(), nullptr, &surface);
 	if (res != VK_SUCCESS) {
 		Log::Error << errorString(res) << "\n";
 		throw std::runtime_error("failed to create window surface!");

@@ -5,7 +5,7 @@
 #include "../rendering/Renderer.h"
 
 #include "../resources/ResourceManager.h"
-#include "../resources/Mesh.h"
+
 #include "../core/TimeManager.h"
 
 #include "Camera.h"
@@ -33,10 +33,11 @@ struct SkySettings {
 class Scene
 {
 public:
-	Scene(ResourceManager* resourceMan, VulkanRenderer* renderer, InternalGraph::GraphPrototype& graph);
+	Scene(ResourceManager& resourceMan, VulkanRenderer& renderer,
+		TimeManager& timeManager, InternalGraph::GraphPrototype& graph);
 	~Scene();
 
-	void UpdateScene(ResourceManager* resourceMan, TimeManager* timeManager);
+	void UpdateScene();
 	void RenderScene(VkCommandBuffer commandBuffer, bool wireframe);
 	void UpdateSceneGUI();
 
@@ -46,10 +47,9 @@ public:
 	bool walkOnGround = false;
 private:
 
-	VulkanRenderer * renderer;
-	ResourceManager* resourceMan;
-
-	TransformManager transformManager;
+	VulkanRenderer & renderer;
+	ResourceManager& resourceMan;
+	TimeManager& timeManager;
 
 	std::vector<DirectionalLight> directionalLights;
 	std::vector<PointLight> pointLights;

@@ -2,18 +2,16 @@
 
 #include "../core/Logger.h"
 
-GameObject::GameObject() {}
+GameObject::GameObject(VulkanRenderer& renderer) :renderer(renderer) {}
 
 GameObject::~GameObject() {
-	renderer->pipelineManager.DeleteManagedPipeline(mvp);
+	renderer.pipelineManager.DeleteManagedPipeline(mvp);
 
 	Log::Debug << "game object deleted\n";
 }
 
-void GameObject::InitGameObject(VulkanRenderer* renderer)
+void GameObject::InitGameObject()
 {
-	this->renderer = renderer;
-
 	SetupUniformBuffer();
 	SetupImage();
 	SetupModel();
@@ -34,10 +32,10 @@ void GameObject::LoadModel(std::shared_ptr<Mesh> mesh)
 
 void GameObject::SetupUniformBuffer()
 {
-	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device, sizeof(ModelBufferObject));
+	uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer.device, sizeof(ModelBufferObject));
 	//uniformBuffer->CreateUniformBufferPersitantlyMapped(sizeof(ModelBufferObject));
 
-	materialBuffer = std::make_shared<VulkanBufferUniform>(renderer->device, sizeof(Phong_Material));
+	materialBuffer = std::make_shared<VulkanBufferUniform>(renderer.device, sizeof(Phong_Material));
 	//	if (usePBR)
 	//		materialBuffer->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Material));
 	//	else
@@ -50,21 +48,21 @@ void GameObject::SetupUniformBuffer()
 void GameObject::SetupImage()
 {
 
-	gameObjectVulkanTexture = std::make_unique<VulkanTexture2D>(renderer->device,
+	gameObjectVulkanTexture = std::make_unique<VulkanTexture2D>(renderer.device,
 		gameObjectTexture, VK_FORMAT_R8G8B8A8_UNORM,
-		*renderer,
+		renderer,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
 }
 
 void GameObject::SetupModel()
 {
-	gameObjectModel = std::make_shared<VulkanModel>(*renderer, gameObjectMesh);
+	gameObjectModel = std::make_shared<VulkanModel>(renderer, gameObjectMesh);
 
 }
 
 void GameObject::SetupMaterial() {
-	mat = std::make_shared<VulkanMaterial>(renderer->device);
+	mat = std::make_shared<VulkanMaterial>(renderer.device);
 
 	mat->AddMaterialDataSlot({ ResourceType::uniform,
 		ResourceStages::fragment_only, materialBuffer->resource });
@@ -79,7 +77,7 @@ void GameObject::SetupMaterial() {
 void GameObject::SetupDescriptor()
 {
 
-	// descriptor = renderer->GetVulkanDescriptor();
+	// descriptor = renderer.GetVulkanDescriptor();
 
 	// std::vector<VkDescriptorSetLayoutBinding> m_bindings;
 	// m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
@@ -102,7 +100,7 @@ void GameObject::SetupDescriptor()
 	// //writes.push_back(DescriptorUse(1, 1, gameObjectVulkanTexture->resource));
 	// descriptor->UpdateDescriptorSet(m_descriptorSet, writes);
 
-	//materialDescriptor = renderer->GetVulkanDescriptor();
+	//materialDescriptor = renderer.GetVulkanDescriptor();
 	//
 	//std::vector<VkDescriptorSetLayoutBinding> mat_bindings;
 	//mat_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1));
@@ -126,16 +124,16 @@ void GameObject::SetupDescriptor()
 
 void GameObject::SetupPipeline()
 {
-	VulkanPipeline &pipeMan = renderer->pipelineManager;
+	VulkanPipeline &pipeMan = renderer.pipelineManager;
 	mvp = pipeMan.CreateManagedPipeline();
 
-	auto pbr_vert = renderer->shaderManager.loadShaderModule("assets/shaders/pbr.vert.spv", ShaderModuleType::vertex);
-	auto pbr_frag = renderer->shaderManager.loadShaderModule("assets/shaders/pbr.frag.spv", ShaderModuleType::fragment);
+	auto pbr_vert = renderer.shaderManager.loadShaderModule("assets/shaders/pbr.vert.spv", ShaderModuleType::vertex);
+	auto pbr_frag = renderer.shaderManager.loadShaderModule("assets/shaders/pbr.frag.spv", ShaderModuleType::fragment);
 
-	auto go_vert = renderer->shaderManager.loadShaderModule("assets/shaders/gameObject_shader.vert.spv", ShaderModuleType::vertex);
-	auto go_frag = renderer->shaderManager.loadShaderModule("assets/shaders/gameObject_shader.frag.spv", ShaderModuleType::fragment);
+	auto go_vert = renderer.shaderManager.loadShaderModule("assets/shaders/gameObject_shader.vert.spv", ShaderModuleType::vertex);
+	auto go_frag = renderer.shaderManager.loadShaderModule("assets/shaders/gameObject_shader.frag.spv", ShaderModuleType::fragment);
 
-	auto geom = renderer->shaderManager.loadShaderModule("assets/shaders/normalVecDebug.geom.spv", ShaderModuleType::geometry);
+	auto geom = renderer.shaderManager.loadShaderModule("assets/shaders/normalVecDebug.geom.spv", ShaderModuleType::geometry);
 
 	ShaderModuleSet pbr_set(pbr_vert, pbr_frag, {}, {}, {});
 	ShaderModuleSet go_set(go_vert, go_frag, {}, {}, {});
@@ -150,12 +148,12 @@ void GameObject::SetupPipeline()
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0,
 		VK_FALSE);
 
-	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width,
-		(float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f,
+	pipeMan.SetViewport(mvp, (float)renderer.vulkanSwapChain.swapChainExtent.width,
+		(float)renderer.vulkanSwapChain.swapChainExtent.height, 0.0f,
 		1.0f, 0.0f, 0.0f);
 
-	pipeMan.SetScissor(mvp, renderer->vulkanSwapChain.swapChainExtent.width,
-		renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);
+	pipeMan.SetScissor(mvp, renderer.vulkanSwapChain.swapChainExtent.width,
+		renderer.vulkanSwapChain.swapChainExtent.height, 0, 0);
 
 	pipeMan.SetViewportState(mvp, 1, 1, 0);
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT,
@@ -182,7 +180,7 @@ void GameObject::SetupPipeline()
 
 
 	std::vector<VkDescriptorSetLayout> layouts;
-	renderer->AddGlobalLayouts(layouts);
+	renderer.AddGlobalLayouts(layouts);
 	layouts.push_back(mat->GetDescriptorSetLayout());
 	//layouts.push_back(materialDescriptor->GetLayout());
 	pipeMan.SetDescriptorSetLayout(mvp, layouts);
@@ -195,12 +193,12 @@ void GameObject::SetupPipeline()
 	//pipeMan.SetModelPushConstant(mvp, pushConstantRange);
 
 	pipeMan.BuildPipelineLayout(mvp);
-	pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
+	pipeMan.BuildPipeline(mvp, renderer.renderPass->Get(), 0);
 
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE,
 		VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE,
 		1.0f, VK_TRUE);
-	pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
+	pipeMan.BuildPipeline(mvp, renderer.renderPass->Get(), 0);
 
 	ShaderModuleSet pbr_geom_set(pbr_vert, pbr_frag, geom, {}, {});
 	ShaderModuleSet go_geom_set(go_vert, go_frag, geom, {}, {});
@@ -210,7 +208,7 @@ void GameObject::SetupPipeline()
 	else
 		pipeMan.SetShaderModuleSet(mvp, go_geom_set);
 
-	pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
+	pipeMan.BuildPipeline(mvp, renderer.renderPass->Get(), 0);
 	// pipeMan.CleanShaderResources(mvp);
 }
 
@@ -236,8 +234,8 @@ void GameObject::UpdateUniformBuffer(float time)
 	//	else
 	//		materialBuffer->CopyToBuffer(&phong_mat, sizeof(Phong_Material));
 
-	//modelUniformBuffer.CopyToBuffer(renderer->device, &ubo, sizeof(ModelBufferObject));
-	//modelUniformBuffer.Map(renderer->device, );
+	//modelUniformBuffer.CopyToBuffer(renderer.device, &ubo, sizeof(ModelBufferObject));
+	//modelUniformBuffer.Map(renderer.device, );
 	//modelUniformBuffer.copyTo(&ubo, sizeof(ubo));
 	//modelUniformBuffer.Unmap();
 

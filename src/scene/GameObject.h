@@ -19,10 +19,10 @@
 class GameObject
 {
 public:
-	GameObject();
+	GameObject(VulkanRenderer& renderer);
 	~GameObject();
 
-	void InitGameObject(VulkanRenderer* renderer);
+	void InitGameObject();
 
 	void LoadModel(std::string fileName);
 	void LoadModel(std::shared_ptr<Mesh> mesh);
@@ -39,7 +39,7 @@ public:
 
 	void Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNormals);
 
-	VulkanRenderer* renderer;
+	VulkanRenderer& renderer;
 
 	std::shared_ptr<ManagedVulkanPipeline> mvp;
 

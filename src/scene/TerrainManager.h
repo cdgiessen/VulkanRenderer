@@ -53,8 +53,8 @@ struct TerrainTextureNamedHandle {
 };
 
 struct TerrainCreationData {
-	ResourceManager* resourceMan;
-	VulkanRenderer* renderer;
+	ResourceManager& resourceMan;
+	VulkanRenderer& renderer;
 	glm::vec3 cameraPos;
 	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray;
 	InternalGraph::GraphPrototype& protoGraph;
@@ -64,8 +64,8 @@ struct TerrainCreationData {
 	TerrainCoordinateData coord;
 
 	TerrainCreationData(
-		ResourceManager* resourceMan,
-		VulkanRenderer* renderer,
+		ResourceManager& resourceMan,
+		VulkanRenderer& renderer,
 		glm::vec3 cameraPos,
 		std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
 		InternalGraph::GraphPrototype& protoGraph,
@@ -84,8 +84,8 @@ public:
 		ready,
 	};
 
-	TerrainChunkBuffer(VulkanRenderer* renderer, int count,
-		TerrainManager* man);
+	TerrainChunkBuffer(VulkanRenderer& renderer, int count,
+		TerrainManager& man);
 	~TerrainChunkBuffer();
 
 	int Allocate();
@@ -104,12 +104,12 @@ public:
 	VulkanBufferVertex vert_buffer;
 	VulkanBufferIndex index_buffer;
 
-	TerrainManager* man;
+	TerrainManager& man;
 
 private:
 	std::mutex lock;
 
-	VulkanRenderer* renderer;
+	VulkanRenderer& renderer;
 
 	VulkanBufferData vert_staging;
 	TerrainMeshVertices* vert_staging_ptr;
@@ -125,14 +125,15 @@ private:
 class TerrainManager
 {
 public:
-	TerrainManager(InternalGraph::GraphPrototype& protoGraph, ResourceManager* resourceMan, VulkanRenderer* renderer);
+	TerrainManager(InternalGraph::GraphPrototype& protoGraph,
+		ResourceManager& resourceMan, VulkanRenderer& renderer);
 	~TerrainManager();
 
 	void CleanUpTerrain();
 
-	void GenerateTerrain(ResourceManager* resourceMan, VulkanRenderer* renderer, std::shared_ptr<Camera> camera);
+	void GenerateTerrain(std::shared_ptr<Camera> camera);
 
-	void UpdateTerrains(ResourceManager* resourceMan, glm::vec3 cameraPos);
+	void UpdateTerrains(glm::vec3 cameraPos);
 
 	void RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe);
 
@@ -143,7 +144,8 @@ public:
 
 	void RecreateTerrain();
 
-	VulkanRenderer* renderer;
+	ResourceManager& resourceMan;
+	VulkanRenderer& renderer;
 
 	TerrainChunkBuffer chunkBuffer;
 

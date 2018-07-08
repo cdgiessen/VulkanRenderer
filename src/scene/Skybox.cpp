@@ -1,15 +1,14 @@
 #include "Skybox.h"
 
-Skybox::Skybox() {
+Skybox::Skybox(VulkanRenderer& renderer) :renderer(renderer) {
 
 };
 
 Skybox::~Skybox() {
-	renderer->pipelineManager.DeleteManagedPipeline(mvp);
+	renderer.pipelineManager.DeleteManagedPipeline(mvp);
 };
 
-void Skybox::InitSkybox(VulkanRenderer* renderer) {
-	this->renderer = renderer;
+void Skybox::InitSkybox() {
 
 	SetupUniformBuffer();
 	SetupCubeMapImage();
@@ -19,16 +18,16 @@ void Skybox::InitSkybox(VulkanRenderer* renderer) {
 }
 
 void Skybox::SetupUniformBuffer() {
-	skyboxUniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device, sizeof(SkyboxUniformBuffer));
+	skyboxUniformBuffer = std::make_shared<VulkanBufferUniform>(renderer.device, sizeof(SkyboxUniformBuffer));
 	//skyboxUniformBuffer->CreateUniformBuffer(sizeof(SkyboxUniformBuffer));
 }
 
 void Skybox::SetupCubeMapImage() {
-	vulkanCubeMap = std::make_unique<VulkanCubeMap>(renderer->device, skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, *renderer);
+	vulkanCubeMap = std::make_unique<VulkanCubeMap>(renderer.device, skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, renderer);
 }
 
 void Skybox::SetupDescriptor() {
-	descriptor = renderer->GetVulkanDescriptor();
+	descriptor = renderer.GetVulkanDescriptor();
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
@@ -50,21 +49,21 @@ void Skybox::SetupDescriptor() {
 
 void Skybox::SetupPipeline()
 {
-	VulkanPipeline &pipeMan = renderer->pipelineManager;
+	VulkanPipeline &pipeMan = renderer.pipelineManager;
 	mvp = pipeMan.CreateManagedPipeline();
 
-	auto vert = renderer->shaderManager.loadShaderModule("assets/shaders/skybox.vert.spv", ShaderModuleType::vertex);
-	auto frag = renderer->shaderManager.loadShaderModule("assets/shaders/skybox.frag.spv", ShaderModuleType::fragment);
+	auto vert = renderer.shaderManager.loadShaderModule("assets/shaders/skybox.vert.spv", ShaderModuleType::vertex);
+	auto frag = renderer.shaderManager.loadShaderModule("assets/shaders/skybox.frag.spv", ShaderModuleType::fragment);
 
 	ShaderModuleSet set(vert, frag, {}, {}, {});
 	pipeMan.SetShaderModuleSet(mvp, set);
-	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/skybox.vert.spv"));
-	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer->device.device, "assets/shaders/skybox.frag.spv"));
+	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer.device.device, "assets/shaders/skybox.vert.spv"));
+	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer.device.device, "assets/shaders/skybox.frag.spv"));
 
 	pipeMan.SetVertexInput(mvp, Vertex_PosNormTexColor::getBindingDescription(), Vertex_PosNormTexColor::getAttributeDescriptions());
 	pipeMan.SetInputAssembly(mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-	pipeMan.SetViewport(mvp, (float)renderer->vulkanSwapChain.swapChainExtent.width, (float)renderer->vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
-	pipeMan.SetScissor(mvp, renderer->vulkanSwapChain.swapChainExtent.width, renderer->vulkanSwapChain.swapChainExtent.height, 0, 0);
+	pipeMan.SetViewport(mvp, (float)renderer.vulkanSwapChain.swapChainExtent.width, (float)renderer.vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f);
+	pipeMan.SetScissor(mvp, renderer.vulkanSwapChain.swapChainExtent.width, renderer.vulkanSwapChain.swapChainExtent.height, 0, 0);
 	pipeMan.SetViewportState(mvp, 1, 1, 0);
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE,
 		VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
@@ -84,12 +83,12 @@ void Skybox::SetupPipeline()
 	pipeMan.SetDynamicState(mvp, dynamicStateEnables);
 
 	std::vector<VkDescriptorSetLayout> layouts;
-	renderer->AddGlobalLayouts(layouts);
+	renderer.AddGlobalLayouts(layouts);
 	layouts.push_back(descriptor->GetLayout());
 	pipeMan.SetDescriptorSetLayout(mvp, layouts);
 
 	pipeMan.BuildPipelineLayout(mvp);
-	pipeMan.BuildPipeline(mvp, renderer->renderPass->Get(), 0);
+	pipeMan.BuildPipeline(mvp, renderer.renderPass->Get(), 0);
 
 	//pipeMan.CleanShaderResources(mvp);
 
@@ -102,7 +101,7 @@ void Skybox::UpdateUniform(glm::mat4 proj, glm::mat4 view) {
 
 	skyboxUniformBuffer->CopyToBuffer(&sbo, sizeof(SkyboxUniformBuffer));
 	/*
-	skyboxUniformBuffer.map(renderer->device.device);
+	skyboxUniformBuffer.map(renderer.device.device);
 	skyboxUniformBuffer.copyTo(&sbo, sizeof(sbo));
 	skyboxUniformBuffer.unmap();*/
 };
