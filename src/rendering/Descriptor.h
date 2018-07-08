@@ -16,7 +16,7 @@ public:
 
 
 	VkDescriptorPoolSize GetPoolSize();
-	
+
 	VkDescriptorType type;
 	uint32_t count;
 };
@@ -56,11 +56,11 @@ public:
 class VulkanDescriptor {
 public:
 	VulkanDescriptor(VulkanDevice& device);
-	
+	~VulkanDescriptor();
+
 	void SetupLayout(std::vector<VkDescriptorSetLayoutBinding> bindings);
 	void SetupPool(std::vector<DescriptorPoolSize> poolSizes, int maxSets = 1);
-	
-	void CleanUp();
+
 
 	static VkDescriptorSetLayoutBinding CreateBinding(VkDescriptorType type, VkShaderStageFlags stages, uint32_t binding, uint32_t descriptorCount);
 
@@ -71,9 +71,11 @@ public:
 	VkDescriptorSetLayout GetLayout();
 
 private:
-	VulkanDevice& device;
-	
+	VulkanDevice & device;
+
+	bool layoutMade = false;
 	VkDescriptorSetLayout layout;
+	bool poolMade = true;
 	VkDescriptorPool pool;
 };
 

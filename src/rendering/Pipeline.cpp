@@ -44,8 +44,8 @@ void ManagedVulkanPipeline::BindPipelineOptionalWireframe(VkCommandBuffer cmdBuf
 	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? pipelines->at(1) : pipelines->at(0));
 }
 
-VulkanPipeline::VulkanPipeline(VulkanDevice &device):
-	device(device) 
+VulkanPipeline::VulkanPipeline(VulkanDevice &device) :
+	device(device)
 {
 	InitPipelineCache();
 }
@@ -69,19 +69,6 @@ void VulkanPipeline::InitPipelineCache() {
 VkPipelineCache VulkanPipeline::GetPipelineCache() {
 	return pipeCache;
 }
-
-// void VulkanPipeline::CleanUp() {
-// 	for (auto& manPipe : pipes){
-// 		vkDestroyPipelineLayout(device.device, manPipe->layout, nullptr);
-
-// 		for (auto& pipe : *manPipe->pipelines){
-// 			vkDestroyPipeline(device.device, pipe, nullptr);
-// 		}
-
-// 	}
-
-// 	vkDestroyPipelineCache(device.device, pipeCache, nullptr);
-// }
 
 std::shared_ptr<ManagedVulkanPipeline> VulkanPipeline::CreateManagedPipeline() {
 	std::shared_ptr<ManagedVulkanPipeline> mvp = std::make_shared<ManagedVulkanPipeline>();
@@ -107,7 +94,7 @@ void VulkanPipeline::BuildPipelineLayout(std::shared_ptr<ManagedVulkanPipeline> 
 	if (vkCreatePipelineLayout(device.device, &mvp->pco.pipelineLayoutInfo, nullptr, &mvp->layout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
-	
+
 }
 
 void VulkanPipeline::BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> mvp, VkRenderPass renderPass, VkPipelineCreateFlags flags)
@@ -123,7 +110,7 @@ void VulkanPipeline::BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> mvp, V
 	//if (mvp->pco.tessShader) {
 	//	shaderStages.push_back(mvp->pco.tessShaderStageInfo);
 	//}
-	
+
 	auto shaderStages = mvp->pco.shaderSet.ShaderStageCreateInfos();
 
 	mvp->pco.pipelineInfo = initializers::pipelineCreateInfo(mvp->layout, renderPass, flags);
@@ -142,25 +129,25 @@ void VulkanPipeline::BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> mvp, V
 
 	mvp->pco.pipelineInfo.subpass = 0; //which subpass in the renderpass this pipeline gets used
 	mvp->pco.pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-	
+
 	VkPipeline pipeline;
 	if (vkCreateGraphicsPipelines(device.device, pipeCache, 1, &mvp->pco.pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
-	
+
 	mvp->pipelines->push_back(pipeline);
 }
 
-void VulkanPipeline::SetShaderModuleSet(std::shared_ptr<ManagedVulkanPipeline> mvp, ShaderModuleSet set){
+void VulkanPipeline::SetShaderModuleSet(std::shared_ptr<ManagedVulkanPipeline> mvp, ShaderModuleSet set) {
 	mvp->pco.shaderSet = set;
 }
 
 
-void VulkanPipeline::SetVertexInput(std::shared_ptr<ManagedVulkanPipeline> mvp, 
+void VulkanPipeline::SetVertexInput(std::shared_ptr<ManagedVulkanPipeline> mvp,
 	std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescriptions)
 {
 	mvp->pco.vertexInputInfo = initializers::pipelineVertexInputStateCreateInfo();
-	
+
 	mvp->pco.vertexInputBindingDescription = std::make_unique<std::vector<VkVertexInputBindingDescription>>(bindingDescription);
 	mvp->pco.vertexInputAttributeDescriptions = std::make_unique<std::vector<VkVertexInputAttributeDescription>>(attributeDescriptions);
 
@@ -168,17 +155,17 @@ void VulkanPipeline::SetVertexInput(std::shared_ptr<ManagedVulkanPipeline> mvp,
 	mvp->pco.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(mvp->pco.vertexInputAttributeDescriptions->size());
 	mvp->pco.vertexInputInfo.pVertexBindingDescriptions = mvp->pco.vertexInputBindingDescription->data();
 	mvp->pco.vertexInputInfo.pVertexAttributeDescriptions = mvp->pco.vertexInputAttributeDescriptions->data();
- 
+
 }
 
-void VulkanPipeline::SetInputAssembly(std::shared_ptr<ManagedVulkanPipeline> mvp, 
+void VulkanPipeline::SetInputAssembly(std::shared_ptr<ManagedVulkanPipeline> mvp,
 	VkPrimitiveTopology topology, VkPipelineInputAssemblyStateCreateFlags flag, VkBool32 primitiveRestart)
 {
 	mvp->pco.inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo(topology, flag, primitiveRestart);
 }
 
-void VulkanPipeline::SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> mvp, 
-	std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateFlags flags) 
+void VulkanPipeline::SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> mvp,
+	std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateFlags flags)
 {
 	mvp->pco.dynamicState = VkPipelineDynamicStateCreateInfo();
 	mvp->pco.dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -187,7 +174,7 @@ void VulkanPipeline::SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> mvp,
 	mvp->pco.dynamicState.pDynamicStates = dynamicStates.data();
 }
 
-void VulkanPipeline::SetViewport(std::shared_ptr<ManagedVulkanPipeline> mvp, 
+void VulkanPipeline::SetViewport(std::shared_ptr<ManagedVulkanPipeline> mvp,
 	float width, float height, float minDepth, float maxDepth, float x, float y)
 {
 	mvp->pco.viewport = initializers::viewport(width, height, minDepth, maxDepth);
@@ -201,19 +188,19 @@ void VulkanPipeline::SetScissor(std::shared_ptr<ManagedVulkanPipeline> mvp, uint
 }
 
 //Currently only supports one viewport or scissor
-void VulkanPipeline::SetViewportState(std::shared_ptr<ManagedVulkanPipeline> mvp, uint32_t viewportCount, uint32_t scissorCount, 
+void VulkanPipeline::SetViewportState(std::shared_ptr<ManagedVulkanPipeline> mvp, uint32_t viewportCount, uint32_t scissorCount,
 	VkPipelineViewportStateCreateFlags flags)
-{ 
+{
 	mvp->pco.viewportState = initializers::pipelineViewportStateCreateInfo(1, 1);
 	mvp->pco.viewportState.pViewports = &mvp->pco.viewport;
 	mvp->pco.viewportState.pScissors = &mvp->pco.scissor;
 }
 
-void VulkanPipeline::SetRasterizer(std::shared_ptr<ManagedVulkanPipeline> mvp, VkPolygonMode polygonMode, 
-	VkCullModeFlagBits cullModeFlagBits, VkFrontFace frontFace, 
+void VulkanPipeline::SetRasterizer(std::shared_ptr<ManagedVulkanPipeline> mvp, VkPolygonMode polygonMode,
+	VkCullModeFlagBits cullModeFlagBits, VkFrontFace frontFace,
 	VkBool32 depthClampEnable, VkBool32 rasterizerDiscardEnable, float lineWidth, VkBool32 depthBiasEnable)
 {
-	mvp->pco.rasterizer = initializers::pipelineRasterizationStateCreateInfo( polygonMode, cullModeFlagBits, frontFace);
+	mvp->pco.rasterizer = initializers::pipelineRasterizationStateCreateInfo(polygonMode, cullModeFlagBits, frontFace);
 	mvp->pco.rasterizer.depthClampEnable = depthClampEnable;
 	mvp->pco.rasterizer.rasterizerDiscardEnable = rasterizerDiscardEnable;
 	mvp->pco.rasterizer.lineWidth = lineWidth;
@@ -227,8 +214,8 @@ void VulkanPipeline::SetMultisampling(std::shared_ptr<ManagedVulkanPipeline> mvp
 	mvp->pco.multisampling.sampleShadingEnable = VK_FALSE;
 }
 
-void VulkanPipeline::SetDepthStencil(std::shared_ptr<ManagedVulkanPipeline> mvp, 
-	VkBool32 depthTestEnable, VkBool32 depthWriteEnable, VkCompareOp depthCompareOp, 
+void VulkanPipeline::SetDepthStencil(std::shared_ptr<ManagedVulkanPipeline> mvp,
+	VkBool32 depthTestEnable, VkBool32 depthWriteEnable, VkCompareOp depthCompareOp,
 	VkBool32 depthBoundsTestEnable, VkBool32 stencilTestEnable)
 {
 	mvp->pco.depthStencil = initializers::pipelineDepthStencilStateCreateInfo(depthTestEnable, depthWriteEnable, depthCompareOp);
@@ -236,9 +223,9 @@ void VulkanPipeline::SetDepthStencil(std::shared_ptr<ManagedVulkanPipeline> mvp,
 	mvp->pco.depthStencil.stencilTestEnable = stencilTestEnable;
 }
 
-void VulkanPipeline::SetColorBlendingAttachment(std::shared_ptr<ManagedVulkanPipeline> mvp, 
-		VkBool32 blendEnable, VkColorComponentFlags colorWriteMask, 
-	VkBlendOp colorBlendOp, VkBlendFactor srcColorBlendFactor, VkBlendFactor dstColorBlendFactor, 
+void VulkanPipeline::SetColorBlendingAttachment(std::shared_ptr<ManagedVulkanPipeline> mvp,
+	VkBool32 blendEnable, VkColorComponentFlags colorWriteMask,
+	VkBlendOp colorBlendOp, VkBlendFactor srcColorBlendFactor, VkBlendFactor dstColorBlendFactor,
 	VkBlendOp alphaBlendOp, VkBlendFactor srcAlphaBlendFactor, VkBlendFactor dstAlphaBlendFactor)
 {
 	mvp->pco.colorBlendAttachment = initializers::pipelineColorBlendAttachmentState(colorWriteMask, blendEnable);
@@ -246,7 +233,7 @@ void VulkanPipeline::SetColorBlendingAttachment(std::shared_ptr<ManagedVulkanPip
 	mvp->pco.colorBlendAttachment.srcColorBlendFactor = srcColorBlendFactor;
 	mvp->pco.colorBlendAttachment.dstColorBlendFactor = dstColorBlendFactor;
 	mvp->pco.colorBlendAttachment.alphaBlendOp = alphaBlendOp;
-	mvp->pco.colorBlendAttachment.srcAlphaBlendFactor= srcAlphaBlendFactor;
+	mvp->pco.colorBlendAttachment.srcAlphaBlendFactor = srcAlphaBlendFactor;
 	mvp->pco.colorBlendAttachment.dstAlphaBlendFactor = dstAlphaBlendFactor;
 }
 

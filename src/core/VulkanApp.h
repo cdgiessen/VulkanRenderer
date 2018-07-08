@@ -28,7 +28,7 @@ struct ImGUI_PanelSettings {
 	bool controls_list = true;
 };
 
-class VulkanAppSettings{
+class VulkanAppSettings {
 public:
 	VulkanAppSettings(std::string fileName);
 	void Load();
@@ -67,19 +67,18 @@ private:
 	std::unique_ptr<TimeManager> timeManager;
 
 	std::unique_ptr<VulkanRenderer> vulkanRenderer;
-	
+
 	std::unique_ptr<Scene> scene;
 
 	//Input stuff
 	//bool mouseControlEnabled = true;
 	bool wireframe = false;
 	//void SetMouseControl(bool value);
-	
+
 	ImGUI_PanelSettings panels;
 
 	////ImGUI functions
 	void BuildImgui();
-	//void CleanUpImgui();
 
 	void DebugOverlay(bool* show_debug_overlay);
 	void CameraWindow(bool* show_camera_overlay);

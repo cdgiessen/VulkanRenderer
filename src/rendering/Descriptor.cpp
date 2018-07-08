@@ -58,13 +58,13 @@ void DescriptorSet::BindDescriptorSet(VkCommandBuffer cmdBuf, VkPipelineLayout l
 
 VulkanDescriptor::VulkanDescriptor(VulkanDevice& device) : device(device) {
 
-
-
 }
 
-void VulkanDescriptor::CleanUp() {
-	vkDestroyDescriptorSetLayout(device.device, layout, nullptr);
-	vkDestroyDescriptorPool(device.device, pool, nullptr);
+VulkanDescriptor::~VulkanDescriptor() {
+	if (layoutMade)
+		vkDestroyDescriptorSetLayout(device.device, layout, nullptr);
+	if (poolMade)
+		vkDestroyDescriptorPool(device.device, pool, nullptr);
 }
 
 void VulkanDescriptor::SetupLayout(std::vector<VkDescriptorSetLayoutBinding> bindings)
@@ -76,7 +76,7 @@ void VulkanDescriptor::SetupLayout(std::vector<VkDescriptorSetLayoutBinding> bin
 	{
 		throw std::runtime_error("failed to create descriptor set layout!");
 	}
-
+	layoutMade = true;
 }
 
 void VulkanDescriptor::SetupPool(std::vector<DescriptorPoolSize> poolSizes, int maxSets) {
@@ -95,6 +95,8 @@ void VulkanDescriptor::SetupPool(std::vector<DescriptorPoolSize> poolSizes, int 
 	{
 		//throw std::runtime_error("failed to create descriptor pool!");
 	}
+
+	poolMade = true;
 }
 
 

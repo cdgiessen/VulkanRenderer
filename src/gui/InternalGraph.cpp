@@ -808,7 +808,8 @@ namespace InternalGraph {
 		}
 	}
 
-	void Node::CleanUp() {
+
+	void Node::CleanNoise() {
 		if (isNoiseNode)
 			myNoise->FreeNoiseSet(noiseImage.GetImageData());
 	}
@@ -929,7 +930,7 @@ namespace InternalGraph {
 
 
 		for (auto& node : nodeMap) {
-			node.second.CleanUp();
+			node.second.CleanNoise();
 		}
 	}
 

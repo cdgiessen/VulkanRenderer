@@ -15,31 +15,18 @@ VulkanTexture::VulkanTexture(VulkanDevice &device)
 
 	readyToUse = std::make_shared<bool>(false);
 }
-VulkanTexture2D::VulkanTexture2D(VulkanDevice &device)
-	: VulkanTexture(device) {}
 
-VulkanTexture2DArray::VulkanTexture2DArray(VulkanDevice &device)
-	: VulkanTexture(device) {}
-
-VulkanCubeMap::VulkanCubeMap(VulkanDevice &device) : VulkanTexture(device) {}
-
-VulkanTextureDepthBuffer::VulkanTextureDepthBuffer(VulkanDevice &device)
-	: VulkanTexture(device) {}
-
-void VulkanTexture::updateDescriptor() {
-	resource.FillResource(textureSampler, textureImageView, textureImageLayout);
-	// descriptor.sampler = textureSampler;
-	// descriptor.imageView = textureImageView;
-	// descriptor.imageLayout = textureImageLayout;
-}
-
-void VulkanTexture::destroy() {
+VulkanTexture::~VulkanTexture() {
 	vmaDestroyImage(image.allocator, image.image, image.allocation);
 
 	if (textureImageView != VK_NULL_HANDLE)
 		vkDestroyImageView(device.device, textureImageView, nullptr);
 	if (textureSampler != VK_NULL_HANDLE)
 		vkDestroySampler(device.device, textureSampler, nullptr);
+}
+
+void VulkanTexture::updateDescriptor() {
+	resource.FillResource(textureSampler, textureImageView, textureImageLayout);
 }
 
 void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image,
@@ -274,10 +261,10 @@ void BeginTransferAndMipMapGenWork(
 			GenerateMipMaps(cmdBuf, image, imageLayout, width, height, 1, layers, mipLevels);
 		};
 
-		renderer.SubmitGraphicsWork(work, {}, {}, {buffer}, { std::move(signal) });
+		renderer.SubmitGraphicsWork(work, {}, {}, { buffer }, { std::move(signal) });
 	}
 	else {
-		VulkanSemaphore sem(renderer.device);
+		auto sem = std::make_shared<VulkanSemaphore>(renderer.device);
 
 		std::function<void(const VkCommandBuffer)> transferWork =
 			[=](const VkCommandBuffer cmdBuf) {
@@ -290,19 +277,20 @@ void BeginTransferAndMipMapGenWork(
 			GenerateMipMaps(cmdBuf, image, imageLayout, width, height, 1, layers, mipLevels);
 		};
 
-		renderer.SubmitTransferWork(transferWork, {}, { sem },  {buffer}, {});
+		renderer.SubmitTransferWork(transferWork, {}, { sem }, { buffer }, {});
 
 		renderer.SubmitGraphicsWork(mipMapGenWork, { sem }, {}, {}, { signal });
 
 	}
 }
 
-void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
+VulkanTexture2D::VulkanTexture2D(VulkanDevice& device,
+	std::shared_ptr<Texture> texture,
 	VkFormat format, VulkanRenderer &renderer,
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout,
 	bool forceLinear, bool genMipMaps,
-	int mipMapLevelsToGen, bool wrapBorder) {
+	int mipMapLevelsToGen, bool wrapBorder) :VulkanTexture(device) {
 	// VmaImage stagingImage;
 
 	this->texture = texture;
@@ -366,8 +354,8 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 	bufferCopyRegions.push_back(bufferCopyRegion);
 	// Increase offset into staging buffer for next level / face
 
-	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange, bufferCopyRegions, 
-	imageLayout, image.image, buffer->buffer.buffer,
+	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange, bufferCopyRegions,
+		imageLayout, image.image, buffer->buffer.buffer,
 		texture->width, texture->height, readyToUse, layers, mipLevels);
 
 
@@ -390,10 +378,10 @@ void VulkanTexture2D::loadFromTexture(std::shared_ptr<Texture> texture,
 
 }
 
-void VulkanTexture2DArray::loadTextureArray(
+VulkanTexture2DArray::VulkanTexture2DArray(VulkanDevice& device,
 	std::shared_ptr<TextureArray> textures, VkFormat format,
 	VulkanRenderer &renderer, VkImageUsageFlags imageUsageFlags,
-	VkImageLayout imageLayout, bool genMipMaps, int mipMapLevelsToGen) {
+	VkImageLayout imageLayout, bool genMipMaps, int mipMapLevelsToGen) :VulkanTexture(device) {
 
 
 	this->textures = textures;
@@ -443,7 +431,7 @@ void VulkanTexture2DArray::loadTextureArray(
 		offset += textures->texImageSizePerTex;
 	}
 
-	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange, bufferCopyRegions, 
+	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange, bufferCopyRegions,
 		imageLayout, image.image, buffer->buffer.buffer,
 		textures->width, textures->height, readyToUse, layers, mipLevels);
 
@@ -463,11 +451,11 @@ void VulkanTexture2DArray::loadTextureArray(
 	updateDescriptor();
 }
 
-void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
+VulkanCubeMap::VulkanCubeMap(VulkanDevice& device, std::shared_ptr<CubeMap> cubeMap,
 	VkFormat format, VulkanRenderer &renderer,
 	VkImageUsageFlags imageUsageFlags,
 	VkImageLayout imageLayout, bool genMipMaps,
-	int mipMapLevelsToGen)
+	int mipMapLevelsToGen) :VulkanTexture(device)
 {
 	this->cubeMap = cubeMap;
 	this->mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
@@ -515,7 +503,7 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 		offset += cubeMap->texImageSizePerTex;
 	}
 
-	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange, 
+	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange,
 		bufferCopyRegions, imageLayout, image.image, buffer->buffer.buffer,
 		cubeMap->width, cubeMap->height, readyToUse, layers, mipLevels);
 
@@ -533,9 +521,9 @@ void VulkanCubeMap::loadFromTexture(std::shared_ptr<CubeMap> cubeMap,
 	updateDescriptor();
 }
 
-void VulkanTextureDepthBuffer::CreateDepthImage(VulkanRenderer &renderer,
+VulkanTextureDepthBuffer::VulkanTextureDepthBuffer(VulkanDevice& device, VulkanRenderer &renderer,
 	VkFormat depthFormat, int width,
-	int height) {
+	int height) :VulkanTexture(device) {
 
 	VkImageCreateInfo imageInfo = initializers::imageCreateInfo(
 		VK_IMAGE_TYPE_2D, depthFormat, 1, 1, VK_SAMPLE_COUNT_1_BIT,
@@ -568,39 +556,37 @@ void VulkanTextureDepthBuffer::CreateDepthImage(VulkanRenderer &renderer,
 
 }
 
-VulkanTextureManager::VulkanTextureManager(VulkanDevice &device)
-	: device(device) {}
+//VulkanTextureManager::VulkanTextureManager(VulkanDevice &device)
+//	: device(device) {}
+//
+//VulkanTextureManager::~VulkanTextureManager() {
+//
+//}
 
-VulkanTextureManager::~VulkanTextureManager() {
-	for (auto& tex : vulkanTextures) {
-		tex.destroy();
-	}
-}
-
-std::shared_ptr<VulkanTexture2D> VulkanTextureManager::CreateTexture2D(
-	std::shared_ptr<Texture> texture, VkFormat format, VulkanRenderer &renderer,
-	VkImageUsageFlags imageUsageFlags, VkImageLayout imageLayout,
-	bool forceLinear, bool genMipMaps, int mipMapLevelsToGen, bool wrapBorder) {
-	return std::make_shared<VulkanTexture2D>(device);
-}
-
-std::shared_ptr<VulkanTexture2DArray>
-VulkanTextureManager::CreateTexture2DArray(
-	std::shared_ptr<TextureArray> textures, VkFormat format,
-	VulkanRenderer &renderer, VkImageUsageFlags imageUsageFlags,
-	VkImageLayout imageLayout, bool genMipMaps, int mipMapLevelsToGen) {
-	return std::make_shared<VulkanTexture2DArray>(device);
-}
-
-std::shared_ptr<VulkanCubeMap> VulkanTextureManager::CreateCubeMap(
-	std::shared_ptr<CubeMap> cubeMap, VkFormat format, VulkanRenderer &renderer,
-	VkImageUsageFlags imageUsageFlags, VkImageLayout imageLayout,
-	bool genMipMaps, int mipMapLevelsToGen) {
-	return std::make_shared<VulkanCubeMap>(device);
-}
-std::shared_ptr<VulkanTextureDepthBuffer>
-VulkanTextureManager::CreateDepthImage(VulkanRenderer &renderer,
-	VkFormat depthFormat, int width,
-	int height) {
-	return std::make_shared<VulkanTextureDepthBuffer>(device);
-}
+//std::shared_ptr<VulkanTexture2D> VulkanTextureManager::CreateTexture2D(
+//	std::shared_ptr<Texture> texture, VkFormat format, VulkanRenderer &renderer,
+//	VkImageUsageFlags imageUsageFlags, VkImageLayout imageLayout,
+//	bool forceLinear, bool genMipMaps, int mipMapLevelsToGen, bool wrapBorder) {
+//	return std::make_shared<VulkanTexture2D>(device);
+//}
+//
+//std::shared_ptr<VulkanTexture2DArray>
+//VulkanTextureManager::CreateTexture2DArray(
+//	std::shared_ptr<TextureArray> textures, VkFormat format,
+//	VulkanRenderer &renderer, VkImageUsageFlags imageUsageFlags,
+//	VkImageLayout imageLayout, bool genMipMaps, int mipMapLevelsToGen) {
+//	return std::make_shared<VulkanTexture2DArray>(device);
+//}
+//
+//std::shared_ptr<VulkanCubeMap> VulkanTextureManager::CreateCubeMap(
+//	std::shared_ptr<CubeMap> cubeMap, VkFormat format, VulkanRenderer &renderer,
+//	VkImageUsageFlags imageUsageFlags, VkImageLayout imageLayout,
+//	bool genMipMaps, int mipMapLevelsToGen) {
+//	return std::make_shared<VulkanCubeMap>(device);
+//}
+//std::shared_ptr<VulkanTextureDepthBuffer>
+//VulkanTextureManager::CreateDepthImage(VulkanRenderer &renderer,
+//	VkFormat depthFormat, int width,
+//	int height) {
+//	return std::make_shared<VulkanTextureDepthBuffer>(device);
+//}

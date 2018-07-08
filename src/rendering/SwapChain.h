@@ -27,17 +27,15 @@ public:
 	//void InitSwapChain(Window* window);
 
 	void RecreateSwapChain(Window* window);
-	
-	void CreateFramebuffers(VkImageView depthImageView, VkRenderPass renderPass);
 
-	void DestroySwapchainResources();
+	void CreateFramebuffers(VkImageView depthImageView, VkRenderPass renderPass);
 
 	static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 	VkSwapchainKHR swapChain = VK_NULL_HANDLE;
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
-	
+
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
@@ -47,18 +45,18 @@ public:
 
 private:
 
-	VulkanDevice& device; 
+	VulkanDevice & device;
 	VkInstance instance;
 	VkPhysicalDevice physicalDevice;
-	
+
 	Window* window;
 
 	SwapChainSupportDetails details;
 
 	void createSwapChain();
-
-	//7
 	void createImageViews();
+
+	void DestroySwapchainResources();
 
 	VkPresentModeKHR chooseSwapPresentMode();
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat();

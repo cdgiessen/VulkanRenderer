@@ -26,12 +26,6 @@ void CopyMeshBuffers(
 	vkCmdCopyBuffer(copyCmd, indexStagingBuffer, indexBuffer, 1, &copyRegion);
 }
 
-// void ModelCleanBuffersAndSignal(std::vector<VulkanBuffer>& buffers) {
-// 	for (auto& buf : buffers) {
-// 		buf.CleanBuffer();
-// 	}
-// }
-
 bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	VulkanRenderer& renderer) {
 
@@ -425,11 +419,4 @@ bool VulkanModel::loadFromFile(const std::string& filename, VkQueue copyQueue)
 void VulkanModel::BindModel(VkCommandBuffer cmdBuf) {
 	vmaVertices->BindVertexBuffer(cmdBuf);
 	vmaIndicies->BindIndexBuffer(cmdBuf);
-}
-
-/** @brief Release all Vulkan resources of this model */
-void VulkanModel::destroy()
-{
-	//vmaVertices.CleanBuffer();
-	//vmaIndicies.CleanBuffer();
 }

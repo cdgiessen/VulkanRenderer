@@ -6,11 +6,6 @@ Skybox::Skybox() {
 
 Skybox::~Skybox() {
 	renderer->pipelineManager.DeleteManagedPipeline(mvp);
-
-	model->destroy();
-	vulkanCubeMap->destroy();
-
-	//skyboxUniformBuffer->CleanBuffer();
 };
 
 void Skybox::InitSkybox(VulkanRenderer* renderer) {
@@ -29,7 +24,7 @@ void Skybox::SetupUniformBuffer() {
 }
 
 void Skybox::SetupCubeMapImage() {
-	vulkanCubeMap->loadFromTexture(skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, *renderer);
+	vulkanCubeMap = std::make_unique<VulkanCubeMap>(renderer->device, skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, *renderer);
 }
 
 void Skybox::SetupDescriptor() {

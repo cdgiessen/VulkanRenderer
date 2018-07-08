@@ -25,24 +25,22 @@ class VulkanDevice;
 
 class VulkanFence {
 public:
-	VulkanFence(VulkanDevice& device);
-
-	void Create(long int timeout = DEFAULT_FENCE_TIMEOUT,
+	VulkanFence(VulkanDevice& device, long int timeout = DEFAULT_FENCE_TIMEOUT,
 		VkFenceCreateFlags flags = VK_FLAGS_NONE);
-	void CleanUp();
+	~VulkanFence();
 
 	bool Check();
 
 	void WaitTillTrue();
 	void WaitTillFalse();
-	//void CleanUp();
+
 	VkFence Get();
 
 	void Reset();
 
 
 private:
-	VkDevice device;
+	VulkanDevice & device;
 	VkFence fence;
 	int timeout;
 };
@@ -52,14 +50,13 @@ std::vector<VkFence> CreateFenceArray(std::vector<VulkanFence>& fences);
 class VulkanSemaphore {
 public:
 	VulkanSemaphore(VulkanDevice& device);
+	~VulkanSemaphore();
 
 	VkSemaphore Get();
 	VkSemaphore* GetPtr();
 
-	void CleanUp();
-
 private:
-	VulkanDevice * device;
+	VulkanDevice & device;
 	VkSemaphore semaphore;
 };
 
@@ -81,8 +78,8 @@ public:
 
 	void SubmitCommandBuffer(VkCommandBuffer buffer,
 		VulkanFence& fence,
-		std::vector<VulkanSemaphore>& waitSemaphores,
-		std::vector<VulkanSemaphore>& signalSemaphores);
+		std::vector<std::shared_ptr<VulkanSemaphore>>& waitSemaphores,
+		std::vector<std::shared_ptr<VulkanSemaphore>>& signalSemaphores);
 
 	int GetQueueFamily();
 	std::mutex& GetQueueMutex();
@@ -102,9 +99,9 @@ class CommandPool {
 public:
 	CommandPool(VulkanDevice& device,
 		VkCommandPoolCreateFlags flags, CommandQueue* queue);
+	~CommandPool();
 
 	//VkBool32 Setup(VkCommandPoolCreateFlags flags, CommandQueue* queue);
-	VkBool32 CleanUp();
 
 	VkBool32 ResetPool();
 	VkBool32 ResetCommandBuffer(VkCommandBuffer cmdBuf);
@@ -116,7 +113,7 @@ public:
 	//VkBool32 SubmitCommandBuffer(VkCommandBuffer, VulkanFence& fence,
 	//	std::vector<VkSemaphore>& waitSemaphores, std::vector<VkSemaphore>& signalSemaphores);
 	VkBool32 SubmitCommandBuffer(VkCommandBuffer, VulkanFence& fence,
-		std::vector<VulkanSemaphore>& waitSemaphores, std::vector<VulkanSemaphore>& signalSemaphores);
+		std::vector<std::shared_ptr<VulkanSemaphore>>& waitSemaphores, std::vector<std::shared_ptr<VulkanSemaphore>>& signalSemaphores);
 
 	VkBool32 SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence = nullptr);
 	VkBool32 SubmitPrimaryCommandBuffer(VkCommandBuffer buf, VkFence fence = nullptr);
@@ -146,24 +143,24 @@ enum class CommandPoolType {
 struct GraphicsWork {
 	std::function<void(const VkCommandBuffer)> work;
 
-	VulkanFence fence;
+	std::shared_ptr<VulkanFence> fence;
 	CommandPoolType type;
 
-	std::vector<VulkanSemaphore> waitSemaphores;
-	std::vector<VulkanSemaphore> signalSemaphores;
+	std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores;
+	std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores;
 	std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean;
 	std::vector<Signal> signals; //signal on cpu completion of work
 
 	explicit GraphicsWork(std::function<void(const VkCommandBuffer)> work,
 		CommandPoolType type,
 		VulkanDevice& device,
-		std::vector<VulkanSemaphore>& waitSemaphores,
-		std::vector<VulkanSemaphore>& signalSemaphores,
+		std::vector<std::shared_ptr<VulkanSemaphore>>& waitSemaphores,
+		std::vector<std::shared_ptr<VulkanSemaphore>>& signalSemaphores,
 		std::vector<std::shared_ptr<VulkanBuffer>>& buffersToClean,
 		std::vector<Signal>& signals)
 		:
 		work(work), type(type),
-		fence(device),
+		fence(std::make_shared<VulkanFence>(device)),
 		waitSemaphores(waitSemaphores),
 		signalSemaphores(signalSemaphores),
 		buffersToClean(buffersToClean),
@@ -178,7 +175,7 @@ struct GraphicsWork {
 };
 
 struct GraphicsCleanUpWork {
-	VulkanFence fence;
+	std::shared_ptr<VulkanFence> fence;
 	CommandPool* pool;
 	VkCommandBuffer cmdBuf;
 	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
@@ -194,7 +191,7 @@ struct GraphicsCleanUpWork {
 		signals(work.signals)
 	{}
 
-	explicit GraphicsCleanUpWork(VulkanFence& fence,
+	explicit GraphicsCleanUpWork(std::shared_ptr<VulkanFence>& fence,
 		CommandPool* pool,
 		VkCommandBuffer cmdBuf,
 		std::vector<std::shared_ptr<VulkanBuffer>>& buffers,
@@ -227,8 +224,6 @@ public:
 	GraphicsCommandWorker& operator=(GraphicsCommandWorker&&) = default;
 
 	~GraphicsCommandWorker();
-
-	void CleanUp();
 
 	void StopWork();
 

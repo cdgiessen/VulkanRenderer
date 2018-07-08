@@ -23,7 +23,6 @@ public:
 	~GameObject();
 
 	void InitGameObject(VulkanRenderer* renderer);
-	void CleanUp();
 
 	void LoadModel(std::string fileName);
 	void LoadModel(std::shared_ptr<Mesh> mesh);
@@ -56,7 +55,7 @@ public:
 	std::shared_ptr<VulkanModel> gameObjectModel;
 
 	std::shared_ptr<Texture> gameObjectTexture;
-	std::shared_ptr<VulkanTexture2D> gameObjectVulkanTexture;
+	std::unique_ptr<VulkanTexture2D> gameObjectVulkanTexture;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 	//ModelPushConstant modelPushConstant;

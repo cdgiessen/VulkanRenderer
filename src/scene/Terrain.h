@@ -138,7 +138,7 @@ public:
 	DescriptorSet descriptorSet;
 
 	std::shared_ptr<Texture> terrainSplatMap;
-	std::shared_ptr<VulkanTexture2D> terrainVulkanSplatMap;
+	std::unique_ptr<VulkanTexture2D> terrainVulkanSplatMap;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 	//TerrainPushConstant modelMatrixData;

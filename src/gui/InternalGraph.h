@@ -130,7 +130,7 @@ namespace InternalGraph {
 		NodeID GetInputNode() const;
 
 		bool HasInputNode() const;
-		 
+
 		void SetInputNodePointer(Node* node);
 		void ResetInputNodePointer();
 
@@ -160,7 +160,7 @@ namespace InternalGraph {
 	public:
 		Node(NodeType type = NodeType::None);
 
-		NodeType GetNodeType() const ;
+		NodeType GetNodeType() const;
 		LinkType GetOutputType() const;
 
 		void SetLinkValue(const int index, const LinkTypeVariants data);
@@ -169,10 +169,10 @@ namespace InternalGraph {
 
 		void ResetLinkInput(const int index);
 
-		LinkTypeVariants GetValue(const int x, const int z) const ;
+		LinkTypeVariants GetValue(const int x, const int z) const;
 
 		LinkTypeVariants GetHeightMapValue(const int x, const int z) const;
-		LinkTypeVariants GetSplatMapValue(const int x, const int z) const ;
+		LinkTypeVariants GetSplatMapValue(const int x, const int z) const;
 		LinkTypeVariants GetVegetationMapValue(const int x, const int z) const;
 
 		void SetID(NodeID);
@@ -182,15 +182,15 @@ namespace InternalGraph {
 
 		void SetupInputLinks(NodeMap* map);
 		void SetupNodeForComputation(NoiseSourceInfo info);
-		void CleanUp();
+		void CleanNoise();
 
 		std::vector <InputLink> inputLinks;
-	
+
 	private:
 		void SetFractalType(int index);
 		void SetCellularDistanceFunction(int index);
 		void SetCellularReturnType(int index);
-		
+
 
 		NodeID id = -1;
 		NodeType nodeType = NodeType::None;

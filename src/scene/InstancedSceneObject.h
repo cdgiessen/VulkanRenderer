@@ -45,7 +45,6 @@ public:
 	~InstancedSceneObject();
 
 	void InitInstancedSceneObject(VulkanRenderer* renderer);
-	void CleanUp();
 	void UploadData();
 
 	void LoadTexture(std::shared_ptr<Texture> tex);
@@ -92,7 +91,7 @@ private:
 	std::shared_ptr<VulkanModel> vulkanModel;
 
 	std::shared_ptr<Texture> texture;
-	std::shared_ptr<VulkanTexture2D> vulkanTexture;
+	std::unique_ptr<VulkanTexture2D> vulkanTexture;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 

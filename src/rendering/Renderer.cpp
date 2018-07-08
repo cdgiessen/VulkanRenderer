@@ -66,23 +66,14 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 	vulkanSwapChain(device, device.window),
 	shaderManager(device),
 	pipelineManager(device),
-	textureManager(device),
+	//textureManager(device),
 	graphicsPrimaryCommandPool(device,
 		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue())
 
 {
-	//device.InitVulkanDevice();
-
-	// graphicsPrimaryCommandPool = std::make_unique<CommandPool>(device,
-	// 	VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue());
-
-	//vulkanSwapChain.InitSwapChain(device.window);
-
 	for (int i = 0; i < vulkanSwapChain.swapChainImages.size(); i++) {
 		frameObjects.push_back(std::make_unique<FrameObject>(device, i));
 	}
-
-	//pipelineManager.InitPipelineCache();
 
 	for (int i = 0; i < workerThreadCount; i++) {
 		graphicsWorkers.push_back(
@@ -103,43 +94,21 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 VulkanRenderer::~VulkanRenderer() {
 	ImGui_ImplGlfwVulkan_Shutdown();
 
-	//globalVariableBuffer->CleanBuffer();
-	//cameraDataBuffer->CleanBuffer();
-	//sunBuffer->CleanBuffer();
-	//pointLightsBuffer->CleanBuffer();
-	//spotLightsBuffer->CleanBuffer();
-
 	vkDestroyPipelineLayout(device.device, frameDataDescriptorLayout, nullptr);
 	vkDestroyPipelineLayout(device.device, lightingDescriptorLayout, nullptr);
-
-
-	frameDataDescriptor->CleanUp();
-	lightingDescriptor->CleanUp();
-
-	dynamicTransformDescriptor->CleanUp();
-	//dynamicTransformBuffer->CleanBuffer();
-
-	for (auto& descriptor : descriptors)
-		descriptor->CleanUp();
-
-	depthBuffer->destroy();
 
 	{
 		std::lock_guard<std::mutex>lk(finishQueueLock);
 		for (auto& work : finishQueue) {
-			work.fence.WaitTillTrue();
-			//if (work.cleanUp)
-			//	work.cleanUp();
+			work.fence->WaitTillTrue();
 			work.pool->FreeCommandBuffer(work.cmdBuf);
-			work.fence.CleanUp();
 		}
 	}
 
 	workQueue.notify_all();
 	for (auto& worker : graphicsWorkers)
 		worker->StopWork();
-	for (auto& worker : graphicsWorkers)
-		worker->CleanUp();
+	graphicsWorkers.clear();
 
 	//Log::Debug << "renderer deleted\n";
 }
@@ -174,15 +143,12 @@ void VulkanRenderer::RenderFrame() {
 	{
 		std::lock_guard<std::mutex>lk(finishQueueLock);
 		for (auto& work : finishQueue) {
-			if (work.fence.Check()) {
+			if (work.fence->Check()) {
 				for (auto& sig : work.signals) {
 					if (sig != nullptr)
 						*sig = true;
 				}
-				//if (work.cleanUp)
-				//	work.cleanUp();
 				work.pool->FreeCommandBuffer(work.cmdBuf);
-				work.fence.CleanUp();
 			}
 			else {
 				nextFramesWork.push_back(std::move(work));
@@ -197,7 +163,7 @@ void VulkanRenderer::RecreateSwapChain() {
 	Log::Debug << "Recreating SwapChain"
 		<< "\n";
 
-	depthBuffer->destroy();
+	depthBuffer.reset();
 
 	renderPass.reset();
 
@@ -230,8 +196,7 @@ void VulkanRenderer::CreateRenderPass() {
 void VulkanRenderer::CreateDepthResources() {
 	VkFormat depthFormat = FindDepthFormat();
 	depthFormat = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
-	depthBuffer = std::make_unique<VulkanTextureDepthBuffer>(device);
-	depthBuffer->CreateDepthImage(*this, depthFormat,
+	depthBuffer = std::make_unique<VulkanTextureDepthBuffer>(device, *this, depthFormat,
 		vulkanSwapChain.swapChainExtent.width,
 		vulkanSwapChain.swapChainExtent.height);
 }
@@ -483,8 +448,8 @@ void VulkanRenderer::SetupLightingDescriptorSet() {
 
 void VulkanRenderer::SubmitGraphicsWork(
 	std::function<void(const VkCommandBuffer)> work,
-	std::vector<VulkanSemaphore> waitSemaphores,
-	std::vector<VulkanSemaphore> signalSemaphores,
+	std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores,
+	std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores,
 	std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
 	std::vector<Signal> signals)
 {
@@ -498,8 +463,8 @@ void VulkanRenderer::SubmitGraphicsWork(
 
 void VulkanRenderer::SubmitTransferWork(
 	std::function<void(const VkCommandBuffer)> work,
-	std::vector<VulkanSemaphore> waitSemaphores,
-	std::vector<VulkanSemaphore> signalSemaphores,
+	std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores,
+	std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores,
 	std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
 	std::vector<Signal> signals)
 {

@@ -152,8 +152,7 @@ Terrain::Terrain(VulkanRenderer* renderer,
 }
 
 Terrain::~Terrain() {
-	//uniformBuffer->CleanBuffer();
-	terrainVulkanSplatMap->destroy();
+
 }
 
 int Terrain::FindEmptyIndex() {
@@ -238,13 +237,11 @@ void Terrain::SetupUniformBuffer()
 
 void Terrain::SetupImage()
 {
-	terrainVulkanSplatMap = std::make_shared<VulkanTexture2D>(renderer->device);
 	if (terrainSplatMap != nullptr) {
-
-		terrainVulkanSplatMap->loadFromTexture(terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, *renderer,
+		terrainVulkanSplatMap = std::make_unique<VulkanTexture2D>(renderer->device,
+			terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, *renderer,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
-
 	}
 	else {
 		throw std::runtime_error("failed to load terrain splat map!");
@@ -730,11 +727,6 @@ void Terrain::UnSubdivide(int quad) {
 		UnSubdivide(quadMap.at(quad).subQuads.DownRight);
 		UnSubdivide(quadMap.at(quad).subQuads.DownLeft);
 
-		//quadMap.at(quadMap.at(quad).subQuads.UpRight).CleanUp();
-		//quadMap.at(quadMap.at(quad).subQuads.UpLeft).CleanUp();
-		//quadMap.at(quadMap.at(quad).subQuads.DownRight).CleanUp();
-		//quadMap.at(quadMap.at(quad).subQuads.DownLeft).CleanUp();
-
 		quadMap.erase(quadMap.at(quad).subQuads.UpRight);
 		quadMap.erase(quadMap.at(quad).subQuads.UpLeft);
 		quadMap.erase(quadMap.at(quad).subQuads.DownRight);
@@ -742,20 +734,6 @@ void Terrain::UnSubdivide(int quad) {
 		numQuads -= 4;
 
 		quadMap.at(quad).isSubdivided = false;
-		//quad->RecursiveCleanUp();
-		/*
-		quad->isSubdivided = false;
-
-		auto urDel = chunkBuffer.GetChunk(quad->subQuads.UpRight);
-		auto ulDel = chunkBuffer.GetChunk(quad->subQuads.UpLeft);
-		auto drDel = chunkBuffer.GetChunk(quad->subQuads.DownRight);
-		auto dlDel = chunkBuffer.GetChunk(quad->subQuads.DownLeft);
-
-		urDel->RecursiveCleanUp();
-		ulDel->RecursiveCleanUp();
-		drDel->RecursiveCleanUp();
-		dlDel->RecursiveCleanUp();*/
-
 	}
 	//numQuads -= 1;
 	//Log::Debug << "Terrain un-subdivided: Level: " << quad->level << " Position: " << quad->pos.x << ", " << quad->pos.z << " Size: " << quad->size.x << ", " << quad->size.z << "\n";

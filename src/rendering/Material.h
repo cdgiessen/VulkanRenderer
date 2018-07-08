@@ -98,7 +98,7 @@ private:
 class VulkanMaterial {
 public:
 	VulkanMaterial(VulkanDevice& device);
-	void CleanUp();
+	~VulkanMaterial();
 
 	void SetShaders(ShaderModuleSet set);
 

@@ -49,21 +49,10 @@ VulkanMaterial::VulkanMaterial(VulkanDevice& device)
 	descriptor(device)
 {
 
-
-
 }
 
-void VulkanMaterial::CleanUp() {
-	descriptor.CleanUp();
-	//value_data->CleanBuffer();
-	//
-	//for (auto& tex : textures) {
-	//	tex->destroy();
-	//}
-	//
-	//for (auto& texArr : textureArrays) {
-	//	texArr->destroy();
-	//}
+VulkanMaterial::~VulkanMaterial() {
+
 }
 
 void VulkanMaterial::SetShaders(ShaderModuleSet set) {

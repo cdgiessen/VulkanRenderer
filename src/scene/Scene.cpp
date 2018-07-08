@@ -41,7 +41,6 @@ Scene::Scene(ResourceManager* resourceMan,
 	//pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 
 	skybox = std::make_unique<Skybox>();
-	skybox->vulkanCubeMap = std::make_shared<VulkanCubeMap>(renderer->device);
 	skybox->skyboxCubeMap = resourceMan->texManager.loadCubeMapFromFile("assets/Textures/Skybox/Skybox2", ".png");
 	skybox->model = std::make_shared<VulkanModel>(renderer->device);
 	skybox->model->loadFromMesh(createCube(), *renderer);
@@ -134,11 +133,6 @@ Scene::Scene(ResourceManager* resourceMan,
 
 Scene::~Scene()
 {
-	for (auto& obj : gameObjects) {
-		obj->CleanUp();
-	}
-
-	//treesInstanced->CleanUp();
 
 	//Log::Debug << "scene deleted\n";
 }
@@ -314,7 +308,6 @@ void Scene::UpdateSceneGUI() {
 			sphereObject->pbr_mat.roughness = 0.1f + (float)5 / 10.0f;
 
 			sphereObject->gameObjectTexture = resourceMan->texManager.loadTextureFromFileRGBA("assets/Textures/Red.png");
-			sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
 			sphereObject->InitGameObject(renderer);
 			gameObjects.push_back(std::move(sphereObject));
 		}

@@ -4,7 +4,11 @@
 
 GameObject::GameObject() {}
 
-GameObject::~GameObject() { Log::Debug << "game object deleted\n"; }
+GameObject::~GameObject() {
+	renderer->pipelineManager.DeleteManagedPipeline(mvp);
+
+	Log::Debug << "game object deleted\n";
+}
 
 void GameObject::InitGameObject(VulkanRenderer* renderer)
 {
@@ -13,22 +17,8 @@ void GameObject::InitGameObject(VulkanRenderer* renderer)
 	SetupUniformBuffer();
 	SetupImage();
 	SetupModel();
-	//SetupDescriptor();
 	SetupMaterial();
 	SetupPipeline();
-}
-
-void GameObject::CleanUp()
-{
-	renderer->pipelineManager.DeleteManagedPipeline(mvp);
-
-	gameObjectModel->destroy();
-	//gameObjectVulkanTexture->destroy();
-
-	// uniformBuffer->CleanBuffer();
-	// materialBuffer->CleanBuffer();
-
-	mat->CleanUp();
 }
 
 void GameObject::LoadModel(std::string filename)
@@ -60,7 +50,7 @@ void GameObject::SetupUniformBuffer()
 void GameObject::SetupImage()
 {
 
-	gameObjectVulkanTexture->loadFromTexture(
+	gameObjectVulkanTexture = std::make_unique<VulkanTexture2D>(renderer->device,
 		gameObjectTexture, VK_FORMAT_R8G8B8A8_UNORM,
 		*renderer,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,

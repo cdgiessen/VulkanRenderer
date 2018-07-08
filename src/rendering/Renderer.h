@@ -89,15 +89,15 @@ public:
 
 	void SubmitGraphicsWork(
 		std::function<void(const VkCommandBuffer)> work,
-		std::vector<VulkanSemaphore> waitSemaphores,
-		std::vector<VulkanSemaphore> signalSemaphores,
+		std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores,
+		std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores,
 		std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
 		std::vector<Signal> signals);
 
 	void SubmitTransferWork(
 		std::function<void(const VkCommandBuffer)> work,
-		std::vector<VulkanSemaphore> waitSemaphores,
-		std::vector<VulkanSemaphore> signalSemaphores,
+		std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores,
+		std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores,
 		std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
 		std::vector<Signal> signals);
 
@@ -117,7 +117,7 @@ public:
 
 	ShaderManager shaderManager;
 	VulkanPipeline pipelineManager;
-	VulkanTextureManager textureManager;
+	//VulkanTextureManager textureManager;
 
 	Scene* scene;
 

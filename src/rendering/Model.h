@@ -56,7 +56,4 @@ public:
 	bool loadFromFile(const std::string& filename, VkQueue copyQueue);
 
 	void BindModel(VkCommandBuffer cmdBuf);
-
-	/** @brief Release all Vulkan resources of this model */
-	void destroy();
 };

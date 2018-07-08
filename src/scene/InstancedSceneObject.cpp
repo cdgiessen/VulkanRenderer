@@ -14,10 +14,6 @@ InstancedSceneObject::InstancedSceneObject(VulkanRenderer* renderer, int maxInst
 {
 
 	vulkanModel = std::make_shared<VulkanModel>(renderer->device);
-	vulkanTexture = std::make_shared<VulkanTexture2D>(renderer->device);
-
-	//uniformBuffer = std::make_shared<VulkanBufferUniform>(renderer->device);
-	//instanceBuffer = std::make_shared<VulkanBufferInstance>(renderer->device,);
 
 	isFinishedTransfer = std::make_shared<bool>(false);
 }
@@ -25,6 +21,7 @@ InstancedSceneObject::InstancedSceneObject(VulkanRenderer* renderer, int maxInst
 
 InstancedSceneObject::~InstancedSceneObject()
 {
+	renderer->pipelineManager.DeleteManagedPipeline(mvp);
 
 }
 
@@ -38,19 +35,6 @@ void InstancedSceneObject::InitInstancedSceneObject(VulkanRenderer* renderer)
 	SetupModel();
 	SetupDescriptor();
 	SetupPipeline();
-}
-
-void InstancedSceneObject::CleanUp()
-{
-	renderer->pipelineManager.DeleteManagedPipeline(mvp);
-
-	vulkanModel->destroy();
-	vulkanTexture->destroy();
-
-	//uniformBuffer->CleanBuffer();
-	//instanceBuffer->CleanBuffer();
-	//vkDestroyBuffer(renderer->device.device, instanceBuffer.buffer, nullptr);
-	//vkFreeMemory(renderer->device.device, instanceBuffer.memory, nullptr);
 }
 
 void InstancedSceneObject::LoadModel(std::string filename) {
@@ -102,7 +86,7 @@ void InstancedSceneObject::SetupUniformBuffer() {
 
 void InstancedSceneObject::SetupImage() {
 	//NOTE: long parameter lists of bools & ints are a bad idea (implicit casting between them makes making mistakes easy)
-	vulkanTexture->loadFromTexture(texture, VK_FORMAT_R8G8B8A8_UNORM, *renderer,
+	vulkanTexture = std::make_unique<VulkanTexture2D>(renderer->device, texture, VK_FORMAT_R8G8B8A8_UNORM, *renderer,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		false, true, 8);
 }
