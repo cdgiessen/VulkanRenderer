@@ -180,4 +180,5 @@ public:
 class VulkanBufferInstancePersistant : public VulkanBuffer {
 public:
 	VulkanBufferInstancePersistant(VulkanDevice& device, uint32_t count, uint32_t indexElementCount);
+	void BindInstanceBuffer(VkCommandBuffer cmdBuf);
 };

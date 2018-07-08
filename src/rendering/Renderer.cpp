@@ -479,41 +479,36 @@ void VulkanRenderer::SetupLightingDescriptorSet() {
 	}
 }
 
-void VulkanRenderer::SubmitGraphicsWork(GraphicsWork&& data) {
-	workQueue.push_back(std::move(data));
-	//TODO:
-}
+
 
 void VulkanRenderer::SubmitGraphicsWork(
 	std::function<void(const VkCommandBuffer)> work,
-	std::vector<VulkanSemaphore>&& waitSemaphores,
-	std::vector<VulkanSemaphore>&& signalSemaphores,
-	std::vector<std::shared_ptr<VulkanBuffer>>&& buffersToClean,
-	std::vector<Signal>&& signals)
+	std::vector<VulkanSemaphore> waitSemaphores,
+	std::vector<VulkanSemaphore> signalSemaphores,
+	std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
+	std::vector<Signal> signals)
 {
-	workQueue.push_back(std::move(GraphicsWork(std::move(work), CommandPoolType::graphics,
+	workQueue.push_back(GraphicsWork(work, CommandPoolType::graphics,
 		device,
-		std::move(waitSemaphores),
-		std::move(signalSemaphores),
-		std::move(buffersToClean),
-		std::move(signals))));
+		waitSemaphores,
+		signalSemaphores,
+		buffersToClean,
+		signals));
 }
 
 void VulkanRenderer::SubmitTransferWork(
 	std::function<void(const VkCommandBuffer)> work,
-	std::vector<VulkanSemaphore>&& waitSemaphores,
-	std::vector<VulkanSemaphore>&& signalSemaphores,
-	std::vector<std::shared_ptr<VulkanBuffer>>&& buffersToClean,
-	std::vector<Signal>&& signals)
+	std::vector<VulkanSemaphore> waitSemaphores,
+	std::vector<VulkanSemaphore> signalSemaphores,
+	std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
+	std::vector<Signal> signals)
 {
-	workQueue.push_back(std::move(GraphicsWork(std::move(work), CommandPoolType::transfer,
+	workQueue.push_back(GraphicsWork(work, CommandPoolType::transfer,
 		device,
-		std::move(waitSemaphores),
-		std::move(signalSemaphores),
-		std::move(buffersToClean),
-		std::move(signals))
-	));
-
+		waitSemaphores,
+		signalSemaphores,
+		buffersToClean,
+		signals));
 }
 
 VkCommandBuffer VulkanRenderer::GetGraphicsCommandBuffer() {

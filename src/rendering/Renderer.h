@@ -87,20 +87,19 @@ public:
 	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat FindDepthFormat();
 
-	void SubmitGraphicsWork(GraphicsWork&& data);
 	void SubmitGraphicsWork(
 		std::function<void(const VkCommandBuffer)> work,
-		std::vector<VulkanSemaphore>&& waitSemaphores,
-		std::vector<VulkanSemaphore>&& signalSemaphores,
-		std::vector<std::shared_ptr<VulkanBuffer>>&& buffersToClean,
-		std::vector<Signal>&& signals);
+		std::vector<VulkanSemaphore> waitSemaphores,
+		std::vector<VulkanSemaphore> signalSemaphores,
+		std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
+		std::vector<Signal> signals);
 
 	void SubmitTransferWork(
 		std::function<void(const VkCommandBuffer)> work,
-		std::vector<VulkanSemaphore>&& waitSemaphores,
-		std::vector<VulkanSemaphore>&& signalSemaphores,
-		std::vector<std::shared_ptr<VulkanBuffer>>&& buffersToClean,
-		std::vector<Signal>&& signals);
+		std::vector<VulkanSemaphore> waitSemaphores,
+		std::vector<VulkanSemaphore> signalSemaphores,
+		std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
+		std::vector<Signal> signals);
 
 	VkCommandBuffer GetGraphicsCommandBuffer();
 	void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);

@@ -55,12 +55,12 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDescriptorType type,
 	}
 
 	SetupResource();
-	
+
 	//Log::Debug << "Allocated buffer Memory\n";
 }
 
 // void VulkanBuffer::CleanBuffer() {
-	
+
 // 	//if (persistantlyMapped) {
 // 	//	Unmap();
 // 	//}
@@ -69,7 +69,7 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDescriptorType type,
 // 	//device->DestroyVmaAllocatedBuffer(buffer);
 
 // 	Log::Debug << "This function shouldn't be called!\n";
-	
+
 // }
 
 VulkanBuffer::VulkanBuffer(VulkanBuffer&& buf) :
@@ -428,6 +428,11 @@ VulkanBufferInstancePersistant::VulkanBufferInstancePersistant(VulkanDevice& dev
 	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, count * indexElementCount * sizeof(float),
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, nullptr, PersistantlyMapped::T) {}
+
+void VulkanBufferInstancePersistant::BindInstanceBuffer(VkCommandBuffer cmdBuf) {
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(cmdBuf, INSTANCE_BUFFER_BIND_ID, 1, &buffer.buffer, offsets);
+}
 
 //	void VulkanBufferInstance::CreatePersistantInstanceBuffer(
 //		uint32_t count, uint32_t indexElementCount)

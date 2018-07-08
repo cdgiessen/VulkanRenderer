@@ -133,8 +133,8 @@ bool VulkanModel::loadFromMesh(std::shared_ptr<Mesh> mesh,
 	//buffers.push_back(std::move(indexStagingBuffer));
 
 	renderer.SubmitTransferWork(work,
-		{}, {}, {vertexStagingBuffer, indexStagingBuffer},
-		{ std::move(readyToUse) });
+		{}, {}, { vertexStagingBuffer, indexStagingBuffer },
+		{ readyToUse });
 
 	return true;
 

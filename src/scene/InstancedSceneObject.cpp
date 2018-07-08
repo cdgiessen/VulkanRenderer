@@ -95,7 +95,7 @@ void InstancedSceneObject::SetupUniformBuffer() {
 	//uniformBuffer.copyTo(&ubo, sizeof(ModelBufferObject));
 	//uniformBuffer.unmap();
 
-	instanceBuffer = std::make_shared<VulkanBufferInstance>(renderer->device, maxInstanceCount, instanceMemberSize);
+	instanceBuffer = std::make_shared<VulkanBufferInstancePersistant>(renderer->device, maxInstanceCount, instanceMemberSize);
 	//instanceBuffer->CreatePersistantInstanceBuffer(maxInstanceCount, instanceMemberSize);
 	//UploadData();
 }

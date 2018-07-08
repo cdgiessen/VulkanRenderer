@@ -100,7 +100,7 @@ private:
 	int instanceCount = 0;
 	int maxInstanceCount = 16384;
 	std::vector<InstanceData> instancesData;
-	std::shared_ptr<VulkanBufferInstance> instanceBuffer;
+	std::shared_ptr<VulkanBufferInstancePersistant> instanceBuffer;
 
 	bool isDirty = false;
 

@@ -404,7 +404,7 @@ void GraphicsCommandWorker::Work() {
 		workQueue.wait_on_value();
 
 		while (!workQueue.empty()) {
-			auto pos_work = std::move(workQueue.pop_if());
+			auto pos_work = workQueue.pop_if();
 			if (pos_work.has_value()) {
 
 
@@ -431,12 +431,9 @@ void GraphicsCommandWorker::Work() {
 				pool->SubmitCommandBuffer(cmdBuf, pos_work->fence,
 					pos_work->waitSemaphores, pos_work->signalSemaphores);
 
-				//GraphicsCleanUpWork cleanUpWork{ std::move(pos_work->fence),
-				//	pool, cmdBuf, std::move(pos_work->buffersToClean),
-				//	std::move(pos_work->signals) };
 				{
 					std::lock_guard<std::mutex>lk(finishQueueLock);
-					finishQueue.push_back(std::move(GraphicsCleanUpWork(std::move(*pos_work), pool, cmdBuf)));
+					finishQueue.push_back(GraphicsCleanUpWork(*pos_work, pool, cmdBuf));
 				}
 			}
 		}

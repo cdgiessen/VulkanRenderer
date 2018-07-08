@@ -157,17 +157,17 @@ struct GraphicsWork {
 	explicit GraphicsWork(std::function<void(const VkCommandBuffer)> work,
 		CommandPoolType type,
 		VulkanDevice& device,
-		std::vector<VulkanSemaphore>&& waitSemaphores,
-		std::vector<VulkanSemaphore>&& signalSemaphores,
-		std::vector<std::shared_ptr<VulkanBuffer>>&& buffersToClean,
-		std::vector<Signal>&& signals)
+		std::vector<VulkanSemaphore>& waitSemaphores,
+		std::vector<VulkanSemaphore>& signalSemaphores,
+		std::vector<std::shared_ptr<VulkanBuffer>>& buffersToClean,
+		std::vector<Signal>& signals)
 		:
 		work(work), type(type),
 		fence(device),
-		waitSemaphores(std::move(waitSemaphores)),
-		signalSemaphores(std::move(signalSemaphores)),
-		buffersToClean(std::move(buffersToClean)),
-		signals(std::move(signals))
+		waitSemaphores(waitSemaphores),
+		signalSemaphores(signalSemaphores),
+		buffersToClean(buffersToClean),
+		signals(signals)
 	{}
 
 	GraphicsWork(const GraphicsWork& work) = default;
@@ -184,26 +184,26 @@ struct GraphicsCleanUpWork {
 	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
 	std::vector<Signal> signals;
 
-	explicit GraphicsCleanUpWork(GraphicsWork&& work,
+	explicit GraphicsCleanUpWork(GraphicsWork& work,
 		CommandPool* pool,
 		VkCommandBuffer cmdBuf) :
 		pool(pool),
 		cmdBuf(cmdBuf),
-		fence(std::move(work.fence)),
-		buffers(std::move(work.buffersToClean)),
-		signals(std::move(work.signals))
+		fence(work.fence),
+		buffers(work.buffersToClean),
+		signals(work.signals)
 	{}
 
-	explicit GraphicsCleanUpWork(VulkanFence&& fence,
+	explicit GraphicsCleanUpWork(VulkanFence& fence,
 		CommandPool* pool,
 		VkCommandBuffer cmdBuf,
-		std::vector<std::shared_ptr<VulkanBuffer>>&& buffers,
-		std::vector<Signal>&& signals) :
-		fence(std::move(fence)),
+		std::vector<std::shared_ptr<VulkanBuffer>>& buffers,
+		std::vector<Signal>& signals) :
+		fence(fence),
 		pool(pool),
 		cmdBuf(cmdBuf),
-		buffers(std::move(buffers)),
-		signals(std::move(signals))
+		buffers(buffers),
+		signals(signals)
 	{}
 
 

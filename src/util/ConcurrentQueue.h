@@ -60,7 +60,7 @@ std::optional<T> ConcurrentQueue<T>::pop_if()
 {
 	std::unique_lock<std::mutex> mlock(m_mutex);
 	if (!m_queue.empty()) {
-		auto&& ret = m_queue.front();
+		auto ret = m_queue.front();
 		m_queue.pop_front();
 		return std::move(ret);
 	}
