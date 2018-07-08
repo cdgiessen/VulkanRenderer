@@ -34,26 +34,26 @@ TerrainCreationData::TerrainCreationData(
 {
 }
 
-void TerrainCreationWorker(TerrainManager& man) {
+void TerrainCreationWorker(TerrainManager* man) {
 
-	while (man.isCreatingTerrain) {
+	while (man->isCreatingTerrain) {
 		{
-			std::unique_lock<std::mutex> lock(man.workerMutex);
-			man.workerConditionVariable.wait(lock);
+			std::unique_lock<std::mutex> lock(man->workerMutex);
+			man->workerConditionVariable.wait(lock);
 		}
 
-		while (!man.terrainCreationWork.empty()) {
-			auto data = man.terrainCreationWork.pop_if();
+		while (!man->terrainCreationWork.empty()) {
+			auto data = man->terrainCreationWork.pop_if();
 			if (data.has_value())
 			{
-				auto terrain = std::make_unique<Terrain>(man.renderer,
-					man.chunkBuffer,
+				auto terrain = std::make_unique<Terrain>(man->renderer,
+					man->chunkBuffer,
 					data->protoGraph, data->numCells, data->maxLevels,
 					data->heightScale, data->coord);
 
 				std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
 
-				terrain->terrainSplatMap = data->resourceMan.
+				terrain->terrainSplatMap = man->resourceMan.
 					texManager.loadTextureFromRGBAPixelData(
 						data->sourceImageResolution + 1,
 						data->sourceImageResolution + 1, imgData);
@@ -61,13 +61,13 @@ void TerrainCreationWorker(TerrainManager& man) {
 				terrain->InitTerrain(data->cameraPos, data->terrainVulkanTextureArray);
 
 				{
-					std::lock_guard<std::mutex> lk(man.terrain_mutex);
-					man.terrains.push_back(std::move(terrain));
+					std::lock_guard<std::mutex> lk(man->terrain_mutex);
+					man->terrains.push_back(std::move(terrain));
 				}
 
 			}
 			//break out of loop if work shouldn't be continued
-			if (!man.isCreatingTerrain)
+			if (!man->isCreatingTerrain)
 				return;
 		}
 	}
@@ -239,7 +239,7 @@ TerrainManager::~TerrainManager()
 void TerrainManager::StartWorkerThreads() {
 	isCreatingTerrain = true;
 	for (int i = 0; i < WorkerThreads; i++) {
-		terrainCreationWorkers.push_back(std::thread(TerrainCreationWorker, *this));
+		terrainCreationWorkers.push_back(std::thread(TerrainCreationWorker, this));
 	}
 }
 
