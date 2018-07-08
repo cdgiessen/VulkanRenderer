@@ -15,12 +15,9 @@
 class VulkanRenderer;
 
 class VulkanModel {
-private:
-	VulkanDevice & device;
-
 public:
 
-	VulkanModel(VulkanDevice &device);
+	VulkanModel(VulkanRenderer& renderer, std::shared_ptr<Mesh> mesh);
 
 	//VulkanBuffer vertices;
 	//VulkanBuffer indices;
@@ -41,19 +38,11 @@ public:
 	};
 	std::vector<ModelPart> parts;
 
-	bool loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanRenderer& renderer);
-
-	/**
-	* Loads a 3D model from a file into Vulkan buffers
-	*
-	* @param device Pointer to the Vulkan device used to generated the vertex and index buffers on
-	* @param filename File to load (must be a model format supported by ASSIMP)
-	* @param layout Vertex layout components (position, normals, tangents, etc.)
-	* @param createInfo MeshCreateInfo structure for load time settings like scale, center, etc.
-	* @param copyQueue Queue used for the memory staging copy commands (must support transfer)
-	* @param (Optional) flags ASSIMP model loading flags
-	*/
-	bool loadFromFile(const std::string& filename, VkQueue copyQueue);
+	//bool loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanRenderer& renderer);
 
 	void BindModel(VkCommandBuffer cmdBuf);
+
+private:
+	VulkanRenderer & renderer;
+
 };

@@ -59,7 +59,7 @@ void GameObject::SetupImage()
 
 void GameObject::SetupModel()
 {
-	gameObjectModel->loadFromMesh(gameObjectMesh, *renderer);
+	gameObjectModel = std::make_shared<VulkanModel>(*renderer, gameObjectMesh);
 
 }
 

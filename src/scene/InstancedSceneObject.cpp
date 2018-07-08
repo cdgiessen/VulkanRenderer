@@ -12,9 +12,6 @@
 InstancedSceneObject::InstancedSceneObject(VulkanRenderer* renderer, int maxInstances)
 	: maxInstanceCount(maxInstances), instanceCount(0), instancesData(maxInstances)
 {
-
-	vulkanModel = std::make_shared<VulkanModel>(renderer->device);
-
 	isFinishedTransfer = std::make_shared<bool>(false);
 }
 
@@ -92,7 +89,7 @@ void InstancedSceneObject::SetupImage() {
 }
 
 void InstancedSceneObject::SetupModel() {
-	vulkanModel->loadFromMesh(mesh, *renderer);
+	vulkanModel = std::make_shared<VulkanModel>(*renderer, mesh);
 }
 
 void InstancedSceneObject::SetupDescriptor() {

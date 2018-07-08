@@ -42,8 +42,7 @@ Scene::Scene(ResourceManager* resourceMan,
 
 	skybox = std::make_unique<Skybox>();
 	skybox->skyboxCubeMap = resourceMan->texManager.loadCubeMapFromFile("assets/Textures/Skybox/Skybox2", ".png");
-	skybox->model = std::make_shared<VulkanModel>(renderer->device);
-	skybox->model->loadFromMesh(createCube(), *renderer);
+	skybox->model = std::make_shared<VulkanModel>(*renderer, createCube());
 	skybox->InitSkybox(renderer);
 
 	//std::shared_ptr<GameObject> cubeObject = std::make_shared<GameObject>();
@@ -300,7 +299,6 @@ void Scene::UpdateSceneGUI() {
 		if (ImGui::Button("Add game object")) {
 			std::unique_ptr<GameObject> sphereObject = std::make_unique<GameObject>();
 			sphereObject->usePBR = true;
-			sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer->device);
 			sphereObject->LoadModel(createSphere(10));
 			sphereObject->position = glm::vec3(x++, 3, 2.2);
 			//sphereObject->pbr_mat.albedo = glm::vec3(0.8, 0.2, 0.2);
