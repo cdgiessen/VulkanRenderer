@@ -51,8 +51,8 @@ template <typename T>
 void ConcurrentQueue<T>::pop()
 {
 	std::unique_lock<std::mutex> mlock(m_mutex);
-	if (!m_queue.empty());
-	m_queue.pop_front();
+	if (!m_queue.empty())
+		m_queue.pop_front();
 }
 
 template <typename T>
@@ -70,9 +70,9 @@ std::optional<T> ConcurrentQueue<T>::pop_if()
 template <typename T>
 void ConcurrentQueue<T>::push_back(const T& item)
 {
+
 	std::unique_lock<std::mutex> mlock(m_mutex);
 	m_queue.push_back(item);
-	mlock.unlock();     // unlock before notificiation to minimize mutex con
 	m_cond.notify_one(); // notify one waiting thread
 
 }
@@ -80,9 +80,9 @@ void ConcurrentQueue<T>::push_back(const T& item)
 template <typename T>
 void ConcurrentQueue<T>::push_back(T&& item)
 {
+
 	std::unique_lock<std::mutex> mlock(m_mutex);
 	m_queue.push_back(std::move(item));
-	mlock.unlock();     // unlock before notificiation to minimize mutex con
 	m_cond.notify_one(); // notify one waiting thread
 
 }
@@ -98,18 +98,14 @@ template <typename T>
 int ConcurrentQueue<T>::size()
 {
 	std::unique_lock<std::mutex> mlock(m_mutex);
-	int size = m_queue.size();
-	mlock.unlock();
-	return size;
+	return m_queue.size();
 }
 
 template <typename T>
 bool ConcurrentQueue<T>::empty()
 {
 	std::unique_lock<std::mutex> mlock(m_mutex);
-	bool empty = m_queue.empty();
-	mlock.unlock();
-	return empty;
+	return m_queue.empty();
 }
 
 template <typename T>

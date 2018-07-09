@@ -9,7 +9,7 @@
 
 TextureManager::TextureManager()
 {
-	errorImage = std::make_shared<Texture>(64,64);
+	errorImage = std::make_shared<Texture>(64, 64);
 	std::vector<RGBA_pixel> pink(64); //{ { RGBA_pixel(255, 0, 255, 255)} };
 	std::vector<RGBA_pixel> black(64); //= { { RGBA_pixel(0, 0, 0, 255)} };
 	for (int i = 0; i < 64; i++)
@@ -23,7 +23,7 @@ TextureManager::TextureManager()
 		for (int j = 0; j < 8; j++)
 		{
 			if ((i + j) % 2 == 0) {
-				std::memcpy(&errorImage->pixels[(i * 8 + j) * 8], pink.data(), 64); 
+				std::memcpy(&errorImage->pixels[(i * 8 + j) * 8], pink.data(), 64);
 			}
 		}
 	}
@@ -39,7 +39,7 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromFile(std::string filenam
 	int texWidth, texHeight, texChannels;
 	stbi_uc* pixels;
 	pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, imgType);
-	
+
 	if (pixels == nullptr) {
 		Log::Error << "Image failed to load! Was the name correct?\n";
 		return errorImage;
@@ -69,13 +69,13 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromGreyscalePixelData(int w
 	}
 
 	std::shared_ptr<Texture> tex = std::make_shared<Texture>(width, height);
-	
+
 	if (in_pixels == nullptr) {
 		Log::Debug << "Noise Utils Image Null, Cannot load null image!\n";
 		return errorImage;
 	}
 
-	
+
 	for (int i = 0; i < width; i++)
 	{
 		for (int j = 0; j < height; j++)
@@ -87,11 +87,11 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromGreyscalePixelData(int w
 				1);
 		}
 	}
-	
+
 
 	std::lock_guard<std::mutex> lg(lock);
 	textureHandles.push_back(tex);
-	
+
 	return tex;
 }
 
@@ -100,7 +100,7 @@ std::shared_ptr<Texture> TextureManager::loadTextureFromRGBAPixelData(int width,
 		Log::Error << "Can't have negative dimentions!\n";
 		return errorImage;
 	}
-	
+
 	if (in_pixels == nullptr) {
 		Log::Debug << "Noise Utils Image Null, Cannot load null image!\n";
 		return errorImage;

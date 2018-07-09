@@ -261,7 +261,7 @@ void BeginTransferAndMipMapGenWork(
 			GenerateMipMaps(cmdBuf, image, imageLayout, width, height, 1, layers, mipLevels);
 		};
 
-		renderer.SubmitGraphicsWork(work, {}, {}, { buffer }, { std::move(signal) });
+		renderer.SubmitWork(WorkType::graphics, work, {}, {}, { buffer }, { std::move(signal) });
 	}
 	else {
 		auto sem = std::make_shared<VulkanSemaphore>(renderer.device);
@@ -277,9 +277,9 @@ void BeginTransferAndMipMapGenWork(
 			GenerateMipMaps(cmdBuf, image, imageLayout, width, height, 1, layers, mipLevels);
 		};
 
-		renderer.SubmitTransferWork(transferWork, {}, { sem }, { buffer }, {});
+		renderer.SubmitWork(WorkType::transfer, transferWork, {}, { sem }, { buffer }, {});
 
-		renderer.SubmitGraphicsWork(mipMapGenWork, { sem }, {}, {}, { signal });
+		renderer.SubmitWork(WorkType::graphics, mipMapGenWork, { sem }, {}, {}, { signal });
 
 	}
 }

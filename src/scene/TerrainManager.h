@@ -38,7 +38,7 @@ struct GeneralSettings {
 	float heightScale = 100.0f;
 	int maxLevels = 4;
 	int gridDimentions = 1;
-	int viewDistance = 2; //terrain chunks to load away from camera;
+	int viewDistance = 1; //terrain chunks to load away from camera;
 	int sourceImageResolution = 512;
 	int numCells = 64; //compile time currently
 	int workerThreads = 1;
@@ -189,7 +189,7 @@ private:
 	bool drawWindow;
 	int selectedTexture;
 
-	int WorkerThreads = 2;
+	int WorkerThreads = 6;
 
 	std::vector<TerrainTextureNamedHandle> terrainTextureHandles;
 

@@ -134,7 +134,7 @@ private:
 
 };
 
-enum class CommandPoolType {
+enum class WorkType {
 	graphics,
 	transfer,
 	compute,
@@ -144,7 +144,7 @@ struct GraphicsWork {
 	std::function<void(const VkCommandBuffer)> work;
 
 	std::shared_ptr<VulkanFence> fence;
-	CommandPoolType type;
+	WorkType type;
 
 	std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores;
 	std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores;
@@ -152,7 +152,7 @@ struct GraphicsWork {
 	std::vector<Signal> signals; //signal on cpu completion of work
 
 	explicit GraphicsWork(std::function<void(const VkCommandBuffer)> work,
-		CommandPoolType type,
+		WorkType type,
 		VulkanDevice& device,
 		std::vector<std::shared_ptr<VulkanSemaphore>>& waitSemaphores,
 		std::vector<std::shared_ptr<VulkanSemaphore>>& signalSemaphores,

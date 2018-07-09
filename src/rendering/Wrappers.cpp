@@ -335,13 +335,13 @@ void GraphicsCommandWorker::Work() {
 				CommandPool* pool;
 
 				switch (pos_work->type) {
-				case(CommandPoolType::graphics):
+				case(WorkType::graphics):
 					pool = &graphicsPool;
 					break;
-				case(CommandPoolType::transfer):
+				case(WorkType::transfer):
 					pool = &transferPool;
 					break;
-				case(CommandPoolType::compute):
+				case(WorkType::compute):
 					pool = &computePool;
 					break;
 				}

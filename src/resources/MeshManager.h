@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <memory>
-
+#include <unordered_map>
 
 #include "Mesh.h"
 
@@ -14,8 +14,7 @@ public:
 
 
 private:
-
-	std::vector<std::shared_ptr<Mesh>> meshHandles;
+	std::unordered_map<int, std::unique_ptr<Mesh>> handles;
 
 };
 

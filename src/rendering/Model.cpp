@@ -124,7 +124,7 @@ VulkanModel::VulkanModel(VulkanRenderer& renderer, std::shared_ptr<Mesh> mesh)
 	//buffers.push_back(std::move(vertexStagingBuffer));
 	//buffers.push_back(std::move(indexStagingBuffer));
 
-	renderer.SubmitTransferWork(work,
+	renderer.SubmitWork(WorkType::transfer, work,
 		{}, {}, { vertexStagingBuffer, indexStagingBuffer },
 		{ readyToUse });
 

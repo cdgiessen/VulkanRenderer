@@ -169,17 +169,9 @@ void TerrainChunkBuffer::UpdateChunks() {
 		}
 
 	}
-	/*TransferCommandWork transfer;
-	transfer.work = std::function<void(VkCommandBuffer)>(
-		[=](const VkCommandBuffer cmdBuf) {
-		vkCmdCopyBuffer(cmdBuf, vert_staging.buffer.buffer, vert_buffer.buffer.buffer,
-			vertexCopyRegions.size(), vertexCopyRegions.data());
-		vkCmdCopyBuffer(cmdBuf, index_staging.buffer.buffer, index_buffer.buffer.buffer,
-			indexCopyRegions.size(), indexCopyRegions.data());
-	}
-	);*/
 
-	renderer.SubmitTransferWork([=](const VkCommandBuffer cmdBuf) {
+	renderer.SubmitWork(WorkType::transfer,
+		[=](const VkCommandBuffer cmdBuf) {
 		vkCmdCopyBuffer(cmdBuf, vert_staging.buffer.buffer, vert_buffer.buffer.buffer,
 			vertexCopyRegions.size(), vertexCopyRegions.data());
 		vkCmdCopyBuffer(cmdBuf, index_staging.buffer.buffer, index_buffer.buffer.buffer,

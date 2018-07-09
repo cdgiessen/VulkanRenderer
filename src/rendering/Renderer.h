@@ -87,14 +87,7 @@ public:
 	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat FindDepthFormat();
 
-	void SubmitGraphicsWork(
-		std::function<void(const VkCommandBuffer)> work,
-		std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores,
-		std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores,
-		std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
-		std::vector<Signal> signals);
-
-	void SubmitTransferWork(
+	void SubmitWork(WorkType workType,
 		std::function<void(const VkCommandBuffer)> work,
 		std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores,
 		std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores,
