@@ -17,6 +17,8 @@ VulkanTexture::VulkanTexture(VulkanDevice &device)
 }
 
 VulkanTexture::~VulkanTexture() {
+	//while(*readyToUse == false) {} //busy wait till done
+
 	vmaDestroyImage(image.allocator, image.image, image.allocation);
 
 	if (textureImageView != VK_NULL_HANDLE)
@@ -261,7 +263,7 @@ void BeginTransferAndMipMapGenWork(
 			GenerateMipMaps(cmdBuf, image, imageLayout, width, height, 1, layers, mipLevels);
 		};
 
-		renderer.SubmitWork(WorkType::graphics, work, {}, {}, { buffer }, { std::move(signal) });
+		renderer.SubmitWork(WorkType::graphics, work, {}, {}, { buffer }, { signal });
 	}
 	else {
 		auto sem = std::make_shared<VulkanSemaphore>(renderer.device);

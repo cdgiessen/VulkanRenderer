@@ -99,11 +99,6 @@ TerrainChunkBuffer::~TerrainChunkBuffer() {
 	if (chunkCount <= 0)
 		Log::Error << "Not all terrain chunks were freed!\n";
 
-	// vert_buffer.CleanBuffer();
-	// index_buffer.CleanBuffer();
-
-	// vert_staging.CleanBuffer();
-	// index_staging.CleanBuffer();
 }
 
 
@@ -169,14 +164,23 @@ void TerrainChunkBuffer::UpdateChunks() {
 		}
 
 	}
+	VkBuffer vert = vert_buffer.buffer.buffer;
+	VkBuffer vert_s = vert_staging.buffer.buffer;
+	VkBuffer index = index_buffer.buffer.buffer;
+	VkBuffer index_s = index_staging.buffer.buffer;
+	
+	if(vertexCopyRegions.size() > 0){
+		renderer.SubmitWork(WorkType::transfer,
+			[=](const VkCommandBuffer cmdBuf) {
+				std::vector<VkBufferCopy> vRegions = vertexCopyRegions;
+				std::vector<VkBufferCopy> iRegions = indexCopyRegions;
 
-	renderer.SubmitWork(WorkType::transfer,
-		[=](const VkCommandBuffer cmdBuf) {
-		vkCmdCopyBuffer(cmdBuf, vert_staging.buffer.buffer, vert_buffer.buffer.buffer,
-			vertexCopyRegions.size(), vertexCopyRegions.data());
-		vkCmdCopyBuffer(cmdBuf, index_staging.buffer.buffer, index_buffer.buffer.buffer,
-			indexCopyRegions.size(), indexCopyRegions.data());
-	}, {}, {}, {}, {});
+			vkCmdCopyBuffer(cmdBuf, vert_s, vert,
+				vRegions.size(), vRegions.data());
+			vkCmdCopyBuffer(cmdBuf, index_s, index,
+				iRegions.size(), iRegions.data());
+		}, {}, {}, {}, {});
+	}
 
 }
 
@@ -332,18 +336,20 @@ void TerrainManager::UpdateTerrains(glm::vec3 cameraPos)
 		glm::vec3 center = glm::vec3((*it)->coordinateData.pos.x, cameraPos.y, (*it)->coordinateData.pos.y);
 		float distanceToViewer = glm::distance(cameraPos, center);
 		if (distanceToViewer > settings.viewDistance * settings.width * 1.5) {
+			if((*(*it)->terrainVulkanSplatMap->readyToUse) == true){
 
-			terToDelete.push_back(it);
-			//Log::Debug << "deleting terrain at x:" << (*it)->coordinateData.noisePos.x / (*it)->coordinateData.sourceImageResolution
-			//	<< " z: " << (*it)->coordinateData.noisePos.y / (*it)->coordinateData.sourceImageResolution << "\n";
-			auto activeIt = std::find(std::begin(activeTerrains), std::end(activeTerrains), (*it)->coordinateData.gridPos);
-			activeTerrains.erase(activeIt);
+				terToDelete.push_back(it);
+				//Log::Debug << "deleting terrain at x:" << (*it)->coordinateData.noisePos.x / (*it)->coordinateData.sourceImageResolution
+				//	<< " z: " << (*it)->coordinateData.noisePos.y / (*it)->coordinateData.sourceImageResolution << "\n";
+				auto activeIt = std::find(std::begin(activeTerrains), std::end(activeTerrains), (*it)->coordinateData.gridPos);
+				activeTerrains.erase(activeIt);
 
-			InstancedSceneObject::InstanceData water;
-			water.pos = glm::vec3((*it)->coordinateData.pos.x, 0, (*it)->coordinateData.pos.y);
-			water.rot = glm::vec3(0, 0, 0);
-			water.scale = settings.width;
-			instancedWaters->RemoveInstance(water);
+				InstancedSceneObject::InstanceData water;
+				water.pos = glm::vec3((*it)->coordinateData.pos.x, 0, (*it)->coordinateData.pos.y);
+				water.rot = glm::vec3(0, 0, 0);
+				water.scale = settings.width;
+				instancedWaters->RemoveInstance(water);
+			}
 
 		}
 	}

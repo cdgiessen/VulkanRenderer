@@ -11,6 +11,7 @@
 #include <mutex>
 #include <thread>
 #include <condition_variable>
+#include <atomic>
 
 #include <vulkan/vulkan.h>
 
@@ -227,15 +228,18 @@ public:
 
 	void StopWork();
 
+	bool IsFinishedWorking();
+
 private:
 	VulkanDevice & device;
 	void Work();
 	std::thread workingThread;
 
-	bool keepWorking = true; //default to start working
+	std::atomic_bool keepWorking = true; //default to start working
 	ConcurrentQueue<GraphicsWork>& workQueue;
 	std::mutex& finishQueueLock;
 	std::vector<GraphicsCleanUpWork>& finishQueue;
+	std::atomic_bool isDoneWorking = false;
 
 	CommandPool graphicsPool;
 	CommandPool transferPool;

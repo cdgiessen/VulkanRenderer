@@ -320,6 +320,10 @@ void GraphicsCommandWorker::StopWork() {
 	keepWorking = false;
 }
 
+bool GraphicsCommandWorker::IsFinishedWorking(){
+	return isDoneWorking;
+}
+
 void GraphicsCommandWorker::Work() {
 	while (keepWorking)
 	{
@@ -360,6 +364,7 @@ void GraphicsCommandWorker::Work() {
 			}
 		}
 	}
+	isDoneWorking = true;
 }
 
 

@@ -18,9 +18,14 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../../third-party/stb_image/stb_image_write.h"
 
+#include "JobSystem.h"
+
 int main(int argc, char* argv[]) {
 
 	SetExecutableFilePath(argv[0]);
+
+	job::JobTester();
+
 
 	std::shared_ptr<VulkanApp> vkApp;
 	try {

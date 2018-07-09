@@ -53,6 +53,7 @@ add_executable(VulkanApp
 src/core/main.cpp
 src/core/CoreTools.cpp
 src/core/VulkanApp.cpp
+src/core/JobSystem.cpp
 src/core/Input.cpp
 src/core/Logger.cpp
 src/core/TimeManager.cpp

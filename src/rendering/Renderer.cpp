@@ -97,6 +97,12 @@ VulkanRenderer::~VulkanRenderer() {
 	vkDestroyPipelineLayout(device.device, frameDataDescriptorLayout, nullptr);
 	vkDestroyPipelineLayout(device.device, lightingDescriptorLayout, nullptr);
 
+	for (auto& worker : graphicsWorkers)
+		worker->StopWork();
+	workQueue.notify_all();
+	for (auto& worker : graphicsWorkers){
+		while(!worker->IsFinishedWorking()) {}
+	}
 	{
 		std::lock_guard<std::mutex>lk(finishQueueLock);
 		for (auto& work : finishQueue) {
@@ -104,10 +110,6 @@ VulkanRenderer::~VulkanRenderer() {
 			work.pool->FreeCommandBuffer(work.cmdBuf);
 		}
 	}
-
-	workQueue.notify_all();
-	for (auto& worker : graphicsWorkers)
-		worker->StopWork();
 	graphicsWorkers.clear();
 
 	//Log::Debug << "renderer deleted\n";

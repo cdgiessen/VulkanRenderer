@@ -24,7 +24,8 @@ public:
 
 	//VulkanBuffer(VulkanDevice& device);
 	explicit VulkanBuffer(VulkanDevice& device, VkDescriptorType type, VkDeviceSize bufferSize,
-		VkBufferUsageFlags bufferUsage, VmaMemoryUsage allocUsage,
+		VkBufferUsageFlags bufferUsage, 
+		VmaMemoryUsage allocUsage,
 		VmaAllocationCreateFlags allocFlags = (VmaAllocationCreateFlagBits)(0),
 		void* memToCopy = nullptr,
 		PersistantlyMapped persistantlyMapped = PersistantlyMapped::F,

@@ -52,6 +52,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice &device) :
 
 VulkanPipeline::~VulkanPipeline()
 {
+	vkDestroyPipelineCache(device.device, pipeCache, nullptr);
 }
 
 void VulkanPipeline::InitPipelineCache() {

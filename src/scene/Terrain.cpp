@@ -152,7 +152,7 @@ Terrain::Terrain(VulkanRenderer& renderer,
 }
 
 Terrain::~Terrain() {
-
+	renderer.pipelineManager.DeleteManagedPipeline(mvp);
 }
 
 int Terrain::FindEmptyIndex() {

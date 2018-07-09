@@ -45,24 +45,3 @@ private:
 
 	std::chrono::nanoseconds elapsedTime;
 };
-
-class Job {
-public:
-	Job(std::function<void()> work) : work(work) {}
-private:
-	std::function<void()> work;
-};
-
-class Task {
-public:
-	void AddJob(Job&& newJob);
-
-	void operator()();
-
-	void WaitOn();
-private:
-	std::vector<Job> jobs;
-
-	std::mutex condVar_lock;
-	std::condition_variable condVar;
-};
