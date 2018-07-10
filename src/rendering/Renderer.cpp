@@ -32,6 +32,8 @@ void RenderSettings::Load() {
 			nlohmann::json j;
 			input >> j;
 
+
+			memory_dump = j["memory_dump_on_exit"];
 			directionalLightCount = j["directional_light_count"];
 			pointLightCount = j["point_light_count"];
 			spotLightCount = j["spot_light_count"];
@@ -48,6 +50,8 @@ void RenderSettings::Load() {
 }
 void RenderSettings::Save() {
 	nlohmann::json j;
+
+	j["memory_dump_on_exit"] = memory_dump;
 
 	j["directional_light_count"] = directionalLightCount;
 	j["point_light_count"] = pointLightCount;
@@ -100,8 +104,8 @@ VulkanRenderer::~VulkanRenderer() {
 	for (auto& worker : graphicsWorkers)
 		worker->StopWork();
 	workQueue.notify_all();
-	for (auto& worker : graphicsWorkers){
-		while(!worker->IsFinishedWorking()) {}
+	for (auto& worker : graphicsWorkers) {
+		while (!worker->IsFinishedWorking()) {}
 	}
 	{
 		std::lock_guard<std::mutex>lk(finishQueueLock);
@@ -112,7 +116,8 @@ VulkanRenderer::~VulkanRenderer() {
 	}
 	graphicsWorkers.clear();
 
-	//Log::Debug << "renderer deleted\n";
+	if (settings.memory_dump)
+		device.LogMemory();
 }
 
 void VulkanRenderer::DeviceWaitTillIdle() { vkDeviceWaitIdle(device.device); }

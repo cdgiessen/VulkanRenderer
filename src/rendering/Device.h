@@ -1,11 +1,11 @@
 #pragma once
 
-#include <vector>
+#include <functional>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <thread>
-#include <mutex>
-#include <functional>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 
@@ -13,19 +13,17 @@
 
 class Window;
 
-#include "RenderTools.h"
 #include "RenderStructs.h"
+#include "RenderTools.h"
 #include "Wrappers.h"
 
-
-const std::vector<const char*> VALIDATION_LAYERS = {
+const std::vector<const char *> VALIDATION_LAYERS = {
 	"VK_LAYER_LUNARG_standard_validation"
 
 };
 
-const std::vector<const char*> DEVICE_EXTENSIONS = {
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
+const std::vector<const char *> DEVICE_EXTENSIONS = {
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 struct QueueFamilyIndices {
 	int graphicsFamily = -1;
@@ -33,9 +31,7 @@ struct QueueFamilyIndices {
 	int transferFamily = -1;
 	int computeFamily = -1;
 
-	bool isComplete() {
-		return graphicsFamily >= 0 && presentFamily >= 0;
-	}
+	bool isComplete() { return graphicsFamily >= 0 && presentFamily >= 0; }
 };
 
 class VulkanDevice {
@@ -48,28 +44,26 @@ public:
 
 	VkPhysicalDevice physical_device;
 
-	bool singleQueueDevice; //for devices with only 1 queue (intel integrated specifically)
-	enum class CommandQueueType {
-		graphics,
-		compute,
-		transfer,
-		present
-	};
+	bool singleQueueDevice; // for devices with only 1 queue (intel integrated
+							// specifically)
+	enum class CommandQueueType { graphics, compute, transfer, present };
 
 	VkPhysicalDeviceProperties physical_device_properties;
 	VkPhysicalDeviceFeatures physical_device_features;
 	VkPhysicalDeviceMemoryProperties memoryProperties;
 
-	VulkanDevice(bool validationLayers, Window& window);
+	VulkanDevice(bool validationLayers, Window &window);
 
 	~VulkanDevice();
 
+	void LogMemory();
+
 	const QueueFamilyIndices GetFamilyIndices() const;
 
-	CommandQueue& GraphicsQueue();
-	CommandQueue& ComputeQueue();
-	CommandQueue& TransferQueue();
-	CommandQueue& PresentQueue();
+	CommandQueue &GraphicsQueue();
+	CommandQueue &ComputeQueue();
+	CommandQueue &TransferQueue();
+	CommandQueue &PresentQueue();
 
 	VmaAllocator GetGeneralAllocator();
 	VmaAllocator GetImageLinearAllocator();
@@ -112,13 +106,23 @@ private:
 
 	void CreateVulkanAllocator();
 
-	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physDevice, VkSurfaceKHR windowSurface);
+	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physDevice,
+		VkSurfaceKHR windowSurface);
 
 	VkPhysicalDeviceFeatures QueryDeviceFeatures();
 
-	VkResult CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback);
+	VkResult CreateDebugReportCallbackEXT(
+		VkInstance instance,
+		const VkDebugReportCallbackCreateInfoEXT *pCreateInfo,
+		const VkAllocationCallbacks *pAllocator,
+		VkDebugReportCallbackEXT *pCallback);
 
-	void DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator);
+	void DestroyDebugReportCallbackEXT(VkInstance instance,
+		VkDebugReportCallbackEXT callback,
+		const VkAllocationCallbacks *pAllocator);
 
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData);
+	static VKAPI_ATTR VkBool32 VKAPI_CALL
+		debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType,
+			uint64_t obj, size_t location, int32_t code,
+			const char *layerPrefix, const char *msg, void *userData);
 };

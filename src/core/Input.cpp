@@ -70,7 +70,7 @@ namespace Input {
 	bool GetMouseControlStatus() {
 		return inputDirector.GetMouseControlStatus();
 	}
-	
+
 	void SetMouseControlStatus(bool value) {
 		inputDirector.SetMouseControlStatus(value);
 	}
@@ -105,9 +105,9 @@ namespace Input {
 		glfwGetCursorPos(window->getWindowContext(), &xpos, &ypos);
 		mousePosition = mousePositionPrevious = glm::dvec2(xpos, ypos);
 
-		mouseControlStatus = true; 
+		mouseControlStatus = true;
 		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		
+
 
 		for (int i = 0; i < 16; i++) {
 			joystickData[i].joystickIndex = i;
@@ -127,7 +127,7 @@ namespace Input {
 			axes = glfwGetJoystickAxes(joystickIndex, &axesCount);
 			buttons = glfwGetJoystickButtons(joystickIndex, &buttonCount);
 		}
-		else 
+		else
 			Disconnect();
 	}
 
@@ -156,16 +156,16 @@ namespace Input {
 		if (index >= 0 && index < axesCount)
 			if (axes != nullptr)
 				return axes[index];
-		
+
 		Log::Error << "Tried to access axes that is out of bounds! \n";
 		return 0.0f;
 	}
 
 	bool InputDirector::JoystickData::GetButton(int index) {
 		if (index >= 0 && index < buttonCount)
-			if(buttons != nullptr)
+			if (buttons != nullptr)
 				return buttons[index];
-		
+
 		Log::Error << "Tried to access button that is out of bounds! \n";
 		return false;
 	}
@@ -218,7 +218,7 @@ namespace Input {
 	}
 
 	void InputDirector::SetMouseControlStatus(bool value) {
-		mouseControlStatus = value; 
+		mouseControlStatus = value;
 		Log::Debug << "Mouse control status " << value << "\n";
 		if (mouseControlStatus) {
 			glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -226,18 +226,18 @@ namespace Input {
 		else {
 			glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
-		
+
 	}
 
 	void InputDirector::ConnectJoystick(int index) {
-		if (index >= 0 && index < 16) 
-			joystickData[index].Connect();	
+		if (index >= 0 && index < 16)
+			joystickData[index].Connect();
 		else
 			Log::Error << "Tried to connect joystick that is out of bounds!\n";
 	}
 
 	void InputDirector::DisconnectJoystick(int index) {
-		if (index >= 0 && index < 16) 
+		if (index >= 0 && index < 16)
 			joystickData[index].Disconnect();
 		else
 			Log::Error << "Tried to disconnect joystick that is out of bounds!\n";
@@ -246,15 +246,15 @@ namespace Input {
 	bool InputDirector::IsJoystickConnected(int index) {
 		if (index >= 0 && index < 16)
 			return joystickData[index].IsConnected();
-		
+
 		Log::Error << "Tried to test if an out of range joystick is connected!\n";
 		return false;
 	}
 
 	float InputDirector::GetControllerAxis(int id, int axis) {
-		if (id >= 0 && id < 16) 
+		if (id >= 0 && id < 16)
 			return joystickData[id].GetAxis(axis);
-		
+
 		Log::Error << "Tried to access joystick axis that is out of bounds!\n";
 		return 0.0f;
 	}
@@ -262,7 +262,7 @@ namespace Input {
 	bool InputDirector::GetControllerButton(int id, int button) {
 		if (id >= 0 && id < 16)
 			return joystickData[id].GetButton(button);
-		
+
 		Log::Error << "Tried to access joystick button that is out of bounds!\n";
 		return false;
 	}
@@ -338,12 +338,12 @@ namespace Input {
 	}
 
 	void InputDirector::mouseMoveEvent(double xoffset, double yoffset) {
-		
+
 		mousePosition = glm::dvec2(xoffset, yoffset);
-	
+
 		mouseChangeInPosition = mousePositionPrevious - mousePosition;
 		mouseChangeInPosition.x *= -1; //coordinates are reversed on y axis (top left vs bottom left)
-	
+
 		mousePositionPrevious = mousePosition;
 	}
 

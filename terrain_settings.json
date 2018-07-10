@@ -1,9 +1,0 @@
-{
-  "grid_dimentions": 0,
-  "height_scale": 100.0,
-  "max_levels": 3,
-  "show_window": true,
-  "souce_iamge_resolution": 512,
-  "terrain_width": 1000.0,
-  "view_distance": 2
-}

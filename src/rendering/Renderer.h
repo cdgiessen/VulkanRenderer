@@ -35,6 +35,8 @@ public:
 	int pointLightCount = 16;
 	int spotLightCount = 8;
 
+	bool memory_dump = false;
+
 	RenderSettings(std::string fileName);
 
 	void Load();

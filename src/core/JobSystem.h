@@ -16,127 +16,121 @@
 namespace job {
 
 
-    class Job {
-    public:
-    	Job(std::function<void()> work) : work(work) {}
+	class Job {
+	public:
+		Job(std::function<void()> work) : work(work) {}
 
-        void operator()(){
-            if(work)
-                work();
-        }
-    private:
-    	std::function<void()> work;
-    };
+		void operator()() {
+			if (work)
+				work();
+		}
+	private:
+		std::function<void()> work;
+	};
 
-    enum class TaskType {
-        currentFrame,
-        async,
-        nextFrame
-    };
+	enum class TaskType {
+		currentFrame,
+		async,
+		nextFrame
+	};
 
-    class TaskSignal;
+	class TaskSignal;
 
-    class TaskBarrier {
-    public:
-        TaskBarrier();
-    
-        void AddTaskToWaitOn(std::weak_ptr<TaskSignal>);
-        
-    private:
-        std::vector<std::weak_ptr<TaskSignal>> tasksWaitingOn;
-        std::atomic_bool ready = false;        
-    };
+	class Task {
+	public:
+		Task(TaskType type, std::weak_ptr<TaskSignal> signalBlock);
 
-    class TaskSignal {
-    public:
-        TaskSignal(std::shared_ptr<TaskBarrier> barrier = nullptr);
-        ~TaskSignal();
-        
-        void Signal(); //for task to call
+		void Add(Job&& newJob);
 
-        void Wait(); //for owner to call
+		void operator()();
 
+		void WaitOn();
 
-    private:
-        std::atomic_bool finished = false;
-        std::mutex condVar_lock;
-    	std::condition_variable condVar;
-        
-        std::shared_ptr<TaskBarrier> barrier;
-    };
+		bool IsReadyToRun();
 
-    class Task {
-    public:
+	private:
+		TaskType type;
+		std::vector<Job> jobs;
+		std::weak_ptr<TaskSignal> signalBlock;
+	};
 
+	class TaskSignal {
+	public:
+		TaskSignal();
+		~TaskSignal();
 
-        Task(TaskType type, std::weak_ptr<TaskSignal> signalBlock);
+		void Signal(); //for task to call
 
-    	void AddJob(Job&& newJob);
+		void Wait(); //for owner to call
 
-    	void operator()();
+		bool IsReadyToRun();
+		void AddTaskToWaitOn(std::shared_ptr<TaskSignal>);
 
-    	void WaitOn();
-    private:
-        TaskType type;
-    	std::vector<Job> jobs; 
-        std::weak_ptr<TaskSignal> signalBlock;      
-    };
+	private:
+		std::atomic_bool finished = false;
 
-    class TaskPool{
-    public:
-    	TaskPool();
+		std::mutex condVar_lock;
+		std::condition_variable condVar;
 
-        void AddTask(Task&& task);
+		std::mutex pred_lock;
+		std::vector<std::shared_ptr<TaskSignal>> predicates;
+	};
 
-        std::optional<Task> GetTask();
+	class TaskPool {
+	public:
+		TaskPool();
 
-    private:
-        std::mutex queueLock;
-        std::queue<Task> tasks;
-    };
+		void AddTask(Task&& task);
 
-    class TaskManager {
-    public:
-        TaskManager();
+		std::optional<Task> GetTask();
 
-        void AddTask(Task&& task);
+	private:
+		std::mutex queueLock;
+		std::queue<Task> tasks;
+	};
 
-        std::optional<Task> GetTask();
+	class TaskManager {
+	public:
+		TaskManager();
 
-        void EndSubmission();
+		void AddTask(Task&& task);
 
-    private:
-        TaskPool currentFrameTasks;
-        TaskPool asyncTasks;
-    };
+		std::optional<Task> GetTask();
 
-    class Worker {
-    public:
-    	Worker(TaskManager& taskMan);
-        ~Worker();
+		void EndSubmission();
 
-        void Stop();
+	private:
+		TaskPool currentFrameTasks;
+		TaskPool asyncTasks;
+	};
 
-    private:
-        void Work();
-        TaskManager& taskMan;
+	class Worker {
+	public:
+		Worker(TaskManager& taskMan);
+		~Worker();
 
-        std::thread workerThread;
-        std::atomic_bool isWorking = true;
-    };
+		void Stop();
 
-    class WorkerPool {
-    public:
-        WorkerPool(TaskManager& taskMan, int workerCount = 1);
-        
-        void StartWorkers();
-        void StopWorkers();
+	private:
+		void Work();
+		TaskManager& taskMan;
 
-    private:
-        TaskManager& taskMan;
-        std::vector<std::unique_ptr<Worker>> workers;
-        int workerCount = 1;
-    };
+		std::thread workerThread;
+		std::atomic_bool isWorking = true;
+	};
 
-    extern bool JobTester();
+	class WorkerPool {
+	public:
+		WorkerPool(TaskManager& taskMan, int workerCount = 1);
+
+		void StartWorkers();
+		void StopWorkers();
+
+	private:
+		TaskManager & taskMan;
+		std::vector<std::unique_ptr<Worker>> workers;
+		int workerCount = 1;
+	};
+
+	extern bool JobTester();
 }

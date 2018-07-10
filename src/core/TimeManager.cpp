@@ -13,7 +13,7 @@ TimeManager::TimeManager()
 	frameTimes = std::vector<double>(50, 0.01666);
 }
 
-void TimeManager::CollectRuntimeData() 
+void TimeManager::CollectRuntimeData()
 {
 	applicationEndTime = high_resolution_clock::now();
 }
@@ -67,5 +67,5 @@ double TimeManager::PreviousFrameTime() {
 	return prevFrameTime.count();
 }
 
-float TimeManager::FrameTimeMax(){ return frameTimeMax;}
-float TimeManager::FrameTimeMin(){ return frameTimeMin;}
+float TimeManager::FrameTimeMax() { return frameTimeMax; }
+float TimeManager::FrameTimeMin() { return frameTimeMin; }
