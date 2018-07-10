@@ -18,7 +18,7 @@ Window::Window(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& posi
 	if (isFullscreen) {
 		GLFWmonitor* primary = glfwGetPrimaryMonitor();
 		const GLFWvidmode* mode = glfwGetVideoMode(primary);
-		
+
 		window = glfwCreateWindow(mode->width, mode->height, "Vulkan Renderer", primary, NULL);
 
 		Log::Debug << "Monitor Width " << mode->width << "\n";
@@ -52,13 +52,19 @@ Window::Window(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& posi
 
 	isWindowIconofied = glfwGetWindowAttrib(window, GLFW_ICONIFIED);
 	isWindowFocused = glfwGetWindowAttrib(window, GLFW_FOCUSED);
-	
+
 	currentWindowSize = GetWindowSize();
 }
 
+Window::~Window() {
+	glfwDestroyWindow(window);
+	glfwTerminate();
+	window = nullptr;
+}
+
 void Window::setSizeLimits(const glm::ivec2& minSize, const glm::ivec2& maxSize) {
-	glfwSetWindowSizeLimits(window, minSize.x, minSize.y, 
-		maxSize.x ? maxSize.x : minSize.x, 
+	glfwSetWindowSizeLimits(window, minSize.x, minSize.y,
+		maxSize.x ? maxSize.x : minSize.x,
 		maxSize.y ? maxSize.y : minSize.y);
 }
 
@@ -69,12 +75,6 @@ void Window::showWindow(bool show) {
 	else {
 		glfwHideWindow(window);
 	}
-}
-
-void Window::destroyWindow() {
-	glfwDestroyWindow(window);
-	glfwTerminate();
-	window = nullptr;
 }
 
 GLFWwindow* Window::getWindowContext() {
@@ -115,7 +115,7 @@ glm::ivec2 Window::GetWindowSize() {
 
 void Window::ErrorHandler(int error, const char* description)
 {
-    Log::Error << description << "\n";
+	Log::Error << description << "\n";
 	puts(description);
 }
 
@@ -174,11 +174,11 @@ void Window::WindowResizeHandler(GLFWwindow* window, int width, int height) {
 	Window* w = (Window*)glfwGetWindowUserPointer(window);
 	//glfwSetWindowSize(window, width, height);
 	w->updateWindowSize = true;
-	
+
 }
 
 void Window::WindowIconifyHandler(GLFWwindow* window, int iconified) {
-	
+
 	Window* w = (Window*)glfwGetWindowUserPointer(window);
 	if (iconified)
 	{

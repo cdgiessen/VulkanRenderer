@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <thread>
 
 
 #include <glm/glm.hpp>
@@ -55,8 +56,17 @@ void VulkanAppSettings::Save() {
 	outFile.close();
 }
 
+unsigned int HardwareThreadCount() {
+	unsigned int concurentThreadsSupported = std::thread::hardware_concurrency();
+	Log::Debug << "Hardware Threads Available = " << concurentThreadsSupported << "\n";
+	//TODO: Use task pool for everything, no need for system jamming atm;
+	return 0;
+	return concurentThreadsSupported > 0 ? concurentThreadsSupported : 1;
+}
+
 VulkanApp::VulkanApp() :
 	settings("settings.json"),
+	workerPool(taskManager, HardwareThreadCount()),
 	timeManager(),
 	window(settings.isFullscreen,
 		glm::ivec2(settings.screenWidth, settings.screenHeight),
@@ -83,16 +93,17 @@ VulkanApp::VulkanApp() :
 	scene = std::make_unique<Scene>(*resourceManager.get(), *vulkanRenderer.get(), *timeManager.get(), imgui_nodeGraph_terrain.GetGraph());
 */
 	vulkanRenderer.scene = &scene;
+
+	workerPool.StartWorkers();
 }
 
 
 VulkanApp::~VulkanApp()
 {
-
-	window.destroyWindow();
+	workerPool.StopWorkers();
 }
 
-void VulkanApp::mainLoop() {
+void VulkanApp::Run() {
 
 	while (!window.CheckForWindowClose()) {
 		if (window.CheckForWindowResizing()) {
@@ -292,8 +303,7 @@ void VulkanApp::HandleInputs() {
 			scene.drawNormals = !scene.drawNormals;
 
 		if (Input::GetKeyDown(Input::KeyCode::X)) {
-			wireframe = !wireframe;
-			vulkanRenderer.SetWireframe(wireframe);
+			vulkanRenderer.ToggleWireframe();
 			Log::Debug << "wireframe toggled" << "\n";
 		}
 

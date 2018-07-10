@@ -5,6 +5,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
+#include "JobSystem.h"
 #include "Window.h"
 #include "Input.h"
 #include "Logger.h"
@@ -46,21 +47,22 @@ private:
 	std::string fileName;
 };
 
-
 class VulkanApp
 {
 public:
 	VulkanApp();
 	~VulkanApp();
 
-	void mainLoop();
+	void Run();
 	void HandleInputs();
-	//void clean();
 
 	void RecreateSwapChain();
 
 private:
 	VulkanAppSettings settings;
+
+	job::TaskManager taskManager;
+	job::WorkerPool workerPool;
 
 	TimeManager timeManager;
 	Window window;
@@ -70,11 +72,6 @@ private:
 
 	ProcTerrainNodeGraph imgui_nodeGraph_terrain;
 	Scene scene;
-
-	//Input stuff
-	//bool mouseControlEnabled = true;
-	bool wireframe = false;
-	//void SetMouseControl(bool value);
 
 	ImGUI_PanelSettings panels;
 

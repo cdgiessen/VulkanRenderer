@@ -18,18 +18,13 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../../third-party/stb_image/stb_image_write.h"
 
-#include "JobSystem.h"
-
 int main(int argc, char* argv[]) {
 
 	SetExecutableFilePath(argv[0]);
 
-	job::JobTester();
-
-
-	std::shared_ptr<VulkanApp> vkApp;
+	std::unique_ptr<VulkanApp> vkApp;
 	try {
-		vkApp = std::make_shared<VulkanApp>();
+		vkApp = std::make_unique<VulkanApp>();
 	}
 	catch (const std::runtime_error& e) {
 		Log::Error << "ENGINE FAILED TO INITIALIZE\n" << std::string(e.what()) << "\n";
@@ -37,7 +32,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	try {
-		vkApp->mainLoop();
+		vkApp->Run();
 	}
 	catch (const std::runtime_error& e) {
 		Log::Error << "ENGINE FAILED IN MAIN LOOP\n" << std::string(e.what()) << "\n";

@@ -56,8 +56,6 @@ public:
 	VulkanRenderer& operator=(VulkanRenderer&&) = delete;
 	~VulkanRenderer();
 
-	//void LoadRenderSettings();
-	//void SaveRenderSettings();
 
 	void UpdateRenderResources(GlobalData globalData,
 		CameraData cameraData,
@@ -100,7 +98,7 @@ public:
 	void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);
 
 	void SaveScreenshotNextFrame();
-	void SetWireframe(bool wireframe);
+	void ToggleWireframe();
 
 	void DeviceWaitTillIdle();
 

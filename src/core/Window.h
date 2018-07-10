@@ -7,12 +7,12 @@ struct GLFWwindow;
 
 class Window {
 public:
-	Window(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position = { 0, 0 });                                                                                                                                                                                            
+	Window(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position = { 0, 0 });
+	~Window();
 
 	//void createWindow(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position = { 0, 0 });
 	void showWindow(bool show = true);
 	void setSizeLimits(const glm::ivec2& minSize, const glm::ivec2& maxSize = {});
-	void destroyWindow();
 
 	GLFWwindow* getWindowContext();
 	bool CheckForWindowResizing();

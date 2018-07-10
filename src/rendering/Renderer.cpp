@@ -191,8 +191,8 @@ void VulkanRenderer::RecreateSwapChain() {
 
 
 
-void VulkanRenderer::SetWireframe(bool wireframe) {
-	this->wireframe = wireframe;
+void VulkanRenderer::ToggleWireframe() {
+	wireframe = !wireframe;
 }
 
 void VulkanRenderer::CreateRenderPass() {
