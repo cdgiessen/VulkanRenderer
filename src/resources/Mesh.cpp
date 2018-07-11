@@ -243,6 +243,17 @@ void Mesh::importFromFile(const std::string filename) {
 //	}
 //}
 
+
+MeshManager::MeshManager()
+{
+}
+
+
+MeshManager::~MeshManager()
+{
+}
+
+
 std::shared_ptr<Mesh> createSinglePlane() {
 	return std::make_shared<Mesh>(Vertices_PosNormTexColor({
 		//vertices

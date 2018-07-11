@@ -176,6 +176,20 @@ private:
 
 };
 
+class MeshManager
+{
+public:
+	MeshManager();
+	~MeshManager();
+
+
+private:
+	std::unordered_map<int, std::unique_ptr<Mesh>> handles;
+
+};
+
+
+
 extern std::shared_ptr<Mesh> createSinglePlane();
 
 extern std::shared_ptr<Mesh> createDoublePlane();

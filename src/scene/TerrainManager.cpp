@@ -168,12 +168,12 @@ void TerrainChunkBuffer::UpdateChunks() {
 	VkBuffer vert_s = vert_staging.buffer.buffer;
 	VkBuffer index = index_buffer.buffer.buffer;
 	VkBuffer index_s = index_staging.buffer.buffer;
-	
-	if(vertexCopyRegions.size() > 0){
+
+	if (vertexCopyRegions.size() > 0) {
 		renderer.SubmitWork(WorkType::transfer,
 			[=](const VkCommandBuffer cmdBuf) {
-				std::vector<VkBufferCopy> vRegions = vertexCopyRegions;
-				std::vector<VkBufferCopy> iRegions = indexCopyRegions;
+			std::vector<VkBufferCopy> vRegions = vertexCopyRegions;
+			std::vector<VkBufferCopy> iRegions = indexCopyRegions;
 
 			vkCmdCopyBuffer(cmdBuf, vert_s, vert,
 				vRegions.size(), vRegions.data());
@@ -205,10 +205,10 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
 		terrainTextureHandles.push_back(
 			TerrainTextureNamedHandle(
 				item,
-				resourceMan.texManager.loadTextureFromFileRGBA("assets/Textures/TerrainTextures/" + item)));
+				resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/TerrainTextures/" + item)));
 	}
 
-	terrainTextureArray = resourceMan.texManager.loadTextureArrayFromFile("assets/Textures/TerrainTextures/", terrainTextureFileNames);
+	terrainTextureArray = resourceMan.texManager.loadTextureArrayFromFile("assets/textures/TerrainTextures/", terrainTextureFileNames);
 
 	terrainVulkanTextureArray = std::make_shared<VulkanTexture2DArray>(renderer.device, terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, renderer,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -219,7 +219,7 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
 	instancedWaters->SetBlendMode(VK_TRUE);
 	instancedWaters->SetCullMode(VK_CULL_MODE_NONE);
 	instancedWaters->LoadModel(createFlatPlane(settings.numCells, glm::vec3(1, 0, 1)));
-	instancedWaters->LoadTexture(resourceMan.texManager.loadTextureFromFileRGBA("assets/Textures/TileableWaterTexture.jpg"));
+	instancedWaters->LoadTexture(resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/TileableWaterTexture.jpg"));
 
 	instancedWaters->InitInstancedSceneObject();
 
@@ -336,7 +336,7 @@ void TerrainManager::UpdateTerrains(glm::vec3 cameraPos)
 		glm::vec3 center = glm::vec3((*it)->coordinateData.pos.x, cameraPos.y, (*it)->coordinateData.pos.y);
 		float distanceToViewer = glm::distance(cameraPos, center);
 		if (distanceToViewer > settings.viewDistance * settings.width * 1.5) {
-			if((*(*it)->terrainVulkanSplatMap->readyToUse) == true){
+			if ((*(*it)->terrainVulkanSplatMap->readyToUse) == true) {
 
 				terToDelete.push_back(it);
 				//Log::Debug << "deleting terrain at x:" << (*it)->coordinateData.noisePos.x / (*it)->coordinateData.sourceImageResolution

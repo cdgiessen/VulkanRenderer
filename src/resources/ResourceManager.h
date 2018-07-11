@@ -3,9 +3,9 @@
 #include <vector>
 #include <memory>
 
-
-#include "TextureManager.h"
-#include "MeshManager.h"
+#include "Material.h"
+#include "Texture.h"
+#include "Mesh.h"
 
 class ResourceManager
 {
@@ -15,6 +15,7 @@ public:
 
 	TextureManager texManager;
 	MeshManager meshManager;
+	MaterialManager matManager;
 
 private:
 

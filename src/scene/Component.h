@@ -3,50 +3,57 @@
 #include <vector>
 #include <map>
 
-#include "../resources/MeshManager.h"
-#include "../resources/TextureManager.h"
+#include "../resources/ResourceManager.h"
 
 #include "Entity.h"
 #include "Transform.h"
 
 using CompID = int;
 
-class Component {
+struct Component {
 	CompID ID;
 
 
 };
 
-class Comp_Renderer : Component {
+struct Comp_Transform : Component {
 
 };
 
-class Comp_Mesh : Component {
+struct Comp_Collider : Component {
 
 };
 
-class Comp_Texture : Component {
+struct Comp_Rigidbody : Component {
 
 };
 
-class Comp_Material : Component {
+struct Comp_Mesh : Component {
 
 };
 
-class Comp_Renderer : Component {
+struct Comp_Texture : Component {
+
+};
+
+struct Comp_Material : Component {
+
+};
+
+struct Comp_Renderer : Component {
 	std::array<CompID, 8> material;
 	std::array<CompID, 8> meshes;
 };
 
 class ComponentManager {
 public:
-	ComponentManager();
+	ComponentManager(ResourceManager& resourceMan);
 
 
 
 private:
 	TransformManager transformMan;
-
+	ResourceManager& resourceMan;
 
 
 };

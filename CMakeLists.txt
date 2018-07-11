@@ -79,11 +79,10 @@ src/rendering/SwapChain.cpp
 src/rendering/Texture.cpp
 src/rendering/Wrappers.cpp
 
+src/resources/Material.cpp
 src/resources/Mesh.cpp
-src/resources/MeshManager.cpp
-src/resources/ResourceManager.cpp
 src/resources/Texture.cpp
-src/resources/TextureManager.cpp
+src/resources/ResourceManager.cpp
 
 src/scene/Camera.cpp
 src/scene/GameObject.cpp
@@ -93,7 +92,6 @@ src/scene/Skybox.cpp
 src/scene/Terrain.cpp
 src/scene/TerrainManager.cpp
 src/scene/Transform.cpp
-#src/scene/Water.cpp
 
 third-party/ImGui/imgui.cpp
 third-party/ImGui/imgui_draw.cpp
