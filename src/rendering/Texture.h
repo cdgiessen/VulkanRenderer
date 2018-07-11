@@ -46,7 +46,6 @@ public:
 	VkSampler textureSampler = VK_NULL_HANDLE;
 	VkImageLayout textureImageLayout;
 
-	//VkDescriptorImageInfo descriptor;
 	DescriptorResource resource;
 
 
@@ -76,9 +75,6 @@ public:
 		bool genMipMaps = false,
 		int mipMapLevelsToGen = 1,
 		bool wrapBorder = true);
-
-
-	std::shared_ptr<Texture> texture;
 };
 
 class VulkanTexture2DArray : public VulkanTexture {
@@ -91,9 +87,6 @@ public:
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		bool genMipMaps = false,
 		int mipMapLevelsToGen = 1);
-
-	std::shared_ptr<TextureArray> textures;
-
 };
 
 class VulkanCubeMap : public VulkanTexture {
@@ -107,51 +100,50 @@ public:
 		bool genMipMaps = false,
 		int mipMapLevelsToGen = 1);
 
-	std::shared_ptr<CubeMap> cubeMap;
 };
 
 class VulkanTextureDepthBuffer : public VulkanTexture {
 public:
-	VulkanTextureDepthBuffer(VulkanDevice& device, VulkanRenderer& renderer, VkFormat depthFormat, int width, int height);
+	VulkanTextureDepthBuffer(VulkanDevice& device, VulkanRenderer& renderer, 
+		VkFormat depthFormat, int width, int height);
 };
 
-//class VulkanTextureManager {
-//public:
-//	VulkanTextureManager(VulkanDevice &device);
-//	~VulkanTextureManager();
-//
-//	std::shared_ptr<VulkanTexture2D> CreateTexture2D(
-//		std::shared_ptr<Texture> texture,
-//		VkFormat format,
-//		VulkanRenderer& renderer,
-//		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
-//		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-//		bool forceLinear = false,
-//		bool genMipMaps = false,
-//		int mipMapLevelsToGen = 1,
-//		bool wrapBorder = true);
-//
-//	std::shared_ptr<VulkanTexture2DArray> CreateTexture2DArray(
-//		std::shared_ptr<TextureArray> textures,
-//		VkFormat format,
-//		VulkanRenderer& renderer,
-//		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
-//		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-//		bool genMipMaps = false,
-//		int mipMapLevelsToGen = 1);
-//
-//	std::shared_ptr<VulkanCubeMap> CreateCubeMap(std::shared_ptr<CubeMap> cubeMap,
-//		VkFormat format,
-//		VulkanRenderer& renderer,
-//		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
-//		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-//		bool genMipMaps = false,
-//		int mipMapLevelsToGen = 1);
-//	std::shared_ptr<VulkanTextureDepthBuffer> CreateDepthImage(VulkanRenderer& renderer, VkFormat depthFormat, int width, int height);
-//
-//
-//private:
-//	VulkanDevice & device;
-//
-//	std::vector<VulkanTexture> vulkanTextures;
-//};
+class VulkanTextureManager {
+public:
+	VulkanTextureManager(VulkanRenderer& renderer);
+	~VulkanTextureManager();
+
+	std::shared_ptr<VulkanTexture2D> CreateTexture2D(
+		std::shared_ptr<Texture> texture,
+		VkFormat format,
+		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
+		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		bool forceLinear = false,
+		bool genMipMaps = false,
+		int mipMapLevelsToGen = 1,
+		bool wrapBorder = true);
+
+	std::shared_ptr<VulkanTexture2DArray> CreateTexture2DArray(
+		std::shared_ptr<TextureArray> textures,
+		VkFormat format,
+		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
+		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		bool genMipMaps = false,
+		int mipMapLevelsToGen = 1);
+
+	std::shared_ptr<VulkanCubeMap> CreateCubeMap(
+		std::shared_ptr<CubeMap> cubeMap,
+		VkFormat format,
+		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
+		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		bool genMipMaps = false,
+		int mipMapLevelsToGen = 1);
+
+	std::shared_ptr<VulkanTextureDepthBuffer> VulkanTextureDepthBuffer(
+		VkFormat depthFormat, int width, int height);
+
+private:
+	VulkanRenderer& renderer;
+
+	std::vector<std::shared_ptr<VulkanTexture>> vulkanTextures;
+};

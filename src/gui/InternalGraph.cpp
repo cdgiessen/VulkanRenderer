@@ -2,6 +2,8 @@
 
 #include "../core/Logger.h"
 
+#include "../../third-party/stb_image/stb_image.h"
+
 
 namespace InternalGraph {
 

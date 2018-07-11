@@ -66,7 +66,7 @@ private:
 
 	TimeManager timeManager;
 	Window window;
-	ResourceManager resourceManager;
+	Resource::ResourceManager resourceManager;
 
 	VulkanRenderer vulkanRenderer;
 

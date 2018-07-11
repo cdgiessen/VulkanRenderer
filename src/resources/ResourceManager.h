@@ -7,13 +7,16 @@
 #include "Texture.h"
 #include "Mesh.h"
 
+namespace Resource {
+
+
 class ResourceManager
 {
 public:
 	ResourceManager();
 	~ResourceManager();
 
-	TextureManager texManager;
+	Texture::Manager texManager;
 	MeshManager meshManager;
 	MaterialManager matManager;
 
@@ -21,3 +24,5 @@ private:
 
 };
 
+
+}
