@@ -11,7 +11,7 @@
 #include "../core/Logger.h"
 
 VulkanTexture::VulkanTexture(VulkanRenderer& renderer,
-		std::optional<Resource::Texture::TexID> textureResource,
+		std::optional<Resource::Texture::TexID> textureID,
 		VkFormat format,
 		VkImageUsageFlags imageUsageFlags,
 		VkImageLayout imageLayout,
@@ -24,8 +24,8 @@ VulkanTexture::VulkanTexture(VulkanRenderer& renderer,
 	: renderer(renderer), 
 	resource(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) 
 {
-	if(textureResource.has_value()){
-
+	if(textureID.has_value()){
+		auto textureResource = 
 		readyToUse = std::make_shared<bool>(false);
 
 		this->mipLevels = genMipMaps ? mipMapLevelsToGen : 1;
