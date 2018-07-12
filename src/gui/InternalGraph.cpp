@@ -912,14 +912,14 @@ namespace InternalGraph {
 			}
 		}
 
-		outputSplatmap = NoiseImage2D<RGBA_pixel>(cellsWide);
+		outputSplatmap = NoiseImage2D<Resource::Texture::Pixel_RGBA>(cellsWide);
 
 		for (int x = 0; x < cellsWide; x++)
 		{
 			for (int z = 0; z < cellsWide; z++)
 			{
 				glm::vec4 val = glm::normalize(std::get<glm::vec4>(outputNode->GetSplatMapValue(x, z)));
-				RGBA_pixel pixel = RGBA_pixel(
+				Resource::Texture::Pixel_RGBA pixel = Resource::Texture::Pixel_RGBA(
 					(stbi_uc)(glm::clamp(val.x, 0.0f, 1.0f) * 255),
 					(stbi_uc)(glm::clamp(val.y, 0.0f, 1.0f) * 255),
 					(stbi_uc)(glm::clamp(val.z, 0.0f, 1.0f) * 255),
@@ -944,7 +944,7 @@ namespace InternalGraph {
 
 	}
 
-	NoiseImage2D<RGBA_pixel>& GraphUser::GetSplatMap() {
+	NoiseImage2D<Resource::Texture::Pixel_RGBA>& GraphUser::GetSplatMap() {
 		return outputSplatmap;
 
 	}

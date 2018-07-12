@@ -240,7 +240,7 @@ namespace InternalGraph {
 		const float SampleHeightMap(const float x, const float z) const;
 		NoiseImage2D<float>& GetHeightMap();
 
-		NoiseImage2D<RGBA_pixel>& GetSplatMap();
+		NoiseImage2D<Resource::Texture::Pixel_RGBA>& GetSplatMap();
 
 		NoiseImage2D<uint8_t>& GetVegetationDensityMap();
 
@@ -251,7 +251,7 @@ namespace InternalGraph {
 		NoiseSourceInfo info;
 
 		NoiseImage2D<float> outputHeightMap;
-		NoiseImage2D<RGBA_pixel> outputSplatmap;
+		NoiseImage2D<Resource::Texture::Pixel_RGBA> outputSplatmap;
 
 		NoiseImage2D<uint8_t> vegetationDensityMap;
 	};
