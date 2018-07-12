@@ -132,26 +132,19 @@ public:
 
 	std::shared_ptr<VulkanDescriptor> descriptor;
 
-	//std::vector<VulkanBufferVertex> vertexBuffers;
-	//std::vector<VulkanBufferIndex> indexBuffers;
-
 	DescriptorSet descriptorSet;
 
-	std::shared_ptr<Texture> terrainSplatMap;
+	Resource::Texture::TexID terrainSplatMap;
 	std::unique_ptr<VulkanTexture2D> terrainVulkanSplatMap;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 	//TerrainPushConstant modelMatrixData;
-
-	//std::shared_ptr<Texture> maillerFace;
 
 	InternalGraph::GraphUser fastGraphUser;
 
 	Gradient splatmapTextureGradient;
 
 	SimpleTimer drawTimer;
-
-	//std::vector<std::thread *> terrainGenerationWorkers;
 
 	Terrain(VulkanRenderer& renderer,
 		TerrainChunkBuffer& chunkBuffer,
@@ -165,7 +158,7 @@ public:
 	void UpdateTerrain(glm::vec3 viewerPos);
 	void DrawTerrain(VkCommandBuffer cmdBuff, bool wireframe);
 
-	std::vector<RGBA_pixel>* LoadSplatMapFromGenerator();
+	//std::vector<RGBA_pixel>* LoadSplatMapFromGenerator();
 
 	float GetHeightAtLocation(float x, float z);
 private:

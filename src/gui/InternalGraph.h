@@ -54,8 +54,11 @@ namespace InternalGraph {
 		void SetPixelValue(int x, int z, T value);
 
 		T* GetImageData();
-		std::vector<T>* GetImageVectorData();
 		void SetImageData(int width, T* data);
+
+		std::vector<T>* GetImageVectorData();
+
+		std::byte* GetByteDataPtr();
 
 	private:
 		int width = 0;
@@ -68,6 +71,13 @@ namespace InternalGraph {
 	std::vector<T>* NoiseImage2D<T>::GetImageVectorData() {
 		return &data;
 	}
+
+	template<typename T>
+	std::byte* NoiseImage2D<T>::GetByteDataPtr(){
+		return static_cast<std::byte>(data.data());
+	}
+
+	
 
 	template<typename T>
 	static const float BilinearImageSample2D(const NoiseImage2D<T>& noiseImage, const float x, const float z);

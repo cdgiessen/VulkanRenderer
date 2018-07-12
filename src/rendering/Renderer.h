@@ -110,7 +110,7 @@ public:
 
 	ShaderManager shaderManager;
 	VulkanPipeline pipelineManager;
-	VulkanTextureManager textureManager;
+	//VulkanTextureManager textureManager;
 
 	Scene* scene;
 

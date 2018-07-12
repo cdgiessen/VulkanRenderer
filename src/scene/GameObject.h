@@ -54,7 +54,7 @@ public:
 	std::shared_ptr<Mesh> gameObjectMesh;
 	std::shared_ptr<VulkanModel> gameObjectModel;
 
-	std::shared_ptr<Texture> gameObjectTexture;
+	Resource::Texture::TexID gameObjectTexture;
 	std::unique_ptr<VulkanTexture2D> gameObjectVulkanTexture;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;

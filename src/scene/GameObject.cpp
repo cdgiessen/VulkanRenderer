@@ -48,9 +48,8 @@ void GameObject::SetupUniformBuffer()
 void GameObject::SetupImage()
 {
 
-	gameObjectVulkanTexture = std::make_unique<VulkanTexture2D>(renderer.device,
+	gameObjectVulkanTexture = std::make_unique<VulkanTexture2D>(renderer,
 		gameObjectTexture, VK_FORMAT_R8G8B8A8_UNORM,
-		renderer,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0);
 }

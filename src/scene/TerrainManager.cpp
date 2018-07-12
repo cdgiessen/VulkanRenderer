@@ -14,10 +14,10 @@
 constexpr auto TerrainSettingsFileName = "terrain_settings.json";
 
 TerrainCreationData::TerrainCreationData(
-	ResourceManager& resourceMan,
+	Resource::ResourceManager& resourceMan,
 	VulkanRenderer& renderer,
 	glm::vec3 cameraPos,
-	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
+	Resource::Texture::TexID terrainVulkanTextureArray,
 	InternalGraph::GraphPrototype& protoGraph,
 	int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord) :
 
@@ -51,12 +51,12 @@ void TerrainCreationWorker(TerrainManager* man) {
 					data->protoGraph, data->numCells, data->maxLevels,
 					data->heightScale, data->coord);
 
-				std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
+				// std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
 
-				terrain->terrainSplatMap = man->resourceMan.
-					texManager.loadTextureFromRGBAPixelData(
-						data->sourceImageResolution + 1,
-						data->sourceImageResolution + 1, imgData);
+				// terrain->terrainSplatMap = man->resourceMan.
+				// 	texManager.loadTextureFromRGBAPixelData(
+				// 		data->sourceImageResolution + 1,
+				// 		data->sourceImageResolution + 1, imgData);
 
 				terrain->InitTerrain(data->cameraPos, data->terrainVulkanTextureArray);
 
@@ -192,7 +192,7 @@ TerrainMeshIndices* TerrainChunkBuffer::GetDeviceIndexBufferPtr(int index) {
 }
 
 TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
-	ResourceManager& resourceMan, VulkanRenderer& renderer)
+	Resource::ResourceManager& resourceMan, VulkanRenderer& renderer)
 	: protoGraph(protoGraph), renderer(renderer), resourceMan(resourceMan),
 	chunkBuffer(renderer, 512, *this)
 {
@@ -210,7 +210,7 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
 
 	terrainTextureArray = resourceMan.texManager.loadTextureArrayFromFile("assets/textures/TerrainTextures/", terrainTextureFileNames);
 
-	terrainVulkanTextureArray = std::make_shared<VulkanTexture2DArray>(renderer.device, terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM, renderer,
+	terrainVulkanTextureArray = std::make_shared<VulkanTexture2DArray>(renderer, terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
 

@@ -47,7 +47,7 @@ public:
 	void InitInstancedSceneObject();
 	void UploadData();
 
-	void LoadTexture(std::shared_ptr<Texture> tex);
+	void LoadTexture(Resource::Texture::TexID);
 	void LoadModel(std::string fileName);
 	void LoadModel(std::shared_ptr<Mesh> mesh);
 
@@ -90,7 +90,7 @@ private:
 	std::shared_ptr<Mesh> mesh;
 	std::shared_ptr<VulkanModel> vulkanModel;
 
-	std::shared_ptr<Texture> texture;
+	Resource::Texture::TexID texture;
 	std::unique_ptr<VulkanTexture2D> vulkanTexture;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;

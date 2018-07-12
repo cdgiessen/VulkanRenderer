@@ -46,17 +46,17 @@ struct GeneralSettings {
 
 struct TerrainTextureNamedHandle {
 	std::string name;
-	std::shared_ptr<Texture> handle;
+	Resource::Texture::TexID handle;
 
-	TerrainTextureNamedHandle(std::string name, std::shared_ptr<Texture> handle) :
+	TerrainTextureNamedHandle(std::string name, Resource::Texture::TexID handle) :
 		name(name), handle(handle) {}
 };
 
 struct TerrainCreationData {
-	ResourceManager& resourceMan;
+	Resource::ResourceManager& resourceMan;
 	VulkanRenderer& renderer;
 	glm::vec3 cameraPos;
-	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray;
+	Resource::Texture::TexID terrainVulkanTextureArray;
 	InternalGraph::GraphPrototype& protoGraph;
 	int numCells; int maxLevels;
 	int sourceImageResolution;
@@ -64,10 +64,10 @@ struct TerrainCreationData {
 	TerrainCoordinateData coord;
 
 	TerrainCreationData(
-		ResourceManager& resourceMan,
+		Resource::ResourceManager& resourceMan,
 		VulkanRenderer& renderer,
 		glm::vec3 cameraPos,
-		std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray,
+		Resource::Texture::TexID terrainVulkanTextureArray,
 		InternalGraph::GraphPrototype& protoGraph,
 		int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord);
 };
@@ -126,7 +126,7 @@ class TerrainManager
 {
 public:
 	TerrainManager(InternalGraph::GraphPrototype& protoGraph,
-		ResourceManager& resourceMan, VulkanRenderer& renderer);
+		Resource::ResourceManager& resourceMan, VulkanRenderer& renderer);
 	~TerrainManager();
 
 	void CleanUpTerrain();
@@ -144,7 +144,7 @@ public:
 
 	void RecreateTerrain();
 
-	ResourceManager& resourceMan;
+	Resource::ResourceManager& resourceMan;
 	VulkanRenderer& renderer;
 
 	TerrainChunkBuffer chunkBuffer;
@@ -174,7 +174,7 @@ private:
 
 	std::shared_ptr<Mesh> WaterMesh;
 
-	std::shared_ptr<TextureArray> terrainTextureArray;
+	Resource::Texture::TexID terrainTextureArray;
 	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray;
 
 	std::vector<std::thread> terrainCreationWorkers;

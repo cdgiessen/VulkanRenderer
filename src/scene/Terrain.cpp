@@ -149,6 +149,17 @@ Terrain::Terrain(VulkanRenderer& renderer,
 	// 	));
 
 	//modelMatrixData.model = glm::translate(glm::mat4(), glm::vec3(coordinateData.pos.x, 0, coordinateData.pos.y));
+
+
+
+	std::byte* imgData = fastGraphUser.GetSplatMap().GetByteDataPtr();
+
+
+
+	terrain->terrainSplatMap = man->resourceMan.
+		texManager.LoadTextureFromDataPtr(
+			data->sourceImageResolution + 1,
+			data->sourceImageResolution + 1, imgData);
 }
 
 Terrain::~Terrain() {
@@ -199,9 +210,9 @@ void Terrain::UpdateTerrain(glm::vec3 viewerPos) {
 	//	Log::Debug << " Update time " << updateTime.GetElapsedTimeMicroSeconds() << "\n";
 }
 
-std::vector<RGBA_pixel>*  Terrain::LoadSplatMapFromGenerator() {
-	return fastGraphUser.GetSplatMap().GetImageVectorData();
-}
+// std::vector<RGBA_pixel>*  Terrain::LoadSplatMapFromGenerator() {
+// 	return fastGraphUser.GetSplatMap().GetImageVectorData();
+// }
 
 void Terrain::SetupMeshbuffers() {
 	//uint32_t vBufferSize = static_cast<uint32_t>(maxNumQuads) * sizeof(TerrainMeshVertices);
@@ -236,8 +247,8 @@ void Terrain::SetupUniformBuffer()
 void Terrain::SetupImage()
 {
 	if (terrainSplatMap != nullptr) {
-		terrainVulkanSplatMap = std::make_unique<VulkanTexture2D>(renderer.device,
-			terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM, renderer,
+		terrainVulkanSplatMap = std::make_unique<VulkanTexture2D>(renderer,
+			terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
 	}

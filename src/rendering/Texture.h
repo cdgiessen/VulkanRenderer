@@ -1,16 +1,32 @@
 #pragma once
 
+#include <optional>
+
 #include <vulkan/vulkan.h>
-#include "Device.h"
+
+#include "RenderStructs.h"
 #include "Descriptor.h"
+#include "Buffer.h"
 
 #include "../resources/Texture.h"
+#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 class VulkanRenderer;
 
+
 class VulkanTexture {
 public:
-	VulkanTexture(VulkanDevice& device);
+	VulkanTexture(VulkanRenderer& renderer,
+		std::optional<Resource::Texture::TexID> textureResource,
+		VkFormat format,
+		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
+		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		bool forceLinear = false,
+		bool genMipMaps = false,
+		int mipMapLevelsToGen = 1,
+		bool wrapBorder = true,
+		int desiredWidth = 0,
+		int desiredHeight = 0);
 	~VulkanTexture();
 
 	void updateDescriptor();
@@ -51,7 +67,7 @@ public:
 
 	Signal readyToUse;
 protected:
-	VulkanDevice & device;
+	VulkanRenderer& renderer;
 
 	int mipLevels;
 	int layers;
@@ -65,10 +81,9 @@ protected:
 
 class VulkanTexture2D : public VulkanTexture {
 public:
-	VulkanTexture2D(VulkanDevice& device,
-		std::shared_ptr<Texture> texture,
+	VulkanTexture2D(VulkanRenderer& renderer,
+		Resource::Texture::TexID textureResource,
 		VkFormat format,
-		VulkanRenderer& renderer,
 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		bool forceLinear = false,
@@ -79,10 +94,9 @@ public:
 
 class VulkanTexture2DArray : public VulkanTexture {
 public:
-	VulkanTexture2DArray(VulkanDevice& device,
-		std::shared_ptr<TextureArray> textures,
+	VulkanTexture2DArray(VulkanRenderer& renderer,
+		Resource::Texture::TexID textureResource,
 		VkFormat format,
-		VulkanRenderer& renderer,
 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		bool genMipMaps = false,
@@ -91,10 +105,9 @@ public:
 
 class VulkanCubeMap : public VulkanTexture {
 public:
-	VulkanCubeMap(VulkanDevice& device,
-		std::shared_ptr<CubeMap> cubeMap,
+	VulkanCubeMap(VulkanRenderer& renderer,
+		Resource::Texture::TexID textureResource,
 		VkFormat format,
-		VulkanRenderer& renderer,
 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		bool genMipMaps = false,
@@ -104,46 +117,71 @@ public:
 
 class VulkanTextureDepthBuffer : public VulkanTexture {
 public:
-	VulkanTextureDepthBuffer(VulkanDevice& device, VulkanRenderer& renderer, 
+	VulkanTextureDepthBuffer(VulkanRenderer& renderer, 
 		VkFormat depthFormat, int width, int height);
 };
 
-class VulkanTextureManager {
-public:
-	VulkanTextureManager(VulkanRenderer& renderer);
-	~VulkanTextureManager();
+// class VulkanTextureManager {
+// public:
+// 	VulkanTextureManager(VulkanRenderer& renderer);
+// 	~VulkanTextureManager();
 
-	std::shared_ptr<VulkanTexture2D> CreateTexture2D(
-		std::shared_ptr<Texture> texture,
-		VkFormat format,
-		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
-		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		bool forceLinear = false,
-		bool genMipMaps = false,
-		int mipMapLevelsToGen = 1,
-		bool wrapBorder = true);
+// 	std::shared_ptr<VulkanTexture2D> CreateTexture2D(
+// 		Resource::Texture::TexID texture,
+// 		VkFormat format,
+// 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
+// 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+// 		bool forceLinear = false,
+// 		bool genMipMaps = false,
+// 		int mipMapLevelsToGen = 1,
+// 		bool wrapBorder = true);
 
-	std::shared_ptr<VulkanTexture2DArray> CreateTexture2DArray(
-		std::shared_ptr<TextureArray> textures,
-		VkFormat format,
-		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
-		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		bool genMipMaps = false,
-		int mipMapLevelsToGen = 1);
+// 	std::shared_ptr<VulkanTexture2DArray> CreateTexture2DArray(
+// 		Resource::Texture::TexID textures,
+// 		VkFormat format,
+// 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
+// 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+// 		bool genMipMaps = false,
+// 		int mipMapLevelsToGen = 1);
 
-	std::shared_ptr<VulkanCubeMap> CreateCubeMap(
-		std::shared_ptr<CubeMap> cubeMap,
-		VkFormat format,
-		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
-		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		bool genMipMaps = false,
-		int mipMapLevelsToGen = 1);
+// 	std::shared_ptr<VulkanCubeMap> CreateCubeMap(
+// 		Resource::Texture::TexID cubeMap,
+// 		VkFormat format,
+// 		VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
+// 		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+// 		bool genMipMaps = false,
+// 		int mipMapLevelsToGen = 1);
 
-	std::shared_ptr<VulkanTextureDepthBuffer> VulkanTextureDepthBuffer(
-		VkFormat depthFormat, int width, int height);
+// 	std::shared_ptr<VulkanTextureDepthBuffer> VulkanTextureDepthBuffer(
+// 		VkFormat depthFormat, int width, int height);
 
-private:
-	VulkanRenderer& renderer;
+// private:
+// 	VulkanRenderer& renderer;
 
-	std::vector<std::shared_ptr<VulkanTexture>> vulkanTextures;
-};
+// 	std::vector<std::shared_ptr<VulkanTexture>> vulkanTextures;
+// };
+
+static void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image,
+	VkImageLayout finalImageLayout,
+	int width, int height, int depth,
+	int layers, int mipLevels);
+
+static void SetLayoutAndTransferRegions(
+	VkCommandBuffer transferCmdBuf, VkImage image, VkBuffer stagingBuffer,
+	const VkImageSubresourceRange subresourceRange,
+	std::vector<VkBufferImageCopy> bufferCopyRegions);
+
+static void BeginTransferAndMipMapGenWork(
+	VulkanRenderer & renderer,
+	std::shared_ptr<VulkanBuffer> buffer,
+	const VkImageSubresourceRange subresourceRange,
+	const std::vector<VkBufferImageCopy> bufferCopyRegions,
+	VkImageLayout imageLayout,
+	VkImage image,
+	VkBuffer vk_buffer,
+	int width,
+	int height,
+	int depth,
+	Signal signal,
+	int layers,
+	int mipLevels);

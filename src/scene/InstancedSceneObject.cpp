@@ -41,7 +41,7 @@ void InstancedSceneObject::LoadModel(std::shared_ptr<Mesh> mesh) {
 	this->mesh = mesh;
 }
 
-void InstancedSceneObject::LoadTexture(std::shared_ptr<Texture> tex) {
+void InstancedSceneObject::LoadTexture(Resource::Texture::TexID tex) {
 	this->texture = tex;
 }
 
@@ -81,7 +81,7 @@ void InstancedSceneObject::SetupUniformBuffer() {
 
 void InstancedSceneObject::SetupImage() {
 	//NOTE: long parameter lists of bools & ints are a bad idea (implicit casting between them makes making mistakes easy)
-	vulkanTexture = std::make_unique<VulkanTexture2D>(renderer.device, texture, VK_FORMAT_R8G8B8A8_UNORM, renderer,
+	vulkanTexture = std::make_unique<VulkanTexture2D>(renderer, texture, VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		false, true, 8);
 }

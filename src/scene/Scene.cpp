@@ -10,7 +10,7 @@
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
 
-Scene::Scene(ResourceManager& resourceMan,
+Scene::Scene(Resource::ResourceManager& resourceMan,
 	VulkanRenderer& renderer,
 	TimeManager& timeManager,
 	InternalGraph::GraphPrototype& graph) :
@@ -41,7 +41,7 @@ Scene::Scene(ResourceManager& resourceMan,
 	//pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 
 	skybox = std::make_unique<Skybox>(renderer);
-	skybox->skyboxCubeMap = resourceMan.texManager.loadCubeMapFromFile("assets/textures/Skybox/Skybox2", ".png");
+	skybox->skyboxCubeMap = resourceMan.texManager.GetTexIDByName("Skybox2");
 	skybox->model = std::make_shared<VulkanModel>(renderer, createCube());
 	skybox->InitSkybox();
 
@@ -304,7 +304,7 @@ void Scene::UpdateSceneGUI() {
 			sphereObject->pbr_mat.metallic = 0.1f + (float)5 / 10.0f;
 			sphereObject->pbr_mat.roughness = 0.1f + (float)5 / 10.0f;
 
-			sphereObject->gameObjectTexture = resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/Red.png");
+			sphereObject->gameObjectTexture = resourceMan.texManager.GetTexIDByName("Red.png");
 			sphereObject->InitGameObject();
 			gameObjects.push_back(std::move(sphereObject));
 		}

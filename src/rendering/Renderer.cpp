@@ -203,7 +203,7 @@ void VulkanRenderer::CreateRenderPass() {
 void VulkanRenderer::CreateDepthResources() {
 	VkFormat depthFormat = FindDepthFormat();
 	depthFormat = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
-	depthBuffer = std::make_unique<VulkanTextureDepthBuffer>(device, *this, depthFormat,
+	depthBuffer = std::make_unique<VulkanTextureDepthBuffer>(*this, depthFormat,
 		vulkanSwapChain.swapChainExtent.width,
 		vulkanSwapChain.swapChainExtent.height);
 }
