@@ -26,7 +26,7 @@ IndentFunctionDeclarationAfterType: false
 IndentWidth: 4
 Language: Cpp
 MaxEmptyLinesToKeep: 4
-NamespaceIndentation: All
+NamespaceIndentation: None
 PenaltyBreakBeforeFirstCallParameter: 100
 PenaltyBreakComment: 100
 PenaltyBreakFirstLessLess: 0

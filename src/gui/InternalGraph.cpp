@@ -920,10 +920,10 @@ namespace InternalGraph {
 			{
 				glm::vec4 val = glm::normalize(std::get<glm::vec4>(outputNode->GetSplatMapValue(x, z)));
 				//Resource::Texture::Pixel_RGBA pixel = Resource::Texture::Pixel_RGBA(
-				std::byte r = static_cast<std::byte>(glm::clamp(val.x, 0.0f, 1.0f) * 255.0);
-				std::byte g = static_cast<std::byte>(glm::clamp(val.y, 0.0f, 1.0f) * 255.0);
-				std::byte b = static_cast<std::byte>(glm::clamp(val.z, 0.0f, 1.0f) * 255.0);
-				std::byte a = static_cast<std::byte>(glm::clamp(val.w, 0.0f, 1.0f) * 255.0);
+				std::byte r = static_cast<std::byte>(static_cast<uint8_t>(glm::clamp(val.x, 0.0f, 1.0f) * 255.0f));
+				std::byte g = static_cast<std::byte>(static_cast<uint8_t>(glm::clamp(val.y, 0.0f, 1.0f) * 255.0f));
+				std::byte b = static_cast<std::byte>(static_cast<uint8_t>(glm::clamp(val.z, 0.0f, 1.0f) * 255.0f));
+				std::byte a = static_cast<std::byte>(static_cast<uint8_t>(glm::clamp(val.w, 0.0f, 1.0f) * 255.0f));
 
 				outputSplatmap.at(i++) = r;
 				outputSplatmap.at(i++) = g;

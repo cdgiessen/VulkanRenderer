@@ -41,7 +41,7 @@ Scene::Scene(Resource::ResourceManager& resourceMan,
 	//pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 
 	skybox = std::make_unique<Skybox>(renderer);
-	skybox->skyboxCubeMap = resourceMan.texManager.GetTexIDByName("Skybox2");
+	skybox->skyboxCubeMap = resourceMan.texManager.GetTexIDByName("Skybox");
 	skybox->model = std::make_shared<VulkanModel>(renderer, createCube());
 	skybox->InitSkybox();
 
