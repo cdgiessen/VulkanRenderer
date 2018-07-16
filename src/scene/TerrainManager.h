@@ -56,7 +56,7 @@ struct TerrainCreationData {
 	Resource::ResourceManager& resourceMan;
 	VulkanRenderer& renderer;
 	glm::vec3 cameraPos;
-	Resource::Texture::TexID terrainVulkanTextureArray;
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArray;
 	InternalGraph::GraphPrototype& protoGraph;
 	int numCells; int maxLevels;
 	int sourceImageResolution;
@@ -67,7 +67,7 @@ struct TerrainCreationData {
 		Resource::ResourceManager& resourceMan,
 		VulkanRenderer& renderer,
 		glm::vec3 cameraPos,
-		Resource::Texture::TexID terrainVulkanTextureArray,
+		std::shared_ptr<VulkanTexture> terrainVulkanTextureArray,
 		InternalGraph::GraphPrototype& protoGraph,
 		int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord);
 };
@@ -175,7 +175,7 @@ private:
 	std::shared_ptr<Mesh> WaterMesh;
 
 	Resource::Texture::TexID terrainTextureArray;
-	std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray;
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArray;
 
 	std::vector<std::thread> terrainCreationWorkers;
 

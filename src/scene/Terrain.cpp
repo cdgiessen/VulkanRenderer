@@ -152,14 +152,14 @@ Terrain::Terrain(VulkanRenderer& renderer,
 
 
 
-	std::byte* imgData = fastGraphUser.GetSplatMap().GetByteDataPtr();
+	splatMapData = fastGraphUser.GetSplatMapPtr();
+	splatMapSize = glm::pow(coords.sourceImageResolution + 1,2);
 
 
-
-	terrain->terrainSplatMap = man->resourceMan.
-		texManager.LoadTextureFromDataPtr(
-			data->sourceImageResolution + 1,
-			data->sourceImageResolution + 1, imgData);
+	// terrain->terrainSplatMap = man->resourceMan.
+	// 	texManager.LoadTextureFromDataPtr(
+	// 		data->sourceImageResolution + 1,
+	// 		data->sourceImageResolution + 1, splatMapData);
 }
 
 Terrain::~Terrain() {
@@ -170,7 +170,7 @@ int Terrain::FindEmptyIndex() {
 	return curEmptyIndex++; //always gets an index one higher
 }
 
-void Terrain::InitTerrain(glm::vec3 cameraPos, std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray)
+void Terrain::InitTerrain(glm::vec3 cameraPos, std::shared_ptr<VulkanTexture> terrainVulkanTextureArray)
 {
 	SetupMeshbuffers();
 	SetupUniformBuffer();
@@ -246,19 +246,24 @@ void Terrain::SetupUniformBuffer()
 
 void Terrain::SetupImage()
 {
-	if (terrainSplatMap != nullptr) {
-		terrainVulkanSplatMap = std::make_unique<VulkanTexture2D>(renderer,
-			terrainSplatMap, VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, false, 1, false);
+	if(splatMapData != nullptr){
+		TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM, 
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			false, 1);
+		terrainVulkanSplatMap = renderer.textureManager.CreateTextureFromData(
+			details, splatMapData, splatMapSize );
+	} else {
+		throw std::runtime_error("failed to get terrain splat map data!");
 	}
-	else {
-		throw std::runtime_error("failed to load terrain splat map!");
-
-	}
+	//if (terrainSplatMap != nullptr) {
+	//}
+	//else {
+	//	throw std::runtime_error("failed to load terrain splat map!");
+//
+	//}
 }
 
-void Terrain::SetupDescriptorSets(std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray)
+void Terrain::SetupDescriptorSets(std::shared_ptr<VulkanTexture> terrainVulkanTextureArray)
 {
 	descriptor = renderer.GetVulkanDescriptor();
 

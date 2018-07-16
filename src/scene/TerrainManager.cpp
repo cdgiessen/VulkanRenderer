@@ -17,7 +17,7 @@ TerrainCreationData::TerrainCreationData(
 	Resource::ResourceManager& resourceMan,
 	VulkanRenderer& renderer,
 	glm::vec3 cameraPos,
-	Resource::Texture::TexID terrainVulkanTextureArray,
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArray,
 	InternalGraph::GraphPrototype& protoGraph,
 	int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord) :
 
@@ -201,25 +201,26 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
 	}
 	LoadSettingsFromFile();
 
-	for (auto& item : terrainTextureFileNames) {
-		terrainTextureHandles.push_back(
-			TerrainTextureNamedHandle(
-				item,
-				resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/TerrainTextures/" + item)));
-	}
+	//for (auto& item : terrainTextureFileNames) {
+	//	terrainTextureHandles.push_back(
+	//		TerrainTextureNamedHandle(
+	//			item,
+	//			resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/TerrainTextures/" + item)));
+	//}
 
-	terrainTextureArray = resourceMan.texManager.loadTextureArrayFromFile("assets/textures/TerrainTextures/", terrainTextureFileNames);
-
-	terrainVulkanTextureArray = std::make_shared<VulkanTexture2DArray>(renderer, terrainTextureArray, VK_FORMAT_R8G8B8A8_UNORM,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
+	terrainTextureArray = resourceMan.texManager.GetTexIDByName("terrain");
+	TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM, 
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		true, 4);
+	terrainVulkanTextureArray = renderer.textureManager.CreateTexture2DArray(
+		terrainTextureArray, details);
 
 	instancedWaters = std::make_unique<InstancedSceneObject>(renderer);
 	instancedWaters->SetFragmentShaderToUse("assets/shaders/water.frag.spv");
 	instancedWaters->SetBlendMode(VK_TRUE);
 	instancedWaters->SetCullMode(VK_CULL_MODE_NONE);
 	instancedWaters->LoadModel(createFlatPlane(settings.numCells, glm::vec3(1, 0, 1)));
-	instancedWaters->LoadTexture(resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/TileableWaterTexture.jpg"));
+	instancedWaters->LoadTexture(resourceMan.texManager.GetTexIDByName("TileableWaterTexture"));
 
 	instancedWaters->InitInstancedSceneObject();
 

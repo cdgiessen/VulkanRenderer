@@ -912,20 +912,23 @@ namespace InternalGraph {
 			}
 		}
 
-		outputSplatmap = NoiseImage2D<Resource::Texture::Pixel_RGBA>(cellsWide);
-
+		outputSplatmap = std::vector<std::byte>(cellsWide * cellsWide * 4);
+		int i = 0;
 		for (int x = 0; x < cellsWide; x++)
 		{
 			for (int z = 0; z < cellsWide; z++)
 			{
 				glm::vec4 val = glm::normalize(std::get<glm::vec4>(outputNode->GetSplatMapValue(x, z)));
-				Resource::Texture::Pixel_RGBA pixel = Resource::Texture::Pixel_RGBA(
-					(std::byte)(glm::clamp(val.x, 0.0f, 1.0f) * 255),
-					(std::byte)(glm::clamp(val.y, 0.0f, 1.0f) * 255),
-					(std::byte)(glm::clamp(val.z, 0.0f, 1.0f) * 255),
-					(std::byte)(glm::clamp(val.w, 0.0f, 1.0f) * 255));
+				//Resource::Texture::Pixel_RGBA pixel = Resource::Texture::Pixel_RGBA(
+				std::byte r = static_cast<std::byte>(glm::clamp(val.x, 0.0f, 1.0f) * 255.0);
+				std::byte g = static_cast<std::byte>(glm::clamp(val.y, 0.0f, 1.0f) * 255.0);
+				std::byte b = static_cast<std::byte>(glm::clamp(val.z, 0.0f, 1.0f) * 255.0);
+				std::byte a = static_cast<std::byte>(glm::clamp(val.w, 0.0f, 1.0f) * 255.0);
 
-				outputSplatmap.SetPixelValue(z, x, pixel);
+				outputSplatmap.at(i++) = r;
+				outputSplatmap.at(i++) = g;
+				outputSplatmap.at(i++) = b;
+				outputSplatmap.at(i++) = a;
 			}
 		}
 
@@ -944,8 +947,8 @@ namespace InternalGraph {
 
 	}
 
-	NoiseImage2D<Resource::Texture::Pixel_RGBA>& GraphUser::GetSplatMap() {
-		return outputSplatmap;
+	std::byte* GraphUser::GetSplatMapPtr() {
+		return outputSplatmap.data();
 
 	}
 

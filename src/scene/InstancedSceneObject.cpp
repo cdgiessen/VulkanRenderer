@@ -80,10 +80,10 @@ void InstancedSceneObject::SetupUniformBuffer() {
 }
 
 void InstancedSceneObject::SetupImage() {
-	//NOTE: long parameter lists of bools & ints are a bad idea (implicit casting between them makes making mistakes easy)
-	vulkanTexture = std::make_unique<VulkanTexture2D>(renderer, texture, VK_FORMAT_R8G8B8A8_UNORM,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		false, true, 8);
+	TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM, 
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		true, 8);
+	vulkanTexture = renderer.textureManager.CreateTexture2D(texture, details);
 }
 
 void InstancedSceneObject::SetupModel() {

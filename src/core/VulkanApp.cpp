@@ -72,7 +72,7 @@ VulkanApp::VulkanApp() :
 		glm::ivec2(settings.screenWidth, settings.screenHeight),
 		glm::ivec2(10, 10)),
 	resourceManager(),
-	vulkanRenderer(settings.useValidationLayers, window),
+	vulkanRenderer(settings.useValidationLayers, window, resourceManager),
 	imgui_nodeGraph_terrain(),
 	scene(resourceManager, vulkanRenderer,
 		timeManager, imgui_nodeGraph_terrain.GetGraph())

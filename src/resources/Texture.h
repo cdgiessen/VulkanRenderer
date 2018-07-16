@@ -94,18 +94,18 @@ enum class ChannelType
 	rgba, //STBI_rgb_alpha = 4
 };
 
-struct FileDescription {
-	LayoutType layout;
-	FormatType format;
-	ChannelType channel;
-	std::string fileName;
+// struct FileDescription {
+// 	LayoutType layout;
+// 	FormatType format;
+// 	ChannelType channel;
+// 	std::string fileName;
 
-	FileDescription(LayoutType layout, 
-		FormatType format, ChannelType channel,
-		std::string fileName):
-		layout(layout), format(format), 
-		channel(channel), fileName(fileName) {}
-};
+// 	FileDescription(LayoutType layout, 
+// 		FormatType format, ChannelType channel,
+// 		std::string fileName):
+// 		layout(layout), format(format), 
+// 		channel(channel), fileName(fileName) {}
+// };
 
 class TexData{
 public:
@@ -119,16 +119,23 @@ private:
 
 class TexResource {
 public:
-	TexResource(TexID id, FileDescription fileDesc,
+	TexResource(){};
+	TexResource(TexID id, std::string name, LayoutType layout, 
+		ChannelType channels, FormatType format,
 		DataDescription dataDesc) : 
-		id(id), fileDescription(fileDesc), dataDescription(dataDesc) {}
+		id(id), name(name),
+		layout(layout), channels(channels), fileFormatType(format),
+		dataDescription(dataDesc) {}
 
 	nlohmann::json to_json() const;
 	void SetDataPtr(TexData* texData);
 	std::byte* GetByteDataPtr();
 
 	TexID id;
-	FileDescription fileDescription;
+	std::string name;
+	LayoutType layout;
+	ChannelType channels;
+	FormatType fileFormatType;
 	DataDescription dataDescription;
 private:
 	TexData* dataPtr = nullptr;
@@ -184,13 +191,10 @@ public:
 	void LoadTextureList();
 	void SaveTextureList();
 
-	TexID CreateNewTexture(FileDescription fileDescription,
-		DataDescription dataDescription);
+	TexID GetNextFreeTexID();
 
+	void LoadTextureFromFile(TexID id); 
 
-	void LoadTextureFromFile(TexID id);
-	void LoadTextureFromDataPtr(TexID id, std::byte* data);
-	
 	TexID GetTexIDByName(std::string s);
 	TexResource GetTexResourceByID(int id);
 	

@@ -1,9 +1,10 @@
 #include "Renderer.h"
 
+#include <fstream>
+
 #include "Initializers.h"
 
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
-
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../../third-party/stb_image/stb_image_write.h"
@@ -15,10 +16,9 @@
 
 #include "../scene/Scene.h"
 
-
+#include "../resources/ResourceManager.h"
 
 #include <json.hpp>
-#include <fstream>
 
 RenderSettings::RenderSettings(std::string fileName) : fileName(fileName) {
 	Load();
@@ -63,14 +63,14 @@ void RenderSettings::Save() {
 }
 
 VulkanRenderer::VulkanRenderer(bool validationLayer,
-	Window& window)
+	Window& window, Resource::ResourceManager& resourceMan)
 
 	:settings("render_settings.json"),
 	device(validationLayer, window),
 	vulkanSwapChain(device, device.window),
 	shaderManager(device),
 	pipelineManager(device),
-	//textureManager(device),
+	textureManager(*this, resourceMan.texManager),
 	graphicsPrimaryCommandPool(device,
 		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue())
 
@@ -203,7 +203,7 @@ void VulkanRenderer::CreateRenderPass() {
 void VulkanRenderer::CreateDepthResources() {
 	VkFormat depthFormat = FindDepthFormat();
 	depthFormat = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
-	depthBuffer = std::make_unique<VulkanTextureDepthBuffer>(*this, depthFormat,
+	depthBuffer = textureManager.CreateDepthImage(depthFormat,
 		vulkanSwapChain.swapChainExtent.width,
 		vulkanSwapChain.swapChainExtent.height);
 }

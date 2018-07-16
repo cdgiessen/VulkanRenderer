@@ -74,7 +74,7 @@ namespace InternalGraph {
 
 	template<typename T>
 	std::byte* NoiseImage2D<T>::GetByteDataPtr(){
-		return static_cast<std::byte>(data.data());
+		return static_cast<std::byte*>(data.data());
 	}
 
 	
@@ -250,7 +250,7 @@ namespace InternalGraph {
 		const float SampleHeightMap(const float x, const float z) const;
 		NoiseImage2D<float>& GetHeightMap();
 
-		NoiseImage2D<Resource::Texture::Pixel_RGBA>& GetSplatMap();
+		std::byte*  GetSplatMapPtr();
 
 		NoiseImage2D<uint8_t>& GetVegetationDensityMap();
 
@@ -261,7 +261,7 @@ namespace InternalGraph {
 		NoiseSourceInfo info;
 
 		NoiseImage2D<float> outputHeightMap;
-		NoiseImage2D<Resource::Texture::Pixel_RGBA> outputSplatmap;
+		std::vector<std::byte> outputSplatmap;
 
 		NoiseImage2D<uint8_t> vegetationDensityMap;
 	};

@@ -48,7 +48,7 @@ Scene::Scene(Resource::ResourceManager& resourceMan,
 	//std::shared_ptr<GameObject> cubeObject = std::make_shared<GameObject>(renderer);
 	//cubeObject->gameObjectModel = std::make_shared<VulkanModel>(renderer.device);
 	//cubeObject->LoadModel(createCube());
-	//cubeObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer.device);
+	//cubeObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture>(renderer.device);
 	//cubeObject->gameObjectTexture = resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/ColorGradientCube.png");
 	////cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
 	//cubeObject->InitGameObject();
@@ -66,7 +66,7 @@ Scene::Scene(Resource::ResourceManager& resourceMan,
 	//		sphereObject->pbr_mat.metallic = 0.1f + (float)i / 10.0f;
 	//		sphereObject->pbr_mat.roughness = 0.1f + (float)j / 10.0f;
 
-	//		//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer.device);
+	//		//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture>(renderer.device);
 	//		//sphereObject->gameObjectTexture = resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/Red.png");
 	//		sphereObject->InitGameObject();
 	//		gameObjects.push_back(sphereObject);
@@ -86,7 +86,7 @@ Scene::Scene(Resource::ResourceManager& resourceMan,
 	//		sphereObject->phong_mat.specular = (float)j / 6;
 	//		sphereObject->phong_mat.reflectivity = 128;
 	//		sphereObject->phong_mat.color = glm::vec4(1.0, 0.3, 0.3, 1.0);
-	//		//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture2D>(renderer.device);
+	//		//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture>(renderer.device);
 	//		//sphereObject->gameObjectTexture = resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/Red.png");
 	//		sphereObject->InitGameObject();
 	//		gameObjects.push_back(sphereObject);

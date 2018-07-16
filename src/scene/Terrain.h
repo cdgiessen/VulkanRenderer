@@ -134,8 +134,9 @@ public:
 
 	DescriptorSet descriptorSet;
 
-	Resource::Texture::TexID terrainSplatMap;
-	std::unique_ptr<VulkanTexture2D> terrainVulkanSplatMap;
+	std::byte* splatMapData;
+	int splatMapSize;
+	std::shared_ptr<VulkanTexture> terrainVulkanSplatMap;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 	//TerrainPushConstant modelMatrixData;
@@ -153,7 +154,7 @@ public:
 	~Terrain();
 
 	void InitTerrain(glm::vec3 cameraPos,
-		std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray);
+		std::shared_ptr<VulkanTexture> terrainVulkanTextureArray);
 
 	void UpdateTerrain(glm::vec3 viewerPos);
 	void DrawTerrain(VkCommandBuffer cmdBuff, bool wireframe);
@@ -174,7 +175,7 @@ private:
 	void SetupImage();
 	void SetupPipeline();
 
-	void SetupDescriptorSets(std::shared_ptr<VulkanTexture2DArray> terrainVulkanTextureArray);
+	void SetupDescriptorSets(std::shared_ptr<VulkanTexture> terrainVulkanTextureArray);
 
 	void UpdateMeshBuffer();
 

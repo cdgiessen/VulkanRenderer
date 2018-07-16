@@ -91,7 +91,7 @@ private:
 	std::shared_ptr<VulkanModel> vulkanModel;
 
 	Resource::Texture::TexID texture;
-	std::unique_ptr<VulkanTexture2D> vulkanTexture;
+	std::shared_ptr<VulkanTexture> vulkanTexture;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 

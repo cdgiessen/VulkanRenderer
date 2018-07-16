@@ -23,7 +23,10 @@ void Skybox::SetupUniformBuffer() {
 }
 
 void Skybox::SetupCubeMapImage() {
-	vulkanCubeMap = std::make_unique<VulkanCubeMap>(renderer.device, skyboxCubeMap, VK_FORMAT_R8G8B8A8_UNORM, renderer);
+	TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM, 
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		true, 4);
+	vulkanCubeMap = renderer.textureManager.CreateCubeMap(skyboxCubeMap, details);
 }
 
 void Skybox::SetupDescriptor() {

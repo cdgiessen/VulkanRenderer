@@ -35,7 +35,7 @@ public:
 	std::shared_ptr<VulkanModel> model;
 
 	Resource::Texture::TexID skyboxCubeMap;
-	std::shared_ptr<VulkanCubeMap> vulkanCubeMap;
+	std::shared_ptr<VulkanTexture> vulkanCubeMap;
 
 	std::shared_ptr<VulkanBufferUniform> skyboxUniformBuffer;
 

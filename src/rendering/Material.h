@@ -103,7 +103,7 @@ public:
 	void SetShaders(ShaderModuleSet set);
 
 	void AddTexture(std::shared_ptr<VulkanTexture> tex);
-	void AddTextureArray(std::shared_ptr<VulkanTexture2DArray> texArr);
+	void AddTextureArray(std::shared_ptr<VulkanTexture> texArr);
 	void AddValue(MaterialOptions value);
 
 	void AddMaterialDataSlot(MaterialDataSlot slot);
@@ -125,7 +125,7 @@ private:
 	std::vector<MaterialDataSlot> dataSlots;
 
 	std::vector<std::shared_ptr<VulkanTexture>> textures;
-	std::vector<std::shared_ptr<VulkanTexture2DArray>> textureArrays;
+	std::vector<std::shared_ptr<VulkanTexture>> textureArrays;
 	std::vector<MaterialOptions> value_var;
 	std::shared_ptr<VulkanBufferUniform> value_data;
 

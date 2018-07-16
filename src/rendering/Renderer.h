@@ -12,19 +12,24 @@
 #include <vulkan/vulkan.h>
 
 #include "../core/CoreTools.h"
+#include "../util/ConcurrentQueue.h"
 
 #include "RenderTools.h"
 #include "RenderStructs.h"
-#include "Device.h"
+#include "Wrappers.h"
 #include "Buffer.h"
-#include "Pipeline.h"
-#include "Shader.h"
+#include "Device.h"
 #include "SwapChain.h"
+#include "Shader.h"
+#include "Pipeline.h"
 #include "Texture.h"
 #include "Descriptor.h"
 #include "RenderPass.h"
 
+class Window;
 class Scene;
+
+namespace Resource { class ResourceManager;}
 
 class RenderSettings {
 public:
@@ -48,7 +53,8 @@ private:
 class VulkanRenderer
 {
 public:
-	VulkanRenderer(bool enableValidationLayer, Window& window);
+	VulkanRenderer(bool enableValidationLayer, 
+		Window& window, Resource::ResourceManager& resourceMan);
 
 	VulkanRenderer(const VulkanRenderer& other) = delete; //copy
 	VulkanRenderer(VulkanRenderer&& other) = delete; //move
@@ -110,7 +116,7 @@ public:
 
 	ShaderManager shaderManager;
 	VulkanPipeline pipelineManager;
-	//VulkanTextureManager textureManager;
+	VulkanTextureManager textureManager;
 
 	Scene* scene;
 
@@ -141,7 +147,7 @@ private:
 	DescriptorSet dynamicTransformDescriptorSet;
 	std::unique_ptr<VulkanBufferUniformDynamic> dynamicTransformBuffer;
 
-	std::unique_ptr<VulkanTextureDepthBuffer> depthBuffer;
+	std::shared_ptr<VulkanTexture> depthBuffer;
 
 	int workerThreadCount = 3;
 

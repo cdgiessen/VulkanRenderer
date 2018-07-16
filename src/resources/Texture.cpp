@@ -53,29 +53,26 @@ std::string formatTypeToString(FormatType type){
 nlohmann::json TexResource::to_json() const{
 	nlohmann::json j;
 	j["id"] = id;
-	switch(fileDescription.layout){
-		case(LayoutType::single1D): j["fileDescription"]["layout"] = "single1D"; break;
-		case(LayoutType::single2D): j["fileDescription"]["layout"] = "single2D"; break;
-		case(LayoutType::single3D): j["fileDescription"]["layout"] = "single3D"; break;
-		case(LayoutType::array1D): j["fileDescription"]["layout"] = "array1D"; break;
-		case(LayoutType::array2D): j["fileDescription"]["layout"] = "array2D"; break;
-		case(LayoutType::array3D): j["fileDescription"]["layout"] = "array3D"; break;
-		case(LayoutType::cubemap2D): j["fileDescription"]["layout"] = "cubemap2D"; break;
+	switch(layout){
+		case(LayoutType::single1D): j["layout"] = "single1D"; break;
+		case(LayoutType::single2D): j["layout"] = "single2D"; break;
+		case(LayoutType::single3D): j["layout"] = "single3D"; break;
+		case(LayoutType::array1D): j["layout"] = "array1D"; break;
+		case(LayoutType::array2D): j["layout"] = "array2D"; break;
+		case(LayoutType::array3D): j["layout"] = "array3D"; break;
+		case(LayoutType::cubemap2D): j["layout"] = "cubemap2D"; break;
 	}
-	switch(fileDescription.format){
-		case(FormatType::png): j["fileDescription"]["format"] = "png"; break;
-		case(FormatType::jpg): j["fileDescription"]["format"] = "jpg"; break;
+	switch(fileFormatType){
+		case(FormatType::png): j["format"] = "png"; break;
+		case(FormatType::jpg): j["format"] = "jpg"; break;
 	}
-	switch(fileDescription.channel){
-		case(ChannelType::grey): j["fileDescription"]["channels"] = "grey"; break;
-		case(ChannelType::grey_alpha): j["fileDescription"]["channels"] = "grey_alpha"; break;
-		case(ChannelType::rgb): j["fileDescription"]["channels"] = "rgb"; break;
-		case(ChannelType::rgba): j["fileDescription"]["channels"] = "rgba"; break;
+	switch(channels){
+		case(ChannelType::grey): j["channels"] = "grey"; break;
+		case(ChannelType::grey_alpha): j["channels"] = "grey_alpha"; break;
+		case(ChannelType::rgb): j["channels"] = "rgb"; break;
+		case(ChannelType::rgba): j["channels"] = "rgba"; break;
 	}
-	//j["fileDescription"]["layout"] = to_string(fileDescription.layout);
-	//j["fileDescription"]["format"] = to_string(fileDescription.format);
-	//j["fileDescription"]["channels"] = to_string(fileDescription.channel);
-	j["fileDescription"]["fileName"] = fileDescription.fileName;
+	j["name"] = name;
 	j["dataDescription"]["channels"] = dataDescription.channels;
 	j["dataDescription"]["width"] = dataDescription.width;
 	j["dataDescription"]["height"] = dataDescription.height;
@@ -85,26 +82,27 @@ nlohmann::json TexResource::to_json() const{
 	return j;
 }
 
-std::tuple<TexID,FileDescription,DataDescription> from_json_TexResource(nlohmann::json j){
+//std::tuple<TexID,std::string, LayoutType, 
+//		ChannelType, FormatType,DataDescription> 		
+TexResource from_json_TexResource(nlohmann::json j){
 	int id = j["id"];
 
 	LayoutType layout;
-	if(j["fileDescription"]["layout"] == "single1D") layout = LayoutType::single1D;
-	if(j["fileDescription"]["layout"] == "single2D") layout = LayoutType::single2D;
-	if(j["fileDescription"]["layout"] == "single3D") layout = LayoutType::single3D;
-	if(j["fileDescription"]["layout"] == "array1D") layout = LayoutType::array1D;
-	if(j["fileDescription"]["layout"] == "array2D") layout = LayoutType::array2D;
-	if(j["fileDescription"]["layout"] == "array3D") layout = LayoutType::array3D;
-	if(j["fileDescription"]["layout"] == "cubemap2D") layout = LayoutType::cubemap2D;
+	if(j["layout"] == "single1D") layout = LayoutType::single1D;
+	else if(j["layout"] == "single2D") layout = LayoutType::single2D;
+	else if(j["layout"] == "single3D") layout = LayoutType::single3D;
+	else if(j["layout"] == "array1D") layout = LayoutType::array1D;
+	else if(j["layout"] == "array2D") layout = LayoutType::array2D;
+	else if(j["layout"] == "array3D") layout = LayoutType::array3D;
+	else if(j["layout"] == "cubemap2D") layout = LayoutType::cubemap2D;
 	FormatType format;
-	if(j["fileDescription"]["format"] == "png") format = FormatType::png;
-	if(j["fileDescription"]["format"] == "jpg") format = FormatType::jpg;
-	ChannelType channel;
-	if(j["fileDescription"]["channels"] == "grey") channel = ChannelType::grey;
-	if(j["fileDescription"]["channels"] == "grey_alpha") channel = ChannelType::grey_alpha;
-	if(j["fileDescription"]["channels"] == "rgb") channel = ChannelType::rgb;
-	std::string fileName = j["fileDescription"]["fileName"];
-	FileDescription fileDesc(layout, format, channel, fileName);
+	if(j["format"] == "png") format = FormatType::png;
+	else if(j["format"] == "jpg") format = FormatType::jpg;
+	ChannelType channelType;
+	if(j["channels"] == "grey") channelType = ChannelType::grey;
+	else if(j["channels"] == "grey_alpha") channelType = ChannelType::grey_alpha;
+	else if(j["channels"] == "rgb") channelType = ChannelType::rgb;
+	std::string name = j["name"];
 
 	uint32_t channels = j["dataDescription"]["channels"]; 
 	uint32_t width = j["dataDescription"]["width"]; 
@@ -113,7 +111,10 @@ std::tuple<TexID,FileDescription,DataDescription> from_json_TexResource(nlohmann
 	uint32_t layers = j["dataDescription"]["layers"]; 
 	DataDescription dataDesc(channels, width, height, depth, layers);
 	
-	return std::tuple<TexID,FileDescription,DataDescription>(id, fileDesc, dataDesc);
+	return TexResource(id, name, layout, channelType, format, dataDesc);
+
+	//return std::tuple<TexID, std::string, LayoutType, 
+	//	ChannelType, FormatType,DataDescription>(id, fileName, layout, channel, format, dataDesc);
 }
 
 std::byte* TexResource::GetByteDataPtr(){
@@ -193,6 +194,10 @@ Manager::~Manager()
 {
 }
 
+TexID Manager::GetNextFreeTexID(){
+	return id_counter++;
+}
+
 void Manager::LoadTextureList() {
 	nlohmann::json j;
 	
@@ -213,15 +218,11 @@ void Manager::LoadTextureList() {
 	}
 
 	try{
-		int num_texs = j["num_textures"];
-		int i = 0;
-		for (; i < num_texs; i++) {	
-			auto [id, f, d] = from_json_TexResource(j[i]);
-			textureResources[i] = TexResource(id, f, d);
-			textureResources[i].id = i;
+		for (int i = id_counter; i < j.size(); i++) {	
+			textureResources[i] = from_json_TexResource(j[std::to_string(i)]);
 			LoadTextureFromFile(i);
+			id_counter = textureResources[i].id;
 		}
-		id_counter = i;
 	}
 	catch(std::runtime_error e){
 		Log::Debug << "Error loading texture list " << std::string(e.what())<<  "\n";
@@ -230,7 +231,6 @@ void Manager::LoadTextureList() {
 
 void Manager::SaveTextureList() {
 	nlohmann::json j;
-	int num_texs = textureResources.size();
 	for (auto const&[key, val] : textureResources) {	
 		j[key] = val.to_json();
 	}
@@ -238,12 +238,6 @@ void Manager::SaveTextureList() {
 	std::ofstream outFile("assets/TextureList.json");
 	outFile << std::setw(4) << j;
 	outFile.close();
-}
-
-TexID Manager::CreateNewTexture(FileDescription fileDescription,
-		DataDescription dataDescription)
-{
-
 }
 
 void Manager::LoadTextureFromFile(TexID id){
@@ -255,17 +249,24 @@ void Manager::LoadTextureFromFile(TexID id){
 	int desiredChannels = texRes.dataDescription.channels;
 
 	for(int i = 0 ; i < texRes.dataDescription.layers; i++){
-		std::string path = std::string("assets/textures/")
-			+ texRes.fileDescription.fileName 
+		std::string path;
+		if (texRes.dataDescription.layers != 1){
+			path = std::string("assets/textures/") + texRes.name 
 			+ std::string("_") + std::to_string(i) + std::string(".")
-			+ formatTypeToString(texRes.fileDescription.format);
+			+ formatTypeToString(texRes.fileFormatType);
+			
+		} else {
+			path = std::string("assets/textures/") + texRes.name 
+			+ std::string(".") + formatTypeToString(texRes.fileFormatType);
+		}
 
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels;
 		pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, desiredChannels);
 	
 		if (pixels == nullptr) {
-			Log::Error << "Image failed to load! Was the name correct?\n";
+
+			Log::Error << "Image failed to load! Was the name correct? " << path.c_str() << "\n";
 		} 
 		else if (desiredChannels != texChannels){
 			Log::Error << "Image couldn't load desired channel of " 
@@ -282,16 +283,20 @@ void Manager::LoadTextureFromFile(TexID id){
 	
 }
 
-void Manager::LoadTextureFromDataPtr(int id, std::byte* data){
-	auto& texRes = textureResources.at(id);
-	textureData.push_back(std::make_unique<TexData>(
-		texRes.dataDescription));
-	texRes.SetDataPtr(&(*textureData.back()));
+// void Manager::LoadTextureFromDataPtr(std::byte* data){
+// 	auto& texRes = textureResources.at(id);
+// 	textureData.push_back(std::make_unique<TexData>(
+// 		texRes.dataDescription));
+// 	texRes.SetDataPtr(&(*textureData.back()));
 
-	int size = texRes.dataDescription.pixelCount * texRes.dataDescription.channels; 
+// 	int size = texRes.dataDescription.pixelCount * texRes.dataDescription.channels; 
 
-	std::memcpy(textureData.back()->GetDataPtr(), data, sizeof(std::byte) * size);
+// 	std::memcpy(textureData.back()->GetDataPtr(), data, sizeof(std::byte) * size);
 
+// }
+
+TexID CreateNewTextureFromByteArray(int width, int height, std::byte* data){
+	return 0;
 }
 
 TexResource Manager::GetTexResourceByID(TexID id){
@@ -303,7 +308,7 @@ TexResource Manager::GetTexResourceByID(TexID id){
 TexID Manager::GetTexIDByName(std::string s){
 	std::lock_guard<std::mutex> lk(lock);
 	for(auto const& [key, val] : textureResources){
-		if(val.fileDescription.fileName == s)
+		if(val.name == s)
 			return key;
 	}
 	throw std::runtime_error("No matching texture found with name " + s);
