@@ -14,18 +14,7 @@
 constexpr auto TerrainSettingsFileName = "terrain_settings.json";
 
 TerrainCreationData::TerrainCreationData(
-	Resource::ResourceManager& resourceMan,
-	VulkanRenderer& renderer,
-	glm::vec3 cameraPos,
-	std::shared_ptr<VulkanTexture> terrainVulkanTextureArray,
-	InternalGraph::GraphPrototype& protoGraph,
 	int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord) :
-
-	resourceMan(resourceMan),
-	renderer(renderer),
-	cameraPos(cameraPos),
-	terrainVulkanTextureArray(terrainVulkanTextureArray),
-	protoGraph(protoGraph),
 	numCells(numCells),
 	maxLevels(maxLevels),
 	sourceImageResolution(sourceImageResolution),
@@ -46,25 +35,32 @@ void TerrainCreationWorker(TerrainManager* man) {
 			auto data = man->terrainCreationWork.pop_if();
 			if (data.has_value())
 			{
-				auto terrain = std::make_unique<Terrain>(man->renderer,
-					man->chunkBuffer,
-					data->protoGraph, data->numCells, data->maxLevels,
-					data->heightScale, data->coord);
-
-				// std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
-
-				// terrain->terrainSplatMap = man->resourceMan.
-				// 	texManager.loadTextureFromRGBAPixelData(
-				// 		data->sourceImageResolution + 1,
-				// 		data->sourceImageResolution + 1, imgData);
-
-				terrain->InitTerrain(data->cameraPos, data->terrainVulkanTextureArray);
-
+				glm::vec3 center = glm::vec3((data)->coord.pos.x, man->curCameraPos.y, (data)->coord.pos.y);
+				float distanceToViewer = glm::distance(man->curCameraPos, center);
+				if (distanceToViewer < man->settings.viewDistance * man->settings.width * 1.5)
 				{
-					std::lock_guard<std::mutex> lk(man->terrain_mutex);
-					man->terrains.push_back(std::move(terrain));
-				}
 
+
+					auto terrain = std::make_unique<Terrain>(man->renderer,
+						man->chunkBuffer,
+						man->protoGraph, data->numCells, data->maxLevels,
+						data->heightScale, data->coord);
+
+					// std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
+
+					// terrain->terrainSplatMap = man->resourceMan.
+					// 	texManager.loadTextureFromRGBAPixelData(
+					// 		data->sourceImageResolution + 1,
+					// 		data->sourceImageResolution + 1, imgData);
+
+					terrain->InitTerrain(man->curCameraPos, man->terrainVulkanTextureArray);
+
+					{
+						std::lock_guard<std::mutex> lk(man->terrain_mutex);
+						man->terrains.push_back(std::move(terrain));
+					}
+
+				}
 			}
 			//break out of loop if work shouldn't be continued
 			if (!man->isCreatingTerrain)
@@ -92,6 +88,9 @@ TerrainChunkBuffer::TerrainChunkBuffer(VulkanRenderer& renderer, int count,
 	index_staging_ptr = (TerrainMeshIndices*)index_staging.buffer.allocationInfo.pMappedData;
 
 	chunkStates.resize(count, TerrainChunkBuffer::ChunkState::free);
+	for (int i = 0; i < count; i++) {
+		chunkReadySignals.push_back(std::make_shared<bool>(false));
+	}
 }
 
 
@@ -134,6 +133,11 @@ void TerrainChunkBuffer::SetChunkWritten(int index) {
 	chunkStates.at(index) = TerrainChunkBuffer::ChunkState::written;
 }
 
+Signal TerrainChunkBuffer::GetChunkSignal(int index) {
+	std::lock_guard<std::mutex> guard(lock);
+	return chunkReadySignals.at(index);
+}
+
 int TerrainChunkBuffer::ActiveQuadCount() {
 	return chunkCount;
 }
@@ -143,6 +147,8 @@ void TerrainChunkBuffer::UpdateChunks() {
 
 	std::vector<VkBufferCopy> vertexCopyRegions;
 	std::vector<VkBufferCopy> indexCopyRegions;
+
+	std::vector<Signal> signals;
 
 	for (int i = 0; i < chunkStates.size(); i++) {
 		switch (chunkStates.at(i)) {
@@ -156,11 +162,16 @@ void TerrainChunkBuffer::UpdateChunks() {
 			vertexCopyRegions.push_back(initializers::bufferCopyCreate(vert_size, i * vert_size, i * vert_size));
 			indexCopyRegions.push_back(initializers::bufferCopyCreate(ind_size, i * ind_size, i * ind_size));
 
+			*chunkReadySignals.at(i) = false;
+
+			signals.push_back(chunkReadySignals.at(i));
 			chunkStates.at(i) = TerrainChunkBuffer::ChunkState::ready;
 			break;
 
 			//data is on gpu, ready to draw
 		case(TerrainChunkBuffer::ChunkState::ready): break;
+
+
 		}
 
 	}
@@ -179,7 +190,7 @@ void TerrainChunkBuffer::UpdateChunks() {
 				vRegions.size(), vRegions.data());
 			vkCmdCopyBuffer(cmdBuf, index_s, index,
 				iRegions.size(), iRegions.data());
-		}, {}, {}, {}, {});
+		}, {}, {}, {}, std::move(signals));
 	}
 
 }
@@ -209,7 +220,7 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
 	//}
 
 	terrainTextureArray = resourceMan.texManager.GetTexIDByName("terrain");
-	TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM, 
+	TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		true, 4);
 	terrainVulkanTextureArray = renderer.textureManager.CreateTexture2DArray(
@@ -264,10 +275,6 @@ void TerrainManager::CleanUpTerrain() {
 	//terrainQuadPool = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
 }
 
-void TerrainManager::RecreateTerrain() {
-	recreateTerrain = true;
-}
-
 void TerrainManager::GenerateTerrain(std::shared_ptr<Camera> camera) {
 
 	settings.width = nextTerrainWidth;
@@ -288,8 +295,6 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<Camera> camera) {
 				terGrid);
 
 			terrainCreationWork.push_back(TerrainCreationData(
-				resourceMan, renderer, camera->Position, terrainVulkanTextureArray,
-				protoGraph,
 				settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale,
 				coord));
 
@@ -316,6 +321,8 @@ void TerrainManager::GenerateTerrain(std::shared_ptr<Camera> camera) {
 
 void TerrainManager::UpdateTerrains(glm::vec3 cameraPos)
 {
+	curCameraPos = cameraPos;
+
 	if (recreateTerrain) {
 		StopWorkerThreads();
 		CleanUpTerrain();
@@ -343,7 +350,8 @@ void TerrainManager::UpdateTerrains(glm::vec3 cameraPos)
 				//Log::Debug << "deleting terrain at x:" << (*it)->coordinateData.noisePos.x / (*it)->coordinateData.sourceImageResolution
 				//	<< " z: " << (*it)->coordinateData.noisePos.y / (*it)->coordinateData.sourceImageResolution << "\n";
 				auto activeIt = std::find(std::begin(activeTerrains), std::end(activeTerrains), (*it)->coordinateData.gridPos);
-				activeTerrains.erase(activeIt);
+				if (activeIt != std::end(activeTerrains))
+					activeTerrains.erase(activeIt);
 
 				InstancedSceneObject::InstanceData water;
 				water.pos = glm::vec3((*it)->coordinateData.pos.x, 0, (*it)->coordinateData.pos.y);
@@ -408,8 +416,6 @@ void TerrainManager::UpdateTerrains(glm::vec3 cameraPos)
 
 				terrain_mutex.lock();
 				terrainCreationWork.push_back(TerrainCreationData(
-					resourceMan, renderer, cameraPos, terrainVulkanTextureArray,
-					protoGraph,
 					settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale,
 					coord));
 				terrain_mutex.unlock();
@@ -541,10 +547,14 @@ void TerrainManager::UpdateTerrainGUI() {
 		ImGui::Text("Generating %i Terrains", terrainCreationWork.size());
 		ImGui::Text("Quad Count %i", chunkBuffer.ActiveQuadCount());
 		ImGui::Text("All terrains update Time: %lu(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds());
-		for (auto& ter : terrains)
+
 		{
-			ImGui::Text("Terrain Draw Time: %lu(uS)", ter->drawTimer.GetElapsedTimeMicroSeconds());
-			ImGui::Text("Terrain Quad Count %d", ter->numQuads);
+			std::lock_guard<std::mutex> lk(terrain_mutex);
+			for (auto& ter : terrains)
+			{
+				ImGui::Text("Terrain Draw Time: %lu(uS)", ter->drawTimer.GetElapsedTimeMicroSeconds());
+				ImGui::Text("Terrain Quad Count %d", ter->numQuads);
+			}
 		}
 	}
 	ImGui::End();

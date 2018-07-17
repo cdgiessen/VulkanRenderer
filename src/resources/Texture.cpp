@@ -258,8 +258,8 @@ namespace Resource::Texture {
 			}
 			id_counter = count;
 			Log::Debug << textureResources.size() << " textures loaded\n";
-			for ( auto const& [key, val] : textureResources){
-				Log::Debug << "Tex " << key << " with name " << val.name 
+			for (auto const&[key, val] : textureResources) {
+				Log::Debug << "Tex " << key << " with name " << val.name
 					<< " dimensions width " << val.dataDescription.width
 					<< " height " << val.dataDescription.height << "\n";
 			}

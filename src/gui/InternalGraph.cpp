@@ -920,7 +920,7 @@ namespace InternalGraph {
 			{
 				glm::vec4 val = glm::normalize(std::get<glm::vec4>(outputNode->GetSplatMapValue(x, z)));
 				//Resource::Texture::Pixel_RGBA pixel = Resource::Texture::Pixel_RGBA(
-				
+
 				std::byte r = static_cast<std::byte>(static_cast<uint8_t>(glm::clamp(val.x, 0.0f, 1.0f) * 255.0f));
 				std::byte g = static_cast<std::byte>(static_cast<uint8_t>(glm::clamp(val.y, 0.0f, 1.0f) * 255.0f));
 				std::byte b = static_cast<std::byte>(static_cast<uint8_t>(glm::clamp(val.z, 0.0f, 1.0f) * 255.0f));
@@ -933,13 +933,13 @@ namespace InternalGraph {
 			}
 		}
 		glm::vec4 val = glm::normalize(std::get<glm::vec4>(outputNode->GetSplatMapValue(0, 0)));
-				
-		Log::Debug << val.x << " "<< val.y << " "<< val.z << " "<< val.w << " " << "\n";
+
+		//Log::Debug << val.x << " "<< val.y << " "<< val.z << " "<< val.w << " " << "\n";
 
 
 
-		for (auto& node : nodeMap) {
-			node.second.CleanNoise();
+		for (auto&[key, val] : nodeMap) {
+			val.CleanNoise();
 		}
 	}
 

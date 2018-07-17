@@ -101,6 +101,8 @@ struct TerrainQuad {
 	TerrainMeshVertices* vertices;
 	TerrainMeshIndices* indices;
 
+	Signal quadSignal;
+
 	//index into terrain's quadMap
 	struct SubQuads {
 		int UpLeft = -1;

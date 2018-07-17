@@ -158,6 +158,7 @@ void VulkanApp::DebugOverlay(bool* show_debug_overlay) {
 	if (verbose) ImGui::Text("Last frame time%f(s)", timeManager.PreviousFrameTime());
 	ImGui::Separator();
 	ImGui::Text("Mouse Position: (%.1f,%.1f)", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
+	ImGui::SliderFloat("Temp spin", &tempCameraSpeed, -5.0f, 5.0f);
 	ImGui::End();
 
 }
@@ -340,8 +341,15 @@ void VulkanApp::HandleInputs() {
 			Input::ResetTextInputMode();
 	}
 
+	if (Input::GetKey(Input::KeyCode::C)) {
+		tempCameraSpeed *= 1.02f;
+	}
+	if (Input::GetKey(Input::KeyCode::V)) {
+		tempCameraSpeed *= 0.98f;
+	}
+
 	if (Input::GetMouseControlStatus()) {
-		scene.GetCamera()->ProcessMouseMovement(Input::GetMouseChangeInPosition().x, Input::GetMouseChangeInPosition().y);
+		scene.GetCamera()->ProcessMouseMovement(tempCameraSpeed + Input::GetMouseChangeInPosition().x, Input::GetMouseChangeInPosition().y);
 		scene.GetCamera()->ProcessMouseScroll(Input::GetMouseScrollY(), deltaTime);
 	}
 

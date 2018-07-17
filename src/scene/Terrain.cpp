@@ -37,7 +37,7 @@ void TerrainQuad::Setup() {
 	GenerateTerrainChunk(std::ref(terrain->fastGraphUser),
 		terrain->heightScale, terrain->coordinateData.size.x);
 	chunkBuffer.SetChunkWritten(index);
-
+	quadSignal = chunkBuffer.GetChunkSignal(index);
 }
 
 float TerrainQuad::GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos) {
@@ -153,7 +153,7 @@ Terrain::Terrain(VulkanRenderer& renderer,
 
 
 	splatMapData = fastGraphUser.GetSplatMapPtr();
-	splatMapSize = glm::pow(coords.sourceImageResolution + 1,2);
+	splatMapSize = glm::pow(coords.sourceImageResolution + 1, 2);
 
 
 	// terrain->terrainSplatMap = man->resourceMan.
@@ -246,13 +246,14 @@ void Terrain::SetupUniformBuffer()
 
 void Terrain::SetupImage()
 {
-	if(splatMapData != nullptr){
-		TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM, 
+	if (splatMapData != nullptr) {
+		TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			false, 1);
 		terrainVulkanSplatMap = renderer.textureManager.CreateTextureFromData(
-			details, splatMapData, splatMapSize );
-	} else {
+			details, splatMapData, splatMapSize);
+	}
+	else {
 		throw std::runtime_error("failed to get terrain splat map data!");
 	}
 	//if (terrainSplatMap != nullptr) {
@@ -761,8 +762,10 @@ void Terrain::PopulateQuadOffsets(int quad, std::vector<VkDeviceSize>& vert, std
 		PopulateQuadOffsets(quadMap.at(quad).subQuads.DownLeft, vert, ind);
 	}
 	else {
+		//if (*quadMap.at(quad).quadSignal == true) {
 		vert.push_back(quadMap.at(quad).index * sizeof(TerrainMeshVertices));
 		ind.push_back(quadMap.at(quad).index * sizeof(TerrainMeshIndices));
+		//}
 	}
 }
 
@@ -771,6 +774,8 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
 	//return;
 	if (!terrainVulkanSplatMap->readyToUse)
 		return;
+
+	drawTimer.StartTimer();
 
 	std::vector<VkDeviceSize> vertexOffsettings;
 	std::vector<VkDeviceSize> indexOffsettings;
@@ -787,8 +792,6 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
 
 	vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, ifWireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
 	vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &descriptorSet.set, 0, nullptr);
-
-	drawTimer.StartTimer();
 
 	for (int i = 0; i < vertexOffsettings.size(); i++) {
 		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &chunkBuffer.vert_buffer.buffer.buffer, &vertexOffsettings[i]);

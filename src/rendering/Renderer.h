@@ -29,7 +29,7 @@
 class Window;
 class Scene;
 
-namespace Resource { class ResourceManager;}
+namespace Resource { class ResourceManager; }
 
 class RenderSettings {
 public:
@@ -53,7 +53,7 @@ private:
 class VulkanRenderer
 {
 public:
-	VulkanRenderer(bool enableValidationLayer, 
+	VulkanRenderer(bool enableValidationLayer,
 		Window& window, Resource::ResourceManager& resourceMan);
 
 	VulkanRenderer(const VulkanRenderer& other) = delete; //copy
@@ -128,11 +128,11 @@ private:
 
 	std::vector<std::shared_ptr<VulkanDescriptor>> descriptors;
 
-	std::unique_ptr<VulkanBufferUniform> globalVariableBuffer;
-	std::unique_ptr<VulkanBufferUniform> cameraDataBuffer;
-	std::unique_ptr<VulkanBufferUniform> sunBuffer;
-	std::unique_ptr<VulkanBufferUniform> pointLightsBuffer;
-	std::unique_ptr<VulkanBufferUniform> spotLightsBuffer;
+	std::unique_ptr<VulkanBufferUniformPersistant> globalVariableBuffer;
+	std::unique_ptr<VulkanBufferUniformPersistant> cameraDataBuffer;
+	std::unique_ptr<VulkanBufferUniformPersistant> sunBuffer;
+	std::unique_ptr<VulkanBufferUniformPersistant> pointLightsBuffer;
+	std::unique_ptr<VulkanBufferUniformPersistant> spotLightsBuffer;
 
 	std::unique_ptr<VulkanDescriptor> frameDataDescriptor;
 	std::unique_ptr<VulkanDescriptor> lightingDescriptor;

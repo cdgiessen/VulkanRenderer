@@ -53,22 +53,12 @@ struct TerrainTextureNamedHandle {
 };
 
 struct TerrainCreationData {
-	Resource::ResourceManager& resourceMan;
-	VulkanRenderer& renderer;
-	glm::vec3 cameraPos;
-	std::shared_ptr<VulkanTexture> terrainVulkanTextureArray;
-	InternalGraph::GraphPrototype& protoGraph;
 	int numCells; int maxLevels;
 	int sourceImageResolution;
 	float heightScale;
 	TerrainCoordinateData coord;
 
 	TerrainCreationData(
-		Resource::ResourceManager& resourceMan,
-		VulkanRenderer& renderer,
-		glm::vec3 cameraPos,
-		std::shared_ptr<VulkanTexture> terrainVulkanTextureArray,
-		InternalGraph::GraphPrototype& protoGraph,
 		int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord);
 };
 
@@ -98,6 +88,8 @@ public:
 	ChunkState GetChunkState(int index);
 	void SetChunkWritten(int index);
 
+	Signal GetChunkSignal(int index);
+
 	TerrainMeshVertices* GetDeviceVertexBufferPtr(int index);
 	TerrainMeshIndices* GetDeviceIndexBufferPtr(int index);
 
@@ -118,6 +110,7 @@ private:
 	TerrainMeshIndices* index_staging_ptr;
 
 	std::vector<ChunkState> chunkStates;
+	std::vector<Signal> chunkReadySignals;
 
 	std::atomic_int chunkCount = 0;
 };
@@ -142,8 +135,6 @@ public:
 
 	float GetTerrainHeightAtLocation(float x, float z);
 
-	void RecreateTerrain();
-
 	Resource::ResourceManager& resourceMan;
 	VulkanRenderer& renderer;
 
@@ -159,7 +150,11 @@ public:
 	std::mutex terrain_mutex;
 	std::vector<std::unique_ptr<Terrain>> terrains;
 	std::vector<glm::i32vec2> activeTerrains;
+	glm::vec3 curCameraPos;
+	InternalGraph::GraphPrototype& protoGraph;
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArray;
 
+	GeneralSettings settings;
 private:
 
 	void SaveSettingsToFile();
@@ -168,19 +163,15 @@ private:
 	void StartWorkerThreads();
 	void StopWorkerThreads();
 
-	InternalGraph::GraphPrototype& protoGraph;
-
 	std::unique_ptr<InstancedSceneObject> instancedWaters;
 
 	std::shared_ptr<Mesh> WaterMesh;
 
 	Resource::Texture::TexID terrainTextureArray;
-	std::shared_ptr<VulkanTexture> terrainVulkanTextureArray;
 
 	std::vector<std::thread> terrainCreationWorkers;
 
-	GeneralSettings settings;
-	bool recreateTerrain = false;
+	bool recreateTerrain = true;
 	float nextTerrainWidth = 1000;
 	SimpleTimer terrainUpdateTimer;
 
@@ -190,6 +181,7 @@ private:
 	int selectedTexture;
 
 	int WorkerThreads = 6;
+
 
 	std::vector<TerrainTextureNamedHandle> terrainTextureHandles;
 

@@ -327,12 +327,12 @@ void VulkanRenderer::SubmitFrame(int curFrameIndex) {
 
 void VulkanRenderer::PrepareResources() {
 
-	globalVariableBuffer = std::make_unique<VulkanBufferUniform>(device, sizeof(GlobalData));
-	cameraDataBuffer = std::make_unique<VulkanBufferUniform>(device, sizeof(CameraData) * settings.cameraCount);
-	sunBuffer = std::make_unique<VulkanBufferUniform>(device, sizeof(DirectionalLight) *
+	globalVariableBuffer = std::make_unique<VulkanBufferUniformPersistant>(device, sizeof(GlobalData));
+	cameraDataBuffer = std::make_unique<VulkanBufferUniformPersistant>(device, sizeof(CameraData) * settings.cameraCount);
+	sunBuffer = std::make_unique<VulkanBufferUniformPersistant>(device, sizeof(DirectionalLight) *
 		settings.directionalLightCount);
-	pointLightsBuffer = std::make_unique<VulkanBufferUniform>(device, sizeof(PointLight) * settings.pointLightCount);
-	spotLightsBuffer = std::make_unique<VulkanBufferUniform>(device, sizeof(SpotLight) * settings.spotLightCount);
+	pointLightsBuffer = std::make_unique<VulkanBufferUniformPersistant>(device, sizeof(PointLight) * settings.pointLightCount);
+	spotLightsBuffer = std::make_unique<VulkanBufferUniformPersistant>(device, sizeof(SpotLight) * settings.spotLightCount);
 
 	//globalVariableBuffer->CreateUniformBuffer(sizeof(GlobalData));
 	//cameraDataBuffer->CreateUniformBuffer(sizeof(CameraData) * settings.cameraCount);

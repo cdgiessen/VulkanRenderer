@@ -18,7 +18,7 @@ auto as_integer(Enumeration const value) -> typename std::underlying_type<Enumer
 
 ProcTerrainNodeGraph::ProcTerrainNodeGraph()
 {
-	RecreateOutputNode();
+	//RecreateOutputNode();
 	LoadGraphFromFile("assets/graphs/default_terrain.json");
 }
 

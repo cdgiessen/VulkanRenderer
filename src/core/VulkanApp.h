@@ -85,5 +85,7 @@ private:
 	//ImGui resources
 	SimpleTimer imGuiTimer;
 	Log::Logger appLog;
+
+	float tempCameraSpeed = 0.0f;
 };
 
