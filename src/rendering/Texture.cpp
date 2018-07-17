@@ -25,6 +25,21 @@ VulkanTexture::VulkanTexture(
 	VkExtent3D imageExtent = { textureResource.dataDescription.width, 
 							textureResource.dataDescription.height, 
 							textureResource.dataDescription.depth };
+	Log::Debug << "width = " << textureResource.dataDescription.width
+		<< " height = " << 	textureResource.dataDescription.height;
+		
+	//VkImageType imageType;
+	//if(texCreateDetails.layout == Resource::Texture::LayoutType::array1D 
+	//	|| texCreateDetails.layout == Resource::Texture::LayoutType::array1D
+	//	|| texCreateDetails.layout == Resource::Texture::LayoutType::array1D){
+	//	imageType = VK_IMAGE_TYPE_2D_ARRAY;
+	//}
+	//else if(texCreateDetails.layout == Resource::Texture::LayoutType::cubemap2D){
+	//	imageType = VK_IMAGE_TYPE_CUBE;
+	//}
+	//else {
+	//	imageType = VK_IMAGE_TYPE_2D;
+	//}
 
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo(
 		VK_IMAGE_TYPE_2D, texCreateDetails.format, (uint32_t)mipLevels,
@@ -33,6 +48,8 @@ VulkanTexture::VulkanTexture(
 		VK_IMAGE_LAYOUT_UNDEFINED, imageExtent,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
 		VK_IMAGE_USAGE_SAMPLED_BIT);
+	if(textureResource.layout == Resource::Texture::LayoutType::cubemap2D)
+		imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
 
 	auto buffer = std::make_shared<VulkanBufferStagingResource>(
@@ -81,8 +98,20 @@ VulkanTexture::VulkanTexture(
 		VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, mipLevels, true, 8,
 		VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
+	VkImageViewType viewType;
+	if(textureResource.layout == Resource::Texture::LayoutType::array1D 
+		|| textureResource.layout == Resource::Texture::LayoutType::array1D
+		|| textureResource.layout == Resource::Texture::LayoutType::array1D){
+		viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+	}
+	else if(textureResource.layout == Resource::Texture::LayoutType::cubemap2D){
+		viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+	}
+	else {
+		viewType = VK_IMAGE_VIEW_TYPE_2D;
+	}
 	textureImageView = CreateImageView(
-		image.image, VK_IMAGE_VIEW_TYPE_2D_ARRAY, texCreateDetails.format,
+		image.image, viewType, texCreateDetails.format,
 		VK_IMAGE_ASPECT_COLOR_BIT,
 		VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G,
 						   VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
@@ -115,7 +144,6 @@ VulkanTexture::VulkanTexture(
 		VK_IMAGE_LAYOUT_UNDEFINED, imageExtent,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
 		VK_IMAGE_USAGE_SAMPLED_BIT);
-
 
 	auto buffer = std::make_shared<VulkanBufferStagingResource>(
 		renderer.device, byteCount, texData);
@@ -161,8 +189,22 @@ VulkanTexture::VulkanTexture(
 		VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, mipLevels, true, 8,
 		VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
+	VkImageViewType viewType;
+	//if(texCreateDetails.layout == Resource::Texture::LayoutType::array1D 
+	//	|| texCreateDetails.layout == Resource::Texture::LayoutType::array1D
+	//	|| texCreateDetails.layout == Resource::Texture::LayoutType::array1D){
+	//	viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+	//}
+	//else if(texCreateDetails.layout == Resource::Texture::LayoutType::cubemap2D){
+	//	viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+	//}
+	//else {
+		viewType = VK_IMAGE_VIEW_TYPE_2D;
+	//}
+
+
 	textureImageView = CreateImageView(
-		image.image, VK_IMAGE_VIEW_TYPE_2D_ARRAY, texCreateDetails.format,
+		image.image, viewType, texCreateDetails.format,
 		VK_IMAGE_ASPECT_COLOR_BIT,
 		VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G,
 						   VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
