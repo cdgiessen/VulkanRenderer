@@ -98,8 +98,8 @@ VulkanTexture::VulkanTexture(
 
 	VkImageViewType viewType;
 	if (textureResource.layout == Resource::Texture::LayoutType::array1D
-		|| textureResource.layout == Resource::Texture::LayoutType::array1D
-		|| textureResource.layout == Resource::Texture::LayoutType::array1D) {
+		|| textureResource.layout == Resource::Texture::LayoutType::array2D
+		|| textureResource.layout == Resource::Texture::LayoutType::array3D) {
 		viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 	}
 	else if (textureResource.layout == Resource::Texture::LayoutType::cubemap2D) {

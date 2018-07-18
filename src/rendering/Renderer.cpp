@@ -75,7 +75,7 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue())
 
 {
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < vulkanSwapChain.swapChainImages.size(); i++) {
 		frameObjects.push_back(std::make_unique<FrameObject>(device, i));
 	}
 
@@ -321,8 +321,8 @@ void VulkanRenderer::SubmitFrame(int curFrameIndex) {
 		throw std::runtime_error("failed to present swap chain image!");
 	}
 	//FINALLY!!!!
-	//std::lock_guard<std::mutex> lock(device.PresentQueue().GetQueueMutex());
-	//vkQueueWaitIdle(device.PresentQueue().GetQueue());
+	std::lock_guard<std::mutex> lock(device.PresentQueue().GetQueueMutex());
+	vkQueueWaitIdle(device.PresentQueue().GetQueue());
 }
 
 void VulkanRenderer::PrepareResources() {
