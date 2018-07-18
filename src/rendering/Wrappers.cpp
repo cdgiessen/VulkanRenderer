@@ -320,7 +320,7 @@ void GraphicsCommandWorker::StopWork() {
 	keepWorking = false;
 }
 
-bool GraphicsCommandWorker::IsFinishedWorking(){
+bool GraphicsCommandWorker::IsFinishedWorking() {
 	return isDoneWorking;
 }
 
@@ -392,6 +392,11 @@ VkResult FrameObject::AquireNextSwapchainImage(VkSwapchainKHR swapchain) {
 }
 
 void FrameObject::PrepareFrame() {
+	WaitTillReady();
+	commandPool.BeginBufferRecording(primaryCmdBuf, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+}
+
+void FrameObject::WaitTillReady() {
 	if (!firstUse) {
 		commandFence.WaitTillTrue();
 		commandFence.Reset();
@@ -399,8 +404,6 @@ void FrameObject::PrepareFrame() {
 	else {
 		firstUse = false;
 	}
-	commandPool.BeginBufferRecording(primaryCmdBuf, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-
 }
 
 void FrameObject::SubmitFrame()

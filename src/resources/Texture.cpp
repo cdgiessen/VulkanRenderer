@@ -168,7 +168,8 @@ namespace Resource::Texture {
 	}
 
 	TexData::TexData(DataDescription inData) {
-		size_t size = inData.channels * inData.pixelCount;
+		//size_t size = inData.channels * inData.pixelCount;
+		size_t size = 4 * inData.pixelCount;
 		data.resize(size);
 	}
 
@@ -283,6 +284,7 @@ namespace Resource::Texture {
 	}
 
 	void Manager::LoadTextureFromFile(TexID id) {
+
 		auto &texRes = textureResources.at(id);
 		textureData.push_back(std::make_unique<TexData>(texRes.dataDescription));
 		texRes.SetDataPtr(&(*textureData.back()));
@@ -307,8 +309,7 @@ namespace Resource::Texture {
 			}
 			int texWidth, texHeight, texChannels;
 			stbi_uc *pixels;
-			pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels,
-				desiredChannels);
+			pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, 4);
 
 			if (pixels == nullptr) {
 
@@ -316,16 +317,16 @@ namespace Resource::Texture {
 					<< path.c_str() << "\n";
 
 			}
-			else if (desiredChannels != texChannels) {
-				Log::Error << "Image couldn't load desired channel of " << desiredChannels
-					<< " but only " << texChannels << " channels\n";
-			}
+			//else if (desiredChannels != texChannels) {
+			//	Log::Error << "Image couldn't load desired channel of " << desiredChannels
+			//		<< " but only " << texChannels << " channels\n";
+			//}
 			else {
-
 				std::memcpy(textureData.back()->GetDataPtr() +
-					i * texWidth * texHeight * texChannels,
+					i * texWidth * texHeight * 4,
 					pixels,
-					sizeof(std::byte) * texWidth * texHeight * texChannels);
+					sizeof(std::byte) * texWidth * texHeight * 4);
+
 
 				stbi_image_free(pixels);
 			}

@@ -11,10 +11,10 @@
 #include "../core/Logger.h"
 
 VulkanTexture::VulkanTexture(
-		VulkanRenderer& renderer,
-		TexCreateDetails texCreateDetails,
-		Resource::Texture::TexResource textureResource): renderer(renderer), 
-	resource(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) 
+	VulkanRenderer& renderer,
+	TexCreateDetails texCreateDetails,
+	Resource::Texture::TexResource textureResource) : renderer(renderer),
+	resource(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
 	readyToUse = std::make_shared<bool>(false);
 
@@ -22,12 +22,9 @@ VulkanTexture::VulkanTexture(
 	this->textureImageLayout = texCreateDetails.imageLayout;
 	this->layers = textureResource.dataDescription.layers;
 
-	VkExtent3D imageExtent = { textureResource.dataDescription.width, 
-							textureResource.dataDescription.height, 
+	VkExtent3D imageExtent = { textureResource.dataDescription.width,
+							textureResource.dataDescription.height,
 							textureResource.dataDescription.depth };
-	Log::Debug << "width = " << textureResource.dataDescription.width
-		<< " height = " << 	textureResource.dataDescription.height;
-		
 	//VkImageType imageType;
 	//if(texCreateDetails.layout == Resource::Texture::LayoutType::array1D 
 	//	|| texCreateDetails.layout == Resource::Texture::LayoutType::array1D
@@ -48,14 +45,14 @@ VulkanTexture::VulkanTexture(
 		VK_IMAGE_LAYOUT_UNDEFINED, imageExtent,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
 		VK_IMAGE_USAGE_SAMPLED_BIT);
-	if(textureResource.layout == Resource::Texture::LayoutType::cubemap2D)
+	if (textureResource.layout == Resource::Texture::LayoutType::cubemap2D)
 		imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
 
 	auto buffer = std::make_shared<VulkanBufferStagingResource>(
 		renderer.device, textureResource.dataDescription.pixelCount
-			* textureResource.dataDescription.channels, 
-			textureResource.GetByteDataPtr());
+		* 4,
+		textureResource.GetByteDataPtr());
 
 	//buffer.CreateStagingResourceBuffer(textures->pixels.data(),
 	//	textures->texImageSize);
@@ -64,7 +61,7 @@ VulkanTexture::VulkanTexture(
 
 	VkImageSubresourceRange subresourceRange =
 		initializers::imageSubresourceRangeCreateInfo(
-		VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, layers);
+			VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, layers);
 
 	std::vector<VkBufferImageCopy> bufferCopyRegions;
 	size_t offset = 0;
@@ -81,30 +78,31 @@ VulkanTexture::VulkanTexture(
 		bufferCopyRegion.bufferOffset = offset;
 		bufferCopyRegions.push_back(bufferCopyRegion);
 		// Increase offset into staging buffer for next level / face
-		offset += textureResource.dataDescription.width 
-			* textureResource.dataDescription.height 
-			* textureResource.dataDescription.depth;
+		offset += textureResource.dataDescription.width
+			* textureResource.dataDescription.height
+			* textureResource.dataDescription.depth
+			* 4;
 	}
 
 	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange, bufferCopyRegions,
 		texCreateDetails.imageLayout, image.image, buffer->buffer.buffer,
-		textureResource.dataDescription.width, 
-		textureResource.dataDescription.height, 
+		textureResource.dataDescription.width,
+		textureResource.dataDescription.height,
 		textureResource.dataDescription.depth,
 		readyToUse, layers, mipLevels);
 
 	textureSampler = CreateImageSampler(
 		VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR,
-		VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, mipLevels, true, 8,
+		texCreateDetails.addressMode, 0.0f, true, mipLevels, true, 8,
 		VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
 	VkImageViewType viewType;
-	if(textureResource.layout == Resource::Texture::LayoutType::array1D 
+	if (textureResource.layout == Resource::Texture::LayoutType::array1D
 		|| textureResource.layout == Resource::Texture::LayoutType::array1D
-		|| textureResource.layout == Resource::Texture::LayoutType::array1D){
+		|| textureResource.layout == Resource::Texture::LayoutType::array1D) {
 		viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 	}
-	else if(textureResource.layout == Resource::Texture::LayoutType::cubemap2D){
+	else if (textureResource.layout == Resource::Texture::LayoutType::cubemap2D) {
 		viewType = VK_IMAGE_VIEW_TYPE_CUBE;
 	}
 	else {
@@ -123,9 +121,9 @@ VulkanTexture::VulkanTexture(
 VulkanTexture::VulkanTexture(
 	VulkanRenderer& renderer,
 	TexCreateDetails texCreateDetails,
-	std::byte* texData, int byteCount): 
-	renderer(renderer), 
-	resource(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) 
+	std::byte* texData, int byteCount) :
+	renderer(renderer),
+	resource(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
 	readyToUse = std::make_shared<bool>(false);
 
@@ -133,8 +131,8 @@ VulkanTexture::VulkanTexture(
 	this->textureImageLayout = texCreateDetails.imageLayout;
 	this->layers = 1;
 
-	VkExtent3D imageExtent = { (uint32_t)texCreateDetails.desiredWidth, 
-							(uint32_t)texCreateDetails.desiredHeight, 
+	VkExtent3D imageExtent = { (uint32_t)texCreateDetails.desiredWidth,
+							(uint32_t)texCreateDetails.desiredHeight,
 							1 };
 
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo(
@@ -146,7 +144,7 @@ VulkanTexture::VulkanTexture(
 		VK_IMAGE_USAGE_SAMPLED_BIT);
 
 	auto buffer = std::make_shared<VulkanBufferStagingResource>(
-		renderer.device, byteCount, texData);
+		renderer.device, byteCount * 4, texData);
 
 	//buffer.CreateStagingResourceBuffer(textures->pixels.data(),
 	//	textures->texImageSize);
@@ -155,7 +153,7 @@ VulkanTexture::VulkanTexture(
 
 	VkImageSubresourceRange subresourceRange =
 		initializers::imageSubresourceRangeCreateInfo(
-		VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, layers);
+			VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, layers);
 
 	std::vector<VkBufferImageCopy> bufferCopyRegions;
 	size_t offset = 0;
@@ -172,21 +170,21 @@ VulkanTexture::VulkanTexture(
 		bufferCopyRegion.bufferOffset = offset;
 		bufferCopyRegions.push_back(bufferCopyRegion);
 		// Increase offset into staging buffer for next level / face
-		offset += 	texCreateDetails.desiredWidth 
-			* 		texCreateDetails.desiredHeight 
-			* 		1;	
+		offset += texCreateDetails.desiredWidth
+			* 		texCreateDetails.desiredHeight
+			* 4;
 	}
 
 	BeginTransferAndMipMapGenWork(renderer, buffer, subresourceRange, bufferCopyRegions,
 		texCreateDetails.imageLayout, image.image, buffer->buffer.buffer,
-		texCreateDetails.desiredWidth, 
-		texCreateDetails.desiredHeight, 
+		texCreateDetails.desiredWidth,
+		texCreateDetails.desiredHeight,
 		1,
 		readyToUse, layers, mipLevels);
 
 	textureSampler = CreateImageSampler(
 		VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR,
-		VK_SAMPLER_ADDRESS_MODE_REPEAT, 0.0f, true, mipLevels, true, 8,
+		texCreateDetails.addressMode, 0.0f, true, mipLevels, true, 8,
 		VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
 	VkImageViewType viewType;
@@ -199,7 +197,7 @@ VulkanTexture::VulkanTexture(
 	//	viewType = VK_IMAGE_VIEW_TYPE_CUBE;
 	//}
 	//else {
-		viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewType = VK_IMAGE_VIEW_TYPE_2D;
 	//}
 
 
@@ -215,15 +213,15 @@ VulkanTexture::VulkanTexture(
 
 VulkanTexture::VulkanTexture(
 	VulkanRenderer& renderer,
-	TexCreateDetails texCreateDetails) : 
-	renderer(renderer), 
-	resource(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) 
+	TexCreateDetails texCreateDetails) :
+	renderer(renderer),
+	resource(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
 	VkImageCreateInfo imageInfo = initializers::imageCreateInfo(
 		VK_IMAGE_TYPE_2D, texCreateDetails.format, 1, 1, VK_SAMPLE_COUNT_1_BIT,
 		VK_IMAGE_TILING_OPTIMAL, VK_SHARING_MODE_EXCLUSIVE,
 		VK_IMAGE_LAYOUT_UNDEFINED,
-		VkExtent3D{ (uint32_t)texCreateDetails.desiredWidth, 
+		VkExtent3D{ (uint32_t)texCreateDetails.desiredWidth,
 		(uint32_t)texCreateDetails.desiredHeight, (uint32_t)1 },
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
@@ -650,7 +648,7 @@ void BeginTransferAndMipMapGenWork(
 // 	VkImageLayout imageLayout,
 // 	bool forceLinear, bool genMipMaps,
 // 	int mipMapLevelsToGen, bool wrapBorder) :
-	
+
 // 	VulkanTexture(renderer, texture, format, imageUsageFlags,
 // 		imageLayout, forceLinear, genMipMaps, mipMapLevelsToGen, wrapBorder) 
 // {
@@ -744,7 +742,7 @@ void BeginTransferAndMipMapGenWork(
 // 	Resource::Texture::TexID textures, VkFormat format,
 // 	VkImageUsageFlags imageUsageFlags,
 // 	VkImageLayout imageLayout, bool genMipMaps, int mipMapLevelsToGen) :
-	
+
 // 	VulkanTexture(renderer, textures, format, imageUsageFlags,
 // 		imageLayout, false, genMipMaps, mipMapLevelsToGen, true)
 // {
@@ -821,7 +819,7 @@ void BeginTransferAndMipMapGenWork(
 // 	VkImageUsageFlags imageUsageFlags,
 // 	VkImageLayout imageLayout, bool genMipMaps,
 // 	int mipMapLevelsToGen) :
-	
+
 // 	VulkanTexture(renderer, cubeMap, format, imageUsageFlags,
 // 		imageLayout, false, genMipMaps, mipMapLevelsToGen, false)
 //  {
@@ -932,7 +930,7 @@ void BeginTransferAndMipMapGenWork(
 
 //}
 
-VulkanTextureManager::VulkanTextureManager(VulkanRenderer& renderer, 
+VulkanTextureManager::VulkanTextureManager(VulkanRenderer& renderer,
 	Resource::Texture::Manager& texManager)
 	: renderer(renderer), texManager(texManager) {}
 
@@ -942,45 +940,45 @@ VulkanTextureManager::~VulkanTextureManager() {
 
 std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateTexture2D(
 	Resource::Texture::TexID texture,
-	TexCreateDetails texCreateDetails) 
+	TexCreateDetails texCreateDetails)
 {
 	auto resource = texManager.GetTexResourceByID(texture);
 	vulkanTextures.push_back(std::make_shared<VulkanTexture>(
 		renderer,
-		texCreateDetails, 
+		texCreateDetails,
 		resource));
 	return vulkanTextures.back();
 }
 
 std::shared_ptr<VulkanTexture>
 VulkanTextureManager::CreateTexture2DArray(
-		Resource::Texture::TexID textures,
-		TexCreateDetails texCreateDetails) 
+	Resource::Texture::TexID textures,
+	TexCreateDetails texCreateDetails)
 {
 	auto resource = texManager.GetTexResourceByID(textures);
 	vulkanTextures.push_back(std::make_shared<VulkanTexture>(
-		renderer, 
-		texCreateDetails, 
+		renderer,
+		texCreateDetails,
 		resource));
 	return vulkanTextures.back();
 }
 
 std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateCubeMap(
-		Resource::Texture::TexID cubeMap,
-		TexCreateDetails texCreateDetails)
+	Resource::Texture::TexID cubeMap,
+	TexCreateDetails texCreateDetails)
 {
 	auto resource = texManager.GetTexResourceByID(cubeMap);
 	vulkanTextures.push_back(std::make_shared<VulkanTexture>(
-		renderer, 
-		texCreateDetails, 
+		renderer,
+		texCreateDetails,
 		resource));
 	return vulkanTextures.back();
 }
 
 std::shared_ptr<VulkanTexture>
 VulkanTextureManager::CreateDepthImage(
-	VkFormat depthFormat, int width, int height) 
-{	
+	VkFormat depthFormat, int width, int height)
+{
 	TexCreateDetails texCreateDetails;
 	texCreateDetails.format = depthFormat;
 	texCreateDetails.desiredWidth = width;
@@ -991,10 +989,10 @@ VulkanTextureManager::CreateDepthImage(
 	return vulkanTextures.back();
 }
 
-std::shared_ptr<VulkanTexture> 
+std::shared_ptr<VulkanTexture>
 VulkanTextureManager::CreateTextureFromData(
-		TexCreateDetails texCreateDetails,
-		std::byte* texData,  int byteCount)
+	TexCreateDetails texCreateDetails,
+	std::byte* texData, int byteCount)
 {
 	vulkanTextures.push_back(std::make_shared<VulkanTexture>(
 		renderer,

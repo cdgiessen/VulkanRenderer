@@ -80,7 +80,7 @@ void InstancedSceneObject::SetupUniformBuffer() {
 }
 
 void InstancedSceneObject::SetupImage() {
-	TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM, 
+	TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		true, 8);
 	vulkanTexture = renderer.textureManager.CreateTexture2D(texture, details);

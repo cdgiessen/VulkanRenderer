@@ -918,7 +918,7 @@ namespace InternalGraph {
 		{
 			for (int z = 0; z < cellsWide; z++)
 			{
-				glm::vec4 val = glm::normalize(std::get<glm::vec4>(outputNode->GetSplatMapValue(x, z)));
+				glm::vec4 val = glm::normalize(std::get<glm::vec4>(outputNode->GetSplatMapValue(z, x)));
 				//Resource::Texture::Pixel_RGBA pixel = Resource::Texture::Pixel_RGBA(
 
 				std::byte r = static_cast<std::byte>(static_cast<uint8_t>(glm::clamp(val.x, 0.0f, 1.0f) * 255.0f));

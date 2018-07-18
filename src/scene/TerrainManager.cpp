@@ -274,50 +274,50 @@ void TerrainManager::CleanUpTerrain() {
 	//delete terrainQuadPool;
 	//terrainQuadPool = new MemoryPool<TerrainQuadData, 2 * sizeof(TerrainQuadData)>();
 }
-
-void TerrainManager::GenerateTerrain(std::shared_ptr<Camera> camera) {
-
-	settings.width = nextTerrainWidth;
-
-	//ResetWorkerThreads();
-
-	for (int i = 0; i < settings.gridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
-		for (int j = 0; j < settings.gridDimentions; j++) {
-
-			glm::ivec2 terGrid(i - settings.gridDimentions / 2, j - settings.gridDimentions / 2);
-
-			TerrainCoordinateData coord = TerrainCoordinateData(
-				glm::vec2((i - settings.gridDimentions / 2) * settings.width - settings.width / 2, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2), //position
-				glm::vec2(settings.width, settings.width), //size
-				glm::i32vec2(i*settings.sourceImageResolution, j*settings.sourceImageResolution), //noise position
-				glm::vec2(1.0 / (float)settings.sourceImageResolution, 1.0f / (float)settings.sourceImageResolution),//noiseSize 
-				settings.sourceImageResolution + 1,
-				terGrid);
-
-			terrainCreationWork.push_back(TerrainCreationData(
-				settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale,
-				coord));
-
-		}
-	}
-	std::lock_guard<std::mutex> lk(workerMutex);
-	workerConditionVariable.notify_one();
-
-	std::vector<InstancedSceneObject::InstanceData> waterData;
-	for (int i = 0; i < settings.gridDimentions; i++) {
-		for (int j = 0; j < settings.gridDimentions; j++) {
-			InstancedSceneObject::InstanceData id;
-			id.pos = glm::vec3((i - settings.gridDimentions / 2) * settings.width - settings.width / 2,
-				0, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2);
-			id.rot = glm::vec3(0, 0, 0);
-			id.scale = settings.width;
-			waterData.push_back(id);
-		}
-	}
-	instancedWaters->ReplaceAllInstances(waterData);
-	instancedWaters->UploadInstances();
-	recreateTerrain = false;
-}
+//
+//void TerrainManager::GenerateTerrain(std::shared_ptr<Camera> camera) {
+//
+//	settings.width = nextTerrainWidth;
+//
+//	//ResetWorkerThreads();
+//
+//	for (int i = 0; i < settings.gridDimentions; i++) { //creates a grid of terrains centered around 0,0,0
+//		for (int j = 0; j < settings.gridDimentions; j++) {
+//
+//			glm::ivec2 terGrid(i - settings.gridDimentions / 2, j - settings.gridDimentions / 2);
+//
+//			TerrainCoordinateData coord = TerrainCoordinateData(
+//				glm::vec2((i - settings.gridDimentions / 2) * settings.width - settings.width / 2, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2), //position
+//				glm::vec2(settings.width, settings.width), //size
+//				glm::i32vec2(i*settings.sourceImageResolution, j*settings.sourceImageResolution), //noise position
+//				glm::vec2(1.0 / (float)settings.sourceImageResolution, 1.0f / (float)settings.sourceImageResolution),//noiseSize 
+//				settings.sourceImageResolution + 1,
+//				terGrid);
+//
+//			terrainCreationWork.push_back(TerrainCreationData(
+//				settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale,
+//				coord));
+//
+//		}
+//	}
+//	std::lock_guard<std::mutex> lk(workerMutex);
+//	workerConditionVariable.notify_one();
+//
+//	std::vector<InstancedSceneObject::InstanceData> waterData;
+//	for (int i = 0; i < settings.gridDimentions; i++) {
+//		for (int j = 0; j < settings.gridDimentions; j++) {
+//			InstancedSceneObject::InstanceData id;
+//			id.pos = glm::vec3((i - settings.gridDimentions / 2) * settings.width - settings.width / 2,
+//				0, (j - settings.gridDimentions / 2) * settings.width - settings.width / 2);
+//			id.rot = glm::vec3(0, 0, 0);
+//			id.scale = settings.width;
+//			waterData.push_back(id);
+//		}
+//	}
+//	instancedWaters->ReplaceAllInstances(waterData);
+//	instancedWaters->UploadInstances();
+//	recreateTerrain = false;
+//}
 
 void TerrainManager::UpdateTerrains(glm::vec3 cameraPos)
 {

@@ -15,12 +15,13 @@ class VulkanRenderer;
 struct TexCreateDetails {
 	VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 	VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	bool genMipMaps = false;
 	int mipMapLevelsToGen = 1;
 	int desiredWidth = 0;
 	int desiredHeight = 0;
 
-	TexCreateDetails(){};
+	TexCreateDetails() {};
 	TexCreateDetails(VkFormat format,
 		VkImageLayout imageLayout,
 		bool genMipMaps,
@@ -29,8 +30,8 @@ struct TexCreateDetails {
 		int desiredHeight = 0) :
 		format(format), imageLayout(imageLayout), genMipMaps(genMipMaps),
 		mipMapLevelsToGen(mipMapLevelsToGen),
-		desiredWidth(desiredWidth), 
-		desiredHeight(desiredHeight) {}	;
+		desiredWidth(desiredWidth),
+		desiredHeight(desiredHeight) {};
 };
 
 class VulkanTexture {
@@ -67,7 +68,7 @@ public:
 
 	Signal readyToUse;
 protected:
-	VulkanRenderer& renderer;
+	VulkanRenderer & renderer;
 
 	int mipLevels;
 	int layers;
@@ -164,11 +165,11 @@ public:
 
 	std::shared_ptr<VulkanTexture> CreateTextureFromData(
 		TexCreateDetails texCreateDetails,
-		std::byte* texData,  int byteCount);
-	
+		std::byte* texData, int byteCount);
+
 
 private:
-	VulkanRenderer& renderer;
+	VulkanRenderer & renderer;
 	Resource::Texture::Manager& texManager;
 
 	std::vector<std::shared_ptr<VulkanTexture>> vulkanTextures;

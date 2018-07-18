@@ -39,7 +39,7 @@ struct GeneralSettings {
 	int maxLevels = 4;
 	int gridDimentions = 1;
 	int viewDistance = 1; //terrain chunks to load away from camera;
-	int sourceImageResolution = 512;
+	int sourceImageResolution = 256;
 	int numCells = 64; //compile time currently
 	int workerThreads = 1;
 };
@@ -124,7 +124,7 @@ public:
 
 	void CleanUpTerrain();
 
-	void GenerateTerrain(std::shared_ptr<Camera> camera);
+	//void GenerateTerrain(std::shared_ptr<Camera> camera);
 
 	void UpdateTerrains(glm::vec3 cameraPos);
 

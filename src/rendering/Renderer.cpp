@@ -75,7 +75,7 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue())
 
 {
-	for (int i = 0; i < vulkanSwapChain.swapChainImages.size(); i++) {
+	for (int i = 0; i < 2; i++) {
 		frameObjects.push_back(std::make_unique<FrameObject>(device, i));
 	}
 

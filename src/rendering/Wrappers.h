@@ -257,6 +257,7 @@ public:
 
 
 	VkResult AquireNextSwapchainImage(VkSwapchainKHR swapchain);
+	void WaitTillReady();
 	void PrepareFrame();
 	void SubmitFrame();
 
