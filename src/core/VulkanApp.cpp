@@ -158,7 +158,7 @@ void VulkanApp::DebugOverlay(bool* show_debug_overlay) {
 	if (verbose) ImGui::Text("Last frame time%f(s)", timeManager.PreviousFrameTime());
 	ImGui::Separator();
 	ImGui::Text("Mouse Position: (%.1f,%.1f)", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
-	ImGui::SliderFloat("Temp spin", &tempCameraSpeed, -5.0f, 5.0f);
+	//ImGui::SliderFloat("Temp spin", &tempCameraSpeed, -5.0f, 5.0f);
 	ImGui::End();
 
 }
@@ -181,6 +181,7 @@ void VulkanApp::CameraWindow(bool* show_camera_window) {
 }
 
 void VulkanApp::ControlsWindow(bool* show_controls_window) {
+	return;
 	ImGui::SetNextWindowPos(ImVec2(0, 250), ImGuiSetCond_FirstUseEver);
 	if (ImGui::Begin("Controls", show_controls_window)) {
 		ImGui::Text("Horizontal Movement: WASD");
@@ -200,13 +201,45 @@ void VulkanApp::ControlsWindow(bool* show_controls_window) {
 
 }
 
+void VulkanApp::ControllerWindow(bool* show_controller_window) {
+
+
+	if (ImGui::Begin("Controller View", show_controller_window)) {
+
+		auto joys = Input::inputDirector.GetConnectedJoysticks();
+
+		for (int i = 0; i < 16; i++) {
+			if (Input::IsJoystickConnected(i)) {
+
+				ImGui::BeginGroup();
+				for (int j = 0; j < 6; j++) {
+					ImGui::Text("%f", Input::GetControllerAxis(i, j));
+				}
+				ImGui::EndGroup();
+				ImGui::SameLine();
+				ImGui::BeginGroup();
+				for (int j = 0; j < 14; j++) {
+					Input::GetControllerButton(i, j) ?
+						ImGui::Text("true") :
+						ImGui::Text("false");
+				}
+				ImGui::EndGroup();
+			}
+
+		}
+
+	}
+	ImGui::End();
+}
+
+
 // Build imGui windows and elements
 void VulkanApp::BuildImgui() {
 
 	imGuiTimer.StartTimer();
 
 	ImGui_ImplGlfwVulkan_NewFrame();
-	if (panels.showGui) {
+	if (debug_mode && panels.showGui) {
 
 		if (panels.debug_overlay) DebugOverlay(&panels.debug_overlay);
 		if (panels.camera_controls) CameraWindow(&panels.camera_controls);
@@ -216,39 +249,16 @@ void VulkanApp::BuildImgui() {
 		scene.UpdateSceneGUI();
 
 		if (panels.log) {
-			appLog.Draw("Example: Log", &panels.log);
+			//appLog.Draw("Example: Log", &panels.log);
 		}
 
 		imgui_nodeGraph_terrain.Draw();
 
 		bool open = true;
 
-		if (ImGui::Begin("Controller View", &open)) {
+		//ControllerWindow(&open);
 
-			auto joys = Input::inputDirector.GetConnectedJoysticks();
 
-			for (int i = 0; i < 16; i++) {
-				if (Input::IsJoystickConnected(i)) {
-
-					ImGui::BeginGroup();
-					for (int j = 0; j < 6; j++) {
-						ImGui::Text("%f", Input::GetControllerAxis(i, j));
-					}
-					ImGui::EndGroup();
-					ImGui::SameLine();
-					ImGui::BeginGroup();
-					for (int j = 0; j < 14; j++) {
-						Input::GetControllerButton(i, j) ?
-							ImGui::Text("true") :
-							ImGui::Text("false");
-					}
-					ImGui::EndGroup();
-				}
-
-			}
-
-		}
-		ImGui::End();
 
 	}
 	imGuiTimer.EndTimer();

@@ -162,9 +162,9 @@ void TerrainChunkBuffer::UpdateChunks() {
 			vertexCopyRegions.push_back(initializers::bufferCopyCreate(vert_size, i * vert_size, i * vert_size));
 			indexCopyRegions.push_back(initializers::bufferCopyCreate(ind_size, i * ind_size, i * ind_size));
 
-			*chunkReadySignals.at(i) = false;
+			//*chunkReadySignals.at(i) = false;
 
-			signals.push_back(chunkReadySignals.at(i));
+			//signals.push_back(chunkReadySignals.at(i));
 			chunkStates.at(i) = TerrainChunkBuffer::ChunkState::ready;
 			break;
 

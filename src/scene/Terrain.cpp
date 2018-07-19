@@ -37,7 +37,7 @@ void TerrainQuad::Setup() {
 	GenerateTerrainChunk(std::ref(terrain->fastGraphUser),
 		terrain->heightScale, terrain->coordinateData.size.x);
 	chunkBuffer.SetChunkWritten(index);
-	quadSignal = chunkBuffer.GetChunkSignal(index);
+	//quadSignal = chunkBuffer.GetChunkSignal(index);
 }
 
 float TerrainQuad::GetUVvalueFromLocalIndex(float i, int numCells, int level, int subDivPos) {

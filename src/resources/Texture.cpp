@@ -236,11 +236,11 @@ namespace Resource::Texture {
 		nlohmann::json j;
 
 		if (fileExists("assets/TextureList.json")) {
+			std::ifstream inFile("assets/TextureList.json");
 			try {
-				std::ifstream inFile("assets/TextureList.json");
 				inFile >> j;
 			}
-			catch (std::runtime_error e) {
+			catch (nlohmann::json::parse_error &e) {
 				Log::Debug << "Texture List was invalid json, creating new one\n";
 				Log::Debug << "Json error: " << std::string(e.what()) << "\n";
 				SaveTextureList();
@@ -265,9 +265,8 @@ namespace Resource::Texture {
 					<< " height " << val.dataDescription.height << "\n";
 			}
 		}
-		catch (std::runtime_error e) {
-			Log::Debug << "Error loading texture list " << std::string(e.what())
-				<< "\n";
+		catch (nlohmann::json::parse_error &e) {
+			Log::Debug << "Error loading texture list " << e.what() << "\n";
 		}
 	}
 
@@ -277,9 +276,14 @@ namespace Resource::Texture {
 		for (auto const &[key, val] : textureResources) {
 			j[key] = val.to_json();
 		}
-
 		std::ofstream outFile("assets/TextureList.json");
-		outFile << std::setw(4) << j;
+		try {
+			outFile << std::setw(4) << j;
+		}
+		catch (nlohmann::json::parse_error &e)
+		{
+			Log::Error << e.what() << "\n";
+		}
 		outFile.close();
 	}
 

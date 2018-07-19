@@ -73,7 +73,10 @@ private:
 	ProcTerrainNodeGraph imgui_nodeGraph_terrain;
 	Scene scene;
 
+	bool debug_mode = true;
+
 	ImGUI_PanelSettings panels;
+
 
 	////ImGUI functions
 	void BuildImgui();
@@ -81,7 +84,7 @@ private:
 	void DebugOverlay(bool* show_debug_overlay);
 	void CameraWindow(bool* show_camera_overlay);
 	void ControlsWindow(bool* show_controls_window);
-
+	void ControllerWindow(bool* show_controller_window);
 	//ImGui resources
 	SimpleTimer imGuiTimer;
 	Log::Logger appLog;

@@ -254,7 +254,7 @@ void Scene::UpdateSceneGUI() {
 		terrainManager->UpdateTerrainGUI();
 		terrainManager->DrawTerrainTextureViewer();
 	}
-
+	return;
 	DrawSkySettingsGui();
 	bool value;
 	if (ImGui::Begin("Lighting Tester", &value)) {

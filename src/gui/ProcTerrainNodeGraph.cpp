@@ -630,88 +630,100 @@ void ProcTerrainNodeGraph::LoadGraphFromFile(std::string fileName)
 		return;
 	}
 
-	inFile >> j;
+	try {
+		inFile >> j;
+	}
+	catch (nlohmann::json::parse_error &e)
+	{
+		Log::Error << e.what() << "\n";
+	}
 	inFile.close();
 
 	ResetGraph();
+	try {
+		int numNodes = j["numNodes"];
+		nodes.reserve(numNodes);
+		for (int i = 0; i < numNodes; i++)
+		{
+			std::string curIndex(std::to_string(i));
+			ImVec2 pos = ImVec2(j[curIndex]["winPosX"], j[curIndex]["winPosY"]);
+			int type = j[curIndex]["nodeType"];
+			AddNode(static_cast<NodeType>(type), pos, j[curIndex]["id"]);
+		}
 
-	int numNodes = j["numNodes"];
-	nodes.reserve(numNodes);
-	for (int i = 0; i < numNodes; i++)
-	{
-		std::string curIndex(std::to_string(i));
-		ImVec2 pos = ImVec2(j[curIndex]["winPosX"], j[curIndex]["winPosY"]);
-		int type = j[curIndex]["nodeType"];
-		AddNode(static_cast<NodeType>(type), pos, j[curIndex]["id"]);
-	}
+		for (int i = 0; i < numNodes; i++) {
+			std::string curIndex(std::to_string(i));
+			auto node = GetNodeById(j[curIndex]["id"]);
+			for (int slot = 0; slot < node->inputSlots.size(); slot++) {
+				std::string curSlotIndex(std::to_string(slot));
 
-	for (int i = 0; i < numNodes; i++) {
-		std::string curIndex(std::to_string(i));
-		auto node = GetNodeById(j[curIndex]["id"]);
-		for (int slot = 0; slot < node->inputSlots.size(); slot++) {
-			std::string curSlotIndex(std::to_string(slot));
+				bool hasCon = j[curIndex][curSlotIndex]["hasConnection"];
+				if (hasCon) {
+					int conIndex = j[curIndex][curSlotIndex]["value"];
 
-			bool hasCon = j[curIndex][curSlotIndex]["hasConnection"];
-			if (hasCon) {
-				int conIndex = j[curIndex][curSlotIndex]["value"];
+					auto outGoingNode = GetNodeById(conIndex);
+					if (outGoingNode == nullptr) {
+						Log::Error << "Couldn't find node by id in graph loading!\n";
+					}
 
-				auto outGoingNode = GetNodeById(conIndex);
-				if (outGoingNode == nullptr) {
-					Log::Error << "Couldn't find node by id in graph loading!\n";
+					int slotType = j[curIndex][curSlotIndex]["slotType"];
+					std::shared_ptr<Connection> newConnection = std::make_shared<Connection>(
+						static_cast<ConnectionType>(slotType),
+						outGoingNode,
+						node,
+						slot);
+
+					node->inputSlots[slot].connection = newConnection;
+					outGoingNode->outputSlot.connections.push_back(newConnection);
+
+					newConnection->startPosRelNode = outGoingNode->outputSlot.pos;
+					newConnection->endPosRelNode = node->inputSlots[slot].pos;
+
+					//node->SetInternalLink(slot, outGoingNode->internal_node);
+					SetNodeInternalLinkByID(node->internalNodeID, slot, outGoingNode->internalNodeID);
+
+					connections.push_back(newConnection);
+
 				}
+				else {
+					int slotType = j[curIndex][curSlotIndex]["slotType"];
+					ConnectionType type = static_cast<ConnectionType>(slotType);
 
-				int slotType = j[curIndex][curSlotIndex]["slotType"];
-				std::shared_ptr<Connection> newConnection = std::make_shared<Connection>(
-					static_cast<ConnectionType>(slotType),
-					outGoingNode,
-					node,
-					slot);
+					if (type == ConnectionType::Int) {
+						int valInt = j[curIndex][curSlotIndex]["value"];
+						node->inputSlots[slot].value.value = valInt;
+					}
+					if (type == ConnectionType::Float) {
+						float valFloat = j[curIndex][curSlotIndex]["value"];
+						node->inputSlots[slot].value.value = valFloat;
+					}
+					if (type == ConnectionType::Vec2) {
+						float arr[2];
+						arr[0] = j[curIndex][curSlotIndex]["value"];
+						node->inputSlots[slot].value.value = glm::make_vec2(arr);
+					}
+					if (type == ConnectionType::Vec3) {
+						float arr[3];
+						arr[0] = j[curIndex][curSlotIndex]["value"];
+						node->inputSlots[slot].value.value = glm::make_vec3(arr);
+					}
+					if (type == ConnectionType::Vec4 || type == ConnectionType::Color) {
+						float arr[4];
+						arr[0] = j[curIndex][curSlotIndex]["value"];
+						node->inputSlots[slot].value.value = glm::make_vec4(arr);
+					}
 
-				node->inputSlots[slot].connection = newConnection;
-				outGoingNode->outputSlot.connections.push_back(newConnection);
 
-				newConnection->startPosRelNode = outGoingNode->outputSlot.pos;
-				newConnection->endPosRelNode = node->inputSlots[slot].pos;
-
-				//node->SetInternalLink(slot, outGoingNode->internal_node);
-				SetNodeInternalLinkByID(node->internalNodeID, slot, outGoingNode->internalNodeID);
-
-				connections.push_back(newConnection);
+				}
 
 			}
-			else {
-				int slotType = j[curIndex][curSlotIndex]["slotType"];
-				ConnectionType type = static_cast<ConnectionType>(slotType);
-
-				if (type == ConnectionType::Int) {
-					int valInt = j[curIndex][curSlotIndex]["value"];
-					node->inputSlots[slot].value.value = valInt;
-				}
-				if (type == ConnectionType::Float) {
-					float valFloat = j[curIndex][curSlotIndex]["value"];
-					node->inputSlots[slot].value.value = valFloat;
-				}
-				if (type == ConnectionType::Vec2) {
-					float arr[2];
-					arr[0] = j[curIndex][curSlotIndex]["value"];
-					node->inputSlots[slot].value.value = glm::make_vec2(arr);
-				}
-				if (type == ConnectionType::Vec3) {
-					float arr[3];
-					arr[0] = j[curIndex][curSlotIndex]["value"];
-					node->inputSlots[slot].value.value = glm::make_vec3(arr);
-				}
-				if (type == ConnectionType::Vec4 || type == ConnectionType::Color) {
-					float arr[4];
-					arr[0] = j[curIndex][curSlotIndex]["value"];
-					node->inputSlots[slot].value.value = glm::make_vec4(arr);
-				}
-
-
-			}
-
 		}
 	}
+	catch (nlohmann::json::parse_error &e)
+	{
+		Log::Error << e.what() << "\n";
+	}
+
 
 }
 

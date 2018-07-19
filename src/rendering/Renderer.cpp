@@ -320,7 +320,7 @@ void VulkanRenderer::SubmitFrame(int curFrameIndex) {
 	else if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to present swap chain image!");
 	}
-	//FINALLY!!!!
+	//FINALLY!!!! -- not quite...
 	std::lock_guard<std::mutex> lock(device.PresentQueue().GetQueueMutex());
 	vkQueueWaitIdle(device.PresentQueue().GetQueue());
 }

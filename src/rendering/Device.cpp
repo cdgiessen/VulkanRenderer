@@ -8,7 +8,7 @@
 #include "../core/Logger.h"
 #include "../core/Window.h"
 
-
+#include <iostream>
 
 
 VulkanDevice::VulkanDevice(bool validationLayers, Window& window)
@@ -68,25 +68,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debugCallback(
 	void* userData)
 {
 	Log::Debug << "validation layer: " << msg << "\n";// << "\n";
-
+	std::cout << "io: validation layer: " << msg << "\n";
 	return VK_FALSE;
 }
-
-// void VulkanDevice::InitVulkanDevice()
-// {
-// 	CreateInstance("My Vulkan App");
-// 	SetupDebugCallback();
-// 	CreateSurface(surface);
-// 	PickPhysicalDevice(surface);
-
-// 	familyIndices = FindQueueFamilies(physical_device, surface);
-
-// 	CreateLogicalDevice();
-
-// 	CreateQueues();
-
-// 	CreateVulkanAllocator();
-// }
 
 bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) {
 
@@ -207,14 +191,16 @@ void VulkanDevice::CreateInstance(std::string appName) {
 
 
 void VulkanDevice::SetupDebugCallback() {
-	if (!enableValidationLayers) return;
+	if (!enableValidationLayers)
+		return;
 
 	VkDebugReportCallbackCreateInfoEXT createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
 	createInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
 	createInfo.pfnCallback = debugCallback;
 
-	if (CreateDebugReportCallbackEXT(instance, &createInfo, nullptr, &callback) != VK_SUCCESS) {
+	VkResult res = CreateDebugReportCallbackEXT(instance, &createInfo, nullptr, &callback);
+	if (res != VK_SUCCESS) {
 		throw std::runtime_error("failed to set up debug callback!");
 	}
 }
