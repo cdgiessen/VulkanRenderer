@@ -22,8 +22,8 @@ Scene::Scene(Resource::ResourceManager& resourceMan,
 	directionalLights.resize(5);
 	pointLights.resize(5);
 
-	skySettings.sun = DirectionalLight(glm::vec3(0, 60, 25), 15.0f, glm::vec3(1.0f, 0.98f, 0.9f));
-	skySettings.moon = DirectionalLight(-glm::vec3(0, 60, 25), 0.5f, glm::vec3(0.9f, 0.95f, 1.0f));
+	skySettings.sun = DirectionalLight(glm::vec3(0, 60, 25), 10.0f, glm::vec3(1.0f, 0.98f, 0.9f));
+	skySettings.moon = DirectionalLight(-glm::vec3(0, 60, 25), 0.0f, glm::vec3(0.9f, 0.95f, 1.0f));
 
 	directionalLights.at(0) = skySettings.sun;
 
@@ -151,6 +151,8 @@ void Scene::UpdateScene() {
 	cd.cameraDir = camera->Front;
 	cd.cameraPos = camera->Position;
 
+	UpdateSunData();
+
 	renderer.UpdateRenderResources(gd, cd, directionalLights, pointLights, spotLights);
 
 	if (walkOnGround) {
@@ -190,7 +192,6 @@ void Scene::UpdateScene() {
 	if (Input::GetKeyDown(Input::KeyCode::V))
 		UpdateTerrain = !UpdateTerrain;
 
-	UpdateSunData();
 
 	skybox->UpdateUniform(proj, cd.view);
 
@@ -232,6 +233,9 @@ void Scene::UpdateSunData() {
 	float Y = glm::sin(skySettings.verticalAngle);
 	skySettings.sun.direction = glm::vec3(X, Y, Z);
 	skySettings.moon.direction = -glm::vec3(X, Y, Z);
+
+	directionalLights.at(0) = skySettings.sun;
+	directionalLights.at(1) = skySettings.moon;
 }
 
 void Scene::DrawSkySettingsGui() {
@@ -254,12 +258,14 @@ void Scene::UpdateSceneGUI() {
 		terrainManager->UpdateTerrainGUI();
 		terrainManager->DrawTerrainTextureViewer();
 	}
-	return;
+	
 	DrawSkySettingsGui();
+	return;
+	
 	bool value;
 	if (ImGui::Begin("Lighting Tester", &value)) {
 		ImGui::Text("Directional Lights");
-		for (int i = 0; i < directionalLights.size(); i++)
+		for (int i = 0; i < 2/*directionalLights.size()*/; i++)
 		{
 
 			ImGui::DragFloat3(std::string("Direction##" + std::to_string(i)).c_str(), (float*)glm::value_ptr(directionalLights[i].direction), 0.01f);
@@ -268,7 +274,7 @@ void Scene::UpdateSceneGUI() {
 			ImGui::Text(" ");
 		}
 		ImGui::Text("Point Lights");
-		for (int i = 0; i < pointLights.size(); i++)
+		for (int i = 0; i < 2/*pointLights.size()*/; i++)
 		{
 
 			ImGui::DragFloat3(std::string("Position##" + std::to_string(i + 1000)).c_str(), ((float*)glm::value_ptr(pointLights[i].position)), 0.01f);
@@ -278,7 +284,7 @@ void Scene::UpdateSceneGUI() {
 		}
 	}
 	ImGui::End();
-
+	
 	if (ImGui::Begin("instance tester", &value)) {
 		ImGui::DragFloat3("Position", ((float*)glm::value_ptr(testInstanceData.pos)));
 		ImGui::DragFloat3("Rotation", ((float*)glm::value_ptr(testInstanceData.rot)));

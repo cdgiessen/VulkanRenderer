@@ -53,7 +53,7 @@ void TerrainCreationWorker(TerrainManager* man) {
 					// 		data->sourceImageResolution + 1,
 					// 		data->sourceImageResolution + 1, imgData);
 
-					terrain->InitTerrain(man->curCameraPos, man->terrainVulkanTextureArray);
+					terrain->InitTerrain(man->curCameraPos, man->terrainVulkanTextureArrayAlbedo, man->terrainVulkanTextureArrayRoughness, man->terrainVulkanTextureArrayMetallic);
 
 					{
 						std::lock_guard<std::mutex> lk(man->terrain_mutex);
@@ -219,12 +219,21 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
 	//			resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/TerrainTextures/" + item)));
 	//}
 
-	terrainTextureArray = resourceMan.texManager.GetTexIDByName("terrain");
 	TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		true, 4);
-	terrainVulkanTextureArray = renderer.textureManager.CreateTexture2DArray(
-		terrainTextureArray, details);
+	
+	terrainTextureArrayAlbedo = resourceMan.texManager.GetTexIDByName("terrain_albedo");
+	terrainVulkanTextureArrayAlbedo = renderer.textureManager.CreateTexture2DArray(
+		terrainTextureArrayAlbedo, details);
+
+	terrainTextureArrayRoughness = resourceMan.texManager.GetTexIDByName("terrain_roughness");
+	terrainVulkanTextureArrayRoughness = renderer.textureManager.CreateTexture2DArray(
+		terrainTextureArrayRoughness, details);
+
+	terrainTextureArrayMetallic = resourceMan.texManager.GetTexIDByName("terrain_metalness");
+	terrainVulkanTextureArrayMetallic = renderer.textureManager.CreateTexture2DArray(
+		terrainTextureArrayMetallic, details);
 
 	instancedWaters = std::make_unique<InstancedSceneObject>(renderer);
 	instancedWaters->SetFragmentShaderToUse("assets/shaders/water.frag.spv");

@@ -170,12 +170,15 @@ int Terrain::FindEmptyIndex() {
 	return curEmptyIndex++; //always gets an index one higher
 }
 
-void Terrain::InitTerrain(glm::vec3 cameraPos, std::shared_ptr<VulkanTexture> terrainVulkanTextureArray)
+void Terrain::InitTerrain(glm::vec3 cameraPos,
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo,
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness,
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic)
 {
 	SetupMeshbuffers();
 	SetupUniformBuffer();
 	SetupImage();
-	SetupDescriptorSets(terrainVulkanTextureArray);
+	SetupDescriptorSets(terrainVulkanTextureArrayAlbedo, terrainVulkanTextureArrayRoughness, terrainVulkanTextureArrayMetallic);
 	SetupPipeline();
 
 	quadMap.emplace(std::make_pair(FindEmptyIndex(), TerrainQuad{ chunkBuffer,
@@ -265,7 +268,10 @@ void Terrain::SetupImage()
 	//}
 }
 
-void Terrain::SetupDescriptorSets(std::shared_ptr<VulkanTexture> terrainVulkanTextureArray)
+void Terrain::SetupDescriptorSets(
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo,
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness,
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic)
 {
 	descriptor = renderer.GetVulkanDescriptor();
 
@@ -273,13 +279,17 @@ void Terrain::SetupDescriptorSets(std::shared_ptr<VulkanTexture> terrainVulkanTe
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
 	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1));
+	m_bindings.push_back(VulkanDescriptor::CreateBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4, 1));
 	descriptor->SetupLayout(m_bindings);
 
 	std::vector<DescriptorPoolSize> poolSizes;
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
-	descriptor->SetupPool(poolSizes, maxNumQuads);
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	poolSizes.push_back(DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	descriptor->SetupPool(poolSizes, 1);
 
 	//VkDescriptorSetAllocateInfo allocInfoTerrain = initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
 	descriptorSet = descriptor->CreateDescriptorSet();
@@ -287,7 +297,9 @@ void Terrain::SetupDescriptorSets(std::shared_ptr<VulkanTexture> terrainVulkanTe
 	std::vector<DescriptorUse> writes;
 	writes.push_back(DescriptorUse(0, 1, uniformBuffer->resource));
 	writes.push_back(DescriptorUse(1, 1, terrainVulkanSplatMap->resource));
-	writes.push_back(DescriptorUse(2, 1, terrainVulkanTextureArray->resource));
+	writes.push_back(DescriptorUse(2, 1, terrainVulkanTextureArrayAlbedo->resource));
+	writes.push_back(DescriptorUse(3, 1, terrainVulkanTextureArrayRoughness->resource));
+	writes.push_back(DescriptorUse(4, 1, terrainVulkanTextureArrayMetallic->resource));
 	descriptor->UpdateDescriptorSet(descriptorSet, writes);
 
 }

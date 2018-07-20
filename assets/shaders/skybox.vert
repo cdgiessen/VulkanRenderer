@@ -15,7 +15,7 @@ layout(set = 0, binding = 1) uniform CameraData {
 	vec3 cameraPos;
 } cam;
 
-layout(set = 3, binding = 0) uniform SkyboxCameraData {
+layout(set = 2, binding = 0) uniform SkyboxCameraData {
 	mat4 proj;
 	mat4 view;
 } sky;

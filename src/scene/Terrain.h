@@ -156,7 +156,9 @@ public:
 	~Terrain();
 
 	void InitTerrain(glm::vec3 cameraPos,
-		std::shared_ptr<VulkanTexture> terrainVulkanTextureArray);
+		std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo,
+		std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness, 
+		std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic);
 
 	void UpdateTerrain(glm::vec3 viewerPos);
 	void DrawTerrain(VkCommandBuffer cmdBuff, bool wireframe);
@@ -177,7 +179,10 @@ private:
 	void SetupImage();
 	void SetupPipeline();
 
-	void SetupDescriptorSets(std::shared_ptr<VulkanTexture> terrainVulkanTextureArray);
+	void SetupDescriptorSets(
+		std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo,
+		std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness,
+		std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic);
 
 	void UpdateMeshBuffer();
 

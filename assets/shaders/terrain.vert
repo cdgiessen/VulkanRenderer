@@ -14,7 +14,7 @@ layout(set = 0, binding = 1) uniform CameraData {
 } cam;
 
 //per model information
-layout(set = 3, binding = 0) uniform ModelMatrixData {
+layout(set = 2, binding = 0) uniform ModelMatrixData {
     mat4 model;
 	mat4 normal;
 } mnd;

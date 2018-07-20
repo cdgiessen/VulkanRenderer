@@ -152,7 +152,9 @@ public:
 	std::vector<glm::i32vec2> activeTerrains;
 	glm::vec3 curCameraPos;
 	InternalGraph::GraphPrototype& protoGraph;
-	std::shared_ptr<VulkanTexture> terrainVulkanTextureArray;
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo;
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness;
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic;
 
 	GeneralSettings settings;
 private:
@@ -167,7 +169,9 @@ private:
 
 	std::shared_ptr<Mesh> WaterMesh;
 
-	Resource::Texture::TexID terrainTextureArray;
+	Resource::Texture::TexID terrainTextureArrayAlbedo;
+	Resource::Texture::TexID terrainTextureArrayRoughness;
+	Resource::Texture::TexID terrainTextureArrayMetallic;
 
 	std::vector<std::thread> terrainCreationWorkers;
 
