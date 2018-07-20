@@ -104,7 +104,7 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     kD *= 1.0 - metalness;
     vec3 numerator    = NDF * G * F;
     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-    vec3 specular     = numerator / denominator/*max(denominator, 0.001)*/;
+    vec3 specular     = numerator / max(denominator, 0.001);
     // add to outgoing radiance Lo
      float NdotL = max(dot(N, L), 0.0);
     return (kD * albedo / PI + specular) * radiance * NdotL;
@@ -201,7 +201,7 @@ void main() {
     vec3 V = normalize(cam.cameraPos - inFragPos);
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, 0.0f);
-    vec3 ambient = vec3(0.0);
+    vec3 ambient = vec3(0.002);
     vec3 lighting = ambient + LightingContribution(N, V, F0, albedo, roughness, metalness);
     
 	//float belowWaterLevelDarkening = clamp(inFragPos.y, -1, 0);
@@ -211,8 +211,8 @@ void main() {
     //outColor = vec4(pointLightContrib * inColor, 1.0f);
 	vec3 color = lighting / (lighting + vec3(1.0));
     outColor = vec4(pow(color, vec3(1.0/2.2)),1.0f);  
-	if(isnan(outColor))
-		outColor = vec4(1.0f);
-	if(isinf(outColor))
-		outColor = vec4(0.5f);
+	//if(isnan(outColor))
+	//	outColor = vec4(1.0f);
+	//if(isinf(outColor))
+	//	outColor = vec4(0.5f);
 }
