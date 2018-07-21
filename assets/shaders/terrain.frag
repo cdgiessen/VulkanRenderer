@@ -147,7 +147,22 @@ vec3 LightingContribution(vec3 N, vec3 V, vec3 F0, vec3 albedo, float roughness,
 	return Lo;
 }
 
+vec3 perturbNormal(vec3 texNormal)
+{
+	vec3 tangentNormal = texNormal * 2.0 - 1.0;
 
+	vec3 q1 = dFdx(inFragPos);
+	vec3 q2 = dFdy(inFragPos);
+	vec2 st1 = dFdx(inTexCoord);
+	vec2 st2 = dFdy(inTexCoord);
+
+	vec3 N = normalize(texNormal);
+	vec3 T = normalize(q1 * st2.t - q2 * st1.t);
+	vec3 B = -normalize(cross(N, T));
+	mat3 TBN = mat3(T, B, N);
+
+	return normalize(TBN * tangentNormal);
+}
 
 void main() {
     //vec4 texColor = inColor; //splatmap not in yet, so just use vertex colors until then
@@ -160,24 +175,24 @@ void main() {
     vec4 albedo4 = pow(texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 3)),vec4(2.2));
     vec3 albedo = vec3(albedo1 * texColor.x + albedo2*texColor.y + albedo3 * texColor.z + albedo4 * texColor.w);
 
-    float roughness1 =  float (texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 0)));
-    float roughness2 = float ( texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 1)));
-    float roughness3 =  float (texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 2)));
-    float roughness4 = float ( texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 3)));
+    float roughness1 =  float (texture(texArrayRoughness, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 0)));
+    float roughness2 = float ( texture(texArrayRoughness, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 1)));
+    float roughness3 =  float (texture(texArrayRoughness, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 2)));
+    float roughness4 = float ( texture(texArrayRoughness, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 3)));
     float roughness = (roughness1 * texColor.x + roughness2*texColor.y + roughness3 * texColor.z + roughness4 * texColor.w);
     
-	float metalness1 =  float (texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 0)));
-    float metalness2 = float ( texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 1)));
-    float metalness3 =  float (texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 2)));
-    float metalness4 = float ( texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 3)));
+	float metalness1 =  float (texture(texArrayMetalness, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 0)));
+    float metalness2 = float ( texture(texArrayMetalness, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 1)));
+    float metalness3 =  float (texture(texArrayMetalness, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 2)));
+    float metalness4 = float ( texture(texArrayMetalness, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 3)));
     float metalness = (metalness1 * texColor.x + metalness2*texColor.y + metalness3 * texColor.z + metalness4 * texColor.w);
    
-	//vec4 normal1 = texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 0));
-    //vec4 normal2 = texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 1));
-    //vec4 normal3 = texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 2));
-    //vec4 normal4 = texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 3));
-    //vec4 normal = vec3(normal1 * texColor.x + normal2*texColor.y + normal3 * texColor.z + normal4 * texColor.w);
-    //vec3 viewVec = normalize(-cam.cameraDir);
+	vec3 normal1 = vec3(texture(texArrayNormal, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 0)));
+    vec3 normal2 = vec3(texture(texArrayNormal, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 1)));
+    vec3 normal3 = vec3(texture(texArrayNormal, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 2)));
+    vec3 normal4 = vec3(texture(texArrayNormal, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 3)));
+    vec3 normal = normalize(normal1 * texColor.x + normal2*texColor.y + normal3 * texColor.z + normal4 * texColor.w);
+    vec3 viewVec = normalize(-cam.cameraDir);
 
 	//vec3 normalVec = normalize(inNormal);
 
@@ -196,8 +211,8 @@ void main() {
 	//}
 
 	//vec3 dirContrib = DirPhongLighting(viewVec, sun.light[0].direction, normalVec, sun.light[0].color, sun.light[0].intensity);
-
-	vec3 N = normalize(inNormal);
+	//vec3 N = normalize(inNormal);
+    vec3 N = perturbNormal(normal);
     vec3 V = normalize(cam.cameraPos - inFragPos);
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, 0.0f);

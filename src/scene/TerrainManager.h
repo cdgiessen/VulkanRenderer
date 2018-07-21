@@ -155,6 +155,7 @@ public:
 	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo;
 	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness;
 	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic;
+	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal;
 
 	GeneralSettings settings;
 private:
@@ -172,6 +173,7 @@ private:
 	Resource::Texture::TexID terrainTextureArrayAlbedo;
 	Resource::Texture::TexID terrainTextureArrayRoughness;
 	Resource::Texture::TexID terrainTextureArrayMetallic;
+	Resource::Texture::TexID terrainTextureArrayNormal;
 
 	std::vector<std::thread> terrainCreationWorkers;
 

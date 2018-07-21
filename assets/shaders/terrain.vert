@@ -38,6 +38,6 @@ void main() {
 
     gl_Position = cam.projView * mnd.model * vec4(inPosition, 1.0);
 
-	outNormal = inNormal;
+	outNormal = vec3(mnd.normal * vec4(inNormal,1.0f));
 	outFragPos = (mnd.model * vec4(inPosition, 1.0)).xyz;		
 }
