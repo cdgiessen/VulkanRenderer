@@ -223,7 +223,7 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
 
 	TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		true, 4);
+		true, 8);
 	
 	terrainTextureArrayAlbedo = resourceMan.texManager.GetTexIDByName("terrain_albedo");
 	terrainVulkanTextureArrayAlbedo = renderer.textureManager.CreateTexture2DArray(
@@ -251,7 +251,7 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
 	instancedWaters->InitInstancedSceneObject();
 
 	StartWorkerThreads();
-	
+
 }
 
 TerrainManager::~TerrainManager()

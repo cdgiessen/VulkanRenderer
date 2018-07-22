@@ -254,7 +254,7 @@ void Terrain::SetupImage()
 	if (splatMapData != nullptr) {
 		TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			true, 4, coordinateData.sourceImageResolution, coordinateData.sourceImageResolution);
+			true, 8, coordinateData.sourceImageResolution, coordinateData.sourceImageResolution);
 		details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 		terrainVulkanSplatMap = renderer.textureManager.CreateTextureFromData(
 			details, splatMapData, splatMapSize);

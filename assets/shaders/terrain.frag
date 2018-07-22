@@ -156,7 +156,7 @@ vec3 perturbNormal(vec3 texNormal)
 	vec2 st1 = dFdx(inTexCoord);
 	vec2 st2 = dFdy(inTexCoord);
 
-	vec3 N = normalize(texNormal);
+	vec3 N = normalize(inNormal);
 	vec3 T = normalize(q1 * st2.t - q2 * st1.t);
 	vec3 B = -normalize(cross(N, T));
 	mat3 TBN = mat3(T, B, N);
@@ -219,13 +219,15 @@ void main() {
     vec3 ambient = vec3(0.002);
     vec3 lighting = ambient + LightingContribution(N, V, F0, albedo, roughness, metalness);
     
-	//float belowWaterLevelDarkening = clamp(inFragPos.y, -1, 0);
+	float belowWaterLevelDarkening = -1*(((-clamp(inFragPos.y, -5.5, -0.5) - 0.5)/5) - 1);
 	
 	//outColor = (vec4(0,0,0,0) + inColor) * vec4((pointLightContrib + dirContrib), 1.0f);
 	//outColor = vec4(lighting, 1.0f);
     //outColor = vec4(pointLightContrib * inColor, 1.0f);
 	vec3 color = lighting / (lighting + vec3(1.0));
-    outColor = vec4(pow(color, vec3(1.0/2.2)),1.0f);  
+    outColor = vec4(pow(color, vec3(1.0/2.2)),1.0f); 
+
+    outColor *= belowWaterLevelDarkening; 
 	//if(isnan(outColor))
 	//	outColor = vec4(1.0f);
 	//if(isinf(outColor))
