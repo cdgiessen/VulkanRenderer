@@ -138,6 +138,10 @@ void VulkanRenderer::UpdateRenderResources(
 
 void VulkanRenderer::RenderFrame() {
 
+	//PrepareDepthPass(frameIndex);
+	//BuildDepthPass(frameObjects.at(frameIndex)->GetDepthCmdBuf());
+	//SubmitDepthPass(frameIndex);
+
 	PrepareFrame(frameIndex);
 	BuildCommandBuffers(frameObjects.at(frameIndex)->GetPrimaryCmdBuf());
 	SubmitFrame(frameIndex);
@@ -235,7 +239,34 @@ VkFormat VulkanRenderer::FindDepthFormat() {
 		VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
+void VulkanRenderer::BuildDepthPass(VkCommandBuffer cmdBuf){
+
+	vkCmdBindDescriptorSets(
+		cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		frameDataDescriptorLayout, 0, 1, &frameDataDescriptorSet.set, 0, nullptr);
+	vkCmdBindDescriptorSets(
+		cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		lightingDescriptorLayout, 1, 1, &lightingDescriptorSet.set, 0, nullptr);
+
+
+	VkViewport viewport = initializers::viewport(
+		(float)vulkanSwapChain.swapChainExtent.width,
+		(float)vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f);
+	vkCmdSetViewport(cmdBuf, 0, 1, &viewport);
+
+	VkRect2D scissor =
+		initializers::rect2D(vulkanSwapChain.swapChainExtent.width,
+			vulkanSwapChain.swapChainExtent.height, 0, 0);
+	vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
+
+	scene->RenderScene(cmdBuf, wireframe);
+
+
+}
+
 void VulkanRenderer::BuildCommandBuffers(VkCommandBuffer cmdBuf) {
+
+
 
 
 	renderPass->BeginRenderPass(cmdBuf,
@@ -276,6 +307,22 @@ std::array<VkClearValue, 2> VulkanRenderer::GetFramebufferClearValues() {
 	clearValues[0].color = clearColor;
 	clearValues[1].depthStencil = depthClearColor;
 	return clearValues;
+}
+
+void VulkanRenderer::PrepareDepthPass(int curFrameIndex){
+	frameObjects.at(curFrameIndex)->PrepareDepthPass();
+}
+
+void VulkanRenderer::SubmitDepthPass(int curFrameIndex){
+	frameObjects.at(curFrameIndex)->EndDepthPass();
+
+	auto curSubmitInfo = frameObjects.at(curFrameIndex)->GetDepthSubmitInfo();
+
+	VkPipelineStageFlags stageMasks = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+	curSubmitInfo.pWaitDstStageMask = &stageMasks;
+
+	device.GraphicsQueue().Submit(curSubmitInfo, frameObjects.at(curFrameIndex)->GetDepthFence());
+
 }
 
 void VulkanRenderer::PrepareFrame(int curFrameIndex) {

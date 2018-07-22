@@ -162,6 +162,7 @@ public:
 		std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal);
 
 	void UpdateTerrain(glm::vec3 viewerPos);
+	void DrawDepthPrePass(VkCommandBuffer cmdBuff);
 	void DrawTerrain(VkCommandBuffer cmdBuff, bool wireframe);
 
 	//std::vector<RGBA_pixel>* LoadSplatMapFromGenerator();

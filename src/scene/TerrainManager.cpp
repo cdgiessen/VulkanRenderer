@@ -465,6 +465,15 @@ void TerrainManager::UpdateTerrains(glm::vec3 cameraPos)
 	chunkBuffer.UpdateChunks();
 }
 
+void TerrainManager::RenderDepthPrePass(VkCommandBuffer commandBuffer){
+	{
+		std::lock_guard<std::mutex> lock(terrain_mutex);
+		for (auto& ter : terrains) {
+			ter->DrawDepthPrePass(commandBuffer);
+		}
+	}
+}
+
 void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe) {
 	{
 		std::lock_guard<std::mutex> lock(terrain_mutex);

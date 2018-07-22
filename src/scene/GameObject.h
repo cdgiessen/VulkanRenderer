@@ -37,6 +37,7 @@ public:
 
 	void UpdateUniformBuffer(float time);
 
+	void DrawDepthPrePass(VkCommandBuffer commandBuffer);
 	void Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNormals);
 
 	VulkanRenderer& renderer;

@@ -128,6 +128,7 @@ public:
 
 	void UpdateTerrains(glm::vec3 cameraPos);
 
+	void RenderDepthPrePass(VkCommandBuffer commandBuffer);
 	void RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe);
 
 	void UpdateTerrainGUI();

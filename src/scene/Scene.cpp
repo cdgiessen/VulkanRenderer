@@ -207,6 +207,16 @@ void Scene::UpdateScene() {
 
 }
 
+void Scene::RenderDepthPrePass(VkCommandBuffer commandBuffer){
+	for (auto& obj : gameObjects) {
+		obj->DrawDepthPrePass(commandBuffer);
+	}
+	if (terrainManager != nullptr)
+		terrainManager->RenderDepthPrePass(commandBuffer);
+
+}
+	
+
 void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
 	VkDeviceSize offsets[] = { 0 };
 

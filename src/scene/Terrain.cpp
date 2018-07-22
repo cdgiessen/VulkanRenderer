@@ -45,6 +45,37 @@ float TerrainQuad::GetUVvalueFromLocalIndex(float i, int numCells, int level, in
 }
 
 
+glm::vec3 CalcNormal(double L, double R, double U, double D, double UL, double DL, double UR, double DR, double vertexDistance, int numCells) {
+
+	return glm::normalize(glm::vec3(L + UL + DL - (R + UR + DR), 2 * vertexDistance / numCells, U + UL + UR - (D + DL + DR)));
+}
+
+
+void RecalculateNormals(int numCells, TerrainMeshVertices* verts, TerrainMeshIndices* indices) {
+	int index = 0;
+	for (int i = 0; i < indCount / 3; i++) {
+		glm::vec3 p1 = glm::vec3((*verts)[(*indices)[i * 3 + 0] * vertElementCount + 0], (*verts)[(*indices)[i * 3 + 0] * vertElementCount + 1], (*verts)[(*indices)[i * 3 + 0] * vertElementCount + 2]);
+		glm::vec3 p2 = glm::vec3((*verts)[(*indices)[i * 3 + 1] * vertElementCount + 0], (*verts)[(*indices)[i * 3 + 1] * vertElementCount + 1], (*verts)[(*indices)[i * 3 + 1] * vertElementCount + 2]);
+		glm::vec3 p3 = glm::vec3((*verts)[(*indices)[i * 3 + 2] * vertElementCount + 0], (*verts)[(*indices)[i * 3 + 2] * vertElementCount + 1], (*verts)[(*indices)[i * 3 + 2] * vertElementCount + 2]);
+
+		glm::vec3 t1 = p2 - p1;
+		glm::vec3 t2 = p3 - p1;
+
+		glm::vec3 normal(glm::cross(t1, t2));
+
+		(*verts)[(*indices)[i * 3 + 0] * vertElementCount + 3] += normal.x; (*verts)[(*indices)[i * 3 + 0] * vertElementCount + 4] += normal.y; (*verts)[(*indices)[i * 3 + 0] * vertElementCount + 5] += normal.z;
+		(*verts)[(*indices)[i * 3 + 1] * vertElementCount + 3] += normal.x; (*verts)[(*indices)[i * 3 + 1] * vertElementCount + 4] += normal.y; (*verts)[(*indices)[i * 3 + 1] * vertElementCount + 5] += normal.z;
+		(*verts)[(*indices)[i * 3 + 2] * vertElementCount + 3] += normal.x; (*verts)[(*indices)[i * 3 + 2] * vertElementCount + 4] += normal.y; (*verts)[(*indices)[i * 3 + 2] * vertElementCount + 5] += normal.z;
+	}
+
+	for (int i = 0; i < (numCells + 1) * (numCells + 1); i++) {
+		glm::vec3 normal = glm::normalize(glm::vec3((*verts)[i * vertElementCount + 3], (*verts)[i * vertElementCount + 4], (*verts)[i * vertElementCount + 5]));
+		(*verts)[i * vertElementCount + 3] = normal.x;
+		(*verts)[i * vertElementCount + 4] = normal.y;
+		(*verts)[i * vertElementCount + 5] = normal.z;
+	}
+}
+
 void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, float heightScale, float widthScale)
 {
 
@@ -72,15 +103,45 @@ void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, floa
 			float uvVminus = uvVs[(j + 1) - 1];
 			float uvVplus = uvVs[(j + 1) + 1];
 
-			float outheight = graphUser.SampleHeightMap(uvU, uvV);
-			float outheightum = graphUser.SampleHeightMap(uvUminus, uvV);
-			float outheightup = graphUser.SampleHeightMap(uvUplus, uvV);
-			float outheightvm = graphUser.SampleHeightMap(uvU, uvVminus);
-			float outheightvp = graphUser.SampleHeightMap(uvU, uvVplus);
+			//float outheight = graphUser.SampleHeightMap(uvU, uvV);
+			//float outheightum = graphUser.SampleHeightMap(uvUminus, uvV);
+			//float outheightup = graphUser.SampleHeightMap(uvUplus, uvV);
+			//float outheightvm = graphUser.SampleHeightMap(uvU, uvVminus);
+			//float outheightvp = graphUser.SampleHeightMap(uvU, uvVplus);
+			//
+			//glm::vec3 normal = glm::normalize(glm::vec3((outheightvm - outheightvp),
+			//	((uvUplus - uvUminus) + (uvVplus - uvVminus)) * 2,
+			//	(outheightum - outheightup)));
 
-			glm::vec3 normal = glm::normalize(glm::vec3((outheightum - outheightup),
-				((uvUplus - uvUminus) + (uvVplus - uvVminus)) * 2,
-				(outheightvm - outheightvp)));
+			//float outheightum = graphUser.SampleHeightMap(uvU - 0.01, uvV);
+			//float outheightup = graphUser.SampleHeightMap(uvU + 0.01, uvV);
+			//float outheightvm = graphUser.SampleHeightMap(uvU, uvV - 0.01);
+
+  			// deduce terrain normal
+			//glm::vec3 normal;
+  			//normal.x = outheightum - outheightup;
+  			//normal.z = outheightvm - outheightvp;
+  			//normal.y = 2.0;
+  			//normal = glm::normalize(normal);
+
+			//float o0 = graphUser.SampleHeightMap(uvUminus,uvVminus);
+			//float o1 = graphUser.SampleHeightMap(uvU, uvVminus);
+			//float o2 = graphUser.SampleHeightMap(uvUplus, uvVminus);
+			//float o3 = graphUser.SampleHeightMap(uvUminus, uvV);
+			float outheight = graphUser.SampleHeightMap(uvU, uvV);
+			//float o5 = graphUser.SampleHeightMap(uvUplus, uvV);
+			//float o6 = graphUser.SampleHeightMap(uvUminus, uvVplus);
+			//float o7 = graphUser.SampleHeightMap(uvU, uvVplus);
+			//float o8 = graphUser.SampleHeightMap(uvUplus, uvVplus);
+//
+			//////float s[9] contains above samples
+			//float scaleX = uvUs[2] - uvUs[1];
+			//float scaleZ = uvVs[2] - uvVs[1];
+			glm::vec3 normal = glm::vec3(0,1,0);
+			//normal.x = scaleX * -(o2-o0+2*(o5-o3)+o8-o6);
+			//normal.z = scaleZ * -(o6-o0+2*(o7-o1)+o8-o2);
+			//normal.y = 1.0;
+			//normal = glm::normalize(normal);
 
 			(*vertices)[((i)*(numCells + 1) + j)* vertElementCount + 0] = uvU * (widthScale);
 			(*vertices)[((i)*(numCells + 1) + j)* vertElementCount + 1] = outheight * heightScale;
@@ -93,6 +154,20 @@ void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, floa
 		}
 	}
 
+	// int counter = 0;
+	// for (int i = 0; i < numCells; i++)
+	// {
+	// 	for (int j = 0; j < numCells; j++)
+	// 	{
+	// 		(*indices)[counter++] = i * (numCells + 1) + j;
+	// 		(*indices)[counter++] = i * (numCells + 1) + j + 1;
+	// 		(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+	// 		(*indices)[counter++] = i * (numCells + 1) + j + 1;
+	// 		(*indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
+	// 		(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+	// 	}
+	// }
+
 	int counter = 0;
 	for (int i = 0; i < numCells; i++)
 	{
@@ -101,11 +176,48 @@ void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, floa
 			(*indices)[counter++] = i * (numCells + 1) + j;
 			(*indices)[counter++] = i * (numCells + 1) + j + 1;
 			(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+			
 			(*indices)[counter++] = i * (numCells + 1) + j + 1;
 			(*indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
 			(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+
+			j++;
+
+			(*indices)[counter++] = i * (numCells + 1) + j;
+			(*indices)[counter++] = i * (numCells + 1) + j + 1;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
+			
+			(*indices)[counter++] = i * (numCells + 1) + j;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+		}
+
+		i++;
+
+		for (int j = 0; j < numCells; j++)
+		{
+			(*indices)[counter++] = i * (numCells + 1) + j;
+			(*indices)[counter++] = i * (numCells + 1) + j + 1;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
+
+			(*indices)[counter++] = i * (numCells + 1) + j;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+		
+			j++;
+
+			(*indices)[counter++] = i * (numCells + 1) + j;
+			(*indices)[counter++] = i * (numCells + 1) + j + 1;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+
+			(*indices)[counter++] = i * (numCells + 1) + j + 1;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
+			(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+
 		}
 	}
+
+	RecalculateNormals(numCells, vertices, indices);
 }
 
 Terrain::Terrain(VulkanRenderer& renderer,
@@ -788,6 +900,25 @@ void Terrain::PopulateQuadOffsets(int quad, std::vector<VkDeviceSize>& vert, std
 	}
 }
 
+void Terrain::DrawDepthPrePass(VkCommandBuffer cmdBuff){
+	VkDeviceSize offsets[] = { 0 };
+	
+	//if (!terrainVulkanSplatMap->readyToUse)
+	//	return;
+
+	std::vector<VkDeviceSize> vertexOffsettings;
+	std::vector<VkDeviceSize> indexOffsettings;
+
+	PopulateQuadOffsets(rootQuad, vertexOffsettings, indexOffsettings);
+
+	for (int i = 0; i < vertexOffsettings.size(); i++) {
+		vkCmdBindVertexBuffers(cmdBuff, 0, 1, &chunkBuffer.vert_buffer.buffer.buffer, &vertexOffsettings[i]);
+		vkCmdBindIndexBuffer(cmdBuff, chunkBuffer.index_buffer.buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
+
+		vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
+	}
+}
+
 void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
 	VkDeviceSize offsets[] = { 0 };
 	//return;
@@ -851,35 +982,4 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
 float Terrain::GetHeightAtLocation(float x, float z) {
 
 	return fastGraphUser.SampleHeightMap(x, z) * heightScale;
-}
-
-glm::vec3 CalcNormal(double L, double R, double U, double D, double UL, double DL, double UR, double DR, double vertexDistance, int numCells) {
-
-	return glm::normalize(glm::vec3(L + UL + DL - (R + UR + DR), 2 * vertexDistance / numCells, U + UL + UR - (D + DL + DR)));
-}
-
-
-void RecalculateNormals(int numCells, TerrainMeshVertices& verts, TerrainMeshIndices& indices) {
-	int index = 0;
-	for (int i = 0; i < indCount / 3; i++) {
-		glm::vec3 p1 = glm::vec3((verts)[(indices)[i * 3 + 0] * vertElementCount + 0], (verts)[(indices)[i * 3 + 0] * vertElementCount + 1], (verts)[(indices)[i * 3 + 0] * vertElementCount + 2]);
-		glm::vec3 p2 = glm::vec3((verts)[(indices)[i * 3 + 1] * vertElementCount + 0], (verts)[(indices)[i * 3 + 1] * vertElementCount + 1], (verts)[(indices)[i * 3 + 1] * vertElementCount + 2]);
-		glm::vec3 p3 = glm::vec3((verts)[(indices)[i * 3 + 2] * vertElementCount + 0], (verts)[(indices)[i * 3 + 2] * vertElementCount + 1], (verts)[(indices)[i * 3 + 2] * vertElementCount + 2]);
-
-		glm::vec3 t1 = p2 - p1;
-		glm::vec3 t2 = p3 - p1;
-
-		glm::vec3 normal(glm::cross(t1, t2));
-
-		(verts)[(indices)[i * 3 + 0] * vertElementCount + 3] += normal.x; (verts)[(indices)[i * 3 + 0] * vertElementCount + 4] += normal.y; (verts)[(indices)[i * 3 + 0] * vertElementCount + 5] += normal.z;
-		(verts)[(indices)[i * 3 + 1] * vertElementCount + 3] += normal.x; (verts)[(indices)[i * 3 + 1] * vertElementCount + 4] += normal.y; (verts)[(indices)[i * 3 + 1] * vertElementCount + 5] += normal.z;
-		(verts)[(indices)[i * 3 + 2] * vertElementCount + 3] += normal.x; (verts)[(indices)[i * 3 + 2] * vertElementCount + 4] += normal.y; (verts)[(indices)[i * 3 + 2] * vertElementCount + 5] += normal.z;
-	}
-
-	for (int i = 0; i < (numCells + 1) * (numCells + 1); i++) {
-		glm::vec3 normal = glm::normalize(glm::vec3((verts)[i * vertElementCount + 3], (verts)[i * vertElementCount + 4], (verts)[i * vertElementCount + 5]));
-		(verts)[i * vertElementCount + 3] = normal.x;
-		(verts)[i * vertElementCount + 4] = normal.y;
-		(verts)[i * vertElementCount + 5] = normal.z;
-	}
 }
