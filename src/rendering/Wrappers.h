@@ -265,16 +265,25 @@ public:
 
 
 	VkResult AquireNextSwapchainImage(VkSwapchainKHR swapchain);
+	void WaitTillDepthReady();
 	void WaitTillReady();
+
+	void PrepareDepthPass();
+	void EndDepthPass();
+
 	void PrepareFrame();
 	void SubmitFrame();
+
+	VkSubmitInfo GetDepthSubmitInfo();
 
 	VkSubmitInfo GetSubmitInfo();
 	VkPresentInfoKHR GetPresentInfo();
 
+	VkCommandBuffer GetDepthCmdBuf();
 	VkCommandBuffer GetPrimaryCmdBuf();
 
 	VkFence GetCommandFence();
+	VkFence GetDepthFence();
 
 private:
 	VulkanDevice & device;
@@ -285,11 +294,13 @@ private:
 	VulkanSemaphore imageAvailSem;
 	VulkanSemaphore renderFinishSem;
 
+	VulkanFence depthFence;
 	VulkanFence commandFence;
 	bool firstUse = true;
 
 	CommandPool commandPool;
 	VkCommandBuffer primaryCmdBuf;
+	VkCommandBuffer depthCmdBuf;
 	//std::vector<VkCommandBuffer> secondCmdBufs;
 
 };

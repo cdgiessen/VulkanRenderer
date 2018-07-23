@@ -77,6 +77,10 @@ public:
 	void CreateRenderPass();
 	void CreateDepthResources();
 
+	void PrepareDepthPass(int curFrameIndex);
+	void SubmitDepthPass(int curFrameIndex);
+
+	void BuildDepthPass(VkCommandBuffer cmdBuf);
 	void BuildCommandBuffers(VkCommandBuffer cmdBuf);
 
 	void PrepareFrame(int curFrameIndex);

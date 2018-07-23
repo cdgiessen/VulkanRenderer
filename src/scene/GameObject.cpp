@@ -239,6 +239,18 @@ void GameObject::UpdateUniformBuffer(float time)
 	//modelUniformBuffer.Unmap();
 
 }
+void GameObject::DrawDepthPrePass(VkCommandBuffer commandBuffer){
+	if (*gameObjectModel->readyToUse)// && *gameObjectVulkanTexture->readyToUse)
+		isReadyToRender = true;
+
+	if (!isReadyToRender) {
+		return;
+	}
+	gameObjectModel->BindModel(commandBuffer);
+
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(gameObjectModel->indexCount), 1, 0, 0, 0);
+}
+
 
 void GameObject::Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNormals) {
 

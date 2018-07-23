@@ -38,6 +38,7 @@ public:
 	~Scene();
 
 	void UpdateScene();
+	void RenderDepthPrePass(VkCommandBuffer commandBuffer);
 	void RenderScene(VkCommandBuffer commandBuffer, bool wireframe);
 	void UpdateSceneGUI();
 

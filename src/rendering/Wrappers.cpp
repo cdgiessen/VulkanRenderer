@@ -375,7 +375,8 @@ FrameObject::FrameObject(VulkanDevice& device, int frameIndex) :
 		&device.GraphicsQueue()),
 	imageAvailSem(device),
 	renderFinishSem(device),
-	commandFence(device)
+	commandFence(device),
+	depthFence(device)
 {
 	primaryCmdBuf = commandPool.GetPrimaryCommandBuffer(false);
 }
@@ -389,6 +390,16 @@ VkResult FrameObject::AquireNextSwapchainImage(VkSwapchainKHR swapchain) {
 		device.device, swapchain,
 		std::numeric_limits<uint64_t>::max(), imageAvailSem.Get(),
 		VK_NULL_HANDLE, &swapChainIndex);
+}
+
+void FrameObject::PrepareDepthPass(){
+	WaitTillReady();
+	commandPool.BeginBufferRecording(depthCmdBuf, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+}
+
+void FrameObject::EndDepthPass(){
+	commandPool.EndBufferRecording(depthCmdBuf);
+
 }
 
 void FrameObject::PrepareFrame() {
@@ -410,8 +421,19 @@ void FrameObject::SubmitFrame()
 {
 	commandPool.EndBufferRecording(primaryCmdBuf);
 
-	auto submitInfo = GetSubmitInfo();
+}
 
+VkSubmitInfo FrameObject::GetDepthSubmitInfo() {
+
+	VkSubmitInfo submitInfo = initializers::submitInfo();
+	//submitInfo.signalSemaphoreCount = 1;
+	//submitInfo.pSignalSemaphores = renderFinishSem.GetPtr();
+	//submitInfo.waitSemaphoreCount = 1;
+	//submitInfo.pWaitSemaphores = imageAvailSem.GetPtr();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &depthCmdBuf;
+
+	return submitInfo;
 }
 
 VkSubmitInfo FrameObject::GetSubmitInfo() {
@@ -438,6 +460,9 @@ VkPresentInfoKHR FrameObject::GetPresentInfo() {
 	return presentInfo;
 }
 
+VkCommandBuffer FrameObject::GetDepthCmdBuf() {
+	return depthCmdBuf;
+}
 
 VkCommandBuffer FrameObject::GetPrimaryCmdBuf() {
 	return primaryCmdBuf;
@@ -445,4 +470,8 @@ VkCommandBuffer FrameObject::GetPrimaryCmdBuf() {
 
 VkFence FrameObject::GetCommandFence() {
 	return commandFence.Get();
+}
+
+VkFence FrameObject::GetDepthFence(){
+	return depthFence.Get();
 }

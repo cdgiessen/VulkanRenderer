@@ -53,7 +53,9 @@ void TerrainCreationWorker(TerrainManager* man) {
 					// 		data->sourceImageResolution + 1,
 					// 		data->sourceImageResolution + 1, imgData);
 
-					terrain->InitTerrain(man->curCameraPos, man->terrainVulkanTextureArrayAlbedo, man->terrainVulkanTextureArrayRoughness, man->terrainVulkanTextureArrayMetallic);
+					terrain->InitTerrain(man->curCameraPos, man->terrainVulkanTextureArrayAlbedo, 
+					man->terrainVulkanTextureArrayRoughness, man->terrainVulkanTextureArrayMetallic
+					, man->terrainVulkanTextureArrayNormal);
 
 					{
 						std::lock_guard<std::mutex> lk(man->terrain_mutex);
@@ -221,7 +223,7 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
 
 	TexCreateDetails details(VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		true, 4);
+		true, 8);
 	
 	terrainTextureArrayAlbedo = resourceMan.texManager.GetTexIDByName("terrain_albedo");
 	terrainVulkanTextureArrayAlbedo = renderer.textureManager.CreateTexture2DArray(
@@ -234,6 +236,10 @@ TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
 	terrainTextureArrayMetallic = resourceMan.texManager.GetTexIDByName("terrain_metalness");
 	terrainVulkanTextureArrayMetallic = renderer.textureManager.CreateTexture2DArray(
 		terrainTextureArrayMetallic, details);
+
+	terrainTextureArrayNormal = resourceMan.texManager.GetTexIDByName("terrain_normal");
+	terrainVulkanTextureArrayNormal = renderer.textureManager.CreateTexture2DArray(
+		terrainTextureArrayNormal, details);
 
 	instancedWaters = std::make_unique<InstancedSceneObject>(renderer);
 	instancedWaters->SetFragmentShaderToUse("assets/shaders/water.frag.spv");
@@ -457,6 +463,15 @@ void TerrainManager::UpdateTerrains(glm::vec3 cameraPos)
 	instancedWaters->UploadData();
 
 	chunkBuffer.UpdateChunks();
+}
+
+void TerrainManager::RenderDepthPrePass(VkCommandBuffer commandBuffer){
+	{
+		std::lock_guard<std::mutex> lock(terrain_mutex);
+		for (auto& ter : terrains) {
+			ter->DrawDepthPrePass(commandBuffer);
+		}
+	}
 }
 
 void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe) {
