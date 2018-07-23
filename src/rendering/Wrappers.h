@@ -177,22 +177,28 @@ struct GraphicsWork {
 
 struct GraphicsCleanUpWork {
 	std::shared_ptr<VulkanFence> fence;
+	std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores;
+	std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores;
 	CommandPool* pool;
 	VkCommandBuffer cmdBuf;
 	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
 	std::vector<Signal> signals;
 
-	explicit GraphicsCleanUpWork(GraphicsWork& work,
+	explicit GraphicsCleanUpWork(GraphicsWork& work, 
 		CommandPool* pool,
 		VkCommandBuffer cmdBuf) :
 		pool(pool),
 		cmdBuf(cmdBuf),
 		fence(work.fence),
 		buffers(work.buffersToClean),
-		signals(work.signals)
+		signals(work.signals),
+		waitSemaphores(work.waitSemaphores),
+		signalSemaphores(work.signalSemaphores)
 	{}
 
 	explicit GraphicsCleanUpWork(std::shared_ptr<VulkanFence>& fence,
+		std::vector<std::shared_ptr<VulkanSemaphore>>& waitSemaphores,
+		std::vector<std::shared_ptr<VulkanSemaphore>>& signalSemaphores,
 		CommandPool* pool,
 		VkCommandBuffer cmdBuf,
 		std::vector<std::shared_ptr<VulkanBuffer>>& buffers,
@@ -201,7 +207,9 @@ struct GraphicsCleanUpWork {
 		pool(pool),
 		cmdBuf(cmdBuf),
 		buffers(buffers),
-		signals(signals)
+		signals(signals),
+		waitSemaphores(waitSemaphores),
+		signalSemaphores(signalSemaphores)
 	{}
 
 
