@@ -61,8 +61,10 @@ layout(location = 0) out vec4 outColor;
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
-}
+	float possible_nan = pow(1.0 - cosTheta,5.0);
+	if(isnan(possible_nan))
+		return F0 + (1.0 - F0) * 0.0;
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);}
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
@@ -104,7 +106,7 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     kD *= 1.0 - metalness;
     vec3 numerator    = NDF * G * F;
     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-    vec3 specular     = numerator / max(denominator, 0.1);
+    vec3 specular     = numerator / max(denominator, 0.001);
     // add to outgoing radiance Lo
      float NdotL = max(dot(N, L), 0.0);
     return (kD * albedo / PI + specular) * radiance * NdotL;

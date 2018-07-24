@@ -112,7 +112,7 @@ void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, floa
 			float outheightvp = graphUser.SampleHeightMap(uvU, uvVplus);
 			
 			glm::vec3 normal = glm::normalize(glm::vec3((outheightvm - outheightvp)/ hDiff,
-				8.0f/*((uvUplus - uvUminus) + (uvVplus - uvVminus)) * 2*/,
+				16.0f/*((uvUplus - uvUminus) + (uvVplus - uvVminus)) * 2*/,
 				(outheightum - outheightup))/ hDiff);
 
 			/*float y = graphUser.SampleHeightMap(uvU, uvV);
@@ -166,21 +166,21 @@ void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, floa
 		}
 	}
 
-	// int counter = 0;
-	// for (int i = 0; i < numCells; i++)
-	// {
-	// 	for (int j = 0; j < numCells; j++)
-	// 	{
-	// 		(*indices)[counter++] = i * (numCells + 1) + j;
-	// 		(*indices)[counter++] = i * (numCells + 1) + j + 1;
-	// 		(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
-	// 		(*indices)[counter++] = i * (numCells + 1) + j + 1;
-	// 		(*indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
-	// 		(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
-	// 	}
-	// }
+	 int counter = 0;
+	 for (int i = 0; i < numCells; i++)
+	 {
+	 	for (int j = 0; j < numCells; j++)
+	 	{
+	 		(*indices)[counter++] = i * (numCells + 1) + j;
+	 		(*indices)[counter++] = i * (numCells + 1) + j + 1;
+	 		(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+	 		(*indices)[counter++] = i * (numCells + 1) + j + 1;
+	 		(*indices)[counter++] = (i + 1) * (numCells + 1) + j + 1;
+	 		(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
+	 	}
+	 }
 
-	int counter = 0;
+	/*int counter = 0;
 	for (int i = 0; i < numCells; i++)
 	{
 		for (int j = 0; j < numCells; j++)
@@ -227,7 +227,7 @@ void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, floa
 			(*indices)[counter++] = (i + 1) * (numCells + 1) + j;
 
 		}
-	}
+	}*/
 
 	//RecalculateNormals(numCells, vertices, indices);
 }
