@@ -89,8 +89,8 @@ vec4 causticsSampler(vec2 uv, float timeIn) {
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
-}  
+    return F0 + (1.0 - F0) * pow(2.0, (-5.55473 * cosTheta - 6.98316) * cosTheta);
+}
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {

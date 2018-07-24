@@ -61,10 +61,8 @@ layout(location = 0) out vec4 outColor;
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
-	float possible_nan = pow(1.0 - cosTheta,5.0);
-	if(isnan(possible_nan))
-		return F0 + (1.0 - F0) * 0.0;
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);}
+	return F0 + (1.0 - F0) * pow(2.0, (-5.55473 * cosTheta - 6.98316) * cosTheta);
+}
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
@@ -218,7 +216,7 @@ void main() {
     vec3 N = perturbNormal(normal);
     vec3 V = normalize(cam.cameraPos - inFragPos);
     vec3 F0 = vec3(0.04);
-    F0 = mix(F0, albedo, 0.0f);
+    F0 = mix(F0, albedo, metalness);
     vec3 ambient = vec3(0.002);
     vec3 lighting = ambient + LightingContribution(N, V, F0, albedo, roughness, metalness);
     
