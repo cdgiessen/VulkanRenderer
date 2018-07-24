@@ -104,7 +104,7 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     kD *= 1.0 - metalness;
     vec3 numerator    = NDF * G * F;
     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-    vec3 specular     = numerator / max(denominator, 0.001);
+    vec3 specular     = numerator / max(denominator, 0.1);
     // add to outgoing radiance Lo
      float NdotL = max(dot(N, L), 0.0);
     return (kD * albedo / PI + specular) * radiance * NdotL;
@@ -112,7 +112,7 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 
 vec3 DirectionalLightingCalc(int i, vec3 N, vec3 V, vec3 F0, vec3 albedo, float roughness, float metalness){
     // calculate per-light radiance
-     vec3 L = normalize(directional.lights[i].direction);
+    vec3 L = normalize(directional.lights[i].direction);
     vec3 H = normalize(V + L);
     vec3 radiance     = directional.lights[i].color
 					   * directional.lights[i].intensity;
@@ -169,11 +169,12 @@ void main() {
 	vec4 texColor = texture(texSplatMap, inTexCoord);
     float texSampleDensity = 500.0f;
 
-    vec4 albedo1 = pow(texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 0)),vec4(2.2));
-    vec4 albedo2 = pow(texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 1)),vec4(2.2));
-    vec4 albedo3 = pow(texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 2)),vec4(2.2));
-    vec4 albedo4 = pow(texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 3)),vec4(2.2));
+    vec4 albedo1 = texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 0));
+    vec4 albedo2 = texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 1));
+    vec4 albedo3 = texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 2));
+    vec4 albedo4 = texture(texArrayAlbedo, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 3));
     vec3 albedo = vec3(albedo1 * texColor.x + albedo2*texColor.y + albedo3 * texColor.z + albedo4 * texColor.w);
+	albedo = pow(albedo,vec3(2.2));
 
     float roughness1 =  float (texture(texArrayRoughness, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 0)));
     float roughness2 = float ( texture(texArrayRoughness, vec3(inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 1)));

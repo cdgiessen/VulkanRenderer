@@ -91,6 +91,8 @@ void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, floa
 		uvVs[i] = glm::clamp((float)(i - 1) / ((float)(powLevel) * (numCells)) + (float)subDivPos.y / (float)(powLevel), 0.0f, 1.0f);
 	}
 
+	float hDiff = uvUs[3] - uvUs[1];
+
 	for (int i = 0; i < numCells + 1; i++)
 	{
 		for (int j = 0; j < numCells + 1; j++)
@@ -103,43 +105,53 @@ void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, floa
 			float uvVminus = uvVs[(j + 1) - 1];
 			float uvVplus = uvVs[(j + 1) + 1];
 
-			//float outheight = graphUser.SampleHeightMap(uvU, uvV);
-			//float outheightum = graphUser.SampleHeightMap(uvUminus, uvV);
-			//float outheightup = graphUser.SampleHeightMap(uvUplus, uvV);
-			//float outheightvm = graphUser.SampleHeightMap(uvU, uvVminus);
-			//float outheightvp = graphUser.SampleHeightMap(uvU, uvVplus);
-			//
-			//glm::vec3 normal = glm::normalize(glm::vec3((outheightvm - outheightvp),
-			//	((uvUplus - uvUminus) + (uvVplus - uvVminus)) * 2,
-			//	(outheightum - outheightup)));
+			float outheight = graphUser.SampleHeightMap(uvU, uvV);
+			float outheightum = graphUser.SampleHeightMap(uvUminus, uvV);
+			float outheightup = graphUser.SampleHeightMap(uvUplus, uvV);
+			float outheightvm = graphUser.SampleHeightMap(uvU, uvVminus);
+			float outheightvp = graphUser.SampleHeightMap(uvU, uvVplus);
+			
+			glm::vec3 normal = glm::normalize(glm::vec3((outheightvm - outheightvp)/ hDiff,
+				8.0f/*((uvUplus - uvUminus) + (uvVplus - uvVminus)) * 2*/,
+				(outheightum - outheightup))/ hDiff);
+
+			/*float y = graphUser.SampleHeightMap(uvU, uvV);
+			float um = graphUser.SampleHeightMap(uvUminus, uvV);
+			float up = graphUser.SampleHeightMap(uvUplus, uvV);
+			float vm = graphUser.SampleHeightMap(uvU, uvVminus);
+			float vp = graphUser.SampleHeightMap(uvU, uvVplus);
+
+			float midU = (um + up) / 2.0;
+			float midV = (vm + vp) / 2.0;*/
+
 
 			//float outheightum = graphUser.SampleHeightMap(uvU - 0.01, uvV);
 			//float outheightup = graphUser.SampleHeightMap(uvU + 0.01, uvV);
 			//float outheightvm = graphUser.SampleHeightMap(uvU, uvV - 0.01);
 
   			// deduce terrain normal
-			//glm::vec3 normal;
-  			//normal.x = outheightum - outheightup;
-  			//normal.z = outheightvm - outheightvp;
-  			//normal.y = 2.0;
-  			//normal = glm::normalize(normal);
-
+			/*glm::vec3 normal;
+  			normal.x = outheightum - outheightup;
+  			normal.z = outheightvm - outheightvp;
+  			normal.y = hDiff * 2;
+  			normal = glm::normalize(normal);
+*/
 			//float o0 = graphUser.SampleHeightMap(uvUminus,uvVminus);
 			//float o1 = graphUser.SampleHeightMap(uvU, uvVminus);
 			//float o2 = graphUser.SampleHeightMap(uvUplus, uvVminus);
 			//float o3 = graphUser.SampleHeightMap(uvUminus, uvV);
-			float outheight = graphUser.SampleHeightMap(uvU, uvV);
+			//float outheight = graphUser.SampleHeightMap(uvU, uvV);
 			//float o5 = graphUser.SampleHeightMap(uvUplus, uvV);
 			//float o6 = graphUser.SampleHeightMap(uvUminus, uvVplus);
 			//float o7 = graphUser.SampleHeightMap(uvU, uvVplus);
 			//float o8 = graphUser.SampleHeightMap(uvUplus, uvVplus);
-//
+
 			//////float s[9] contains above samples
 			//float scaleX = uvUs[2] - uvUs[1];
 			//float scaleZ = uvVs[2] - uvVs[1];
-			glm::vec3 normal = glm::vec3(0,1,0);
-			//normal.x = scaleX * -(o2-o0+2*(o5-o3)+o8-o6);
-			//normal.z = scaleZ * -(o6-o0+2*(o7-o1)+o8-o2);
+			//glm::vec3 normal = glm::vec3(0,1,0);
+			//normal.x = 10 * -(o2-o0+2*(o5-o3)+o8-o6);
+			//normal.z = 10 * -(o6-o0+2*(o7-o1)+o8-o2);
 			//normal.y = 1.0;
 			//normal = glm::normalize(normal);
 
@@ -217,7 +229,7 @@ void TerrainQuad::GenerateTerrainChunk(InternalGraph::GraphUser& graphUser, floa
 		}
 	}
 
-	RecalculateNormals(numCells, vertices, indices);
+	//RecalculateNormals(numCells, vertices, indices);
 }
 
 Terrain::Terrain(VulkanRenderer& renderer,
@@ -261,7 +273,6 @@ Terrain::Terrain(VulkanRenderer& renderer,
 	// 	));
 
 	//modelMatrixData.model = glm::translate(glm::mat4(), glm::vec3(coordinateData.pos.x, 0, coordinateData.pos.y));
-
 
 
 	splatMapData = fastGraphUser.GetSplatMapPtr();
@@ -473,6 +484,15 @@ void Terrain::SetupPipeline()
 
 	pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 	pipeMan.BuildPipeline(mvp, renderer.renderPass->Get(), 0);
+
+	auto normalVert = renderer.shaderManager.loadShaderModule("assets/shaders/normalVecDebug.vert.spv", ShaderModuleType::vertex);
+	auto normalFrag = renderer.shaderManager.loadShaderModule("assets/shaders/normalVecDebug.frag.spv", ShaderModuleType::fragment);
+	auto normalGeom = renderer.shaderManager.loadShaderModule("assets/shaders/normalVecDebug.geom.spv", ShaderModuleType::geometry);
+	
+	ShaderModuleSet normalSset(normalVert, normalFrag, normalGeom, {}, {});
+	pipeMan.SetShaderModuleSet(mvp, normalSset);
+	pipeMan.BuildPipeline(mvp, renderer.renderPass->Get(), 0);
+
 
 	//pipeMan.CleanShaderResources(mvp);
 
@@ -949,6 +969,17 @@ void Terrain::DrawTerrain(VkCommandBuffer cmdBuff, bool ifWireframe) {
 
 		vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
 	}
+
+	//vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at(2));
+	////vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1, &descriptorSet.set, 0, nullptr);
+
+	//for (int i = 0; i < vertexOffsettings.size(); i++) {
+	//	vkCmdBindVertexBuffers(cmdBuff, 0, 1, &chunkBuffer.vert_buffer.buffer.buffer, &vertexOffsettings[i]);
+	//	vkCmdBindIndexBuffer(cmdBuff, chunkBuffer.index_buffer.buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
+
+	//	vkCmdDrawIndexed(cmdBuff, static_cast<uint32_t>(indCount), 1, 0, 0, 0);
+	//}
+
 
 	//for (int i = 0; i < quadHandles.size(); ++i) {
 	//	if ((!quadHandles[i]->isSubdivided && (*(quadHandles[i]->isReady)) == true)

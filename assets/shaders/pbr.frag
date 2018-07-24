@@ -178,7 +178,7 @@ vec3 LightingContribution(vec3 N, vec3 V, vec3 F0)
 	} 
     for(int i = 0; i < PointLightCount; ++i) 
     {
-		Lo += PointLightingCalc(i, N, V, F0);
+		//Lo += PointLightingCalc(i, N, V, F0);
 	}
 
 	return Lo;

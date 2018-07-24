@@ -630,7 +630,7 @@ void BeginTransferAndMipMapGenWork(
 		};
 
 		std::function<void(const VkCommandBuffer)> mipMapGenWork =
-			[=](const VkCommandBuffer cmdBuf) {
+			[=](const VkCommandBuffer cmdBuf) {  
 			GenerateMipMaps(cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
 		};
 

@@ -34,10 +34,10 @@ out gl_PerVertex {
 };
 
 void main() {
-	outTexCoord = inTexCoord;
 
     gl_Position = cam.projView * mnd.model * vec4(inPosition, 1.0);
 
-	outNormal = vec3(mnd.normal * vec4(inNormal,1.0f));
+	outTexCoord = inTexCoord;
+	outNormal = inNormal;
 	outFragPos = (mnd.model * vec4(inPosition, 1.0)).xyz;		
 }
