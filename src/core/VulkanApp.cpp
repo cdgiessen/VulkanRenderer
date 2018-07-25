@@ -172,11 +172,18 @@ void VulkanApp::CameraWindow(bool* show_camera_window) {
 		return;
 	};
 	ImGui::Text("Camera");
-	ImGui::DragFloat3("Pos", &scene.GetCamera()->Position.x, 2);
-	ImGui::DragFloat3("Rot", &scene.GetCamera()->Front.x, 2);
-	ImGui::Text("Camera Movement Speed");
-	ImGui::Text("%f", scene.GetCamera()->MovementSpeed);
-	ImGui::SliderFloat("##camMovSpeed", &(scene.GetCamera()->MovementSpeed), 0.1f, 100.0f);
+	auto sPos = "Pos " + std::to_string(scene.GetCamera()->Position.x);
+	auto sDir = "Dir " + std::to_string(scene.GetCamera()->Front.x);
+	auto sSpeed = "Speed " + std::to_string(scene.GetCamera()->MovementSpeed);
+	ImGui::Text(sPos.c_str());
+	ImGui::Text(sDir.c_str());
+	ImGui::Text(sSpeed.c_str());
+
+	//	ImGui::DragFloat3("Pos", &scene.GetCamera()->Position.x, 2);
+//	ImGui::DragFloat3("Rot", &scene.GetCamera()->Front.x, 2);
+//	ImGui::Text("Camera Movement Speed");
+//	ImGui::Text("%f", scene.GetCamera()->MovementSpeed);
+	//ImGui::SliderFloat("##camMovSpeed", &(scene.GetCamera()->MovementSpeed), 0.1f, 100.0f);
 	ImGui::End();
 }
 

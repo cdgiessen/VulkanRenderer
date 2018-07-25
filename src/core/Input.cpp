@@ -44,10 +44,10 @@ namespace Input {
 	bool GetMouseButtonReleased(int button) {
 		return inputDirector.GetMouseButtonReleased(button);
 	}
-	glm::vec2 GetMousePosition() {
+	glm::dvec2 GetMousePosition() {
 		return inputDirector.GetMousePosition();
 	}
-	glm::vec2 GetMouseChangeInPosition() {
+	glm::dvec2 GetMouseChangeInPosition() {
 		return inputDirector.GetMouseChangeInPosition();
 	}
 	double GetMouseScrollX() {
@@ -191,10 +191,10 @@ namespace Input {
 	bool InputDirector::GetMouseButtonReleased(int button) {
 		return mouseButtonsUp[button];
 	}
-	glm::vec2 InputDirector::GetMousePosition() {
+	glm::dvec2 InputDirector::GetMousePosition() {
 		return mousePosition;
 	}
-	glm::vec2 InputDirector::GetMouseChangeInPosition() {
+	glm::dvec2 InputDirector::GetMouseChangeInPosition() {
 		return mouseChangeInPosition;
 	}
 	double InputDirector::GetMouseScrollX() {
@@ -291,7 +291,7 @@ namespace Input {
 		std::fill(std::begin(keysUp), std::end(keysUp), 0);
 		std::fill(std::begin(mouseButtonsUp), std::end(mouseButtonsUp), 0);
 		std::fill(std::begin(mouseButtonsDown), std::end(mouseButtonsDown), 0);
-		mouseScroll = glm::vec2(0, 0);
+		mouseScroll = glm::dvec2(0, 0);
 		mouseChangeInPosition = glm::dvec2(0, 0);
 	}
 

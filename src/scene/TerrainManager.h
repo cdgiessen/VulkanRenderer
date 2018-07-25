@@ -30,7 +30,7 @@
 
 constexpr size_t vert_size = sizeof(TerrainMeshVertices);
 constexpr size_t ind_size = sizeof(TerrainMeshIndices);
-constexpr int MaxChunkCount = 1024;
+constexpr int MaxChunkCount = 2048;
 
 struct GeneralSettings {
 	bool show_terrain_manager_window = true;
@@ -159,6 +159,9 @@ public:
 	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal;
 
 	GeneralSettings settings;
+
+	std::unique_ptr<InstancedSceneObject> instancedWaters;
+
 private:
 
 	void SaveSettingsToFile();
@@ -166,8 +169,6 @@ private:
 
 	void StartWorkerThreads();
 	void StopWorkerThreads();
-
-	std::unique_ptr<InstancedSceneObject> instancedWaters;
 
 	std::shared_ptr<Mesh> WaterMesh;
 

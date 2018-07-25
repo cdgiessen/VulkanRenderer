@@ -229,8 +229,4 @@ void main() {
     outColor = vec4(pow(color, vec3(1.0/2.2)),1.0f); 
 
     outColor *= belowWaterLevelDarkening; 
-	//if(isnan(outColor))
-	//	outColor = vec4(1.0f);
-	//if(isinf(outColor))
-	//	outColor = vec4(0.5f);
 }

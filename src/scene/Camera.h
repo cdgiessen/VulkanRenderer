@@ -19,27 +19,27 @@ class Camera
 {
 public:
 	// Camera Attributes
-	glm::vec3 Position;
-	glm::vec3 Front;
-	glm::vec3 Up;
-	glm::vec3 Right;
-	glm::vec3 WorldUp;
+	glm::dvec3 Position;
+	glm::dvec3 Front;
+	glm::dvec3 Up;
+	glm::dvec3 Right;
+	glm::dvec3 WorldUp;
 
 	// Eular Angles
-	float Yaw = -90.0f;
-	float Pitch = 0.0f;
+	double Yaw = -90.0f;
+	double Pitch = 0.0f;
 	
 	// Camera options
-	float MovementSpeed = 20.0f;
-	float MouseSensitivity = 0.3f;
-	float Zoom = 45.0f;
+	double MovementSpeed = 20.0f;
+	double MouseSensitivity = 0.3f;
+	double Zoom = 45.0f;
 
 	// Joystick
-	float joystickMoveAccel = 1.0f;
-	float joystickLookAccel = 60.0f;
+	double joystickMoveAccel = 1.0f;
+	double joystickLookAccel = 60.0f;
 
 	// Constructor with vectors
-	Camera(glm::vec3 position, glm::vec3 up, float pitch, float yaw);
+	Camera(glm::dvec3 position, glm::dvec3 up, double pitch, double yaw);
 
 	// Returns the view matrix calculated using Eular Angles and the LookAt Matrix
 	glm::mat4 GetViewMatrix()
@@ -48,27 +48,27 @@ public:
 	}
 
 	// Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-	void ProcessKeyboard(Camera_Movement direction, float deltaTime);
+	void ProcessKeyboard(Camera_Movement direction, double deltaTime);
 
-	void ProcessJoystickMove(float x, float y, float zL, float zR, float deltaTime);
-	void ProcessJoystickLook(float x, float y, float deltaTime);
+	void ProcessJoystickMove(double x, double y, double zL, double zR, double deltaTime);
+	void ProcessJoystickLook(double x, double y, double deltaTime);
 
 
 	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-	void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true);
+	void ProcessMouseMovement(double xoffset, double yoffset, bool constrainPitch = true);
 
 	// Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-	void ProcessMouseScroll(float yoffset, float deltaTime);
+	void ProcessMouseScroll(double yoffset, double deltaTime);
 
 	//alter the speed of movement
-	void ChangeCameraSpeed(Camera_Movement direction, float deltaTime);
+	void ChangeCameraSpeed(Camera_Movement direction, double deltaTime);
 
 private:
 	// Calculates the front vector from the Camera's (updated) Eular Angles
 	void updateCameraVectors()
 	{
 		// Calculate the new Front vector
-		glm::vec3 front;
+		glm::dvec3 front;
 		front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
 		front.y = sin(glm::radians(Pitch));
 		front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));

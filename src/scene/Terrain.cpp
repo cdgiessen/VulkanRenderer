@@ -717,7 +717,7 @@ void Terrain::InitTerrainQuad(int quad,
 
 bool Terrain::UpdateTerrainQuad(int quad, glm::vec3 viewerPos) {
 
-	float SubdivideDistanceBias = 2.0f;
+	float SubdivideDistanceBias = 4.0f;
 
 	glm::vec3 center = glm::vec3(quadMap.at(quad).pos.x + quadMap.at(quad).size.x / 2.0f,
 		quadMap.at(quad).heightValAtCenter, quadMap.at(quad).pos.y + quadMap.at(quad).size.y / 2.0f);

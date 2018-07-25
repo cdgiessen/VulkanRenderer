@@ -146,8 +146,8 @@ namespace Input {
 	bool GetMouseButton(int button);
 	bool GetMouseButtonPressed(int button);
 	bool GetMouseButtonReleased(int button);
-	glm::vec2 GetMousePosition();
-	glm::vec2 GetMouseChangeInPosition();
+	glm::dvec2 GetMousePosition();
+	glm::dvec2 GetMouseChangeInPosition();
 	double GetMouseScrollX();
 	double GetMouseScrollY();
 
@@ -179,8 +179,8 @@ namespace Input {
 		bool GetMouseButton(int button);
 		bool GetMouseButtonPressed(int button);
 		bool GetMouseButtonReleased(int button);
-		glm::vec2 GetMousePosition();
-		glm::vec2 GetMouseChangeInPosition();
+		glm::dvec2 GetMousePosition();
+		glm::dvec2 GetMouseChangeInPosition();
 		double GetMouseScrollX();
 		double GetMouseScrollY();
 

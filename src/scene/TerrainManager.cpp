@@ -57,6 +57,12 @@ void TerrainCreationWorker(TerrainManager* man) {
 					man->terrainVulkanTextureArrayRoughness, man->terrainVulkanTextureArrayMetallic
 					, man->terrainVulkanTextureArrayNormal);
 
+					InstancedSceneObject::InstanceData water;
+					water.pos = glm::vec3((data)->coord.pos.x, 0, (data)->coord.pos.y);
+					water.rot = glm::vec3(0, 0, 0);
+					water.scale = man->settings.width;
+					man->instancedWaters->AddInstance(water);
+
 					{
 						std::lock_guard<std::mutex> lk(man->terrain_mutex);
 						man->terrains.push_back(std::move(terrain));
@@ -207,7 +213,7 @@ TerrainMeshIndices* TerrainChunkBuffer::GetDeviceIndexBufferPtr(int index) {
 TerrainManager::TerrainManager(InternalGraph::GraphPrototype& protoGraph,
 	Resource::ResourceManager& resourceMan, VulkanRenderer& renderer)
 	: protoGraph(protoGraph), renderer(renderer), resourceMan(resourceMan),
-	chunkBuffer(renderer, 512, *this)
+	chunkBuffer(renderer, MaxChunkCount, *this)
 {
 	if (settings.maxLevels < 0) {
 		settings.maxLevels = 0;
@@ -436,11 +442,11 @@ void TerrainManager::UpdateTerrains(glm::vec3 cameraPos)
 				terrain_mutex.unlock();
 				workerConditionVariable.notify_one();
 
-				InstancedSceneObject::InstanceData water;
+				/*InstancedSceneObject::InstanceData water;
 				water.pos = glm::vec3(pos.x, 0, pos.y);
 				water.rot = glm::vec3(0, 0, 0);
 				water.scale = settings.width;
-				instancedWaters->AddInstance(water);
+				instancedWaters->AddInstance(water);*/
 			}
 			//}
 		}
@@ -487,6 +493,7 @@ void TerrainManager::RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe
 
 //TODO : Reimplement getting height at terrain location
 float TerrainManager::GetTerrainHeightAtLocation(float x, float z) {
+	std::lock_guard<std::mutex> lock(terrain_mutex);
 	for (auto& terrain : terrains)
 	{
 		glm::vec2 pos = terrain->coordinateData.pos;
