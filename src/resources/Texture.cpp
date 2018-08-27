@@ -252,10 +252,12 @@ namespace Resource::Texture {
 		}
 
 		try {
-			int count = j["num_texs"];
-			for (int i = 0; i < count; i++) {
-				textureResources[i] = from_json_TexResource(j[std::to_string(i)]);
-				LoadTextureFromFile(i);
+			int count = 0;
+			for (nlohmann::json::iterator it = j.begin(); it != j.end(); ++it) {
+				auto tex = from_json_TexResource(*it);
+				textureResources[tex.id] = tex;
+				LoadTextureFromFile(tex.id);
+				count++;
 			}
 			id_counter = count;
 			Log::Debug << textureResources.size() << " textures loaded\n";
@@ -272,7 +274,7 @@ namespace Resource::Texture {
 
 	void Manager::SaveTextureList() {
 		nlohmann::json j;
-		j["num_texs"] = textureResources.size();
+		//j["num_texs"] = textureResources.size();
 		for (auto const &[key, val] : textureResources) {
 			j[key] = val.to_json();
 		}

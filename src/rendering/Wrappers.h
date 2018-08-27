@@ -296,7 +296,6 @@ private:
 
 	VulkanFence depthFence;
 	VulkanFence commandFence;
-	bool firstUse = true;
 
 	CommandPool commandPool;
 	VkCommandBuffer primaryCmdBuf;
