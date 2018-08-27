@@ -18,6 +18,7 @@ class VulkanModel {
 public:
 
 	VulkanModel(VulkanRenderer& renderer, std::shared_ptr<Mesh> mesh);
+    VulkanModel(VulkanRenderer& renderer, std::shared_ptr<MeshData> meshData);
 
 	//VulkanBuffer vertices;
 	//VulkanBuffer indices;
