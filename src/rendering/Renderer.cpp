@@ -275,6 +275,10 @@ void VulkanRenderer::BuildCommandBuffers(VkCommandBuffer cmdBuf) {
 		VK_SUBPASS_CONTENTS_INLINE);
 
 
+
+
+
+
 	vkCmdBindDescriptorSets(
 		cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		frameDataDescriptorLayout, 0, 1, &frameDataDescriptorSet.set, 0, nullptr);
@@ -292,6 +296,8 @@ void VulkanRenderer::BuildCommandBuffers(VkCommandBuffer cmdBuf) {
 			vulkanSwapChain.swapChainExtent.height, 0, 0);
 	vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
 
+	scene->RenderDepthPrePass (cmdBuf);
+	renderPass->NextSubPass (cmdBuf, VK_SUBPASS_CONTENTS_INLINE);
 	scene->RenderScene(cmdBuf, wireframe);
 
 	// Imgui rendering

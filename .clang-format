@@ -3,12 +3,14 @@ BasedOnStyle: LLVM
 AccessModifierOffset: 0
 AlignEscapedNewlinesLeft: false
 AlignTrailingComments: true
+AlignAfterOpenBracket: DontAlign
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortFunctionsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: false
+BinPackArguments: false
 BinPackParameters: false
 BreakBeforeBinaryOperators: false
 BreakBeforeBraces: Allman

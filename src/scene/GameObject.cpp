@@ -134,8 +134,10 @@ void GameObject::SetupPipeline()
 
 	auto geom = renderer.shaderManager.loadShaderModule("assets/shaders/normalVecDebug.geom.spv", ShaderModuleType::geometry);
 
-	ShaderModuleSet pbr_set(pbr_vert, pbr_frag, {}, {}, {});
-	ShaderModuleSet go_set(go_vert, go_frag, {}, {}, {});
+	ShaderModuleSet pbr_set(pbr_vert, pbr_frag);
+	ShaderModuleSet go_set(go_vert, go_frag);
+
+	ShaderModuleSet depthpre (pbr_vert);
 
 	if (usePBR)
 		pipeMan.SetShaderModuleSet(mvp, pbr_set);
@@ -199,8 +201,8 @@ void GameObject::SetupPipeline()
 		1.0f, VK_TRUE);
 	pipeMan.BuildPipeline(mvp, renderer.renderPass->Get(), 0);
 
-	ShaderModuleSet pbr_geom_set(pbr_vert, pbr_frag, geom, {}, {});
-	ShaderModuleSet go_geom_set(go_vert, go_frag, geom, {}, {});
+	ShaderModuleSet pbr_geom_set(pbr_vert, pbr_frag, geom);
+	ShaderModuleSet go_geom_set(go_vert, go_frag, geom);
 
 	if (usePBR)
 		pipeMan.SetShaderModuleSet(mvp, pbr_geom_set);

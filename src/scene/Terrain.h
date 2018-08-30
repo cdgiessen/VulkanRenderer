@@ -193,5 +193,6 @@ private:
 	void UnSubdivide(int quad);
 
 	void PopulateQuadOffsets(int quad, std::vector<VkDeviceSize>& vert, std::vector<VkDeviceSize>& ind);
-
+	//std::vector<VkDeviceSize> vertexOffsettings;
+	//std::vector<VkDeviceSize> indexOffsettings;
 };

@@ -94,44 +94,31 @@ ShaderModuleSet::ShaderModuleSet() {};
 
 ShaderModuleSet::ShaderModuleSet(
 	ShaderModule vert,
-	ShaderModule frag,
+    std::optional<ShaderModule> frag,
 	std::optional<ShaderModule> geom,
 	std::optional<ShaderModule> tessEval,
-	std::optional<ShaderModule> tessControl)
+	std::optional<ShaderModule> tessControl):
+
+	vert (vert),
+  frag (frag),
+  geom (geom),
+  tessEval (tessEval),
+  tessControl (tessControl)
 {
-	vertexModule = vert;
-	fragmentModule = frag;
-
-	if (geom.has_value()) {
-		geomPresent = true;
-		geometryModule = geom.value();
-	}
-
-	if (tessEval.has_value()) {
-		tessEvalPresent = true;
-		tessEvalModule = tessEval.value();
-	}
-
-	if (tessControl.has_value()) {
-		tessControlPresent = true;
-		tessControlModule = tessControl.value();
-
-	}
 }
 
 std::vector<VkPipelineShaderStageCreateInfo> ShaderModuleSet::ShaderStageCreateInfos() {
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 	shaderStages.push_back(vertexModule.createInfo);
-	shaderStages.push_back(fragmentModule.createInfo);
-	if (geomPresent) {
-		shaderStages.push_back(geometryModule.createInfo);
-	}
-	if (tessControlPresent) {
-		shaderStages.push_back(tessEvalModule.createInfo);
-	}
-	if (tessEvalPresent) {
-		shaderStages.push_back(tessControlModule.createInfo);
-	}
+	if (frag.has_value ()) 
+	    shaderStages.push_back (frag->createInfo);
+	if (geom.has_value ())
+		shaderStages.push_back (geom->createInfo);
+	if (tessControl.has_value ()) 
+	   shaderStages.push_back (tessControl->createInfo);
+	if (tessEval.has_value ())
+		shaderStages.push_back (tessEval->createInfo);
+	
 	return shaderStages;
 }
 

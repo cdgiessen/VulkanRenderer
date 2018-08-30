@@ -2,64 +2,100 @@
 
 #include "Initializers.h"
 
-RenderPass::RenderPass(VulkanDevice& device, VkFormat colorFormat):
-    device(device)
+RenderPass::RenderPass (VulkanDevice& device, VkFormat colorFormat) : device (device)
 {
-    AttachmentDescription colorAttachment(
-        colorFormat,
-        VK_SAMPLE_COUNT_1_BIT,
-        VK_ATTACHMENT_LOAD_OP_CLEAR,
-        VK_ATTACHMENT_STORE_OP_STORE,
-        VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	AttachmentDescription colorAttachment (colorFormat,
+	    VK_SAMPLE_COUNT_1_BIT,
+	    VK_ATTACHMENT_LOAD_OP_CLEAR,
+	    VK_ATTACHMENT_STORE_OP_STORE,
+	    VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+	    VK_ATTACHMENT_STORE_OP_DONT_CARE,
+	    VK_IMAGE_LAYOUT_UNDEFINED,
+	    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-    AttachmentDescription depthAttachment(
-        VK_FORMAT_D32_SFLOAT_S8_UINT,
-        VK_SAMPLE_COUNT_1_BIT,
-        VK_ATTACHMENT_LOAD_OP_CLEAR,
-        VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	AttachmentDescription depthAttachment (VK_FORMAT_D32_SFLOAT_S8_UINT,
+	    VK_SAMPLE_COUNT_1_BIT,
+	    VK_ATTACHMENT_LOAD_OP_CLEAR,
+	    VK_ATTACHMENT_STORE_OP_DONT_CARE,
+	    VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+	    VK_ATTACHMENT_STORE_OP_DONT_CARE,
+	    VK_IMAGE_LAYOUT_UNDEFINED,
+	    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    AttachmentReference colorAttachmentRef(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    AttachmentReference depthAttachmentRef(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	AttachmentReference colorAttachmentRef (0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	AttachmentReference depthAttachmentRef (1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    SubpassDescription subpass(0, VK_PIPELINE_BIND_POINT_GRAPHICS, 
-    0, nullptr,
-    1, &colorAttachmentRef.reference, &depthAttachmentRef.reference, nullptr,
-    0, nullptr);
+	SubpassDescription depth_subpass (0,
+	    VK_PIPELINE_BIND_POINT_GRAPHICS,
+	    0,
+	    nullptr,
+	    1,
+		nullptr,
+	    &depthAttachmentRef.reference,
+	    nullptr,
+	    0,
+	    nullptr);
 
-    SubpassDependency dependency (
-        VK_SUBPASS_EXTERNAL,
-        0,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        0,
-        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-		    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        0);
+	SubpassDescription color_subpass (0,
+	    VK_PIPELINE_BIND_POINT_GRAPHICS,
+	    1,
+	    &depthAttachmentRef.reference,
+	    1,
+	    &colorAttachmentRef.reference, 
+		nullptr,
+	    nullptr,
+	    0,
+	    nullptr);
 
-    std::array<VkAttachmentDescription, 2> attachments = { colorAttachment.description,
-														  depthAttachment.description };
-	
-    VkRenderPassCreateInfo renderPassInfo = initializers::renderPassCreateInfo();
-	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-	renderPassInfo.pAttachments = attachments.data();
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass.subpass;
-	renderPassInfo.dependencyCount = 1;
-	renderPassInfo.pDependencies = &dependency.dependency;
+	SubpassDependency ext_subpass_dependency (VK_SUBPASS_EXTERNAL,
+	    0,
+	    VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+	    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+	    0,
+	    VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+	    0);
 
-    if (vkCreateRenderPass(device.device, &renderPassInfo, nullptr,
-		&renderPass) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create render pass!");
+	SubpassDependency depth_subpass_dependency (0,
+	    1,
+	    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+	    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+	    0,
+	    VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+	    0);
+
+	SubpassDependency color_subpass_dependency (1,
+	    VK_SUBPASS_EXTERNAL,
+	    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+	    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+	    0,
+	    VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+	    0);
+
+
+	std::array<VkSubpassDependency, 3> subpass_dependencies = { ext_subpass_dependency.dependency,
+		depth_subpass_dependency.dependency,
+		color_subpass_dependency.dependency };
+
+	std::array<VkAttachmentDescription, 2> attachments = { colorAttachment.description,
+		depthAttachment.description };
+
+	std::array<VkSubpassDescription, 2> subpass_descriptions = { depth_subpass.subpass,
+		color_subpass.subpass };
+
+	VkRenderPassCreateInfo renderPassInfo = initializers::renderPassCreateInfo ();
+	renderPassInfo.attachmentCount = static_cast<uint32_t> (attachments.size ());
+	renderPassInfo.pAttachments = attachments.data ();
+	renderPassInfo.subpassCount = 2;
+	renderPassInfo.pSubpasses = subpass_descriptions.data ();
+	renderPassInfo.dependencyCount = 3;
+	renderPassInfo.pDependencies = subpass_dependencies.data ();
+
+	if (vkCreateRenderPass (device.device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+	{
+		throw std::runtime_error ("failed to create render pass!");
 	}
 
-    // VkAttachmentDescription colorAttachment = {};
+	// VkAttachmentDescription colorAttachment = {};
 	// colorAttachment.format = colorFormat;
 	// colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	// colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -112,35 +148,33 @@ RenderPass::RenderPass(VulkanDevice& device, VkFormat colorFormat):
 	// renderPassInfo.dependencyCount = 1;
 	// renderPassInfo.pDependencies = &dependency;
 
-    // if (vkCreateRenderPass(device.device, &renderPassInfo, nullptr,
+	// if (vkCreateRenderPass(device.device, &renderPassInfo, nullptr,
 	// 	&renderPass) != VK_SUCCESS) {
 	// 	throw std::runtime_error("failed to create render pass!");
 	// }
 }
 
-RenderPass::~RenderPass(){
-    vkDestroyRenderPass(device.device, renderPass, nullptr);
-}
+RenderPass::~RenderPass () { vkDestroyRenderPass (device.device, renderPass, nullptr); }
 
- void RenderPass::BeginRenderPass(VkCommandBuffer cmdBuf, 
-    VkFramebuffer framebuffer, 
-    VkOffset2D offset, VkExtent2D extent, 
+void RenderPass::BeginRenderPass (VkCommandBuffer cmdBuf,
+    VkFramebuffer framebuffer,
+    VkOffset2D offset,
+    VkExtent2D extent,
     std::array<VkClearValue, 2> clearValues,
     VkSubpassContents contents)
 {
-    VkRenderPassBeginInfo renderPassInfo = initializers::renderPassBeginInfo(
-		renderPass, framebuffer, offset,
-		extent, clearValues);
+	VkRenderPassBeginInfo renderPassInfo =
+	    initializers::renderPassBeginInfo (renderPass, framebuffer, offset, extent, clearValues);
 
-	vkCmdBeginRenderPass(cmdBuf, &renderPassInfo,
-		contents);
-
+	vkCmdBeginRenderPass (cmdBuf, &renderPassInfo, contents);
 }
 
-void RenderPass::EndRenderPass(VkCommandBuffer cmdBuf){
-    vkCmdEndRenderPass(cmdBuf);
+
+void RenderPass ::NextSubPass (VkCommandBuffer cmdBuf, VkSubpassContents contents)
+{
+	vkCmdNextSubpass (cmdBuf, contents);
 }
 
-VkRenderPass RenderPass::Get(){
-    return renderPass;
-}
+void RenderPass::EndRenderPass (VkCommandBuffer cmdBuf) { vkCmdEndRenderPass (cmdBuf); }
+
+VkRenderPass RenderPass::Get () { return renderPass; }

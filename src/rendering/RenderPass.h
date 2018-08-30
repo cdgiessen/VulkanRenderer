@@ -103,6 +103,7 @@ public:
         std::array<VkClearValue, 2> clearValues, 
         VkSubpassContents contents);
 
+	void NextSubPass (VkCommandBuffer cmdBuf, VkSubpassContents contents);
     void EndRenderPass(VkCommandBuffer cmdBuf);
 
     VkRenderPass Get();
