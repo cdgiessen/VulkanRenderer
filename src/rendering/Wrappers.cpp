@@ -376,7 +376,7 @@ FrameObject::FrameObject(VulkanDevice& device, int frameIndex) :
 	imageAvailSem(device),
 	renderFinishSem(device),
 	commandFence(device),
-	depthFence(device)
+	depthFence(device, DEFAULT_FENCE_TIMEOUT, VK_FENCE_CREATE_SIGNALED_BIT)
 {
 	primaryCmdBuf = commandPool.GetPrimaryCommandBuffer(false);
 }
@@ -408,13 +408,8 @@ void FrameObject::PrepareFrame() {
 }
 
 void FrameObject::WaitTillReady() {
-	if (!firstUse) {
-		commandFence.WaitTillTrue();
-		commandFence.Reset();
-	}
-	else {
-		firstUse = false;
-	}
+	commandFence.WaitTillTrue();
+	commandFence.Reset();
 }
 
 void FrameObject::SubmitFrame()
