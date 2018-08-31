@@ -44,18 +44,147 @@ void ManagedVulkanPipeline::BindPipelineOptionalWireframe(VkCommandBuffer cmdBuf
 	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? pipelines->at(1) : pipelines->at(0));
 }
 
-VulkanPipeline::VulkanPipeline(VulkanDevice &device) :
+/////////////////////////// 
+// -- PipelineBuilder -- //
+///////////////////////////
+
+void PipelineBuilder::SetShaderModuleSet(ShaderModuleSet set) {
+	pco.shaderSet = set;
+}
+
+
+void PipelineBuilder::SetVertexInput(
+	std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescriptions)
+{
+	pco.vertexInputInfo = initializers::pipelineVertexInputStateCreateInfo();
+
+	pco.vertexInputBindingDescription = std::make_unique<std::vector<VkVertexInputBindingDescription>>(bindingDescription);
+	pco.vertexInputAttributeDescriptions = std::make_unique<std::vector<VkVertexInputAttributeDescription>>(attributeDescriptions);
+
+	pco.vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(pco.vertexInputBindingDescription->size());
+	pco.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(pco.vertexInputAttributeDescriptions->size());
+	pco.vertexInputInfo.pVertexBindingDescriptions = pco.vertexInputBindingDescription->data();
+	pco.vertexInputInfo.pVertexAttributeDescriptions = pco.vertexInputAttributeDescriptions->data();
+
+}
+
+void PipelineBuilder::SetInputAssembly(
+	VkPrimitiveTopology topology, VkPipelineInputAssemblyStateCreateFlags flag, VkBool32 primitiveRestart)
+{
+	pco.inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo(topology, flag, primitiveRestart);
+}
+
+void PipelineBuilder::SetDynamicState(
+	std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateFlags flags)
+{
+	pco.dynamicState = VkPipelineDynamicStateCreateInfo();
+	pco.dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	pco.dynamicState.flags = flags;
+	pco.dynamicState.dynamicStateCount = (uint32_t)dynamicStates.size();
+	pco.dynamicState.pDynamicStates = dynamicStates.data();
+}
+
+void PipelineBuilder::SetViewport(
+	float width, float height, float minDepth, float maxDepth, float x, float y)
+{
+	pco.viewport = initializers::viewport(width, height, minDepth, maxDepth);
+	pco.viewport.x = 0.0f;
+	pco.viewport.y = 0.0f;
+}
+
+void PipelineBuilder::SetScissor(uint32_t width, uint32_t height, uint32_t offsetX, uint32_t offsetY)
+{
+	pco.scissor = initializers::rect2D(width, height, offsetX, offsetY);
+}
+
+//Currently only supports one viewport or scissor
+void PipelineBuilder::SetViewportState(uint32_t viewportCount, uint32_t scissorCount,
+	VkPipelineViewportStateCreateFlags flags)
+{
+	pco.viewportState = initializers::pipelineViewportStateCreateInfo(1, 1);
+	pco.viewportState.pViewports = &pco.viewport;
+	pco.viewportState.pScissors = &pco.scissor;
+}
+
+void PipelineBuilder::SetRasterizer(VkPolygonMode polygonMode,
+	VkCullModeFlagBits cullModeFlagBits, VkFrontFace frontFace,
+	VkBool32 depthClampEnable, VkBool32 rasterizerDiscardEnable, float lineWidth, VkBool32 depthBiasEnable)
+{
+	pco.rasterizer = initializers::pipelineRasterizationStateCreateInfo(polygonMode, cullModeFlagBits, frontFace);
+	pco.rasterizer.depthClampEnable = depthClampEnable;
+	pco.rasterizer.rasterizerDiscardEnable = rasterizerDiscardEnable;
+	pco.rasterizer.lineWidth = lineWidth;
+	pco.rasterizer.depthBiasEnable = depthBiasEnable;
+}
+
+//No Multisampling support right now
+void PipelineBuilder::SetMultisampling(VkSampleCountFlagBits sampleCountFlags)
+{
+	pco.multisampling = initializers::pipelineMultisampleStateCreateInfo(sampleCountFlags);
+	pco.multisampling.sampleShadingEnable = VK_FALSE;
+}
+
+void PipelineBuilder::SetDepthStencil(
+	VkBool32 depthTestEnable, VkBool32 depthWriteEnable, VkCompareOp depthCompareOp,
+	VkBool32 depthBoundsTestEnable, VkBool32 stencilTestEnable)
+{
+	pco.depthStencil = initializers::pipelineDepthStencilStateCreateInfo(depthTestEnable, depthWriteEnable, depthCompareOp);
+	pco.depthStencil.depthBoundsTestEnable = depthBoundsTestEnable;
+	pco.depthStencil.stencilTestEnable = stencilTestEnable;
+}
+
+void PipelineBuilder::SetColorBlendingAttachment(
+	VkBool32 blendEnable, VkColorComponentFlags colorWriteMask,
+	VkBlendOp colorBlendOp, VkBlendFactor srcColorBlendFactor, VkBlendFactor dstColorBlendFactor,
+	VkBlendOp alphaBlendOp, VkBlendFactor srcAlphaBlendFactor, VkBlendFactor dstAlphaBlendFactor)
+{
+	pco.colorBlendAttachment = initializers::pipelineColorBlendAttachmentState(colorWriteMask, blendEnable);
+	pco.colorBlendAttachment.colorBlendOp = colorBlendOp;
+	pco.colorBlendAttachment.srcColorBlendFactor = srcColorBlendFactor;
+	pco.colorBlendAttachment.dstColorBlendFactor = dstColorBlendFactor;
+	pco.colorBlendAttachment.alphaBlendOp = alphaBlendOp;
+	pco.colorBlendAttachment.srcAlphaBlendFactor = srcAlphaBlendFactor;
+	pco.colorBlendAttachment.dstAlphaBlendFactor = dstAlphaBlendFactor;
+}
+
+//Can't handle more than one attachment currently
+void PipelineBuilder::SetColorBlending(uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState * attachments)
+{
+	pco.colorBlending = initializers::pipelineColorBlendStateCreateInfo(1, &pco.colorBlendAttachment);
+	pco.colorBlending.logicOpEnable = VK_FALSE;
+	pco.colorBlending.logicOp = VK_LOGIC_OP_COPY;
+	pco.colorBlending.blendConstants[0] = 0.0f;
+	pco.colorBlending.blendConstants[1] = 0.0f;
+	pco.colorBlending.blendConstants[2] = 0.0f;
+	pco.colorBlending.blendConstants[3] = 0.0f;
+}
+
+void PipelineBuilder::SetDescriptorSetLayout(std::vector<VkDescriptorSetLayout>& descriptorSetlayouts)
+{
+	pco.pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(descriptorSetlayouts.data(), (uint32_t)descriptorSetlayouts.size());
+}
+
+void PipelineBuilder::SetModelPushConstant(VkPushConstantRange& pushConstantRange) {
+	pco.pipelineLayoutInfo.pushConstantRangeCount = 1;
+	pco.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+}
+
+/////////////////////////////////
+// -- VulkanPipelineManager -- //
+/////////////////////////////////
+
+VulkanPipelineManager::VulkanPipelineManager(VulkanDevice &device) :
 	device(device)
 {
 	InitPipelineCache();
 }
 
-VulkanPipeline::~VulkanPipeline()
+VulkanPipelineManager::~VulkanPipelineManager()
 {
 	vkDestroyPipelineCache(device.device, pipeCache, nullptr);
 }
 
-void VulkanPipeline::InitPipelineCache() {
+void VulkanPipelineManager::InitPipelineCache() {
 	VkPipelineCacheCreateInfo cacheCreateInfo;
 	cacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 	cacheCreateInfo.pNext = NULL;
@@ -67,18 +196,18 @@ void VulkanPipeline::InitPipelineCache() {
 	}
 }
 
-VkPipelineCache VulkanPipeline::GetPipelineCache() {
+VkPipelineCache VulkanPipelineManager::GetPipelineCache() {
 	return pipeCache;
 }
 
-std::shared_ptr<ManagedVulkanPipeline> VulkanPipeline::CreateManagedPipeline() {
+std::shared_ptr<ManagedVulkanPipeline> VulkanPipelineManager::CreateManagedPipeline() {
 	std::shared_ptr<ManagedVulkanPipeline> mvp = std::make_shared<ManagedVulkanPipeline>();
 	pipes.push_back(mvp);
 	mvp->pipelines = std::make_unique<std::vector<VkPipeline>>();
 	return mvp;
 }
 
-void VulkanPipeline::DeleteManagedPipeline(std::shared_ptr<ManagedVulkanPipeline> pipe) {
+void VulkanPipelineManager::DeleteManagedPipeline(std::shared_ptr<ManagedVulkanPipeline> pipe) {
 	auto mvp = std::find(pipes.begin(), pipes.end(), pipe);
 	if (mvp != pipes.end()) {
 		vkDestroyPipelineLayout(device.device, (*mvp)->layout, nullptr);
@@ -91,14 +220,14 @@ void VulkanPipeline::DeleteManagedPipeline(std::shared_ptr<ManagedVulkanPipeline
 	}
 }
 
-void VulkanPipeline::BuildPipelineLayout(std::shared_ptr<ManagedVulkanPipeline> mvp) {
+void VulkanPipelineManager::BuildPipelineLayout(std::shared_ptr<ManagedVulkanPipeline> mvp) {
 	if (vkCreatePipelineLayout(device.device, &mvp->pco.pipelineLayoutInfo, nullptr, &mvp->layout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
 
 }
 
-void VulkanPipeline::BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> mvp, VkRenderPass renderPass, VkPipelineCreateFlags flags)
+void VulkanPipelineManager::BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> mvp, VkRenderPass renderPass, VkPipelineCreateFlags flags)
 {
 
 	//Deals with possible geometry or tessilation shaders
@@ -137,125 +266,4 @@ void VulkanPipeline::BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> mvp, V
 	}
 
 	mvp->pipelines->push_back(pipeline);
-}
-
-void VulkanPipeline::SetShaderModuleSet(std::shared_ptr<ManagedVulkanPipeline> mvp, ShaderModuleSet set) {
-	mvp->pco.shaderSet = set;
-}
-
-
-void VulkanPipeline::SetVertexInput(std::shared_ptr<ManagedVulkanPipeline> mvp,
-	std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescriptions)
-{
-	mvp->pco.vertexInputInfo = initializers::pipelineVertexInputStateCreateInfo();
-
-	mvp->pco.vertexInputBindingDescription = std::make_unique<std::vector<VkVertexInputBindingDescription>>(bindingDescription);
-	mvp->pco.vertexInputAttributeDescriptions = std::make_unique<std::vector<VkVertexInputAttributeDescription>>(attributeDescriptions);
-
-	mvp->pco.vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(mvp->pco.vertexInputBindingDescription->size());
-	mvp->pco.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(mvp->pco.vertexInputAttributeDescriptions->size());
-	mvp->pco.vertexInputInfo.pVertexBindingDescriptions = mvp->pco.vertexInputBindingDescription->data();
-	mvp->pco.vertexInputInfo.pVertexAttributeDescriptions = mvp->pco.vertexInputAttributeDescriptions->data();
-
-}
-
-void VulkanPipeline::SetInputAssembly(std::shared_ptr<ManagedVulkanPipeline> mvp,
-	VkPrimitiveTopology topology, VkPipelineInputAssemblyStateCreateFlags flag, VkBool32 primitiveRestart)
-{
-	mvp->pco.inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo(topology, flag, primitiveRestart);
-}
-
-void VulkanPipeline::SetDynamicState(std::shared_ptr<ManagedVulkanPipeline> mvp,
-	std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateFlags flags)
-{
-	mvp->pco.dynamicState = VkPipelineDynamicStateCreateInfo();
-	mvp->pco.dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	mvp->pco.dynamicState.flags = flags;
-	mvp->pco.dynamicState.dynamicStateCount = (uint32_t)dynamicStates.size();
-	mvp->pco.dynamicState.pDynamicStates = dynamicStates.data();
-}
-
-void VulkanPipeline::SetViewport(std::shared_ptr<ManagedVulkanPipeline> mvp,
-	float width, float height, float minDepth, float maxDepth, float x, float y)
-{
-	mvp->pco.viewport = initializers::viewport(width, height, minDepth, maxDepth);
-	mvp->pco.viewport.x = 0.0f;
-	mvp->pco.viewport.y = 0.0f;
-}
-
-void VulkanPipeline::SetScissor(std::shared_ptr<ManagedVulkanPipeline> mvp, uint32_t width, uint32_t height, uint32_t offsetX, uint32_t offsetY)
-{
-	mvp->pco.scissor = initializers::rect2D(width, height, offsetX, offsetY);
-}
-
-//Currently only supports one viewport or scissor
-void VulkanPipeline::SetViewportState(std::shared_ptr<ManagedVulkanPipeline> mvp, uint32_t viewportCount, uint32_t scissorCount,
-	VkPipelineViewportStateCreateFlags flags)
-{
-	mvp->pco.viewportState = initializers::pipelineViewportStateCreateInfo(1, 1);
-	mvp->pco.viewportState.pViewports = &mvp->pco.viewport;
-	mvp->pco.viewportState.pScissors = &mvp->pco.scissor;
-}
-
-void VulkanPipeline::SetRasterizer(std::shared_ptr<ManagedVulkanPipeline> mvp, VkPolygonMode polygonMode,
-	VkCullModeFlagBits cullModeFlagBits, VkFrontFace frontFace,
-	VkBool32 depthClampEnable, VkBool32 rasterizerDiscardEnable, float lineWidth, VkBool32 depthBiasEnable)
-{
-	mvp->pco.rasterizer = initializers::pipelineRasterizationStateCreateInfo(polygonMode, cullModeFlagBits, frontFace);
-	mvp->pco.rasterizer.depthClampEnable = depthClampEnable;
-	mvp->pco.rasterizer.rasterizerDiscardEnable = rasterizerDiscardEnable;
-	mvp->pco.rasterizer.lineWidth = lineWidth;
-	mvp->pco.rasterizer.depthBiasEnable = depthBiasEnable;
-}
-
-//No Multisampling support right now
-void VulkanPipeline::SetMultisampling(std::shared_ptr<ManagedVulkanPipeline> mvp, VkSampleCountFlagBits sampleCountFlags)
-{
-	mvp->pco.multisampling = initializers::pipelineMultisampleStateCreateInfo(sampleCountFlags);
-	mvp->pco.multisampling.sampleShadingEnable = VK_FALSE;
-}
-
-void VulkanPipeline::SetDepthStencil(std::shared_ptr<ManagedVulkanPipeline> mvp,
-	VkBool32 depthTestEnable, VkBool32 depthWriteEnable, VkCompareOp depthCompareOp,
-	VkBool32 depthBoundsTestEnable, VkBool32 stencilTestEnable)
-{
-	mvp->pco.depthStencil = initializers::pipelineDepthStencilStateCreateInfo(depthTestEnable, depthWriteEnable, depthCompareOp);
-	mvp->pco.depthStencil.depthBoundsTestEnable = depthBoundsTestEnable;
-	mvp->pco.depthStencil.stencilTestEnable = stencilTestEnable;
-}
-
-void VulkanPipeline::SetColorBlendingAttachment(std::shared_ptr<ManagedVulkanPipeline> mvp,
-	VkBool32 blendEnable, VkColorComponentFlags colorWriteMask,
-	VkBlendOp colorBlendOp, VkBlendFactor srcColorBlendFactor, VkBlendFactor dstColorBlendFactor,
-	VkBlendOp alphaBlendOp, VkBlendFactor srcAlphaBlendFactor, VkBlendFactor dstAlphaBlendFactor)
-{
-	mvp->pco.colorBlendAttachment = initializers::pipelineColorBlendAttachmentState(colorWriteMask, blendEnable);
-	mvp->pco.colorBlendAttachment.colorBlendOp = colorBlendOp;
-	mvp->pco.colorBlendAttachment.srcColorBlendFactor = srcColorBlendFactor;
-	mvp->pco.colorBlendAttachment.dstColorBlendFactor = dstColorBlendFactor;
-	mvp->pco.colorBlendAttachment.alphaBlendOp = alphaBlendOp;
-	mvp->pco.colorBlendAttachment.srcAlphaBlendFactor = srcAlphaBlendFactor;
-	mvp->pco.colorBlendAttachment.dstAlphaBlendFactor = dstAlphaBlendFactor;
-}
-
-//Can't handle more than one attachment currently
-void VulkanPipeline::SetColorBlending(std::shared_ptr<ManagedVulkanPipeline> mvp, uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState * attachments)
-{
-	mvp->pco.colorBlending = initializers::pipelineColorBlendStateCreateInfo(1, &mvp->pco.colorBlendAttachment);
-	mvp->pco.colorBlending.logicOpEnable = VK_FALSE;
-	mvp->pco.colorBlending.logicOp = VK_LOGIC_OP_COPY;
-	mvp->pco.colorBlending.blendConstants[0] = 0.0f;
-	mvp->pco.colorBlending.blendConstants[1] = 0.0f;
-	mvp->pco.colorBlending.blendConstants[2] = 0.0f;
-	mvp->pco.colorBlending.blendConstants[3] = 0.0f;
-}
-
-void VulkanPipeline::SetDescriptorSetLayout(std::shared_ptr<ManagedVulkanPipeline> mvp, std::vector<VkDescriptorSetLayout>& descriptorSetlayouts)
-{
-	mvp->pco.pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo(descriptorSetlayouts.data(), (uint32_t)descriptorSetlayouts.size());
-}
-
-void VulkanPipeline::SetModelPushConstant(std::shared_ptr<ManagedVulkanPipeline> mvp, VkPushConstantRange& pushConstantRange) {
-	mvp->pco.pipelineLayoutInfo.pushConstantRangeCount = 1;
-	mvp->pco.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 }

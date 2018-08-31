@@ -119,7 +119,7 @@ public:
 	std::unique_ptr<RenderPass> renderPass;
 
 	ShaderManager shaderManager;
-	VulkanPipeline pipelineManager;
+	VulkanPipelineManager pipelineManager;
 	VulkanTextureManager textureManager;
 
 	Scene* scene;
