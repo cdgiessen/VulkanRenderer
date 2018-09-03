@@ -31,6 +31,83 @@ class Scene;
 
 namespace Resource { class ResourceManager; }
 
+
+
+class RenderableTarget {
+
+	std::function<void(VkCommandBuffer)> drawFunc;
+
+
+
+};
+
+class ViewCamera {
+	struct Orthographic {
+		float size = 1.0f;
+	};
+
+	struct Perspective {
+		float fov = 1.0f;
+	};
+
+	std::variant< Orthographic, Perspective> projectionType;
+	struct ClipPlanes {
+		float near = 0.01;
+		float far = 10000.0f;
+	} clipPlane;
+
+	struct Transform {
+		glm::vec3 pos = glm::vec3(0,0,0);
+		glm::vec3 scale = glm::vec3(1,1,1);
+		glm::quat rot;
+	} transform;
+
+
+};
+
+class ViewSurface {
+	ViewCamera& cam;
+	struct Viewport {
+		int x = 0, y = 0;
+		int width = 1, height = 1;
+	} viewport;
+	struct Sciossor {
+		int offsetX = 0, offsetY = 0;
+		int width = 1, height = 1;
+	} scissor;
+
+	//RenderPass& renderPass;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class RenderSettings {
 public:
 
@@ -116,7 +193,7 @@ public:
 
 	VulkanDevice device;
 	VulkanSwapChain vulkanSwapChain;
-	std::unique_ptr<RenderPass> renderPass;
+	std::unique_ptr<const FrameGraph> renderPass;
 
 	ShaderManager shaderManager;
 	VulkanPipelineManager pipelineManager;

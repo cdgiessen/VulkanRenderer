@@ -14,8 +14,8 @@
 
 namespace InternalGraph {
 
-	typedef std::variant<int, float, glm::vec2, glm::vec3, glm::vec4> LinkTypeVariants;
-	typedef int NodeID;
+	using LinkTypeVariants = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4> LinkTypeVariants;
+	using NodeID = int;
 
 	class Node;
 

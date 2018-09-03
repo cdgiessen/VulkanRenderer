@@ -72,7 +72,7 @@ src/rendering/Material.cpp
 src/rendering/Model.cpp
 src/rendering/Pipeline.cpp
 src/rendering/Renderer.cpp
-src/rendering/RenderPass.cpp
+src/rendering/FrameGraph.cpp
 src/rendering/RenderTools.cpp
 src/rendering/Shader.cpp
 src/rendering/SwapChain.cpp

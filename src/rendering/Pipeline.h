@@ -79,6 +79,15 @@ public:
 	void BindPipelineOptionalWireframe(VkCommandBuffer cmdBuf, bool wireframe);
 };
 
+class PipelineExternalData {
+	ShaderModuleSet shaderSet;
+	VkPrimitiveTopology topology;
+	VkBool32 primitiveRestart;
+	VkPolygonMode polygonMode;
+	VkCullModeFlagBits cullModeFlagBits;
+	VkFrontFace frontFace;
+};
+
 class PipelineBuilder {
 	PipelineCreationObject pco;
 
@@ -91,12 +100,12 @@ class PipelineBuilder {
 	void SetInputAssembly(VkPrimitiveTopology topology,
 		VkPipelineInputAssemblyStateCreateFlags flag, VkBool32 primitiveRestart);
 
-	void SetViewport(float width, float height, float minDepth, float maxDepth, float x, float y);
-	void SetScissor(uint32_t width, uint32_t height, uint32_t offsetX, uint32_t offsetY);
+	//void SetViewport(float width, float height, float minDepth, float maxDepth, float x, float y);
+	//void SetScissor(uint32_t width, uint32_t height, uint32_t offsetX, uint32_t offsetY);
 
-	void SetViewportState(
-		uint32_t viewportCount, uint32_t scissorCount,
-		VkPipelineViewportStateCreateFlags flags);
+	//void SetViewportState(
+	//	uint32_t viewportCount, uint32_t scissorCount,
+	//	VkPipelineViewportStateCreateFlags flags);
 
 	void SetRasterizer(
 		VkPolygonMode polygonMode, VkCullModeFlagBits cullModeFlagBits,
