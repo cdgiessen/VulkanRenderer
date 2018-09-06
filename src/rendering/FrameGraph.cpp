@@ -203,7 +203,7 @@ FrameGraph ContrustRenderPass(VulkanDevice& device) {
 	main_work.AddSubpass(color_subpass);
 
 	frame_graph_builder.AddRenderPass(main_work);
-
+	frame_graph_builder.lastPass = main_work.name;
 
 	return FrameGraph(frame_graph_builder, device);
 }
@@ -218,22 +218,93 @@ void SubpassDescription::SetDepthStencil(std::string name, DepthStencilAccess ac
 	depth_stencil_access = access;
 }
 
+std::vector<VkAttachmentDescription> SubpassDescription::AttachmentsUsed(AttachmentMap& attachment_map) const {
+	std::vector<VkAttachmentDescription> attachments;
+	for (auto& item : input_attachments) { attachments.push_back(attachment_map.at(item)); }
+	for (auto& item : color_attachments) { attachments.push_back(attachment_map.at(item)); }
+	for (auto& item : resolve_attachments) { attachments.push_back(attachment_map.at(item)); }
+	for (auto& item : preserve_attachments) { attachments.push_back(attachment_map.at(item)); }
+	if(depth_stencil_attachment.has_value()) attachments.push_back(attachment_map.at(*depth_stencil_attachment));
+	return attachments;
+}
+
+VkSubpassDescription SubpassDescription::GetSubpassDescription(AttachmentMap& attachment_map) {
+	VkSubpassDescription desc = {};
+	desc.inputAttachmentCount = input_attachments.size();
+	desc.colorAttachmentCount = color_attachments.size();
+	desc.preserveAttachmentCount = preserve_attachments.size();
+
+	return desc;
+}
 
 void RenderPassDescription::AddSubpass(SubpassDescription subpass) {
 	subpasses.push_back(subpass);
 }
 
-void FrameGraphBuilder::AddAttachment(RenderPassAttachment attachment) {
-	attachments.push_back(attachment);
+VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate(AttachmentMap& attachment_map) {
+	
+	std::vector<VkAttachmentDescription> rp_attachments;
+	for (auto& rp_subpass : pass.subpasses) {
+		auto& sub_attaches = rp_subpass.AttachmentsUsed();
+		for (auto& attach_name : sub_attaches) {
+
+		}
+
+	}
+
+	std::vector<VkSubpassDescription> rp_subpassDescriptions;
+	for (auto& rp_subpass : pass.subpasses) {
+		auto subpass = rp_subpass.GetSubpassDescription();
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+	}
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colorAttachmentRef;
+	subpass.pDepthStencilAttachment = &depthAttachmentRef;
+	//create subpasses
+
+	//create subpass dependencies
+
+
+	VkRenderPassCreateInfo renderPassInfo = initializers::renderPassCreateInfo();
+	renderPassInfo.attachmentCount = static_cast<uint32_t> (attachments.size());
+	renderPassInfo.pAttachments = attachments.data();
+	renderPassInfo.subpassCount = 2;
+	renderPassInfo.pSubpasses = subpass_descriptions.data();
+	renderPassInfo.dependencyCount = 3;
+	renderPassInfo.pDependencies = subpass_dependencies.data();
+
+	return renderPassInfo;
+
 }
 
-void FrameGraphBuilder::AddRenderPass(RenderPassDescription renderPass) {
-	renderPasses.push_back(renderPass);
+
+
+void FrameGraphBuilder::AddAttachment(std::string name, RenderPassAttachment attachment) {
+
+	attachments[name] = attachment;
+}
+
+void FrameGraphBuilder::AddRenderPass(std::string name,RenderPassDescription renderPass) {
+	renderPasses[name] = renderPass;
 }
 
 FrameGraph::FrameGraph(FrameGraphBuilder builder, VulkanDevice& device):device(device) {
 
+	for (auto [name, pass] : builder.renderPasses) {
 
+		auto renderPassInfo = pass.GetRenderPassCreate();
+
+
+		VkRenderPass pass;
+		if (vkCreateRenderPass(device.device, &renderPassInfo, nullptr, &pass) != VK_SUCCESS)
+		{
+			throw std::runtime_error ("failed to create render pass!");
+		}
+		renderPasses.push_back(RenderPass(pass));
+	}
 
 
 
@@ -241,6 +312,26 @@ FrameGraph::FrameGraph(FrameGraphBuilder builder, VulkanDevice& device):device(d
 
 FrameGraph::~FrameGraph() {
 	for(auto& rp : renderPasses)
-		vkDestroyRenderPass(device.device, rp, nullptr);
+		vkDestroyRenderPass(device.device, rp.rp, nullptr);
+}
+
+void RenderPass::SetSubpassDrawFuncs(std::vector<std::function<void(VkCommandBuffer cmdBuf)>> funcs) {
+	subpassFuncs = funcs;
+}
+
+void RenderPass::BuildCmdBuf(VkCommandBuffer cmdBuf, VkFramebuffer framebuffer,
+	VkOffset2D offset, VkExtent2D extent, std::array<VkClearValue, 2> clearValues) {
+	VkRenderPassBeginInfo renderPassInfo =
+	    initializers::renderPassBeginInfo (rp, framebuffer, offset, extent, clearValues);
+	
+
+	vkCmdBeginRenderPass(cmdBuf, &renderPassInfo, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
+	int i = 0;
+	for (auto& func : subpassFuncs) {
+		func(cmdBuf);
+		i++;
+		vkCmdNextSubpass(cmdBuf, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
+	}
+	vkCmdEndRenderPass(cmdBuf);
 }
 
