@@ -8,8 +8,6 @@
 
 #include "../../third-party/FastNoiseSIMD/FastNoiseSIMD.h"
 
-#include "../resources/Texture.h"
-
 #include <glm/glm.hpp>
 
 namespace InternalGraph {

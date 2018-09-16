@@ -4,7 +4,8 @@
 
 #include <iosfwd>
 #include <fstream>
-#include <ostream> 
+#include <ostream>
+#include <mutex>
 
 namespace Log {
 	
@@ -14,10 +15,13 @@ namespace Log {
 
 		std::ofstream fileOut;
 		std::ostream consoleOut;
+	private:
+		std::mutex log_lock;
 	};
 
 	template<typename T>
 	Log& operator << (Log& log, T const& stream) {
+		std::lock_guard<std::mutex> lg(log_lock);
 		log.consoleOut << stream;
 		log.fileOut << stream;
 		return log;
