@@ -13,39 +13,40 @@
 
 #include "../rendering/Initializers.h"
 
-class VertexDescription {
-public:
+class VertexDescription
+{
+	public:
 	VertexDescription (std::vector<int> layout) : layout (layout){};
 
-	std::vector<VkVertexInputBindingDescription> getBindingDescription ()
-	{
-		std::vector<VkVertexInputBindingDescription> bindingDescription;
+	// std::vector<VkVertexInputBindingDescription> getBindingDescription ()
+	// {
+	// 	std::vector<VkVertexInputBindingDescription> bindingDescription;
 
-		int size = std::accumulate (std::begin (layout), std::end (layout), 0) * 4;
+	// 	int size = std::accumulate (std::begin (layout), std::end (layout), 0) * 4;
 
-		bindingDescription.push_back (
-		    initializers::vertexInputBindingDescription (0, size, VK_VERTEX_INPUT_RATE_VERTEX));
-		return bindingDescription;
-	}
+	// 	bindingDescription.push_back (
+	// 	    initializers::vertexInputBindingDescription (0, size, VK_VERTEX_INPUT_RATE_VERTEX));
+	// 	return bindingDescription;
+	// }
 
-	std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions ()
-	{
-		std::vector<VkVertexInputAttributeDescription> attrib = {};
+	// std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions ()
+	// {
+	// 	std::vector<VkVertexInputAttributeDescription> attrib = {};
 
-		int offset = 0;
-		for (int i = 0; i < layout.size (); i++)
-		{
-			VkFormat vertSize = VK_FORMAT_R32_SFLOAT;
-			if (layout[i] == 2) vertSize = VK_FORMAT_R32G32_SFLOAT;
-			if (layout[i] == 3) vertSize = VK_FORMAT_R32G32B32_SFLOAT;
-			if (layout[i] == 4) vertSize = VK_FORMAT_R32G32B32A32_SFLOAT;
+	// 	int offset = 0;
+	// 	for (int i = 0; i < layout.size (); i++)
+	// 	{
+	// 		VkFormat vertSize = VK_FORMAT_R32_SFLOAT;
+	// 		if (layout[i] == 2) vertSize = VK_FORMAT_R32G32_SFLOAT;
+	// 		if (layout[i] == 3) vertSize = VK_FORMAT_R32G32B32_SFLOAT;
+	// 		if (layout[i] == 4) vertSize = VK_FORMAT_R32G32B32A32_SFLOAT;
 
-			attrib.push_back (initializers::vertexInputAttributeDescription (0, 0, vertSize, offset));
-			offset += layout[i] * 4;
-		}
-	};
+	// 		attrib.push_back (initializers::vertexInputAttributeDescription (0, 0, vertSize,
+	// offset)); 		offset += layout[i] * 4;
+	// 	}
+	// };
 
-private:
+	private:
 	std::vector<int> layout; // each element in the array is a different attribute, its value (1-4) is it's size
 };
 
@@ -60,8 +61,8 @@ struct Vertex_PosNorm
 	static std::vector<VkVertexInputBindingDescription> getBindingDescription ()
 	{
 		std::vector<VkVertexInputBindingDescription> bindingDescription;
-		bindingDescription.push_back (
-		    initializers::vertexInputBindingDescription (0, sizeof (Vertex_PosNorm), VK_VERTEX_INPUT_RATE_VERTEX));
+		bindingDescription.push_back (initializers::vertexInputBindingDescription (
+		    0, sizeof (Vertex_PosNorm), VK_VERTEX_INPUT_RATE_VERTEX));
 		return bindingDescription;
 	}
 
@@ -69,10 +70,10 @@ struct Vertex_PosNorm
 	{
 		std::vector<VkVertexInputAttributeDescription> attrib = {};
 
-		attrib.push_back (initializers::vertexInputAttributeDescription (0, 0, VK_FORMAT_R32G32B32_SFLOAT,
-		                                                                 offsetof (Vertex_PosNorm, pos)));
-		attrib.push_back (initializers::vertexInputAttributeDescription (0, 1, VK_FORMAT_R32G32B32_SFLOAT,
-		                                                                 offsetof (Vertex_PosNorm, normal)));
+		attrib.push_back (initializers::vertexInputAttributeDescription (
+		    0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof (Vertex_PosNorm, pos)));
+		attrib.push_back (initializers::vertexInputAttributeDescription (
+		    0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof (Vertex_PosNorm, normal)));
 
 		return attrib;
 	}
@@ -95,8 +96,8 @@ struct Vertex_PosNormTex
 	static std::vector<VkVertexInputBindingDescription> getBindingDescription ()
 	{
 		std::vector<VkVertexInputBindingDescription> bindingDescription;
-		bindingDescription.push_back (
-		    initializers::vertexInputBindingDescription (0, sizeof (Vertex_PosNormTex), VK_VERTEX_INPUT_RATE_VERTEX));
+		bindingDescription.push_back (initializers::vertexInputBindingDescription (
+		    0, sizeof (Vertex_PosNormTex), VK_VERTEX_INPUT_RATE_VERTEX));
 		return bindingDescription;
 	}
 
@@ -104,12 +105,12 @@ struct Vertex_PosNormTex
 	{
 		std::vector<VkVertexInputAttributeDescription> attrib = {};
 
-		attrib.push_back (initializers::vertexInputAttributeDescription (0, 0, VK_FORMAT_R32G32B32_SFLOAT,
-		                                                                 offsetof (Vertex_PosNormTex, pos)));
-		attrib.push_back (initializers::vertexInputAttributeDescription (0, 1, VK_FORMAT_R32G32B32_SFLOAT,
-		                                                                 offsetof (Vertex_PosNormTex, normal)));
-		attrib.push_back (initializers::vertexInputAttributeDescription (0, 2, VK_FORMAT_R32G32_SFLOAT,
-		                                                                 offsetof (Vertex_PosNormTex, texCoord)));
+		attrib.push_back (initializers::vertexInputAttributeDescription (
+		    0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof (Vertex_PosNormTex, pos)));
+		attrib.push_back (initializers::vertexInputAttributeDescription (
+		    0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof (Vertex_PosNormTex, normal)));
+		attrib.push_back (initializers::vertexInputAttributeDescription (
+		    0, 2, VK_FORMAT_R32G32_SFLOAT, offsetof (Vertex_PosNormTex, texCoord)));
 
 		return attrib;
 	}
@@ -136,9 +137,8 @@ struct Vertex_PosNormTexColor
 	static std::vector<VkVertexInputBindingDescription> getBindingDescription ()
 	{
 		std::vector<VkVertexInputBindingDescription> bindingDescription;
-		bindingDescription.push_back (
-		    initializers::vertexInputBindingDescription (0, sizeof (Vertex_PosNormTexColor),
-		                                                 VK_VERTEX_INPUT_RATE_VERTEX));
+		bindingDescription.push_back (initializers::vertexInputBindingDescription (
+		    0, sizeof (Vertex_PosNormTexColor), VK_VERTEX_INPUT_RATE_VERTEX));
 		return bindingDescription;
 	}
 
@@ -146,18 +146,14 @@ struct Vertex_PosNormTexColor
 	{
 		std::vector<VkVertexInputAttributeDescription> attrib = {};
 
-		attrib.push_back (
-		    initializers::vertexInputAttributeDescription (0, 0, VK_FORMAT_R32G32B32_SFLOAT,
-		                                                   offsetof (Vertex_PosNormTexColor, pos)));
-		attrib.push_back (
-		    initializers::vertexInputAttributeDescription (0, 1, VK_FORMAT_R32G32B32_SFLOAT,
-		                                                   offsetof (Vertex_PosNormTexColor, normal)));
-		attrib.push_back (
-		    initializers::vertexInputAttributeDescription (0, 2, VK_FORMAT_R32G32_SFLOAT,
-		                                                   offsetof (Vertex_PosNormTexColor, texCoord)));
-		attrib.push_back (
-		    initializers::vertexInputAttributeDescription (0, 3, VK_FORMAT_R32G32B32A32_SFLOAT,
-		                                                   offsetof (Vertex_PosNormTexColor, color)));
+		attrib.push_back (initializers::vertexInputAttributeDescription (
+		    0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof (Vertex_PosNormTexColor, pos)));
+		attrib.push_back (initializers::vertexInputAttributeDescription (
+		    0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof (Vertex_PosNormTexColor, normal)));
+		attrib.push_back (initializers::vertexInputAttributeDescription (
+		    0, 2, VK_FORMAT_R32G32_SFLOAT, offsetof (Vertex_PosNormTexColor, texCoord)));
+		attrib.push_back (initializers::vertexInputAttributeDescription (
+		    0, 3, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof (Vertex_PosNormTexColor, color)));
 
 
 		return attrib;
@@ -210,19 +206,24 @@ using Vertices_PosNorm = std::vector<Vertex_PosNorm>;
 using Vertices_PosNormTex = std::vector<Vertex_PosNormTex>;
 using Vertices_PosNormTexColor = std::vector<Vertex_PosNormTexColor>;
 
-class MeshData {
-public:
+class MeshData
+{
+	public:
 	MeshData (VertexDescription desc, std::vector<float> vertexData, std::vector<uint16_t> indexData)
-	: desc (desc), vertexData (vertexData) {}
+	: desc (desc), vertexData (vertexData)
+	{
+	}
 
 	MeshData (VertexDescription desc, std::vector<float>&& vertexData, std::vector<uint16_t>&& indexData)
-	: desc (desc), vertexData (std::move (vertexData)), indexData (indexData) {}
+	: desc (desc), vertexData (std::move (vertexData)), indexData (indexData)
+	{
+	}
 
-    const VertexDescription desc;
+	const VertexDescription desc;
 	std::vector<float> vertexData;
 	std::vector<uint16_t> indexData;
-private:
 
+	private:
 };
 
 

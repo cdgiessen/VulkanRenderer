@@ -1,13 +1,14 @@
-#pragma once 
+#pragma once
 
+#include <functional>
 #include <string>
 #include <unordered_map>
-#include <functional>
+#include <unordered_set>
 
 #include "Device.h"
 #include "vulkan/vulkan.h"
 
-//struct AttachmentDescription {
+// struct AttachmentDescription {
 //
 //    AttachmentDescription(
 //        VkFormat                        format,
@@ -19,7 +20,7 @@
 //        VkImageLayout                   initialLayout,
 //        VkImageLayout                   finalLayout
 //    ) {
-//        
+//
 //	    description.format = format;
 //	    description.samples = samples;
 //	    description.loadOp = loadOp;
@@ -34,7 +35,7 @@
 //    VkAttachmentDescription description = {};
 //};
 //
-//struct AttachmentReference {
+// struct AttachmentReference {
 //
 //    AttachmentReference(int index, VkImageLayout layout)    {
 //        reference.attachment = index;
@@ -44,7 +45,7 @@
 //    VkAttachmentReference reference = {};
 //};
 
-//struct SubpassDescription {
+// struct SubpassDescription {
 //    SubpassDescription (
 //        VkSubpassDescriptionFlags       flags,
 //        VkPipelineBindPoint             pipelineBindPoint,
@@ -72,7 +73,7 @@
 //    VkSubpassDescription subpass = {};
 //};
 //
-//struct SubpassDependency {
+// struct SubpassDependency {
 //    SubpassDependency(
 //        uint32_t                srcSubpass,
 //        uint32_t                dstSubpass,
@@ -92,75 +93,78 @@
 //    }
 //    VkSubpassDependency dependency = {};
 //};
-//class RenderPass {
-//public:
-	//RenderPass(VulkanDevice& device, VkFormat colorFormat);
-	//~RenderPass();
+// class RenderPass {
+// public:
+// RenderPass(VulkanDevice& device, VkFormat colorFormat);
+//~RenderPass();
 
-	//void BeginRenderPass(VkCommandBuffer cmdBuf, 
-	//    VkFramebuffer framebuffer, 
-	//    VkOffset2D offset, VkExtent2D extent, 
-	//    std::array<VkClearValue, 2> clearValues, 
-	//    VkSubpassContents contents);
-	//
-	//void NextSubPass (VkCommandBuffer cmdBuf, VkSubpassContents contents);
-	//void EndRenderPass(VkCommand 
-	//VkRenderPass Get();
+// void BeginRenderPass(VkCommandBuffer cmdBuf,
+//    VkFramebuffer framebuffer,
+//    VkOffset2D offset, VkExtent2D extent,
+//    std::array<VkClearValue, 2> clearValues,
+//    VkSubpassContents contents);
+//
+// void NextSubPass (VkCommandBuffer cmdBuf, VkSubpassContents contents);
+// void EndRenderPass(VkCommand
+// VkRenderPass Get();
 
-//private:
+// private:
 //    VkRenderPass renderPass;
 //};
 
 
 
 using RenderFunc = std::function<void(VkCommandBuffer cmdBuf)>;
-using AttachmentMap = std::unordered_map<std::string, RenderPassAttachment>;
-using RenderPassMap = std::unordered_map<std::string, RenderPassDescription>;
 
-struct RenderPassAttachment {
-	RenderPassAttachment(std::string name, VkFormat format):
-		name(name), format(format) {}
+struct RenderPassAttachment
+{
+	RenderPassAttachment (std::string name, VkFormat format) : name (name), format (format) {}
 
 	std::string name;
 	VkFormat format;
 	VkAttachmentDescription description = {};
 	VkAttachmentReference reference = {};
 };
+using AttachmentMap = std::unordered_map<std::string, RenderPassAttachment>;
 
-struct SubpassDependency {
-	SubpassDependency(std::string src, std::string dst):
-		src_subpass(src), dst_subpass(dst)
-
-	{}
+struct SubpassDependency
+{
+	SubpassDependency (std::string src, std::string dst) : src_subpass (src), dst_subpass (dst) {}
 	std::string src_subpass;
 	std::string dst_subpass;
 
-	uint32_t                dependentSubpass;
-	uint32_t                sourceSubpass;
-	VkPipelineStageFlags    srcStageMask;
-	VkPipelineStageFlags    dstStageMask;
-	VkAccessFlags           srcAccessMask;
-	VkAccessFlags           dstAccessMask;
-	VkDependencyFlags       dependencyFlags;
+	uint32_t dependentSubpass;
+	uint32_t sourceSubpass;
+	VkPipelineStageFlags srcStageMask;
+	VkPipelineStageFlags dstStageMask;
+	VkAccessFlags srcAccessMask;
+	VkAccessFlags dstAccessMask;
+	VkDependencyFlags dependencyFlags;
 };
 
-struct SubpassDescription {
-	SubpassDescription(std::string name):name(name){}
+struct SubpassDescription
+{
+	SubpassDescription (std::string name) : name (name) {}
 
-	void AddSubpassDependency(std::string subpass);
+	void AddSubpassDependency (std::string subpass);
 
-	void AddImageInput(std::string name);
+	void AddImageInput (std::string name);
 
-	void AddColorOutput(std::string name);
+	void AddColorOutput (std::string name);
 
-	enum class DepthStencilAccess {read_write, read_only, depth_read_only, stencil_read_only};
-	void SetDepthStencil(std::string name, DepthStencilAccess access);
+	enum class DepthStencilAccess
+	{
+		read_write,
+		read_only,
+		depth_read_only,
+		stencil_read_only
+	};
+	void SetDepthStencil (std::string name, DepthStencilAccess access);
 
-	void AddResolveAttachments(std::string name);
-	void AddPreserveAttachments(std::string name);
+	void AddResolveAttachments (std::string name);
+	void AddPreserveAttachments (std::string name);
 
-	std::vector<VkAttachmentDescription> AttachmentsUsed(AttachmentMap& attachment_map) const;
-	VkSubpassDescription GetSubpassDescription(AttachmentMap& attachment_map) const;
+	std::vector<std::string> AttachmentsUsed (AttachmentMap& attachment_map) const;
 
 	std::string name;
 	uint32_t index;
@@ -169,57 +173,66 @@ struct SubpassDescription {
 	std::vector<std::string> input_attachments;
 	std::vector<std::string> color_attachments;
 	std::vector<std::string> resolve_attachments;
-	std::optional<std::string> depth_stencil_attachment; DepthStencilAccess depth_stencil_access;
+	std::optional<std::string> depth_stencil_attachment;
+	DepthStencilAccess depth_stencil_access;
 	std::vector<std::string> preserve_attachments;
 };
-	
 
 
 
-struct RenderPassDescription {
-	RenderPassDescription(std::string name):name(name) {}
 
-	void AddSubpass(SubpassDescription subpass);
+struct RenderPassDescription
+{
+	RenderPassDescription (std::string name) : name (name) {}
 
-	VkRenderPassCreateInfo GetRenderPassCreate(AttachmentMap& attachment_map);
+	void AddSubpass (SubpassDescription subpass);
+
+	VkRenderPassCreateInfo GetRenderPassCreate (AttachmentMap& attachment_map);
 
 	std::string name;
-	//std::vector< std::string> attachments;
+	// std::vector< std::string> attachments;
 	std::vector<SubpassDescription> subpasses;
 };
+using RenderPassMap = std::unordered_map<std::string, RenderPassDescription>;
 
-struct RenderPass {
-	RenderPass(VkRenderPass renderPass):rp(renderPass) {};
+struct RenderPass
+{
+	RenderPass (VkRenderPass renderPass) : rp (renderPass){};
 
-	void SetSubpassDrawFuncs(std::vector<RenderFunc> funcs);
+	void SetSubpassDrawFuncs (std::vector<RenderFunc> funcs);
 
-	void BuildCmdBuf(VkCommandBuffer cmdBuf, VkFramebuffer framebuffer,
-		VkOffset2D offset, VkExtent2D extent, std::array<VkClearValue, 2> clearValues);
+	void BuildCmdBuf (VkCommandBuffer cmdBuf,
+	    VkFramebuffer framebuffer,
+	    VkOffset2D offset,
+	    VkExtent2D extent,
+	    std::array<VkClearValue, 2> clearValues);
 
 	std::vector<RenderFunc> subpassFuncs;
 	VkRenderPass rp;
 };
 
-struct FrameGraphBuilder {
+struct FrameGraphBuilder
+{
 
-	void AddAttachment(std::string name, RenderPassAttachment attachment);
+	void AddAttachment (std::string name, RenderPassAttachment attachment);
 	std::unordered_map<std::string, RenderPassAttachment> attachments;
 
-	void AddRenderPass(std::string name, RenderPassDescription renderPass);
+	void AddRenderPass (std::string name, RenderPassDescription renderPass);
 	std::unordered_map<std::string, RenderPassDescription> renderPasses;
 
 	std::string lastPass;
 };
 
-class FrameGraph {
-public:
+class FrameGraph
+{
+	public:
+	FrameGraph (FrameGraphBuilder builder, VulkanDevice& device);
+	~FrameGraph ();
 
-	FrameGraph(FrameGraphBuilder builder, VulkanDevice& device);
-	~FrameGraph();
+	VkRenderPass Get (int index) const;
+	void SetDrawFuncs (std::vector<RenderFunc> funcs);
 
-	VkRenderPass Get(int index) const;
-
-private:
+	private:
 	VulkanDevice& device;
 
 	std::vector<RenderPass> renderPasses;

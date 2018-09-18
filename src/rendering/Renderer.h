@@ -1,117 +1,102 @@
 #pragma once
 
 #include <array>
-#include <vector>
-#include <string>
+#include <condition_variable>
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
-#include <condition_variable>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 
 #include "../core/CoreTools.h"
 #include "../util/ConcurrentQueue.h"
 
-#include "RenderTools.h"
-#include "RenderStructs.h"
-#include "Wrappers.h"
 #include "Buffer.h"
-#include "Device.h"
-#include "SwapChain.h"
-#include "Shader.h"
-#include "Pipeline.h"
-#include "Texture.h"
 #include "Descriptor.h"
-#include "RenderPass.h"
+#include "Device.h"
+#include "FrameGraph.h"
+#include "Pipeline.h"
+#include "RenderStructs.h"
+#include "RenderTools.h"
+#include "Shader.h"
+#include "SwapChain.h"
+#include "Texture.h"
+#include "Wrappers.h"
 
 class Window;
 class Scene;
 
-namespace Resource { class ResourceManager; }
+namespace Resource
+{
+class ResourceManager;
+}
 
 
 
-class RenderableTarget {
+class RenderableTarget
+{
 
 	std::function<void(VkCommandBuffer)> drawFunc;
-
-
-
 };
 
-class ViewCamera {
-	struct Orthographic {
+class ViewCamera
+{
+	struct Orthographic
+	{
+		Orthographic (){};
 		float size = 1.0f;
 	};
 
-	struct Perspective {
+	struct Perspective
+	{
+		Perspective (){};
 		float fov = 1.0f;
 	};
 
-	std::variant< Orthographic, Perspective> projectionType;
-	struct ClipPlanes {
+	std::variant<Orthographic, Perspective> projectionType;
+	struct ClipPlanes
+	{
 		float near = 0.01;
 		float far = 10000.0f;
 	} clipPlane;
 
-	struct Transform {
-		glm::vec3 pos = glm::vec3(0,0,0);
-		glm::vec3 scale = glm::vec3(1,1,1);
-		glm::quat rot;
+	struct Transform
+	{
+		glm::vec3 pos = glm::vec3 (0, 0, 0);
+		glm::vec3 scale = glm::vec3 (1, 1, 1);
+		glm::quat rot = glm::quat (1, 0, 0, 0);
 	} transform;
 
-
+	ViewCamera () : projectionType (Orthographic{}) {}
 };
 
-class ViewSurface {
+class ViewSurface
+{
 	ViewCamera& cam;
-	struct Viewport {
+	struct Viewport
+	{
 		int x = 0, y = 0;
 		int width = 1, height = 1;
 	} viewport;
-	struct Sciossor {
+	struct Sciossor
+	{
 		int offsetX = 0, offsetY = 0;
 		int width = 1, height = 1;
 	} scissor;
 
-	//RenderPass& renderPass;
+	// RenderPass& renderPass;
 };
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class RenderSettings {
-public:
-
-	//Lighting?
+class RenderSettings
+{
+	public:
+	// Lighting?
 	int cameraCount = 1;
 	int directionalLightCount = 5;
 	int pointLightCount = 16;
@@ -119,81 +104,82 @@ public:
 
 	bool memory_dump = false;
 
-	RenderSettings(std::string fileName);
+	RenderSettings (std::string fileName);
 
-	void Load();
-	void Save();
-private:
+	void Load ();
+	void Save ();
+
+	private:
 	std::string fileName;
 };
 
 class VulkanRenderer
 {
-public:
-	VulkanRenderer(bool enableValidationLayer,
-		Window& window, Resource::ResourceManager& resourceMan);
+	public:
+	VulkanRenderer (bool enableValidationLayer, Window& window, Resource::ResourceManager& resourceMan);
 
-	VulkanRenderer(const VulkanRenderer& other) = delete; //copy
-	VulkanRenderer(VulkanRenderer&& other) = delete; //move
-	VulkanRenderer& operator=(const VulkanRenderer&) = delete;
-	VulkanRenderer& operator=(VulkanRenderer&&) = delete;
-	~VulkanRenderer();
+	VulkanRenderer (const VulkanRenderer& other) = delete; // copy
+	VulkanRenderer (VulkanRenderer&& other) = delete;      // move
+	VulkanRenderer& operator= (const VulkanRenderer&) = delete;
+	VulkanRenderer& operator= (VulkanRenderer&&) = delete;
+	~VulkanRenderer ();
 
 
-	void UpdateRenderResources(GlobalData globalData,
-		CameraData cameraData,
-		std::vector<DirectionalLight> directionalLights,
-		std::vector<PointLight> pointLights,
-		std::vector<SpotLight> spotLights);
-	void RenderFrame();
+	void UpdateRenderResources (GlobalData globalData,
+	    CameraData cameraData,
+	    std::vector<DirectionalLight> directionalLights,
+	    std::vector<PointLight> pointLights,
+	    std::vector<SpotLight> spotLights);
+	void RenderFrame ();
 
-	//void ReloadRenderer(GLFWwindow *window);
+	// void ReloadRenderer(GLFWwindow *window);
 
-	void RecreateSwapChain();
+	void RecreateSwapChain ();
 
-	void CreateRenderPass();
-	void CreateDepthResources();
+	void CreateRenderPass ();
+	void CreateDepthResources ();
 
-	void PrepareDepthPass(int curFrameIndex);
-	void SubmitDepthPass(int curFrameIndex);
+	void PrepareDepthPass (int curFrameIndex);
+	void SubmitDepthPass (int curFrameIndex);
 
-	void BuildDepthPass(VkCommandBuffer cmdBuf);
-	void BuildCommandBuffers(VkCommandBuffer cmdBuf);
+	void BuildDepthPass (VkCommandBuffer cmdBuf);
+	void BuildCommandBuffers (VkCommandBuffer cmdBuf);
 
-	void PrepareFrame(int curFrameIndex);
-	void SubmitFrame(int curFrameIndex);
+	void PrepareFrame (int curFrameIndex);
+	void SubmitFrame (int curFrameIndex);
 
-	void PrepareResources();
+	void PrepareResources ();
 
-	std::shared_ptr<VulkanDescriptor> GetVulkanDescriptor();
-	void AddGlobalLayouts(std::vector<VkDescriptorSetLayout>& layouts);
-	//std::vector<DescriptorPoolSize> GetGlobalPoolSize(int poolSize = 1);
-	//std::vector<DescriptorUse> GetGlobalDescriptorUses();
-	//DescriptorUse GetLightingDescriptorUses(uint32_t binding);
+	std::shared_ptr<VulkanDescriptor> GetVulkanDescriptor ();
+	void AddGlobalLayouts (std::vector<VkDescriptorSetLayout>& layouts);
+	// std::vector<DescriptorPoolSize> GetGlobalPoolSize(int poolSize = 1);
+	// std::vector<DescriptorUse> GetGlobalDescriptorUses();
+	// DescriptorUse GetLightingDescriptorUses(uint32_t binding);
 
-	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-	VkFormat FindDepthFormat();
+	VkFormat FindSupportedFormat (
+	    const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+	VkFormat FindDepthFormat ();
 
-	void SubmitWork(WorkType workType,
-		std::function<void(const VkCommandBuffer)> work,
-		std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores,
-		std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores,
-		std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
-		std::vector<Signal> signals);
+	void SubmitWork (WorkType workType,
+	    std::function<void(const VkCommandBuffer)> work,
+	    std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores,
+	    std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores,
+	    std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
+	    std::vector<Signal> signals);
 
-	VkCommandBuffer GetGraphicsCommandBuffer();
-	void SubmitGraphicsCommandBufferAndWait(VkCommandBuffer buffer);
+	VkCommandBuffer GetGraphicsCommandBuffer ();
+	void SubmitGraphicsCommandBufferAndWait (VkCommandBuffer buffer);
 
-	void SaveScreenshotNextFrame();
-	void ToggleWireframe();
+	void SaveScreenshotNextFrame ();
+	void ToggleWireframe ();
 
-	void DeviceWaitTillIdle();
+	void DeviceWaitTillIdle ();
 
 	RenderSettings settings;
 
 	VulkanDevice device;
 	VulkanSwapChain vulkanSwapChain;
-	std::unique_ptr<const FrameGraph> renderPass;
+	std::unique_ptr<const FrameGraph> frameGraph;
 
 	ShaderManager shaderManager;
 	VulkanPipelineManager pipelineManager;
@@ -201,8 +187,7 @@ public:
 
 	Scene* scene;
 
-private:
-
+	private:
 	CommandPool graphicsPrimaryCommandPool;
 
 	std::vector<std::unique_ptr<FrameObject>> frameObjects;
@@ -235,26 +220,25 @@ private:
 	ConcurrentQueue<GraphicsWork> workQueue;
 	std::vector<GraphicsCleanUpWork> finishQueue;
 	std::mutex finishQueueLock;
-	std::vector < std::unique_ptr<GraphicsCommandWorker>> graphicsWorkers;
+	std::vector<std::unique_ptr<GraphicsCommandWorker>> graphicsWorkers;
 
-	//CommandBufferWorkQueue<CommandBufferWork> graphicsSetupWorkQueue;
+	// CommandBufferWorkQueue<CommandBufferWork> graphicsSetupWorkQueue;
 
-	//CommandBufferWorkQueue<TransferCommandWork> transferWorkQueue;
-	//std::vector<std::unique_ptr<CommandBufferWorker<TransferCommandWork>>> transferWorkers;
+	// CommandBufferWorkQueue<TransferCommandWork> transferWorkQueue;
+	// std::vector<std::unique_ptr<CommandBufferWorker<TransferCommandWork>>> transferWorkers;
 
-	uint32_t frameIndex = 0; //which of the swapchain images the app is rendering to
-	bool wireframe = false; //whether or not to use the wireframe pipeline for the scene.
+	uint32_t frameIndex = 0; // which of the swapchain images the app is rendering to
+	bool wireframe = false;  // whether or not to use the wireframe pipeline for the scene.
 	bool saveScreenshot = false;
 
 	VkClearColorValue clearColor = { { 0.1f, 0.1f, 0.1f, 1.0f } };
-	//VkClearColorValue clearColor = {{ 0.2f, 0.3f, 0.3f, 1.0f }};
+	// VkClearColorValue clearColor = {{ 0.2f, 0.3f, 0.3f, 1.0f }};
 	VkClearDepthStencilValue depthClearColor = { 0.0f, 0 };
 
-	std::array<VkClearValue, 2> GetFramebufferClearValues();
+	std::array<VkClearValue, 2> GetFramebufferClearValues ();
 
 
-	void SetupGlobalDescriptorSet();
-	void SetupLightingDescriptorSet();
-	void SaveScreenshot();
+	void SetupGlobalDescriptorSet ();
+	void SetupLightingDescriptorSet ();
+	void SaveScreenshot ();
 };
-

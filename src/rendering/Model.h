@@ -4,24 +4,40 @@
 
 #include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
 
+#include "Buffer.h"
+#include "Device.h"
 #include "RenderStructs.h"
 #include "RenderTools.h"
-#include "Device.h"
-#include "Buffer.h"
 
-#include "../resources/Mesh.h"
 #include "../core/CoreTools.h"
+#include "../resources/Mesh.h"
 
 class VulkanRenderer;
 
-class VulkanModel {
-public:
+class VertexLayout
+{
+	public:
+	VertexLayout (VertexDescription desc)
+	: bindingDesc (getBindingDescription (desc)), attribDesc (getAttributeDescriptions (desc))
+	{
+	}
 
-	VulkanModel(VulkanRenderer& renderer, std::shared_ptr<Mesh> mesh);
-    VulkanModel(VulkanRenderer& renderer, std::shared_ptr<MeshData> meshData);
+	std::vector<VkVertexInputBindingDescription> bindingDesc;
+	std::vector<VkVertexInputAttributeDescription> attribDesc;
 
-	//VulkanBuffer vertices;
-	//VulkanBuffer indices;
+	private:
+	std::vector<VkVertexInputBindingDescription> getBindingDescription (VertexDescription vertDesc);
+	std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions (VertexDescription vertDesc)
+}
+
+class VulkanModel
+{
+	public:
+	VulkanModel (VulkanRenderer& renderer, std::shared_ptr<Mesh> mesh);
+	VulkanModel (VulkanRenderer& renderer, std::shared_ptr<MeshData> meshData);
+
+	// VulkanBuffer vertices;
+	// VulkanBuffer indices;
 	uint32_t vertexCount = 0;
 	uint32_t vertexElementCount = 0;
 	uint32_t indexCount = 0;
@@ -31,7 +47,8 @@ public:
 
 	Signal readyToUse;
 
-	struct ModelPart {
+	struct ModelPart
+	{
 		uint32_t vertexBase;
 		uint32_t vertexCount;
 		uint32_t indexBase;
@@ -39,11 +56,11 @@ public:
 	};
 	std::vector<ModelPart> parts;
 
-	//bool loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanRenderer& renderer);
+	// bool loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanRenderer& renderer);
 
-	void BindModel(VkCommandBuffer cmdBuf);
+	void BindModel (VkCommandBuffer cmdBuf);
 
-private:
-	VulkanRenderer & renderer;
-
+	private:
+	VulkanRenderer& renderer;
+	VertexLayout vertLayout;
 };
