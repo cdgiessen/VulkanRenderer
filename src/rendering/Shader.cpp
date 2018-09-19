@@ -109,7 +109,7 @@ ShaderModuleSet::ShaderModuleSet(
 
 std::vector<VkPipelineShaderStageCreateInfo> ShaderModuleSet::ShaderStageCreateInfos() {
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-	shaderStages.push_back(vertexModule.createInfo);
+	shaderStages.push_back(vert.createInfo);
 	if (frag.has_value ()) 
 	    shaderStages.push_back (frag->createInfo);
 	if (geom.has_value ())

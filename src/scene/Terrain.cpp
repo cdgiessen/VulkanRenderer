@@ -435,8 +435,8 @@ void Terrain::SetupDescriptorSets(
 
 void Terrain::SetupPipeline()
 {
-	VulkanPipeline &pipeMan = renderer.pipelineManager;
-	mvp = pipeMan.CreateManagedPipeline();
+	VulkanPipelineManager &pipeMan = renderer.pipelineManager;
+	mvp = pipeMan.CreateManagedPipeline(RenderableType::opaque);
 
 	//pipeMan.SetVertexShader(mvp, loadShaderModule(renderer.device.device, "assets/shaders/terrain.vert.spv"));
 	//pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer.device.device, "assets/shaders/terrain.frag.spv"));

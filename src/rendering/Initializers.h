@@ -495,8 +495,8 @@ namespace initializers
 
 	inline VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo(
 		VkPrimitiveTopology topology,
-		VkPipelineInputAssemblyStateCreateFlags flags,
-		VkBool32 primitiveRestartEnable)
+		VkBool32 primitiveRestartEnable,
+		VkPipelineInputAssemblyStateCreateFlags flags = 0)_
 	{
 		VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo{};
 		pipelineInputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

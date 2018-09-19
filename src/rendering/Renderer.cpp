@@ -69,7 +69,7 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 	device(validationLayer, window),
 	vulkanSwapChain(device, device.window),
 	shaderManager(device),
-	pipelineManager(device),
+	pipelineManager(*this),
 	textureManager(*this, resourceMan.texManager),
 	graphicsPrimaryCommandPool(device,
 		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue())

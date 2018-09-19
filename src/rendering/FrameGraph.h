@@ -119,7 +119,7 @@ using RenderFunc = std::function<void(VkCommandBuffer cmdBuf)>;
 
 struct RenderPassAttachment
 {
-	RenderPassAttachment (std::string name, VkFormat format) : name (name), format (format) {}
+	RenderPassAttachment (std::string name = "default", VkFormat format = VK_FORMAT_R8G8B8A8_UNORM) : name (name), format (format) {}
 
 	std::string name;
 	VkFormat format;
@@ -218,7 +218,7 @@ struct VulkanSubpassDescription {
 
 struct RenderPassDescription
 {
-	RenderPassDescription (std::string name) : name (name) {}
+	RenderPassDescription (std::string name = "default") : name (name) {}
 
 	void AddSubpass (SubpassDescription subpass);
 

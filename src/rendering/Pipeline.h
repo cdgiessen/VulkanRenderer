@@ -10,6 +10,8 @@
 #include "Device.h"
 #include "Shader.h"
 
+class Renderer;
+
 //class PipelineCreationData {
 //public:
 //	
@@ -68,18 +70,7 @@ public:
 	VkGraphicsPipelineCreateInfo pipelineInfo;
 };
 
-class ManagedVulkanPipeline {
-public:
-	PipelineCreationObject pco;
-	VkPipelineLayout layout;
-	std::unique_ptr<std::vector<VkPipeline>> pipelines;
-
-	void BindPipelineAtIndex(VkCommandBuffer cmdBuf, int index);
-
-	void BindPipelineOptionalWireframe(VkCommandBuffer cmdBuf, bool wireframe);
-};
-
-class PipelineExternalData {
+struct PipelineExternalData {
 	ShaderModuleSet shaderSet;
 	VkPrimitiveTopology topology;
 	VkBool32 primitiveRestart;
@@ -88,8 +79,46 @@ class PipelineExternalData {
 	VkFrontFace frontFace;
 };
 
+enum class PipelineType {
+	opaque,
+	transparent,
+	post_process,
+	overlay,
+};
+
 class PipelineBuilder {
-	PipelineCreationObject pco;
+	PipelineBuilder(PipelineType type, PipelineExternalData externalData): type(type){
+
+		shaderSet = externalData.shaderSet;
+		inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo(externalData.topology, externalData.primitiveRestart);
+		rasterizer = initializers::pipelineRasterizationStateCreateInfo(externalData.polygonMode, externalData.cullModeFlagBits, externalData.frontFace);
+
+	}
+
+	PipelineType type;
+
+	ShaderModuleSet shaderSet;
+
+	VkPipelineVertexInputStateCreateInfo vertexInputInfo;
+	std::vector<VkVertexInputBindingDescription> vertexInputBindingDescription;
+	std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
+
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly;
+	VkViewport viewport;
+	VkRect2D scissor;
+	VkPipelineViewportStateCreateInfo viewportState;
+	VkPipelineRasterizationStateCreateInfo rasterizer;
+	VkPipelineMultisampleStateCreateInfo multisampling;
+	VkPipelineDepthStencilStateCreateInfo depthStencil;
+	VkPipelineColorBlendAttachmentState colorBlendAttachment;
+	VkPipelineColorBlendStateCreateInfo colorBlending;
+
+	VkPipelineDynamicStateCreateInfo dynamicState;
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo;
+	
+	
+	VkGraphicsPipelineCreateInfo Get();
+
 
 	void SetShaderModuleSet(ShaderModuleSet set);
 
@@ -97,8 +126,7 @@ class PipelineBuilder {
 		std::vector<VkVertexInputBindingDescription> bindingDescription,
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions);
 
-	void SetInputAssembly(VkPrimitiveTopology topology,
-		VkPipelineInputAssemblyStateCreateFlags flag, VkBool32 primitiveRestart);
+	void SetInputAssembly(VkPrimitiveTopology topology, VkBool32 primitiveRestart);
 
 	//void SetViewport(float width, float height, float minDepth, float maxDepth, float x, float y);
 	//void SetScissor(uint32_t width, uint32_t height, uint32_t offsetX, uint32_t offsetY);
@@ -133,24 +161,39 @@ class PipelineBuilder {
 
 };
 
+class ManagedVulkanPipeline {
+public:
+	ManagedVulkanPipeline(PipelineType type, VkPipelineLayout layout, std::vector<VkPipeline> pipes):
+		type(type), layout(layout), pipelines(pipes){}
+
+	PipelineType type;
+
+	VkPipelineLayout layout;
+	std::vector<VkPipeline> pipelines;
+
+	void BindPipelineAtIndex(VkCommandBuffer cmdBuf, int index);
+
+	//void BindPipelineOptionalWireframe(VkCommandBuffer cmdBuf, bool wireframe);
+};
+
 class VulkanPipelineManager
 {
 public:
-	VulkanPipelineManager(VulkanDevice &device);
+	VulkanPipelineManager(VulkanRenderer &renderer);
 	~VulkanPipelineManager();
 
 	void InitPipelineCache();
 	VkPipelineCache GetPipelineCache();
 
-	std::shared_ptr<ManagedVulkanPipeline> CreateManagedPipeline();
-	void DeleteManagedPipeline(std::shared_ptr<ManagedVulkanPipeline> pipe);
+	ManagedVulkanPipeline* CreatePipelinesHandle(PipelineBuilder builder);
+	//void DeleteManagedPipeline(std::shared_ptr<ManagedVulkanPipeline> pipe);
 
-	void BuildPipelineLayout(std::shared_ptr<ManagedVulkanPipeline> pco); //returns the pipeline layout of the pco (must have done SetDescriptorSetLayout
-	void BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> pco, VkRenderPass renderPass, VkPipelineCreateFlags flags);
+	//void BuildPipelineLayout(std::shared_ptr<ManagedVulkanPipeline> pco); //returns the pipeline layout of the pco (must have done SetDescriptorSetLayout
+	//void BuildPipeline(std::shared_ptr<ManagedVulkanPipeline> pco, VkRenderPass renderPass, VkPipelineCreateFlags flags);
 
 private:
-	VulkanDevice &device;
+	VulkanRenderer &renderer;
 	VkPipelineCache pipeCache;
-	std::vector<std::shared_ptr<ManagedVulkanPipeline>> pipes;
+	std::vector<std::unique_ptr<ManagedVulkanPipeline>> managed_pipes;
 };
 
