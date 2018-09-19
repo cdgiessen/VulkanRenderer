@@ -893,7 +893,7 @@ void PrepareImGui(Window* window, VulkanRenderer* vulkanRenderer)
 	init_data.allocator = VK_NULL_HANDLE;
 	init_data.gpu = vulkanRenderer->device.physical_device;
 	init_data.device = vulkanRenderer->device.device;
-	init_data.render_pass = vulkanRenderer->renderPass->Get();
+	init_data.render_pass = vulkanRenderer->GetRelevantRenderpass(RenderableType::overlay);
 	init_data.pipeline_cache = vulkanRenderer->pipelineManager.GetPipelineCache();
 	init_data.check_vk_result = [](VkResult err) {
 		if (err == 0) return;

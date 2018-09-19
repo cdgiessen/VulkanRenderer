@@ -90,7 +90,12 @@ class ViewSurface
 	// RenderPass& renderPass;
 };
 
-
+enum class RenderableType {
+	opaque,
+	transparent,
+	post_process,
+	overlay
+};
 
 
 class RenderSettings
@@ -112,6 +117,7 @@ class RenderSettings
 	private:
 	std::string fileName;
 };
+
 
 class VulkanRenderer
 {
@@ -135,6 +141,8 @@ class VulkanRenderer
 	// void ReloadRenderer(GLFWwindow *window);
 
 	void RecreateSwapChain ();
+
+	void ContrustFrameGraph();
 
 	void CreateRenderPass ();
 	void CreateDepthResources ();
@@ -179,7 +187,8 @@ class VulkanRenderer
 
 	VulkanDevice device;
 	VulkanSwapChain vulkanSwapChain;
-	std::unique_ptr<const FrameGraph> frameGraph;
+	std::unique_ptr<FrameGraph> frameGraph;
+	VkRenderPass GetRelevantRenderpass(RenderableType type);
 
 	ShaderManager shaderManager;
 	VulkanPipelineManager pipelineManager;

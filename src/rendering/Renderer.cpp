@@ -85,10 +85,11 @@ VulkanRenderer::VulkanRenderer(bool validationLayer,
 				device, workQueue, finishQueue, finishQueueLock));
 	}
 
-	CreateRenderPass();
+	ContrustFrameGraph();
+	//CreateRenderPass();
 
 	CreateDepthResources();
-	vulkanSwapChain.CreateFramebuffers(depthBuffer->textureImageView, renderPass->Get());
+	vulkanSwapChain.CreateFramebuffers(depthBuffer->textureImageView, GetRelevantRenderpass(RenderableType::opaque));
 
 	PrepareResources();
 
@@ -136,6 +137,19 @@ void VulkanRenderer::UpdateRenderResources(
 		spotLights.size() * sizeof(SpotLight));
 }
 
+VkRenderPass VulkanRenderer::GetRelevantRenderpass(RenderableType type) {
+	//TEMPORARY SCAFOLDING - needs to work first before expanding
+	return frameGraph->Get(0);
+
+	switch (type) {
+		case(RenderableType::opaque): return frameGraph->Get(0);
+		case(RenderableType::transparent): return frameGraph->Get(1);
+		case(RenderableType::post_process): return frameGraph->Get(2);
+		case(RenderableType::overlay): return frameGraph->Get(3);
+	}
+	return nullptr;
+}
+
 void VulkanRenderer::RenderFrame() {
 
 	//PrepareDepthPass(frameIndex);
@@ -176,7 +190,8 @@ void VulkanRenderer::RecreateSwapChain() {
 
 	depthBuffer.reset();
 
-	renderPass.reset();
+	frameGraph.reset();
+	//renderPass.reset();
 
 	frameIndex = 0;
 	frameObjects.clear();
@@ -185,7 +200,7 @@ void VulkanRenderer::RecreateSwapChain() {
 
 	CreateRenderPass();
 	CreateDepthResources();
-	vulkanSwapChain.CreateFramebuffers(depthBuffer->textureImageView, renderPass->Get());
+	vulkanSwapChain.CreateFramebuffers(depthBuffer->textureImageView, GetRelevantRenderpass(RenderableType::opaque));
 
 	for (int i = 0; i < vulkanSwapChain.swapChainImages.size(); i++) {
 		frameObjects.push_back(std::make_unique<FrameObject>(device, i));
@@ -200,7 +215,7 @@ void VulkanRenderer::ToggleWireframe() {
 }
 
 void VulkanRenderer::CreateRenderPass() {
-	renderPass = std::make_unique<RenderPass>(device, vulkanSwapChain.swapChainImageFormat);
+	//renderPass = std::make_unique<RenderPass>(device, vulkanSwapChain.swapChainImageFormat);
 }
 
 // 11
@@ -239,40 +254,93 @@ VkFormat VulkanRenderer::FindDepthFormat() {
 		VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
-void VulkanRenderer::BuildDepthPass(VkCommandBuffer cmdBuf){
+void VulkanRenderer::ContrustFrameGraph()
+{
+	FrameGraphBuilder frame_graph_builder;
 
-	vkCmdBindDescriptorSets(
-		cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		frameDataDescriptorLayout, 0, 1, &frameDataDescriptorSet.set, 0, nullptr);
-	vkCmdBindDescriptorSets(
-		cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		lightingDescriptorLayout, 1, 1, &lightingDescriptorSet.set, 0, nullptr);
+	RenderPassDescription main_work("main_work");
 
+	frame_graph_builder.AddAttachment(RenderPassAttachment("img_color", vulkanSwapChain.swapChainImageFormat));
+	frame_graph_builder.AddAttachment(RenderPassAttachment("img_depth", FindDepthFormat()));
 
-	VkViewport viewport = initializers::viewport(
-		(float)vulkanSwapChain.swapChainExtent.width,
-		(float)vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f);
-	vkCmdSetViewport(cmdBuf, 0, 1, &viewport);
+	SubpassDescription depth_subpass("sub_depth");
+	depth_subpass.SetDepthStencil("img_depth", SubpassDescription::DepthStencilAccess::read_write);
+	main_work.AddSubpass(depth_subpass);
 
-	VkRect2D scissor =
-		initializers::rect2D(vulkanSwapChain.swapChainExtent.width,
-			vulkanSwapChain.swapChainExtent.height, 0, 0);
-	vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
+	SubpassDescription color_subpass("sub_color");
+	color_subpass.SetDepthStencil("img_depth", SubpassDescription::DepthStencilAccess::read_only);
+	color_subpass.AddColorOutput("img_color");
+	color_subpass.AddSubpassDependency("sub_depth");
+	main_work.AddSubpass(color_subpass);
 
-	scene->RenderScene(cmdBuf, wireframe);
+	frame_graph_builder.AddRenderPass(main_work);
+	frame_graph_builder.lastPass = main_work.name;
 
+	frameGraph = std::make_unique<FrameGraph>(frame_graph_builder, device);
 
+	auto depth_pre = [&](VkCommandBuffer cmdBuf) {
+		vkCmdBindDescriptorSets(
+			cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			frameDataDescriptorLayout, 0, 1, &frameDataDescriptorSet.set, 0, nullptr);
+		vkCmdBindDescriptorSets(
+			cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			lightingDescriptorLayout, 1, 1, &lightingDescriptorSet.set, 0, nullptr);
+
+		VkViewport viewport = initializers::viewport(
+			(float)vulkanSwapChain.swapChainExtent.width,
+			(float)vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f);
+		vkCmdSetViewport(cmdBuf, 0, 1, &viewport);
+
+		VkRect2D scissor =
+			initializers::rect2D(vulkanSwapChain.swapChainExtent.width,
+				vulkanSwapChain.swapChainExtent.height, 0, 0);
+		vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
+
+		scene->RenderDepthPrePass(cmdBuf);
+	};
+	auto main_draw = [&](VkCommandBuffer cmdBuf){
+	
+		scene->RenderScene(cmdBuf, wireframe);
+		ImGui_ImplGlfwVulkan_Render(cmdBuf);
+	};
+
+	frameGraph->SetDrawFuncs({depth_pre, main_draw});
 }
+
+//void VulkanRenderer::BuildDepthPass(VkCommandBuffer cmdBuf){
+//
+//	vkCmdBindDescriptorSets(
+//		cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+//		frameDataDescriptorLayout, 0, 1, &frameDataDescriptorSet.set, 0, nullptr);
+//	vkCmdBindDescriptorSets(
+//		cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+//		lightingDescriptorLayout, 1, 1, &lightingDescriptorSet.set, 0, nullptr);
+//
+//
+//	VkViewport viewport = initializers::viewport(
+//		(float)vulkanSwapChain.swapChainExtent.width,
+//		(float)vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f);
+//	vkCmdSetViewport(cmdBuf, 0, 1, &viewport);
+//
+//	VkRect2D scissor =
+//		initializers::rect2D(vulkanSwapChain.swapChainExtent.width,
+//			vulkanSwapChain.swapChainExtent.height, 0, 0);
+//	vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
+//
+//	scene->RenderScene(cmdBuf, wireframe);
+//
+//
+//}
 
 void VulkanRenderer::BuildCommandBuffers(VkCommandBuffer cmdBuf) {
 
 
 
 
-	renderPass->BeginRenderPass(cmdBuf,
-		vulkanSwapChain.swapChainFramebuffers[frameIndex], { 0, 0 },
-		vulkanSwapChain.swapChainExtent, GetFramebufferClearValues(),
-		VK_SUBPASS_CONTENTS_INLINE);
+	//renderPass->BeginRenderPass(cmdBuf,
+	//	vulkanSwapChain.swapChainFramebuffers[frameIndex], { 0, 0 },
+	//	vulkanSwapChain.swapChainExtent, GetFramebufferClearValues(),
+	//	VK_SUBPASS_CONTENTS_INLINE);
 
 
 
@@ -296,14 +364,14 @@ void VulkanRenderer::BuildCommandBuffers(VkCommandBuffer cmdBuf) {
 			vulkanSwapChain.swapChainExtent.height, 0, 0);
 	vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
 
-	scene->RenderDepthPrePass (cmdBuf);
-	renderPass->NextSubPass (cmdBuf, VK_SUBPASS_CONTENTS_INLINE);
-	scene->RenderScene(cmdBuf, wireframe);
+	//scene->RenderDepthPrePass (cmdBuf);
+	//renderPass->NextSubPass (cmdBuf, VK_SUBPASS_CONTENTS_INLINE);
+	//scene->RenderScene(cmdBuf, wireframe);
 
 	// Imgui rendering
 	ImGui_ImplGlfwVulkan_Render(cmdBuf);
 
-	renderPass->EndRenderPass(cmdBuf);
+	//renderPass->EndRenderPass(cmdBuf);
 
 
 }

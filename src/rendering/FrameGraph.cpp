@@ -373,7 +373,7 @@ FrameGraph::~FrameGraph ()
 		vkDestroyRenderPass (device.device, rp.rp, nullptr);
 }
 
-void RenderPass::SetSubpassDrawFuncs (std::vector<std::function<void(VkCommandBuffer cmdBuf)>> funcs)
+void RenderPass::SetSubpassDrawFuncs (std::vector<RenderFunc> funcs)
 {
 	subpassFuncs = funcs;
 }
@@ -395,4 +395,8 @@ void RenderPass::BuildCmdBuf (VkCommandBuffer cmdBuf,
 		vkCmdNextSubpass (cmdBuf, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
 	}
 	vkCmdEndRenderPass (cmdBuf);
+}
+
+VkRenderPass FrameGraph::Get(int index) const {
+	return renderPasses.at(index).rp;
 }
