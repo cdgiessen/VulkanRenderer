@@ -111,6 +111,7 @@ target_include_directories(VulkanApp PUBLIC third-party/json)
 
 #glm
 target_include_directories(VulkanApp PUBLIC glm)
+target_link_libraries(VulkanApp PUBLIC glm)
 
 #glfw
 target_include_directories(VulkanApp PUBLIC glfw)

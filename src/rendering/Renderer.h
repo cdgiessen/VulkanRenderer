@@ -8,6 +8,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <variant>
+
 
 #include <vulkan/vulkan.h>
 
@@ -26,11 +28,13 @@
 #include "Texture.h"
 #include "Wrappers.h"
 
+
+#include <glm/gtc/quaternion.hpp>
+
 class Window;
 class Scene;
 
-namespace Resource
-{
+namespace Resource {
 class ResourceManager;
 }
 
@@ -44,24 +48,22 @@ class RenderableTarget
 
 class ViewCamera
 {
-	struct Orthographic
-	{
-		Orthographic (){};
+
+	struct Orthographic {
 		float size = 1.0f;
 	};
 
-	struct Perspective
-	{
-		Perspective (){};
+	struct Perspective {
 		float fov = 1.0f;
 	};
 
-	std::variant<Orthographic, Perspective> projectionType;
-	struct ClipPlanes
-	{
-		float near = 0.01;
-		float far = 10000.0f;
-	} clipPlane;
+	struct ClipPlanes { 
+		float clip_near = 0.01f;
+		float clip_far = 10000.0f;
+	} clipPlanes;
+
+	std::variant<Orthographic, Perspective> projectionType = Orthographic{};
+
 
 	struct Transform
 	{
@@ -69,8 +71,6 @@ class ViewCamera
 		glm::vec3 scale = glm::vec3 (1, 1, 1);
 		glm::quat rot = glm::quat (1, 0, 0, 0);
 	} transform;
-
-	ViewCamera () : projectionType (Orthographic{}) {}
 };
 
 class ViewSurface

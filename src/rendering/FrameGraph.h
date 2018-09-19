@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <optional>
 
 #include "Device.h"
 #include "vulkan/vulkan.h"
@@ -123,7 +124,7 @@ struct RenderPassAttachment
 	std::string name;
 	VkFormat format;
 	VkAttachmentDescription description = {};
-	VkAttachmentReference reference = {};
+	//VkAttachmentReference reference = {};
 };
 using AttachmentMap = std::unordered_map<std::string, RenderPassAttachment>;
 
@@ -140,6 +141,17 @@ struct SubpassDependency
 	VkAccessFlags srcAccessMask;
 	VkAccessFlags dstAccessMask;
 	VkDependencyFlags dependencyFlags;
+
+	VkSubpassDependency Get() {
+		VkSubpassDependency desc;
+		desc.srcSubpass = sourceSubpass;
+		desc.dstSubpass = dependentSubpass;
+		desc.srcStageMask = srcStageMask;
+		desc.dstStageMask = dstStageMask;
+		desc.srcAccessMask = srcAccessMask;
+		desc.dstAccessMask = dstAccessMask;
+		return desc;
+	}
 };
 
 struct SubpassDescription
@@ -164,7 +176,7 @@ struct SubpassDescription
 	void AddResolveAttachments (std::string name);
 	void AddPreserveAttachments (std::string name);
 
-	std::vector<std::string> AttachmentsUsed (AttachmentMap& attachment_map) const;
+	std::vector<std::string> AttachmentsUsed (AttachmentMap& const attachment_map) const;
 
 	std::string name;
 	uint32_t index;
@@ -178,7 +190,30 @@ struct SubpassDescription
 	std::vector<std::string> preserve_attachments;
 };
 
+struct VulkanSubpassDescription {
+	std::vector<VkAttachmentReference> ar_inputs;
+	std::vector<VkAttachmentReference> ar_colors;
+	std::vector<VkAttachmentReference> ar_resolves;
+	std::vector<uint32_t> ar_preserves;
+	VkAttachmentReference ar_depth_stencil;
 
+	VkSubpassDescription desc;
+
+	VkSubpassDescription Get() {
+		desc.inputAttachmentCount = ar_inputs.size();
+		desc.pInputAttachments = ar_inputs.data();
+
+		desc.colorAttachmentCount = ar_colors.size();
+		desc.pColorAttachments = ar_colors.data();
+		desc.pResolveAttachments = ar_resolves.data();
+		
+		desc.preserveAttachmentCount = ar_preserves.size();
+		desc.pPreserveAttachments = ar_preserves.data();
+		
+		desc.pDepthStencilAttachment = &ar_depth_stencil;
+		return desc;
+	}
+};
 
 
 struct RenderPassDescription
@@ -214,10 +249,10 @@ struct RenderPass
 struct FrameGraphBuilder
 {
 
-	void AddAttachment (std::string name, RenderPassAttachment attachment);
+	void AddAttachment ( RenderPassAttachment attachment);
 	std::unordered_map<std::string, RenderPassAttachment> attachments;
 
-	void AddRenderPass (std::string name, RenderPassDescription renderPass);
+	void AddRenderPass (RenderPassDescription renderPass);
 	std::unordered_map<std::string, RenderPassDescription> renderPasses;
 
 	std::string lastPass;

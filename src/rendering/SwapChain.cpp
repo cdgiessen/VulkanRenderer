@@ -29,7 +29,7 @@ VulkanSwapChain::~VulkanSwapChain()
 }
 
 void VulkanSwapChain::RecreateSwapChain() {
-	 ();
+	DestroySwapchainResources();
 
 	createSwapChain();
 	createImageViews();

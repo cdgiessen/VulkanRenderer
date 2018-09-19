@@ -27,8 +27,8 @@ class VertexLayout
 
 	private:
 	std::vector<VkVertexInputBindingDescription> getBindingDescription (VertexDescription vertDesc);
-	std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions (VertexDescription vertDesc)
-}
+	std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions (VertexDescription vertDesc);
+};
 
 class VulkanModel
 {

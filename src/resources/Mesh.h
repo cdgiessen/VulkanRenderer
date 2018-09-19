@@ -46,7 +46,6 @@ class VertexDescription
 	// 	}
 	// };
 
-	private:
 	std::vector<int> layout; // each element in the array is a different attribute, its value (1-4) is it's size
 };
 

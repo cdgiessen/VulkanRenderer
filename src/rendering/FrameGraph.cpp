@@ -191,8 +191,8 @@ FrameGraph ContrustRenderPass (VulkanDevice& device)
 
 	RenderPassDescription main_work ("main_work");
 
-	frame_graph_builder.AddAttachment ({ "img_color", findColorFormat () });
-	frame_graph_builder.AddAttachment ({ "img_depth", findDepthFormat () });
+	frame_graph_builder.AddAttachment (RenderPassAttachment("img_color",findColorFormat ()));
+	frame_graph_builder.AddAttachment (RenderPassAttachment("img_depth",findDepthFormat ()));
 
 	SubpassDescription depth_subpass ("sub_depth");
 	depth_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
@@ -230,7 +230,7 @@ void SubpassDescription::SetDepthStencil (std::string name, DepthStencilAccess a
 	depth_stencil_access = access;
 }
 
-std::vector<std::string> SubpassDescription::AttachmentsUsed (AttachmentMap& attachment_map) const
+std::vector<std::string> SubpassDescription::AttachmentsUsed (AttachmentMap& const attachment_map) const
 {
 	std::vector<std::string> attachments;
 	for (auto& item : input_attachments)
@@ -262,56 +262,67 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 {
 	// Get all used attachments from subpasses(ignoring duplicate usages with std::unordered_set)
 	std::unordered_set<std::string> used_attachment_names;
-	for (auto& rp_subpass : pass.subpasses)
+	for (auto& rp_subpass : subpasses)
 	{
-		auto& sub_attaches = rp_subpass.AttachmentsUsed ();
+		auto sub_attaches = rp_subpass.AttachmentsUsed (attachment_map);
 		for (auto& attach_name : sub_attaches)
 		{
-			used_attachment_names.insert (name);
+			used_attachment_names.insert (attach_name);
 		}
 	}
 	std::vector<VkAttachmentDescription> rp_attachments;
 	for (auto& attach_name : used_attachment_names)
 	{
-		if (attachment_map.count (attach_name)) == 1 ){
-			rp_attachments.push_back(attachment_map.at(attach_name));
+		if (attachment_map.count (attach_name) == 1 ){
+			rp_attachments.push_back(attachment_map.at(attach_name).description);
 		}
 	}
+
+	//subpass usable attachment indexes
+	std::unordered_map<std::string, uint32_t> used_attachments;
+	uint32_t index = 0;
+	for(auto& name : used_attachment_names)
+		used_attachments[name] = index++;
 
 	// create subpasses
 
-	std::vector<VkSubpassDescription> sb_descriptions;
-	for (auto& rp_subpass : pass.subpasses)
+	std::vector<VulkanSubpassDescription> vulkan_sb_descriptions;
+	for (auto& rp_subpass : subpasses)
 	{
-		//	auto subpass = rp_subpass.GetSubpassDescription ();
+		VulkanSubpassDescription vulkan_desc;
+		for (auto& name : rp_subpass.input_attachments)
+			vulkan_desc.ar_inputs.push_back ({used_attachments.at(name), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
+		
+		for (auto& name : rp_subpass.color_attachments)
+			vulkan_desc.ar_colors.push_back({ used_attachments.at(name), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+		
+		for (auto& name : rp_subpass.resolve_attachments)
+			vulkan_desc.ar_resolves.push_back({ used_attachments.at(name), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+		
+		for (auto& name : rp_subpass.preserve_attachments)
+			vulkan_desc.ar_preserves.push_back(used_attachments.at(name));
+		
+		if(rp_subpass.depth_stencil_attachment.has_value())
+			vulkan_desc.ar_depth_stencil = { used_attachments.at(name), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+		
+		vulkan_desc.desc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-		std::vector<VkAttachmentReference> ar_inputs;
-		std::vector<VkAttachmentReference> ar_colors;
-		std::vector<VkAttachmentReference> ar_resolves;
-		std::vector<VkAttachmentReference> ar_preserves;
-		VkAttachmentReference ar_depth_stencil;
-		for (auto& name : p_subpass.input_attachments)
-		{
-			auto sb_a = attachment_map.at (name);
-			VkAttachmentReference ref;
-			ref.layout = sb_a.layout;
-
-			ar_inputs.push_back (attachment_map.at (name))
-		}
-
-		VkSubpassDescription desc = {};
-		desc.inputAttachmentCount = rp_subpass.input_attachments.size ();
-		desc.colorAttachmentCount = rp_subpass.color_attachments.size ();
-		desc.preserveAttachmentCount = rp_subpass.preserve_attachments.size ();
-
-
-		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-		sb_descriptions.push_back (desc);
+		vulkan_sb_descriptions.push_back (vulkan_desc);
 	}
 
+	//get pointer arrays ready (ugh, c api...)
+	std::vector<VkSubpassDescription> sb_descriptions;
+	for(auto& desc : vulkan_sb_descriptions)
+		sb_descriptions.push_back(desc.Get());
+
+
 	// create subpass dependencies
-	std::vector<SubpassDependency> sb_dependencies;
+	std::vector<SubpassDependency> vulkan_sb_dependencies;
+
+
+	std::vector<VkSubpassDependency> sb_dependencies;
+	for (auto& desc : vulkan_sb_dependencies)
+		sb_dependencies.push_back(desc.Get());
 
 
 	VkRenderPassCreateInfo renderPassInfo = initializers::renderPassCreateInfo ();
@@ -327,15 +338,15 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 
 
 
-void FrameGraphBuilder::AddAttachment (std::string name, RenderPassAttachment attachment)
+void FrameGraphBuilder::AddAttachment ( RenderPassAttachment attachment)
 {
 
-	attachments[name] = attachment;
+	attachments[attachment.name] = attachment;
 }
 
-void FrameGraphBuilder::AddRenderPass (std::string name, RenderPassDescription renderPass)
+void FrameGraphBuilder::AddRenderPass (RenderPassDescription renderPass)
 {
-	renderPasses[name] = renderPass;
+	renderPasses[renderPass.name] = renderPass;
 }
 
 FrameGraph::FrameGraph (FrameGraphBuilder builder, VulkanDevice& device) : device (device)
@@ -344,7 +355,7 @@ FrameGraph::FrameGraph (FrameGraphBuilder builder, VulkanDevice& device) : devic
 	for (auto [name, pass] : builder.renderPasses)
 	{
 
-		auto renderPassInfo = pass.GetRenderPassCreate ();
+		auto renderPassInfo = pass.GetRenderPassCreate (builder.attachments);
 
 
 		VkRenderPass pass;

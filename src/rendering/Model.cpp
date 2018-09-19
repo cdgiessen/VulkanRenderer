@@ -8,7 +8,7 @@ std::vector<VkVertexInputBindingDescription> VertexLayout::getBindingDescription
 {
 	std::vector<VkVertexInputBindingDescription> bindingDescription;
 
-	int size = std::accumulate (std::begin (layout), std::end (layout), 0) * 4;
+	int size = std::accumulate (std::begin (vertDesc.layout), std::end (vertDesc.layout), 0) * 4;
 
 	bindingDescription.push_back (
 	    initializers::vertexInputBindingDescription (0, size, VK_VERTEX_INPUT_RATE_VERTEX));
@@ -20,15 +20,15 @@ std::vector<VkVertexInputAttributeDescription> VertexLayout::getAttributeDescrip
 	std::vector<VkVertexInputAttributeDescription> attrib = {};
 
 	int offset = 0;
-	for (int i = 0; i < layout.size (); i++)
+	for (int i = 0; i < vertDesc.layout.size (); i++)
 	{
 		VkFormat vertSize = VK_FORMAT_R32_SFLOAT;
-		if (layout[i] == 2) vertSize = VK_FORMAT_R32G32_SFLOAT;
-		if (layout[i] == 3) vertSize = VK_FORMAT_R32G32B32_SFLOAT;
-		if (layout[i] == 4) vertSize = VK_FORMAT_R32G32B32A32_SFLOAT;
+		if (vertDesc.layout[i] == 2) vertSize = VK_FORMAT_R32G32_SFLOAT;
+		if (vertDesc.layout[i] == 3) vertSize = VK_FORMAT_R32G32B32_SFLOAT;
+		if (vertDesc.layout[i] == 4) vertSize = VK_FORMAT_R32G32B32A32_SFLOAT;
 
 		attrib.push_back (initializers::vertexInputAttributeDescription (0, 0, vertSize, offset));
-		offset += layout[i] * 4;
+		offset += vertDesc.layout[i] * 4;
 	}
 	return attrib;
 };
@@ -50,7 +50,7 @@ void CopyMeshBuffers (const VkCommandBuffer copyCmd,
 }
 
 VulkanModel::VulkanModel (VulkanRenderer& renderer, std::shared_ptr<Mesh> mesh)
-: renderer (renderer), vertLayout ({ 3, 3, 2 })
+: renderer (renderer), vertLayout (VertexDescription({ 3, 3, 2 }))
 {
 	readyToUse = std::make_shared<bool> (false);
 
@@ -158,7 +158,7 @@ VulkanModel::VulkanModel (VulkanRenderer& renderer, std::shared_ptr<Mesh> mesh)
 }
 
 VulkanModel::VulkanModel (VulkanRenderer& renderer, std::shared_ptr<MeshData> mesh)
-: renderer (renderer), vertLayout (meshData->desc)
+: renderer (renderer), vertLayout (mesh->desc)
 {
 	readyToUse = std::make_shared<bool> (false);
 
