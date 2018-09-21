@@ -18,17 +18,6 @@ struct Index
 
 template <typename T> class PackedArrayPool
 {
-	private:
-	unsigned _num_objects;
-	std::array<T, MAX_OBJECTS> objects;
-	std::array<Index, MAX_OBJECTS> indices;
-	unsigned short _freelist_enqueue;
-	unsigned short _freelist_dequeue;
-
-	std::mutex lock;
-
-
-
 	public:
 	PackedArrayPool ()
 	{
@@ -81,4 +70,13 @@ template <typename T> class PackedArrayPool
 		indices[_freelist_enqueue].next = id & INDEX_MASK;
 		_freelist_enqueue = id & INDEX_MASK;
 	}
+
+	private:
+	unsigned _num_objects;
+	std::array<T, MAX_OBJECTS> objects;
+	std::array<Index, MAX_OBJECTS> indices;
+	unsigned short _freelist_enqueue;
+	unsigned short _freelist_dequeue;
+
+	std::mutex lock;
 };

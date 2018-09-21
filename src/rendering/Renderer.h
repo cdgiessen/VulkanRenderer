@@ -7,14 +7,15 @@
 #include <mutex>
 #include <string>
 #include <thread>
-#include <vector>
 #include <variant>
+#include <vector>
 
 
 #include <vulkan/vulkan.h>
 
 #include "../core/CoreTools.h"
 #include "../util/ConcurrentQueue.h"
+#include "../util/PackedArray.h"
 
 #include "Buffer.h"
 #include "Descriptor.h"
@@ -34,30 +35,33 @@
 class Window;
 class Scene;
 
-namespace Resource {
+namespace Resource
+{
 class ResourceManager;
 }
 
-
-
-class RenderableTarget
+struct Transform
 {
-
-	std::function<void(VkCommandBuffer)> drawFunc;
+	glm::vec3 pos = glm::vec3 (0, 0, 0);
+	glm::vec3 scale = glm::vec3 (1, 1, 1);
+	glm::quat rot = glm::quat (1, 0, 0, 0);
 };
 
 class ViewCamera
 {
 
-	struct Orthographic {
+	struct Orthographic
+	{
 		float size = 1.0f;
 	};
 
-	struct Perspective {
+	struct Perspective
+	{
 		float fov = 1.0f;
 	};
 
-	struct ClipPlanes { 
+	struct ClipPlanes
+	{
 		float clip_near = 0.01f;
 		float clip_far = 10000.0f;
 	} clipPlanes;
@@ -65,12 +69,7 @@ class ViewCamera
 	std::variant<Orthographic, Perspective> projectionType = Orthographic{};
 
 
-	struct Transform
-	{
-		glm::vec3 pos = glm::vec3 (0, 0, 0);
-		glm::vec3 scale = glm::vec3 (1, 1, 1);
-		glm::quat rot = glm::quat (1, 0, 0, 0);
-	} transform;
+	Transform transform;
 };
 
 class ViewSurface
@@ -90,13 +89,29 @@ class ViewSurface
 	// RenderPass& renderPass;
 };
 
-enum class RenderableType {
+enum class RenderableType
+{
 	opaque,
 	transparent,
 	post_process,
 	overlay
 };
 
+struct RendererData
+{
+	PackedArrayPool<VulkanModel> models;
+	PackedArrayPool<VulkanMaterial> materials;
+	PackedArrayPool<VulkanMaterialInstance> materialInstance;
+	PackedArrayPool<Transform> transforms;
+}
+
+
+class RenderableModel
+{
+	VulkanModel* model;
+	VulkanMaterialInstance* material;
+	Transform* transform;
+}
 
 class RenderSettings
 {
@@ -142,7 +157,7 @@ class VulkanRenderer
 
 	void RecreateSwapChain ();
 
-	void ContrustFrameGraph();
+	void ContrustFrameGraph ();
 
 	void CreateRenderPass ();
 	void CreateDepthResources ();
@@ -188,7 +203,7 @@ class VulkanRenderer
 	VulkanDevice device;
 	VulkanSwapChain vulkanSwapChain;
 	std::unique_ptr<FrameGraph> frameGraph;
-	VkRenderPass GetRelevantRenderpass(RenderableType type);
+	VkRenderPass GetRelevantRenderpass (RenderableType type);
 
 	ShaderManager shaderManager;
 	VulkanPipelineManager pipelineManager;
