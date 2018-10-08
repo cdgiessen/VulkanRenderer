@@ -103,7 +103,7 @@ struct RendererData
 	PackedArrayPool<VulkanMaterial> materials;
 	PackedArrayPool<VulkanMaterialInstance> materialInstance;
 	PackedArrayPool<Transform> transforms;
-}
+};
 
 
 class RenderableModel
@@ -111,7 +111,7 @@ class RenderableModel
 	VulkanModel* model;
 	VulkanMaterialInstance* material;
 	Transform* transform;
-}
+};
 
 class RenderSettings
 {

@@ -154,4 +154,4 @@ class VulkanMaterialInstance
 	std::vector<std::shared_ptr<VulkanTexture>> textureArrays;
 	std::vector<MaterialOptions> value_var;
 	std::shared_ptr<VulkanBufferUniform> value_data;
-}
+};
