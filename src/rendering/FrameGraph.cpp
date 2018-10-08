@@ -272,7 +272,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 			used_attachment_names.insert (attach_name);
 		}
 	}
-	std::vector<VkAttachmentDescription> rp_attachments;
+	// std::vector<VkAttachmentDescription> rp_attachments;
 	for (auto& attach_name : used_attachment_names)
 	{
 		if (attachment_map.count (attach_name) == 1)
@@ -309,8 +309,9 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 			vulkan_desc.ar_preserves.push_back (used_attachments.at (name));
 
 		if (rp_subpass.depth_stencil_attachment.has_value ())
-			vulkan_desc.ar_depth_stencil = { used_attachments.at (name),
-				VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+			vulkan_desc.ar_depth_stencil = {
+				used_attachments.at (rp_subpass.depth_stencil_attachment.value ()), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+			};
 
 		vulkan_desc.desc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
@@ -318,7 +319,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	}
 
 	// get pointer arrays ready (ugh, c api...)
-	std::vector<VkSubpassDescription> sb_descriptions;
+	// std::vector<VkSubpassDescription> sb_descriptions;
 	for (auto& desc : vulkan_sb_descriptions)
 		sb_descriptions.push_back (desc.Get ());
 
@@ -327,7 +328,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	std::vector<SubpassDependency> vulkan_sb_dependencies;
 
 
-	std::vector<VkSubpassDependency> sb_dependencies;
+	// std::vector<VkSubpassDependency> sb_dependencies;
 	for (auto& desc : vulkan_sb_dependencies)
 		sb_dependencies.push_back (desc.Get ());
 

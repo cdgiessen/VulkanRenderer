@@ -233,6 +233,11 @@ struct RenderPassDescription
 	std::string name;
 	// std::vector< std::string> attachments;
 	std::vector<SubpassDescription> subpasses;
+
+	// needed for the call to create_render_pass
+	std::vector<VkAttachmentDescription> rp_attachments;
+	std::vector<VkSubpassDescription> sb_descriptions;
+	std::vector<VkSubpassDependency> sb_dependencies;
 };
 using RenderPassMap = std::unordered_map<std::string, RenderPassDescription>;
 class VulkanRenderer;
