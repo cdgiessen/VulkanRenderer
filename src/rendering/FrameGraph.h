@@ -1,10 +1,10 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <optional>
 
 #include "Device.h"
 #include "vulkan/vulkan.h"
@@ -119,12 +119,15 @@ using RenderFunc = std::function<void(VkCommandBuffer cmdBuf)>;
 
 struct RenderPassAttachment
 {
-	RenderPassAttachment (std::string name = "default", VkFormat format = VK_FORMAT_R8G8B8A8_UNORM) : name (name), format (format) {}
+	RenderPassAttachment (std::string name = "default", VkFormat format = VK_FORMAT_R8G8B8A8_UNORM)
+	: name (name), format (format)
+	{
+	}
 
 	std::string name;
 	VkFormat format;
 	VkAttachmentDescription description = {};
-	//VkAttachmentReference reference = {};
+	// VkAttachmentReference reference = {};
 };
 using AttachmentMap = std::unordered_map<std::string, RenderPassAttachment>;
 
@@ -142,7 +145,8 @@ struct SubpassDependency
 	VkAccessFlags dstAccessMask;
 	VkDependencyFlags dependencyFlags;
 
-	VkSubpassDependency Get() {
+	VkSubpassDependency Get ()
+	{
 		VkSubpassDependency desc;
 		desc.srcSubpass = sourceSubpass;
 		desc.dstSubpass = dependentSubpass;
@@ -176,7 +180,7 @@ struct SubpassDescription
 	void AddResolveAttachments (std::string name);
 	void AddPreserveAttachments (std::string name);
 
-	std::vector<std::string> AttachmentsUsed (AttachmentMap& const attachment_map) const;
+	std::vector<std::string> AttachmentsUsed (AttachmentMap const& attachment_map) const;
 
 	std::string name;
 	uint32_t index;
@@ -190,7 +194,8 @@ struct SubpassDescription
 	std::vector<std::string> preserve_attachments;
 };
 
-struct VulkanSubpassDescription {
+struct VulkanSubpassDescription
+{
 	std::vector<VkAttachmentReference> ar_inputs;
 	std::vector<VkAttachmentReference> ar_colors;
 	std::vector<VkAttachmentReference> ar_resolves;
@@ -199,17 +204,18 @@ struct VulkanSubpassDescription {
 
 	VkSubpassDescription desc;
 
-	VkSubpassDescription Get() {
-		desc.inputAttachmentCount = ar_inputs.size();
-		desc.pInputAttachments = ar_inputs.data();
+	VkSubpassDescription Get ()
+	{
+		desc.inputAttachmentCount = ar_inputs.size ();
+		desc.pInputAttachments = ar_inputs.data ();
 
-		desc.colorAttachmentCount = ar_colors.size();
-		desc.pColorAttachments = ar_colors.data();
-		desc.pResolveAttachments = ar_resolves.data();
-		
-		desc.preserveAttachmentCount = ar_preserves.size();
-		desc.pPreserveAttachments = ar_preserves.data();
-		
+		desc.colorAttachmentCount = ar_colors.size ();
+		desc.pColorAttachments = ar_colors.data ();
+		desc.pResolveAttachments = ar_resolves.data ();
+
+		desc.preserveAttachmentCount = ar_preserves.size ();
+		desc.pPreserveAttachments = ar_preserves.data ();
+
 		desc.pDepthStencilAttachment = &ar_depth_stencil;
 		return desc;
 	}
@@ -229,10 +235,11 @@ struct RenderPassDescription
 	std::vector<SubpassDescription> subpasses;
 };
 using RenderPassMap = std::unordered_map<std::string, RenderPassDescription>;
+class VulkanRenderer;
 
 struct RenderPass
 {
-	RenderPass (VkRenderPass renderPass) : rp (renderPass){};
+	RenderPass (VkDevice device, RenderPassDescription desc, AttachmentMap& attachments);
 
 	void SetSubpassDrawFuncs (std::vector<RenderFunc> funcs);
 
@@ -249,7 +256,7 @@ struct RenderPass
 struct FrameGraphBuilder
 {
 
-	void AddAttachment ( RenderPassAttachment attachment);
+	void AddAttachment (RenderPassAttachment attachment);
 	std::unordered_map<std::string, RenderPassAttachment> attachments;
 
 	void AddRenderPass (RenderPassDescription renderPass);
@@ -265,7 +272,7 @@ class FrameGraph
 	~FrameGraph ();
 
 	VkRenderPass Get (int index) const;
-	void SetDrawFuncs (std::vector<RenderFunc> funcs);
+	void SetDrawFuncs (int index, std::vector<RenderFunc> funcs);
 
 	private:
 	VulkanDevice& device;

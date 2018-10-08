@@ -10,24 +10,26 @@
 
 #include "../resources/Texture.h"
 
-#include "../rendering/Texture.h"
 #include "../rendering/Model.h"
 #include "../rendering/Renderer.h"
+#include "../rendering/Texture.h"
 
 
-struct SkyboxUniformBuffer {
+struct SkyboxUniformBuffer
+{
 	glm::mat4 proj;
 	glm::mat4 view;
 };
 
-class Skybox {
-public:
-	Skybox(VulkanRenderer& renderer);
-	~Skybox();
+class Skybox
+{
+	public:
+	Skybox (VulkanRenderer& renderer);
+	~Skybox ();
 
 	VulkanRenderer& renderer;
 
-	std::shared_ptr<ManagedVulkanPipeline> mvp;
+	std::unique_ptr<Pipeline> normal;
 
 	std::shared_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;
@@ -40,15 +42,14 @@ public:
 	std::shared_ptr<VulkanBufferUniform> skyboxUniformBuffer;
 
 
-	void InitSkybox();
+	void InitSkybox ();
 
-	void UpdateUniform(glm::mat4 proj, glm::mat4 view);
+	void UpdateUniform (glm::mat4 proj, glm::mat4 view);
 
-	void SetupUniformBuffer();
-	void SetupCubeMapImage();
-	void SetupDescriptor();
-	void SetupPipeline();
+	void SetupUniformBuffer ();
+	void SetupCubeMapImage ();
+	void SetupDescriptor ();
+	void SetupPipeline ();
 
-	void WriteToCommandBuffer(VkCommandBuffer commandBuffer);
-
+	void WriteToCommandBuffer (VkCommandBuffer commandBuffer);
 };

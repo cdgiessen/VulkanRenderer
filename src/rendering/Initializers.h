@@ -346,6 +346,18 @@ inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo (
 }
 
 inline VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo (
+    std::vector<VkDescriptorSetLayout>& layouts, std::vector<VkPushConstantRange>& ranges)
+{
+	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
+	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutCreateInfo.setLayoutCount = layouts.size ();
+	pipelineLayoutCreateInfo.pSetLayouts = layouts.data ();
+	pipelineLayoutCreateInfo.pushConstantRangeCount = ranges.size ();
+	pipelineLayoutCreateInfo.pPushConstantRanges = ranges.data ();
+	return pipelineLayoutCreateInfo;
+}
+
+inline VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo (
     const VkDescriptorSetLayout* pSetLayouts, uint32_t setLayoutCount = 1)
 {
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
@@ -454,6 +466,19 @@ inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo (
 	return pipelineVertexInputStateCreateInfo;
 }
 
+inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo (
+    std::vector<VkVertexInputBindingDescription>& bindings, std::vector<VkVertexInputAttributeDescription>& attribs)
+{
+	VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};
+	pipelineVertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount = bindings.size ();
+	pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions = bindings.data ();
+	pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount = attribs.size ();
+	pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions = attribs.data ();
+
+	return pipelineVertexInputStateCreateInfo;
+}
+
 inline VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo (
     VkPrimitiveTopology topology, VkBool32 primitiveRestartEnable, VkPipelineInputAssemblyStateCreateFlags flags = 0)
 {
@@ -500,6 +525,16 @@ inline VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo (
 	return pipelineColorBlendStateCreateInfo;
 }
 
+inline VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo (
+    std::vector<VkPipelineColorBlendAttachmentState>& attachments)
+{
+	VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo{};
+	pipelineColorBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	pipelineColorBlendStateCreateInfo.attachmentCount = attachments.size ();
+	pipelineColorBlendStateCreateInfo.pAttachments = attachments.data ();
+	return pipelineColorBlendStateCreateInfo;
+}
+
 inline VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo (
     VkBool32 depthTestEnable, VkBool32 depthWriteEnable, VkCompareOp depthCompareOp)
 {
@@ -513,13 +548,17 @@ inline VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo
 	return pipelineDepthStencilStateCreateInfo;
 }
 
-inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo (
-    uint32_t viewportCount, uint32_t scissorCount, VkPipelineViewportStateCreateFlags flags = 0)
+inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo (std::vector<VkViewport>& viewports,
+    std::vector<VkRect2D>& scissors,
+    VkPipelineViewportStateCreateFlags flags = 0)
 {
 	VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo{};
 	pipelineViewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	pipelineViewportStateCreateInfo.viewportCount = viewportCount;
-	pipelineViewportStateCreateInfo.scissorCount = scissorCount;
+	pipelineViewportStateCreateInfo.viewportCount = viewports.size ();
+	pipelineViewportStateCreateInfo.scissorCount = scissors.size ();
+	pipelineViewportStateCreateInfo.pViewports = viewports.data ();
+	pipelineViewportStateCreateInfo.pScissors = scissors.data ();
+
 	pipelineViewportStateCreateInfo.flags = flags;
 	return pipelineViewportStateCreateInfo;
 }
@@ -534,16 +573,16 @@ inline VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo (
 	return pipelineMultisampleStateCreateInfo;
 }
 
-inline VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo (
-    const VkDynamicState* pDynamicStates, uint32_t dynamicStateCount, VkPipelineDynamicStateCreateFlags flags = 0)
-{
-	VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo{};
-	pipelineDynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	pipelineDynamicStateCreateInfo.pDynamicStates = pDynamicStates;
-	pipelineDynamicStateCreateInfo.dynamicStateCount = dynamicStateCount;
-	pipelineDynamicStateCreateInfo.flags = flags;
-	return pipelineDynamicStateCreateInfo;
-}
+// inline VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo (
+//     const VkDynamicState* pDynamicStates, uint32_t dynamicStateCount, VkPipelineDynamicStateCreateFlags flags = 0)
+// {
+// 	VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo{};
+// 	pipelineDynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+// 	pipelineDynamicStateCreateInfo.pDynamicStates = pDynamicStates;
+// 	pipelineDynamicStateCreateInfo.dynamicStateCount = dynamicStateCount;
+// 	pipelineDynamicStateCreateInfo.flags = flags;
+// 	return pipelineDynamicStateCreateInfo;
+// }
 
 inline VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo (
     const std::vector<VkDynamicState>& pDynamicStates, VkPipelineDynamicStateCreateFlags flags = 0)

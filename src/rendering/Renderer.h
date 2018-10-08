@@ -47,47 +47,47 @@ struct Transform
 	glm::quat rot = glm::quat (1, 0, 0, 0);
 };
 
-class ViewCamera
-{
+// class ViewCamera
+// {
 
-	struct Orthographic
-	{
-		float size = 1.0f;
-	};
+// 	struct Orthographic
+// 	{
+// 		float size = 1.0f;
+// 	};
 
-	struct Perspective
-	{
-		float fov = 1.0f;
-	};
+// 	struct Perspective
+// 	{
+// 		float fov = 1.0f;
+// 	};
 
-	struct ClipPlanes
-	{
-		float clip_near = 0.01f;
-		float clip_far = 10000.0f;
-	} clipPlanes;
+// 	struct ClipPlanes
+// 	{
+// 		float clip_near = 0.01f;
+// 		float clip_far = 10000.0f;
+// 	} clipPlanes;
 
-	std::variant<Orthographic, Perspective> projectionType = Orthographic{};
+// 	std::variant<Orthographic, Perspective> projectionType = Orthographic{};
 
 
-	Transform transform;
-};
+// 	Transform transform;
+// };
 
-class ViewSurface
-{
-	ViewCamera& cam;
-	struct Viewport
-	{
-		int x = 0, y = 0;
-		int width = 1, height = 1;
-	} viewport;
-	struct Sciossor
-	{
-		int offsetX = 0, offsetY = 0;
-		int width = 1, height = 1;
-	} scissor;
+// class ViewSurface
+// {
+// 	ViewCamera& cam;
+// 	struct Viewport
+// 	{
+// 		int x = 0, y = 0;
+// 		int width = 1, height = 1;
+// 	} viewport;
+// 	struct Sciossor
+// 	{
+// 		int offsetX = 0, offsetY = 0;
+// 		int width = 1, height = 1;
+// 	} scissor;
 
-	// RenderPass& renderPass;
-};
+// 	// RenderPass& renderPass;
+// };
 
 enum class RenderableType
 {
@@ -97,21 +97,21 @@ enum class RenderableType
 	overlay
 };
 
-struct RendererData
-{
-	PackedArrayPool<VulkanModel> models;
-	PackedArrayPool<VulkanMaterial> materials;
-	PackedArrayPool<VulkanMaterialInstance> materialInstance;
-	PackedArrayPool<Transform> transforms;
-};
+// struct RendererData
+// {
+// 	PackedArrayPool<VulkanModel> models;
+// 	PackedArrayPool<VulkanMaterial> materials;
+// 	PackedArrayPool<VulkanMaterialInstance> materialInstance;
+// 	PackedArrayPool<Transform> transforms;
+// };
 
 
-class RenderableModel
-{
-	VulkanModel* model;
-	VulkanMaterialInstance* material;
-	Transform* transform;
-};
+// class RenderableModel
+// {
+// 	VulkanModel* model;
+// 	VulkanMaterialInstance* material;
+// 	Transform* transform;
+// };
 
 class RenderSettings
 {
@@ -175,6 +175,8 @@ class VulkanRenderer
 
 	std::shared_ptr<VulkanDescriptor> GetVulkanDescriptor ();
 	void AddGlobalLayouts (std::vector<VkDescriptorSetLayout>& layouts);
+	std::vector<VkDescriptorSetLayout> GetGlobalLayouts ();
+
 	// std::vector<DescriptorPoolSize> GetGlobalPoolSize(int poolSize = 1);
 	// std::vector<DescriptorUse> GetGlobalDescriptorUses();
 	// DescriptorUse GetLightingDescriptorUses(uint32_t binding);
@@ -206,7 +208,7 @@ class VulkanRenderer
 	VkRenderPass GetRelevantRenderpass (RenderableType type);
 
 	ShaderManager shaderManager;
-	VulkanPipelineManager pipelineManager;
+	// VulkanPipelineManager pipelineManager;
 	VulkanTextureManager textureManager;
 
 	Scene* scene;

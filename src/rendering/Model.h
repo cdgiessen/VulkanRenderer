@@ -60,6 +60,8 @@ class VulkanModel
 
 	void BindModel (VkCommandBuffer cmdBuf);
 
+	VertexLayout GetVertexLayout ();
+
 	private:
 	VulkanRenderer& renderer;
 	VertexLayout vertLayout;

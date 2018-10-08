@@ -2,12 +2,12 @@
 
 #include <vector>
 
-#include <vulkan/vulkan.h>
 #include <glm/common.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <vulkan/vulkan.h>
 
-#include "../rendering/Renderer.h"
 #include "../rendering/Model.h"
+#include "../rendering/Renderer.h"
 #include "../rendering/Texture.h"
 
 #include "../resources/Mesh.h"
@@ -17,72 +17,73 @@
 
 class InstancedSceneObject
 {
-public:
-
+	public:
 	int instanceMemberSize = 8;
 
 	// Per-instance data block
-	struct InstanceData {
+	struct InstanceData
+	{
 		glm::vec3 pos;
 		glm::vec3 rot;
 		float scale = 1;
 		int texIndex = 0;
-		//float dummy2;
-		InstanceData() = default;
-		InstanceData(glm::vec3 pos, glm::vec3 rot, float scale, int texIndex) :
-			pos(pos), rot(rot), scale(scale), texIndex(texIndex)
-		{}
+		// float dummy2;
+		InstanceData () = default;
+		InstanceData (glm::vec3 pos, glm::vec3 rot, float scale, int texIndex)
+		: pos (pos), rot (rot), scale (scale), texIndex (texIndex)
+		{
+		}
 
-		bool operator==(const InstanceData& rhs) {
-			return this->pos == rhs.pos
-				&& this->rot == rhs.rot
-				&& this->scale == rhs.scale
-				&& this->texIndex == rhs.texIndex;
+		bool operator== (const InstanceData& rhs)
+		{
+			return this->pos == rhs.pos && this->rot == rhs.rot && this->scale == rhs.scale &&
+			       this->texIndex == rhs.texIndex;
 		}
 	};
 
-	InstancedSceneObject(VulkanRenderer& renderer, int maxInstances = 16384);
-	~InstancedSceneObject();
+	InstancedSceneObject (VulkanRenderer& renderer, int maxInstances = 16384);
+	~InstancedSceneObject ();
 
-	void InitInstancedSceneObject();
-	void UploadData();
+	void InitInstancedSceneObject ();
+	void UploadData ();
 
-	void LoadTexture(Resource::Texture::TexID);
-	void LoadModel(std::string fileName);
-	void LoadModel(std::shared_ptr<Mesh> mesh);
+	void LoadTexture (Resource::Texture::TexID);
+	void LoadModel (std::string fileName);
+	void LoadModel (std::shared_ptr<Mesh> mesh);
 
-	void SetFragmentShaderToUse(std::string frag);
-	void SetCullMode(VkCullModeFlagBits cullMode);
-	void SetBlendMode(VkBool32 blendEnable);
+	void SetFragmentShaderToUse (std::string frag);
+	void SetCullMode (VkCullModeFlagBits cullMode);
+	void SetBlendMode (VkBool32 blendEnable);
 
-	void SetupUniformBuffer();
-	void SetupImage();
-	void SetupModel();
-	void SetupPipeline();
+	void SetupUniformBuffer ();
+	void SetupImage ();
+	void SetupModel ();
+	void SetupPipeline ();
 
-	void SetupDescriptor();
+	void SetupDescriptor ();
 
-	void AddInstance(InstanceData data);
-	void RemoveInstance(InstanceData data);
+	void AddInstance (InstanceData data);
+	void RemoveInstance (InstanceData data);
 
-	void AddInstances(std::vector<InstanceData>& instances);
-	void RemoveInstances(std::vector<InstanceData>& instances);
+	void AddInstances (std::vector<InstanceData>& instances);
+	void RemoveInstances (std::vector<InstanceData>& instances);
 
-	void RemoveAllInstances();
+	void RemoveAllInstances ();
 
-	//Resets all current instances and puts new ones in its place
-	void ReplaceAllInstances(std::vector<InstanceData>& instances);
+	// Resets all current instances and puts new ones in its place
+	void ReplaceAllInstances (std::vector<InstanceData>& instances);
 
-	void UploadInstances();
+	void UploadInstances ();
 
-	void ImGuiShowInstances();
+	void ImGuiShowInstances ();
 
-	void WriteToCommandBuffer(VkCommandBuffer commandBuffer, bool wireframe);
-private:
+	void WriteToCommandBuffer (VkCommandBuffer commandBuffer, bool wireframe);
 
-	VulkanRenderer & renderer;
+	private:
+	VulkanRenderer& renderer;
 
-	std::shared_ptr<ManagedVulkanPipeline> mvp;
+	std::unique_ptr<Pipeline> normal;
+	std::unique_ptr<Pipeline> wireframe;
 
 	std::shared_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;
@@ -104,7 +105,7 @@ private:
 	bool isDirty = false;
 
 	std::string fragShaderPath;
-	//VkShaderModule fragShaderModule;
+	// VkShaderModule fragShaderModule;
 	VkCullModeFlagBits cullModeFlagBits = VK_CULL_MODE_BACK_BIT;
 	VkBool32 enableBlending = VK_FALSE;
 

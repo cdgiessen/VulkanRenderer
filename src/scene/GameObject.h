@@ -1,16 +1,16 @@
 #pragma once
 
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/common.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <vulkan/vulkan.h>
 
 
 
 
+#include "../rendering/Material.h"
 #include "../rendering/Model.h"
 #include "../rendering/Renderer.h"
 #include "../rendering/Texture.h"
-#include "../rendering/Material.h"
 
 
 #include "../resources/Mesh.h"
@@ -18,31 +18,33 @@
 
 class GameObject
 {
-public:
-	GameObject(VulkanRenderer& renderer);
-	~GameObject();
+	public:
+	GameObject (VulkanRenderer& renderer);
+	~GameObject ();
 
-	void InitGameObject();
+	void InitGameObject ();
 
-	void LoadModel(std::string fileName);
-	void LoadModel(std::shared_ptr<Mesh> mesh);
+	void LoadModel (std::string fileName);
+	void LoadModel (std::shared_ptr<Mesh> mesh);
 
-	void SetupUniformBuffer();
-	void SetupImage();
-	void SetupModel();
-	void SetupDescriptor();
-	void SetupMaterial();
-	void SetupPipeline();
+	void SetupUniformBuffer ();
+	void SetupImage ();
+	void SetupModel ();
+	void SetupDescriptor ();
+	void SetupMaterial ();
+	void SetupPipeline ();
 
 
-	void UpdateUniformBuffer(float time);
+	void UpdateUniformBuffer (float time);
 
-	void DrawDepthPrePass(VkCommandBuffer commandBuffer);
-	void Draw(VkCommandBuffer commandBuffer, bool wireframe, bool drawNormals);
+	void DrawDepthPrePass (VkCommandBuffer commandBuffer);
+	void Draw (VkCommandBuffer commandBuffer, bool wireframe, bool drawNormals);
 
 	VulkanRenderer& renderer;
 
-	std::shared_ptr<ManagedVulkanPipeline> mvp;
+	std::unique_ptr<Pipeline> normal;
+	std::unique_ptr<Pipeline> wireframe;
+
 
 	std::shared_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;
@@ -59,7 +61,7 @@ public:
 	std::shared_ptr<VulkanTexture> gameObjectVulkanTexture;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
-	//ModelPushConstant modelPushConstant;
+	// ModelPushConstant modelPushConstant;
 
 	bool usePBR;
 	bool usePBR_Tex;

@@ -50,7 +50,7 @@ void CopyMeshBuffers (const VkCommandBuffer copyCmd,
 }
 
 VulkanModel::VulkanModel (VulkanRenderer& renderer, std::shared_ptr<Mesh> mesh)
-: renderer (renderer), vertLayout (VertexDescription({ 3, 3, 2 }))
+: renderer (renderer), vertLayout (VertexDescription ({ 3, 3, 2 }))
 {
 	readyToUse = std::make_shared<bool> (false);
 
@@ -192,3 +192,6 @@ void VulkanModel::BindModel (VkCommandBuffer cmdBuf)
 	vmaVertices->BindVertexBuffer (cmdBuf);
 	vmaIndicies->BindIndexBuffer (cmdBuf);
 }
+
+
+VertexLayout VulkanModel::GetVertexLayout () { return vertLayout; }

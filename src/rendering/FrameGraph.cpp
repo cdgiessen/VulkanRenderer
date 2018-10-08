@@ -2,6 +2,8 @@
 
 #include "Initializers.h"
 
+#include "Renderer.h"
+
 // RenderPass::RenderPass (VulkanDevice& device, VkFormat colorFormat) : device (device)
 //{
 //	AttachmentDescription colorAttachment (colorFormat,
@@ -191,8 +193,8 @@ FrameGraph ContrustRenderPass (VulkanDevice& device)
 
 	RenderPassDescription main_work ("main_work");
 
-	frame_graph_builder.AddAttachment (RenderPassAttachment("img_color",findColorFormat ()));
-	frame_graph_builder.AddAttachment (RenderPassAttachment("img_depth",findDepthFormat ()));
+	frame_graph_builder.AddAttachment (RenderPassAttachment ("img_color", findColorFormat ()));
+	frame_graph_builder.AddAttachment (RenderPassAttachment ("img_depth", findDepthFormat ()));
 
 	SubpassDescription depth_subpass ("sub_depth");
 	depth_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
@@ -230,7 +232,7 @@ void SubpassDescription::SetDepthStencil (std::string name, DepthStencilAccess a
 	depth_stencil_access = access;
 }
 
-std::vector<std::string> SubpassDescription::AttachmentsUsed (AttachmentMap& const attachment_map) const
+std::vector<std::string> SubpassDescription::AttachmentsUsed (AttachmentMap const& attachment_map) const
 {
 	std::vector<std::string> attachments;
 	for (auto& item : input_attachments)
@@ -273,15 +275,16 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	std::vector<VkAttachmentDescription> rp_attachments;
 	for (auto& attach_name : used_attachment_names)
 	{
-		if (attachment_map.count (attach_name) == 1 ){
-			rp_attachments.push_back(attachment_map.at(attach_name).description);
+		if (attachment_map.count (attach_name) == 1)
+		{
+			rp_attachments.push_back (attachment_map.at (attach_name).description);
 		}
 	}
 
-	//subpass usable attachment indexes
+	// subpass usable attachment indexes
 	std::unordered_map<std::string, uint32_t> used_attachments;
 	uint32_t index = 0;
-	for(auto& name : used_attachment_names)
+	for (auto& name : used_attachment_names)
 		used_attachments[name] = index++;
 
 	// create subpasses
@@ -291,29 +294,33 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	{
 		VulkanSubpassDescription vulkan_desc;
 		for (auto& name : rp_subpass.input_attachments)
-			vulkan_desc.ar_inputs.push_back ({used_attachments.at(name), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
-		
+			vulkan_desc.ar_inputs.push_back (
+			    { used_attachments.at (name), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
+
 		for (auto& name : rp_subpass.color_attachments)
-			vulkan_desc.ar_colors.push_back({ used_attachments.at(name), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
-		
+			vulkan_desc.ar_colors.push_back (
+			    { used_attachments.at (name), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+
 		for (auto& name : rp_subpass.resolve_attachments)
-			vulkan_desc.ar_resolves.push_back({ used_attachments.at(name), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
-		
+			vulkan_desc.ar_resolves.push_back (
+			    { used_attachments.at (name), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+
 		for (auto& name : rp_subpass.preserve_attachments)
-			vulkan_desc.ar_preserves.push_back(used_attachments.at(name));
-		
-		if(rp_subpass.depth_stencil_attachment.has_value())
-			vulkan_desc.ar_depth_stencil = { used_attachments.at(name), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
-		
+			vulkan_desc.ar_preserves.push_back (used_attachments.at (name));
+
+		if (rp_subpass.depth_stencil_attachment.has_value ())
+			vulkan_desc.ar_depth_stencil = { used_attachments.at (name),
+				VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+
 		vulkan_desc.desc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 		vulkan_sb_descriptions.push_back (vulkan_desc);
 	}
 
-	//get pointer arrays ready (ugh, c api...)
+	// get pointer arrays ready (ugh, c api...)
 	std::vector<VkSubpassDescription> sb_descriptions;
-	for(auto& desc : vulkan_sb_descriptions)
-		sb_descriptions.push_back(desc.Get());
+	for (auto& desc : vulkan_sb_descriptions)
+		sb_descriptions.push_back (desc.Get ());
 
 
 	// create subpass dependencies
@@ -322,7 +329,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 
 	std::vector<VkSubpassDependency> sb_dependencies;
 	for (auto& desc : vulkan_sb_dependencies)
-		sb_dependencies.push_back(desc.Get());
+		sb_dependencies.push_back (desc.Get ());
 
 
 	VkRenderPassCreateInfo renderPassInfo = initializers::renderPassCreateInfo ();
@@ -336,9 +343,53 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	return renderPassInfo;
 }
 
+RenderPass::RenderPass (VkDevice device, RenderPassDescription desc, AttachmentMap& attachments)
+{
+
+	auto renderPassInfo = desc.GetRenderPassCreate (attachments);
+
+	if (vkCreateRenderPass (device, &renderPassInfo, nullptr, &rp) != VK_SUCCESS)
+	{
+		throw std::runtime_error ("failed to create render pass!");
+	}
+}
+
+// RenderPass::~RenderPass () { vkDestroyRenderPass (device.device, rp, nullptr); }
+
+void RenderPass::SetSubpassDrawFuncs (std::vector<RenderFunc> funcs) { subpassFuncs = funcs; }
+
+void RenderPass::BuildCmdBuf (VkCommandBuffer cmdBuf,
+    VkFramebuffer framebuffer,
+    VkOffset2D offset,
+    VkExtent2D extent,
+    std::array<VkClearValue, 2> clearValues)
+{
+	VkRenderPassBeginInfo renderPassInfo =
+	    initializers::renderPassBeginInfo (rp, framebuffer, offset, extent, clearValues);
 
 
-void FrameGraphBuilder::AddAttachment ( RenderPassAttachment attachment)
+	vkCmdBeginRenderPass (cmdBuf, &renderPassInfo, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
+	if (subpassFuncs.size () == 0)
+	{
+		// nothing to draw;
+	}
+	else if (subpassFuncs.size () == 1)
+	{
+		subpassFuncs.at (0) (cmdBuf);
+	}
+	else
+	{
+
+		for (auto& func : subpassFuncs)
+		{
+			func (cmdBuf);
+			vkCmdNextSubpass (cmdBuf, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
+		}
+	}
+	vkCmdEndRenderPass (cmdBuf);
+}
+
+void FrameGraphBuilder::AddAttachment (RenderPassAttachment attachment)
 {
 
 	attachments[attachment.name] = attachment;
@@ -354,16 +405,7 @@ FrameGraph::FrameGraph (FrameGraphBuilder builder, VulkanDevice& device) : devic
 
 	for (auto [name, pass] : builder.renderPasses)
 	{
-
-		auto renderPassInfo = pass.GetRenderPassCreate (builder.attachments);
-
-
-		VkRenderPass pass;
-		if (vkCreateRenderPass (device.device, &renderPassInfo, nullptr, &pass) != VK_SUCCESS)
-		{
-			throw std::runtime_error ("failed to create render pass!");
-		}
-		renderPasses.push_back (RenderPass (pass));
+		renderPasses.push_back (RenderPass (device.device, pass, builder.attachments));
 	}
 }
 
@@ -373,30 +415,11 @@ FrameGraph::~FrameGraph ()
 		vkDestroyRenderPass (device.device, rp.rp, nullptr);
 }
 
-void RenderPass::SetSubpassDrawFuncs (std::vector<RenderFunc> funcs)
+void FrameGraph::SetDrawFuncs (int index, std::vector<RenderFunc> funcs)
 {
-	subpassFuncs = funcs;
+	renderPasses.at (index).SetSubpassDrawFuncs (funcs);
+	// renderPasses.insert (std::end (renderPasses), std::begin (funcs), std::end (funcs));
 }
 
-void RenderPass::BuildCmdBuf (VkCommandBuffer cmdBuf,
-    VkFramebuffer framebuffer,
-    VkOffset2D offset,
-    VkExtent2D extent,
-    std::array<VkClearValue, 2> clearValues)
-{
-	VkRenderPassBeginInfo renderPassInfo =
-	    initializers::renderPassBeginInfo (rp, framebuffer, offset, extent, clearValues);
 
-
-	vkCmdBeginRenderPass (cmdBuf, &renderPassInfo, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
-	for (auto& func : subpassFuncs)
-	{
-		func (cmdBuf);
-		vkCmdNextSubpass (cmdBuf, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
-	}
-	vkCmdEndRenderPass (cmdBuf);
-}
-
-VkRenderPass FrameGraph::Get(int index) const {
-	return renderPasses.at(index).rp;
-}
+VkRenderPass FrameGraph::Get (int index) const { return renderPasses.at (index).rp; }

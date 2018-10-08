@@ -1,0 +1,10 @@
+{
+    "fullscreen": false,
+    "initial-screen-size": {
+        "height": 600,
+        "width": 800
+    },
+    "is-frame-rate-capped": true,
+    "max-fps": 100.0,
+    "use-validation-layers": true
+}
