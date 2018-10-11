@@ -180,37 +180,6 @@
 // void RenderPass::EndRenderPass (VkCommandBuffer cmdBuf) { vkCmdEndRenderPass (cmdBuf); }
 
 
-// VkRenderPass RenderPass::Get () { return renderPass; }
-
-
-// VkFormat findColorFormat () { return VK_FORMAT_R8G8B8A8_SNORM; }
-//
-// VkFormat findDepthFormat () { return VK_FORMAT_D32_SFLOAT_S8_UINT; }
-
-// FrameGraph ContrustRenderPass (VulkanDevice& device)
-//{
-//	FrameGraphBuilder frame_graph_builder;
-//
-//	RenderPassDescription main_work ("main_work");
-//
-//	frame_graph_builder.AddAttachment (RenderPassAttachment ("img_color", findColorFormat ()));
-//	frame_graph_builder.AddAttachment (RenderPassAttachment ("img_depth", findDepthFormat ()));
-//
-//	SubpassDescription depth_subpass ("sub_depth");
-//	depth_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
-//	main_work.AddSubpass (depth_subpass);
-//
-//	SubpassDescription color_subpass ("sub_color");
-//	color_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_only);
-//	color_subpass.AddColorOutput ("img_color");
-//	color_subpass.AddSubpassDependency ("sub_depth");
-//	main_work.AddSubpass (color_subpass);
-//
-//	frame_graph_builder.AddRenderPass (main_work);
-//	frame_graph_builder.lastPass = main_work.name;
-//
-//	return FrameGraph (frame_graph_builder, device);
-//}
 
 void SubpassDescription::AddSubpassDependency (std::string subpass)
 {
@@ -439,7 +408,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 			attach.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 		}
 		else {
-			attach.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			attach.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		}
 
 		attach.storeOp = VK_ATTACHMENT_STORE_OP_MAX_ENUM;
@@ -455,7 +424,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 			attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 		}
 		else {
-			attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		}
 
 		attach.stencilStoreOp = VK_ATTACHMENT_STORE_OP_MAX_ENUM;
@@ -468,13 +437,13 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 
 		//defaults
 		if (attach.loadOp == VK_ATTACHMENT_LOAD_OP_MAX_ENUM) {
-			attach.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			attach.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		}
 		if (attach.storeOp == VK_ATTACHMENT_STORE_OP_MAX_ENUM) {
 			attach.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		}
 		if (attach.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_MAX_ENUM) {
-			attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		}
 		if (attach.stencilStoreOp == VK_ATTACHMENT_STORE_OP_MAX_ENUM) {
 			attach.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -490,8 +459,8 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 		}
 		
 		if (isLastPass && is_output) {
-			attach.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			attach.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+			initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 		}
 
 		attach.initialLayout = initialLayout;

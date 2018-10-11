@@ -127,13 +127,13 @@ void InstancedSceneObject::SetupPipeline ()
 
 	std::vector<VkVertexInputAttributeDescription> instanceBufferAttribute = {
 		initializers::vertexInputAttributeDescription (
-		    INSTANCE_BUFFER_BIND_ID, 4, VK_FORMAT_R32G32B32_SFLOAT, 0), // Location 4: Position
+		    INSTANCE_BUFFER_BIND_ID, 3, VK_FORMAT_R32G32B32_SFLOAT, 0), // Location 4: Position
 		initializers::vertexInputAttributeDescription (
-		    INSTANCE_BUFFER_BIND_ID, 5, VK_FORMAT_R32G32B32_SFLOAT, sizeof (float) * 3), // Location 5: Rotation
+		    INSTANCE_BUFFER_BIND_ID, 4, VK_FORMAT_R32G32B32_SFLOAT, sizeof (float) * 3), // Location 5: Rotation
 		initializers::vertexInputAttributeDescription (
-		    INSTANCE_BUFFER_BIND_ID, 6, VK_FORMAT_R32_SFLOAT, sizeof (float) * 6), // Location 6: Scale
+		    INSTANCE_BUFFER_BIND_ID, 5, VK_FORMAT_R32_SFLOAT, sizeof (float) * 6), // Location 6: Scale
 		initializers::vertexInputAttributeDescription (
-		    INSTANCE_BUFFER_BIND_ID, 7, VK_FORMAT_R32_SINT, sizeof (float) * 7), // Location 7: Texture array layer index
+		    INSTANCE_BUFFER_BIND_ID, 6, VK_FORMAT_R32_SINT, sizeof (float) * 7), // Location 7: Texture array layer index
 	};
 
 	out.AddVertexLayouts (instanceBufferBinding, instanceBufferAttribute);
@@ -144,11 +144,11 @@ void InstancedSceneObject::SetupPipeline ()
 	out.AddScissor (1, 1, 0, 0);
 
 	out.SetRasterizer (
-	    VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	    VK_POLYGON_MODE_FILL, cullModeFlagBits, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 
 	out.SetMultisampling (VK_SAMPLE_COUNT_1_BIT);
 	out.SetDepthStencil (VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
-	out.AddColorBlendingAttachment (VK_FALSE,
+	out.AddColorBlendingAttachment (enableBlending,
 	    VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
 	    VK_BLEND_OP_ADD,
 	    VK_BLEND_FACTOR_SRC_COLOR,
