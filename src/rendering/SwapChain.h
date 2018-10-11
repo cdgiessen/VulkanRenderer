@@ -28,7 +28,7 @@ public:
 
 	void RecreateSwapChain();
 
-	void CreateFramebuffers(VkImageView depthImageView, VkRenderPass renderPass);
+	void CreateFramebuffers(std::array< VkImageView, 2> depthImageViews, VkRenderPass renderPass);
 
 	static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 

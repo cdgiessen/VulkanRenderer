@@ -503,6 +503,11 @@ void Terrain::SetupPipeline ()
 	out.AddVertexLayouts (
 	    Vertex_PosNormTex::getBindingDescription (), Vertex_PosNormTex::getAttributeDescriptions ());
 
+	out.SetInputAssembly (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
+
+	out.AddViewport (1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f);
+	out.AddScissor (1, 1, 0, 0);
+
 	out.SetRasterizer (
 	    VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 
@@ -519,6 +524,8 @@ void Terrain::SetupPipeline ()
 
 	out.AddDescriptorLayouts (renderer.GetGlobalLayouts ());
 	out.AddDescriptorLayout (descriptor->GetLayout ());
+
+	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
 	normal = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 
@@ -541,21 +548,36 @@ void Terrain::SetupPipeline ()
 	// ShaderModuleSet set(vert, frag, {}, {}, {});
 	// pipeMan.SetShaderModuleSet(mvp, set);
 
-	// pipeMan.SetVertexInput(mvp, Vertex_PosNormTex::getBindingDescription(),
-	// Vertex_PosNormTex::getAttributeDescriptions()); pipeMan.SetInputAssembly(mvp,
-	// VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE); pipeMan.SetViewport(mvp,
-	// (float)renderer.vulkanSwapChain.swapChainExtent.width,
-	// (float)renderer.vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f, 0.0f, 0.0f); pipeMan.SetScissor(mvp,
-	// renderer.vulkanSwapChain.swapChainExtent.width,
-	// renderer.vulkanSwapChain.swapChainExtent.height, 0, 0); pipeMan.SetViewportState(mvp, 1, 1,
-	// 0); pipeMan.SetRasterizer(mvp, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT,
-	// VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE); pipeMan.SetMultisampling(mvp,
-	// VK_SAMPLE_COUNT_1_BIT); pipeMan.SetDepthStencil(mvp, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER,
-	// VK_FALSE, VK_FALSE); pipeMan.SetColorBlendingAttachment(mvp, VK_FALSE,
-	// VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
-	// VK_COLOR_COMPONENT_A_BIT, 	VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR,
-	// VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR, 	VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE,
-	// VK_BLEND_FACTOR_ZERO); pipeMan.SetColorBlending(mvp, 1, &mvp->pco.colorBlendAttachment);
+	//pipeMan.SetVertexInput (
+	//    mvp, Vertex_PosNormTex::getBindingDescription (), Vertex_PosNormTex::getAttributeDescriptions ());
+	//pipeMan.SetInputAssembly (mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+	//pipeMan.SetViewport (mvp,
+	//    (float)renderer.vulkanSwapChain.swapChainExtent.width,
+	//    (float)renderer.vulkanSwapChain.swapChainExtent.height,
+	//    0.0f,
+	//    1.0f,
+	//    0.0f,
+	//    0.0f);
+	//pipeMan.SetScissor (mvp,
+	//    renderer.vulkanSwapChain.swapChainExtent.width,
+	//    renderer.vulkanSwapChain.swapChainExtent.height,
+	//    0,
+	//    0);
+	//pipeMan.SetViewportState (mvp, 1, 1, 0);
+	//pipeMan.SetRasterizer (
+	//    mvp, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	//pipeMan.SetMultisampling (mvp, VK_SAMPLE_COUNT_1_BIT);
+	//pipeMan.SetDepthStencil (mvp, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
+	//pipeMan.SetColorBlendingAttachment (mvp,
+	//    VK_FALSE,
+	//    VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+	//    VK_BLEND_OP_ADD,
+	//    VK_BLEND_FACTOR_SRC_COLOR,
+	//    VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
+	//    VK_BLEND_OP_ADD,
+	//    VK_BLEND_FACTOR_ONE,
+	//    VK_BLEND_FACTOR_ZERO);
+	//pipeMan.SetColorBlending (mvp, 1, &mvp->pco.colorBlendAttachment);
 
 	// std::vector<VkDynamicState> dynamicStateEnables = {
 	// 	VK_DYNAMIC_STATE_VIEWPORT,

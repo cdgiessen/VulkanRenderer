@@ -183,34 +183,34 @@
 // VkRenderPass RenderPass::Get () { return renderPass; }
 
 
-VkFormat findColorFormat () { return VK_FORMAT_R8G8B8A8_SNORM; }
+// VkFormat findColorFormat () { return VK_FORMAT_R8G8B8A8_SNORM; }
+//
+// VkFormat findDepthFormat () { return VK_FORMAT_D32_SFLOAT_S8_UINT; }
 
-VkFormat findDepthFormat () { return VK_FORMAT_D32_SFLOAT_S8_UINT; }
-
-FrameGraph ContrustRenderPass (VulkanDevice& device)
-{
-	FrameGraphBuilder frame_graph_builder;
-
-	RenderPassDescription main_work ("main_work");
-
-	frame_graph_builder.AddAttachment (RenderPassAttachment ("img_color", findColorFormat ()));
-	frame_graph_builder.AddAttachment (RenderPassAttachment ("img_depth", findDepthFormat ()));
-
-	SubpassDescription depth_subpass ("sub_depth");
-	depth_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
-	main_work.AddSubpass (depth_subpass);
-
-	SubpassDescription color_subpass ("sub_color");
-	color_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_only);
-	color_subpass.AddColorOutput ("img_color");
-	color_subpass.AddSubpassDependency ("sub_depth");
-	main_work.AddSubpass (color_subpass);
-
-	frame_graph_builder.AddRenderPass (main_work);
-	frame_graph_builder.lastPass = main_work.name;
-
-	return FrameGraph (frame_graph_builder, device);
-}
+// FrameGraph ContrustRenderPass (VulkanDevice& device)
+//{
+//	FrameGraphBuilder frame_graph_builder;
+//
+//	RenderPassDescription main_work ("main_work");
+//
+//	frame_graph_builder.AddAttachment (RenderPassAttachment ("img_color", findColorFormat ()));
+//	frame_graph_builder.AddAttachment (RenderPassAttachment ("img_depth", findDepthFormat ()));
+//
+//	SubpassDescription depth_subpass ("sub_depth");
+//	depth_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
+//	main_work.AddSubpass (depth_subpass);
+//
+//	SubpassDescription color_subpass ("sub_color");
+//	color_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_only);
+//	color_subpass.AddColorOutput ("img_color");
+//	color_subpass.AddSubpassDependency ("sub_depth");
+//	main_work.AddSubpass (color_subpass);
+//
+//	frame_graph_builder.AddRenderPass (main_work);
+//	frame_graph_builder.lastPass = main_work.name;
+//
+//	return FrameGraph (frame_graph_builder, device);
+//}
 
 void SubpassDescription::AddSubpassDependency (std::string subpass)
 {
@@ -255,6 +255,27 @@ std::vector<std::string> SubpassDescription::AttachmentsUsed (AttachmentMap cons
 	return attachments;
 }
 
+AttachmentUse::AttachmentUse (RenderPassAttachment rpAttach, int index) : 
+	format(rpAttach.format), index(index)
+{
+
+}
+
+VkAttachmentDescription AttachmentUse::Get () {
+	VkAttachmentDescription desc;
+	desc.flags = 0; //doesn't alias
+	desc.format = format;
+	desc.samples = sampleCount;
+	desc.loadOp = loadOp;
+	desc.storeOp = storeOp;
+	desc.stencilLoadOp = stencilLoadOp;
+	desc.stencilStoreOp = stencilStoreOp;
+	desc.initialLayout = initialLayout;
+	desc.finalLayout = finalLayout;
+	return desc;
+}
+
+
 void RenderPassDescription::AddSubpass (SubpassDescription subpass)
 {
 	subpasses.push_back (subpass);
@@ -272,24 +293,26 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 			used_attachment_names.insert (attach_name);
 		}
 	}
-	// std::vector<VkAttachmentDescription> rp_attachments;
+
+	std::vector<AttachmentUse> attachmentUses;
+	int index = 0;
 	for (auto& attach_name : used_attachment_names)
 	{
 		if (attachment_map.count (attach_name) == 1)
 		{
-			rp_attachments.push_back (attachment_map.at (attach_name).description);
+			attachmentUses.push_back (AttachmentUse (attachment_map.at (attach_name), index++));
 		}
 	}
 
-	// subpass usable attachment indexes
+	// map of attchment names and their index, for quick access - rather than a raw vector
 	std::unordered_map<std::string, uint32_t> used_attachments;
-	uint32_t index = 0;
+	index = 0;
 	for (auto& name : used_attachment_names)
 		used_attachments[name] = index++;
 
 	// create subpasses
 
-	std::vector<VulkanSubpassDescription> vulkan_sb_descriptions;
+	// std::vector<VulkanSubpassDescription> vulkan_sb_descriptions;
 	for (auto& rp_subpass : subpasses)
 	{
 		VulkanSubpassDescription vulkan_desc;
@@ -309,9 +332,12 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 			vulkan_desc.ar_preserves.push_back (used_attachments.at (name));
 
 		if (rp_subpass.depth_stencil_attachment.has_value ())
+		{
+			vulkan_desc.has_depth_stencil = true;
 			vulkan_desc.ar_depth_stencil = {
 				used_attachments.at (rp_subpass.depth_stencil_attachment.value ()), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 			};
+		}
 
 		vulkan_desc.desc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
@@ -331,7 +357,153 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	// std::vector<VkSubpassDependency> sb_dependencies;
 	for (auto& desc : vulkan_sb_dependencies)
 		sb_dependencies.push_back (desc.Get ());
+	// TODO Subpass Dependencies
 
+
+	// get attachment reference details
+	for (auto& attach : attachmentUses)
+	{
+		bool is_input = false;
+		bool is_output = false;
+
+		bool is_depth_image = false;
+		bool is_depth_input = false;
+		bool is_depth_output = false;
+
+		int subpass_earliest_use = 0;
+		int subpass_latest_use = vulkan_sb_descriptions.size() - 1;
+
+		VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+		VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+		for (int i = 0; i < vulkan_sb_descriptions.size(); i++)
+		{
+			for (auto& ref : vulkan_sb_descriptions.at(i).ar_inputs)
+			{
+				if (ref.attachment == attach.index && subpass_earliest_use > ref.attachment) {
+					subpass_earliest_use = i;
+				}
+				if (ref.attachment == attach.index && subpass_latest_use < ref.attachment) {
+					subpass_latest_use = i;
+				}
+				is_input = true;
+				initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			}
+			for (auto& ref : vulkan_sb_descriptions.at(i).ar_colors)
+			{
+				if (ref.attachment == attach.index && subpass_earliest_use > ref.attachment) {
+					subpass_earliest_use = i;
+				}
+				if (ref.attachment == attach.index && subpass_latest_use < ref.attachment) {
+					subpass_latest_use = i;
+				}
+				is_output = true;
+				initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+				finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			}
+			for (auto& ref : vulkan_sb_descriptions.at(i).ar_resolves)
+			{
+				if (ref.attachment == attach.index && subpass_earliest_use > ref.attachment) {
+					subpass_earliest_use = i;
+				}
+				if (ref.attachment == attach.index && subpass_latest_use < ref.attachment) {
+					subpass_latest_use = i;
+				}
+			}
+			for (auto& ref : vulkan_sb_descriptions.at(i).ar_preserves)
+			{
+				if (ref == attach.index && subpass_earliest_use > ref) {
+					subpass_earliest_use = i;
+				}
+				if (ref == attach.index && subpass_latest_use < ref) {
+					subpass_latest_use = i;
+				}
+			}
+			if (vulkan_sb_descriptions.at(i).has_depth_stencil && vulkan_sb_descriptions.at(i).ar_depth_stencil.attachment == attach.index)
+			{
+				if (vulkan_sb_descriptions.at(i).ar_depth_stencil.attachment == attach.index && subpass_earliest_use > vulkan_sb_descriptions.at(i).ar_depth_stencil.attachment) {
+					subpass_earliest_use = i;
+				}
+				if (vulkan_sb_descriptions.at(i).ar_depth_stencil.attachment == attach.index && subpass_latest_use < vulkan_sb_descriptions.at(i).ar_depth_stencil.attachment) {
+					subpass_latest_use = i;
+				}
+				is_depth_image = true;
+				is_depth_input = false;
+				is_depth_output = true;
+			}
+		}
+
+		attach.sampleCount = VK_SAMPLE_COUNT_1_BIT;
+		attach.loadOp = VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
+		if (is_input) {
+			attach.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		}
+		else {
+			attach.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		}
+
+		attach.storeOp = VK_ATTACHMENT_STORE_OP_MAX_ENUM;
+		if (is_output) {
+			attach.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		}
+		else {
+			attach.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		}
+		
+		attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
+		if (is_depth_input) {
+			attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		}
+		else {
+			attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		}
+
+		attach.stencilStoreOp = VK_ATTACHMENT_STORE_OP_MAX_ENUM;
+		if (is_depth_output) {
+			attach.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+		}
+		else {
+			attach.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		}
+
+		//defaults
+		if (attach.loadOp == VK_ATTACHMENT_LOAD_OP_MAX_ENUM) {
+			attach.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		}
+		if (attach.storeOp == VK_ATTACHMENT_STORE_OP_MAX_ENUM) {
+			attach.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		}
+		if (attach.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_MAX_ENUM) {
+			attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		}
+		if (attach.stencilStoreOp == VK_ATTACHMENT_STORE_OP_MAX_ENUM) {
+			attach.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		}
+		
+		if (is_depth_image && is_depth_input) {
+			initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+			finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		}
+		if (is_depth_image && is_depth_output) {
+			initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		}
+		
+		if (isLastPass && is_output) {
+			attach.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			attach.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		}
+
+		attach.initialLayout = initialLayout;
+		attach.finalLayout = finalLayout;
+		
+		
+	}
+
+	for (auto& a : attachmentUses)
+	{
+		rp_attachments.push_back (a.Get ());
+	}
 
 	VkRenderPassCreateInfo renderPassInfo = initializers::renderPassCreateInfo ();
 	renderPassInfo.attachmentCount = static_cast<uint32_t> (rp_attachments.size ());
@@ -403,10 +575,22 @@ void FrameGraphBuilder::AddRenderPass (RenderPassDescription renderPass)
 
 FrameGraph::FrameGraph (FrameGraphBuilder builder, VulkanDevice& device) : device (device)
 {
+	auto& lastPassDesc = builder.renderPasses.at(builder.lastPass);
+	lastPassDesc.isLastPass = true;
+	//for (auto&[name, a] : builder.attachments) {
+	//	for(auto& sub : lastPassDesc.subpasses){
+	//		for (auto& a : sub.color_attachments) {
+	//			if (name == a) {
+	//				builder.attachments.at(name).format = VK_FORMAT_R8G8B8A8_SINT;
+	//			}
+	//		}
+	//	}
+	//}
 
 	for (auto [name, pass] : builder.renderPasses)
 	{
-		renderPasses.push_back (RenderPass (device.device, pass, builder.attachments));
+		
+		renderPasses.push_back(RenderPass(device.device, pass, builder.attachments));
 	}
 }
 
@@ -424,3 +608,10 @@ void FrameGraph::SetDrawFuncs (int index, std::vector<RenderFunc> funcs)
 
 
 VkRenderPass FrameGraph::Get (int index) const { return renderPasses.at (index).rp; }
+
+
+void FrameGraph::FillCommandBuffer(VkCommandBuffer cmdBuf, VkFramebuffer fb, VkOffset2D offset, VkExtent2D extent, std::array<VkClearValue, 2>  clearValues) {
+	for (auto& rp : renderPasses) {
+		rp.BuildCmdBuf(cmdBuf, fb, offset, extent, clearValues);
+	}
+}

@@ -200,12 +200,15 @@ struct VulkanSubpassDescription
 	std::vector<VkAttachmentReference> ar_colors;
 	std::vector<VkAttachmentReference> ar_resolves;
 	std::vector<uint32_t> ar_preserves;
+	bool has_depth_stencil = false;
 	VkAttachmentReference ar_depth_stencil;
 
 	VkSubpassDescription desc;
 
 	VkSubpassDescription Get ()
 	{
+		desc.flags = 0;
+
 		desc.inputAttachmentCount = ar_inputs.size ();
 		desc.pInputAttachments = ar_inputs.data ();
 
@@ -216,11 +219,30 @@ struct VulkanSubpassDescription
 		desc.preserveAttachmentCount = ar_preserves.size ();
 		desc.pPreserveAttachments = ar_preserves.data ();
 
-		desc.pDepthStencilAttachment = &ar_depth_stencil;
+		if (has_depth_stencil) {
+			desc.pDepthStencilAttachment = &ar_depth_stencil;
+		}
 		return desc;
 	}
 };
 
+struct AttachmentUse {
+	AttachmentUse(RenderPassAttachment rpAttach, int index);
+
+	 VkAttachmentDescription Get();
+	
+	int index = -1;
+
+	VkFormat format;
+	VkSampleCountFlagBits sampleCount;
+	 VkAttachmentLoadOp loadOp;
+	 VkAttachmentStoreOp storeOp;
+	 VkAttachmentLoadOp stencilLoadOp;
+	 VkAttachmentStoreOp stencilStoreOp;
+	 VkImageLayout initialLayout;
+	 VkImageLayout finalLayout;
+
+};
 
 struct RenderPassDescription
 {
@@ -230,11 +252,13 @@ struct RenderPassDescription
 
 	VkRenderPassCreateInfo GetRenderPassCreate (AttachmentMap& attachment_map);
 
+	bool isLastPass = false;
 	std::string name;
 	// std::vector< std::string> attachments;
 	std::vector<SubpassDescription> subpasses;
 
 	// needed for the call to create_render_pass
+	std::vector<VulkanSubpassDescription> vulkan_sb_descriptions;
 	std::vector<VkAttachmentDescription> rp_attachments;
 	std::vector<VkSubpassDescription> sb_descriptions;
 	std::vector<VkSubpassDependency> sb_dependencies;
@@ -278,6 +302,8 @@ class FrameGraph
 
 	VkRenderPass Get (int index) const;
 	void SetDrawFuncs (int index, std::vector<RenderFunc> funcs);
+
+	void FillCommandBuffer(VkCommandBuffer cmdBuf, VkFramebuffer fb, VkOffset2D offset, VkExtent2D extent, std::array<VkClearValue, 2>  clearValues);
 
 	private:
 	VulkanDevice& device;

@@ -346,7 +346,10 @@ void PipelineOutline::AddVertexLayouts (std::vector<VkVertexInputBindingDescript
 	    std::end (vertexInputAttributeDescriptions), std::begin (attribs), std::end (attribs));
 }
 
-
+void PipelineOutline::SetInputAssembly (VkPrimitiveTopology topology, VkBool32 primitiveRestart)
+{
+	inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo (topology, primitiveRestart);
+}
 
 void PipelineOutline::AddDescriptorLayouts (std::vector<VkDescriptorSetLayout> layouts)
 {
@@ -465,6 +468,7 @@ Pipeline::Pipeline (VulkanRenderer& renderer, PipelineOutline builder, VkRenderP
 
 
 	auto info = initializers::pipelineCreateInfo (layout, renderPass, 0);
+	info.layout = layout;
 	info.subpass = subPass; // which subpass in the renderpass this pipeline gets used
 	info.basePipelineHandle = VK_NULL_HANDLE;
 

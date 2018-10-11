@@ -67,6 +67,11 @@ void Skybox::SetupPipeline ()
 
 	out.UseModelVertexLayout (model.get ());
 
+	out.AddViewport(1.0f,1.0f,0.0f,1.0f,0.0f,0.0f);
+	out.AddScissor(1,1,0,0);
+
+	out.SetInputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
+
 	out.SetRasterizer (
 	    VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 
@@ -83,6 +88,8 @@ void Skybox::SetupPipeline ()
 
 	out.AddDescriptorLayouts (renderer.GetGlobalLayouts ());
 	out.AddDescriptorLayout (descriptor->GetLayout ());
+
+	out.AddDynamicStates({VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR});
 
 	normal = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 

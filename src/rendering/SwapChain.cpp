@@ -117,13 +117,13 @@ void VulkanSwapChain::createImageViews() {
 	}
 }
 
-void VulkanSwapChain::CreateFramebuffers(VkImageView depthImageView, VkRenderPass renderPass) {
+void VulkanSwapChain::CreateFramebuffers(std::array< VkImageView, 2> depthImageViews, VkRenderPass renderPass) {
 	swapChainFramebuffers.resize(swapChainImageViews.size());
 
 	for (size_t i = 0; i < swapChainImageViews.size(); i++) {
 		std::array<VkImageView, 2> attachments = {
 			swapChainImageViews[i],
-			depthImageView
+			depthImageViews[i]
 		};
 
 		VkFramebufferCreateInfo framebufferInfo = initializers::framebufferCreateInfo();

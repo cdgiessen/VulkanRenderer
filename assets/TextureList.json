@@ -1,1 +1,130 @@
-null
+[
+  {
+    "id": 0,
+
+    "layout": "single2D",
+    "format": "jpg",
+    "channels": "rgb",
+
+    "dataDescription": {
+      "channels": 3,
+      "width": 1024,
+      "height": 1024,
+      "depth": 1,
+      "layers": 1
+    },
+    "name": "TileableWaterTexture"
+  },
+  {
+    "id": 1,
+
+    "layout": "cubemap2D",
+    "format": "png",
+    "channels": "rgb",
+
+    "dataDescription": {
+      "channels": 3,
+      "width": 900,
+      "height": 900,
+      "depth": 1,
+      "layers": 6
+    },
+    "name": "Skybox"
+  },
+  {
+    "id": 2,
+
+    "layout": "array2D",
+    "format": "jpg",
+    "channels": "rgb",
+
+    "dataDescription": {
+      "channels": 3,
+      "width": 512,
+      "height": 512,
+      "depth": 1,
+      "layers": 4
+    },
+    "name": "terrain"
+  },
+  {
+    "id": 3,
+
+    "layout": "single2D",
+    "format": "png",
+    "channels": "rgb",
+
+    "dataDescription": {
+      "channels": 3,
+      "width": 64,
+      "height": 64,
+      "depth": 1,
+      "layers": 1
+    },
+    "name": "Red"
+  },
+  {
+    "id": 4,
+
+    "layout": "array2D",
+    "format": "png",
+    "channels": "rgb",
+
+    "dataDescription": {
+      "channels": 3,
+      "width": 2048,
+      "height": 2048,
+      "depth": 1,
+      "layers": 4
+    },
+    "name": "terrain_albedo"
+  },
+  {
+    "id": 5,
+
+    "layout": "array2D",
+    "format": "png",
+    "channels": "rgb",
+
+    "dataDescription": {
+      "channels": 3,
+      "width": 2048,
+      "height": 2048,
+      "depth": 1,
+      "layers": 4
+    },
+    "name": "terrain_roughness"
+  },
+  {
+    "id": 6,
+
+    "layout": "array2D",
+    "format": "png",
+    "channels": "rgb",
+
+    "dataDescription": {
+      "channels": 3,
+      "width": 2048,
+      "height": 2048,
+      "depth": 1,
+      "layers": 4
+    },
+    "name": "terrain_metalness"
+  },
+  {
+    "id": 7,
+
+    "layout": "array2D",
+    "format": "png",
+    "channels": "rgb",
+
+    "dataDescription": {
+      "channels": 3,
+      "width": 2048,
+      "height": 2048,
+      "depth": 1,
+      "layers": 4
+    },
+    "name": "terrain_normal"
+  }
+]

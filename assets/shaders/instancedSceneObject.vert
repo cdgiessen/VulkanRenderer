@@ -24,18 +24,18 @@ layout(set = 2, binding = 0) uniform ModelMatrixData {
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
-layout(location = 3) in vec4 inColor;
 
 // Instanced attributes
-layout (location = 4) in vec3 instancePos;
-layout (location = 5) in vec3 instanceRot;
-layout (location = 6) in float instanceScale;
+layout (location = 3) in vec3 instancePos;
+layout (location = 4) in vec3 instanceRot;
+layout (location = 5) in float instanceScale;
+layout (location = 6) in int texArrayIndex;
+
 
 // Outputs
 layout(location = 0) out vec3 outFragPos;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec2 outTexCoord;
-layout(location = 3) out vec4 outColor;
 
 out gl_PerVertex {
     vec4 gl_Position;
@@ -83,7 +83,6 @@ mat4 CreateRotationMat(vec3 instanceRot){
 
 void main() {
 	outTexCoord = inTexCoord;
-	outColor = inColor;
 
 	vec4 locPos = vec4(inPosition.xyz, 1.0);
 	vec4 pos = vec4((locPos.xyz * instanceScale) + instancePos, 1.0);

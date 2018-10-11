@@ -469,6 +469,11 @@ inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo (
 inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo (
     std::vector<VkVertexInputBindingDescription>& bindings, std::vector<VkVertexInputAttributeDescription>& attribs)
 {
+	int index = 0;
+	for (auto& attrib : attribs) {
+		attrib.location = index++;
+	}
+
 	VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};
 	pipelineVertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount = bindings.size ();
