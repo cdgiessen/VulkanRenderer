@@ -292,7 +292,7 @@ std::shared_ptr<Mesh> createDoublePlane() {
 
 
 std::shared_ptr<Mesh> createFlatPlane(int dim, glm::vec3 size) {
-	Vertices_PosNormTexColor verts;
+	Vertices_PosNormTex verts;
 	std::vector<uint16_t> indices;
 
 	verts.resize((dim + 1) * (dim + 1));
@@ -302,10 +302,10 @@ std::shared_ptr<Mesh> createFlatPlane(int dim, glm::vec3 size) {
 	{
 		for (int j = 0; j <= dim; j++)
 		{
-			verts[(i)*(dim + 1) + j] = Vertex_PosNormTexColor(
+			verts[(i)*(dim + 1) + j] = Vertex_PosNormTex(
 				glm::vec3((double)i *(size.x) / (float)dim, 0,
 				(double)j *(size.z) / (float)dim),
-				glm::vec3(0, 1, 0), glm::vec2(i, j), glm::vec4(1));
+				glm::vec3(0, 1, 0), glm::vec2(i, j));
 		}
 	}
 

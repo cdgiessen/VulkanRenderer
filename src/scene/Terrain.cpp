@@ -1098,7 +1098,7 @@ void Terrain::DrawTerrain (VkCommandBuffer cmdBuff, bool ifWireframe)
 	    sizeof(TerrainPushConstant),
 	    &modelMatrixData);*/
 
-	if (wireframe)
+	if (ifWireframe)
 		wireframe->Bind (cmdBuff);
 	else
 		normal->Bind (cmdBuff);
