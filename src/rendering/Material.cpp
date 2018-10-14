@@ -22,6 +22,8 @@ VkDescriptorType GetVulkanDescriptorType (ResourceType type)
 			return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		case (ResourceType::cubemap):
 			return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		default:
+			return VK_DESCRIPTOR_TYPE_SAMPLER;
 	}
 }
 
@@ -35,6 +37,8 @@ VkShaderStageFlags GetVulkanShaderStageFlags (ResourceStages stage)
 			return VK_SHADER_STAGE_FRAGMENT_BIT;
 		case (ResourceStages::vertex_fragment):
 			return VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+		default:
+			return VK_SHADER_STAGE_ALL_GRAPHICS;
 	}
 }
 
