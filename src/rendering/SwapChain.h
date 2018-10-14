@@ -18,6 +18,7 @@ struct SwapChainSupportDetails
 	std::vector<VkSurfaceFormatKHR> formats;
 	std::vector<VkPresentModeKHR> present_modes;
 };
+class FrameGraph;
 
 class VulkanSwapChain
 {
@@ -29,7 +30,7 @@ class VulkanSwapChain
 
 	void RecreateSwapChain ();
 
-	void CreateFramebuffers (std::array<VkImageView, 3> depthImageViews, VkRenderPass renderPass);
+	void CreateFramebuffers (std::vector<int> order, std::array<VkImageView, 3> depthImageViews, VkRenderPass renderPass);
 
 	static SwapChainSupportDetails querySwapChainSupport (VkPhysicalDevice device, VkSurfaceKHR surface);
 

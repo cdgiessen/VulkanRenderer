@@ -225,7 +225,7 @@ std::vector<std::string> SubpassDescription::AttachmentsUsed (AttachmentMap cons
 }
 
 AttachmentUse::AttachmentUse (RenderPassAttachment rpAttach, int index)
-: format (rpAttach.format), index (index)
+: format (rpAttach.format), index (index), rpAttach(rpAttach)
 {
 }
 
@@ -263,13 +263,13 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 		}
 	}
 
-	std::vector<AttachmentUse> attachmentUses;
+	// std::vector<AttachmentUse> attachmentUses;
 	int index = 0;
 	for (auto& attach_name : used_attachment_names)
 	{
 		if (attachment_map.count (attach_name) == 1)
 		{
-			attachmentUses.push_back (AttachmentUse (attachment_map.at (attach_name), index++));
+			attachmentUses.emplace_back (attachment_map.at (attach_name), index++);
 		}
 	}
 
@@ -485,7 +485,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 			finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 		}
 
-		if (isLastPass && is_output && !is_depth_output)
+		if (presentColorAttachment && is_output && !is_depth_output)
 		{
 			initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -512,9 +512,10 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 }
 
 RenderPass::RenderPass (VkDevice device, RenderPassDescription desc, AttachmentMap& attachments)
+: desc (desc)
 {
 
-	auto renderPassInfo = desc.GetRenderPassCreate (attachments);
+	auto renderPassInfo = this->desc.GetRenderPassCreate (attachments);
 
 	if (vkCreateRenderPass (device, &renderPassInfo, nullptr, &rp) != VK_SUCCESS)
 	{
@@ -568,10 +569,11 @@ void FrameGraphBuilder::AddRenderPass (RenderPassDescription renderPass)
 	renderPasses[renderPass.name] = renderPass;
 }
 
-FrameGraph::FrameGraph (FrameGraphBuilder builder, VulkanDevice& device) : device (device)
+FrameGraph::FrameGraph (FrameGraphBuilder builder, VulkanDevice& device)
+: device (device), builder (builder)
 {
-	auto& lastPassDesc = builder.renderPasses.at (builder.lastPass);
-	lastPassDesc.isLastPass = true;
+	auto& lastPassDesc = this->builder.renderPasses.at (builder.lastPass);
+	lastPassDesc.presentColorAttachment = true;
 	// for (auto&[name, a] : builder.attachments) {
 	//	for(auto& sub : lastPassDesc.subpasses){
 	//		for (auto& a : sub.color_attachments) {
@@ -582,10 +584,10 @@ FrameGraph::FrameGraph (FrameGraphBuilder builder, VulkanDevice& device) : devic
 	//	}
 	//}
 
-	for (auto [name, pass] : builder.renderPasses)
+	for (auto [name, pass] : this->builder.renderPasses)
 	{
 
-		renderPasses.push_back (RenderPass (device.device, pass, builder.attachments));
+		renderPasses.emplace_back (device.device, pass, this->builder.attachments);
 	}
 }
 
@@ -612,4 +614,27 @@ void FrameGraph::FillCommandBuffer (
 	{
 		rp.BuildCmdBuf (cmdBuf, fb, offset, extent, clearValues);
 	}
+}
+
+std::vector<int> FrameGraph::OrderAttachments (std::vector<std::string> names)
+{
+	for (auto& rp : renderPasses)
+	{
+		if (rp.desc.name == builder.lastPass)
+		{
+			std::vector<int> out;
+			for (int i = 0; i < names.size (); i++)
+			{
+				for(int j = 0; j < rp.desc.attachmentUses.size(); j++)
+					if(rp.desc.attachmentUses.at(j).rpAttach.name == names.at(i))
+						out.push_back(rp.desc.attachmentUses.at(j).index);
+
+			}
+			
+			return out;
+		}
+		break;
+	}
+	return {};
+
 }

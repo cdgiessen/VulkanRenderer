@@ -95,7 +95,10 @@ VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::
 	std::array<VkImageView, 3> depthImageViews = { depthBuffer.at (0)->textureImageView,
 		depthBuffer.at (1)->textureImageView,
 		depthBuffer.at (2)->textureImageView };
-	vulkanSwapChain.CreateFramebuffers (depthImageViews, GetRelevantRenderpass (RenderableType::opaque));
+
+	auto imageViewOrder = frameGraph->OrderAttachments({"img_depth", "img_color"});
+
+	vulkanSwapChain.CreateFramebuffers (imageViewOrder, depthImageViews, GetRelevantRenderpass (RenderableType::opaque));
 
 	PrepareResources ();
 
@@ -211,6 +214,21 @@ void VulkanRenderer::RenderFrame ()
 	}
 }
 
+void VulkanRenderer::CreatePresentResources() {
+	ContrustFrameGraph();
+	// CreateRenderPass();
+
+	CreateDepthResources();
+	std::array<VkImageView, 3> depthImageViews = { depthBuffer.at(0)->textureImageView,
+		depthBuffer.at(1)->textureImageView,
+		depthBuffer.at(2)->textureImageView };
+
+	auto imageViewOrder = frameGraph->OrderAttachments({ "img_depth", "img_color" });
+
+	vulkanSwapChain.CreateFramebuffers(imageViewOrder, depthImageViews, GetRelevantRenderpass(RenderableType::opaque));
+
+}
+
 void VulkanRenderer::RecreateSwapChain ()
 {
 	Log::Debug << "Recreating SwapChain"
@@ -225,29 +243,18 @@ void VulkanRenderer::RecreateSwapChain ()
 	frameIndex = 0;
 	frameObjects.clear ();
 	vulkanSwapChain.RecreateSwapChain ();
-
-	ContrustFrameGraph ();
-	// CreateRenderPass ();
-	CreateDepthResources ();
-	std::array<VkImageView, 3> depthImageViews = { depthBuffer.at (0)->textureImageView,
-		depthBuffer.at (1)->textureImageView,
-		depthBuffer.at (2)->textureImageView };
-	vulkanSwapChain.CreateFramebuffers (depthImageViews, GetRelevantRenderpass (RenderableType::opaque));
-
+	
 	for (int i = 0; i < vulkanSwapChain.swapChainImages.size (); i++)
 	{
 		frameObjects.push_back (std::make_unique<FrameObject> (device, i));
 	}
+
+	CreatePresentResources();
 }
 
 
 
 void VulkanRenderer::ToggleWireframe () { wireframe = !wireframe; }
-
-void VulkanRenderer::CreateRenderPass ()
-{
-	// renderPass = std::make_unique<RenderPass>(device, vulkanSwapChain.swapChainImageFormat);
-}
 
 // 11
 void VulkanRenderer::CreateDepthResources ()

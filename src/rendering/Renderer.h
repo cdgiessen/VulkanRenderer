@@ -159,8 +159,9 @@ class VulkanRenderer
 
 	void ContrustFrameGraph ();
 
-	void CreateRenderPass ();
+//	void CreateRenderPass ();
 	void CreateDepthResources ();
+	void CreatePresentResources();
 
 	void PrepareDepthPass (int curFrameIndex);
 	void SubmitDepthPass (int curFrameIndex);

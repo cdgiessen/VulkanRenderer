@@ -241,7 +241,7 @@ struct AttachmentUse {
 	 VkAttachmentStoreOp stencilStoreOp;
 	 VkImageLayout initialLayout;
 	 VkImageLayout finalLayout;
-
+	 RenderPassAttachment rpAttach;
 };
 
 struct RenderPassDescription
@@ -252,7 +252,7 @@ struct RenderPassDescription
 
 	VkRenderPassCreateInfo GetRenderPassCreate (AttachmentMap& attachment_map);
 
-	bool isLastPass = false;
+	bool presentColorAttachment = false; 
 	std::string name;
 	// std::vector< std::string> attachments;
 	std::vector<SubpassDescription> subpasses;
@@ -262,6 +262,8 @@ struct RenderPassDescription
 	std::vector<VkAttachmentDescription> rp_attachments;
 	std::vector<VkSubpassDescription> sb_descriptions;
 	std::vector<VkSubpassDependency> sb_dependencies;
+
+	std::vector<AttachmentUse> attachmentUses;
 };
 using RenderPassMap = std::unordered_map<std::string, RenderPassDescription>;
 class VulkanRenderer;
@@ -280,6 +282,8 @@ struct RenderPass
 
 	std::vector<RenderFunc> subpassFuncs;
 	VkRenderPass rp;
+
+	RenderPassDescription desc;
 };
 
 struct FrameGraphBuilder
@@ -305,8 +309,12 @@ class FrameGraph
 
 	void FillCommandBuffer(VkCommandBuffer cmdBuf, VkFramebuffer fb, VkOffset2D offset, VkExtent2D extent, std::array<VkClearValue, 2>  clearValues);
 
+	std::vector<int> OrderAttachments(std::vector<std::string> names);
+
 	private:
 	VulkanDevice& device;
 
 	std::vector<RenderPass> renderPasses;
+
+	FrameGraphBuilder builder; //for later use
 };

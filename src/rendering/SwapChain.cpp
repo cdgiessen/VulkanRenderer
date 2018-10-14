@@ -5,6 +5,7 @@
 
 #include "../core/Logger.h"
 
+#include "FrameGraph.h"
 
 #include <limits>
 
@@ -129,14 +130,18 @@ void VulkanSwapChain::createImageViews ()
 	}
 }
 
-void VulkanSwapChain::CreateFramebuffers (std::array<VkImageView, 3> depthImageViews, VkRenderPass renderPass)
+void VulkanSwapChain::CreateFramebuffers (std::vector<int> order, std::array<VkImageView, 3> depthImageViews, VkRenderPass renderPass)
 {
 	swapChainFramebuffers.resize (swapChainImageViews.size ());
 
+
+
 	for (size_t i = 0; i < swapChainImageViews.size (); i++)
 	{
-		std::array<VkImageView, 2> attachments = { depthImageViews[i], swapChainImageViews[i] };
-
+		std::array<VkImageView, 2> attachments;
+		attachments.at(order.at(0)) = depthImageViews[i];
+		attachments.at(order.at(1)) = swapChainImageViews[i];
+		
 		VkFramebufferCreateInfo framebufferInfo = initializers::framebufferCreateInfo ();
 		framebufferInfo.renderPass = renderPass;
 		framebufferInfo.attachmentCount = static_cast<uint32_t> (attachments.size ());
