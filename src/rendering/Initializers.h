@@ -350,9 +350,9 @@ inline VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo (
 {
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutCreateInfo.setLayoutCount = layouts.size ();
+	pipelineLayoutCreateInfo.setLayoutCount = (uint32_t)layouts.size ();
 	pipelineLayoutCreateInfo.pSetLayouts = layouts.data ();
-	pipelineLayoutCreateInfo.pushConstantRangeCount = ranges.size ();
+	pipelineLayoutCreateInfo.pushConstantRangeCount = (uint32_t)ranges.size ();
 	pipelineLayoutCreateInfo.pPushConstantRanges = ranges.data ();
 	return pipelineLayoutCreateInfo;
 }
@@ -476,9 +476,9 @@ inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo (
 
 	VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};
 	pipelineVertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount = bindings.size ();
+	pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount = (uint32_t)bindings.size ();
 	pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions = bindings.data ();
-	pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount = attribs.size ();
+	pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount = (uint32_t)attribs.size ();
 	pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions = attribs.data ();
 
 	return pipelineVertexInputStateCreateInfo;
@@ -535,7 +535,7 @@ inline VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo (
 {
 	VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo{};
 	pipelineColorBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	pipelineColorBlendStateCreateInfo.attachmentCount = attachments.size ();
+	pipelineColorBlendStateCreateInfo.attachmentCount = (uint32_t)attachments.size ();
 	pipelineColorBlendStateCreateInfo.pAttachments = attachments.data ();
 	return pipelineColorBlendStateCreateInfo;
 }
@@ -559,8 +559,8 @@ inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo (std::v
 {
 	VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo{};
 	pipelineViewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	pipelineViewportStateCreateInfo.viewportCount = viewports.size ();
-	pipelineViewportStateCreateInfo.scissorCount = scissors.size ();
+	pipelineViewportStateCreateInfo.viewportCount = (uint32_t)viewports.size ();
+	pipelineViewportStateCreateInfo.scissorCount = (uint32_t)scissors.size ();
 	pipelineViewportStateCreateInfo.pViewports = viewports.data ();
 	pipelineViewportStateCreateInfo.pScissors = scissors.data ();
 

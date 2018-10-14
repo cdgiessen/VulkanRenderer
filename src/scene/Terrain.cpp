@@ -316,7 +316,7 @@ Terrain::Terrain (VulkanRenderer& renderer,
 
 
 	splatMapData = fastGraphUser.GetSplatMapPtr ();
-	splatMapSize = glm::pow (coords.sourceImageResolution, 2);
+	splatMapSize = (int)glm::pow (coords.sourceImageResolution, 2);
 
 
 	// terrain->terrainSplatMap = man->resourceMan.

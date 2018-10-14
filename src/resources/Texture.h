@@ -12,9 +12,7 @@
 #include <unordered_map>
 #include <tuple>
 
-#include <glm/common.hpp>
-
-#include <vulkan/vulkan.h>
+#include <glm/fwd.hpp>
 
 #include <json.hpp>
 
@@ -142,47 +140,6 @@ private:
 
 };
 
-
-
-// class Texture {
-// public:
-// 	uint32_t width = 0, height = 0;
-// 	VkDeviceSize texImageSize = 0;
-
-// 	std::vector<RGBA_pixel> pixels;
-
-// 	Texture(uint32_t width, uint32_t height);
-
-// };
-
-// class TextureArray {
-// public:
-// 	uint32_t width = 0, height = 0;
-// 	uint32_t layerCount = 1;
-// 	VkDeviceSize texImageSize = 0;
-// 	VkDeviceSize texImageSizePerTex = 0;
-
-// 	std::vector<RGBA_pixel> pixels;
-
-// 	TextureArray(uint32_t width, uint32_t height, uint32_t layerCount = 1);
-// };
-
-// class CubeMap {
-// public:
-
-// 	uint32_t width = 0, height = 0;
-// 	uint32_t layerCount = 6;
-// 	VkDeviceSize texImageSize = 0;
-// 	VkDeviceSize texImageSizePerTex = 0;
-
-// 	std::vector<RGBA_pixel> pixels;
-
-// 	CubeMap(uint32_t width, uint32_t height);
-
-// };
-
-
-
 class Manager {
 public:
 	Manager();
@@ -198,15 +155,6 @@ public:
 	TexID GetTexIDByName(std::string s);
 	TexResource GetTexResourceByID(int id);
 	
-	// std::shared_ptr<Texture> loadTextureFromFileRGBA(std::string filename);
-	// std::shared_ptr<Texture> loadTextureFromFileGreyOnly(std::string filename);
-	// //void loadFromNoiseUtilImage(utils::Image* image);
-	// std::shared_ptr<Texture> loadTextureFromGreyscalePixelData(int width, int height, float* pixels);
-	// std::shared_ptr<Texture> loadTextureFromRGBAPixelData(int width, int height, std::vector<RGBA_pixel>* pixels);
-
-	// std::shared_ptr<TextureArray> loadTextureArrayFromFile(std::string path, std::vector<std::string> filenames);
-
-	// std::shared_ptr<CubeMap> loadCubeMapFromFile(std::string filename, std::string fileExt);
 
 private:
 	std::atomic_int id_counter = 0;
@@ -215,13 +163,6 @@ private:
 	std::unordered_map<TexID, TexResource> textureResources;
 	std::vector<std::unique_ptr<TexData>> textureData;
 
-	// std::vector<std::shared_ptr<Texture>> textureHandles;
-
-	// std::shared_ptr<Texture> loadTextureFromFile(std::string filename, int imgType);
-	// std::shared_ptr<Texture> loadTextureFromPixelData(int width, int height); //doesn't copy pixels, but it sets up everthing else
-
-	//std::shared_ptr<Texture> errorImage;
-	//std::vector<RGBA_pixel> errorImageData;
 };
 
 }

@@ -544,6 +544,7 @@ void VulkanRenderer::PrepareResources ()
 	// spotLightsBuffer->CreateUniformBuffer(sizeof(SpotLight) * settings.spotLightCount);
 
 	SetupGlobalDescriptorSet ();
+	UpdateGlobalDescriptorSet();
 	SetupLightingDescriptorSet ();
 
 
@@ -607,11 +608,6 @@ void VulkanRenderer::SetupGlobalDescriptorSet ()
 
 	frameDataDescriptorSet = frameDataDescriptor->CreateDescriptorSet ();
 
-	std::vector<DescriptorUse> writes;
-	writes.push_back (DescriptorUse (0, 1, globalVariableBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, cameraDataBuffer->resource));
-	frameDataDescriptor->UpdateDescriptorSet (frameDataDescriptorSet, writes);
-
 	auto desLayout = frameDataDescriptor->GetLayout ();
 	auto pipelineLayoutInfo = initializers::pipelineLayoutCreateInfo (&desLayout, 1);
 
@@ -619,6 +615,14 @@ void VulkanRenderer::SetupGlobalDescriptorSet ()
 	{
 		throw std::runtime_error ("failed to create pipeline layout!");
 	}
+}
+
+void VulkanRenderer::UpdateGlobalDescriptorSet() {
+	std::vector<DescriptorUse> writes;
+	writes.push_back(DescriptorUse(0, 1, globalVariableBuffer->resource));
+	writes.push_back(DescriptorUse(1, 1, cameraDataBuffer->resource));
+	frameDataDescriptor->UpdateDescriptorSet(frameDataDescriptorSet, writes);
+
 }
 
 void VulkanRenderer::SetupLightingDescriptorSet ()
@@ -685,7 +689,7 @@ void VulkanRenderer::SubmitGraphicsCommandBufferAndWait (VkCommandBuffer command
 	if (commandBuffer == VK_NULL_HANDLE) return;
 
 	VkFence fence;
-	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo (VK_FLAGS_NONE);
+	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo ();
 	VK_CHECK_RESULT (vkCreateFence (device.device, &fenceInfo, nullptr, &fence));
 	graphicsPrimaryCommandPool.SubmitPrimaryCommandBuffer (commandBuffer, fence);
 

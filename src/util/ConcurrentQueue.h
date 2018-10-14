@@ -98,7 +98,7 @@ template <typename T>
 int ConcurrentQueue<T>::size()
 {
 	std::unique_lock<std::mutex> mlock(m_mutex);
-	return m_queue.size();
+	return (int)m_queue.size();
 }
 
 template <typename T>

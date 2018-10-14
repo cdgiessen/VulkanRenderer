@@ -957,31 +957,31 @@ void ProcTerrainNodeGraph::SetNodeInternalValueByID(InternalGraph::NodeID intern
 
 void Node::AddInputSlot(ConnectionType type, std::string name)
 {
-	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40), type, name));
+	inputSlots.push_back(InputConnectionSlot((int)inputSlots.size(), ImVec2(0, 40), type, name));
 }
 void Node::AddInputSlot(ConnectionType type, std::string name, float defaultValue, float sliderStepSize = 0.01f, float lowerBound = 0.0f, float upperBound = 0.0f)
 {
-	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40), type, name, defaultValue, sliderStepSize, lowerBound, upperBound));
+	inputSlots.push_back(InputConnectionSlot((int)inputSlots.size(), ImVec2(0, 40), type, name, defaultValue, sliderStepSize, lowerBound, upperBound));
 }
 
 void Node::AddInputSlot(ConnectionType type, std::string name, int defaultValue, float sliderStepSize = 0.1f, float lowerBound = 0.0f, float upperBound = 0.0f)
 {
-	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40), type, name, defaultValue, sliderStepSize, lowerBound, upperBound));
+	inputSlots.push_back(InputConnectionSlot((int)inputSlots.size(), ImVec2(0, 40), type, name, defaultValue, sliderStepSize, lowerBound, upperBound));
 }
 
 void Node::AddInputSlot(ConnectionType type, std::string name, glm::vec2 defaultValue)
 {
-	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40), type, name, defaultValue));
+	inputSlots.push_back(InputConnectionSlot((int)inputSlots.size(), ImVec2(0, 40), type, name, defaultValue));
 }
 
 void Node::AddInputSlot(ConnectionType type, std::string name, glm::vec3 defaultValue)
 {
-	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40), type, name, defaultValue));
+	inputSlots.push_back(InputConnectionSlot((int)inputSlots.size(), ImVec2(0, 40), type, name, defaultValue));
 }
 
 void Node::AddInputSlot(ConnectionType type, std::string name, glm::vec4 defaultValue)
 {
-	inputSlots.push_back(InputConnectionSlot(inputSlots.size(), ImVec2(0, 40), type, name, defaultValue));
+	inputSlots.push_back(InputConnectionSlot((int)inputSlots.size(), ImVec2(0, 40), type, name, defaultValue));
 }
 
 OutputNode::OutputNode(InternalGraph::GraphPrototype& graph) : Node("Output", ConnectionType::Float)

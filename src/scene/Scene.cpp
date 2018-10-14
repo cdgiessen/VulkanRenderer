@@ -156,8 +156,8 @@ void Scene::UpdateScene() {
 	renderer.UpdateRenderResources(gd, cd, directionalLights, pointLights, spotLights);
 
 	if (walkOnGround) {
-		float groundHeight = terrainManager->GetTerrainHeightAtLocation(camera->Position.x, camera->Position.z) + 2.0f;
-		float height = camera->Position.y;
+		float groundHeight = (float)terrainManager->GetTerrainHeightAtLocation(camera->Position.x, camera->Position.z) + 2.0f;
+		float height = (float)camera->Position.y;
 
 		if (pressedControllerJumpButton && !releasedControllerJumpButton) {
 			if (Input::IsJoystickConnected(0) && Input::GetControllerButton(0, 0)) {

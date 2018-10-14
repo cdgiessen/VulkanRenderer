@@ -265,7 +265,7 @@ VkBool32 CommandPool::SubmitOneTimeUseCommandBuffer(VkCommandBuffer cmdBuffer, V
 	EndBufferRecording(cmdBuffer);
 
 	if (fence == nullptr) {
-		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo();
 		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 	}
 
@@ -278,7 +278,7 @@ VkBool32 CommandPool::SubmitPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, VkFe
 	EndBufferRecording(cmdBuffer);
 
 	if (fence == nullptr) {
-		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo(VK_FLAGS_NONE);
+		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo();
 		VK_CHECK_RESULT(vkCreateFence(device.device, &fenceInfo, nullptr, &fence))
 	}
 

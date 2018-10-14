@@ -6,6 +6,8 @@
       ],
       "name": "x64-Debug",
       "includePath": [
+        "${workspaceRoot}\\..\\..\\src\\vcpkg\\installed\\x64-windows\\include\\nlohmann",
+        "${workspaceRoot}\\..\\..\\src\\vcpkg\\installed\\x64-windows\\include",
         "${env.INCLUDE}",
         "${env.VULKAN_SDK}/Include"
       ],
@@ -15,14 +17,17 @@
         "UNICODE",
         "_UNICODE"
       ],
+      "compilerSwitches": "/std:c++17",
       "intelliSenseMode": "windows-msvc-x64"
     },
     {
       "inheritEnvironments": [
         "msvc_x64"
       ],
-      "name": "x64-Release",
+      "name": "x64-RelWithDebInfo",
       "includePath": [
+        "${workspaceRoot}\\..\\..\\src\\vcpkg\\installed\\x64-windows\\include\\nlohmann",
+        "${workspaceRoot}\\..\\..\\src\\vcpkg\\installed\\x64-windows\\include",
         "${env.INCLUDE}",
         "${env.VULKAN_SDK}/Include"
       ],
@@ -32,6 +37,27 @@
         "UNICODE",
         "_UNICODE"
       ],
+      "compilerSwitches": "/std:c++17",
+      "intelliSenseMode": "windows-msvc-x64"
+    },
+    {
+      "inheritEnvironments": [
+        "msvc_x64"
+      ],
+      "name": "x64-Release",
+      "includePath": [
+        "${workspaceRoot}\\..\\..\\src\\vcpkg\\installed\\x64-windows\\include\\nlohmann",
+        "${workspaceRoot}\\..\\..\\src\\vcpkg\\installed\\x64-windows\\include",
+        "${env.INCLUDE}",
+        "${env.VULKAN_SDK}/Include"
+      ],
+      "defines": [
+        "WIN32",
+        "NDEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "compilerSwitches": "/std:c++17",
       "intelliSenseMode": "windows-msvc-x64"
     }
   ]

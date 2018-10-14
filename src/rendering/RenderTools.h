@@ -53,8 +53,3 @@ std::string errorString(const VkResult errorCode);
 		assert(res == VK_SUCCESS);																								\
 	}																															\
 }
-
-// Custom define for better code readability
-#define VK_FLAGS_NONE 0
-// Default fence timeout in nanoseconds
-#define DEFAULT_FENCE_TIMEOUT 100000000000

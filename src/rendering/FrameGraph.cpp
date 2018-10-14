@@ -274,7 +274,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	}
 
 	// map of attchment names and their index, for quick access - rather than a raw vector
-	std::unordered_map<std::string, uint32_t> used_attachments;
+	std::unordered_map<std::string, int32_t> used_attachments;
 	index = 0;
 	for (auto& name : used_attachment_names)
 		used_attachments[name] = index++;
@@ -287,24 +287,24 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 		VulkanSubpassDescription vulkan_desc;
 		for (auto& name : rp_subpass.input_attachments)
 			vulkan_desc.ar_inputs.push_back (
-			    { used_attachments.at (name), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
+			    { (uint32_t)used_attachments.at (name), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
 
 		for (auto& name : rp_subpass.color_attachments)
 			vulkan_desc.ar_colors.push_back (
-			    { used_attachments.at (name), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+			    { (uint32_t)used_attachments.at (name), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
 
 		for (auto& name : rp_subpass.resolve_attachments)
 			vulkan_desc.ar_resolves.push_back (
-			    { used_attachments.at (name), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+			    { (uint32_t)used_attachments.at (name), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
 
 		for (auto& name : rp_subpass.preserve_attachments)
-			vulkan_desc.ar_preserves.push_back (used_attachments.at (name));
+			vulkan_desc.ar_preserves.push_back ((uint32_t)used_attachments.at (name));
 
 		if (rp_subpass.depth_stencil_attachment.has_value ())
 		{
 			vulkan_desc.has_depth_stencil = true;
 			vulkan_desc.ar_depth_stencil = {
-				used_attachments.at (rp_subpass.depth_stencil_attachment.value ()), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+				(uint32_t)used_attachments.at (rp_subpass.depth_stencil_attachment.value ()), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 			};
 		}
 
@@ -340,7 +340,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 		bool is_depth_output = false;
 
 		int subpass_earliest_use = 0;
-		int subpass_latest_use = vulkan_sb_descriptions.size () - 1;
+		int subpass_latest_use = (int)vulkan_sb_descriptions.size () - 1;
 
 		VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
 		VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL;

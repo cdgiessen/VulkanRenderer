@@ -113,8 +113,6 @@
 //    VkRenderPass renderPass;
 //};
 
-
-
 using RenderFunc = std::function<void(VkCommandBuffer cmdBuf)>;
 
 struct RenderPassAttachment
@@ -137,8 +135,8 @@ struct SubpassDependency
 	std::string src_subpass;
 	std::string dst_subpass;
 
-	uint32_t dependentSubpass;
-	uint32_t sourceSubpass;
+	int32_t dependentSubpass;
+	int32_t sourceSubpass;
 	VkPipelineStageFlags srcStageMask;
 	VkPipelineStageFlags dstStageMask;
 	VkAccessFlags srcAccessMask;
@@ -183,7 +181,7 @@ struct SubpassDescription
 	std::vector<std::string> AttachmentsUsed (AttachmentMap const& attachment_map) const;
 
 	std::string name;
-	uint32_t index;
+	int32_t index;
 	std::vector<std::string> subpass_dependencies;
 
 	std::vector<std::string> input_attachments;
@@ -209,14 +207,14 @@ struct VulkanSubpassDescription
 	{
 		desc.flags = 0;
 
-		desc.inputAttachmentCount = ar_inputs.size ();
+		desc.inputAttachmentCount = (uint32_t)ar_inputs.size ();
 		desc.pInputAttachments = ar_inputs.data ();
 
-		desc.colorAttachmentCount = ar_colors.size ();
+		desc.colorAttachmentCount = (uint32_t)ar_colors.size ();
 		desc.pColorAttachments = ar_colors.data ();
 		desc.pResolveAttachments = ar_resolves.data ();
 
-		desc.preserveAttachmentCount = ar_preserves.size ();
+		desc.preserveAttachmentCount = (uint32_t)ar_preserves.size ();
 		desc.pPreserveAttachments = ar_preserves.data ();
 
 		if (has_depth_stencil) {

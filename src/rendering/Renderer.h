@@ -47,47 +47,6 @@ struct Transform
 	glm::quat rot = glm::quat (1, 0, 0, 0);
 };
 
-// class ViewCamera
-// {
-
-// 	struct Orthographic
-// 	{
-// 		float size = 1.0f;
-// 	};
-
-// 	struct Perspective
-// 	{
-// 		float fov = 1.0f;
-// 	};
-
-// 	struct ClipPlanes
-// 	{
-// 		float clip_near = 0.01f;
-// 		float clip_far = 10000.0f;
-// 	} clipPlanes;
-
-// 	std::variant<Orthographic, Perspective> projectionType = Orthographic{};
-
-
-// 	Transform transform;
-// };
-
-// class ViewSurface
-// {
-// 	ViewCamera& cam;
-// 	struct Viewport
-// 	{
-// 		int x = 0, y = 0;
-// 		int width = 1, height = 1;
-// 	} viewport;
-// 	struct Sciossor
-// 	{
-// 		int offsetX = 0, offsetY = 0;
-// 		int width = 1, height = 1;
-// 	} scissor;
-
-// 	// RenderPass& renderPass;
-// };
 
 enum class RenderableType
 {
@@ -153,21 +112,18 @@ class VulkanRenderer
 	    std::vector<SpotLight> spotLights);
 	void RenderFrame ();
 
-	// void ReloadRenderer(GLFWwindow *window);
-
 	void RecreateSwapChain ();
 
 	void ContrustFrameGraph ();
 
-//	void CreateRenderPass ();
 	void CreateDepthResources ();
 	void CreatePresentResources();
 
 	void PrepareDepthPass (int curFrameIndex);
 	void SubmitDepthPass (int curFrameIndex);
 
-	void BuildDepthPass (VkCommandBuffer cmdBuf);
-	void BuildCommandBuffers (VkCommandBuffer cmdBuf);
+	//void BuildDepthPass (VkCommandBuffer cmdBuf);
+	//void BuildCommandBuffers (VkCommandBuffer cmdBuf);
 
 	void PrepareFrame (int curFrameIndex);
 	void SubmitFrame (int curFrameIndex);
@@ -264,8 +220,9 @@ class VulkanRenderer
 
 	std::array<VkClearValue, 2> GetFramebufferClearValues ();
 
-
 	void SetupGlobalDescriptorSet ();
+	void UpdateGlobalDescriptorSet();
+	
 	void SetupLightingDescriptorSet ();
 	void SaveScreenshot ();
 };

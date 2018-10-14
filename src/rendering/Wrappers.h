@@ -22,12 +22,17 @@
 #include "../util/ConcurrentQueue.h"
 
 
+// Custom define for better code readability
+
+// Default fence timeout in nanoseconds
+constexpr long DEFAULT_FENCE_TIMEOUT = 100000000000;
+
 class VulkanDevice;
 
 class VulkanFence {
 public:
-	VulkanFence(VulkanDevice& device, long int timeout = DEFAULT_FENCE_TIMEOUT,
-		VkFenceCreateFlags flags = VK_FLAGS_NONE);
+	VulkanFence(VulkanDevice& device, long timeout = DEFAULT_FENCE_TIMEOUT,
+		VkFenceCreateFlags flags = 0);
 	~VulkanFence();
 
 	bool Check();

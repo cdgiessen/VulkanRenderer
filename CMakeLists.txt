@@ -18,6 +18,8 @@ project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
 
 #libraries
 
+#find_package(nlohmann_json 3.1.0 REQUIRED)
+
 find_package(glfw3 REQUIRED)
 
 find_package(glm REQUIRED)
@@ -68,15 +70,16 @@ src/gui/InternalGraph.cpp
 src/rendering/Buffer.cpp
 src/rendering/Device.cpp
 src/rendering/Descriptor.cpp
+src/rendering/FrameGraph.cpp
 src/rendering/Material.cpp
 src/rendering/Model.cpp
 src/rendering/Pipeline.cpp
 src/rendering/Renderer.cpp
-src/rendering/FrameGraph.cpp
 src/rendering/RenderTools.cpp
 src/rendering/Shader.cpp
 src/rendering/SwapChain.cpp
 src/rendering/Texture.cpp
+src/rendering/ViewCamera.cpp
 src/rendering/Wrappers.cpp
 
 src/resources/Material.cpp
@@ -85,6 +88,7 @@ src/resources/Texture.cpp
 src/resources/ResourceManager.cpp
 
 src/scene/Camera.cpp
+src/scene/Entity.cpp
 src/scene/GameObject.cpp
 src/scene/InstancedSceneObject.cpp
 src/scene/Scene.cpp
@@ -105,6 +109,11 @@ third-party/FastNoiseSIMD/FastNoiseSIMD_sse2.cpp
 third-party/FastNoiseSIMD/FastNoiseSIMD_sse41.cpp
 )
 
+if(MSVC)
+	target_compile_options(VulkanApp PRIVATE "/std:c++17")
+	target_compile_options(VulkanApp PRIVATE "/permissive-")
+	#target_compile_options(VulkanApp PRIVATE "/Debug:fastlink")
+endif(MSVC)
 
 #json
 target_include_directories(VulkanApp PUBLIC third-party/json)
@@ -141,13 +150,11 @@ endif(UNIX)
 #cotire(VulkanApp)
 
 if(MSVC)
-	add_compile_options("/permissive-")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive-")
-	add_compile_options("/Debug:fastlink")
+	#add_compile_options("/Debug:fastlink")
 	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Debug:fastlink")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")	
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
-	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+	#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")	
+	#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+	#set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
 endif(MSVC)
 
 
