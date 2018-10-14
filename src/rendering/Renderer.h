@@ -239,7 +239,7 @@ class VulkanRenderer
 	DescriptorSet dynamicTransformDescriptorSet;
 	std::unique_ptr<VulkanBufferUniformDynamic> dynamicTransformBuffer;
 
-	std::array<std::shared_ptr<VulkanTexture>,2> depthBuffer;
+	std::array<std::shared_ptr<VulkanTexture>, 3> depthBuffer;
 
 	int workerThreadCount = 3;
 

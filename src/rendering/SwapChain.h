@@ -1,14 +1,14 @@
 #pragma once
 
-#include <vector>
+#include <memory>
 #include <set>
 #include <string>
-#include <memory>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 
-#include "Initializers.h"
 #include "Device.h"
+#include "Initializers.h"
 
 class Window;
 
@@ -19,18 +19,19 @@ struct SwapChainSupportDetails
 	std::vector<VkPresentModeKHR> present_modes;
 };
 
-class VulkanSwapChain {
-public:
-	VulkanSwapChain(VulkanDevice& device, Window& window);
-	~VulkanSwapChain();
+class VulkanSwapChain
+{
+	public:
+	VulkanSwapChain (VulkanDevice& device, Window& window);
+	~VulkanSwapChain ();
 
-	//void InitSwapChain(Window* window);
+	// void InitSwapChain(Window* window);
 
-	void RecreateSwapChain();
+	void RecreateSwapChain ();
 
-	void CreateFramebuffers(std::array< VkImageView, 2> depthImageViews, VkRenderPass renderPass);
+	void CreateFramebuffers (std::array<VkImageView, 3> depthImageViews, VkRenderPass renderPass);
 
-	static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
+	static SwapChainSupportDetails querySwapChainSupport (VkPhysicalDevice device, VkSurfaceKHR surface);
 
 	VkSwapchainKHR swapChain = VK_NULL_HANDLE;
 	VkFormat swapChainImageFormat;
@@ -41,11 +42,10 @@ public:
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 
 	// Active frame buffer index -- not likely needed (as having multiple in flight is useful)
-	//uint32_t currentBuffer = 0;
+	// uint32_t currentBuffer = 0;
 
-private:
-
-	VulkanDevice & device;
+	private:
+	VulkanDevice& device;
 	VkInstance instance;
 	VkPhysicalDevice physicalDevice;
 
@@ -53,12 +53,12 @@ private:
 
 	SwapChainSupportDetails details;
 
-	void createSwapChain();
-	void createImageViews();
+	void createSwapChain ();
+	void createImageViews ();
 
-	void DestroySwapchainResources();
+	void DestroySwapchainResources ();
 
-	VkPresentModeKHR chooseSwapPresentMode();
-	VkSurfaceFormatKHR chooseSwapSurfaceFormat();
-	VkExtent2D chooseSwapExtent();
+	VkPresentModeKHR chooseSwapPresentMode ();
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat ();
+	VkExtent2D chooseSwapExtent ();
 };

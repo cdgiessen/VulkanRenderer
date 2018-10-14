@@ -92,9 +92,10 @@ VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::
 	// CreateRenderPass();
 
 	CreateDepthResources ();
-	std::array< VkImageView, 2> depthImageViews = { depthBuffer.at(0)->textureImageView , depthBuffer.at(0)->textureImageView };
-	vulkanSwapChain.CreateFramebuffers(
-		depthImageViews, GetRelevantRenderpass(RenderableType::opaque));
+	std::array<VkImageView, 3> depthImageViews = { depthBuffer.at (0)->textureImageView,
+		depthBuffer.at (1)->textureImageView,
+		depthBuffer.at (2)->textureImageView };
+	vulkanSwapChain.CreateFramebuffers (depthImageViews, GetRelevantRenderpass (RenderableType::opaque));
 
 	PrepareResources ();
 
@@ -171,13 +172,16 @@ void VulkanRenderer::RenderFrame ()
 	// BuildDepthPass(frameObjects.at(frameIndex)->GetDepthCmdBuf());
 	// SubmitDepthPass(frameIndex);
 
-	//PrepareFrame (frameIndex);
-	//BuildCommandBuffers (frameObjects.at (frameIndex)->GetPrimaryCmdBuf ());
-	//SubmitFrame (frameIndex);
+	// PrepareFrame (frameIndex);
+	// BuildCommandBuffers (frameObjects.at (frameIndex)->GetPrimaryCmdBuf ());
+	// SubmitFrame (frameIndex);
 
 	PrepareFrame (frameIndex);
-	frameGraph->FillCommandBuffer(frameObjects.at(frameIndex)->GetPrimaryCmdBuf(), vulkanSwapChain.swapChainFramebuffers[frameIndex], { 0, 0 },
-		vulkanSwapChain.swapChainExtent, GetFramebufferClearValues());
+	frameGraph->FillCommandBuffer (frameObjects.at (frameIndex)->GetPrimaryCmdBuf (),
+	    vulkanSwapChain.swapChainFramebuffers[frameIndex],
+	    { 0, 0 },
+	    vulkanSwapChain.swapChainExtent,
+	    GetFramebufferClearValues ());
 	SubmitFrame (frameIndex);
 
 	frameIndex = (frameIndex + 1) % frameObjects.size ();
@@ -212,8 +216,8 @@ void VulkanRenderer::RecreateSwapChain ()
 	Log::Debug << "Recreating SwapChain"
 	           << "\n";
 
-	for(int i =0; i < 2; i++)
-		depthBuffer.at(i).reset();
+	for (int i = 0; i < 3; i++)
+		depthBuffer.at (i).reset ();
 
 	frameGraph.reset ();
 	// renderPass.reset();
@@ -222,12 +226,13 @@ void VulkanRenderer::RecreateSwapChain ()
 	frameObjects.clear ();
 	vulkanSwapChain.RecreateSwapChain ();
 
-	ContrustFrameGraph();
-	//CreateRenderPass ();
+	ContrustFrameGraph ();
+	// CreateRenderPass ();
 	CreateDepthResources ();
-	std::array< VkImageView,2> depthImageViews = { depthBuffer.at(0)->textureImageView , depthBuffer.at(0)->textureImageView };
-	vulkanSwapChain.CreateFramebuffers (
-		depthImageViews, GetRelevantRenderpass (RenderableType::opaque));
+	std::array<VkImageView, 3> depthImageViews = { depthBuffer.at (0)->textureImageView,
+		depthBuffer.at (1)->textureImageView,
+		depthBuffer.at (2)->textureImageView };
+	vulkanSwapChain.CreateFramebuffers (depthImageViews, GetRelevantRenderpass (RenderableType::opaque));
 
 	for (int i = 0; i < vulkanSwapChain.swapChainImages.size (); i++)
 	{
@@ -248,10 +253,10 @@ void VulkanRenderer::CreateRenderPass ()
 void VulkanRenderer::CreateDepthResources ()
 {
 	VkFormat depthFormat = FindDepthFormat ();
-	//depthFormat = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
-	for(int i = 0; i < 2; i++)
-	depthBuffer.at(i) = textureManager.CreateDepthImage (
-	    depthFormat, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+	// depthFormat = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
+	for (int i = 0; i < 3; i++)
+		depthBuffer.at (i) = textureManager.CreateDepthImage (
+		    depthFormat, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
 }
 
 VkFormat VulkanRenderer::FindSupportedFormat (
@@ -277,7 +282,7 @@ VkFormat VulkanRenderer::FindSupportedFormat (
 
 VkFormat VulkanRenderer::FindDepthFormat ()
 {
-//	return FindSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+	//	return FindSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
 	return FindSupportedFormat ({ VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
 	    VK_IMAGE_TILING_OPTIMAL,
 	    VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
@@ -385,7 +390,7 @@ void VulkanRenderer::ContrustFrameGraph ()
 //
 //}
 //
-//void VulkanRenderer::BuildCommandBuffers (VkCommandBuffer cmdBuf)
+// void VulkanRenderer::BuildCommandBuffers (VkCommandBuffer cmdBuf)
 //{
 //
 //
@@ -417,8 +422,8 @@ void VulkanRenderer::ContrustFrameGraph ()
 //	    nullptr);
 //
 //	VkViewport viewport = initializers::viewport (
-//	    (float)vulkanSwapChain.swapChainExtent.width, (float)vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f);
-//	vkCmdSetViewport (cmdBuf, 0, 1, &viewport);
+//	    (float)vulkanSwapChain.swapChainExtent.width, (float)vulkanSwapChain.swapChainExtent.height,
+// 0.0f, 1.0f); 	vkCmdSetViewport (cmdBuf, 0, 1, &viewport);
 //
 //	VkRect2D scissor = initializers::rect2D (
 //	    vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, 0, 0);

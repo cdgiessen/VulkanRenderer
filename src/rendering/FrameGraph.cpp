@@ -224,15 +224,15 @@ std::vector<std::string> SubpassDescription::AttachmentsUsed (AttachmentMap cons
 	return attachments;
 }
 
-AttachmentUse::AttachmentUse (RenderPassAttachment rpAttach, int index) : 
-	format(rpAttach.format), index(index)
+AttachmentUse::AttachmentUse (RenderPassAttachment rpAttach, int index)
+: format (rpAttach.format), index (index)
 {
-
 }
 
-VkAttachmentDescription AttachmentUse::Get () {
+VkAttachmentDescription AttachmentUse::Get ()
+{
 	VkAttachmentDescription desc;
-	desc.flags = 0; //doesn't alias
+	desc.flags = 0; // doesn't alias
 	desc.format = format;
 	desc.samples = sampleCount;
 	desc.loadOp = loadOp;
@@ -340,60 +340,73 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 		bool is_depth_output = false;
 
 		int subpass_earliest_use = 0;
-		int subpass_latest_use = vulkan_sb_descriptions.size() - 1;
+		int subpass_latest_use = vulkan_sb_descriptions.size () - 1;
 
 		VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
 		VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-		for (int i = 0; i < vulkan_sb_descriptions.size(); i++)
+		for (int i = 0; i < vulkan_sb_descriptions.size (); i++)
 		{
-			for (auto& ref : vulkan_sb_descriptions.at(i).ar_inputs)
+			for (auto& ref : vulkan_sb_descriptions.at (i).ar_inputs)
 			{
-				if (ref.attachment == attach.index && subpass_earliest_use > ref.attachment) {
+				if (ref.attachment == attach.index && subpass_earliest_use > ref.attachment)
+				{
 					subpass_earliest_use = i;
 				}
-				if (ref.attachment == attach.index && subpass_latest_use < ref.attachment) {
+				if (ref.attachment == attach.index && subpass_latest_use < ref.attachment)
+				{
 					subpass_latest_use = i;
 				}
 				is_input = true;
 				initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			}
-			for (auto& ref : vulkan_sb_descriptions.at(i).ar_colors)
+			for (auto& ref : vulkan_sb_descriptions.at (i).ar_colors)
 			{
-				if (ref.attachment == attach.index && subpass_earliest_use > ref.attachment) {
+				if (ref.attachment == attach.index && subpass_earliest_use > ref.attachment)
+				{
 					subpass_earliest_use = i;
 				}
-				if (ref.attachment == attach.index && subpass_latest_use < ref.attachment) {
+				if (ref.attachment == attach.index && subpass_latest_use < ref.attachment)
+				{
 					subpass_latest_use = i;
 				}
 				is_output = true;
 				initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 				finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 			}
-			for (auto& ref : vulkan_sb_descriptions.at(i).ar_resolves)
+			for (auto& ref : vulkan_sb_descriptions.at (i).ar_resolves)
 			{
-				if (ref.attachment == attach.index && subpass_earliest_use > ref.attachment) {
+				if (ref.attachment == attach.index && subpass_earliest_use > ref.attachment)
+				{
 					subpass_earliest_use = i;
 				}
-				if (ref.attachment == attach.index && subpass_latest_use < ref.attachment) {
+				if (ref.attachment == attach.index && subpass_latest_use < ref.attachment)
+				{
 					subpass_latest_use = i;
 				}
 			}
-			for (auto& ref : vulkan_sb_descriptions.at(i).ar_preserves)
+			for (auto& ref : vulkan_sb_descriptions.at (i).ar_preserves)
 			{
-				if (ref == attach.index && subpass_earliest_use > ref) {
+				if (ref == attach.index && subpass_earliest_use > ref)
+				{
 					subpass_earliest_use = i;
 				}
-				if (ref == attach.index && subpass_latest_use < ref) {
+				if (ref == attach.index && subpass_latest_use < ref)
+				{
 					subpass_latest_use = i;
 				}
 			}
-			if (vulkan_sb_descriptions.at(i).has_depth_stencil && vulkan_sb_descriptions.at(i).ar_depth_stencil.attachment == attach.index)
+			if (vulkan_sb_descriptions.at (i).has_depth_stencil &&
+			    vulkan_sb_descriptions.at (i).ar_depth_stencil.attachment == attach.index)
 			{
-				if (vulkan_sb_descriptions.at(i).ar_depth_stencil.attachment == attach.index && subpass_earliest_use > vulkan_sb_descriptions.at(i).ar_depth_stencil.attachment) {
+				if (vulkan_sb_descriptions.at (i).ar_depth_stencil.attachment == attach.index &&
+				    subpass_earliest_use > vulkan_sb_descriptions.at (i).ar_depth_stencil.attachment)
+				{
 					subpass_earliest_use = i;
 				}
-				if (vulkan_sb_descriptions.at(i).ar_depth_stencil.attachment == attach.index && subpass_latest_use < vulkan_sb_descriptions.at(i).ar_depth_stencil.attachment) {
+				if (vulkan_sb_descriptions.at (i).ar_depth_stencil.attachment == attach.index &&
+				    subpass_latest_use < vulkan_sb_descriptions.at (i).ar_depth_stencil.attachment)
+				{
 					subpass_latest_use = i;
 				}
 				is_depth_image = true;
@@ -404,69 +417,82 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 
 		attach.sampleCount = VK_SAMPLE_COUNT_1_BIT;
 		attach.loadOp = VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
-		if (is_input) {
+		if (is_input)
+		{
 			attach.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 		}
-		else {
+		else
+		{
 			attach.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		}
 
 		attach.storeOp = VK_ATTACHMENT_STORE_OP_MAX_ENUM;
-		if (is_output) {
+		if (is_output)
+		{
 			attach.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		}
-		else {
+		else
+		{
 			attach.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		}
-		
+
 		attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
-		if (is_depth_input) {
+		if (is_depth_input)
+		{
 			attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 		}
-		else {
+		else
+		{
 			attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		}
 
 		attach.stencilStoreOp = VK_ATTACHMENT_STORE_OP_MAX_ENUM;
-		if (is_depth_output) {
+		if (is_depth_output)
+		{
 			attach.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
 		}
-		else {
+		else
+		{
 			attach.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		}
 
-		//defaults
-		if (attach.loadOp == VK_ATTACHMENT_LOAD_OP_MAX_ENUM) {
+		// defaults
+		if (attach.loadOp == VK_ATTACHMENT_LOAD_OP_MAX_ENUM)
+		{
 			attach.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		}
-		if (attach.storeOp == VK_ATTACHMENT_STORE_OP_MAX_ENUM) {
+		if (attach.storeOp == VK_ATTACHMENT_STORE_OP_MAX_ENUM)
+		{
 			attach.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		}
-		if (attach.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_MAX_ENUM) {
+		if (attach.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_MAX_ENUM)
+		{
 			attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		}
-		if (attach.stencilStoreOp == VK_ATTACHMENT_STORE_OP_MAX_ENUM) {
+		if (attach.stencilStoreOp == VK_ATTACHMENT_STORE_OP_MAX_ENUM)
+		{
 			attach.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		}
-		
-		if (is_depth_image && is_depth_input) {
+
+		if (is_depth_image && is_depth_input)
+		{
 			initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 			finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 		}
-		if (is_depth_image && is_depth_output) {
+		if (is_depth_image && is_depth_output)
+		{
 			initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 		}
-		
-		if (isLastPass && is_output) {
+
+		if (isLastPass && is_output && !is_depth_output)
+		{
 			initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 		}
 
 		attach.initialLayout = initialLayout;
 		attach.finalLayout = finalLayout;
-		
-		
 	}
 
 	for (auto& a : attachmentUses)
@@ -544,9 +570,9 @@ void FrameGraphBuilder::AddRenderPass (RenderPassDescription renderPass)
 
 FrameGraph::FrameGraph (FrameGraphBuilder builder, VulkanDevice& device) : device (device)
 {
-	auto& lastPassDesc = builder.renderPasses.at(builder.lastPass);
+	auto& lastPassDesc = builder.renderPasses.at (builder.lastPass);
 	lastPassDesc.isLastPass = true;
-	//for (auto&[name, a] : builder.attachments) {
+	// for (auto&[name, a] : builder.attachments) {
 	//	for(auto& sub : lastPassDesc.subpasses){
 	//		for (auto& a : sub.color_attachments) {
 	//			if (name == a) {
@@ -558,8 +584,8 @@ FrameGraph::FrameGraph (FrameGraphBuilder builder, VulkanDevice& device) : devic
 
 	for (auto [name, pass] : builder.renderPasses)
 	{
-		
-		renderPasses.push_back(RenderPass(device.device, pass, builder.attachments));
+
+		renderPasses.push_back (RenderPass (device.device, pass, builder.attachments));
 	}
 }
 
@@ -579,8 +605,11 @@ void FrameGraph::SetDrawFuncs (int index, std::vector<RenderFunc> funcs)
 VkRenderPass FrameGraph::Get (int index) const { return renderPasses.at (index).rp; }
 
 
-void FrameGraph::FillCommandBuffer(VkCommandBuffer cmdBuf, VkFramebuffer fb, VkOffset2D offset, VkExtent2D extent, std::array<VkClearValue, 2>  clearValues) {
-	for (auto& rp : renderPasses) {
-		rp.BuildCmdBuf(cmdBuf, fb, offset, extent, clearValues);
+void FrameGraph::FillCommandBuffer (
+    VkCommandBuffer cmdBuf, VkFramebuffer fb, VkOffset2D offset, VkExtent2D extent, std::array<VkClearValue, 2> clearValues)
+{
+	for (auto& rp : renderPasses)
+	{
+		rp.BuildCmdBuf (cmdBuf, fb, offset, extent, clearValues);
 	}
 }

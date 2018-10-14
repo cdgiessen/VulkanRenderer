@@ -1,9 +1,9 @@
 #pragma once
 
-#include <vector>
 #include <memory>
+#include <vector>
 
-#include <glm\fwd.hpp>
+#include <glm/fwd.hpp>
 
 class VertexDescription
 {
@@ -37,7 +37,7 @@ class VertexDescription
 	// offset)); 		offset += layout[i] * 4;
 	// 	}
 	// };
-	int ElementCount() const;
+	int ElementCount () const;
 
 	std::vector<int> layout; // each element in the array is a different attribute, its value (1-4) is it's size
 };
@@ -45,7 +45,7 @@ class VertexDescription
 
 
 //
-//struct Vertex_PosNorm
+// struct Vertex_PosNorm
 //{
 //	glm::vec3 pos;
 //	glm::vec3 normal;
@@ -79,7 +79,7 @@ class VertexDescription
 //	}
 //};
 //
-//struct Vertex_PosNormTex
+// struct Vertex_PosNormTex
 //{
 //	glm::vec3 pos;
 //	glm::vec3 normal;
@@ -119,7 +119,7 @@ class VertexDescription
 //	}
 //};
 //
-//struct Vertex_PosNormTexColor
+// struct Vertex_PosNormTexColor
 //{
 //	glm::vec3 pos;
 //	glm::vec3 normal;
@@ -165,27 +165,27 @@ class VertexDescription
 //};
 //
 //// Hash function for indicy uniqueness in model loading.
-//namespace std
+// namespace std
 //{
-//template <> struct hash<Vertex_PosNormTexColor>
+// template <> struct hash<Vertex_PosNormTexColor>
 //{
 //	size_t operator() (Vertex_PosNormTexColor const& vertex) const
 //	{
-//		return ((hash<glm::vec3> () (vertex.pos) ^ (hash<glm::vec3> () (vertex.normal) << 1)) >> 1) ^
-//		       (hash<glm::vec2> () (vertex.texCoord) << 1) ^ (hash<glm::vec4> () (vertex.color) << 1);
+//		return ((hash<glm::vec3> () (vertex.pos) ^ (hash<glm::vec3> () (vertex.normal) << 1)) >> 1)
+//^ 		       (hash<glm::vec2> () (vertex.texCoord) << 1) ^ (hash<glm::vec4> () (vertex.color) << 1);
 //	}
 //};
 //
-//template <> struct hash<Vertex_PosNormTex>
+// template <> struct hash<Vertex_PosNormTex>
 //{
 //	size_t operator() (Vertex_PosNormTex const& vertex) const
 //	{
-//		return ((hash<glm::vec3> () (vertex.pos) ^ (hash<glm::vec3> () (vertex.normal) << 1)) >> 1) ^
-//		       (hash<glm::vec2> () (vertex.texCoord) << 1);
+//		return ((hash<glm::vec3> () (vertex.pos) ^ (hash<glm::vec3> () (vertex.normal) << 1)) >> 1)
+//^ 		       (hash<glm::vec2> () (vertex.texCoord) << 1);
 //	}
 //};
 //
-//template <> struct hash<Vertex_PosNorm>
+// template <> struct hash<Vertex_PosNorm>
 //{
 //	size_t operator() (Vertex_PosNorm const& vertex) const
 //	{
@@ -194,20 +194,20 @@ class VertexDescription
 //};
 //} // namespace std
 //
-//using Vertices_PosNorm = std::vector<Vertex_PosNorm>;
-//using Vertices_PosNormTex = std::vector<Vertex_PosNormTex>;
-//using Vertices_PosNormTexColor = std::vector<Vertex_PosNormTexColor>;
+// using Vertices_PosNorm = std::vector<Vertex_PosNorm>;
+// using Vertices_PosNormTex = std::vector<Vertex_PosNormTex>;
+// using Vertices_PosNormTexColor = std::vector<Vertex_PosNormTexColor>;
 
 class MeshData
 {
 	public:
 	MeshData (VertexDescription desc, std::vector<float> vertexData, std::vector<uint16_t> indexData)
-	: desc (desc), vertexData (vertexData), indexData(indexData)
+	: desc (desc), vertexData (vertexData), indexData (indexData)
 	{
 	}
 
-	//MeshData (VertexDescription desc, std::vector<float>&& vertexData, std::vector<uint16_t>&& indexData)
-	//: desc (desc), vertexData (std::move (vertexData)), indexData (indexData)
+	// MeshData (VertexDescription desc, std::vector<float>&& vertexData, std::vector<uint16_t>&&
+	// indexData) : desc (desc), vertexData (std::move (vertexData)), indexData (indexData)
 	//{
 	//}
 
@@ -219,7 +219,7 @@ class MeshData
 };
 
 
-//class Mesh
+// class Mesh
 //{
 //	public:
 //	Mesh (Vertices_PosNorm vertices, std::vector<uint16_t> indices);
@@ -231,8 +231,8 @@ class MeshData
 //
 //	void importFromFile (const std::string filename);
 //
-//	std::variant<std::vector<Vertex_PosNorm>, std::vector<Vertex_PosNormTex>, std::vector<Vertex_PosNormTexColor>> vertices;
-//	std::vector<uint16_t> indices;
+//	std::variant<std::vector<Vertex_PosNorm>, std::vector<Vertex_PosNormTex>,
+//std::vector<Vertex_PosNormTexColor>> vertices; 	std::vector<uint16_t> indices;
 //
 //	uint32_t indexCount = 0;
 //	uint32_t vertexCount = 0;
@@ -248,7 +248,7 @@ class MeshData
 //	private:
 //};
 
-//class MeshManager
+// class MeshManager
 //{
 //	public:
 //	MeshManager ();
@@ -261,25 +261,25 @@ class MeshData
 
 
 
-//extern std::shared_ptr<Mesh> createSinglePlane ();
+// extern std::shared_ptr<Mesh> createSinglePlane ();
 //
-//extern std::shared_ptr<Mesh> createDoublePlane ();
-//
-//
-//extern std::shared_ptr<Mesh> createFlatPlane (int dim, glm::vec3 size);
-//
-//extern std::shared_ptr<Mesh> createCube ();
+// extern std::shared_ptr<Mesh> createDoublePlane ();
 //
 //
-//extern std::shared_ptr<Mesh> createSphere (int dim = 10);
+// extern std::shared_ptr<Mesh> createFlatPlane (int dim, glm::vec3 size);
+//
+// extern std::shared_ptr<Mesh> createCube ();
+//
+//
+// extern std::shared_ptr<Mesh> createSphere (int dim = 10);
 
-extern std::shared_ptr<MeshData> createSinglePlane();
+extern std::shared_ptr<MeshData> createSinglePlane ();
 
-extern std::shared_ptr<MeshData> createDoublePlane();
+extern std::shared_ptr<MeshData> createDoublePlane ();
 
-extern std::shared_ptr<MeshData> createFlatPlane(int dim, glm::vec3 size);
+extern std::shared_ptr<MeshData> createFlatPlane (int dim, glm::vec3 size);
 
-extern std::shared_ptr<MeshData> createCube();
+extern std::shared_ptr<MeshData> createCube ();
 
 
-extern std::shared_ptr<MeshData> createSphere(int dim = 10);
+extern std::shared_ptr<MeshData> createSphere (int dim = 10);
