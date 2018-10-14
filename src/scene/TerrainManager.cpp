@@ -82,7 +82,7 @@ TerrainChunkBuffer::TerrainChunkBuffer(VulkanRenderer& renderer, int count,
 	TerrainManager& man) :
 	renderer(renderer), man(man),
 	vert_buffer(renderer.device, vertCount * count, vertElementCount),
-	index_buffer(renderer.device, indCount * count),
+	index_buffer(renderer.device, (uint32_t)indCount * (uint32_t)count),
 	vert_staging(renderer.device, sizeof(TerrainMeshVertices) * count),
 	index_staging(renderer.device, sizeof(TerrainMeshIndices) * count)
 {

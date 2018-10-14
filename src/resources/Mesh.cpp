@@ -1,42 +1,45 @@
 #include "Mesh.h"
 
+#include <numeric>
+#include <glm/glm.hpp>
+
 #include "../core/CoreTools.h"
 #include "../core/Logger.h"
 
-#include "../rendering/Initializers.h"
+int VertexDescription::ElementCount()  const { return std::accumulate(std::begin(layout), std::end(layout), 0); }
 
-Mesh::Mesh(Vertices_PosNorm vertices, std::vector<uint16_t> indices)
-	: vertices(vertices), indices(indices), vertexElementCount(6)
-{
-	//this->vertices = vertices;
-}
-
-Mesh::Mesh(Vertices_PosNormTex vertices, std::vector<uint16_t> indices)
-	: vertices(vertices), indices(indices), vertexElementCount(8)
-{
-	//this->vertices = vertices;
-
-}
-
-Mesh::Mesh(Vertices_PosNormTexColor vertices, std::vector<uint16_t> indices)
-	: vertices(vertices), indices(indices), vertexElementCount(12)
-{
-	//this->vertices = vertices;
-
-}
-
-Mesh::Mesh()
-{
-}
-
-Mesh::~Mesh()
-{
-}
-
-void Mesh::importFromFile(const std::string filename) {
-	vertexCount = 0;
-	indexCount = 0;
-
+//Mesh::Mesh(Vertices_PosNorm vertices, std::vector<uint16_t> indices)
+//	: vertices(vertices), indices(indices), vertexElementCount(6)
+//{
+//	//this->vertices = vertices;
+//}
+//
+//Mesh::Mesh(Vertices_PosNormTex vertices, std::vector<uint16_t> indices)
+//	: vertices(vertices), indices(indices), vertexElementCount(8)
+//{
+//	//this->vertices = vertices;
+//
+//}
+//
+//Mesh::Mesh(Vertices_PosNormTexColor vertices, std::vector<uint16_t> indices)
+//	: vertices(vertices), indices(indices), vertexElementCount(12)
+//{
+//	//this->vertices = vertices;
+//
+//}
+//
+//Mesh::Mesh()
+//{
+//}
+//
+//Mesh::~Mesh()
+//{
+//}
+//
+//void Mesh::importFromFile(const std::string filename) {
+//	vertexCount = 0;
+//	indexCount = 0;
+//
 	// if (fileExists(filename)) { //file exists and can be loaded
 
 	// 	glm::vec3 scale(1.0f);
@@ -98,12 +101,12 @@ void Mesh::importFromFile(const std::string filename) {
 	// 	}
 	// }
 	// else
-	{
-		printf("Error parsing '%s': '\n", filename.c_str());
-
-	}
-}
-
+//	{
+//		printf("Error parsing '%s': '\n", filename.c_str());
+//
+//	}
+//}
+//
 
 
 //void Mesh::importFromFile(const std::string filename) {
@@ -243,25 +246,27 @@ void Mesh::importFromFile(const std::string filename) {
 //	}
 //}
 
+//
+//MeshManager::MeshManager()
+//{
+//}
+//
+//
+//MeshManager::~MeshManager()
+//{
+//}
 
-MeshManager::MeshManager()
-{
-}
+
+std::shared_ptr<MeshData> createSinglePlane() {
 
 
-MeshManager::~MeshManager()
-{
-}
-
-
-std::shared_ptr<Mesh> createSinglePlane() {
-	return std::make_shared<Mesh>(Vertices_PosNormTexColor({
+	return std::make_shared<MeshData>(VertexDescription({ 3,3,2}),std::vector<float>({
 		//vertices
-
-		{ { -0.5f, -0.5f, 0.0f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
-		{ { 0.5f, -0.5f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
-		{ { 0.5f, 0.5f, 0.0f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 1.0f, 1.0f, 1.0f } },
-		{ { -0.5f, 0.5f, 0.0f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
+		
+		 -0.5f, -0.5f, 0.0f , 1.0f, 0.0f, 0.0f , 0.0f, 0.0f,
+		 0.5f, -0.5f, 0.0f , 0.0f, 1.0f, 0.0f , 1.0f, 0.0f ,
+		 0.5f, 0.5f, 0.0f , 0.0f, 0.0f, 1.0f , 1.0f, 1.0f ,
+		 -0.5f, 0.5f, 0.0f , 1.0f, 1.0f, 1.0f , 0.0f, 1.0f 
 
 		//indices
 		}), std::vector<uint16_t>({
@@ -269,19 +274,19 @@ std::shared_ptr<Mesh> createSinglePlane() {
 			}));
 };
 
-std::shared_ptr<Mesh> createDoublePlane() {
-	return std::make_shared<Mesh>(Vertices_PosNormTexColor({
+std::shared_ptr<MeshData> createDoublePlane() {
+	return std::make_shared<MeshData>(VertexDescription({ 3,3,2 }), std::vector<float>({
 		//vertices
 
-		{ { -0.5f, -0.5f, 1.0f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
-		{ { 0.5f, -0.5f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
-		{ { 0.5f, 0.5f, 1.0f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
-		{ { -0.5f, 0.5f, 1.0f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
+		  -0.5f, -0.5f, 1.0f , 1.0f, 0.0f, 0.0f , 0.0f, 0.0f ,
+		  0.5f, -0.5f, 1.0f , 0.0f, 1.0f, 0.0f , 1.0f, 0.0f ,
+		  0.5f, 0.5f, 1.0f , 0.0f, 0.0f, 1.0f , 1.0f, 1.0f ,
+		  -0.5f, 0.5f, 1.0f , 1.0f, 1.0f, 1.0f , 0.0f, 1.0f , 
 
-		{ { -0.5f, -0.5f, -1.5f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
-		{ { 0.5f, -0.5f, -1.5f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
-		{ { 0.5f, 0.5f, -1.5f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
-		{ { -0.5f, 0.5f, -1.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
+		  -0.5f, -0.5f, -1.5f , 1.0f, 0.0f, 0.0f , 0.0f, 0.0f , 
+		  0.5f, -0.5f, -1.5f , 0.0f, 1.0f, 0.0f , 1.0f, 0.0f , 
+		  0.5f, 0.5f, -1.5f , 0.0f, 0.0f, 1.0f , 1.0f, 1.0f , 
+		  -0.5f, 0.5f, -1.5f , 1.0f, 1.0f, 1.0f , 0.0f, 1.0f 
 
 		//indices
 		}), std::vector<uint16_t>({
@@ -291,21 +296,26 @@ std::shared_ptr<Mesh> createDoublePlane() {
 };
 
 
-std::shared_ptr<Mesh> createFlatPlane(int dim, glm::vec3 size) {
-	Vertices_PosNormTex verts;
+std::shared_ptr<MeshData> createFlatPlane(int dim, glm::vec3 size) {
+	std::vector<float> verts;
 	std::vector<uint16_t> indices;
 
-	verts.resize((dim + 1) * (dim + 1));
+	verts.resize((dim + 1) * (dim + 1) * 8);
 	indices.resize((dim) * (dim) * 6);
 
 	for (int i = 0; i <= dim; i++)
 	{
 		for (int j = 0; j <= dim; j++)
 		{
-			verts[(i)*(dim + 1) + j] = Vertex_PosNormTex(
-				glm::vec3((double)i *(size.x) / (float)dim, 0,
-				(double)j *(size.z) / (float)dim),
-				glm::vec3(0, 1, 0), glm::vec2(i, j));
+			verts[8*((i)*(dim + 1) + j) + 0] = (double)i *(size.x) / (float)dim;
+			verts[8*((i)*(dim + 1) + j) + 1] = 0;
+			verts[8*((i)*(dim + 1) + j) + 2] = (double)j *(size.z) / (float)dim;
+			verts[8*((i)*(dim + 1) + j) + 3] = 0;
+			verts[8*((i)*(dim + 1) + j) + 4] = 1;
+			verts[8*((i)*(dim + 1) + j) + 5] = 0;
+			verts[8*((i)*(dim + 1) + j) + 6] = i;
+			verts[8*((i)*(dim + 1) + j) + 7] = j;
+
 		}
 	}
 
@@ -323,59 +333,59 @@ std::shared_ptr<Mesh> createFlatPlane(int dim, glm::vec3 size) {
 		}
 	}
 
-	return std::make_shared<Mesh>(verts, indices);
+	return std::make_shared<MeshData>(VertexDescription({3,3,2}), verts, indices);
 }
 
-std::shared_ptr<Mesh> createCube() {
-	return std::make_shared<Mesh>(Vertices_PosNormTexColor({
+std::shared_ptr<MeshData> createCube() {
+	return std::make_shared<MeshData>(VertexDescription({3,3,2,4}), std::vector<float>({
 
 		//Left face
-		{ { 0.5f, -0.5f, -0.5f },{ 0.0f, 0.0f, -1.0f },{ 0.333f, 1.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, -0.5f, -0.5f },{ 0.0f, 0.0f, -1.0f },{ 0.667f, 1.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { 0.5f, 0.5f, -0.5f },{ 0.0f, 0.0f, -1.0f },{ 0.333f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, 0.5f, -0.5f },{ 0.0f, 0.0f, -1.0f },{ 0.667f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { 0.5f, 0.5f, -0.5f },{ 0.0f, 0.0f, -1.0f },{ 0.333f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, -0.5f, -0.5f },{ 0.0f, 0.0f, -1.0f },{ 0.667f, 1.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
+		  0.5f, -0.5f, -0.5f , 0.0f, 0.0f, -1.0f , 0.333f, 1.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, -0.5f, -0.5f , 0.0f, 0.0f, -1.0f , 0.667f, 1.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  0.5f, 0.5f, -0.5f , 0.0f, 0.0f, -1.0f , 0.333f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, 0.5f, -0.5f , 0.0f, 0.0f, -1.0f , 0.667f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  0.5f, 0.5f, -0.5f , 0.0f, 0.0f, -1.0f , 0.333f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, -0.5f, -0.5f , 0.0f, 0.0f, -1.0f , 0.667f, 1.0f , 1.0f,1.0f,1.0f, 1.0f  ,
 
 		//Right face			
-		{ { 0.5f, 0.5f, 0.5f },{ 0.0f, 0.0f, 1.0f },{ 0.667f, 0.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, -0.5f, 0.5f },{ 0.0f, 0.0f, 1.0f },{ 0.333f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { 0.5f, -0.5f, 0.5f },{ 0.0f, 0.0f, 1.0f },{ 0.667f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { 0.5f, 0.5f, 0.5f },{ 0.0f, 0.0f, 1.0f },{ 0.667f, 0.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, 0.5f, 0.5f },{ 0.0f, 0.0f, 1.0f },{ 0.333f, 0.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, -0.5f, 0.5f },{ 0.0f, 0.0f, 1.0f },{ 0.333f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
+		  0.5f, 0.5f, 0.5f , 0.0f, 0.0f, 1.0f , 0.667f, 0.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, -0.5f, 0.5f , 0.0f, 0.0f, 1.0f , 0.333f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  0.5f, -0.5f, 0.5f , 0.0f, 0.0f, 1.0f , 0.667f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  0.5f, 0.5f, 0.5f , 0.0f, 0.0f, 1.0f , 0.667f, 0.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, 0.5f, 0.5f , 0.0f, 0.0f, 1.0f , 0.333f, 0.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, -0.5f, 0.5f , 0.0f, 0.0f, 1.0f , 0.333f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
 
 		//Back face			
-		{ { -0.5f, -0.5f, -0.5f },{ -1.0f, 0.0f, 0.0f },{ 0.0f, 1.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, -0.5f, 0.5f },{ -1.0f, 0.0f, 0.0f },{ 0.333f, 1.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, 0.5f, 0.5f },{ -1.0f, 0.0f, 0.0f },{ 0.333f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, 0.5f, 0.5f },{ -1.0f, 0.0f, 0.0f },{ 0.333f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, 0.5f, -0.5f },{ -1.0f, 0.0f, 0.0f },{ 0.0f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, -0.5f, -0.5f },{ -1.0f, 0.0f, 0.0f },{ 0.0f, 1.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
+		  -0.5f, -0.5f, -0.5f , -1.0f, 0.0f, 0.0f , 0.0f, 1.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, -0.5f, 0.5f , -1.0f, 0.0f, 0.0f , 0.333f, 1.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, 0.5f, 0.5f , -1.0f, 0.0f, 0.0f , 0.333f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, 0.5f, 0.5f , -1.0f, 0.0f, 0.0f , 0.333f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, 0.5f, -0.5f , -1.0f, 0.0f, 0.0f , 0.0f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, -0.5f, -0.5f , -1.0f, 0.0f, 0.0f , 0.0f, 1.0f , 1.0f,1.0f,1.0f, 1.0f  ,
 
 		//Front face																  
-		{ { 0.5f, 0.5f, -0.5f },{ 1.0f, 0.0f, 0.0f },{ 0.334f, 0.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { 0.5f, 0.5f, 0.5f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { 0.5f, -0.5f, -0.5f },{ 1.0f, 0.0f, 0.0f },{ 0.334f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { 0.5f, -0.5f, 0.5f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { 0.5f, -0.5f, -0.5f },{ 1.0f, 0.0f, 0.0f },{ 0.334f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { 0.5f, 0.5f, 0.5f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
+		  0.5f, 0.5f, -0.5f , 1.0f, 0.0f, 0.0f , 0.334f, 0.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  0.5f, 0.5f, 0.5f , 1.0f, 0.0f, 0.0f , 0.0f, 0.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  0.5f, -0.5f, -0.5f , 1.0f, 0.0f, 0.0f , 0.334f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  0.5f, -0.5f, 0.5f , 1.0f, 0.0f, 0.0f , 0.0f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  0.5f, -0.5f, -0.5f , 1.0f, 0.0f, 0.0f , 0.334f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  0.5f, 0.5f, 0.5f , 1.0f, 0.0f, 0.0f , 0.0f, 0.0f , 1.0f,1.0f,1.0f, 1.0f  ,
 
 		//Bottom face		
-		{ { 0.5f, -0.5f, 0.5f },{ 0.0f, -1.0f, 0.0f },{ 0.667f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, -0.5f, -0.5f },{ 0.0f, -1.0f, 0.0f },{ 1.0f, 1.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { 0.5f, -0.5f, -0.5f },{ 0.0f, -1.0f, 0.0f },{ 0.667f, 1.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { 0.5f, -0.5f, 0.5f },{ 0.0f, -1.0f, 0.0f },{ 0.667f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, -0.5f, 0.5f },{ 0.0f, -1.0f, 0.0f },{ 1.0f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, -0.5f, -0.5f },{ 0.0f, -1.0f, 0.0f },{ 1.0f, 1.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
+		  0.5f, -0.5f, 0.5f , 0.0f, -1.0f, 0.0f , 0.667f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, -0.5f, -0.5f , 0.0f, -1.0f, 0.0f , 1.0f, 1.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  0.5f, -0.5f, -0.5f , 0.0f, -1.0f, 0.0f , 0.667f, 1.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  0.5f, -0.5f, 0.5f , 0.0f, -1.0f, 0.0f , 0.667f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, -0.5f, 0.5f , 0.0f, -1.0f, 0.0f , 1.0f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, -0.5f, -0.5f , 0.0f, -1.0f, 0.0f , 1.0f, 1.0f , 1.0f,1.0f,1.0f, 1.0f  ,
 
 		//Top face			
-		{ { 0.5f, 0.5f, -0.5f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, 0.5f, -0.5f },{ 0.0f, 1.0f, 0.0f },{ 0.667f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { 0.5f, 0.5f, 0.5f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, 0.5f, 0.5f },{ 0.0f, 1.0f, 0.0f },{ 0.667f, 0.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { 0.5f, 0.5f, 0.5f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f },{ 1.0f,1.0f,1.0f, 1.0f } },
-		{ { -0.5f, 0.5f, -0.5f },{ 0.0f, 1.0f, 0.0f },{ 0.667f, 0.5f },{ 1.0f,1.0f,1.0f, 1.0f } }
+		  0.5f, 0.5f, -0.5f , 0.0f, 1.0f, 0.0f , 1.0f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, 0.5f, -0.5f , 0.0f, 1.0f, 0.0f , 0.667f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  0.5f, 0.5f, 0.5f , 0.0f, 1.0f, 0.0f , 1.0f, 0.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, 0.5f, 0.5f , 0.0f, 1.0f, 0.0f , 0.667f, 0.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  0.5f, 0.5f, 0.5f , 0.0f, 1.0f, 0.0f , 1.0f, 0.0f , 1.0f,1.0f,1.0f, 1.0f  ,
+		  -0.5f, 0.5f, -0.5f , 0.0f, 1.0f, 0.0f , 0.667f, 0.5f , 1.0f,1.0f,1.0f, 1.0f  
 
 
 		//indices
@@ -386,7 +396,7 @@ std::shared_ptr<Mesh> createCube() {
 }
 
 
-void AddPlane(Vertices_PosNormTex& verts, std::vector<uint16_t>& indices,
+void AddPlane(std::vector<float>& verts, std::vector<uint16_t>& indices,
 	int dim, int faceNum,
 	glm::vec3 topLeft, glm::vec3 topRight, glm::vec3 bottomLeft, glm::vec3 bottomRight
 ) {
@@ -402,10 +412,16 @@ void AddPlane(Vertices_PosNormTex& verts, std::vector<uint16_t>& indices,
 
 	for (float i = 0; i <= dim; i++) {
 		for (float j = 0; j <= dim; j++) {
-
-			verts.push_back(
-				Vertex_PosNormTex(glm::mix(glm::mix(topLeft, topRight, j / dim), glm::mix(bottomLeft, bottomRight, j / dim), i / dim),
-					normal, glm::vec2(i, j)));
+			glm::vec3 pos = glm::mix(glm::mix(topLeft, topRight, j / dim), glm::mix(bottomLeft, bottomRight, j / dim), i / dim);
+			
+			verts.push_back(pos.x);
+			verts.push_back(pos.y);
+			verts.push_back(pos.z);
+			verts.push_back(normal.x);
+			verts.push_back(normal.y);
+			verts.push_back(normal.z);
+			verts.push_back(i);
+			verts.push_back(j);
 		}
 	}
 
@@ -423,9 +439,9 @@ void AddPlane(Vertices_PosNormTex& verts, std::vector<uint16_t>& indices,
 	}
 }
 
-std::shared_ptr<Mesh> createSphere(int dim) {
+std::shared_ptr<MeshData> createSphere(int dim) {
 
-	Vertices_PosNormTex verts;
+	std::vector<float> verts;
 	std::vector<uint16_t> indices;
 
 	verts.reserve((dim + 1) * (dim + 1) * 6);
@@ -438,10 +454,19 @@ std::shared_ptr<Mesh> createSphere(int dim) {
 	AddPlane(verts, indices, dim, 4, glm::vec3(-0.5, 0.5, 0.5), glm::vec3(-0.5, -0.5, 0.5), glm::vec3(0.5, 0.5, 0.5), glm::vec3(0.5, -0.5, 0.5));
 	AddPlane(verts, indices, dim, 5, glm::vec3(0.5, 0.5, -0.5), glm::vec3(0.5, -0.5, -0.5), glm::vec3(-0.5, 0.5, -0.5), glm::vec3(-0.5, -0.5, -0.5));
 
-	for (auto& vert : verts) {
-		vert.pos = glm::normalize(vert.pos);
-		vert.normal = vert.pos;
+	//for (auto& vert : verts) {
+	//	vert.pos = glm::normalize(vert.pos);
+	//	vert.normal = vert.pos;
+	//}
+	for(int i = 0; i < verts.size() / 8; i++){
+		glm::vec3 pos = glm::normalize(glm::vec3(verts[i + 0], verts[i + 1], verts[i + 2]));
+		verts[i + 0] = pos.x;
+		verts[i + 1] = pos.y;
+		verts[i + 2] = pos.z;
+		verts[i + 3] = pos.x;
+		verts[i + 4] = pos.y;
+		verts[i + 5] = pos.z;
 	}
 
-	return std::make_shared<Mesh>(verts, indices);
+	return std::make_shared<MeshData>(VertexDescription({3,3,2}), verts, indices);
 };

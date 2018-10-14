@@ -20,13 +20,14 @@ void GameObject::InitGameObject ()
 	SetupPipeline ();
 }
 
-void GameObject::LoadModel (std::string filename)
-{
-	gameObjectMesh = std::make_shared<Mesh> ();
-	// this->gameObjectMesh->importFromFile(filename);
-}
+//void GameObject::LoadModel (std::string filename)
+//{
+//
+//	//gameObjectMesh = std::make_shared<MeshData> ();
+//	// this->gameObjectMesh->importFromFile(filename);
+//}
 
-void GameObject::LoadModel (std::shared_ptr<Mesh> mesh) { this->gameObjectMesh = mesh; }
+void GameObject::LoadModel (std::shared_ptr<MeshData> mesh) { this->gameObjectMesh = mesh; }
 
 void GameObject::SetupUniformBuffer ()
 {

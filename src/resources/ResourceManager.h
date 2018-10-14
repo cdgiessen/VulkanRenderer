@@ -17,7 +17,7 @@ public:
 	~ResourceManager();
 
 	Texture::Manager texManager;
-	MeshManager meshManager;
+	//MeshManager meshManager;
 	MaterialManager matManager;
 
 private:

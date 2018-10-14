@@ -33,11 +33,11 @@ void InstancedSceneObject::InitInstancedSceneObject ()
 
 void InstancedSceneObject::LoadModel (std::string filename)
 {
-	mesh = std::make_shared<Mesh> ();
+	//mesh = std::make_shared<MeshData> ();
 	// this->mesh->importFromFile(filename);
 }
 
-void InstancedSceneObject::LoadModel (std::shared_ptr<Mesh> mesh) { this->mesh = mesh; }
+void InstancedSceneObject::LoadModel (std::shared_ptr<MeshData> mesh) { this->mesh = mesh; }
 
 void InstancedSceneObject::LoadTexture (Resource::Texture::TexID tex) { this->texture = tex; }
 
@@ -119,8 +119,10 @@ void InstancedSceneObject::SetupPipeline ()
 	    "assets/shaders/instancedSceneObject.frag.spv", ShaderModuleType::fragment);
 	out.SetShaderModuleSet (ShaderModuleSet (vert, frag));
 
-	out.AddVertexLayouts (
-	    Vertex_PosNormTex::getBindingDescription (), Vertex_PosNormTex::getAttributeDescriptions ());
+	VertexLayout layout(VertexDescription({3,3,2}));
+
+	out.AddVertexLayouts (layout.bindingDesc, layout.attribDesc);
+	   
 
 	std::vector<VkVertexInputBindingDescription> instanceBufferBinding = { initializers::vertexInputBindingDescription (
 		INSTANCE_BUFFER_BIND_ID, sizeof (InstanceData), VK_VERTEX_INPUT_RATE_INSTANCE) };

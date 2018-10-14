@@ -24,8 +24,8 @@ class GameObject
 
 	void InitGameObject ();
 
-	void LoadModel (std::string fileName);
-	void LoadModel (std::shared_ptr<Mesh> mesh);
+	//void LoadModel (std::string fileName);
+	void LoadModel (std::shared_ptr<MeshData> mesh);
 
 	void SetupUniformBuffer ();
 	void SetupImage ();
@@ -54,7 +54,7 @@ class GameObject
 	std::shared_ptr<VulkanDescriptor> materialDescriptor;
 	DescriptorSet material_descriptorSet;
 
-	std::shared_ptr<Mesh> gameObjectMesh;
+	std::shared_ptr<MeshData> gameObjectMesh;
 	std::shared_ptr<VulkanModel> gameObjectModel;
 
 	Resource::Texture::TexID gameObjectTexture;

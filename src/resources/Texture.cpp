@@ -252,20 +252,18 @@ namespace Resource::Texture {
 		}
 
 		try {
+			Log::Debug << textureResources.size() << " textures loaded\n";
 			int count = 0;
 			for (nlohmann::json::iterator it = j.begin(); it != j.end(); ++it) {
 				auto tex = from_json_TexResource(*it);
 				textureResources[tex.id] = tex;
 				LoadTextureFromFile(tex.id);
+				Log::Debug << "Tex " << tex.id << " with name " << tex.name
+					<< " dimensions width " << tex.dataDescription.width
+					<< " height " << tex.dataDescription.height << "\n";
 				count++;
 			}
 			id_counter = count;
-			Log::Debug << textureResources.size() << " textures loaded\n";
-			for (auto const&[key, val] : textureResources) {
-				Log::Debug << "Tex " << key << " with name " << val.name
-					<< " dimensions width " << val.dataDescription.width
-					<< " height " << val.dataDescription.height << "\n";
-			}
 		}
 		catch (nlohmann::json::parse_error &e) {
 			Log::Debug << "Error loading texture list " << e.what() << "\n";

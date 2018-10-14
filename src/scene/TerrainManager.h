@@ -170,7 +170,7 @@ private:
 	void StartWorkerThreads();
 	void StopWorkerThreads();
 
-	std::shared_ptr<Mesh> WaterMesh;
+	std::shared_ptr<MeshData> WaterMesh;
 
 	Resource::Texture::TexID terrainTextureArrayAlbedo;
 	Resource::Texture::TexID terrainTextureArrayRoughness;

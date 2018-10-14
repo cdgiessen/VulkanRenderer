@@ -267,27 +267,32 @@ VulkanBufferStagingVertex::VulkanBufferStagingVertex (VulkanDevice& device,
 
 VulkanBufferIndex::VulkanBufferIndex(VulkanDevice& device, uint32_t count) :
 	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-		sizeof(int) * count, (VkBufferUsageFlags)(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-		VMA_MEMORY_USAGE_GPU_ONLY) {}
+		sizeof(uint32_t) * count, (VkBufferUsageFlags)(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+		VMA_MEMORY_USAGE_GPU_ONLY), is32bit(true) {}
 
-VulkanBufferIndex::VulkanBufferIndex (VulkanDevice& device, int count, bool use32bitIndices)
-: VulkanBuffer (device,
-                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                (use32bitIndices) ? sizeof (uint32_t) * count : sizeof (uint16_t) * count, //stupid ambiguous function signature
-                (VkBufferUsageFlags) (VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-                VMA_MEMORY_USAGE_GPU_ONLY)
-{
-}
+VulkanBufferIndex::VulkanBufferIndex(VulkanDevice& device, uint16_t count) :
+	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		sizeof(uint16_t) * count, (VkBufferUsageFlags)(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+		VMA_MEMORY_USAGE_GPU_ONLY), is32bit(false) {}
+
+//VulkanBufferIndex::VulkanBufferIndex (VulkanDevice& device, int count, bool use32bitIndices)
+//: VulkanBuffer (device,
+//                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+//                (use32bitIndices) ? sizeof (uint32_t) * count : sizeof (uint16_t) * count, //stupid ambiguous function signature
+//                (VkBufferUsageFlags) (VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+//                VMA_MEMORY_USAGE_GPU_ONLY)
+//{
+//}
 
 void VulkanBufferIndex::BindIndexBuffer(VkCommandBuffer cmdBuf) {
 	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindIndexBuffer(cmdBuf, buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(cmdBuf, buffer.buffer, 0, is32bit ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
 }
 
 VulkanBufferStagingIndex::VulkanBufferStagingIndex(VulkanDevice& device, uint32_t count, void* pData) :
 	VulkanBuffer(device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-		sizeof(int) * count, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData)
+		sizeof(uint32_t) * count, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT, pData), is32bit(true)
 {}
 
 VulkanBufferStagingIndex::VulkanBufferStagingIndex (VulkanDevice& device, uint16_t count, void* pData)
@@ -297,7 +302,7 @@ VulkanBufferStagingIndex::VulkanBufferStagingIndex (VulkanDevice& device, uint16
                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                 VMA_MEMORY_USAGE_CPU_ONLY,
                 VMA_ALLOCATION_CREATE_MAPPED_BIT,
-                pData)
+                pData), is32bit(false)
 {
 }
 

@@ -49,7 +49,7 @@ class InstancedSceneObject
 
 	void LoadTexture (Resource::Texture::TexID);
 	void LoadModel (std::string fileName);
-	void LoadModel (std::shared_ptr<Mesh> mesh);
+	void LoadModel (std::shared_ptr<MeshData> mesh);
 
 	void SetFragmentShaderToUse (std::string frag);
 	void SetCullMode (VkCullModeFlagBits cullMode);
@@ -88,7 +88,7 @@ class InstancedSceneObject
 	std::shared_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;
 
-	std::shared_ptr<Mesh> mesh;
+	std::shared_ptr<MeshData> mesh;
 	std::shared_ptr<VulkanModel> vulkanModel;
 
 	Resource::Texture::TexID texture;

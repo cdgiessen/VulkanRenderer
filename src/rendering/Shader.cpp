@@ -146,7 +146,7 @@ ShaderModule ShaderManager::loadShaderModule(
 
 	auto pos_shaderCode = readShaderFile(codePath);
 	if (!pos_shaderCode.has_value()) {
-		Log::Debug << "Shader unable to load, using defaults instead\n";
+		Log::Debug << "Shader at " << codePath << " unable to load, using defaults instead\n";
 
 		switch (type) {
 		case(ShaderModuleType::vertex):

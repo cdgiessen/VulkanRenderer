@@ -204,7 +204,7 @@ void main() {
 	//vec3 dirContrib = DirPhongLighting(viewVec, sun.light[0].direction, normalVec, sun.light[0].color, sun.light[0].intensity);
 
 	//outColor = texColor * vec4(pointLightContrib * inColor, 1.0f);
-    outColor = texColor * vec4(lighting, 1.0f) * inColor;
+    outColor = texColor * vec4(lighting, 1.0f);
 	
 	
 }

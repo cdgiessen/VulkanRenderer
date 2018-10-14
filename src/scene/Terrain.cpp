@@ -500,8 +500,8 @@ void Terrain::SetupPipeline ()
 	    "assets/shaders/terrain.frag.spv", ShaderModuleType::fragment);
 	out.SetShaderModuleSet (ShaderModuleSet (vert, frag));
 
-	out.AddVertexLayouts (
-	    Vertex_PosNormTex::getBindingDescription (), Vertex_PosNormTex::getAttributeDescriptions ());
+	VertexLayout layout(VertexDescription({3,3,2}));
+	out.AddVertexLayouts (layout.bindingDesc, layout.attribDesc);
 
 	out.SetInputAssembly (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
 
@@ -1098,7 +1098,7 @@ void Terrain::DrawTerrain (VkCommandBuffer cmdBuff, bool ifWireframe)
 	    sizeof(TerrainPushConstant),
 	    &modelMatrixData);*/
 
-	if (ifWireframe)
+	if (ifWireframe )
 		wireframe->Bind (cmdBuff);
 	else
 		normal->Bind (cmdBuff);
