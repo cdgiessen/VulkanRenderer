@@ -15,7 +15,8 @@
 
 #include "Buffer.h"
 
-struct GPU_CameraData {
+struct GPU_CameraData
+{
 	glm::mat4 proj;
 	glm::mat4 view;
 	glm::vec4 cameraDir;
@@ -23,40 +24,46 @@ struct GPU_CameraData {
 };
 
 
-class ViewCamera {
+class ViewCamera
+{
 
-	struct Orthographic {
+	struct Orthographic
+	{
 		float size = 1.0f;
 	};
 
-	struct Perspective {
+	struct Perspective
+	{
 		float fov = 1.0f;
 	};
 
-	struct ClipPlanes {
+	struct ClipPlanes
+	{
 		float clip_near = 0.01f;
 		float clip_far = 10000.0f;
 	} clipPlanes;
 
-	std::variant<ViewCamera::Orthographic, ViewCamera::Perspective> projectionType = ViewCamera::Orthographic{};
+	// std::variant<ViewCamera::Orthographic, ViewCamera::Perspective> projectionType = ViewCamera::Orthographic{};
 
 
 
-	glm::vec3 pos = glm::vec3(0, 0, 0);
-	glm::vec3 scale = glm::vec3(1, 1, 1);
-	glm::quat rot = glm::quat(1, 0, 0, 0);
+	glm::vec3 pos = glm::vec3 (0, 0, 0);
+	glm::vec3 scale = glm::vec3 (1, 1, 1);
+	glm::quat rot = glm::quat (1, 0, 0, 0);
 
-	GPU_CameraData CameraData();
-
+	GPU_CameraData CameraData ();
 };
 
-class ViewSurface {
+class ViewSurface
+{
 	ViewCamera& cam;
-	struct Viewport {
+	struct Viewport
+	{
 		int x = 0, y = 0;
 		int width = 1, height = 1;
 	} viewport;
-	struct Sciossor {
+	struct Sciossor
+	{
 		int offsetX = 0, offsetY = 0;
 		int width = 1, height = 1;
 	} scissor;
@@ -64,11 +71,12 @@ class ViewSurface {
 	// RenderPass& renderPass;
 };
 
-const glm::mat4 depthReverserMatrix{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1};
+const glm::mat4 depthReverserMatrix{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1 };
 
 
-class ViewManager {
-	int AddCamera();
+class ViewManager
+{
+	int AddCamera ();
 
 
 
