@@ -92,8 +92,9 @@ class RenderSettings
 	std::string fileName;
 };
 
+struct
 
-class VulkanRenderer
+    class VulkanRenderer
 {
 	public:
 	VulkanRenderer (bool enableValidationLayer, Window& window, Resource::ResourceManager& resourceMan);
@@ -117,13 +118,13 @@ class VulkanRenderer
 	void ContrustFrameGraph ();
 
 	void CreateDepthResources ();
-	void CreatePresentResources();
+	void CreatePresentResources ();
 
 	void PrepareDepthPass (int curFrameIndex);
 	void SubmitDepthPass (int curFrameIndex);
 
-	//void BuildDepthPass (VkCommandBuffer cmdBuf);
-	//void BuildCommandBuffers (VkCommandBuffer cmdBuf);
+	// void BuildDepthPass (VkCommandBuffer cmdBuf);
+	// void BuildCommandBuffers (VkCommandBuffer cmdBuf);
 
 	void PrepareFrame (int curFrameIndex);
 	void SubmitFrame (int curFrameIndex);
@@ -160,9 +161,12 @@ class VulkanRenderer
 	RenderSettings settings;
 
 	VulkanDevice device;
+
+	public:
 	VulkanSwapChain vulkanSwapChain;
 	std::unique_ptr<FrameGraph> frameGraph;
 	VkRenderPass GetRelevantRenderpass (RenderableType type);
+
 
 	ShaderManager shaderManager;
 	// VulkanPipelineManager pipelineManager;
@@ -182,6 +186,8 @@ class VulkanRenderer
 	std::unique_ptr<VulkanBufferUniformPersistant> sunBuffer;
 	std::unique_ptr<VulkanBufferUniformPersistant> pointLightsBuffer;
 	std::unique_ptr<VulkanBufferUniformPersistant> spotLightsBuffer;
+
+	std::unique_ptr<VulkanBufferUniformPersistant> transformDataBuffer;
 
 	std::unique_ptr<VulkanDescriptor> frameDataDescriptor;
 	std::unique_ptr<VulkanDescriptor> lightingDescriptor;
@@ -221,8 +227,8 @@ class VulkanRenderer
 	std::array<VkClearValue, 2> GetFramebufferClearValues ();
 
 	void SetupGlobalDescriptorSet ();
-	void UpdateGlobalDescriptorSet();
-	
+	void UpdateGlobalDescriptorSet ();
+
 	void SetupLightingDescriptorSet ();
 	void SaveScreenshot ();
 };

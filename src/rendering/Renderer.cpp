@@ -96,9 +96,10 @@ VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::
 		depthBuffer.at (1)->textureImageView,
 		depthBuffer.at (2)->textureImageView };
 
-	auto imageViewOrder = frameGraph->OrderAttachments({"img_depth", "img_color"});
+	auto imageViewOrder = frameGraph->OrderAttachments ({ "img_depth", "img_color" });
 
-	vulkanSwapChain.CreateFramebuffers (imageViewOrder, depthImageViews, GetRelevantRenderpass (RenderableType::opaque));
+	vulkanSwapChain.CreateFramebuffers (
+	    imageViewOrder, depthImageViews, GetRelevantRenderpass (RenderableType::opaque));
 
 	PrepareResources ();
 
@@ -214,19 +215,20 @@ void VulkanRenderer::RenderFrame ()
 	}
 }
 
-void VulkanRenderer::CreatePresentResources() {
-	ContrustFrameGraph();
+void VulkanRenderer::CreatePresentResources ()
+{
+	ContrustFrameGraph ();
 	// CreateRenderPass();
 
-	CreateDepthResources();
-	std::array<VkImageView, 3> depthImageViews = { depthBuffer.at(0)->textureImageView,
-		depthBuffer.at(1)->textureImageView,
-		depthBuffer.at(2)->textureImageView };
+	CreateDepthResources ();
+	std::array<VkImageView, 3> depthImageViews = { depthBuffer.at (0)->textureImageView,
+		depthBuffer.at (1)->textureImageView,
+		depthBuffer.at (2)->textureImageView };
 
-	auto imageViewOrder = frameGraph->OrderAttachments({ "img_depth", "img_color" });
+	auto imageViewOrder = frameGraph->OrderAttachments ({ "img_depth", "img_color" });
 
-	vulkanSwapChain.CreateFramebuffers(imageViewOrder, depthImageViews, GetRelevantRenderpass(RenderableType::opaque));
-
+	vulkanSwapChain.CreateFramebuffers (
+	    imageViewOrder, depthImageViews, GetRelevantRenderpass (RenderableType::opaque));
 }
 
 void VulkanRenderer::RecreateSwapChain ()
@@ -243,13 +245,13 @@ void VulkanRenderer::RecreateSwapChain ()
 	frameIndex = 0;
 	frameObjects.clear ();
 	vulkanSwapChain.RecreateSwapChain ();
-	
+
 	for (int i = 0; i < vulkanSwapChain.swapChainImages.size (); i++)
 	{
 		frameObjects.push_back (std::make_unique<FrameObject> (device, i));
 	}
 
-	CreatePresentResources();
+	CreatePresentResources ();
 }
 
 
@@ -544,7 +546,7 @@ void VulkanRenderer::PrepareResources ()
 	// spotLightsBuffer->CreateUniformBuffer(sizeof(SpotLight) * settings.spotLightCount);
 
 	SetupGlobalDescriptorSet ();
-	UpdateGlobalDescriptorSet();
+	UpdateGlobalDescriptorSet ();
 	SetupLightingDescriptorSet ();
 
 
@@ -617,12 +619,12 @@ void VulkanRenderer::SetupGlobalDescriptorSet ()
 	}
 }
 
-void VulkanRenderer::UpdateGlobalDescriptorSet() {
+void VulkanRenderer::UpdateGlobalDescriptorSet ()
+{
 	std::vector<DescriptorUse> writes;
-	writes.push_back(DescriptorUse(0, 1, globalVariableBuffer->resource));
-	writes.push_back(DescriptorUse(1, 1, cameraDataBuffer->resource));
-	frameDataDescriptor->UpdateDescriptorSet(frameDataDescriptorSet, writes);
-
+	writes.push_back (DescriptorUse (0, 1, globalVariableBuffer->resource));
+	writes.push_back (DescriptorUse (1, 1, cameraDataBuffer->resource));
+	frameDataDescriptor->UpdateDescriptorSet (frameDataDescriptorSet, writes);
 }
 
 void VulkanRenderer::SetupLightingDescriptorSet ()
