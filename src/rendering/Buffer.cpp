@@ -42,8 +42,8 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDescriptorType type,
 
 	buffer.allocator = device.GetGeneralAllocator();
 	//Log::Debug << buffer.allocator << "\n";
-	if (buffer.allocator == nullptr)
-		throw std::runtime_error("Allocator was null!");
+	//if (buffer.allocator == nullptr)
+	//	throw std::runtime_error("Allocator was null!");
 	VK_CHECK_RESULT(vmaCreateBuffer(buffer.allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
 
 	if (memToCopy != nullptr) {

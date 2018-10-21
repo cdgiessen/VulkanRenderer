@@ -36,10 +36,10 @@ struct QueueFamilyIndices
 struct VMA_MemoryResource
 {
 	public:
-	VMA_MemoryResource (){};
-	VMA_MemoryResource (
+	void Create (
 	    VkPhysicalDevice physical_device, VkDevice device, VkAllocationCallbacks* custom_allocator = nullptr);
-	~VMA_MemoryResource ();
+	
+	void Free();
 
 	void Log (bool detailedOutput = false);
 
@@ -103,9 +103,9 @@ class VulkanDevice
 	VMA_MemoryResource allocator_general;
 	VMA_MemoryResource allocator_linear_tiling;
 
-	VmaAllocator allocator;
-	VmaAllocator linear_allocator;
-	VmaAllocator optimal_allocator;
+	//VmaAllocator allocator;
+	//VmaAllocator linear_allocator;
+	//VmaAllocator optimal_allocator;
 
 	VkSurfaceKHR surface;
 

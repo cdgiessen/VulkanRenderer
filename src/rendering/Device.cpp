@@ -11,7 +11,7 @@
 #include <iostream>
 
 
-VMA_MemoryResource::VMA_MemoryResource (
+void VMA_MemoryResource::Create(
     VkPhysicalDevice physical_device, VkDevice device, VkAllocationCallbacks* custom_allocator)
 {
 	VmaAllocatorCreateInfo allocatorInfo = {};
@@ -21,7 +21,7 @@ VMA_MemoryResource::VMA_MemoryResource (
 
 	VK_CHECK_RESULT (vmaCreateAllocator (&allocatorInfo, &allocator));
 }
-VMA_MemoryResource::~VMA_MemoryResource ()
+void VMA_MemoryResource::Free()
 {
 	if (allocator)
 	{
@@ -56,6 +56,9 @@ VulkanDevice::VulkanDevice (bool validationLayers, Window& window)
 
 VulkanDevice::~VulkanDevice ()
 {
+	allocator_general.Free();
+	allocator_linear_tiling.Free();
+
 	vkDestroyDevice (device, nullptr);
 	DestroyDebugReportCallbackEXT (instance, callback, nullptr);
 	vkDestroySurfaceKHR (instance, surface, nullptr);
@@ -469,8 +472,8 @@ CommandQueue& VulkanDevice::PresentQueue ()
 
 void VulkanDevice::CreateVulkanAllocator ()
 {
-	allocator_general = VMA_MemoryResource (physical_device, device);
-	allocator_linear_tiling = VMA_MemoryResource (physical_device, device);
+	allocator_general.Create (physical_device, device);
+	allocator_linear_tiling.Create(physical_device, device);
 }
 
 
