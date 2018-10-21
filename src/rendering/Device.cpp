@@ -11,6 +11,32 @@
 #include <iostream>
 
 
+VMA_MemoryResource::VMA_MemoryResource (
+    VkPhysicalDevice physical_device, VkDevice device, VkAllocationCallbacks* custom_allocator)
+{
+	VmaAllocatorCreateInfo allocatorInfo = {};
+	allocatorInfo.physicalDevice = physical_device;
+	allocatorInfo.device = device;
+	allocatorInfo.pAllocationCallbacks = custom_allocator;
+
+	VK_CHECK_RESULT (vmaCreateAllocator (&allocatorInfo, &allocator));
+}
+VMA_MemoryResource::~VMA_MemoryResource ()
+{
+	if (allocator)
+	{
+		vmaDestroyAllocator (allocator);
+	}
+}
+
+void VMA_MemoryResource::Log (bool detailedOutput)
+{
+	char* str;
+	vmaBuildStatsString (allocator, &str, detailedOutput);
+	Log::Debug << "Allocator Data Dump:\n" << std::string (str) << "\n";
+	vmaFreeStatsString (allocator, str);
+}
+
 VulkanDevice::VulkanDevice (bool validationLayers, Window& window)
 : enableValidationLayers (validationLayers), window (window)
 {
@@ -30,10 +56,6 @@ VulkanDevice::VulkanDevice (bool validationLayers, Window& window)
 
 VulkanDevice::~VulkanDevice ()
 {
-	vmaDestroyAllocator (allocator);
-	vmaDestroyAllocator (linear_allocator);
-	vmaDestroyAllocator (optimal_allocator);
-
 	vkDestroyDevice (device, nullptr);
 	DestroyDebugReportCallbackEXT (instance, callback, nullptr);
 	vkDestroySurfaceKHR (instance, surface, nullptr);
@@ -42,19 +64,8 @@ VulkanDevice::~VulkanDevice ()
 
 void VulkanDevice::LogMemory ()
 {
-	bool detailedOutput = false;
-	char* str;
-	vmaBuildStatsString (allocator, &str, detailedOutput);
-	Log::Debug << "Allocator output\n" << std::string (str) << "\n";
-	vmaFreeStatsString (allocator, str);
-
-	vmaBuildStatsString (linear_allocator, &str, detailedOutput);
-	Log::Debug << "Linear Allocator output\n" << std::string (str) << "\n";
-	vmaFreeStatsString (linear_allocator, str);
-
-	vmaBuildStatsString (optimal_allocator, &str, detailedOutput);
-	Log::Debug << "Optimal Allocator output\n" << std::string (str) << "\n";
-	vmaFreeStatsString (optimal_allocator, str);
+	allocator_general.Log ();
+	allocator_linear_tiling.Log ();
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debugCallback (VkDebugReportFlagsEXT flags,
@@ -458,21 +469,15 @@ CommandQueue& VulkanDevice::PresentQueue ()
 
 void VulkanDevice::CreateVulkanAllocator ()
 {
-	VmaAllocatorCreateInfo allocatorInfo = {};
-	allocatorInfo.physicalDevice = physical_device;
-	allocatorInfo.device = device;
-
-	VK_CHECK_RESULT (vmaCreateAllocator (&allocatorInfo, &allocator));
-
-	VK_CHECK_RESULT (vmaCreateAllocator (&allocatorInfo, &linear_allocator));
-	VK_CHECK_RESULT (vmaCreateAllocator (&allocatorInfo, &optimal_allocator));
+	allocator_general = VMA_MemoryResource (physical_device, device);
+	allocator_linear_tiling = VMA_MemoryResource (physical_device, device);
 }
 
 
-VmaAllocator VulkanDevice::GetGeneralAllocator () { return allocator; }
+VmaAllocator VulkanDevice::GetGeneralAllocator () { return allocator_general.allocator; }
 
-VmaAllocator VulkanDevice::GetImageLinearAllocator () { return linear_allocator; }
+VmaAllocator VulkanDevice::GetImageLinearAllocator () { return allocator_linear_tiling.allocator; }
 
-VmaAllocator VulkanDevice::GetImageOptimalAllocator () { return optimal_allocator; }
+VmaAllocator VulkanDevice::GetImageOptimalAllocator () { return allocator_general.allocator; }
 
 VkSurfaceKHR VulkanDevice::GetSurface () { return surface; }

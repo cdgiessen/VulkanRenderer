@@ -127,10 +127,8 @@ target_include_directories(VulkanApp PUBLIC glfw)
 target_link_libraries(VulkanApp PRIVATE glfw)
 
 #vulkan
-if(VULKAN_FOUND)
-	target_include_directories(VulkanApp PRIVATE ${Vulkan_INCLUDE_DIRS})
-	target_link_libraries(VulkanApp PRIVATE ${Vulkan_LIBRARIES})
-endif (VULKAN_FOUND)
+target_include_directories(VulkanApp PRIVATE ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(VulkanApp PRIVATE ${Vulkan_LIBRARIES})
 
 #bullet physics
 if(BULLET_FOUND)
@@ -148,15 +146,6 @@ endif(UNIX)
 
 #set_target_properties(VulkanApp PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
 #cotire(VulkanApp)
-
-if(MSVC)
-	#add_compile_options("/Debug:fastlink")
-	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Debug:fastlink")
-	#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")	
-	#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
-	#set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
-endif(MSVC)
-
 
 # copy files over
 add_custom_command(TARGET VulkanApp POST_BUILD
