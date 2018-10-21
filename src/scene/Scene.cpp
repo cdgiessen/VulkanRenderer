@@ -145,15 +145,15 @@ void Scene::UpdateScene() {
 		0.05f, 10000000.0f);
 	proj[1][1] *= -1;
 
-	CameraData cd;
-	cd.view = camera->GetViewMatrix();
-	cd.projView = proj * cd.view;
-	cd.cameraDir = camera->Front;
-	cd.cameraPos = camera->Position;
+	std::vector<CameraData> cd(1);
+	cd.at(0).view = camera->GetViewMatrix();
+	cd.at(0).projView = proj * cd.at(0).view;
+	cd.at(0).cameraDir = camera->Front;
+	cd.at(0).cameraPos = camera->Position;
 
 	UpdateSunData();
 
-	renderer.UpdateRenderResources(gd, cd, directionalLights, pointLights, spotLights);
+	renderer.UpdateRenderResources(gd, {cd}, directionalLights, pointLights, spotLights);
 
 	if (walkOnGround) {
 		float groundHeight = (float)terrainManager->GetTerrainHeightAtLocation(camera->Position.x, camera->Position.z) + 2.0f;
@@ -193,7 +193,7 @@ void Scene::UpdateScene() {
 		UpdateTerrain = !UpdateTerrain;
 
 
-	skybox->UpdateUniform(proj, cd.view);
+	skybox->UpdateUniform(proj, cd.at(0).view);
 
 	for (auto& obj : gameObjects) {
 		obj->UpdateUniformBuffer((float)timeManager.RunningTime());

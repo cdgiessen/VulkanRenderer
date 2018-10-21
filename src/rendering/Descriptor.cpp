@@ -93,7 +93,7 @@ void VulkanDescriptor::SetupPool(std::vector<DescriptorPoolSize> poolSizes, int 
 
 	if (vkCreateDescriptorPool(device.device, &poolInfo, nullptr, &pool) != VK_SUCCESS)
 	{
-		//throw std::runtime_error("failed to create descriptor pool!");
+		throw std::runtime_error("failed to create descriptor pool!");
 	}
 
 	poolMade = true;
@@ -111,9 +111,13 @@ DescriptorSet VulkanDescriptor::CreateDescriptorSet() {
 	VkDescriptorSetAllocateInfo allocInfo =
 		initializers::descriptorSetAllocateInfo(pool, layouts, 1);
 
-	if (vkAllocateDescriptorSets(device.device, &allocInfo, &(set.set)) != VK_SUCCESS)
+	VkResult res = vkAllocateDescriptorSets(device.device, &allocInfo, &(set.set));
+	if (res != VK_SUCCESS)
 	{
-		throw std::runtime_error("failed to allocate descriptor set!");
+		if (res == VK_ERROR_FRAGMENTED_POOL)throw std::runtime_error("failed to allocate descriptor set! FRAGMENTED_POOL");
+		else if (res == VK_ERROR_OUT_OF_POOL_MEMORY) throw std::runtime_error("failed to allocate descriptor set! OUT_OF_POOL_MEMORY");
+		else if (res == VK_ERROR_OUT_OF_HOST_MEMORY)throw std::runtime_error("failed to allocate descriptor set! OUT_OF_HOST_MEMORY");
+		else if (res == VK_ERROR_OUT_OF_DEVICE_MEMORY)throw std::runtime_error("failed to allocate descriptor set! OUT_OF_DEVICE_MEMORY");
 	}
 
 	return set;

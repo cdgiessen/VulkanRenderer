@@ -1,4 +1,4 @@
-#include "Camera.h"
+#include "ViewCamera.h"
 
 GPU_CameraData ViewCamera::CameraData() {
 

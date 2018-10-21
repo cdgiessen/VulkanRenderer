@@ -92,6 +92,79 @@ class RenderSettings
 	std::string fileName;
 };
 
+class GPU_DoubleBuffer
+{
+	public:
+	GPU_DoubleBuffer (VulkanDevice& device, RenderSettings& settings);
+
+	~GPU_DoubleBuffer ();
+
+	void Update (GlobalData& globalData,
+	    std::vector<CameraData>& cameraData,
+	    std::vector<DirectionalLight>& directionalLights,
+	    std::vector<PointLight>& pointLights,
+	    std::vector<SpotLight>& spotLights);
+
+	int CurIndex();
+	void AdvanceFrameCounter ();
+
+	VkDescriptorSetLayout GetFrameDataDescriptorLayout ();
+	VkDescriptorSetLayout GetLightingDescriptorLayout ();
+
+	void BindFrameDataDescriptorSet (int index, VkCommandBuffer cmdBuf);
+	void BindLightingDataDescriptorSet (int index, VkCommandBuffer cmdBuf);
+
+	private:
+	struct Dynamic
+	{
+		std::unique_ptr<VulkanBufferUniformPersistant> globalVariableBuffer;
+		std::unique_ptr<VulkanBufferUniformPersistant> cameraDataBuffer;
+		std::unique_ptr<VulkanBufferUniformPersistant> sunBuffer;
+		std::unique_ptr<VulkanBufferUniformPersistant> pointLightsBuffer;
+		std::unique_ptr<VulkanBufferUniformPersistant> spotLightsBuffer;
+
+		std::unique_ptr<VulkanBufferUniformDynamic> dynamicTransformBuffer;
+
+		DescriptorSet frameDataDescriptorSet;
+		DescriptorSet lightingDescriptorSet;
+
+		DescriptorSet dynamicTransformDescriptorSet;
+	};
+
+	std::unique_ptr<VulkanDescriptor> frameDataDescriptor;
+	std::unique_ptr<VulkanDescriptor> lightingDescriptor;
+
+	std::unique_ptr<VulkanDescriptor> dynamicTransformDescriptor;
+
+	VkPipelineLayout frameDataDescriptorLayout;
+	VkPipelineLayout lightingDescriptorLayout;
+
+
+	VulkanDevice& device;
+
+	std::array<Dynamic, 2> d_buffers;
+
+	int cur_index = 0;
+};
+
+//struct GPU_TransformUBO {
+//	glm::mat4 model;
+//	glm::mat4 normal;
+//}
+//
+//struct GPU_StaticTransformBuffer{
+//	GPU_StaticTransformBuffer(VulkanDevice& device, int size, int count) {
+//		data = std::make_unique<VulkanBufferUniform>(device.device, sizeof(GPU_TransformUBO));
+//
+//	}
+//	int Allocate(GPU_TransformUBO transform){
+//		if(size < allocated)
+//
+//	}
+//	int allocated = 0;
+//	std::unique_ptr<VulkanBufferUniform> data;
+//
+//};
 
 class VulkanRenderer
 {
@@ -105,11 +178,11 @@ class VulkanRenderer
 	~VulkanRenderer ();
 
 
-	void UpdateRenderResources (GlobalData globalData,
-	    CameraData cameraData,
-	    std::vector<DirectionalLight> directionalLights,
-	    std::vector<PointLight> pointLights,
-	    std::vector<SpotLight> spotLights);
+	void UpdateRenderResources (GlobalData& globalData,
+	    std::vector<CameraData>& cameraData,
+	    std::vector<DirectionalLight>& directionalLights,
+	    std::vector<PointLight>& pointLights,
+	    std::vector<SpotLight>& spotLights);
 	void RenderFrame ();
 
 	void RecreateSwapChain ();
@@ -117,26 +190,21 @@ class VulkanRenderer
 	void ContrustFrameGraph ();
 
 	void CreateDepthResources ();
-	void CreatePresentResources();
+	void CreatePresentResources ();
 
 	void PrepareDepthPass (int curFrameIndex);
 	void SubmitDepthPass (int curFrameIndex);
 
-	//void BuildDepthPass (VkCommandBuffer cmdBuf);
-	//void BuildCommandBuffers (VkCommandBuffer cmdBuf);
+	// void BuildDepthPass (VkCommandBuffer cmdBuf);
+	// void BuildCommandBuffers (VkCommandBuffer cmdBuf);
 
 	void PrepareFrame (int curFrameIndex);
 	void SubmitFrame (int curFrameIndex);
-
-	void PrepareResources ();
 
 	std::shared_ptr<VulkanDescriptor> GetVulkanDescriptor ();
 	void AddGlobalLayouts (std::vector<VkDescriptorSetLayout>& layouts);
 	std::vector<VkDescriptorSetLayout> GetGlobalLayouts ();
 
-	// std::vector<DescriptorPoolSize> GetGlobalPoolSize(int poolSize = 1);
-	// std::vector<DescriptorUse> GetGlobalDescriptorUses();
-	// DescriptorUse GetLightingDescriptorUses(uint32_t binding);
 
 	VkFormat FindSupportedFormat (
 	    const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
@@ -177,24 +245,9 @@ class VulkanRenderer
 
 	std::vector<std::shared_ptr<VulkanDescriptor>> descriptors;
 
-	std::unique_ptr<VulkanBufferUniformPersistant> globalVariableBuffer;
-	std::unique_ptr<VulkanBufferUniformPersistant> cameraDataBuffer;
-	std::unique_ptr<VulkanBufferUniformPersistant> sunBuffer;
-	std::unique_ptr<VulkanBufferUniformPersistant> pointLightsBuffer;
-	std::unique_ptr<VulkanBufferUniformPersistant> spotLightsBuffer;
+	GPU_DoubleBuffer dynamic_data;
 
-	std::unique_ptr<VulkanDescriptor> frameDataDescriptor;
-	std::unique_ptr<VulkanDescriptor> lightingDescriptor;
-
-	DescriptorSet frameDataDescriptorSet;
-	DescriptorSet lightingDescriptorSet;
-
-	VkPipelineLayout frameDataDescriptorLayout;
-	VkPipelineLayout lightingDescriptorLayout;
-
-	std::unique_ptr<VulkanDescriptor> dynamicTransformDescriptor;
-	DescriptorSet dynamicTransformDescriptorSet;
-	std::unique_ptr<VulkanBufferUniformDynamic> dynamicTransformBuffer;
+	// std::unique_ptr<VulkanBufferUniformDynamic> dynamicTransformBuffer;
 
 	std::array<std::shared_ptr<VulkanTexture>, 3> depthBuffer;
 
@@ -220,9 +273,5 @@ class VulkanRenderer
 
 	std::array<VkClearValue, 2> GetFramebufferClearValues ();
 
-	void SetupGlobalDescriptorSet ();
-	void UpdateGlobalDescriptorSet();
-	
-	void SetupLightingDescriptorSet ();
 	void SaveScreenshot ();
 };

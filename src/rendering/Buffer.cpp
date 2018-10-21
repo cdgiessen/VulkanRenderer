@@ -24,12 +24,12 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, VkDescriptorType type,
 	if (dynamicAlignment == DynamicallyAligned::T)
 	{
 		size_t minUboAlignment = device.physical_device_properties.limits.minUniformBufferOffsetAlignment;
-		size_t dynamicAlignment = m_size;
+		alignment = m_size;
 		if (minUboAlignment > 0) {
-			dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+			alignment = (alignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
 		}
 
-		m_size = count * dynamicAlignment;
+		m_size = count * alignment;
 	}
 
 	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
@@ -210,6 +210,13 @@ VulkanBufferUniformDynamic::VulkanBufferUniformDynamic(VulkanDevice& device, VkD
 {
 
 }
+
+void VulkanBufferUniformDynamic::BindDynamicBufferInstance(VkCommandBuffer cmdBuf, uint32_t instance, VkPipelineLayout pipelineLayout, VkDescriptorSet* descriptorSet) {
+	uint32_t dynamicOffset = instance * static_cast<uint32_t>(alignment);
+	
+	vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, descriptorSet, 1, &dynamicOffset);
+}
+
 
 
 VulkanBufferStagingResource::VulkanBufferStagingResource(VulkanDevice& device, VkDeviceSize size, void* pData) :

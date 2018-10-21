@@ -69,6 +69,7 @@ protected:
 
 	bool persistantlyMapped = false;
 
+	size_t alignment = -1;
 
 	void SetupResource();
 
@@ -94,7 +95,7 @@ class VulkanBufferUniformDynamic : public VulkanBuffer {
 public:
 	VulkanBufferUniformDynamic(VulkanDevice& device, VkDeviceSize size, uint32_t count);
 
-	
+	void BindDynamicBufferInstance (VkCommandBuffer cmdBuf, uint32_t instance, VkPipelineLayout pipelineLayout, VkDescriptorSet* descriptorSet);
 };
 
 class VulkanBufferStagingResource : public VulkanBuffer {
