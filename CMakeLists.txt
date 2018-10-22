@@ -6,7 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 if(MSVC)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
 endif(MSVC)
-
+if(UNIX)
+endif(UNIX)
 
 #list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 #set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -139,7 +140,11 @@ endif(BULLET_FOUND)
 #gtk
 if(UNIX)
 	target_link_libraries(VulkanApp PRIVATE ${GTK3_LIBRARIES})
+
+	target_link_libraries(VulkanApp PRIVATE stdc++fs)
 endif(UNIX)
+
+
 
 #memory
 #target_link_libraries(VulkanApp PUBLIC foonathan_memory)
@@ -152,22 +157,20 @@ add_custom_command(TARGET VulkanApp POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets)
 
+#copy glslangvalidator to binary dir
 if(MSVC)
 add_custom_command(TARGET VulkanApp POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy
-		$ENV{VULKAN_SDK}/Bin/glslangValidator.exe $<TARGET_FILE_DIR:VulkanApp>	
-	)
-	endif(MSVC)
+		$ENV{VULKAN_SDK}/Bin/glslangValidator.exe $<TARGET_FILE_DIR:VulkanApp>)
+endif(MSVC)
 
-	if(UNIX)
-
+if(UNIX)
 add_custom_command(TARGET VulkanApp POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy
-		$ENV{VULKAN_SDK}/bin/glslangValidator $<TARGET_FILE_DIR:VulkanApp>	
-	)
-	endif(UNIX)
+		$ENV{VULKAN_SDK}/bin/glslangValidator $<TARGET_FILE_DIR:VulkanApp>)
+endif(UNIX)
 
-add_custom_target(CopyAssets ALL POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_directory
-		${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets)
+# add_custom_target(CopyAssets ALL POST_BUILD
+# 	COMMAND ${CMAKE_COMMAND} -E copy_directory
+# 		${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets)
 
