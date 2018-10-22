@@ -151,3 +151,23 @@ endif(UNIX)
 add_custom_command(TARGET VulkanApp POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets)
+
+if(MSVC)
+add_custom_command(TARGET VulkanApp POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy
+		$ENV{VULKAN_SDK}/Bin/glslangValidator.exe $<TARGET_FILE_DIR:VulkanApp>	
+	)
+	endif(MSVC)
+
+	if(UNIX)
+
+add_custom_command(TARGET VulkanApp POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy
+		$ENV{VULKAN_SDK}/bin/glslangValidator $<TARGET_FILE_DIR:VulkanApp>	
+	)
+	endif(UNIX)
+
+add_custom_target(CopyAssets ALL POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_directory
+		${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets)
+

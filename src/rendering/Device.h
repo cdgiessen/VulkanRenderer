@@ -103,10 +103,6 @@ class VulkanDevice
 	VMA_MemoryResource allocator_general;
 	VMA_MemoryResource allocator_linear_tiling;
 
-	//VmaAllocator allocator;
-	//VmaAllocator linear_allocator;
-	//VmaAllocator optimal_allocator;
-
 	VkSurfaceKHR surface;
 
 	void CreateInstance (std::string appName);

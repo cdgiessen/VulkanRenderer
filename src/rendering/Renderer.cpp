@@ -250,10 +250,8 @@ void VulkanRenderer::RecreateSwapChain ()
 }
 
 
+void VulkanRenderer::ToggleWireframe () {  wireframe = !wireframe; }
 
-void VulkanRenderer::ToggleWireframe () { wireframe = !wireframe; }
-
-// 11
 void VulkanRenderer::CreateDepthResources ()
 {
 	VkFormat depthFormat = FindDepthFormat ();
@@ -268,7 +266,7 @@ VkFormat VulkanRenderer::FindSupportedFormat (
 {
 	for (VkFormat format : candidates)
 	{
-		VkFormatProperties props;
+		VkFormatProperties props; 
 		vkGetPhysicalDeviceFormatProperties (device.physical_device, format, &props);
 
 		if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
