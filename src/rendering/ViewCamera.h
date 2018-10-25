@@ -19,17 +19,20 @@ struct GPU_CameraData
 {
 	glm::mat4 proj;
 	glm::mat4 view;
-	glm::vec4 cameraDir;
-	glm::vec4 cameraPos;
 };
 
 
 class ViewCamera
 {
-
+public:
+	enum class ProjectionType {
+		orthographic,
+		perspective
+	};
 	struct Orthographic
 	{
 		float size = 1.0f;
+		float left
 	};
 
 	struct Perspective
@@ -41,22 +44,35 @@ class ViewCamera
 	{
 		float clip_near = 0.01f;
 		float clip_far = 10000.0f;
-	} clipPlanes;
-
-	// std::variant<ViewCamera::Orthographic, ViewCamera::Perspective> projectionType = ViewCamera::Orthographic{};
+	};
 
 
+	glm::mat4 UpdateProjMatrix(ProjectionType projectionType);
+	glm::mat4 CalcViewMatrix();
+
+	glm::mat4 CalcViewFrustum();
 
 	glm::vec3 pos = glm::vec3 (0, 0, 0);
 	glm::vec3 scale = glm::vec3 (1, 1, 1);
 	glm::quat rot = glm::quat (1, 0, 0, 0);
 
 	GPU_CameraData CameraData ();
+	void CalcCameraData(GPU_CameraData * dest);
+
+	private:
+
+		ProjectionType projectionType = ProjectionType::perspective; 
+		Orthographic ortho;
+		Perspective persp;
+		ClipPlanes clipPlanes;
+
+		glm::mat4 projectionMatrix; //cached version
+
 };
 
 class ViewSurface
 {
-	ViewCamera& cam;
+	//ViewCamera& cam;
 	struct Viewport
 	{
 		int x = 0, y = 0;
@@ -76,8 +92,8 @@ const glm::mat4 depthReverserMatrix{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 
 
 class ViewManager
 {
-	int AddCamera ();
-
+	int AddCamera (ViewCamera camera);
+	int AddSurface (ViewSurface surface);
 
 
 	std::unique_ptr<VulkanBufferUniformPersistant> camera_data;
