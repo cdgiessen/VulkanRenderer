@@ -8,7 +8,7 @@ glm::mat4 ViewCamera::UpdateProjMatrix(ProjectionType projectionType) {
 	}
 	else {
 		//ProjectionType::orthographic
-		glm::ortho()
+		//glm::ortho()
 	}
 }
 

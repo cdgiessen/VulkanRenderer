@@ -32,7 +32,7 @@ public:
 	struct Orthographic
 	{
 		float size = 1.0f;
-		float left
+		float left;
 	};
 
 	struct Perspective
