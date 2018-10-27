@@ -1,26 +1,30 @@
 #include "ViewCamera.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-glm::mat4 ViewCamera::UpdateProjMatrix(ProjectionType projectionType) {
+glm::mat4 ViewCamera::UpdateProjMatrix (ProjectionType projectionType)
+{
 	this->projectionType = projectionType;
-	if (projectionType == ProjectionType::perspective) {
-		//glm::lookAt(Position, Position + Front, Up);
+	if (projectionType == ProjectionType::perspective)
+	{
+		// glm::lookAt(Position, Position + Front, Up);
 	}
-	else {
-		//ProjectionType::orthographic
-		glm::ortho()
+	else
+	{
+		// ProjectionType::orthographic
+		// glm::ortho()
 	}
+	return glm::mat4 ();
 }
 
-glm::mat4 ViewCamera::CalcViewMatrix(){
-	//cd.at(0).view = camera->GetViewMatrix();
-	//cd.at(0).projView = proj * cd.at(0).view;
-	//cd.at(0).cameraDir = camera->Front;
-	//cd.at(0).cameraPos = camera->Position;
+glm::mat4 ViewCamera::CalcViewMatrix ()
+{
+	// cd.at(0).view = camera->GetViewMatrix();
+	// cd.at(0).projView = proj * cd.at(0).view;
+	// cd.at(0).cameraDir = camera->Front;
+	// cd.at(0).cameraPos = camera->Position;
+	return glm::mat4 ();
 }
-glm::mat4 ViewCamera::CalcViewFrustum() {
-
-}
+glm::mat4 ViewCamera::CalcViewFrustum () { return glm::mat4 (); }
 
 GPU_CameraData ViewCamera::CameraData ()
 {
@@ -35,5 +39,5 @@ GPU_CameraData ViewCamera::CameraData ()
 	// cd.projView = proj * cd.view;
 	// cd.cameraDir = camera->Front;
 	// cd.cameraPos = camera->Position;
-	return GPU_CameraData{ projectionMatrix, CalcViewMatrix ()};
+	return GPU_CameraData{ projectionMatrix, CalcViewMatrix () };
 }

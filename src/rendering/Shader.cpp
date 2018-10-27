@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <thread>
 
+#include <json.hpp>
+
 #include "../core/CoreTools.h"
 #include "../core/Logger.h"
 #include "Initializers.h"
@@ -135,7 +137,81 @@ std::vector<VkPipelineShaderStageCreateInfo> ShaderModuleSet::ShaderStageCreateI
 //	return cftime;
 //}
 
-void StartShaderCompilation (std::string str) { std::system (str.c_str ()); }
+void ReadInShaderDatabaseFile (std::string fileName)
+{
+	if (fileExists (fileName))
+	{
+		try
+		{
+			std::ifstream input (fileName);
+			nlohmann::json j;
+			input >> j;
+
+
+			memory_dump = j["memory_dump_on_exit"];
+			directionalLightCount = j["directional_light_count"];
+			pointLightCount = j["point_light_count"];
+			spotLightCount = j["spot_light_count"];
+		}
+		catch (std::runtime_error e)
+		{
+			Log::Debug << "Shader Database file was incorrect, creating a new one";
+			SaveShaderDatabaseFile ();
+		}
+	}
+	else
+	{
+		Log::Debug << "Shader Database doesn't exist, creating one";
+		SaveShaderDatabaseFile ();
+	}
+}
+
+void SaveShaderDatabaseFile ()
+{
+	nlohmann::json j;
+
+	j["memory_dump_on_exit"] = memory_dump;
+
+	j["directional_light_count"] = directionalLightCount;
+	j["point_light_count"] = pointLightCount;
+	j["spot_light_count"] = spotLightCount;
+
+	std::ofstream outFile (fileName);
+	outFile << std::setw (4) << j;
+	outFile.close ();
+}
+
+void StartShaderCompilation (std::vector<std::string> strs)
+{
+	for (auto& str : strs)
+		std::system (str.c_str ());
+}
+
+void CompileShaders (std::vector<std::string> filenames)
+{
+	unsigned int cts = std::thread::hardware_concurrency ();
+
+	std::vector<std::thread> threads;
+	for (int i = 0; i < cts; i++)
+	{
+		if (i == cts - 1)
+		{
+			auto cmds = std::vector<std::string> (std::begin (filenames) + i * filenames.size () / cts,
+			    std::begin (filenames) + (i + 1) / cts);
+			threads.push_back (std::thread (StartShaderCompilation, cmds));
+		}
+		else
+		{
+			auto cmds = std::vector<std::string> (
+			    std::begin (filenames) + i * filenames.size () / cts, std::end (filenames));
+			threads.push_back (std::thread (StartShaderCompilation, cmds));
+		}
+	}
+	for (auto& t : threads)
+	{
+		t.join ();
+	}
+}
 
 ShaderManager::ShaderManager (VulkanDevice& device) : device (device)
 {
@@ -176,15 +252,7 @@ ShaderManager::ShaderManager (VulkanDevice& device) : device (device)
 		}
 	}
 
-	std::vector<std::thread> threads;
-	for (auto& cmd : cmds)
-	{
-		threads.push_back (std::thread (StartShaderCompilation, cmd));
-	}
-	for (auto& t : threads)
-	{
-		t.join ();
-	}
+	CompileShaders (cmds);
 }
 
 ShaderManager::~ShaderManager ()

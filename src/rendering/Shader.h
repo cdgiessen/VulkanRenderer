@@ -55,12 +55,37 @@ class ShaderModuleSet
 	private:
 	ShaderModule vert;
 
-	std::optional<ShaderModule> frag ;
-	std::optional<ShaderModule> geom ;
+	std::optional<ShaderModule> frag;
+	std::optional<ShaderModule> geom;
 	std::optional<ShaderModule> tessControl;
 	std::optional<ShaderModule> tessEval;
-
 };
+
+class ShaderCharacteristics
+{
+	ShaderModuleType type;
+
+}
+
+class ShaderDatabaseHandle
+{
+	std::string name;
+	bool compiled = false;
+
+}
+
+class ShaderDatabase
+{
+	public:
+	ShaderDatabase (std::string fileName);
+
+	void Load ();
+	void Save ();
+
+	// void AddEntry (ShaderDatabaseHandle handle);
+
+	private:
+}
 
 class ShaderManager
 {

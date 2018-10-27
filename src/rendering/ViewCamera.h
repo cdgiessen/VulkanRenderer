@@ -24,15 +24,15 @@ struct GPU_CameraData
 
 class ViewCamera
 {
-public:
-	enum class ProjectionType {
+	public:
+	enum class ProjectionType
+	{
 		orthographic,
 		perspective
 	};
 	struct Orthographic
 	{
 		float size = 1.0f;
-		float left
 	};
 
 	struct Perspective
@@ -47,32 +47,30 @@ public:
 	};
 
 
-	glm::mat4 UpdateProjMatrix(ProjectionType projectionType);
-	glm::mat4 CalcViewMatrix();
+	glm::mat4 UpdateProjMatrix (ProjectionType projectionType);
+	glm::mat4 CalcViewMatrix ();
 
-	glm::mat4 CalcViewFrustum();
+	glm::mat4 CalcViewFrustum ();
 
 	glm::vec3 pos = glm::vec3 (0, 0, 0);
 	glm::vec3 scale = glm::vec3 (1, 1, 1);
 	glm::quat rot = glm::quat (1, 0, 0, 0);
 
 	GPU_CameraData CameraData ();
-	void CalcCameraData(GPU_CameraData * dest);
+	void CalcCameraData (GPU_CameraData* dest);
 
 	private:
+	ProjectionType projectionType = ProjectionType::perspective;
+	Orthographic ortho;
+	Perspective persp;
+	ClipPlanes clipPlanes;
 
-		ProjectionType projectionType = ProjectionType::perspective; 
-		Orthographic ortho;
-		Perspective persp;
-		ClipPlanes clipPlanes;
-
-		glm::mat4 projectionMatrix; //cached version
-
+	glm::mat4 projectionMatrix; // cached version
 };
 
 class ViewSurface
 {
-	//ViewCamera& cam;
+	// ViewCamera& cam;
 	struct Viewport
 	{
 		int x = 0, y = 0;
