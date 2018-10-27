@@ -1,3 +1,0 @@
-[submodule "ext/memory"]
-	path = ext/memory
-	url = https://github.com/foonathan/memory
