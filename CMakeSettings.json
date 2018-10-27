@@ -8,10 +8,12 @@
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
-      "variables": [{
-        "name": "CMAKE_TOOLCHAIN_FILE",
-        "value": "C:\\src\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
-      }],
+      "variables": [
+        {
+          "name": "CMAKE_TOOLCHAIN_FILE",
+          "value": "C:/src/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        }
+      ],
       "ctestCommandArgs": ""
     },
     {
@@ -22,10 +24,12 @@
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
-      "variables": [{
-        "name": "CMAKE_TOOLCHAIN_FILE",
-        "value": "C:\\src\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
-      }],
+      "variables": [
+        {
+          "name": "CMAKE_TOOLCHAIN_FILE",
+          "value": "C:/src/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        }
+      ],
       "ctestCommandArgs": ""
     },
     {
@@ -36,10 +40,12 @@
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
-      "variables": [{
-        "name": "CMAKE_TOOLCHAIN_FILE",
-        "value": "C:\\src\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
-      }],
+      "variables": [
+        {
+          "name": "CMAKE_TOOLCHAIN_FILE",
+          "value": "C:/src/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        }
+      ],
       "ctestCommandArgs": ""
     }
   ]
