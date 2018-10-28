@@ -1,6 +1,7 @@
 #include "Model.h"
 
 #include <iterator>
+#include <numeric>
 
 #include "Renderer.h"
 
@@ -162,9 +163,9 @@ VulkanModel::VulkanModel (VulkanRenderer& renderer, std::shared_ptr<MeshData> me
 {
 	readyToUse = std::make_shared<bool> (false);
 
-	vertexCount = mesh->vertexData.size();
-	vertexElementCount = mesh->desc.ElementCount();
-	indexCount = (uint16_t)mesh->indexData.size();
+	vertexCount = mesh->vertexData.size ();
+	vertexElementCount = mesh->desc.ElementCount ();
+	indexCount = (uint16_t)mesh->indexData.size ();
 
 	uint32_t vBufferSize = static_cast<uint32_t> (vertexCount) * sizeof (float);
 	uint16_t iBufferSize = static_cast<uint16_t> (indexCount) * sizeof (uint16_t);
@@ -176,7 +177,7 @@ VulkanModel::VulkanModel (VulkanRenderer& renderer, std::shared_ptr<MeshData> me
 	auto vertexStagingBuffer = std::make_shared<VulkanBufferStagingVertex> (
 	    renderer.device, mesh->vertexData.size (), mesh->vertexData.data ());
 	auto indexStagingBuffer = std::make_shared<VulkanBufferStagingIndex> (
-	    renderer.device, (uint16_t)mesh->indexData.size(), mesh->indexData.data ());
+	    renderer.device, (uint16_t)mesh->indexData.size (), mesh->indexData.data ());
 
 	VkBuffer vert = vmaVertices->buffer.buffer;
 	VkBuffer index = vmaIndicies->buffer.buffer;

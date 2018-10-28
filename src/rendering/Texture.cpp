@@ -2,13 +2,13 @@
 
 #include <algorithm>
 
-#include "../../third-party/stb_image/stb_image.h"
+#include "stb_image/stb_image.h"
 
 #include "Initializers.h"
 #include "RenderTools.h"
 #include "Renderer.h"
 
-#include "../core/Logger.h"
+#include "core/Logger.h"
 
 VulkanTexture::VulkanTexture(
 	VulkanRenderer& renderer,

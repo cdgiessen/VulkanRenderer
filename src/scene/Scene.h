@@ -2,11 +2,11 @@
 
 #include <glm/vec3.hpp>
 
-#include "../rendering/Renderer.h"
+#include "rendering/Renderer.h"
 
-#include "../resources/ResourceManager.h"
+#include "resources/ResourceManager.h"
 
-#include "../core/TimeManager.h"
+#include "core/TimeManager.h"
 
 #include "Camera.h"
 #include "Terrain.h"

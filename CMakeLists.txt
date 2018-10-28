@@ -19,17 +19,7 @@ project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
 
 #libraries
 
-find_library(GLSLANG_LIBRARY NAMES glslang)
-find_path(GLSLANG_INCLUDE_DIR "glslang/Include/Common.h")
-if(GLSLANG_INCLUDE_DIR MATCHES "NOTFOUND" OR GLSLANG_LIBRARY MATCHES "NOTFOUND")
-  message(FATAL_ERROR "Could not find glslang")
-endif()
-
-#find_library(NLOHMANN_JSON_LIBRARY NAMES nlohmann_json)
-find_path(NLOHMANN_JSON_INCLUDE_DIR "nlohmann/json.hpp")
-if(NLOHMANN_JSON_INCLUDE_DIR MATCHES "NOTFOUND")# OR NLOHMANN_JSON_LIBRARY MATCHES "NOTFOUND")
-  message(FATAL_ERROR "Could not find nlohmann_json")
-endif()
+add_subdirectory(ext)
 
 find_package(glfw3 REQUIRED)
 
@@ -39,7 +29,7 @@ find_package(Vulkan REQUIRED)
 
 find_package(Bullet) 
 
-find_package(spirv_cross_reflect CONFIG REQUIRED) 
+#find_package(spirv_cross_reflect CONFIG REQUIRED) 
 
 #gtk include for linux file window
 if(UNIX)
@@ -129,10 +119,8 @@ if(MSVC)
 endif(MSVC)
 
 #json
-target_include_directories(VulkanApp PUBLIC third-party/json)
-if(JSON_FOUND)
-	target_include_directories(VulkanApp PUBLIC nlohmann_json::nlohmann_json)
-endif(JSON_FOUND)
+#target_include_directories(VulkanApp PUBLIC third-party/json)
+target_link_libraries(VulkanApp PUBLIC nlohmann_json)
 
 #glm
 target_include_directories(VulkanApp PUBLIC glm)
@@ -155,6 +143,9 @@ endif(BULLET_FOUND)
 #spirv-cross
 target_link_libraries(VulkanApp PRIVATE spirv-cross-reflect)
 
+#glslang
+target_link_libraries(VulkanApp PRIVATE glslang)
+
 #gtk
 if(UNIX)
 	target_link_libraries(VulkanApp PRIVATE ${GTK3_LIBRARIES})
@@ -162,7 +153,11 @@ if(UNIX)
 	target_link_libraries(VulkanApp PRIVATE stdc++fs)
 endif(UNIX)
 
+#include the different source directories in include path
+target_include_directories(VulkanApp PRIVATE src)
 
+#Third party files included in repo
+target_include_directories(VulkanApp PRIVATE third-party)
 
 #memory
 #target_link_libraries(VulkanApp PUBLIC foonathan_memory)

@@ -2,7 +2,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
-#include "../core/Logger.h"
+#include "core/Logger.h"
 
 
 #define VERTEX_BUFFER_BIND_ID 0

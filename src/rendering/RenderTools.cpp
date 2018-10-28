@@ -10,7 +10,7 @@
 
 #include "Initializers.h"
 
-#include "../core/CoreTools.h"
+#include "core/CoreTools.h"
 
 std::string errorString(const VkResult errorCode)
 {

@@ -13,9 +13,9 @@
 
 #include <vulkan/vulkan.h>
 
-#include "../core/CoreTools.h"
-#include "../util/ConcurrentQueue.h"
-#include "../util/PackedArray.h"
+#include "core/CoreTools.h"
+#include "util/ConcurrentQueue.h"
+#include "util/PackedArray.h"
 
 #include "Buffer.h"
 #include "Descriptor.h"
@@ -105,7 +105,7 @@ class GPU_DoubleBuffer
 	    std::vector<PointLight>& pointLights,
 	    std::vector<SpotLight>& spotLights);
 
-	int CurIndex();
+	int CurIndex ();
 	void AdvanceFrameCounter ();
 
 	VkDescriptorSetLayout GetFrameDataDescriptorLayout ();
@@ -147,12 +147,12 @@ class GPU_DoubleBuffer
 	int cur_index = 0;
 };
 
-//struct GPU_TransformUBO {
+// struct GPU_TransformUBO {
 //	glm::mat4 model;
 //	glm::mat4 normal;
 //}
 //
-//struct GPU_StaticTransformBuffer{
+// struct GPU_StaticTransformBuffer{
 //	GPU_StaticTransformBuffer(VulkanDevice& device, int size, int count) {
 //		data = std::make_unique<VulkanBufferUniform>(device.device, sizeof(GPU_TransformUBO));
 //

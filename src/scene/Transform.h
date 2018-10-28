@@ -3,9 +3,9 @@
 #include <glm/vec3.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include "../rendering/RenderStructs.h"
+#include "rendering/RenderStructs.h"
 
-#include "../util/DoubleBuffer.h"
+#include "util/DoubleBuffer.h"
 
 struct TransformData {
 	glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);

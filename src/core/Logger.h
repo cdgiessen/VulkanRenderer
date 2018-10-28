@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../third-party/ImGui/imgui.h"
+#include "ImGui/imgui.h"
 
 #include <fstream>
 #include <iosfwd>

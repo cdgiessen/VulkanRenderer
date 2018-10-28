@@ -1,6 +1,6 @@
 #include "GameObject.h"
 
-#include "../core/Logger.h"
+#include "core/Logger.h"
 
 GameObject::GameObject (VulkanRenderer& renderer) : renderer (renderer) {}
 

@@ -6,14 +6,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vulkan/vulkan.h>
 
-#include "../rendering/Model.h"
-#include "../rendering/Renderer.h"
-#include "../rendering/Texture.h"
+#include "rendering/Model.h"
+#include "rendering/Renderer.h"
+#include "rendering/Texture.h"
 
-#include "../resources/Mesh.h"
-#include "../resources/Texture.h"
+#include "resources/Mesh.h"
+#include "resources/Texture.h"
 
-#include "../util/DoubleBuffer.h"
+#include "util/DoubleBuffer.h"
 
 class InstancedSceneObject
 {

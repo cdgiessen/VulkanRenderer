@@ -11,17 +11,17 @@
 //#include <foonathan/memory/container.hpp> // vector, list, list_node_size
 //#include <foonathan/memory/memory_pool.hpp> // memory_pool
 
-#include "../core/CoreTools.h"
-#include "../core/TimeManager.h"
+#include "core/CoreTools.h"
+#include "core/TimeManager.h"
 
-#include "../util/ConcurrentQueue.h"
-#include "../util/MemoryPool.h"
+#include "util/ConcurrentQueue.h"
+#include "util/MemoryPool.h"
 
-#include "../rendering/Renderer.h"
+#include "rendering/Renderer.h"
 
-#include "../resources/ResourceManager.h"
+#include "resources/ResourceManager.h"
 
-#include "../gui/InternalGraph.h"
+#include "gui/InternalGraph.h"
 
 #include "Camera.h"
 #include "Terrain.h"

@@ -65,14 +65,14 @@ class ShaderCharacteristics
 {
 	ShaderModuleType type;
 
-}
+};
 
 class ShaderDatabaseHandle
 {
 	std::string name;
 	bool compiled = false;
 
-}
+};
 
 class ShaderDatabase
 {
@@ -85,7 +85,7 @@ class ShaderDatabase
 	// void AddEntry (ShaderDatabaseHandle handle);
 
 	private:
-}
+};
 
 class ShaderManager
 {

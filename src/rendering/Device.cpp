@@ -5,8 +5,8 @@
 #include "Initializers.h"
 #include "SwapChain.h"
 
-#include "../core/Logger.h"
-#include "../core/Window.h"
+#include "core/Logger.h"
+#include "core/Window.h"
 
 #include <iostream>
 

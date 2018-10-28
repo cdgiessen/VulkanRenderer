@@ -1,9 +1,9 @@
 #include "Terrain.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "../core/Logger.h"
+#include "core/Logger.h"
 
-#include "../rendering/RenderStructs.h"
+#include "rendering/RenderStructs.h"
 
 #include "TerrainManager.h"
 

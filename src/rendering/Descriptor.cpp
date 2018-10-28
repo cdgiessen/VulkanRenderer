@@ -1,7 +1,7 @@
 #include "Descriptor.h"
 
 #include "Device.h"
-#include "../rendering/Initializers.h"
+#include "rendering/Initializers.h"
 
 DescriptorPoolSize::DescriptorPoolSize(VkDescriptorType type, uint32_t count) : type(type), count(count) {
 };

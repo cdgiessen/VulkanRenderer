@@ -11,7 +11,7 @@
 #include <atomic>
 #include <functional>
 
-#include "../util/ConcurrentQueue.h"
+#include "util/ConcurrentQueue.h"
 
 namespace job {
 

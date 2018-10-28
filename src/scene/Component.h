@@ -3,7 +3,7 @@
 #include <vector>
 #include <map>
 
-#include "../resources/ResourceManager.h"
+#include "resources/ResourceManager.h"
 
 #include "Entity.h"
 #include "Transform.h"

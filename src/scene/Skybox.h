@@ -8,11 +8,11 @@
 #include <glm/common.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "../resources/Texture.h"
+#include "resources/Texture.h"
 
-#include "../rendering/Model.h"
-#include "../rendering/Renderer.h"
-#include "../rendering/Texture.h"
+#include "rendering/Model.h"
+#include "rendering/Renderer.h"
+#include "rendering/Texture.h"
 
 
 struct SkyboxUniformBuffer

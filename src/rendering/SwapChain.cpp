@@ -1,9 +1,9 @@
 #include "SwapChain.h"
 #include "RenderTools.h"
 
-#include "../core/Window.h"
+#include "core/Window.h"
 
-#include "../core/Logger.h"
+#include "core/Logger.h"
 
 #include "FrameGraph.h"
 

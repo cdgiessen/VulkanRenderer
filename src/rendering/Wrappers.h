@@ -19,7 +19,7 @@
 #include "RenderTools.h"
 #include "Buffer.h"
 
-#include "../util/ConcurrentQueue.h"
+#include "util/ConcurrentQueue.h"
 
 
 // Custom define for better code readability

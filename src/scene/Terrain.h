@@ -11,16 +11,16 @@
 #include <vulkan/vulkan.h>
 
 
-#include "../rendering/Model.h"
-#include "../rendering/Renderer.h"
-#include "../rendering/Texture.h"
+#include "rendering/Model.h"
+#include "rendering/Renderer.h"
+#include "rendering/Texture.h"
 
-#include "../core/CoreTools.h"
-#include "../resources/Texture.h"
-#include "../util/Gradient.h"
-#include "../util/MemoryPool.h"
+#include "core/CoreTools.h"
+#include "resources/Texture.h"
+#include "util/Gradient.h"
+#include "util/MemoryPool.h"
 
-#include "../gui/InternalGraph.h"
+#include "gui/InternalGraph.h"
 
 
 const int NumCells = 64;

@@ -1,24 +1,24 @@
 #include "Renderer.h"
 
 #include <fstream>
+#include <iomanip>
 
 #include "Initializers.h"
 
-#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+#include "VulkanMemoryAllocator/vk_mem_alloc.h"
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../../third-party/stb_image/stb_image_write.h"
+#include "stb_image/stb_image_write.h"
 
-#include "../gui/ImGuiImpl.h"
+#include "gui/ImGuiImpl.h"
 
-#include "../core/Logger.h"
-#include "../core/Window.h"
+#include "core/Logger.h"
+#include "core/Window.h"
 
-#include "../scene/Scene.h"
+#include "scene/Scene.h"
 
-#include "../resources/ResourceManager.h"
+#include "resources/ResourceManager.h"
 
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 RenderSettings::RenderSettings (std::string fileName) : fileName (fileName) { Load (); }
 
@@ -250,7 +250,7 @@ void VulkanRenderer::RecreateSwapChain ()
 }
 
 
-void VulkanRenderer::ToggleWireframe () {  wireframe = !wireframe; }
+void VulkanRenderer::ToggleWireframe () { wireframe = !wireframe; }
 
 void VulkanRenderer::CreateDepthResources ()
 {
@@ -266,7 +266,7 @@ VkFormat VulkanRenderer::FindSupportedFormat (
 {
 	for (VkFormat format : candidates)
 	{
-		VkFormatProperties props; 
+		VkFormatProperties props;
 		vkGetPhysicalDeviceFormatProperties (device.physical_device, format, &props);
 
 		if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
@@ -500,8 +500,8 @@ void VulkanRenderer::SubmitFrame (int curFrameIndex)
 		throw std::runtime_error ("failed to present swap chain image!");
 	}
 	// FINALLY!!!! -- not quite...
-	//std::lock_guard<std::mutex> lock (device.PresentQueue ().GetQueueMutex ());
-	//vkQueueWaitIdle (device.PresentQueue ().GetQueue ());
+	// std::lock_guard<std::mutex> lock (device.PresentQueue ().GetQueueMutex ());
+	// vkQueueWaitIdle (device.PresentQueue ().GetQueue ());
 }
 
 std::shared_ptr<VulkanDescriptor> VulkanRenderer::GetVulkanDescriptor ()

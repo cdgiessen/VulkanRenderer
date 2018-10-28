@@ -4,8 +4,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
-#include "../core/Input.h"
-#include "../core/Logger.h"
+#include "core/Input.h"
+#include "core/Logger.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1

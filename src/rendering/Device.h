@@ -9,7 +9,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "../util/ConcurrentQueue.h"
+#include "util/ConcurrentQueue.h"
 
 class Window;
 

@@ -7,8 +7,8 @@
 #include "Descriptor.h"
 #include "Buffer.h"
 
-#include "../resources/Texture.h"
-#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+#include "resources/Texture.h"
+#include "VulkanMemoryAllocator/vk_mem_alloc.h"
 
 class VulkanRenderer;
 

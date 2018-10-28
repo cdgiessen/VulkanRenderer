@@ -2,15 +2,15 @@
 
 #include <vulkan/vulkan.h>
 
-#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+#include "VulkanMemoryAllocator/vk_mem_alloc.h"
 
 #include "Buffer.h"
 #include "Device.h"
 #include "RenderStructs.h"
 #include "RenderTools.h"
 
-#include "../core/CoreTools.h"
-#include "../resources/Mesh.h"
+#include "core/CoreTools.h"
+#include "resources/Mesh.h"
 
 class VulkanRenderer;
 

@@ -5,9 +5,9 @@
 
 #include "Initializers.h"
 
-#include "../core/CoreTools.h"
+#include "core/CoreTools.h"
 
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 
 VkDescriptorType GetVulkanDescriptorType (ResourceType type)

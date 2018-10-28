@@ -6,7 +6,7 @@
 #include <variant>
 #include <vector>
 
-#include "../../third-party/FastNoiseSIMD/FastNoiseSIMD.h"
+#include "FastNoiseSIMD/FastNoiseSIMD.h"
 
 #include <glm/glm.hpp>
 

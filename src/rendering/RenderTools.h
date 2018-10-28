@@ -4,9 +4,9 @@
 
 #include <vulkan/vulkan.h>
 
-#include "../core/Logger.h"
+#include "core/Logger.h"
 
-#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+#include "VulkanMemoryAllocator/vk_mem_alloc.h"
 
 void setTransferBarrier (
     VkCommandBuffer cmdbuffer, VkBuffer bufferr, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);

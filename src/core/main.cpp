@@ -1,53 +1,59 @@
 
-#include <string>
 #include <iostream>
+#include <string>
 
 #include "CoreTools.h"
-#include "VulkanApp.h"
 #include "Logger.h"
+#include "VulkanApp.h"
 
 #define VMA_IMPLEMENTATION
-#include "../../third-party/VulkanMemoryAllocator/vk_mem_alloc.h"
+#include "VulkanMemoryAllocator/vk_mem_alloc.h"
 
-#define TINYGLTF_IMPLEMENTATION //needs stb_image & stb_image_write to be defined above 
-#include "../../third-party/tinygltf/tiny_gltf.h"
+//#define TINYGLTF_IMPLEMENTATION //needs stb_image & stb_image_write to be defined above
+//#include "tinygltf/tiny_gltf.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../../third-party/stb_image/stb_image.h"
+#include "stb_image/stb_image.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../../third-party/stb_image/stb_image_write.h"
+#include "stb_image/stb_image_write.h"
 
-int main(int argc, char* argv[]) {
+int main (int argc, char* argv[])
+{
 
-	SetExecutableFilePath(argv[0]);
+	SetExecutableFilePath (argv[0]);
 
 	std::unique_ptr<VulkanApp> vkApp;
-	try {
-		vkApp = std::make_unique<VulkanApp>();
+	try
+	{
+		vkApp = std::make_unique<VulkanApp> ();
 	}
-	catch (const std::runtime_error& e) {
-		Log::Error << "ENGINE FAILED TO INITIALIZE\n" << std::string(e.what()) << "\n";
+	catch (const std::runtime_error& e)
+	{
+		Log::Error << "ENGINE FAILED TO INITIALIZE\n" << std::string (e.what ()) << "\n";
 		return EXIT_FAILURE;
 	}
 
-	try {
-		vkApp->Run();
+	try
+	{
+		vkApp->Run ();
 	}
-	catch (const std::runtime_error& e) {
-		Log::Error << "ENGINE FAILED IN MAIN LOOP\n" << std::string(e.what()) << "\n";
+	catch (const std::runtime_error& e)
+	{
+		Log::Error << "ENGINE FAILED IN MAIN LOOP\n" << std::string (e.what ()) << "\n";
 		return EXIT_FAILURE;
 	}
 
-	try {
-		vkApp.reset();
+	try
+	{
+		vkApp.reset ();
 	}
-	catch (const std::runtime_error& e) {
-		Log::Error << "ENGINE FAILED TO DESCRUCT\n" << std::string(e.what()) << "\n";
+	catch (const std::runtime_error& e)
+	{
+		Log::Error << "ENGINE FAILED TO DESCRUCT\n" << std::string (e.what ()) << "\n";
 		return EXIT_FAILURE;
 	}
 
 
 	return EXIT_SUCCESS;
-
 }

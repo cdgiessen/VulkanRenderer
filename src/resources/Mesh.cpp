@@ -3,8 +3,8 @@
 #include <numeric>
 #include <glm/glm.hpp>
 
-#include "../core/CoreTools.h"
-#include "../core/Logger.h"
+#include "core/CoreTools.h"
+#include "core/Logger.h"
 
 int VertexDescription::ElementCount()  const { return std::accumulate(std::begin(layout), std::end(layout), 0); }
 

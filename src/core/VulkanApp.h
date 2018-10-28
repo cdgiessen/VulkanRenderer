@@ -12,14 +12,14 @@
 #include "TimeManager.h"
 #include "CoreTools.h"
 
-#include "../resources/ResourceManager.h"
+#include "resources/ResourceManager.h"
 
-#include "../rendering/Renderer.h"
+#include "rendering/Renderer.h"
 
-#include "../scene/Scene.h"
+#include "scene/Scene.h"
 
-#include "../gui/ImGuiImpl.h"
-#include "../gui/ProcTerrainNodeGraph.h"
+#include "gui/ImGuiImpl.h"
+#include "gui/ProcTerrainNodeGraph.h"
 
 struct ImGUI_PanelSettings {
 	bool showGui = true;

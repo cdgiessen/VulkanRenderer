@@ -7,14 +7,14 @@
 
 
 
-#include "../rendering/Material.h"
-#include "../rendering/Model.h"
-#include "../rendering/Renderer.h"
-#include "../rendering/Texture.h"
+#include "rendering/Material.h"
+#include "rendering/Model.h"
+#include "rendering/Renderer.h"
+#include "rendering/Texture.h"
 
 
-#include "../resources/Mesh.h"
-#include "../resources/Texture.h"
+#include "resources/Mesh.h"
+#include "resources/Texture.h"
 
 class GameObject
 {
