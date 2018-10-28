@@ -18,8 +18,32 @@ project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
 
 
 #libraries
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+set(JSON_MultipleHeaders ON)
 
-add_subdirectory(ext)
+find_path(JSON_PATH_FOUND "json" "ext")
+if(NOT JSON_PATH_FOUND)
+message("Json downloading")
+execute_process(COMMAND git submodule update --init -- ext/json
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT JSON_PATH_FOUND)
+add_subdirectory(ext/json)
+
+find_path(SPIRV_CROSS_PATH_FOUND "SPIRV-Cross" "ext")
+if(NOT SPIRV_CROSS_PATH_FOUND)
+message("spirv-cross downloading")
+execute_process(COMMAND git submodule update --init -- ext/SPIRV-Cross
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT SPIRV_CROSS_PATH_FOUND)
+add_subdirectory(ext/SPIRV-Cross)
+
+find_path(GLSLANG_PATH_FOUND "glslang" "ext")
+if(NOT GLSLANG_PATH_FOUND)
+message("glslang downloading")
+execute_process(COMMAND git submodule update --init -- ext/glslang
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT GLSLANG_PATH_FOUND)
+add_subdirectory(ext/glslang)
 
 find_package(glfw3 REQUIRED)
 
