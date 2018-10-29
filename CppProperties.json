@@ -6,7 +6,8 @@
       ],
       "name": "x64-Debug",
       "includePath": [
-        "${workspaceRoot}\\..\\..\\src\\vcpkg\\installed\\x64-windows\\include\\nlohmann",
+        "${workspaceRoot}\\src\\**",
+        "${workspaceRoot}\\ext\\**",
         "${workspaceRoot}\\..\\..\\src\\vcpkg\\installed\\x64-windows\\include",
         "${env.INCLUDE}",
         "${env.VULKAN_SDK}/Include"
@@ -26,7 +27,8 @@
       ],
       "name": "x64-RelWithDebInfo",
       "includePath": [
-        "${workspaceRoot}\\..\\..\\src\\vcpkg\\installed\\x64-windows\\include\\nlohmann",
+        "${workspaceRoot}\\src\\**",
+        "${workspaceRoot}\\ext\\**",
         "${workspaceRoot}\\..\\..\\src\\vcpkg\\installed\\x64-windows\\include",
         "${env.INCLUDE}",
         "${env.VULKAN_SDK}/Include"
@@ -46,7 +48,8 @@
       ],
       "name": "x64-Release",
       "includePath": [
-        "${workspaceRoot}\\..\\..\\src\\vcpkg\\installed\\x64-windows\\include\\nlohmann",
+        "${workspaceRoot}\\src\\**",
+        "${workspaceRoot}\\ext\\**",
         "${workspaceRoot}\\..\\..\\src\\vcpkg\\installed\\x64-windows\\include",
         "${env.INCLUDE}",
         "${env.VULKAN_SDK}/Include"

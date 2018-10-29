@@ -1,6 +1,6 @@
 #include "CoreTools.h"
 
-#include <nlohmann/json.hpp>
+#include <fstream>
 
 std::string executableFilePath;
 

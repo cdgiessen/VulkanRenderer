@@ -1,14 +1,16 @@
 #pragma once
 
 //Input wrapper around GLFW, so the input isn't being driven by the vulkanapp class
-#include <glm/vec2.hpp>
+#include <glm/glm.hpp>
 
 #include <array>
-#include <vector>
 
 #include "Window.h"
 
 namespace Input {
+	const int KeyboardButtonCount = 1024;
+	const int MouseButtonCount = 15;
+	const int JoystickCount = 16;
 
 	//Keycodes reflect ascii encodings, for simplicity's sake
 	enum class KeyCode {
@@ -201,7 +203,7 @@ namespace Input {
 
 		bool IsJoystickConnected(int index);
 
-		std::vector<int> GetConnectedJoysticks();
+		std::array<int, JoystickCount> GetConnectedJoysticks();
 
 		float GetControllerAxis(int id, int axis);
 		bool GetControllerButton(int id, int button);
@@ -232,23 +234,23 @@ namespace Input {
 
 		};
 
-		std::array<bool, 1024> keys = { { false } };
-		std::array<bool, 1024> keysDown = { { false } };
-		std::array<bool, 1024> keysUp = { { false } };
+		std::array<bool, KeyboardButtonCount> keys = { { false } };
+		std::array<bool, KeyboardButtonCount> keysDown = { { false } };
+		std::array<bool, KeyboardButtonCount> keysUp = { { false } };
 
-		std::array<bool, 15> mouseButtons = { { false } };
-		std::array<bool, 15> mouseButtonsDown = { { false } };
-		std::array<bool, 15> mouseButtonsUp = { { false } };
+		std::array<bool, MouseButtonCount> mouseButtons = { { false } };
+		std::array<bool, MouseButtonCount> mouseButtonsDown = { { false } };
+		std::array<bool, MouseButtonCount> mouseButtonsUp = { { false } };
 
 		bool textInputMode = false;
-		glm::dvec2 mousePosition = glm::dvec2(0, 0);
-		glm::dvec2 mousePositionPrevious = glm::dvec2(0, 0);
-		glm::dvec2 mouseChangeInPosition = glm::dvec2(0, 0);
-		glm::dvec2 mouseScroll = glm::dvec2(0, 0);
+		glm::dvec2 mousePosition = glm::dvec2(0.0, 0.0);
+		glm::dvec2 mousePositionPrevious = glm::dvec2(0.0, 0.0);
+		glm::dvec2 mouseChangeInPosition = glm::dvec2(0.0, 0.0);
+		glm::dvec2 mouseScroll = glm::dvec2(0.0, 0.0);
 
 		bool mouseControlStatus = false;
 
-		std::array<JoystickData, 16> joystickData;
+		std::array<JoystickData, JoystickCount> joystickData;
 
 	};
 

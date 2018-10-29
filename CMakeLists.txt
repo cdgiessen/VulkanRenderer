@@ -18,32 +18,7 @@ project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
 
 
 #libraries
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-set(JSON_MultipleHeaders ON)
-
-find_path(JSON_PATH_FOUND "json" "ext")
-if(NOT JSON_PATH_FOUND)
-message("Json downloading")
-execute_process(COMMAND git submodule update --init -- ext/json
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT JSON_PATH_FOUND)
-add_subdirectory(ext/json)
-
-find_path(SPIRV_CROSS_PATH_FOUND "SPIRV-Cross" "ext")
-if(NOT SPIRV_CROSS_PATH_FOUND)
-message("spirv-cross downloading")
-execute_process(COMMAND git submodule update --init -- ext/SPIRV-Cross
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT SPIRV_CROSS_PATH_FOUND)
-add_subdirectory(ext/SPIRV-Cross)
-
-find_path(GLSLANG_PATH_FOUND "glslang" "ext")
-if(NOT GLSLANG_PATH_FOUND)
-message("glslang downloading")
-execute_process(COMMAND git submodule update --init -- ext/glslang
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT GLSLANG_PATH_FOUND)
-add_subdirectory(ext/glslang)
+add_subdirectory(ext)
 
 find_package(glfw3 REQUIRED)
 
@@ -147,7 +122,6 @@ endif(MSVC)
 target_link_libraries(VulkanApp PUBLIC nlohmann_json)
 
 #glm
-target_include_directories(VulkanApp PUBLIC glm)
 target_link_libraries(VulkanApp PUBLIC glm)
 
 #glfw
@@ -170,6 +144,9 @@ target_link_libraries(VulkanApp PRIVATE spirv-cross-reflect)
 #glslang
 target_link_libraries(VulkanApp PRIVATE glslang)
 
+#fmt
+target_link_libraries(VulkanApp PRIVATE fmt)
+
 #gtk
 if(UNIX)
 	target_link_libraries(VulkanApp PRIVATE ${GTK3_LIBRARIES})
@@ -178,10 +155,10 @@ if(UNIX)
 endif(UNIX)
 
 #include the different source directories in include path
-target_include_directories(VulkanApp PRIVATE src)
+target_include_directories(VulkanApp PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
 #Third party files included in repo
-target_include_directories(VulkanApp PRIVATE third-party)
+target_include_directories(VulkanApp PRIVATE ${CMAKE_SOURCE_DIR}/third-party)
 
 #memory
 #target_link_libraries(VulkanApp PUBLIC foonathan_memory)

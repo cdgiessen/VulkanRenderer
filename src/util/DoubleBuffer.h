@@ -50,7 +50,7 @@ template <typename T, int size> int DoubleBufferArray<T, size>::Allocate ()
 	for (int i = 0; i < size; i++)
 		if (freeElems[i] == false)
 		{
-			freeElems[i] == true;
+			freeElems[i] = true;
 			return i;
 		}
 	throw std::runtime_error ("Ran out of indicies to give!");
@@ -62,7 +62,7 @@ template <typename T, int size> void DoubleBufferArray<T, size>::Free (int index
 
 	if (freeElems[index] == true)
 	{
-		freeElems[index] == false;
+		freeElems[index] = false;
 	}
 	else
 	{

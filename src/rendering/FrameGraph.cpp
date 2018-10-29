@@ -274,7 +274,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	}
 
 	// map of attchment names and their index, for quick access - rather than a raw vector
-	std::unordered_map<std::string, int32_t> used_attachments;
+	std::unordered_map<std::string, uint32_t> used_attachments;
 	index = 0;
 	for (auto& name : used_attachment_names)
 		used_attachments[name] = index++;
@@ -339,13 +339,13 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 		bool is_depth_input = false;
 		bool is_depth_output = false;
 
-		int subpass_earliest_use = 0;
-		int subpass_latest_use = (int)vulkan_sb_descriptions.size () - 1;
+		uint32_t subpass_earliest_use = 0;
+		uint32_t subpass_latest_use = (int)vulkan_sb_descriptions.size () - 1;
 
 		VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
 		VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-		for (int i = 0; i < vulkan_sb_descriptions.size (); i++)
+		for (uint32_t i = 0; i < vulkan_sb_descriptions.size (); i++)
 		{
 			for (auto& ref : vulkan_sb_descriptions.at (i).ar_inputs)
 			{
@@ -503,9 +503,9 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	VkRenderPassCreateInfo renderPassInfo = initializers::renderPassCreateInfo ();
 	renderPassInfo.attachmentCount = static_cast<uint32_t> (rp_attachments.size ());
 	renderPassInfo.pAttachments = rp_attachments.data ();
-	renderPassInfo.subpassCount = sb_descriptions.size ();
+	renderPassInfo.subpassCount = (uint32_t)sb_descriptions.size ();
 	renderPassInfo.pSubpasses = sb_descriptions.data ();
-	renderPassInfo.dependencyCount = sb_dependencies.size ();
+	renderPassInfo.dependencyCount = (uint32_t)sb_dependencies.size ();
 	renderPassInfo.pDependencies = sb_dependencies.data ();
 
 	return renderPassInfo;

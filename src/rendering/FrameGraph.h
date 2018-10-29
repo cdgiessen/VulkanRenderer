@@ -135,8 +135,8 @@ struct SubpassDependency
 	std::string src_subpass;
 	std::string dst_subpass;
 
-	int32_t dependentSubpass;
-	int32_t sourceSubpass;
+	uint32_t dependentSubpass;
+	uint32_t sourceSubpass;
 	VkPipelineStageFlags srcStageMask;
 	VkPipelineStageFlags dstStageMask;
 	VkAccessFlags srcAccessMask;
@@ -181,7 +181,7 @@ struct SubpassDescription
 	std::vector<std::string> AttachmentsUsed (AttachmentMap const& attachment_map) const;
 
 	std::string name;
-	int32_t index;
+	uint32_t index;
 	std::vector<std::string> subpass_dependencies;
 
 	std::vector<std::string> input_attachments;

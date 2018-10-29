@@ -25,7 +25,7 @@
 // Custom define for better code readability
 
 // Default fence timeout in nanoseconds
-constexpr long DEFAULT_FENCE_TIMEOUT = 100000000000;
+constexpr long DEFAULT_FENCE_TIMEOUT = 1000000000;
 
 class VulkanDevice;
 

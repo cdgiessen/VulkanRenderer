@@ -10,7 +10,7 @@ TimeManager::TimeManager()
 	frameEndTime = high_resolution_clock::now();
 	curFrameTime = (frameEndTime - frameStartTime);
 
-	frameTimes = std::vector<double>(50, 0.01666);
+	std::fill(std::begin(frameTimes), std::end(frameTimes), 0.01666);
 }
 
 void TimeManager::CollectRuntimeData()

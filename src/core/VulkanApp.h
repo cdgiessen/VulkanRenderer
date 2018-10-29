@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
@@ -87,7 +85,6 @@ private:
 	void ControllerWindow(bool* show_controller_window);
 	//ImGui resources
 	SimpleTimer imGuiTimer;
-	Log::Logger appLog;
 
 	float tempCameraSpeed = 0.0f;
 };

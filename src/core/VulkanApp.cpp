@@ -5,6 +5,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <memory>
 
 #include <glm/glm.hpp>
 
@@ -225,7 +226,7 @@ void VulkanApp::ControllerWindow (bool* show_controller_window)
 	if (ImGui::Begin ("Controller View", show_controller_window))
 	{
 
-		auto joys = Input::inputDirector.GetConnectedJoysticks ();
+		//auto joys = Input::inputDirector.GetConnectedJoysticks ();
 
 		for (int i = 0; i < 16; i++)
 		{

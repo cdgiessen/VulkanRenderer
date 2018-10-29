@@ -11,10 +11,10 @@ namespace Log {
 	Log::Log(std::string fileOut, std::streambuf* consoleStream) : fileOut(fileOut.c_str()), consoleOut(consoleStream) {
 	}
 
-	void Logger::Clear() {
-		Buf.clear(); 
-		LineOffsets.clear();
-	}
+	//void Logger::Clear() {
+	//	Buf.clear(); 
+	//	LineOffsets.clear();
+	//}
 
 	//void Logger::AddLog(const char* fmt, ...)
 	//{
@@ -29,7 +29,7 @@ namespace Log {
 	//	ScrollToBottom = true;
 	//}
 
-	void Logger::Draw(const char* title, bool* p_open)
+	/*void Logger::Draw(const char* title, bool* p_open)
 	{
 		ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiSetCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(0, 450), ImGuiSetCond_FirstUseEver);
@@ -67,5 +67,5 @@ namespace Log {
 		ScrollToBottom = false;
 		ImGui::EndChild();
 		ImGui::End();
-	}
+	}*/
 }

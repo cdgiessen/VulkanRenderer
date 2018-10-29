@@ -12,7 +12,7 @@
 #include "Input.h"
 #include "Logger.h"
 
-Window::Window (bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position)
+Window::Window (bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position = { 0, 0 })
 {
 	glfwInit ();
 	glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
@@ -65,7 +65,7 @@ Window::~Window ()
 	window = nullptr;
 }
 
-void Window::setSizeLimits (const glm::ivec2& minSize, const glm::ivec2& maxSize)
+void Window::setSizeLimits (const glm::ivec2& minSize, const glm::ivec2& maxSize = {})
 {
 	glfwSetWindowSizeLimits (window,
 	    minSize.x,

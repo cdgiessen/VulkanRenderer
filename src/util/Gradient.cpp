@@ -1,5 +1,5 @@
 #include "Gradient.h"
-
+#include <glm/glm.hpp>
 
 
 Gradient::Gradient()

@@ -3,12 +3,7 @@
 #include <string>
 #include <vector>
 #include <chrono>
-#include <fstream>
-#include <queue>
-#include <mutex>
-#include <condition_variable>
-#include <optional>
-#include <functional>
+
 
 std::string GetExecutableFilePath();
 void SetExecutableFilePath(std::string file);

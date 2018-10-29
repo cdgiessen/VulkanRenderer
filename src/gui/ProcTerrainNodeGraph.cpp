@@ -1,6 +1,8 @@
 #include "ProcTerrainNodeGraph.h"
 
 #include <iomanip>
+#include <iostream>
+#include <fstream>
 #include <nlohmann/json.hpp>
 
 #include "noc/noc_file_dialog.h"

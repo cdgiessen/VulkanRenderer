@@ -1,18 +1,18 @@
 #pragma once
 
-#include <glm/vec2.hpp>
+#include <glm/glm.hpp>
 #include <vector>
 
 struct GLFWwindow;
 
 class Window {
 public:
-	Window(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position = { 0, 0 });
+	Window(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position);
 	~Window();
 
 	//void createWindow(bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position = { 0, 0 });
 	void showWindow(bool show = true);
-	void setSizeLimits(const glm::ivec2& minSize, const glm::ivec2& maxSize = {});
+	void setSizeLimits(const glm::ivec2& minSize, const glm::ivec2& maxSize);
 
 	GLFWwindow* getWindowContext();
 	bool CheckForWindowResizing();
@@ -43,7 +43,7 @@ protected:
 	static void WindowIconifyHandler(GLFWwindow* window, int iconified);
 	static void WindowCloseHandler(GLFWwindow* window);
 
-	glm::ivec2 currentWindowSize = glm::ivec2(0, 0);
+	glm::ivec2 currentWindowSize;
 
 	GLFWwindow* window{ nullptr };
 	bool updateWindowSize = false;

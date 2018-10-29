@@ -4,7 +4,8 @@
 
 #include <GLFW/glfw3.h>
 
-#include <glm/fwd.hpp>
+#include <glm/glm.hpp>
+#include <glm/vec2.hpp>
 
 #include "Logger.h"
 
@@ -109,7 +110,7 @@ namespace Input {
 		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < JoystickCount; i++) {
 			joystickData[i].joystickIndex = i;
 			if (glfwJoystickPresent(i)) {
 				joystickData[i].connected = true;
@@ -142,12 +143,13 @@ namespace Input {
 		return connected;
 	}
 
-	std::vector<int> InputDirector::GetConnectedJoysticks() {
-		std::vector<int> joys;
+	std::array<int, JoystickCount> InputDirector::GetConnectedJoysticks() {
+		std::array<int, JoystickCount> joys;
 
-		for (auto& possible : joystickData)
-			if (possible.IsConnected())
-				joys.push_back(possible.joystickIndex);
+		int i = 0;
+		for (int i = 0; i < JoystickCount; i++)
+			if (joystickData.at(i).IsConnected())
+				joys.at(i++) = joystickData.at(i).joystickIndex;
 
 		return joys;
 	}
@@ -230,21 +232,21 @@ namespace Input {
 	}
 
 	void InputDirector::ConnectJoystick(int index) {
-		if (index >= 0 && index < 16)
+		if (index >= 0 && index < JoystickCount)
 			joystickData[index].Connect();
 		else
 			Log::Error << "Tried to connect joystick that is out of bounds!\n";
 	}
 
 	void InputDirector::DisconnectJoystick(int index) {
-		if (index >= 0 && index < 16)
+		if (index >= 0 && index < JoystickCount)
 			joystickData[index].Disconnect();
 		else
 			Log::Error << "Tried to disconnect joystick that is out of bounds!\n";
 	}
 
 	bool InputDirector::IsJoystickConnected(int index) {
-		if (index >= 0 && index < 16)
+		if (index >= 0 && index < JoystickCount)
 			return joystickData[index].IsConnected();
 
 		Log::Error << "Tried to test if an out of range joystick is connected!\n";
@@ -252,7 +254,7 @@ namespace Input {
 	}
 
 	float InputDirector::GetControllerAxis(int id, int axis) {
-		if (id >= 0 && id < 16)
+		if (id >= 0 && id < JoystickCount)
 			return joystickData[id].GetAxis(axis);
 
 		Log::Error << "Tried to access joystick axis that is out of bounds!\n";
@@ -260,7 +262,7 @@ namespace Input {
 	}
 
 	bool InputDirector::GetControllerButton(int id, int button) {
-		if (id >= 0 && id < 16)
+		if (id >= 0 && id < JoystickCount)
 			return joystickData[id].GetButton(button);
 
 		Log::Error << "Tried to access joystick button that is out of bounds!\n";
@@ -271,7 +273,7 @@ namespace Input {
 	void InputDirector::UpdateInputs() {
 		glfwPollEvents();
 
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < JoystickCount; i++) {
 			if (glfwJoystickPresent(i)) {
 				joystickData[i].connected = true;
 				joystickData[i].axes = glfwGetJoystickAxes(i, &(joystickData[i].axesCount));

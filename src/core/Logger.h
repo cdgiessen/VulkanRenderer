@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ImGui/imgui.h"
+//#include "ImGui/imgui.h"
 
 #include <fstream>
 #include <iosfwd>
@@ -36,20 +36,20 @@ extern Log Debug;
 //  static ExampleAppLog my_log;
 //  my_log.AddLog("Hello %d world\n", 123);
 //  my_log.Draw("title");
-class Logger
-{
-	private:
-	ImGuiTextBuffer Buf;
-	ImGuiTextFilter Filter;
-	ImVector<int> LineOffsets; // Index to lines offset
-	bool ScrollToBottom;
-
-	public:
-	void Clear ();
-
-	// void AddLog(const char* fmt, ...);
-
-	void Draw (const char* title, bool* p_open = NULL);
-};
+//class Logger
+//{
+//	private:
+//	ImGuiTextBuffer Buf;
+//	ImGuiTextFilter Filter;
+//	ImVector<int> LineOffsets; // Index to lines offset
+//	bool ScrollToBottom;
+//
+//	public:
+//	void Clear ();
+//
+//	// void AddLog(const char* fmt, ...);
+//
+//	void Draw (const char* title, bool* p_open = NULL);
+//};
 
 } // namespace Log

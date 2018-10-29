@@ -163,8 +163,8 @@ VulkanModel::VulkanModel (VulkanRenderer& renderer, std::shared_ptr<MeshData> me
 {
 	readyToUse = std::make_shared<bool> (false);
 
-	vertexCount = mesh->vertexData.size ();
-	vertexElementCount = mesh->desc.ElementCount ();
+	vertexCount = (uint32_t)mesh->vertexData.size ();
+	vertexElementCount = (uint32_t)mesh->desc.ElementCount ();
 	indexCount = (uint16_t)mesh->indexData.size ();
 
 	uint32_t vBufferSize = static_cast<uint32_t> (vertexCount) * sizeof (float);

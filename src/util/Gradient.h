@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <glm/common.hpp>
+#include <glm/glm.hpp>
 
 struct Gradient_ControlPoint {
 	float position;

@@ -1,10 +1,9 @@
 #pragma once
 #include <chrono>
 #include <array>
-#include <vector>
 
 using PreciseClockPoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
-using BriefTimingHistory = std::vector<double>;
+using BriefTimingHistory = std::array<double, 50>;
 
 class TimeManager
 {
