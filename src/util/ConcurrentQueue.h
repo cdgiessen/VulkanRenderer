@@ -3,6 +3,7 @@
 #include <vector>
 #include <queue>
 #include <mutex>
+#include <algorithm>
 #include <condition_variable>
 #include <optional>
 

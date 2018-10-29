@@ -7,11 +7,14 @@
 #include <thread>
 #include <vector>
 
+#include <cstring>
+
 #include <vulkan/vulkan.h>
 
 #include "util/ConcurrentQueue.h"
 
 class Window;
+
 
 #include "RenderStructs.h"
 #include "RenderTools.h"
@@ -36,10 +39,9 @@ struct QueueFamilyIndices
 struct VMA_MemoryResource
 {
 	public:
-	void Create (
-	    VkPhysicalDevice physical_device, VkDevice device, VkAllocationCallbacks* custom_allocator = nullptr);
-	
-	void Free();
+	void Create (VkPhysicalDevice physical_device, VkDevice device, VkAllocationCallbacks* custom_allocator = nullptr);
+
+	void Free ();
 
 	void Log (bool detailedOutput = false);
 
