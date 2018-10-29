@@ -196,7 +196,7 @@ VkCommandBuffer CommandPool::AllocateCommandBuffer(VkCommandBufferLevel level)
 }
 
 void CommandPool::BeginBufferRecording(VkCommandBuffer buf, VkCommandBufferUsageFlagBits flags) {
-
+	std::lock_guard<std::mutex> lock(poolLock);
 	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo();
 	beginInfo.flags = flags;
 
@@ -204,6 +204,7 @@ void CommandPool::BeginBufferRecording(VkCommandBuffer buf, VkCommandBufferUsage
 }
 
 void CommandPool::EndBufferRecording(VkCommandBuffer buf) {
+	std::lock_guard<std::mutex> lock(poolLock);
 	vkEndCommandBuffer(buf);
 }
 
@@ -225,7 +226,7 @@ VkCommandBuffer CommandPool::GetOneTimeUseCommandBuffer() {
 VkCommandBuffer CommandPool::GetPrimaryCommandBuffer(bool beginBufferRecording) {
 
 	VkCommandBuffer cmdBuffer = AllocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
+	
 	if (beginBufferRecording == true)
 		BeginBufferRecording(cmdBuffer);
 
@@ -234,7 +235,7 @@ VkCommandBuffer CommandPool::GetPrimaryCommandBuffer(bool beginBufferRecording) 
 
 VkCommandBuffer CommandPool::GetSecondaryCommandBuffer(bool beginBufferRecording) {
 	VkCommandBuffer cmdBuffer = AllocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-
+	
 	if (beginBufferRecording == true)
 		BeginBufferRecording(cmdBuffer);
 

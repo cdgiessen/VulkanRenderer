@@ -448,7 +448,7 @@ void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image,
 
 	if (finalImageLayout == VK_IMAGE_LAYOUT_UNDEFINED) Log::Debug << "final layout is undefined!\n";
 	SetImageLayout(cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		finalImageLayout, subresourceRange);
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
 
 }
 
