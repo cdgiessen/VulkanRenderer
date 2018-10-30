@@ -2,10 +2,10 @@
 
 #include <fstream>
 #include <iomanip>
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
-#include <memory>
 
 #include <glm/glm.hpp>
 
@@ -33,7 +33,8 @@ void VulkanAppSettings::Load ()
 	}
 	else
 	{
-		Log::Debug << "Settings file didn't exist, creating one";
+		Log.Debug (fmt::format ("Settings file didn't exist, creating one\n"));
+		// Log::Debug << "Settings file didn't exist, creating one";
 		Save ();
 	}
 }
@@ -60,7 +61,8 @@ void VulkanAppSettings::Save ()
 unsigned int HardwareThreadCount ()
 {
 	unsigned int concurentThreadsSupported = std::thread::hardware_concurrency ();
-	Log::Debug << "Hardware Threads Available = " << concurentThreadsSupported << "\n";
+	Log.Debug (fmt::format ("Hardware Threads Available = {}\n", concurentThreadsSupported));
+	// Log::Debug << "Hardware Threads Available = " << concurentThreadsSupported << "\n";
 	// TODO: Use task pool for everything, no need for system jamming atm;
 	return 0;
 	return concurentThreadsSupported > 0 ? concurentThreadsSupported : 1;
@@ -226,7 +228,7 @@ void VulkanApp::ControllerWindow (bool* show_controller_window)
 	if (ImGui::Begin ("Controller View", show_controller_window))
 	{
 
-		//auto joys = Input::inputDirector.GetConnectedJoysticks ();
+		// auto joys = Input::inputDirector.GetConnectedJoysticks ();
 
 		for (int i = 0; i < 16; i++)
 		{
@@ -340,28 +342,28 @@ void VulkanApp::HandleInputs ()
 		if (Input::GetKeyDown (Input::KeyCode::X))
 		{
 			vulkanRenderer.ToggleWireframe ();
-			Log::Debug << "wireframe toggled"
-			           << "\n";
+			Log.Debug (fmt::format ("Wireframe toggle"));
+			//			Log::Debug << "wireframe toggled" << "\n";
 		}
 
 		if (Input::GetKeyDown (Input::KeyCode::F))
 		{
 			scene.walkOnGround = !scene.walkOnGround;
-			Log::Debug << "flight mode toggled "
-			           << "\n";
+			Log.Debug (fmt::format ("flight mode toggled"));
+			// Log::Debug << "flight mode toggled "  << "\n";
 		}
 
 		if (Input::GetKeyDown (Input::KeyCode::H))
 		{
-			Log::Debug << "gui visibility toggled "
-			           << "\n";
+			Log.Debug (fmt::format ("gui visibility toggled\n"));
+			// Log::Debug << "gui visibility toggled "  << "\n";
 			panels.showGui = !panels.showGui;
 		}
 
 		if (Input::GetKeyDown (Input::KeyCode::F10))
 		{
-			Log::Debug << "screenshot taken "
-			           << "\n";
+			Log.Debug (fmt::format ("Screenshot taken\n"));
+			// Log::Debug << "screenshot taken "<<"\n";
 			vulkanRenderer.SaveScreenshotNextFrame ();
 		}
 

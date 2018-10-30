@@ -43,7 +43,7 @@ struct VMA_MemoryResource
 
 	void Free ();
 
-	void Log (bool detailedOutput = false);
+	void LogVMA (bool detailedOutput = false);
 
 	VmaAllocator allocator;
 };

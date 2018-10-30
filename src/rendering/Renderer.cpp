@@ -41,13 +41,17 @@ void RenderSettings::Load ()
 		}
 		catch (std::runtime_error e)
 		{
-			Log::Debug << "Render Settings was incorrect, creating one";
+			Log.Debug (fmt::format ("Render Settings was incorrect, recreating\n"));
+
+			//			Log::Debug << "Render Settings was incorrect, creating one";
 			Save ();
 		}
 	}
 	else
 	{
-		Log::Debug << "Render Settings file didn't exist, creating one";
+		Log.Debug (fmt::format ("Render Settings not found, creting one\n"));
+
+		//		Log::Debug << "Render Settings file didn't exist, creating one";
 		Save ();
 	}
 }
@@ -228,8 +232,9 @@ void VulkanRenderer::CreatePresentResources ()
 
 void VulkanRenderer::RecreateSwapChain ()
 {
-	Log::Debug << "Recreating SwapChain"
-	           << "\n";
+	Log.Debug (fmt::format ("Recreating Swapchain\n"));
+
+	//	Log::Debug << "Recreating SwapChain"	           << "\n";
 
 	for (int i = 0; i < 3; i++)
 		depthBuffer.at (i).reset ();
@@ -571,8 +576,8 @@ void WaitForSubmissionFinish (VkDevice device,
 	}
 	else if (vkGetFenceStatus (device, fence) == VK_NOT_READY)
 	{
-		Log::Error << "Transfer exeeded maximum fence timeout! Is too much stuff "
-		              "happening?\n";
+		Log.Error (fmt::format ("Transfer timout exceeded maximum fence timout!\n"));
+		// Log::Error << "Transfer exeeded maximum fence timeout! Is too much stuff happening?\n";
 		vkWaitForFences (device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 		if (vkGetFenceStatus (device, fence) == VK_SUCCESS)
 		{
@@ -582,7 +587,7 @@ void WaitForSubmissionFinish (VkDevice device,
 	}
 	else if (vkGetFenceStatus (device, fence) == VK_ERROR_DEVICE_LOST)
 	{
-		Log::Error << "AAAAAAAAAAAHHHHHHHHHHHHH EVERYTHING IS ONE FIRE\n";
+		//	Log::Error << "AAAAAAAAAAAHHHHHHHHHHHHH EVERYTHING IS ONE FIRE\n";
 		throw std::runtime_error ("Fence lost device!\n");
 	}
 

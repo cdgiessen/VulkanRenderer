@@ -176,35 +176,35 @@ void Manager::LoadTextureList ()
 		}
 		catch (nlohmann::json::parse_error& e)
 		{
-			Log::Debug << "Texture List was invalid json, creating new one\n";
-			Log::Debug << "Json error: " << std::string (e.what ()) << "\n";
+			// Log::Debug << "Texture List was invalid json, creating new one\n";
+			// Log::Debug << "Json error: " << std::string (e.what ()) << "\n";
 			SaveTextureList ();
 		}
 	}
 	else
 	{
-		Log::Debug << "Texture List file didn't exist, creating one";
+		// Log::Debug << "Texture List file didn't exist, creating one";
 		SaveTextureList ();
 	}
 
 	try
 	{
-		Log::Debug << textureResources.size () << " textures loaded\n";
+		// Log::Debug << textureResources.size () << " textures loaded\n";
 		int count = 0;
 		for (nlohmann::json::iterator it = j.begin (); it != j.end (); ++it)
 		{
 			auto tex = from_json_TexResource (*it);
 			textureResources[tex.id] = tex;
 			LoadTextureFromFile (tex.id);
-			Log::Debug << "Tex " << tex.id << " with name " << tex.name << " dimensions width "
-			           << tex.dataDescription.width << " height " << tex.dataDescription.height << "\n";
+			// Log::Debug << "Tex " << tex.id << " with name " << tex.name << " dimensions width "
+			//<< tex.dataDescription.width << " height " << tex.dataDescription.height << "\n";
 			count++;
 		}
 		id_counter = count;
 	}
 	catch (nlohmann::json::parse_error& e)
 	{
-		Log::Debug << "Error loading texture list " << e.what () << "\n";
+		// Log::Debug << "Error loading texture list " << e.what () << "\n";
 	}
 }
 
@@ -223,7 +223,7 @@ void Manager::SaveTextureList ()
 	}
 	catch (nlohmann::json::parse_error& e)
 	{
-		Log::Error << e.what () << "\n";
+		// Log::Error << e.what () << "\n";
 	}
 	outFile.close ();
 }
@@ -253,7 +253,7 @@ void Manager::LoadTextureFromFile (TexID id)
 
 		if (path.c_str () == "")
 		{
-			Log::Error << "Path not set!\n";
+			// Log::Error << "Path not set!\n";
 		}
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels;
@@ -262,7 +262,7 @@ void Manager::LoadTextureFromFile (TexID id)
 		if (pixels == nullptr)
 		{
 
-			Log::Error << "Image failed to load! Was the name correct? " << path.c_str () << "\n";
+			// Log::Error << "Image failed to load! Was the name correct? " << path.c_str () << "\n";
 		}
 		// else if (desiredChannels != texChannels) {
 		//	Log::Error << "Image couldn't load desired channel of " << desiredChannels

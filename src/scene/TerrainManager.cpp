@@ -112,7 +112,7 @@ TerrainChunkBuffer::TerrainChunkBuffer (VulkanRenderer& renderer, int count, Ter
 
 TerrainChunkBuffer::~TerrainChunkBuffer ()
 {
-	if (chunkCount <= 0) Log::Error << "Not all terrain chunks were freed!\n";
+	// if (chunkCount <= 0) Log::Error << "Not all terrain chunks were freed!\n";
 }
 
 

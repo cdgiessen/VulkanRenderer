@@ -22,9 +22,10 @@ Window::Window (bool isFullscreen, const glm::ivec2& size, const glm::ivec2& pos
 		const GLFWvidmode* mode = glfwGetVideoMode (primary);
 
 		window = glfwCreateWindow (mode->width, mode->height, "Vulkan Renderer", primary, NULL);
-
-		Log::Debug << "Monitor Width " << mode->width << "\n";
-		Log::Debug << "Monitor Height " << mode->height << "\n";
+		Log.Debug (fmt::format ("Monitor Width {}\n", mode->width));
+		Log.Debug (fmt::format ("Monitor Height {}\n", mode->height));
+		// Log::Debug << "Monitor Width " << mode->width << "\n";
+		// Log::Debug << "Monitor Height " << mode->height << "\n";
 	}
 	else
 	{
@@ -114,7 +115,8 @@ glm::ivec2 Window::GetWindowSize ()
 
 void Window::ErrorHandler (int error, const char* description)
 {
-	Log::Error << description << "\n";
+	Log.Error (fmt::format ("{}\n", description));
+	// Log::Error << description << "\n";
 	puts (description);
 }
 
@@ -151,12 +153,14 @@ void Window::JoystickConfigurationChangeHandler (int joy, int event)
 {
 	if (event == GLFW_CONNECTED)
 	{
-		Log::Debug << "Controller " << joy << " Connected \n";
+		Log.Debug (fmt::format ("Controller {} Connected\n", joy));
+		// Log::Debug << "Controller " << joy << " Connected \n";
 		Input::ConnectJoystick (joy);
 	}
 	else if (event == GLFW_DISCONNECTED)
 	{
-		Log::Debug << "Controller " << joy << " Disconnected \n";
+		Log.Debug (fmt::format ("Controller {} Disconnected\n", joy));
+		// Log::Debug << "Controller " << joy << " Disconnected \n";
 		Input::DisconnectJoystick (joy);
 	}
 }

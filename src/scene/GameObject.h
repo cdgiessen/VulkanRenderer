@@ -20,11 +20,10 @@ class GameObject
 {
 	public:
 	GameObject (VulkanRenderer& renderer);
-	~GameObject ();
 
 	void InitGameObject ();
 
-	//void LoadModel (std::string fileName);
+	// void LoadModel (std::string fileName);
 	void LoadModel (std::shared_ptr<MeshData> mesh);
 
 	void SetupUniformBuffer ();

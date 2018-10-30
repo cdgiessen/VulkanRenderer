@@ -1,8 +1,8 @@
 #include "Shader.h"
 
 #include <chrono>
-#include <fstream>
 #include <filesystem>
+#include <fstream>
 #include <thread>
 
 #include <nlohmann/json.hpp>
@@ -287,7 +287,8 @@ ShaderModule ShaderManager::loadShaderModule (const std::string& codePath, Shade
 	auto pos_shaderCode = readShaderFile (codePath);
 	if (!pos_shaderCode.has_value ())
 	{
-		Log::Debug << "Shader at " << codePath << " unable to load, using defaults instead\n";
+		Log.Error (fmt::format ("Shader at {} wont load, using defaults\n", codePath));
+		// Log::Debug << "Shader at " << codePath << " unable to load, using defaults instead\n";
 
 		switch (type)
 		{

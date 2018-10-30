@@ -1,42 +1,68 @@
 #pragma once
 
-//#include "ImGui/imgui.h"
-
-#include <fstream>
-#include <iosfwd>
+#include <cstdio>
+#include <fmt/format.h>
 #include <mutex>
-#include <ostream>
+#include <string_view>
 
-namespace Log
-{
+// namespace Log
+// {
 
-class Log
+
+class Logger
 {
 	public:
-	Log (std::string fileOut, std::streambuf* consoleOut);
+	Logger ();
+	void Debug (std::string_view str_v);
+	void Error (std::string_view str_v);
 
-	std::ofstream fileOut;
-	std::ostream consoleOut;
+	private:
+	class OutputFileHandle
+	{
+		public:
+		OutputFileHandle (std::string file_name)
+		{
+			fp = std::fopen (file_name.c_str (), "w");
+			if (!fp)
+			{
+				fmt::print ("File opening failed");
+			}
+		}
+		~OutputFileHandle () { std::fclose (fp); }
+		FILE* fp = nullptr;
+	};
 
-	std::mutex log_lock;
+	OutputFileHandle fp_debug;
+	OutputFileHandle fp_error;
 };
 
-template <typename T> Log& operator<< (Log& log, T const& stream)
-{
-	std::lock_guard<std::mutex> lg (log.log_lock);
-	log.consoleOut << stream;
-	log.fileOut << stream;
-	return log;
-}
+// class Log
+// {
+// 	public:
+// 	Log (std::string fileOut, std::streambuf* consoleOut);
 
-extern Log Error;
-extern Log Debug;
+// 	std::ofstream fileOut;
+// 	std::ostream consoleOut;
+
+// 	std::mutex log_lock;
+// };
+
+// template <typename T> Log& operator<< (Log& log, T const& stream)
+// {
+// 	std::lock_guard<std::mutex> lg (log.log_lock);
+// 	log.consoleOut << stream;
+// 	log.fileOut << stream;
+// 	return log;
+// }
+
+extern Logger Log;
+// extern Log Debug;
 
 // Usage:
 //  static ExampleAppLog my_log;
 //  my_log.AddLog("Hello %d world\n", 123);
 //  my_log.Draw("title");
-//class Logger
+// class Logger
 //{
 //	private:
 //	ImGuiTextBuffer Buf;
@@ -52,4 +78,4 @@ extern Log Debug;
 //	void Draw (const char* title, bool* p_open = NULL);
 //};
 
-} // namespace Log
+//} // namespace Log

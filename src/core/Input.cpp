@@ -10,295 +10,241 @@
 #include "Logger.h"
 
 
-//External facing access to buttons. 
-namespace Input {
-	template <typename Enumeration>
-	auto as_integer(Enumeration const value) -> typename std::underlying_type<Enumeration>::type
+// External facing access to buttons.
+namespace Input
+{
+template <typename Enumeration>
+auto as_integer (Enumeration const value) -> typename std::underlying_type<Enumeration>::type
+{
+	return static_cast<typename std::underlying_type<Enumeration>::type> (value);
+}
+
+InputDirector inputDirector;
+
+void SetupInputDirector (Window* window) { inputDirector.SetupInputDirector (window); }
+
+bool GetKey (KeyCode code) { return inputDirector.GetKey (code); }
+
+bool GetKeyDown (KeyCode code) { return inputDirector.GetKeyDown (code); }
+
+bool GetKeyUp (KeyCode code) { return inputDirector.GetKeyUp (code); }
+
+bool GetMouseButton (int button) { return inputDirector.GetMouseButton (button); }
+bool GetMouseButtonPressed (int button) { return inputDirector.GetMouseButtonPressed (button); }
+bool GetMouseButtonReleased (int button) { return inputDirector.GetMouseButtonReleased (button); }
+glm::dvec2 GetMousePosition () { return inputDirector.GetMousePosition (); }
+glm::dvec2 GetMouseChangeInPosition () { return inputDirector.GetMouseChangeInPosition (); }
+double GetMouseScrollX () { return inputDirector.GetMouseScrollX (); }
+double GetMouseScrollY () { return inputDirector.GetMouseScrollY (); }
+
+void SetTextInputMode () { inputDirector.SetTextInputMode (); }
+void ResetTextInputMode () { inputDirector.ResetTextInputMode (); }
+bool GetTextInputMode () { return inputDirector.GetTextInputMode (); }
+
+bool GetMouseControlStatus () { return inputDirector.GetMouseControlStatus (); }
+
+void SetMouseControlStatus (bool value) { inputDirector.SetMouseControlStatus (value); }
+
+void ConnectJoystick (int index) { inputDirector.ConnectJoystick (index); }
+void DisconnectJoystick (int index) { inputDirector.DisconnectJoystick (index); }
+
+bool IsJoystickConnected (int index) { return inputDirector.IsJoystickConnected (index); }
+
+float GetControllerAxis (int controllerID, int axis)
+{
+	return inputDirector.GetControllerAxis (controllerID, axis);
+}
+bool GetControllerButton (int controllerID, int button)
+{
+	return inputDirector.GetControllerButton (controllerID, button);
+}
+
+
+InputDirector::InputDirector () {}
+
+void InputDirector::SetupInputDirector (Window* window)
+{
+	this->window = window;
+
+	double xpos, ypos;
+	glfwGetCursorPos (window->getWindowContext (), &xpos, &ypos);
+	mousePosition = mousePositionPrevious = glm::dvec2 (xpos, ypos);
+
+	mouseControlStatus = true;
+	glfwSetInputMode (window->getWindowContext (), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+
+	for (int i = 0; i < JoystickCount; i++)
 	{
-		return static_cast<typename std::underlying_type<Enumeration>::type>(value);
+		joystickData[i].joystickIndex = i;
+		if (glfwJoystickPresent (i))
+		{
+			joystickData[i].connected = true;
+			joystickData[i].axes = glfwGetJoystickAxes (i, &(joystickData[i].axesCount));
+			joystickData[i].buttons = glfwGetJoystickButtons (i, &(joystickData[i].buttonCount));
+		}
 	}
+}
 
-	InputDirector inputDirector;
+void InputDirector::JoystickData::Connect ()
+{
 
-	void SetupInputDirector(Window* window) {
-		inputDirector.SetupInputDirector(window);
-	}
-
-	bool GetKey(KeyCode code) {
-		return inputDirector.GetKey(code);
-	}
-
-	bool GetKeyDown(KeyCode code) {
-		return inputDirector.GetKeyDown(code);
-	}
-
-	bool GetKeyUp(KeyCode code) {
-		return inputDirector.GetKeyUp(code);
-	}
-
-	bool GetMouseButton(int button) {
-		return inputDirector.GetMouseButton(button);
-	}
-	bool GetMouseButtonPressed(int button) {
-		return inputDirector.GetMouseButtonPressed(button);
-	}
-	bool GetMouseButtonReleased(int button) {
-		return inputDirector.GetMouseButtonReleased(button);
-	}
-	glm::dvec2 GetMousePosition() {
-		return inputDirector.GetMousePosition();
-	}
-	glm::dvec2 GetMouseChangeInPosition() {
-		return inputDirector.GetMouseChangeInPosition();
-	}
-	double GetMouseScrollX() {
-		return inputDirector.GetMouseScrollX();
-	}
-	double GetMouseScrollY() {
-		return inputDirector.GetMouseScrollY();
-	}
-
-	void SetTextInputMode() {
-		inputDirector.SetTextInputMode();
-	}
-	void ResetTextInputMode() {
-		inputDirector.ResetTextInputMode();
-	}
-	bool GetTextInputMode() {
-		return inputDirector.GetTextInputMode();
-	}
-
-	bool GetMouseControlStatus() {
-		return inputDirector.GetMouseControlStatus();
-	}
-
-	void SetMouseControlStatus(bool value) {
-		inputDirector.SetMouseControlStatus(value);
-	}
-
-	void ConnectJoystick(int index) {
-		inputDirector.ConnectJoystick(index);
-	}
-	void DisconnectJoystick(int index) {
-		inputDirector.DisconnectJoystick(index);
-	}
-
-	bool IsJoystickConnected(int index) {
-		return inputDirector.IsJoystickConnected(index);
-	}
-
-	float GetControllerAxis(int controllerID, int axis) {
-		return inputDirector.GetControllerAxis(controllerID, axis);
-	}
-	bool GetControllerButton(int controllerID, int button) {
-		return inputDirector.GetControllerButton(controllerID, button);
-	}
-
-
-	InputDirector::InputDirector()
+	if (glfwJoystickPresent (joystickIndex))
 	{
+		connected = true;
+		axes = glfwGetJoystickAxes (joystickIndex, &axesCount);
+		buttons = glfwGetJoystickButtons (joystickIndex, &buttonCount);
 	}
+	else
+		Disconnect ();
+}
 
-	void InputDirector::SetupInputDirector(Window* window) {
-		this->window = window;
+void InputDirector::JoystickData::Disconnect ()
+{
+	connected = false;
+	axes = nullptr;
+	buttons = nullptr;
+}
 
-		double xpos, ypos;
-		glfwGetCursorPos(window->getWindowContext(), &xpos, &ypos);
-		mousePosition = mousePositionPrevious = glm::dvec2(xpos, ypos);
+bool InputDirector::JoystickData::IsConnected () { return connected; }
 
-		mouseControlStatus = true;
-		glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+std::array<int, JoystickCount> InputDirector::GetConnectedJoysticks ()
+{
+	std::array<int, JoystickCount> joys;
 
+	int i = 0;
+	for (int i = 0; i < JoystickCount; i++)
+		if (joystickData.at (i).IsConnected ()) joys.at (i++) = joystickData.at (i).joystickIndex;
 
-		for (int i = 0; i < JoystickCount; i++) {
-			joystickData[i].joystickIndex = i;
-			if (glfwJoystickPresent(i)) {
-				joystickData[i].connected = true;
-				joystickData[i].axes = glfwGetJoystickAxes(i, &(joystickData[i].axesCount));
-				joystickData[i].buttons = glfwGetJoystickButtons(i, &(joystickData[i].buttonCount));
+	return joys;
+}
 
-			}
-		}
+float InputDirector::JoystickData::GetAxis (int index)
+{
+	if (index >= 0 && index < axesCount)
+		if (axes != nullptr) return axes[index];
+
+	// Log::Error << "Tried to access axes that is out of bounds! \n";
+	return 0.0f;
+}
+
+bool InputDirector::JoystickData::GetButton (int index)
+{
+	if (index >= 0 && index < buttonCount)
+		if (buttons != nullptr) return buttons[index];
+
+	// Log::Error << "Tried to access button that is out of bounds! \n";
+	return false;
+}
+
+bool InputDirector::GetKey (KeyCode code) { return keys[as_integer (code)]; }
+
+bool InputDirector::GetKeyDown (KeyCode code) { return keysDown[as_integer (code)]; }
+
+bool InputDirector::GetKeyUp (KeyCode code) { return keysUp[as_integer (code)]; }
+
+bool InputDirector::GetMouseButton (int button) { return mouseButtons[button]; }
+bool InputDirector::GetMouseButtonPressed (int button) { return mouseButtonsDown[button]; }
+bool InputDirector::GetMouseButtonReleased (int button) { return mouseButtonsUp[button]; }
+glm::dvec2 InputDirector::GetMousePosition () { return mousePosition; }
+glm::dvec2 InputDirector::GetMouseChangeInPosition () { return mouseChangeInPosition; }
+double InputDirector::GetMouseScrollX () { return mouseScroll.x; }
+double InputDirector::GetMouseScrollY () { return mouseScroll.y; }
+void InputDirector::SetTextInputMode () { textInputMode = true; }
+void InputDirector::ResetTextInputMode () { textInputMode = false; }
+bool InputDirector::GetTextInputMode () { return textInputMode; }
+
+bool InputDirector::GetMouseControlStatus () { return mouseControlStatus; }
+
+void InputDirector::SetMouseControlStatus (bool value)
+{
+	mouseControlStatus = value;
+	Log.Debug (fmt::format ("Mouse control status {}\n", value));
+	// Log::Debug << "Mouse control status " << value << "\n";
+	if (mouseControlStatus)
+	{
+		glfwSetInputMode (window->getWindowContext (), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	}
+	else
+	{
+		glfwSetInputMode (window->getWindowContext (), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
+}
 
-	void InputDirector::JoystickData::Connect() {
+void InputDirector::ConnectJoystick (int index)
+{
+	if (index >= 0 && index < JoystickCount) joystickData[index].Connect ();
+	// else
+	//	Log::Error << "Tried to connect joystick that is out of bounds!\n";
+}
 
-		if (glfwJoystickPresent(joystickIndex)) {
-			connected = true;
-			axes = glfwGetJoystickAxes(joystickIndex, &axesCount);
-			buttons = glfwGetJoystickButtons(joystickIndex, &buttonCount);
+void InputDirector::DisconnectJoystick (int index)
+{
+	if (index >= 0 && index < JoystickCount) joystickData[index].Disconnect ();
+	// else
+	//	Log::Error << "Tried to disconnect joystick that is out of bounds!\n";
+}
+
+bool InputDirector::IsJoystickConnected (int index)
+{
+	if (index >= 0 && index < JoystickCount) return joystickData[index].IsConnected ();
+
+	// Log::Error << "Tried to test if an out of range joystick is connected!\n";
+	return false;
+}
+
+float InputDirector::GetControllerAxis (int id, int axis)
+{
+	if (id >= 0 && id < JoystickCount) return joystickData[id].GetAxis (axis);
+
+	// Log::Error << "Tried to access joystick axis that is out of bounds!\n";
+	return 0.0f;
+}
+
+bool InputDirector::GetControllerButton (int id, int button)
+{
+	if (id >= 0 && id < JoystickCount) return joystickData[id].GetButton (button);
+
+	// Log::Error << "Tried to access joystick button that is out of bounds!\n";
+	return false;
+}
+
+
+void InputDirector::UpdateInputs ()
+{
+	glfwPollEvents ();
+
+	for (int i = 0; i < JoystickCount; i++)
+	{
+		if (glfwJoystickPresent (i))
+		{
+			joystickData[i].connected = true;
+			joystickData[i].axes = glfwGetJoystickAxes (i, &(joystickData[i].axesCount));
+			joystickData[i].buttons = glfwGetJoystickButtons (i, &(joystickData[i].buttonCount));
 		}
 		else
-			Disconnect();
-	}
-
-	void InputDirector::JoystickData::Disconnect() {
-		connected = false;
-		axes = nullptr;
-		buttons = nullptr;
-
-	}
-
-	bool InputDirector::JoystickData::IsConnected() {
-		return connected;
-	}
-
-	std::array<int, JoystickCount> InputDirector::GetConnectedJoysticks() {
-		std::array<int, JoystickCount> joys;
-
-		int i = 0;
-		for (int i = 0; i < JoystickCount; i++)
-			if (joystickData.at(i).IsConnected())
-				joys.at(i++) = joystickData.at(i).joystickIndex;
-
-		return joys;
-	}
-
-	float InputDirector::JoystickData::GetAxis(int index) {
-		if (index >= 0 && index < axesCount)
-			if (axes != nullptr)
-				return axes[index];
-
-		Log::Error << "Tried to access axes that is out of bounds! \n";
-		return 0.0f;
-	}
-
-	bool InputDirector::JoystickData::GetButton(int index) {
-		if (index >= 0 && index < buttonCount)
-			if (buttons != nullptr)
-				return buttons[index];
-
-		Log::Error << "Tried to access button that is out of bounds! \n";
-		return false;
-	}
-
-	bool InputDirector::GetKey(KeyCode code) {
-		return keys[as_integer(code)];
-	}
-
-	bool InputDirector::GetKeyDown(KeyCode code) {
-		return keysDown[as_integer(code)];
-	}
-
-	bool InputDirector::GetKeyUp(KeyCode code) {
-		return keysUp[as_integer(code)];
-	}
-
-	bool InputDirector::GetMouseButton(int button) {
-		return mouseButtons[button];
-	}
-	bool InputDirector::GetMouseButtonPressed(int button) {
-		return mouseButtonsDown[button];
-	}
-	bool InputDirector::GetMouseButtonReleased(int button) {
-		return mouseButtonsUp[button];
-	}
-	glm::dvec2 InputDirector::GetMousePosition() {
-		return mousePosition;
-	}
-	glm::dvec2 InputDirector::GetMouseChangeInPosition() {
-		return mouseChangeInPosition;
-	}
-	double InputDirector::GetMouseScrollX() {
-		return mouseScroll.x;
-	}
-	double InputDirector::GetMouseScrollY() {
-		return mouseScroll.y;
-	}
-	void InputDirector::SetTextInputMode() {
-		textInputMode = true;
-	}
-	void InputDirector::ResetTextInputMode() {
-		textInputMode = false;
-	}
-	bool InputDirector::GetTextInputMode() {
-		return textInputMode;
-	}
-
-	bool InputDirector::GetMouseControlStatus() {
-		return mouseControlStatus;
-	}
-
-	void InputDirector::SetMouseControlStatus(bool value) {
-		mouseControlStatus = value;
-		Log::Debug << "Mouse control status " << value << "\n";
-		if (mouseControlStatus) {
-			glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		}
-		else {
-			glfwSetInputMode(window->getWindowContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		}
-
-	}
-
-	void InputDirector::ConnectJoystick(int index) {
-		if (index >= 0 && index < JoystickCount)
-			joystickData[index].Connect();
-		else
-			Log::Error << "Tried to connect joystick that is out of bounds!\n";
-	}
-
-	void InputDirector::DisconnectJoystick(int index) {
-		if (index >= 0 && index < JoystickCount)
-			joystickData[index].Disconnect();
-		else
-			Log::Error << "Tried to disconnect joystick that is out of bounds!\n";
-	}
-
-	bool InputDirector::IsJoystickConnected(int index) {
-		if (index >= 0 && index < JoystickCount)
-			return joystickData[index].IsConnected();
-
-		Log::Error << "Tried to test if an out of range joystick is connected!\n";
-		return false;
-	}
-
-	float InputDirector::GetControllerAxis(int id, int axis) {
-		if (id >= 0 && id < JoystickCount)
-			return joystickData[id].GetAxis(axis);
-
-		Log::Error << "Tried to access joystick axis that is out of bounds!\n";
-		return 0.0f;
-	}
-
-	bool InputDirector::GetControllerButton(int id, int button) {
-		if (id >= 0 && id < JoystickCount)
-			return joystickData[id].GetButton(button);
-
-		Log::Error << "Tried to access joystick button that is out of bounds!\n";
-		return false;
-	}
-
-
-	void InputDirector::UpdateInputs() {
-		glfwPollEvents();
-
-		for (int i = 0; i < JoystickCount; i++) {
-			if (glfwJoystickPresent(i)) {
-				joystickData[i].connected = true;
-				joystickData[i].axes = glfwGetJoystickAxes(i, &(joystickData[i].axesCount));
-				joystickData[i].buttons = glfwGetJoystickButtons(i, &(joystickData[i].buttonCount));
-
-			}
-			else {
-				joystickData[i].connected = false;
-				joystickData[i].axes = nullptr;
-				joystickData[i].buttons = nullptr;
-			}
+		{
+			joystickData[i].connected = false;
+			joystickData[i].axes = nullptr;
+			joystickData[i].buttons = nullptr;
 		}
 	}
+}
 
-	void InputDirector::ResetReleasedInput() {
-		std::fill(std::begin(keysDown), std::end(keysDown), 0);
-		std::fill(std::begin(keysUp), std::end(keysUp), 0);
-		std::fill(std::begin(mouseButtonsUp), std::end(mouseButtonsUp), 0);
-		std::fill(std::begin(mouseButtonsDown), std::end(mouseButtonsDown), 0);
-		mouseScroll = glm::dvec2(0, 0);
-		mouseChangeInPosition = glm::dvec2(0, 0);
-	}
+void InputDirector::ResetReleasedInput ()
+{
+	std::fill (std::begin (keysDown), std::end (keysDown), 0);
+	std::fill (std::begin (keysUp), std::end (keysUp), 0);
+	std::fill (std::begin (mouseButtonsUp), std::end (mouseButtonsUp), 0);
+	std::fill (std::begin (mouseButtonsDown), std::end (mouseButtonsDown), 0);
+	mouseScroll = glm::dvec2 (0, 0);
+	mouseChangeInPosition = glm::dvec2 (0, 0);
+}
 
-	void InputDirector::keyEvent(int key, int scancode, int action, int mods) {
-		switch (action) {
+void InputDirector::keyEvent (int key, int scancode, int action, int mods)
+{
+	switch (action)
+	{
 		case GLFW_PRESS:
 			keys[key] = true;
 			keysDown[key] = true;
@@ -315,11 +261,13 @@ namespace Input {
 
 		default:
 			break;
-		}
 	}
+}
 
-	void InputDirector::mouseButtonEvent(int button, int action, int mods) {
-		switch (action) {
+void InputDirector::mouseButtonEvent (int button, int action, int mods)
+{
+	switch (action)
+	{
 		case GLFW_PRESS:
 			mouseButtons[button] = true;
 			mouseButtonsDown[button] = true;
@@ -336,20 +284,22 @@ namespace Input {
 
 		default:
 			break;
-		}
-	}
-
-	void InputDirector::mouseMoveEvent(double xoffset, double yoffset) {
-
-		mousePosition = glm::dvec2(xoffset, yoffset);
-
-		mouseChangeInPosition = mousePositionPrevious - mousePosition;
-		mouseChangeInPosition.x *= -1; //coordinates are reversed on y axis (top left vs bottom left)
-
-		mousePositionPrevious = mousePosition;
-	}
-
-	void InputDirector::mouseScrollEvent(double xoffset, double yoffset) {
-		mouseScroll = glm::dvec2(xoffset, yoffset);
 	}
 }
+
+void InputDirector::mouseMoveEvent (double xoffset, double yoffset)
+{
+
+	mousePosition = glm::dvec2 (xoffset, yoffset);
+
+	mouseChangeInPosition = mousePositionPrevious - mousePosition;
+	mouseChangeInPosition.x *= -1; // coordinates are reversed on y axis (top left vs bottom left)
+
+	mousePositionPrevious = mousePosition;
+}
+
+void InputDirector::mouseScrollEvent (double xoffset, double yoffset)
+{
+	mouseScroll = glm::dvec2 (xoffset, yoffset);
+}
+} // namespace Input

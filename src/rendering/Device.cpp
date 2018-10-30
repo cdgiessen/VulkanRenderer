@@ -11,7 +11,7 @@
 #include <iostream>
 
 
-void VMA_MemoryResource::Create(
+void VMA_MemoryResource::Create (
     VkPhysicalDevice physical_device, VkDevice device, VkAllocationCallbacks* custom_allocator)
 {
 	VmaAllocatorCreateInfo allocatorInfo = {};
@@ -21,7 +21,7 @@ void VMA_MemoryResource::Create(
 
 	VK_CHECK_RESULT (vmaCreateAllocator (&allocatorInfo, &allocator));
 }
-void VMA_MemoryResource::Free()
+void VMA_MemoryResource::Free ()
 {
 	if (allocator)
 	{
@@ -29,11 +29,13 @@ void VMA_MemoryResource::Free()
 	}
 }
 
-void VMA_MemoryResource::Log (bool detailedOutput)
+void VMA_MemoryResource::LogVMA (bool detailedOutput)
 {
 	char* str;
 	vmaBuildStatsString (allocator, &str, detailedOutput);
-	Log::Debug << "Allocator Data Dump:\n" << std::string (str) << "\n";
+	Log.Debug (fmt::format ("Allocator Data Dump:\n {}\n", str));
+
+	// Log::Debug << "Allocator Data Dump:\n" << std::string (str) << "\n";
 	vmaFreeStatsString (allocator, str);
 }
 
@@ -56,8 +58,8 @@ VulkanDevice::VulkanDevice (bool validationLayers, Window& window)
 
 VulkanDevice::~VulkanDevice ()
 {
-	allocator_general.Free();
-	allocator_linear_tiling.Free();
+	allocator_general.Free ();
+	allocator_linear_tiling.Free ();
 
 	vkDestroyDevice (device, nullptr);
 	DestroyDebugReportCallbackEXT (instance, callback, nullptr);
@@ -67,8 +69,8 @@ VulkanDevice::~VulkanDevice ()
 
 void VulkanDevice::LogMemory ()
 {
-	allocator_general.Log ();
-	allocator_linear_tiling.Log ();
+	allocator_general.LogVMA ();
+	allocator_linear_tiling.LogVMA ();
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debugCallback (VkDebugReportFlagsEXT flags,
@@ -80,7 +82,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debugCallback (VkDebugReportFlagsEX
     const char* msg,
     void* userData)
 {
-	Log::Debug << "\nvalidation layer: " << msg << "\n"; // << "\n";
+	Log.Debug (fmt::format ("Validation Layer:\n{}\n", msg));
+
+	// Log::Debug << "\nvalidation layer: " << msg << "\n"; // << "\n";
 	return VK_FALSE;
 }
 
@@ -185,8 +189,8 @@ void VulkanDevice::CreateInstance (std::string appName)
 {
 	if (enableValidationLayers && !CheckValidationLayerSupport ())
 	{
-		Log::Debug << "validation layers requested, but not available! "
-		           << "\n";
+		Log.Error (fmt::format ("Validation layers requested, but not found!\n"));
+		//		Log::Debug << "validation layers requested, but not available! "<< "\n";
 		enableValidationLayers = false;
 		// throw std::runtime_error("validation layers requested, but not available!");
 	}
@@ -250,7 +254,9 @@ void VulkanDevice::CreateSurface (VkSurfaceKHR& surface)
 	VkResult res = glfwCreateWindowSurface (instance, window.getWindowContext (), nullptr, &surface);
 	if (res != VK_SUCCESS)
 	{
-		Log::Error << errorString (res) << "\n";
+		Log.Error (fmt::format ("{}\n", errorString (res)));
+
+		//		Log::Error << errorString (res) << "\n";
 		throw std::runtime_error ("failed to create window surface!");
 	}
 }
@@ -473,7 +479,7 @@ CommandQueue& VulkanDevice::PresentQueue ()
 void VulkanDevice::CreateVulkanAllocator ()
 {
 	allocator_general.Create (physical_device, device);
-	allocator_linear_tiling.Create(physical_device, device);
+	allocator_linear_tiling.Create (physical_device, device);
 }
 
 
