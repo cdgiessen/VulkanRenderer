@@ -3,12 +3,7 @@
 #include <string>
 #include <vector>
 #include <chrono>
-
-
-std::string GetExecutableFilePath();
-void SetExecutableFilePath(std::string file);
-
-std::string GetFilePathFromFullPath(std::string file);
+           
 
 bool fileExists(const std::string &filename);
 

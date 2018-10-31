@@ -1,9 +1,11 @@
 #include "ProcTerrainNodeGraph.h"
 
 #include <fstream>
+#include <glm/gtc/type_ptr.hpp>
 #include <iomanip>
-#include <iostream>
 #include <nlohmann/json.hpp>
+
+#include <filesystem>
 
 #include "noc/noc_file_dialog.h"
 
@@ -11,7 +13,6 @@
 #include "core/Input.h"
 #include "core/Logger.h"
 
-#include <glm/gtc/type_ptr.hpp>
 
 template <typename Enumeration>
 auto as_integer (Enumeration const value) -> typename std::underlying_type<Enumeration>::type
@@ -54,9 +55,7 @@ void ProcTerrainNodeGraph::DeleteNode (std::shared_ptr<Node> node)
 	}
 	else
 	{
-		Log.Debug (fmt::format ("Couldn't find node to delete! Does it exist?\n"));
-
-		// Log::Error << "Couldn't find node to delete! Does it actually exist?\n";
+		Log.Debug ("Couldn't find node to delete! Does it exist?\n");
 	}
 }
 
@@ -76,9 +75,7 @@ void ProcTerrainNodeGraph::DeleteConnection (std::shared_ptr<Connection> con)
 	}
 	else
 	{
-		Log.Error (fmt::format ("Couldn't find connection! Does it exist?\n"));
-
-		//	Log::Error << "Couldn't find connection to delete! Does it actually exist?\n";
+		Log.Error ("Couldn't find connection! Does it exist?\n");
 	}
 }
 
@@ -667,8 +664,9 @@ void ProcTerrainNodeGraph::DrawConnections (ImDrawList* imDrawList)
 
 void ProcTerrainNodeGraph::SaveGraphFromFile ()
 {
-	const char* filename =
-	    noc_file_dialog_open (NOC_FILE_DIALOG_SAVE, NULL, GetExecutableFilePath ().c_str (), NULL);
+	Log.Debug(fmt::format("PWD = {}\n", std::filesystem::current_path().string()));
+	const char* filename = noc_file_dialog_open (
+	    NOC_FILE_DIALOG_SAVE, NULL, std::filesystem::current_path ().string ().c_str (), NULL);
 	if (filename != NULL)
 	{
 		SaveGraphFromFile (std::string (filename));
@@ -680,8 +678,7 @@ void ProcTerrainNodeGraph::SaveGraphFromFile (std::string fileName)
 	std::ofstream outFile (fileName);
 	if (!outFile)
 	{
-		Log.Debug (fmt::format ("Bad file name for terrain graph\n"));
-		// Log::Debug << "Bad file name for terrain graph!\n";
+		Log.Debug ("Bad file name for terrain graph\n");
 		return;
 	}
 	nlohmann::json j;
@@ -737,7 +734,7 @@ void ProcTerrainNodeGraph::SaveGraphFromFile (std::string fileName)
 			nodeJson[std::to_string (slot.slotNum)] = slotJson;
 		}
 
-		j[std::to_string (curNodeIndex)] = nodeJson;
+		j[std::to_string (curNodeIndex)] = nodeJson; 
 		curNodeIndex++;
 	}
 
@@ -748,16 +745,14 @@ void ProcTerrainNodeGraph::SaveGraphFromFile (std::string fileName)
 void ProcTerrainNodeGraph::LoadGraphFromFile ()
 {
 	const char* filename =
-	    noc_file_dialog_open (NOC_FILE_DIALOG_OPEN, NULL, GetExecutableFilePath ().c_str (), NULL);
+	    noc_file_dialog_open (NOC_FILE_DIALOG_OPEN, NULL, std::filesystem::current_path().string().c_str(), NULL);
 	if (filename != NULL)
 	{
 		LoadGraphFromFile (std::string (filename));
 	}
 	else
 	{
-		Log.Debug (fmt::format ("No file specified, stopping load\n"));
-
-		// Log::Debug << "User didn't specify file, Aborting load\n";
+		Log.Debug ("No file specified, stopping load\n");
 	}
 }
 
@@ -767,9 +762,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 	std::ifstream inFile (fileName);
 	if (!inFile)
 	{
-		Log.Debug (fmt::format ("Bad file name\n"));
-
-		// Log::Debug << "Bad file name for terrain graph!\n";
+		Log.Debug ("Bad file name\n");
 		return;
 	}
 
@@ -777,9 +770,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 
 	if (inFile.peek () == std::ifstream::traits_type::eof ())
 	{
-		Log.Error (fmt::format ("Opened file is empty! \n"));
-
-		// Log::Error << "Opened graph is empty! Did something go wrong?\n";
+		Log.Error ("Opened file is empty! \n");
 		return;
 	}
 
@@ -790,8 +781,6 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 	catch (nlohmann::json::parse_error& e)
 	{
 		Log.Error (fmt::format ("{}\n", e.what ()));
-
-		// Log::Error << e.what () << "\n";
 	}
 	inFile.close ();
 
@@ -824,9 +813,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 					auto outGoingNode = GetNodeById (conIndex);
 					if (outGoingNode == nullptr)
 					{
-						Log.Error (fmt::format ("Couldn't find node by id in loaded graph\n"));
-
-						// Log::Error << "Couldn't find node by id in graph loading!\n";
+						Log.Error ("Couldn't find node by id in loaded graph\n");
 					}
 
 					int slotType = j[curIndex][curSlotIndex]["slotType"];
@@ -884,8 +871,6 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 	catch (nlohmann::json::parse_error& e)
 	{
 		Log.Error (fmt::format ("{}\n", e.what ()));
-
-		// Log::Error << e.what () << "\n";
 	}
 }
 

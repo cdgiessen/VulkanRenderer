@@ -1,6 +1,4 @@
 
-#include <iostream>
-#include <string>
 
 #include "CoreTools.h"
 #include "Logger.h"
@@ -20,9 +18,6 @@
 
 int main (int argc, char* argv[])
 {
-
-	SetExecutableFilePath (argv[0]);
-
 	std::unique_ptr<VulkanApp> vkApp;
 	try
 	{
@@ -31,7 +26,6 @@ int main (int argc, char* argv[])
 	catch (const std::runtime_error& e)
 	{
 		Log.Debug (fmt::format ("ENGINE FAILED TO INITIALIZE\n{}\n", e.what ()));
-		//		Log::Error << "ENGINE FAILED TO INITIALIZE\n" << std::string (e.what ()) << "\n";
 		return EXIT_FAILURE;
 	}
 
@@ -42,8 +36,6 @@ int main (int argc, char* argv[])
 	catch (const std::runtime_error& e)
 	{
 		Log.Error (fmt::format ("Engine quite in main loop\n{}\n", e.what ()));
-
-		//		Log::Error << "ENGINE FAILED IN MAIN LOOP\n" << std::string (e.what ()) << "\n";
 		return EXIT_FAILURE;
 	}
 
@@ -54,8 +46,6 @@ int main (int argc, char* argv[])
 	catch (const std::runtime_error& e)
 	{
 		Log.Error (fmt::format ("Engine quite in destructor\n{}\n", e.what ()));
-
-		//		Log::Error << "ENGINE FAILED TO DESCRUCT\n" << std::string (e.what ()) << "\n";
 		return EXIT_FAILURE;
 	}
 

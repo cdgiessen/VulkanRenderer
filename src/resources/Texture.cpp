@@ -176,35 +176,38 @@ void Manager::LoadTextureList ()
 		}
 		catch (nlohmann::json::parse_error& e)
 		{
-			// Log::Debug << "Texture List was invalid json, creating new one\n";
-			// Log::Debug << "Json error: " << std::string (e.what ()) << "\n";
+			Log.Debug ("Texture list was invalid json, creating a new one\n");
+			Log.Debug (fmt::format ("Json error: {}\n", e.what ()));
 			SaveTextureList ();
 		}
 	}
 	else
 	{
-		// Log::Debug << "Texture List file didn't exist, creating one";
+		Log.Debug ("Texture list didn't exist, creating one");
 		SaveTextureList ();
 	}
 
 	try
 	{
-		// Log::Debug << textureResources.size () << " textures loaded\n";
+		Log.Debug (fmt::format ("Loaded {} textuers\n", textureResources.size ()));
 		int count = 0;
 		for (nlohmann::json::iterator it = j.begin (); it != j.end (); ++it)
 		{
 			auto tex = from_json_TexResource (*it);
 			textureResources[tex.id] = tex;
 			LoadTextureFromFile (tex.id);
-			// Log::Debug << "Tex " << tex.id << " with name " << tex.name << " dimensions width "
-			//<< tex.dataDescription.width << " height " << tex.dataDescription.height << "\n";
+			Log.Debug (fmt::format ("Tex {}, name {}, width={}, height={}\n",
+			    tex.id,
+			    tex.name,
+			    tex.dataDescription.width,
+			    tex.dataDescription.height));
 			count++;
 		}
 		id_counter = count;
 	}
 	catch (nlohmann::json::parse_error& e)
 	{
-		// Log::Debug << "Error loading texture list " << e.what () << "\n";
+		Log.Debug (fmt::format ("Error loading texture list {}\n", e.what ()));
 	}
 }
 
@@ -223,7 +226,7 @@ void Manager::SaveTextureList ()
 	}
 	catch (nlohmann::json::parse_error& e)
 	{
-		// Log::Error << e.what () << "\n";
+		Log.Debug (fmt::format ("{}\n", e.what ()));
 	}
 	outFile.close ();
 }
@@ -251,18 +254,13 @@ void Manager::LoadTextureFromFile (TexID id)
 			       formatTypeToString (texRes.fileFormatType);
 		}
 
-		if (path.c_str () == "")
-		{
-			// Log::Error << "Path not set!\n";
-		}
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels;
 		pixels = stbi_load (path.c_str (), &texWidth, &texHeight, &texChannels, 4);
 
 		if (pixels == nullptr)
 		{
-
-			// Log::Error << "Image failed to load! Was the name correct? " << path.c_str () << "\n";
+			Log.Error(fmt::format("Image {} failed to load!\n", path.c_str()));
 		}
 		// else if (desiredChannels != texChannels) {
 		//	Log::Error << "Image couldn't load desired channel of " << desiredChannels

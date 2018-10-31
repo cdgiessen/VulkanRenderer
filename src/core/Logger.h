@@ -2,8 +2,8 @@
 
 #include <cstdio>
 #include <fmt/format.h>
-#include <mutex>
 #include <string_view>
+
 
 // namespace Log
 // {
