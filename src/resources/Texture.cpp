@@ -191,11 +191,14 @@ void Manager::LoadTextureList ()
 	{
 		Log.Debug (fmt::format ("Loaded {} textuers\n", textureResources.size ()));
 		int count = 0;
+		std::vector<std::thread> workers;
+
 		for (nlohmann::json::iterator it = j.begin (); it != j.end (); ++it)
 		{
 			auto tex = from_json_TexResource (*it);
 			textureResources[tex.id] = tex;
-			LoadTextureFromFile (tex.id);
+			workers.push_back(std::thread(&Manager::LoadTextureFromFile, this, tex.id));
+			 //LoadTextureFromFile (tex.id);
 			Log.Debug (fmt::format ("Tex {}, name {}, width={}, height={}\n",
 			    tex.id,
 			    tex.name,
@@ -204,6 +207,11 @@ void Manager::LoadTextureList ()
 			count++;
 		}
 		id_counter = count;
+
+		for (auto& w : workers) {
+			w.join();
+		}
+
 	}
 	catch (nlohmann::json::parse_error& e)
 	{
@@ -235,11 +243,12 @@ void Manager::LoadTextureFromFile (TexID id)
 {
 
 	auto& texRes = textureResources.at (id);
-	textureData.push_back (std::make_unique<TexData> (texRes.dataDescription));
-	texRes.SetDataPtr (&(*textureData.back ()));
+	auto texData = std::make_unique<TexData> (texRes.dataDescription);
+	texRes.SetDataPtr (texData.get());
 
 	int desiredChannels = texRes.dataDescription.channels;
 
+	std::vector<std::string> paths;
 	for (int i = 0; i < texRes.dataDescription.layers; i++)
 	{
 		std::string path;
@@ -253,6 +262,8 @@ void Manager::LoadTextureFromFile (TexID id)
 			path = std::string ("assets/textures/") + texRes.name + std::string (".") +
 			       formatTypeToString (texRes.fileFormatType);
 		}
+
+		paths.push_back(path);
 
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels;
@@ -268,7 +279,7 @@ void Manager::LoadTextureFromFile (TexID id)
 		//}
 		else
 		{
-			std::memcpy (textureData.back ()->GetDataPtr () + i * texWidth * texHeight * 4,
+			std::memcpy (texData->GetDataPtr () + i * texWidth * texHeight * 4,
 			    pixels,
 			    sizeof (std::byte) * texWidth * texHeight * 4);
 
@@ -276,6 +287,9 @@ void Manager::LoadTextureFromFile (TexID id)
 			stbi_image_free (pixels);
 		}
 	}
+
+	std::lock_guard<std::mutex> lg(lock);
+	textureData.push_back(std::move(texData));
 }
 
 TexID CreateNewTextureFromByteArray (int width, int height, std::byte* data) { return 0; }

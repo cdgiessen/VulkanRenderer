@@ -11,6 +11,8 @@
 #include <tuple>
 #include <unordered_map>
 #include <vector>
+#include <thread>
+#include <mutex>
 
 #include <glm/fwd.hpp>
 
