@@ -3,12 +3,12 @@
 namespace Resource {
 
 
-ResourceManager::ResourceManager()
+AssetManager::AssetManager()
 {
 }
 
 
-ResourceManager::~ResourceManager()
+AssetManager::~AssetManager()
 {
 }
 

@@ -232,7 +232,7 @@ TerrainMeshIndices* TerrainChunkBuffer::GetDeviceIndexBufferPtr (int index)
 }
 
 TerrainManager::TerrainManager (
-    InternalGraph::GraphPrototype& protoGraph, Resource::ResourceManager& resourceMan, VulkanRenderer& renderer)
+    InternalGraph::GraphPrototype& protoGraph, Resource::AssetManager& resourceMan, VulkanRenderer& renderer)
 : protoGraph (protoGraph),
   renderer (renderer),
   resourceMan (resourceMan),

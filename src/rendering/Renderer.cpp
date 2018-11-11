@@ -70,7 +70,7 @@ void RenderSettings::Save ()
 	outFile.close ();
 }
 
-VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::ResourceManager& resourceMan)
+VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::AssetManager& resourceMan)
 
 : settings ("render_settings.json"),
   device (validationLayer, window),

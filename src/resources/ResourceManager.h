@@ -10,11 +10,11 @@
 namespace Resource {
 
 
-class ResourceManager
+class AssetManager
 {
 public:
-	ResourceManager();
-	~ResourceManager();
+	AssetManager();
+	~AssetManager();
 
 	Texture::Manager texManager;
 	//MeshManager meshManager;

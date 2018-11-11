@@ -37,7 +37,7 @@ class Scene;
 
 namespace Resource
 {
-class ResourceManager;
+class AssetManager;
 }
 
 struct Transform
@@ -169,7 +169,7 @@ class GPU_DoubleBuffer
 class VulkanRenderer
 {
 	public:
-	VulkanRenderer (bool enableValidationLayer, Window& window, Resource::ResourceManager& resourceMan);
+	VulkanRenderer (bool enableValidationLayer, Window& window, Resource::AssetManager& resourceMan);
 
 	VulkanRenderer (const VulkanRenderer& other) = delete; // copy
 	VulkanRenderer (VulkanRenderer&& other) = delete;      // move
