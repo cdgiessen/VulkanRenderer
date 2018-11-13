@@ -1,8 +1,8 @@
 #include "Scene.h"
 
-#include <glm/gtc/type_ptr.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "core/Input.h"
 #include "core/Logger.h"
@@ -12,50 +12,55 @@
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
 
-Scene::Scene(Resource::ResourceManager& resourceMan,
-	VulkanRenderer& renderer,
-	TimeManager& timeManager,
-	InternalGraph::GraphPrototype& graph) :
-	renderer(renderer), resourceMan(resourceMan), timeManager(timeManager)
+Scene::Scene (Resource::ResourceManager& resourceMan,
+    VulkanRenderer& renderer,
+    TimeManager& timeManager,
+    InternalGraph::GraphPrototype& graph)
+: renderer (renderer), resourceMan (resourceMan), timeManager (timeManager)
 {
 
-	camera = std::make_unique< Camera>(glm::vec3(0, 1, -5), glm::vec3(0, 1, 0), 0, 90);
+	camera = std::make_unique<Camera> (glm::vec3 (0, 1, -5), glm::vec3 (0, 1, 0), 0, 90);
 
-	directionalLights.resize(5);
-	pointLights.resize(5);
+	directionalLights.resize (5);
+	pointLights.resize (5);
 
-	skySettings.sun = DirectionalLight(glm::vec3(0, 60, 25), 10.0f, glm::vec3(1.0f, 0.98f, 0.9f));
-	skySettings.moon = DirectionalLight(-glm::vec3(0, 60, 25), 0.0f, glm::vec3(0.9f, 0.95f, 1.0f));
+	skySettings.sun = DirectionalLight (glm::vec3 (0, 60, 25), 10.0f, glm::vec3 (1.0f, 0.98f, 0.9f));
+	skySettings.moon = DirectionalLight (-glm::vec3 (0, 60, 25), 0.0f, glm::vec3 (0.9f, 0.95f, 1.0f));
 
-	directionalLights.at(0) = skySettings.sun;
+	directionalLights.at (0) = skySettings.sun;
 
-	//pointLights.resize(1);
-	//PointLight pl;
-	//pl.position = glm::vec3(0, 3, 3);
-	//pl.color = glm::vec3(0, 1, 0);
-	//pl.attenuation = 5;
-	//pointLights[0] = pl;
+	// pointLights.resize(1);
+	// PointLight pl;
+	// pl.position = glm::vec3(0, 3, 3);
+	// pl.color = glm::vec3(0, 1, 0);
+	// pl.attenuation = 5;
+	// pointLights[0] = pl;
 
-	//pointLights[0] = PointLight(glm::vec4(0, 4, 3, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	//pointLights[1] = PointLight(glm::vec4(10, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	//pointLights[2] = PointLight(glm::vec4(50, 10, 10, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	//pointLights[3] = PointLight(glm::vec4(50, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
-	//pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	// pointLights[0] = PointLight(glm::vec4(0, 4, 3, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0,
+	// 0.045f, 0.0075f, 1.0f)); pointLights[1] = PointLight(glm::vec4(10, 10, 50, 1), glm::vec4(0,
+	// 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f)); pointLights[2] = PointLight(glm::vec4(50,
+	// 10, 10, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f)); pointLights[3] =
+	// PointLight(glm::vec4(50, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f,
+	// 0.0075f, 1.0f)); pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(0, 0, 0, 0),
+	// glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
 
-	skybox = std::make_unique<Skybox>(renderer);
-	skybox->skyboxCubeMap = resourceMan.texManager.GetTexIDByName("Skybox");
-	skybox->model = std::make_shared<VulkanModel>(renderer, createCube());
-	skybox->InitSkybox();
+	skybox = std::make_unique<Skybox> (renderer);
+	skybox->skyboxCubeMap = resourceMan.texManager.GetTexIDByName ("Skybox");
+	skybox->model = std::make_shared<VulkanModel> (renderer, createCube ());
+	skybox->InitSkybox ();
 
-	//std::shared_ptr<GameObject> cubeObject = std::make_shared<GameObject>(renderer);
-	//cubeObject->gameObjectModel = std::make_shared<VulkanModel>(renderer.device);
-	//cubeObject->LoadModel(createCube());
-	//cubeObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture>(renderer.device);
-	//cubeObject->gameObjectTexture = resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/ColorGradientCube.png");
-	////cubeObject->LoadTexture("Resources/Textures/ColorGradientCube.png");
-	//cubeObject->InitGameObject();
-	//gameObjects.push_back(cubeObject);
-	//for (int i = 0; i < 9; i++) {
+	// auto cubeObject 	= std::make_unique<GameObject> (renderer);
+	// cubeObject->LoadModel (createCube ());
+	// cubeObject->gameObjectModel = std::make_shared<VulkanModel> (renderer, cubeObject->gameObjectMesh);
+
+	// TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
+
+	// cubeObject->gameObjectTexture = resourceMan.texManager.GetTexIDByName ("ColorGradientCube");
+	// cubeObject->gameObjectVulkanTexture =
+	//     renderer.textureManager.CreateTexture2D (cubeObject->gameObjectTexture, details);
+	// cubeObject->InitGameObject ();
+	// gameObjects.push_back (std::move (cubeObject));
+	// for (int i = 0; i < 9; i++) {
 	//	for (int j = 0; j < 9; j++)
 	//	{
 
@@ -75,7 +80,7 @@ Scene::Scene(Resource::ResourceManager& resourceMan,
 	//	}
 	//}
 
-	//for (int i = 0; i < 9; i++) {
+	// for (int i = 0; i < 9; i++) {
 	//	for (int j = 0; j < 9; j++)
 	//	{
 
@@ -95,245 +100,281 @@ Scene::Scene(Resource::ResourceManager& resourceMan,
 	//	}
 	//}
 
-	//std::shared_ptr<GameObject> pbr_test = std::make_shared<GameObject>(renderer);
-	//pbr_test->usePBR = true;
+	// std::shared_ptr<GameObject> pbr_test = std::make_shared<GameObject>(renderer);
+	// pbr_test->usePBR = true;
 
-	terrainManager = std::make_unique<TerrainManager>(graph, resourceMan, renderer);
+	terrainManager = std::make_unique<TerrainManager> (graph, resourceMan, renderer);
 
-	//terrainManager->SetupResources(resourceMan, renderer);
-	//terrainManager->GenerateTerrain(resourceMan, renderer, camera);
+	// terrainManager->SetupResources(resourceMan, renderer);
+	// terrainManager->GenerateTerrain(resourceMan, renderer, camera);
 
-	//treesInstanced = std::make_unique<InstancedSceneObject>(renderer);
-	//treesInstanced->SetFragmentShaderToUse("assets/shaders/instancedSceneObject.frag.spv");
-	//treesInstanced->SetBlendMode(VK_FALSE);
-	//treesInstanced->SetCullMode(VK_CULL_MODE_BACK_BIT);
-	//treesInstanced->LoadModel(createCube());
-	//treesInstanced->LoadTexture(resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/grass.jpg"));
-	//treesInstanced->InitInstancedSceneObject(renderer);
+	// treesInstanced = std::make_unique<InstancedSceneObject>(renderer);
+	// treesInstanced->SetFragmentShaderToUse("assets/shaders/instancedSceneObject.frag.spv");
+	// treesInstanced->SetBlendMode(VK_FALSE);
+	// treesInstanced->SetCullMode(VK_CULL_MODE_BACK_BIT);
+	// treesInstanced->LoadModel(createCube());
+	// treesInstanced->LoadTexture(resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/grass.jpg"));
+	// treesInstanced->InitInstancedSceneObject(renderer);
 
-	//treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(20,0,10), glm::vec3(10,0,40), glm::vec3(10,0,-40), glm::vec3(100,0,40) });
-	//treesInstanced->UploadInstances();
+	// treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(20,0,10),
+	// glm::vec3(10,0,40), glm::vec3(10,0,-40), glm::vec3(100,0,40) });
+	// treesInstanced->UploadInstances();
 
-	std::vector< InstancedSceneObject::InstanceData> data;
+	std::vector<InstancedSceneObject::InstanceData> data;
 	int size = 2;
 	for (int i = 0; i < size; i++)
 		for (int j = 0; j < size; j++)
 			for (int k = 0; k < size; k++)
 			{
-				data.push_back(InstancedSceneObject::InstanceData(glm::vec3(i * 2, k * 2, j * 2), glm::vec3(0, 0, 0), 1, 0));
+				data.push_back (InstancedSceneObject::InstanceData (
+				    glm::vec3 (i * 2, k * 2, j * 2), glm::vec3 (0, 0, 0), 1, 0));
 			}
-	//treesInstanced->AddInstances(data);
-	//rocksInstanced = std::make_shared<InstancedSceneObject>(renderer);
+	// treesInstanced->AddInstances(data);
+	// rocksInstanced = std::make_shared<InstancedSceneObject>(renderer);
 
 	// gltf2 integration
-	//std::shared_ptr< gltf2::Asset> tree_test = std::make_shared<gltf2::Asset>();
+	// std::shared_ptr< gltf2::Asset> tree_test = std::make_shared<gltf2::Asset>();
 	//*tree_test = gltf2::load("Resources/Assets/tree_test.gltf");
-
 }
 
-Scene::~Scene()
+Scene::~Scene ()
 {
 
-	//Log::Debug << "scene deleted\n";
+	// Log::Debug << "scene deleted\n";
 }
 
-void Scene::UpdateScene() {
+void Scene::UpdateScene ()
+{
 
 	GlobalData gd;
-	gd.time = (float)timeManager.RunningTime();
+	gd.time = (float)timeManager.RunningTime ();
 
-	glm::mat4 proj = depthReverserMatrix * glm::perspective(glm::radians(45.0f),
-		renderer.vulkanSwapChain.swapChainExtent.width / (float)renderer.vulkanSwapChain.swapChainExtent.height,
-		0.05f, 10000000.0f);
+	glm::mat4 proj = depthReverserMatrix * glm::perspective (glm::radians (45.0f),
+	                                           renderer.vulkanSwapChain.swapChainExtent.width /
+	                                               (float)renderer.vulkanSwapChain.swapChainExtent.height,
+	                                           0.05f,
+	                                           10000000.0f);
 	proj[1][1] *= -1;
 
-	std::vector<CameraData> cd(1);
-	cd.at(0).view = camera->GetViewMatrix();
-	cd.at(0).projView = proj * cd.at(0).view;
-	cd.at(0).cameraDir = camera->Front;
-	cd.at(0).cameraPos = camera->Position;
+	std::vector<CameraData> cd (1);
+	cd.at (0).view = camera->GetViewMatrix ();
+	cd.at (0).projView = proj * cd.at (0).view;
+	cd.at (0).cameraDir = camera->Front;
+	cd.at (0).cameraPos = camera->Position;
 
-	UpdateSunData();
+	UpdateSunData ();
 
-	renderer.UpdateRenderResources(gd, {cd}, directionalLights, pointLights, spotLights);
+	renderer.UpdateRenderResources (gd, { cd }, directionalLights, pointLights, spotLights);
 
-	if (walkOnGround) {
-		float groundHeight = (float)terrainManager->GetTerrainHeightAtLocation(camera->Position.x, camera->Position.z) + 2.0f;
+	if (walkOnGround)
+	{
+		float groundHeight =
+		    (float)terrainManager->GetTerrainHeightAtLocation (camera->Position.x, camera->Position.z) + 2.0f;
 		float height = (float)camera->Position.y;
 
-		if (pressedControllerJumpButton && !releasedControllerJumpButton) {
-			if (Input::IsJoystickConnected(0) && Input::GetControllerButton(0, 0)) {
+		if (pressedControllerJumpButton && !releasedControllerJumpButton)
+		{
+			if (Input::IsJoystickConnected (0) && Input::GetControllerButton (0, 0))
+			{
 				pressedControllerJumpButton = false;
 				releasedControllerJumpButton = true;
 				verticalVelocity += 0.15f;
 			}
 		}
-		if (Input::IsJoystickConnected(0) && Input::GetControllerButton(0, 0)) {
+		if (Input::IsJoystickConnected (0) && Input::GetControllerButton (0, 0))
+		{
 			pressedControllerJumpButton = true;
 		}
-		if (Input::IsJoystickConnected(0) && !Input::GetControllerButton(0, 0)) {
+		if (Input::IsJoystickConnected (0) && !Input::GetControllerButton (0, 0))
+		{
 			releasedControllerJumpButton = false;
 		}
 
-		if (Input::GetKeyDown(Input::KeyCode::SPACE)) {
+		if (Input::GetKeyDown (Input::KeyCode::SPACE))
+		{
 			verticalVelocity += 0.15f;
 		}
-		verticalVelocity += (float)timeManager.DeltaTime()*gravity;
+		verticalVelocity += (float)timeManager.DeltaTime () * gravity;
 		height += verticalVelocity;
 		camera->Position.y = height;
-		if (camera->Position.y < groundHeight) { //for over land
+		if (camera->Position.y < groundHeight)
+		{ // for over land
 			camera->Position.y = groundHeight;
 			verticalVelocity = 0;
 		}
-		else if (camera->Position.y < heightOfGround) {//for over water
+		else if (camera->Position.y < heightOfGround)
+		{ // for over water
 			camera->Position.y = heightOfGround;
 			verticalVelocity = 0;
 		}
 	}
 
-	if (Input::GetKeyDown(Input::KeyCode::V))
-		UpdateTerrain = !UpdateTerrain;
+	if (Input::GetKeyDown (Input::KeyCode::V)) UpdateTerrain = !UpdateTerrain;
 
 
-	skybox->UpdateUniform(proj, cd.at(0).view);
+	skybox->UpdateUniform (proj, cd.at (0).view);
 
-	for (auto& obj : gameObjects) {
-		obj->UpdateUniformBuffer((float)timeManager.RunningTime());
+	for (auto& obj : gameObjects)
+	{
+		obj->UpdateUniformBuffer ((float)timeManager.RunningTime ());
 	}
 
 	if (UpdateTerrain && terrainManager != nullptr)
-		terrainManager->UpdateTerrains(camera->Position);
-
-
-
-
+		terrainManager->UpdateTerrains (camera->Position);
 }
 
-void Scene::RenderDepthPrePass(VkCommandBuffer commandBuffer){
-	for (auto& obj : gameObjects) {
-		obj->DrawDepthPrePass(commandBuffer);
+void Scene::RenderDepthPrePass (VkCommandBuffer commandBuffer)
+{
+	for (auto& obj : gameObjects)
+	{
+		obj->DrawDepthPrePass (commandBuffer);
 	}
-	if (terrainManager != nullptr)
-		terrainManager->RenderDepthPrePass(commandBuffer);
-
+	if (terrainManager != nullptr) terrainManager->RenderDepthPrePass (commandBuffer);
 }
-	
 
-void Scene::RenderScene(VkCommandBuffer commandBuffer, bool wireframe) {
+
+void Scene::RenderScene (VkCommandBuffer commandBuffer, bool wireframe)
+{
 	VkDeviceSize offsets[] = { 0 };
 
 
-	for (auto& obj : gameObjects) {
-		obj->Draw(commandBuffer, wireframe, drawNormals);
+	for (auto& obj : gameObjects)
+	{
+		obj->Draw (commandBuffer, wireframe, drawNormals);
 	}
 
-	//treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
+	// treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
 
-	if (terrainManager != nullptr)
-		terrainManager->RenderTerrain(commandBuffer, wireframe);
+	if (terrainManager != nullptr) terrainManager->RenderTerrain (commandBuffer, wireframe);
 
-	skybox->WriteToCommandBuffer(commandBuffer);
+	skybox->WriteToCommandBuffer (commandBuffer);
 }
 
-void Scene::UpdateSunData() {
-	if (skySettings.autoMove) {
+void Scene::UpdateSunData ()
+{
+	if (skySettings.autoMove)
+	{
 		skySettings.horizontalAngle += skySettings.moveSpeed;
 	}
 
-	float X = glm::cos(skySettings.horizontalAngle) * glm::cos(skySettings.verticalAngle);
-	float Z = glm::sin(skySettings.horizontalAngle) * glm::cos(skySettings.verticalAngle);
-	float Y = glm::sin(skySettings.verticalAngle);
-	skySettings.sun.direction = glm::vec3(X, Y, Z);
-	skySettings.moon.direction = -glm::vec3(X, Y, Z);
+	float X = glm::cos (skySettings.horizontalAngle) * glm::cos (skySettings.verticalAngle);
+	float Z = glm::sin (skySettings.horizontalAngle) * glm::cos (skySettings.verticalAngle);
+	float Y = glm::sin (skySettings.verticalAngle);
+	skySettings.sun.direction = glm::vec3 (X, Y, Z);
+	skySettings.moon.direction = -glm::vec3 (X, Y, Z);
 
-	directionalLights.at(0) = skySettings.sun;
-	directionalLights.at(1) = skySettings.moon;
+	directionalLights.at (0) = skySettings.sun;
+	directionalLights.at (1) = skySettings.moon;
 }
 
-void Scene::DrawSkySettingsGui() {
-	ImGui::SetNextWindowPos(ImVec2(0, 675), ImGuiSetCond_FirstUseEver);
-	ImGui::SetNextWindowSize(ImVec2(356, 180), ImGuiSetCond_FirstUseEver);
+void Scene::DrawSkySettingsGui ()
+{
+	ImGui::SetNextWindowPos (ImVec2 (0, 675), ImGuiSetCond_FirstUseEver);
+	ImGui::SetNextWindowSize (ImVec2 (356, 180), ImGuiSetCond_FirstUseEver);
 
-	if (ImGui::Begin("Sky editor", &skySettings.show_skyEditor)) {
-		ImGui::Checkbox("Sun motion", &skySettings.autoMove);
-		ImGui::DragFloat("Sun Move Speed", &skySettings.moveSpeed, 0.0001f, 0.0f, 0.0f, "%.5f");
-		ImGui::DragFloat("Sun Intensity", &skySettings.sun.intensity, 0.01f);
-		ImGui::DragFloat("Sun Horizontal", &skySettings.horizontalAngle, 0.01f, 0.0f, 0.0f, "%.5f");
-		ImGui::DragFloat("Sun Vertical", &skySettings.verticalAngle, 0.01f, 0.0f, 0.0f, "%.5f");
-		ImGui::SliderFloat3("Sun Color", ((float*)glm::value_ptr(skySettings.sun.color)), 0.0f, 1.0f);
+	if (ImGui::Begin ("Sky editor", &skySettings.show_skyEditor))
+	{
+		ImGui::Checkbox ("Sun motion", &skySettings.autoMove);
+		ImGui::DragFloat ("Sun Move Speed", &skySettings.moveSpeed, 0.0001f, 0.0f, 0.0f, "%.5f");
+		ImGui::DragFloat ("Sun Intensity", &skySettings.sun.intensity, 0.01f);
+		ImGui::DragFloat ("Sun Horizontal", &skySettings.horizontalAngle, 0.01f, 0.0f, 0.0f, "%.5f");
+		ImGui::DragFloat ("Sun Vertical", &skySettings.verticalAngle, 0.01f, 0.0f, 0.0f, "%.5f");
+		ImGui::SliderFloat3 ("Sun Color", ((float*)glm::value_ptr (skySettings.sun.color)), 0.0f, 1.0f);
 	}
-	ImGui::End();
+	ImGui::End ();
 }
 
-void Scene::UpdateSceneGUI() {
-	if (terrainManager != nullptr) {
-		terrainManager->UpdateTerrainGUI();
-		terrainManager->DrawTerrainTextureViewer();
+void Scene::UpdateSceneGUI ()
+{
+	if (terrainManager != nullptr)
+	{
+		terrainManager->UpdateTerrainGUI ();
+		terrainManager->DrawTerrainTextureViewer ();
 	}
-	
-	DrawSkySettingsGui();
+
+	DrawSkySettingsGui ();
 	return;
-	
+
 	bool value;
-	if (ImGui::Begin("Lighting Tester", &value)) {
-		ImGui::Text("Directional Lights");
-		for (int i = 0; i < 2/*directionalLights.size()*/; i++)
+	if (ImGui::Begin ("Lighting Tester", &value))
+	{
+		ImGui::Text ("Directional Lights");
+		for (int i = 0; i < 2 /*directionalLights.size()*/; i++)
 		{
 
-			ImGui::DragFloat3(std::string("Direction##" + std::to_string(i)).c_str(), (float*)glm::value_ptr(directionalLights[i].direction), 0.01f);
-			ImGui::SliderFloat3(std::string("Color##" + std::to_string(i)).c_str(), (float*)glm::value_ptr(directionalLights[i].color), 0.0f, 1.0f);
-			ImGui::DragFloat(std::string("Intensity##" + std::to_string(i)).c_str(), &directionalLights[i].intensity, 0.01f);
-			ImGui::Text(" ");
+			ImGui::DragFloat3 (std::string ("Direction##" + std::to_string (i)).c_str (),
+			    (float*)glm::value_ptr (directionalLights[i].direction),
+			    0.01f);
+			ImGui::SliderFloat3 (std::string ("Color##" + std::to_string (i)).c_str (),
+			    (float*)glm::value_ptr (directionalLights[i].color),
+			    0.0f,
+			    1.0f);
+			ImGui::DragFloat (std::string ("Intensity##" + std::to_string (i)).c_str (),
+			    &directionalLights[i].intensity,
+			    0.01f);
+			ImGui::Text (" ");
 		}
-		ImGui::Text("Point Lights");
-		for (int i = 0; i < 2/*pointLights.size()*/; i++)
+		ImGui::Text ("Point Lights");
+		for (int i = 0; i < 2 /*pointLights.size()*/; i++)
 		{
 
-			ImGui::DragFloat3(std::string("Position##" + std::to_string(i + 1000)).c_str(), ((float*)glm::value_ptr(pointLights[i].position)), 0.01f);
-			ImGui::SliderFloat3(std::string("Color##" + std::to_string(i + 1000)).c_str(), ((float*)glm::value_ptr(pointLights[i].color)), 0.0f, 1.0f);
-			ImGui::DragFloat(std::string("Attenuation##" + std::to_string(i + 1000)).c_str(), &pointLights[i].attenuation, 0.0f, 0.01f);
-			ImGui::Text(" ");
+			ImGui::DragFloat3 (std::string ("Position##" + std::to_string (i + 1000)).c_str (),
+			    ((float*)glm::value_ptr (pointLights[i].position)),
+			    0.01f);
+			ImGui::SliderFloat3 (std::string ("Color##" + std::to_string (i + 1000)).c_str (),
+			    ((float*)glm::value_ptr (pointLights[i].color)),
+			    0.0f,
+			    1.0f);
+			ImGui::DragFloat (std::string ("Attenuation##" + std::to_string (i + 1000)).c_str (),
+			    &pointLights[i].attenuation,
+			    0.0f,
+			    0.01f);
+			ImGui::Text (" ");
 		}
 	}
-	ImGui::End();
-	
-	if (ImGui::Begin("instance tester", &value)) {
-		ImGui::DragFloat3("Position", ((float*)glm::value_ptr(testInstanceData.pos)));
-		ImGui::DragFloat3("Rotation", ((float*)glm::value_ptr(testInstanceData.rot)));
-		ImGui::DragFloat("Scale", &testInstanceData.scale);
-		if (ImGui::Button("Add instance")) {
-			treesInstanced->AddInstance(testInstanceData);
-		}
-		if (ImGui::Button("Remove Instance")) {
-			treesInstanced->RemoveInstance(testInstanceData);
-		}
-	}
-	ImGui::End();
+	ImGui::End ();
 
-	treesInstanced->ImGuiShowInstances();
+	if (ImGui::Begin ("instance tester", &value))
+	{
+		ImGui::DragFloat3 ("Position", ((float*)glm::value_ptr (testInstanceData.pos)));
+		ImGui::DragFloat3 ("Rotation", ((float*)glm::value_ptr (testInstanceData.rot)));
+		ImGui::DragFloat ("Scale", &testInstanceData.scale);
+		if (ImGui::Button ("Add instance"))
+		{
+			treesInstanced->AddInstance (testInstanceData);
+		}
+		if (ImGui::Button ("Remove Instance"))
+		{
+			treesInstanced->RemoveInstance (testInstanceData);
+		}
+	}
+	ImGui::End ();
+
+	treesInstanced->ImGuiShowInstances ();
 	static int x = 0;
-	if (ImGui::Begin("create game object", &value)) {
-		if (ImGui::Button("Add game object")) {
-			std::unique_ptr<GameObject> sphereObject = std::make_unique<GameObject>(renderer);
+	if (ImGui::Begin ("create game object", &value))
+	{
+		if (ImGui::Button ("Add game object"))
+		{
+			std::unique_ptr<GameObject> sphereObject = std::make_unique<GameObject> (renderer);
 			sphereObject->usePBR = true;
-			sphereObject->LoadModel(createSphere(10));
-			sphereObject->position = glm::vec3(x++, 3, 2.2);
-			//sphereObject->pbr_mat.albedo = glm::vec3(0.8, 0.2, 0.2);
+			sphereObject->LoadModel (createSphere (10));
+			sphereObject->position = glm::vec3 (x++, 3, 2.2);
+			// sphereObject->pbr_mat.albedo = glm::vec3(0.8, 0.2, 0.2);
 			sphereObject->pbr_mat.metallic = 0.1f + (float)5 / 10.0f;
 			sphereObject->pbr_mat.roughness = 0.1f + (float)5 / 10.0f;
 
-			sphereObject->gameObjectTexture = resourceMan.texManager.GetTexIDByName("Red.png");
-			sphereObject->InitGameObject();
-			gameObjects.push_back(std::move(sphereObject));
+			sphereObject->gameObjectTexture = resourceMan.texManager.GetTexIDByName ("Red.png");
+			sphereObject->InitGameObject ();
+			gameObjects.push_back (std::move (sphereObject));
 		}
 	}
-	ImGui::End();
-	for (auto& go : gameObjects) {
+	ImGui::End ();
+	for (auto& go : gameObjects)
+	{
 		go->pbr_mat.albedo = testMat.albedo;
-		go->phong_mat.color = glm::vec4(testMat.albedo, 1.0f);
+		go->phong_mat.color = glm::vec4 (testMat.albedo, 1.0f);
 	}
 }
 
-Camera* Scene::GetCamera() {
-	return camera.get();
-}
+Camera* Scene::GetCamera () { return camera.get (); }

@@ -9,6 +9,22 @@
 
 #include "VulkanMemoryAllocator/vk_mem_alloc.h"
 
+/*
+Buffer types:
+
+
+
+Vertex, index, instance
+Staging: Vertex, index, instance
+
+Uniform, Dynamic
+Staging: Uniform
+
+Persistant: Uniform, Instance
+Data
+
+*/
+
 class VulkanDevice;
 
 class VulkanBuffer
@@ -81,6 +97,8 @@ class VulkanBuffer
 
 	void SetupResource ();
 };
+
+
 
 class VulkanBufferUniform : public VulkanBuffer
 {

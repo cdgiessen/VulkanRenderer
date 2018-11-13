@@ -1,11 +1,9 @@
 [
   {
     "id": 0,
-
     "layout": "single2D",
     "format": "jpg",
     "channels": "rgb",
-
     "dataDescription": {
       "channels": 3,
       "width": 1024,
@@ -17,11 +15,9 @@
   },
   {
     "id": 1,
-
     "layout": "cubemap2D",
     "format": "png",
     "channels": "rgb",
-
     "dataDescription": {
       "channels": 3,
       "width": 900,
@@ -33,11 +29,9 @@
   },
   {
     "id": 2,
-
     "layout": "array2D",
     "format": "jpg",
     "channels": "rgb",
-
     "dataDescription": {
       "channels": 3,
       "width": 512,
@@ -49,11 +43,9 @@
   },
   {
     "id": 3,
-
     "layout": "single2D",
     "format": "png",
     "channels": "rgb",
-
     "dataDescription": {
       "channels": 3,
       "width": 64,
@@ -65,11 +57,9 @@
   },
   {
     "id": 4,
-
     "layout": "array2D",
     "format": "png",
     "channels": "rgb",
-
     "dataDescription": {
       "channels": 3,
       "width": 2048,
@@ -81,11 +71,9 @@
   },
   {
     "id": 5,
-
     "layout": "array2D",
     "format": "png",
     "channels": "rgb",
-
     "dataDescription": {
       "channels": 3,
       "width": 2048,
@@ -97,11 +85,9 @@
   },
   {
     "id": 6,
-
     "layout": "array2D",
     "format": "png",
     "channels": "rgb",
-
     "dataDescription": {
       "channels": 3,
       "width": 2048,
@@ -113,11 +99,9 @@
   },
   {
     "id": 7,
-
     "layout": "array2D",
     "format": "png",
     "channels": "rgb",
-
     "dataDescription": {
       "channels": 3,
       "width": 2048,
@@ -126,5 +110,19 @@
       "layers": 4
     },
     "name": "terrain_normal"
+  },
+  {
+    "id": 8,
+    "layout": "single2D",
+    "format": "png",
+    "channels": "rgb",
+    "dataDescription": {
+      "channels": 3,
+      "width": 96,
+      "height": 64,
+      "depth": 1,
+      "layers": 1
+    },
+    "name": "ColorGradientCube"
   }
 ]

@@ -505,8 +505,8 @@ void VulkanRenderer::SubmitFrame (int curFrameIndex)
 		throw std::runtime_error ("failed to present swap chain image!");
 	}
 	// FINALLY!!!! -- not quite...
-	// std::lock_guard<std::mutex> lock (device.PresentQueue ().GetQueueMutex ());
-	// vkQueueWaitIdle (device.PresentQueue ().GetQueue ());
+	std::lock_guard<std::mutex> lock (device.PresentQueue ().GetQueueMutex ());
+	vkQueueWaitIdle (device.PresentQueue ().GetQueue ());
 }
 
 std::shared_ptr<VulkanDescriptor> VulkanRenderer::GetVulkanDescriptor ()
