@@ -62,9 +62,6 @@ unsigned int HardwareThreadCount ()
 {
 	unsigned int concurentThreadsSupported = std::thread::hardware_concurrency ();
 	Log.Debug (fmt::format ("Hardware Threads Available = {}\n", concurentThreadsSupported));
-	// Log::Debug << "Hardware Threads Available = " << concurentThreadsSupported << "\n";
-	// TODO: Use task pool for everything, no need for system jamming atm;
-	return 0;
 	return concurentThreadsSupported > 0 ? concurentThreadsSupported : 1;
 }
 
@@ -94,8 +91,6 @@ VulkanApp::VulkanApp ()
 	scene = std::make_unique<Scene>(*resourceManager.get(), *vulkanRenderer.get(), *timeManager.get(), imgui_nodeGraph_terrain.GetGraph());
 */
 	vulkanRenderer.scene = &scene;
-
-	workerPool.StartWorkers ();
 }
 
 

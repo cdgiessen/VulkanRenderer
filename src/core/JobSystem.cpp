@@ -2,22 +2,22 @@
 
 #include "Logger.h"
 
+job::TaskManager taskManager;
+
 namespace job
 {
 
-Task::Task (TaskType type, std::weak_ptr<TaskSignal> signalBlock)
-: type (type), signalBlock (signalBlock)
+Task::Task (std::weak_ptr<TaskSignal> signalBlock, std::function<void()>&& m_job)
+: m_job(m_job), signalBlock (signalBlock)
 {
+	if (auto sbp = signalBlock.lock()) sbp->Notify();
 }
-
-void Task::Add (Job&& newJob) { jobs.push_back (std::move (newJob)); }
 
 void Task::operator() ()
 {
 	if (auto sbp = signalBlock.lock ())
 	{
-		for (auto& job : jobs)
-			job ();
+		m_job ();
 		sbp->Signal ();
 	}
 }
@@ -40,20 +40,25 @@ TaskSignal::TaskSignal () {}
 
 TaskSignal::~TaskSignal () {}
 
+void TaskSignal::Notify() {
+	active_waiters++;
+}
+
 void TaskSignal::Signal ()
 {
-	finished = true;
-	condVar.notify_all ();
+	active_waiters--;
+	if(active_waiters == 0)
+		condVar.notify_all();
 }
 
 void TaskSignal::Wait ()
 {
-	if (finished) return;
+	if (active_waiters == 0) return;
 	std::unique_lock<std::mutex> mlock (condVar_lock);
 	condVar.wait (mlock);
 }
 
-void TaskSignal::AddTaskToWaitOn (std::shared_ptr<TaskSignal> taskSig)
+void TaskSignal::WaitOn (std::shared_ptr<TaskSignal> taskSig)
 {
 	std::lock_guard<std::mutex> lg (pred_lock);
 	predicates.push_back (taskSig);
@@ -77,6 +82,13 @@ void TaskPool::AddTask (Task&& task)
 	tasks.push (std::move (task));
 }
 
+void TaskPool::AddTasks(std::vector<Task> in_tasks) {
+	std::lock_guard<std::mutex> lg(queueLock);
+	for (auto& t : in_tasks) {
+		tasks.push(std::move(t));
+	}
+}
+
 std::optional<Task> TaskPool::GetTask ()
 {
 	std::lock_guard<std::mutex> lg (queueLock);
@@ -92,7 +104,36 @@ std::optional<Task> TaskPool::GetTask ()
 
 TaskManager::TaskManager () {}
 
-void TaskManager::AddTask (Task&& task) { currentFrameTasks.AddTask (std::move (task)); }
+
+void TaskManager::Submit(Task&& task, TaskType type){ 
+	switch (type) {
+		default:
+		case(TaskType::currentFrame):
+			currentFrameTasks.AddTask(std::move(task));
+		break;
+		case(TaskType::async):
+			asyncTasks.AddTask(std::move(task));
+		break;
+		case(TaskType::nextFrame):
+		break;
+	}		
+}
+
+void TaskManager::Submit(std::vector<Task> tasks, TaskType type){
+	switch (type) {
+		default:
+		case(TaskType::currentFrame):
+			currentFrameTasks.AddTasks(tasks);
+			break;
+		case(TaskType::async):
+			asyncTasks.AddTasks(tasks);
+			break;
+		case(TaskType::nextFrame):
+			break;
+	}
+}
+
+//void TaskManager::AddTask (Task&& task) { currentFrameTasks.AddTask (std::move (task)); }
 
 std::optional<Task> TaskManager::GetTask () { return currentFrameTasks.GetTask (); }
 
@@ -122,19 +163,21 @@ void Worker::Work ()
 WorkerPool::WorkerPool (TaskManager& taskMan, int workerCount)
 : taskMan (taskMan), workerCount (workerCount)
 {
-}
-
-void WorkerPool::StartWorkers ()
-{
 	if (workerCount > 0)
 	{
 		for (int i = 0; i < workerCount; i++)
 		{
-			workers.push_back (std::make_unique<Worker> (taskMan));
+			workers.push_back(std::make_unique<Worker>(taskMan));
 		}
 	}
 }
-void WorkerPool::StopWorkers ()
+
+WorkerPool::~WorkerPool()
+{ 
+	StopWorkers();
+}
+
+void WorkerPool::StopWorkers()
 {
 	for (auto& worker : workers)
 	{
@@ -197,34 +240,28 @@ bool JobTester ()
 	TaskManager tMan;
 
 	WorkerPool workerPool (tMan, 2);
-	workerPool.StartWorkers ();
 
 	JobTesterClass jtc;
 	jtc.Print ();
 
-	std::vector<Job> js1, js2;
 	int jobCount = 1000;
-	for (int i = 0; i < jobCount; i++)
-		js1.push_back ({ [&]() { jtc.AddNum (1); } });
-	for (int i = 0; i < jobCount; i++)
-		js2.push_back ({ [&]() { jtc.MulNumAddNum (2, 0); } });
 
 	auto signal1 = std::make_shared<TaskSignal> ();
-	Task t1 = Task (TaskType::currentFrame, signal1);
+	Task t1 = Task (signal1, [&]() {
+		for (int i = 0; i < jobCount; i++)
+			jtc.AddNum (1);
+	});
 
 	auto signal2 = std::make_shared<TaskSignal> ();
-	signal2->AddTaskToWaitOn (signal1);
-	Task t2 = Task (TaskType::currentFrame, signal2);
 
+	signal2->WaitOn (signal1);
+	Task t2 = Task (signal2, [&]() {
+		for (int i = 0; i < jobCount; i++)
+			jtc.MulNumAddNum (2, 0);
+	});
 
-	for (int i = 0; i < jobCount; i++)
-		t1.Add (std::move (js1.at (i)));
-
-	for (int i = 0; i < jobCount; i++)
-		t2.Add (std::move (js2.at (i)));
-
-	tMan.AddTask (std::move (t1));
-	tMan.AddTask (std::move (t2));
+	tMan.Submit (std::move (t1), TaskType::currentFrame );
+	tMan.Submit(std::move (t2), TaskType::currentFrame);
 
 
 	workerPool.StopWorkers ();

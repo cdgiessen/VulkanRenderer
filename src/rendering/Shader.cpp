@@ -10,6 +10,7 @@
 #include "Initializers.h"
 #include "RenderTools.h"
 #include "core/CoreTools.h"
+#include "core/JobSystem.h"
 #include "core/Logger.h"
 
 VkShaderModule loadShaderModule (VkDevice device, const std::string& codePath)
@@ -214,16 +215,25 @@ void CompileShaders (std::vector<std::string> filenames)
 	// 		threads.push_back (std::thread (StartShaderCompilation, cmds));
 	// 	}
 	// }
-	std::vector<std::thread> threads;
+
+	auto signal = std::make_shared<job::TaskSignal>();
+
+	//std::vector<std::thread> threads;
+	std::vector<job::Task> tasks;
 	for (auto& bucket : buckets)
 	{
-		threads.push_back (std::thread (StartShaderCompilation, bucket));
+		tasks.push_back(job::Task(signal, [&]() {
+			StartShaderCompilation(bucket);
+		}));
+		//threads.push_back (std::thread (StartShaderCompilation, bucket));
 	}
+	taskManager.Submit(tasks, job::TaskType::currentFrame);
 
-	for (auto& t : threads)
-	{
-		t.join ();
-	}
+	signal->Wait();
+	//for (auto& t : threads)
+	//{
+	//	t.join ();
+	//}
 }
 
 ShaderManager::ShaderManager (VulkanDevice& device) : device (device)

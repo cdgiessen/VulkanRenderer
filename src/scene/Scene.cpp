@@ -12,7 +12,7 @@
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
 
-Scene::Scene (Resource::ResourceManager& resourceMan,
+Scene::Scene (Resource::AssetManager& resourceMan,
     VulkanRenderer& renderer,
     TimeManager& timeManager,
     InternalGraph::GraphPrototype& graph)

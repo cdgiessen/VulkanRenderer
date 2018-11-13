@@ -33,7 +33,7 @@ struct SkySettings {
 class Scene
 {
 public:
-	Scene(Resource::ResourceManager& resourceMan, VulkanRenderer& renderer,
+	Scene(Resource::AssetManager& resourceMan, VulkanRenderer& renderer,
 		TimeManager& timeManager, InternalGraph::GraphPrototype& graph);
 	~Scene();
 
@@ -49,7 +49,7 @@ public:
 private:
 
 	VulkanRenderer & renderer;
-	Resource::ResourceManager& resourceMan;
+	Resource::AssetManager& resourceMan;
 	TimeManager& timeManager;
 
 	std::vector<DirectionalLight> directionalLights;

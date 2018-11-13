@@ -15,59 +15,22 @@
 
 namespace job {
 
-
-	class Job {
-	public:
-		Job(std::function<void()> work) : work(work) {}
-
-		void operator()() {
-			if (work)
-				work();
-		}
-	private:
-		std::function<void()> work;
-	};
-
-	enum class TaskType {
-		currentFrame,
-		async,
-		nextFrame
-	};
-
-	class TaskSignal;
-
-	class Task {
-	public:
-		Task(TaskType type, std::weak_ptr<TaskSignal> signalBlock);
-
-		void Add(Job&& newJob);
-
-		void operator()();
-
-		void WaitOn();
-
-		bool IsReadyToRun();
-
-	private:
-		TaskType type;
-		std::vector<Job> jobs;
-		std::weak_ptr<TaskSignal> signalBlock;
-	};
-
 	class TaskSignal {
 	public:
 		TaskSignal();
 		~TaskSignal();
 
-		void Signal(); //for task to call
+		void Notify(); //for tasks that should be waited upon
+
+		void Signal(); //for task to call when done
 
 		void Wait(); //for owner to call
 
 		bool IsReadyToRun();
-		void AddTaskToWaitOn(std::shared_ptr<TaskSignal>);
+		void WaitOn(std::shared_ptr<TaskSignal>);
 
 	private:
-		std::atomic_bool finished = false;
+		std::atomic_int active_waiters = 0;
 
 		std::mutex condVar_lock;
 		std::condition_variable condVar;
@@ -76,11 +39,27 @@ namespace job {
 		std::vector<std::shared_ptr<TaskSignal>> predicates;
 	};
 
+	class Task {
+	public:
+		Task(std::weak_ptr<TaskSignal> signalBlock, std::function<void()>&& job);
+
+		void operator()();
+
+		void WaitOn();
+
+		bool IsReadyToRun();
+
+	private:
+		std::function<void()> m_job;
+		std::weak_ptr<TaskSignal> signalBlock;
+	};
+
 	class TaskPool {
 	public:
 		TaskPool();
 
 		void AddTask(Task&& task);
+		void AddTasks(std::vector<Task> tasks);
 
 		std::optional<Task> GetTask();
 
@@ -89,11 +68,18 @@ namespace job {
 		std::queue<Task> tasks;
 	};
 
+	enum class TaskType {
+		currentFrame,
+		async,
+		nextFrame
+	};
+
 	class TaskManager {
 	public:
 		TaskManager();
 
-		void AddTask(Task&& task);
+		void Submit(Task&& task, TaskType type = TaskType::currentFrame);
+		void Submit(std::vector<Task> tasks, TaskType type = TaskType::currentFrame);
 
 		std::optional<Task> GetTask();
 
@@ -122,8 +108,8 @@ namespace job {
 	class WorkerPool {
 	public:
 		WorkerPool(TaskManager& taskMan, int workerCount = 1);
+		~WorkerPool();
 
-		void StartWorkers();
 		void StopWorkers();
 
 	private:
@@ -134,3 +120,5 @@ namespace job {
 
 	extern bool JobTester();
 }
+
+extern job::TaskManager taskManager;

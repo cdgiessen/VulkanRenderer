@@ -119,7 +119,7 @@ class TerrainManager
 {
 public:
 	TerrainManager(InternalGraph::GraphPrototype& protoGraph,
-		Resource::ResourceManager& resourceMan, VulkanRenderer& renderer);
+		Resource::AssetManager& resourceMan, VulkanRenderer& renderer);
 	~TerrainManager();
 
 	void CleanUpTerrain();
@@ -136,7 +136,7 @@ public:
 
 	float GetTerrainHeightAtLocation(float x, float z);
 
-	Resource::ResourceManager& resourceMan;
+	Resource::AssetManager& resourceMan;
 	VulkanRenderer& renderer;
 
 	TerrainChunkBuffer chunkBuffer;

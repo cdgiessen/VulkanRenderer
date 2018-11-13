@@ -5,6 +5,7 @@
 #include "stb_image/stb_image.h"
 
 #include "core/CoreTools.h"
+#include "core/JobSystem.h"
 #include "core/Logger.h"
 
 #include <glm/glm.hpp>
@@ -191,27 +192,31 @@ void Manager::LoadTextureList ()
 	{
 		Log.Debug (fmt::format ("Loaded {} textuers\n", textureResources.size ()));
 		int count = 0;
-		std::vector<std::thread> workers;
+		// std::vector<std::thread> workers;
 
+		auto signal = std::make_shared<job::TaskSignal> ();
+		std::vector<job::Task> tasks;
 		for (nlohmann::json::iterator it = j.begin (); it != j.end (); ++it)
 		{
 			auto tex = from_json_TexResource (*it);
 			textureResources[tex.id] = tex;
-			workers.push_back(std::thread(&Manager::LoadTextureFromFile, this, tex.id));
-			 //LoadTextureFromFile (tex.id);
-			Log.Debug (fmt::format ("Tex {}, name {}, width={}, height={}\n",
+			tasks.push_back(
+			    job::Task ( signal, [=] { LoadTextureFromFile (tex.id); }));
+			// workers.push_back(std::thread(&Manager::LoadTextureFromFile, this, tex.id));
+			// LoadTextureFromFile (tex.id);
+			/*Log.Debug (fmt::format ("Tex {}, name {}, width={}, height={}\n",
 			    tex.id,
 			    tex.name,
 			    tex.dataDescription.width,
-			    tex.dataDescription.height));
+			    tex.dataDescription.height));*/
 			count++;
 		}
 		id_counter = count;
-
-		for (auto& w : workers) {
-			w.join();
-		}
-
+		taskManager.Submit(tasks, job::TaskType::currentFrame);
+		signal->Wait ();
+		// for (auto& w : workers) {
+		//	w.join();
+		//}
 	}
 	catch (nlohmann::json::parse_error& e)
 	{
@@ -244,7 +249,7 @@ void Manager::LoadTextureFromFile (TexID id)
 
 	auto& texRes = textureResources.at (id);
 	auto texData = std::make_unique<TexData> (texRes.dataDescription);
-	texRes.SetDataPtr (texData.get());
+	texRes.SetDataPtr (texData.get ());
 
 	int desiredChannels = texRes.dataDescription.channels;
 
@@ -263,7 +268,7 @@ void Manager::LoadTextureFromFile (TexID id)
 			       formatTypeToString (texRes.fileFormatType);
 		}
 
-		paths.push_back(path);
+		paths.push_back (path);
 
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels;
@@ -271,7 +276,7 @@ void Manager::LoadTextureFromFile (TexID id)
 
 		if (pixels == nullptr)
 		{
-			Log.Error(fmt::format("Image {} failed to load!\n", path.c_str()));
+			Log.Error (fmt::format ("Image {} failed to load!\n", path.c_str ()));
 		}
 		// else if (desiredChannels != texChannels) {
 		//	Log::Error << "Image couldn't load desired channel of " << desiredChannels
@@ -288,8 +293,10 @@ void Manager::LoadTextureFromFile (TexID id)
 		}
 	}
 
-	std::lock_guard<std::mutex> lg(lock);
-	textureData.push_back(std::move(texData));
+	std::lock_guard<std::mutex> lg (lock);
+	textureData.push_back (std::move (texData));
+
+	Log.Debug(fmt::format("Tex {}\n", id));
 }
 
 TexID CreateNewTextureFromByteArray (int width, int height, std::byte* data) { return 0; }

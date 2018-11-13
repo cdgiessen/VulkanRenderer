@@ -59,12 +59,12 @@ public:
 private:
 	VulkanAppSettings settings;
 
-	job::TaskManager taskManager;
+	//job::TaskManager taskManager;
 	job::WorkerPool workerPool;
 
 	TimeManager timeManager;
 	Window window;
-	Resource::ResourceManager resourceManager;
+	Resource::AssetManager resourceManager;
 
 	VulkanRenderer vulkanRenderer;
 
