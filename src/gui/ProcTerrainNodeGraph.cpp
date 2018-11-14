@@ -22,8 +22,8 @@ auto as_integer (Enumeration const value) -> typename std::underlying_type<Enume
 
 ProcTerrainNodeGraph::ProcTerrainNodeGraph ()
 {
-	// RecreateOutputNode();
-	LoadGraphFromFile ("assets/graphs/default_terrain.json");
+	RecreateOutputNode();
+	//LoadGraphFromFile ("assets/graphs/default_terrain.json");
 }
 
 
@@ -598,8 +598,6 @@ void ProcTerrainNodeGraph::DrawPossibleConnection (ImDrawList* imDrawList)
 				    posCon.slot.node != info.node)
 				{
 
-					ConId newConnection;
-
 					HoveredSlotInfo outgoingSlot;
 					HoveredSlotInfo incomingSlot;
 
@@ -634,8 +632,8 @@ void ProcTerrainNodeGraph::DrawPossibleConnection (ImDrawList* imDrawList)
 					//     incomingSlot.node,
 					//     incomingSlot.inputSlotNum);
 
-					nodes.at (incomingSlot.node).inputSlots[incomingSlot.inputSlotNum].connection = newConnection;
-					nodes.at (outgoingSlot.node).outputSlot.connections.push_back (newConnection);
+					nodes.at (incomingSlot.node).inputSlots[incomingSlot.inputSlotNum].connection = newCon;
+					nodes.at (outgoingSlot.node).outputSlot.connections.push_back (newCon);
 
 					connections.at (newCon).startPosRelNode =
 					    PossibleConnection::GetActiveSlotPosition (outgoingSlot, nodes);
@@ -1587,6 +1585,8 @@ Node::Node (NodeType type, NodeId id, ImVec2 position, InternalGraph::GraphProto
 			AddInputSlot (ConnectionType::Int, "Texture 2", 1);
 			AddInputSlot (ConnectionType::Int, "Texture 3", 2);
 			AddInputSlot (ConnectionType::Int, "Texture 4", 3);
+			internalNodeID = graph.AddNode(InternalGraph::NodeType::Output);
+
 			break;
 		case (NodeType::Addition):
 			name = "Addition";
