@@ -183,7 +183,7 @@ class Node
 
 	bool hasTextInput = false;
 };
-
+/*
 // class OutputNode : public Node
 // {
 // 	public:
@@ -349,7 +349,7 @@ class Node
 // 	public:
 // 	MonoGradient (InternalGraph::GraphPrototype& graph);
 // };
-
+*/
 struct HoveredSlotInfo
 {
 	NodeId node = -1;
