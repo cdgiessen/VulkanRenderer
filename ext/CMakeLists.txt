@@ -1,6 +1,6 @@
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
-set(JSON_MultipleHeaders ON)
+set(JSON_MultipleHeaders ON CACHE INTERNAL "")
 
 find_path(JSON_PATH_FOUND "json" "")
 find_path(SPIRV_CROSS_PATH_FOUND "SPIRV-Cross" "")
@@ -22,6 +22,12 @@ if(NOT SPIRV_CROSS_PATH_FOUND)
 endif(NOT SPIRV_CROSS_PATH_FOUND)
 
 add_subdirectory(SPIRV-Cross)
+
+set(ENABLE_HLSL OFF CACHE INTERNAL "")
+set(ENABLE_NV_EXTENSIONS OFF CACHE INTERNAL "")
+set(ENABLE_GLSLANG_BINARIES OFF CACHE INTERNAL "")
+
+
 
 if(NOT GLSLANG_PATH_FOUND)
 	message("Updating glslang")

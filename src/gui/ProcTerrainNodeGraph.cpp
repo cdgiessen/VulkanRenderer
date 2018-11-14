@@ -22,8 +22,8 @@ auto as_integer (Enumeration const value) -> typename std::underlying_type<Enume
 
 ProcTerrainNodeGraph::ProcTerrainNodeGraph ()
 {
-	RecreateOutputNode();
-	//LoadGraphFromFile ("assets/graphs/default_terrain.json");
+	RecreateOutputNode ();
+	// LoadGraphFromFile ("assets/graphs/default_terrain.json");
 }
 
 
@@ -1585,7 +1585,7 @@ Node::Node (NodeType type, NodeId id, ImVec2 position, InternalGraph::GraphProto
 			AddInputSlot (ConnectionType::Int, "Texture 2", 1);
 			AddInputSlot (ConnectionType::Int, "Texture 3", 2);
 			AddInputSlot (ConnectionType::Int, "Texture 4", 3);
-			internalNodeID = graph.AddNode(InternalGraph::NodeType::Output);
+			internalNodeID = graph.AddNode (InternalGraph::NodeType::Output);
 
 			break;
 		case (NodeType::Addition):
@@ -1796,6 +1796,8 @@ Node::Node (NodeType type, NodeId id, ImVec2 position, InternalGraph::GraphProto
 
 			break;
 		case (NodeType::ColorCreator):
+			outputSlot = OutputConnectionSlot (0, ImVec2 (size.x, 15), ConnectionType::Color);
+
 			name = "ColorCreator";
 
 			AddInputSlot (ConnectionType::Float, "Red", 0.0f, 0.01f, 0.0f, 1.0f);
