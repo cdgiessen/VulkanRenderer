@@ -2,9 +2,6 @@
 
 #include "core/Logger.h"
 
-#include "stb_image/stb_image.h"
-
-
 namespace InternalGraph
 {
 
@@ -66,22 +63,23 @@ NoiseImage2D<T>::NoiseImage2D (int width) : width (width), isExternallyAllocated
 
 template <typename T> NoiseImage2D<T>::~NoiseImage2D ()
 {
-	if (!isExternallyAllocated && image != nullptr) free (image);
+	// if (!isExternallyAllocated && image != nullptr) free (image);
 	// Log::Error << "Was this image already freed?\n";
 }
 
 template <typename T> T* NoiseImage2D<T>::GetImageData ()
 {
 	if (isExternallyAllocated)
-		return image;
+		return image.get ();
 	else
 		return data.data ();
 }
 
-template <typename T> void NoiseImage2D<T>::SetImageData (int width, T* data)
+template <typename T>
+void NoiseImage2D<T>::SetImageData (int width, T* data, std::shared_ptr<FastNoiseSIMD> noiseHolder)
 {
 	this->width = width;
-	image = data;
+	image = std::shared_ptr<T> (data, [=](T* ptr) { noiseHolder->FreeNoiseSet (ptr); });
 }
 
 template <typename T> const int NoiseImage2D<T>::GetSize () const { return width * width; }
@@ -96,7 +94,7 @@ template <typename T> void NoiseImage2D<T>::SetWidth (int width) { this->width =
 template <typename T> const T NoiseImage2D<T>::LookUp (int x, int z) const
 {
 	if (isExternallyAllocated)
-		return image[x * width + z];
+		return image.get ()[x * width + z];
 	else
 		return data[x * width + z];
 }
@@ -106,7 +104,7 @@ template <typename T> const T NoiseImage2D<T>::BoundedLookUp (int x, int z) cons
 	if (x >= 0 && x < width && z >= 0 && z < width)
 	{
 		if (isExternallyAllocated)
-			return image[x * width + z];
+			return image.get ()[x * width + z];
 		else
 			return data[x * width + z];
 	}
@@ -270,46 +268,47 @@ Node::Node (NodeType in_type) : nodeType (in_type)
 			AddNodeInputLinks (inputLinks,
 			    { LinkType::Int, LinkType::Float, LinkType::Int, LinkType::Float, LinkType::Int });
 			isNoiseNode = true;
-			myNoise = FastNoiseSIMD::NewFastNoiseSIMD ();
+			myNoise = std::shared_ptr<FastNoiseSIMD> (FastNoiseSIMD::NewFastNoiseSIMD ());
+
 			break;
 
 		case InternalGraph::NodeType::SimplexNoise:
 			AddNodeInputLinks (inputLinks,
 			    { LinkType::Int, LinkType::Float, LinkType::Int, LinkType::Float, LinkType::Int });
 			isNoiseNode = true;
-			myNoise = FastNoiseSIMD::NewFastNoiseSIMD ();
+			myNoise = std::shared_ptr<FastNoiseSIMD> (FastNoiseSIMD::NewFastNoiseSIMD ());
 			break;
 
 		case InternalGraph::NodeType::PerlinNoise:
 			AddNodeInputLinks (inputLinks,
 			    { LinkType::Int, LinkType::Float, LinkType::Int, LinkType::Float, LinkType::Int });
 			isNoiseNode = true;
-			myNoise = FastNoiseSIMD::NewFastNoiseSIMD ();
+			myNoise = std::shared_ptr<FastNoiseSIMD> (FastNoiseSIMD::NewFastNoiseSIMD ());
 			break;
 
 		case InternalGraph::NodeType::CubicNoise:
 			AddNodeInputLinks (inputLinks,
 			    { LinkType::Int, LinkType::Float, LinkType::Int, LinkType::Float, LinkType::Int });
 			isNoiseNode = true;
-			myNoise = FastNoiseSIMD::NewFastNoiseSIMD ();
+			myNoise = std::shared_ptr<FastNoiseSIMD> (FastNoiseSIMD::NewFastNoiseSIMD ());
 			break;
 
 		case InternalGraph::NodeType::WhiteNoise:
 			AddNodeInputLinks (inputLinks, { LinkType::Int, LinkType::Float });
 			isNoiseNode = true;
-			myNoise = FastNoiseSIMD::NewFastNoiseSIMD ();
+			myNoise = std::shared_ptr<FastNoiseSIMD> (FastNoiseSIMD::NewFastNoiseSIMD ());
 			break;
 
 		case InternalGraph::NodeType::CellNoise:
 			AddNodeInputLinks (inputLinks, { LinkType::Int, LinkType::Float, LinkType::Float, LinkType::Int });
 			isNoiseNode = true;
-			myNoise = FastNoiseSIMD::NewFastNoiseSIMD ();
+			myNoise = std::shared_ptr<FastNoiseSIMD> (FastNoiseSIMD::NewFastNoiseSIMD ());
 			break;
 
 		case InternalGraph::NodeType::VoroniNoise:
 			AddNodeInputLinks (inputLinks, { LinkType::Int, LinkType::Float, LinkType::Float, LinkType::Int });
 			isNoiseNode = true;
-			myNoise = FastNoiseSIMD::NewFastNoiseSIMD ();
+			myNoise = std::shared_ptr<FastNoiseSIMD> (FastNoiseSIMD::NewFastNoiseSIMD ());
 			break;
 
 		case NodeType::ColorCreator:
@@ -328,6 +327,14 @@ Node::Node (NodeType in_type) : nodeType (in_type)
 			break;
 	}
 }
+
+// Node::~Node ()
+// {
+// 	if (myNoise)
+// 	{
+// 		delete myNoise;
+// 	}
+// }
 
 void Node::SetLinkValue (const int index, const LinkTypeVariants data)
 {
@@ -717,8 +724,6 @@ void Node::ResetLinkInput (const int index) { inputLinks.at (index).ResetInputNo
 void Node::SetID (NodeID id) { this->id = id; }
 NodeID Node::GetID () { return id; }
 
-void Node::SetIsNoiseNode (bool val) { isNoiseNode = val; }
-
 void Node::SetFractalType (int val)
 {
 	if (val == 2)
@@ -787,7 +792,8 @@ void Node::SetupNodeForComputation (NoiseSourceInfo info)
 			case InternalGraph::NodeType::WhiteNoise:
 				noiseImage.SetImageData (info.cellsWide,
 				    myNoise->GetWhiteNoiseSet (
-				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
+				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale),
+				    myNoise);
 				break;
 
 			case InternalGraph::NodeType::ValueNoise:
@@ -796,7 +802,8 @@ void Node::SetupNodeForComputation (NoiseSourceInfo info)
 				SetFractalType (std::get<int> (inputLinks.at (4).GetValue ()));
 				noiseImage.SetImageData (info.cellsWide,
 				    myNoise->GetValueFractalSet (
-				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
+				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale),
+				    myNoise);
 				break;
 
 			case InternalGraph::NodeType::SimplexNoise:
@@ -805,7 +812,8 @@ void Node::SetupNodeForComputation (NoiseSourceInfo info)
 				SetFractalType (std::get<int> (inputLinks.at (4).GetValue ()));
 				noiseImage.SetImageData (info.cellsWide,
 				    myNoise->GetSimplexFractalSet (
-				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
+				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale),
+				    myNoise);
 				break;
 
 			case InternalGraph::NodeType::PerlinNoise:
@@ -814,7 +822,8 @@ void Node::SetupNodeForComputation (NoiseSourceInfo info)
 				SetFractalType (std::get<int> (inputLinks.at (4).GetValue ()));
 				noiseImage.SetImageData (info.cellsWide,
 				    myNoise->GetPerlinFractalSet (
-				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
+				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale),
+				    myNoise);
 				break;
 
 			case InternalGraph::NodeType::CubicNoise:
@@ -823,7 +832,8 @@ void Node::SetupNodeForComputation (NoiseSourceInfo info)
 				SetFractalType (std::get<int> (inputLinks.at (4).GetValue ()));
 				noiseImage.SetImageData (info.cellsWide,
 				    myNoise->GetCubicFractalSet (
-				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
+				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale),
+				    myNoise);
 				break;
 
 			case InternalGraph::NodeType::CellNoise:
@@ -831,7 +841,8 @@ void Node::SetupNodeForComputation (NoiseSourceInfo info)
 				SetCellularReturnType (std::get<int> (inputLinks.at (3).GetValue ()));
 				noiseImage.SetImageData (info.cellsWide,
 				    myNoise->GetCellularSet (
-				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
+				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale),
+				    myNoise);
 				break;
 
 			case InternalGraph::NodeType::VoroniNoise:
@@ -839,7 +850,8 @@ void Node::SetupNodeForComputation (NoiseSourceInfo info)
 				myNoise->SetCellularReturnType (FastNoiseSIMD::CellularReturnType::CellValue);
 				noiseImage.SetImageData (info.cellsWide,
 				    myNoise->GetCellularSet (
-				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
+				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale),
+				    myNoise);
 				break;
 
 			default:
@@ -851,7 +863,7 @@ void Node::SetupNodeForComputation (NoiseSourceInfo info)
 
 void Node::CleanNoise ()
 {
-	if (isNoiseNode) myNoise->FreeNoiseSet (noiseImage.GetImageData ());
+	// if (isNoiseNode) myNoise->FreeNoiseSet (noiseImage.GetImageData ());
 }
 
 GraphPrototype::GraphPrototype ()
@@ -868,23 +880,18 @@ void GraphPrototype::ResetGraph ()
 	outputNodeID = 0;
 }
 
-NodeID GraphPrototype::AddNode (Node node)
+NodeID GraphPrototype::AddNode (NodeType type)
 {
-	node.SetID (GetNextID ());
-	nodeMap[node.GetID ()] = node;
-	if (node.GetNodeType () == NodeType::Output)
-	{
-		outputNodeID = node.GetID ();
-	}
-	return node.GetID ();
-}
-NodeID GraphPrototype::AddNoiseNoide (Node node)
-{
-	node.SetID (GetNextID ());
-	node.SetIsNoiseNode (true);
-	nodeMap[node.GetID ()] = node;
+	int nextId = GetNextID ();
 
-	return node.GetID ();
+	nodeMap.emplace (std::piecewise_construct, std::forward_as_tuple (nextId), std::forward_as_tuple (type));
+	nodeMap.at (nextId).SetID (nextId);
+
+	if (nodeMap.at (nextId).GetNodeType () == NodeType::Output)
+	{
+		outputNodeID = nodeMap.at (nextId).GetID ();
+	}
+	return nextId;
 }
 
 bool GraphPrototype::DeleteNode (NodeID id)

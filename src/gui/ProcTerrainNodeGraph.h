@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -27,10 +28,12 @@ enum class ConnectionType
 	Color,
 };
 
+using SlotValueVariant = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4>;
+
 struct SlotValueHolder
 {
 
-	std::variant<int, float, glm::vec2, glm::vec3, glm::vec4> value;
+	SlotValueVariant value;
 
 
 	ConnectionType type = ConnectionType::Null;
@@ -38,21 +41,24 @@ struct SlotValueHolder
 	SlotValueHolder (ConnectionType type) : type (type){};
 };
 
+using NodeId = int;
+using ConId = int;
+
 class Node;
 class ProcTerrainNodeGraph;
 
 class Connection
 {
 	public:
-	Connection (ConnectionType conType, std::shared_ptr<Node> input, std::shared_ptr<Node> output, int output_slot_id);
+	Connection (ConnectionType conType, NodeId input, NodeId output, int output_slot_id);
 
 	ConnectionType conType;
 
 	ImVec2 startPosRelNode = ImVec2 (0.0f, 0.0f);
 	ImVec2 endPosRelNode = ImVec2 (0.0f, 0.0f);
 
-	std::shared_ptr<Node> input;
-	std::shared_ptr<Node> output;
+	NodeId input = -1;
+	NodeId output = -1;
 
 	int output_slot_id = -1;
 };
@@ -82,23 +88,20 @@ class InputConnectionSlot : public ConnectionSlot
 {
 	public:
 	InputConnectionSlot (int slotNum, ImVec2 pos, ConnectionType type, std::string name);
+	InputConnectionSlot (
+	    int slotNum, ImVec2 pos, ConnectionType type, std::string name, SlotValueVariant defaultValue);
 	InputConnectionSlot (int slotNum,
 	    ImVec2 pos,
 	    ConnectionType type,
 	    std::string name,
-	    std::variant<int, float, glm::vec2, glm::vec3, glm::vec4> defaultValue);
-	InputConnectionSlot (int slotNum,
-	    ImVec2 pos,
-	    ConnectionType type,
-	    std::string name,
-	    std::variant<int, float, glm::vec2, glm::vec3, glm::vec4> defaultValue,
+	    SlotValueVariant defaultValue,
 	    float sliderStepSize,
 	    float lowerBound,
 	    float upperBound);
 
 	int Draw (ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) override;
 
-	std::shared_ptr<Connection> connection;
+	ConId connection = -1;
 	SlotValueHolder value;
 	float sliderStepSize = 0.1f, lowerBound = 0.0f, upperBound = 1.0f;
 };
@@ -110,7 +113,7 @@ class OutputConnectionSlot : public ConnectionSlot
 
 	int Draw (ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) override;
 
-	std::vector<std::shared_ptr<Connection>> connections;
+	std::vector<ConId> connections;
 };
 
 enum class NodeType
@@ -152,15 +155,15 @@ enum class NodeType
 class Node
 {
 	public:
-	Node (std::string name, ConnectionType outputType);
+	Node (NodeType type, NodeId id, ImVec2 position, InternalGraph::GraphPrototype& graph);
 
 	// void SetInternalLink(int index, std::shared_ptr<NewNodeGraph::INode> inode);
 
 	std::string name;
 	ImVec2 pos = ImVec2 (200, 150);
 	ImVec2 size = ImVec2 (100, 100);
-	int id;
-	NodeType type;
+	NodeId id = -1;
+	NodeType nodeType;
 
 	std::vector<InputConnectionSlot> inputSlots;
 	OutputConnectionSlot outputSlot;
@@ -181,179 +184,179 @@ class Node
 	bool hasTextInput = false;
 };
 
-class OutputNode : public Node
-{
-	public:
-	OutputNode (InternalGraph::GraphPrototype& graph);
-};
+// class OutputNode : public Node
+// {
+// 	public:
+// 	OutputNode (InternalGraph::GraphPrototype& graph);
+// };
 
-class MathNode : public Node
-{
-	public:
-	MathNode (std::string name);
-};
+// class MathNode : public Node
+// {
+// 	public:
+// 	MathNode (std::string name);
+// };
 
-class AdditionNode : public MathNode
-{
-	public:
-	AdditionNode (InternalGraph::GraphPrototype& graph);
-};
-class SubtractionNode : public MathNode
-{
-	public:
-	SubtractionNode (InternalGraph::GraphPrototype& graph);
-};
-class MultiplicationNode : public MathNode
-{
-	public:
-	MultiplicationNode (InternalGraph::GraphPrototype& graph);
-};
-class DivisionNode : public MathNode
-{
-	public:
-	DivisionNode (InternalGraph::GraphPrototype& graph);
-};
-class PowerNode : public MathNode
-{
-	public:
-	PowerNode (InternalGraph::GraphPrototype& graph);
-};
-class MaxNode : public MathNode
-{
-	public:
-	MaxNode (InternalGraph::GraphPrototype& graph);
-};
-class MinNode : public MathNode
-{
-	public:
-	MinNode (InternalGraph::GraphPrototype& graph);
-};
-
-
-
-class BlendNode : public Node
-{
-	public:
-	BlendNode (InternalGraph::GraphPrototype& graph);
-};
-class ClampNode : public Node
-{
-	public:
-	ClampNode (InternalGraph::GraphPrototype& graph);
-};
-class SelectorNode : public Node
-{
-	public:
-	SelectorNode (InternalGraph::GraphPrototype& graph);
-};
-
-class NoiseNode : public Node
-{
-	public:
-	NoiseNode (std::string name);
-};
-
-class FractalNoiseNode : public NoiseNode
-{
-	public:
-	FractalNoiseNode (std::string name);
-};
-class CellularNoiseNode : public NoiseNode
-{
-	public:
-	CellularNoiseNode (std::string name);
-};
-
-class WhiteNoiseNode : public NoiseNode
-{
-	public:
-	WhiteNoiseNode (InternalGraph::GraphPrototype& graph);
-};
-
-class PerlinNode : public FractalNoiseNode
-{
-	public:
-	PerlinNode (InternalGraph::GraphPrototype& graph);
-};
-class SimplexNode : public FractalNoiseNode
-{
-	public:
-	SimplexNode (InternalGraph::GraphPrototype& graph);
-};
-class ValueNode : public FractalNoiseNode
-{
-	public:
-	ValueNode (InternalGraph::GraphPrototype& graph);
-};
-class CubicNode : public FractalNoiseNode
-{
-	public:
-	CubicNode (InternalGraph::GraphPrototype& graph);
-};
-
-class FractalReturnType : public Node
-{
-	public:
-	FractalReturnType (InternalGraph::GraphPrototype& graph);
-};
-
-class CellNoiseNode : public CellularNoiseNode
-{
-	public:
-	CellNoiseNode (InternalGraph::GraphPrototype& graph);
-};
-class VoroniNode : public CellularNoiseNode
-{
-	public:
-	VoroniNode (InternalGraph::GraphPrototype& graph);
-};
-
-class CellularReturnType : public Node
-{
-	public:
-	CellularReturnType (InternalGraph::GraphPrototype& graph);
-};
-
-class ConstantIntNode : public Node
-{
-	public:
-	ConstantIntNode (InternalGraph::GraphPrototype& graph);
-};
-class ConstantFloatNode : public Node
-{
-	public:
-	ConstantFloatNode (InternalGraph::GraphPrototype& graph);
-};
-class TextureIndexNode : public Node
-{
-	public:
-	TextureIndexNode (InternalGraph::GraphPrototype& graph);
-};
-class InvertNode : public Node
-{
-	public:
-	InvertNode (InternalGraph::GraphPrototype& graph);
-};
+// class AdditionNode : public MathNode
+// {
+// 	public:
+// 	AdditionNode (InternalGraph::GraphPrototype& graph);
+// };
+// class SubtractionNode : public MathNode
+// {
+// 	public:
+// 	SubtractionNode (InternalGraph::GraphPrototype& graph);
+// };
+// class MultiplicationNode : public MathNode
+// {
+// 	public:
+// 	MultiplicationNode (InternalGraph::GraphPrototype& graph);
+// };
+// class DivisionNode : public MathNode
+// {
+// 	public:
+// 	DivisionNode (InternalGraph::GraphPrototype& graph);
+// };
+// class PowerNode : public MathNode
+// {
+// 	public:
+// 	PowerNode (InternalGraph::GraphPrototype& graph);
+// };
+// class MaxNode : public MathNode
+// {
+// 	public:
+// 	MaxNode (InternalGraph::GraphPrototype& graph);
+// };
+// class MinNode : public MathNode
+// {
+// 	public:
+// 	MinNode (InternalGraph::GraphPrototype& graph);
+// };
 
 
-class ColorCreator : public Node
-{
-	public:
-	ColorCreator (InternalGraph::GraphPrototype& graph);
-};
-class MonoGradient : public Node
-{
-	public:
-	MonoGradient (InternalGraph::GraphPrototype& graph);
-};
+
+// class BlendNode : public Node
+// {
+// 	public:
+// 	BlendNode (InternalGraph::GraphPrototype& graph);
+// };
+// class ClampNode : public Node
+// {
+// 	public:
+// 	ClampNode (InternalGraph::GraphPrototype& graph);
+// };
+// class SelectorNode : public Node
+// {
+// 	public:
+// 	SelectorNode (InternalGraph::GraphPrototype& graph);
+// };
+
+// class NoiseNode : public Node
+// {
+// 	public:
+// 	NoiseNode (std::string name);
+// };
+
+// class FractalNoiseNode : public NoiseNode
+// {
+// 	public:
+// 	FractalNoiseNode (std::string name);
+// };
+// class CellularNoiseNode : public NoiseNode
+// {
+// 	public:
+// 	CellularNoiseNode (std::string name);
+// };
+
+// class WhiteNoiseNode : public NoiseNode
+// {
+// 	public:
+// 	WhiteNoiseNode (InternalGraph::GraphPrototype& graph);
+// };
+
+// class PerlinNode : public FractalNoiseNode
+// {
+// 	public:
+// 	PerlinNode (InternalGraph::GraphPrototype& graph);
+// };
+// class SimplexNode : public FractalNoiseNode
+// {
+// 	public:
+// 	SimplexNode (InternalGraph::GraphPrototype& graph);
+// };
+// class ValueNode : public FractalNoiseNode
+// {
+// 	public:
+// 	ValueNode (InternalGraph::GraphPrototype& graph);
+// };
+// class CubicNode : public FractalNoiseNode
+// {
+// 	public:
+// 	CubicNode (InternalGraph::GraphPrototype& graph);
+// };
+
+// class FractalReturnType : public Node
+// {
+// 	public:
+// 	FractalReturnType (InternalGraph::GraphPrototype& graph);
+// };
+
+// class CellNoiseNode : public CellularNoiseNode
+// {
+// 	public:
+// 	CellNoiseNode (InternalGraph::GraphPrototype& graph);
+// };
+// class VoroniNode : public CellularNoiseNode
+// {
+// 	public:
+// 	VoroniNode (InternalGraph::GraphPrototype& graph);
+// };
+
+// class CellularReturnType : public Node
+// {
+// 	public:
+// 	CellularReturnType (InternalGraph::GraphPrototype& graph);
+// };
+
+// class ConstantIntNode : public Node
+// {
+// 	public:
+// 	ConstantIntNode (InternalGraph::GraphPrototype& graph);
+// };
+// class ConstantFloatNode : public Node
+// {
+// 	public:
+// 	ConstantFloatNode (InternalGraph::GraphPrototype& graph);
+// };
+// class TextureIndexNode : public Node
+// {
+// 	public:
+// 	TextureIndexNode (InternalGraph::GraphPrototype& graph);
+// };
+// class InvertNode : public Node
+// {
+// 	public:
+// 	InvertNode (InternalGraph::GraphPrototype& graph);
+// };
+
+
+// class ColorCreator : public Node
+// {
+// 	public:
+// 	ColorCreator (InternalGraph::GraphPrototype& graph);
+// };
+// class MonoGradient : public Node
+// {
+// 	public:
+// 	MonoGradient (InternalGraph::GraphPrototype& graph);
+// };
 
 struct HoveredSlotInfo
 {
-	std::shared_ptr<Node> node;
+	NodeId node = -1;
 	bool isOutput = false;
 	int inputSlotNum = 0;
-	HoveredSlotInfo () : node (nullptr), isOutput (false), inputSlotNum (-1){};
-	HoveredSlotInfo (std::shared_ptr<Node> node, bool output, int inSlotNum)
+	HoveredSlotInfo () : node (-1), isOutput (false), inputSlotNum (-1){};
+	HoveredSlotInfo (NodeId node, bool output, int inSlotNum)
 	: node (node), isOutput (output), inputSlotNum (inSlotNum)
 	{
 	}
@@ -364,8 +367,8 @@ class PossibleConnection
 	public:
 	PossibleConnection ();
 
-	static ImVec2 GetActiveSlotPosition (HoveredSlotInfo info);
-	static ConnectionType GetActiveSlotType (HoveredSlotInfo info);
+	static ImVec2 GetActiveSlotPosition (HoveredSlotInfo info, std::unordered_map<NodeId, Node> nodes);
+	static ConnectionType GetActiveSlotType (HoveredSlotInfo info, std::unordered_map<NodeId, Node> nodes);
 
 	enum class State
 	{
@@ -412,14 +415,17 @@ class ProcTerrainNodeGraph
 	void LoadGraphFromFile (std::string fileName);
 	void BuildTerGenNodeGraph ();
 
-	void DeleteNode (std::shared_ptr<Node> node);
-	void DeleteConnection (std::shared_ptr<Connection> con);
+	// NodeId NewNode (NodeType type, ConnectionType outputType);
+	ConId NewCon (ConnectionType conType, NodeId input, NodeId output, int output_slot_id);
+
+	void DeleteNode (NodeId node);
+	void DeleteConnection (ConId con);
 	void ResetGraph ();
 	void RecreateOutputNode ();
 
 	HoveredSlotInfo GetHoveredSlot ();
 
-	void AddNode (NodeType nodeType, ImVec2 position, int id = -1);
+	NodeId AddNode (NodeType nodeType, ImVec2 position, int id = -1);
 
 	void SetNodeInternalLinkByID (InternalGraph::NodeID internalNodeID, int index, InternalGraph::NodeID id);
 	void ResetNodeInternalLinkByID (InternalGraph::NodeID internalNodeID, int index);
@@ -427,7 +433,7 @@ class ProcTerrainNodeGraph
 	void SetNodeInternalValueByID (
 	    InternalGraph::NodeID internalNodeID, int index, InternalGraph::LinkTypeVariants val);
 
-	std::shared_ptr<Node> GetNodeById (int id);
+	// NodeId GetNodeById (int id);
 
 	const ImVec2 windowPadding = ImVec2 (8.0f, 8.0f);
 	ImVec2 windowPos = ImVec2 (0, 0);
@@ -441,8 +447,13 @@ class ProcTerrainNodeGraph
 	// NewNodeGraph::TerGenNodeGraph curGraph;
 	InternalGraph::GraphPrototype protoGraph;
 
-	std::vector<std::shared_ptr<Node>> nodes;
-	std::vector<std::shared_ptr<Connection>> connections;
+	int nextNodeId = 0;
+	std::unordered_map<NodeId, Node> nodes;
+	int nextConId = 0;
+	std::unordered_map<ConId, Connection> connections;
 
-	std::shared_ptr<Node> outputNode;
+	// std::vector<std::shared_ptr<Node>> nodes;
+	// std::vector<std::shared_ptr<Connection>> connections;
+
+	NodeId outputNode;
 };

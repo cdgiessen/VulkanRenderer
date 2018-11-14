@@ -54,7 +54,7 @@ template <typename T> class NoiseImage2D
 	void SetPixelValue (int x, int z, T value);
 
 	T* GetImageData ();
-	void SetImageData (int width, T* data);
+	void SetImageData (int width, T* data, std::shared_ptr<FastNoiseSIMD> noiseHolder);
 
 	std::vector<T>* GetImageVectorData ();
 
@@ -62,7 +62,7 @@ template <typename T> class NoiseImage2D
 
 	private:
 	int width = 0;
-	T* image = nullptr;
+	std::shared_ptr<T> image;
 	bool isExternallyAllocated = false;
 	std::vector<T> data;
 };
@@ -172,6 +172,7 @@ class Node
 {
 	public:
 	Node (NodeType type = NodeType::None);
+	//~Node ();
 
 	NodeType GetNodeType () const;
 	LinkType GetOutputType () const;
@@ -190,8 +191,6 @@ class Node
 
 	void SetID (NodeID);
 	NodeID GetID ();
-
-	void SetIsNoiseNode (bool val);
 
 	void SetupInputLinks (NodeMap* map);
 	void SetupNodeForComputation (NoiseSourceInfo info);
@@ -212,7 +211,7 @@ class Node
 
 	bool isNoiseNode = false;
 	NoiseImage2D<float> noiseImage;
-	FastNoiseSIMD* myNoise;
+	std::shared_ptr<FastNoiseSIMD> myNoise;
 	FastNoiseSIMD::FractalType fractalType;
 	FastNoiseSIMD::CellularDistanceFunction cellularDistanceFunction;
 	FastNoiseSIMD::CellularReturnType cellularReturnType;
@@ -225,8 +224,7 @@ class GraphPrototype
 	GraphPrototype ();
 	~GraphPrototype ();
 
-	NodeID AddNode (Node node);
-	NodeID AddNoiseNoide (Node node);
+	NodeID AddNode (NodeType type);
 
 	bool DeleteNode (NodeID id);
 

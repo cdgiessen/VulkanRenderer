@@ -117,9 +117,13 @@ if(MSVC)
 	#target_compile_options(VulkanApp PRIVATE "/Debug:fastlink")
 endif(MSVC)
 
+OPTION(THREADSANITIZER "Enable thread sanitizer on unix platforms" ON)
+
 if(UNIX)
+	if(THREADSANITIZER)
 	set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 	set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+	endif(THREADSANITIZER)
 endif(UNIX)
 
 #json

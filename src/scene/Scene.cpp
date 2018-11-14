@@ -91,8 +91,8 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	//		sphereObject->position = glm::vec3(0, i * 2.2, (float) 8 * 2.2 - j * 2.2 - 30);
 	//		sphereObject->phong_mat.diffuse = (float)(i ) / 10.0;
 	//		sphereObject->phong_mat.specular = (float)j / 6;
-	//		sphereObject->phong_mat.reflectivity = 128;
-	//		sphereObject->phong_mat.color = glm::vec4(1.0, 0.3, 0.3, 1.0);
+	//																																																																																																																																																	sphereObject->phong_mat.reflectivity
+	//= 128; 		sphereObject->phong_mat.color = glm::vec4(1.0, 0.3, 0.3, 1.0);
 	//		//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture>(renderer.device);
 	//		//sphereObject->gameObjectTexture = resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/Red.png");
 	//		sphereObject->InitGameObject();
