@@ -8,19 +8,20 @@ namespace job
 {
 
 Task::Task (std::weak_ptr<TaskSignal> signalBlock, std::function<void()>&& m_job)
-: m_job(m_job), signalBlock (signalBlock)
+: m_job (m_job), signalBlock (signalBlock)
 {
-	if (auto sbp = signalBlock.lock()) sbp->Notify();
+	if (auto sbp = signalBlock.lock ()) sbp->Notify ();
 }
 
 void Task::operator() ()
 {
 	if (auto sbp = signalBlock.lock ())
 	{
-		if (!sbp->IsCancelled()) {
-			m_job();
+		if (!sbp->IsCancelled ())
+		{
+			m_job ();
 		}
-		sbp->Signal();
+		sbp->Signal ();
 	}
 }
 
@@ -42,15 +43,12 @@ TaskSignal::TaskSignal () {}
 
 TaskSignal::~TaskSignal () {}
 
-void TaskSignal::Notify() {
-	active_waiters++;
-}
+void TaskSignal::Notify () { active_waiters++; }
 
 void TaskSignal::Signal ()
 {
 	active_waiters--;
-	if(active_waiters == 0)
-		condVar.notify_all();
+	if (active_waiters == 0) condVar.notify_all ();
 }
 
 void TaskSignal::Wait ()
@@ -66,13 +64,9 @@ void TaskSignal::WaitOn (std::shared_ptr<TaskSignal> taskSig)
 	predicates.push_back (taskSig);
 }
 
-void TaskSignal::Cancel(){
-	cancelled = true;
-}
+void TaskSignal::Cancel () { cancelled = true; }
 
-bool TaskSignal::IsCancelled() {
-	return cancelled;
-}
+bool TaskSignal::IsCancelled () { return cancelled; }
 
 
 bool TaskSignal::IsReadyToRun ()
@@ -85,6 +79,8 @@ bool TaskSignal::IsReadyToRun ()
 	return true;
 }
 
+int TaskSignal::InQueue () { return active_waiters; }
+
 TaskPool::TaskPool () {}
 
 void TaskPool::AddTask (Task&& task)
@@ -93,10 +89,12 @@ void TaskPool::AddTask (Task&& task)
 	tasks.push (std::move (task));
 }
 
-void TaskPool::AddTasks(std::vector<Task> in_tasks) {
-	std::lock_guard<std::mutex> lg(queueLock);
-	for (auto& t : in_tasks) {
-		tasks.push(std::move(t));
+void TaskPool::AddTasks (std::vector<Task> in_tasks)
+{
+	std::lock_guard<std::mutex> lg (queueLock);
+	for (auto& t : in_tasks)
+	{
+		tasks.push (std::move (t));
 	}
 }
 
@@ -113,54 +111,58 @@ std::optional<Task> TaskPool::GetTask ()
 	return {};
 }
 
-bool TaskPool::HasTasks() {
-	return !tasks.empty();
-}
+bool TaskPool::HasTasks () { return !tasks.empty (); }
 
 
 TaskManager::TaskManager () {}
 
 
-void TaskManager::Submit(Task&& task, TaskType type){ 
-	currentFrameTasks.AddTask(std::move(task));
-	workSubmittedCondVar.notify_one();
+void TaskManager::Submit (Task&& task, TaskType type)
+{
+	currentFrameTasks.AddTask (std::move (task));
+	workSubmittedCondVar.notify_one ();
 	return;
 
-	switch (type) {
+	switch (type)
+	{
 		default:
-		case(TaskType::currentFrame):
-			currentFrameTasks.AddTask(std::move(task));
-		break;
-		case(TaskType::async):
-			asyncTasks.AddTask(std::move(task));
-		break;
-		case(TaskType::nextFrame):
-		break;
-	}		
-	workSubmittedCondVar.notify_one();
-}
-
-void TaskManager::Submit(std::vector<Task> tasks, TaskType type){
-	switch (type) {
-		default:
-		case(TaskType::currentFrame):
-			currentFrameTasks.AddTasks(tasks);
+		case (TaskType::currentFrame):
+			currentFrameTasks.AddTask (std::move (task));
 			break;
-		case(TaskType::async):
-			asyncTasks.AddTasks(tasks);
+		case (TaskType::async):
+			asyncTasks.AddTask (std::move (task));
 			break;
-		case(TaskType::nextFrame):
+		case (TaskType::nextFrame):
 			break;
 	}
-	workSubmittedCondVar.notify_all();
+	workSubmittedCondVar.notify_one ();
 }
 
-//void TaskManager::AddTask (Task&& task) { currentFrameTasks.AddTask (std::move (task)); }
+void TaskManager::Submit (std::vector<Task> tasks, TaskType type)
+{
+	switch (type)
+	{
+		default:
+		case (TaskType::currentFrame):
+			currentFrameTasks.AddTasks (tasks);
+			break;
+		case (TaskType::async):
+			asyncTasks.AddTasks (tasks);
+			break;
+		case (TaskType::nextFrame):
+			break;
+	}
+	workSubmittedCondVar.notify_all ();
+}
 
-std::optional<Task> TaskManager::GetTask () { 
-	if(currentFrameTasks.HasTasks())
-		return currentFrameTasks.GetTask();
-	else return asyncTasks.GetTask();
+// void TaskManager::AddTask (Task&& task) { currentFrameTasks.AddTask (std::move (task)); }
+
+std::optional<Task> TaskManager::GetTask ()
+{
+	if (currentFrameTasks.HasTasks ())
+		return currentFrameTasks.GetTask ();
+	else
+		return asyncTasks.GetTask ();
 }
 
 Worker::Worker (TaskManager& taskMan) : taskMan (taskMan), workerThread{ &Worker::Work, this } {}
@@ -177,8 +179,8 @@ void Worker::Work ()
 	while (isWorking)
 	{
 		{
-			std::unique_lock<std::mutex> lock(taskMan.workSubmittedLock);
-			taskMan.workSubmittedCondVar.wait(lock);
+			std::unique_lock<std::mutex> lock (taskMan.workSubmittedLock);
+			taskMan.workSubmittedCondVar.wait (lock);
 		}
 
 		auto task = taskMan.GetTask ();
@@ -187,29 +189,25 @@ void Worker::Work ()
 			(*task) ();
 			task = taskMan.GetTask ();
 		}
-
 	}
 }
 
 WorkerPool::WorkerPool (TaskManager& taskMan, int workerCount)
 : taskMan (taskMan), workerCount (workerCount)
 {
-	if (workerCount > 0)
+	for (int i = 0; i < workerCount; i++)
 	{
-		for (int i = 0; i < workerCount; i++)
-		{
-			workers.push_back(std::make_unique<Worker>(taskMan));
-		}
+		workers.push_back (std::make_unique<Worker> (taskMan));
 	}
 }
 
-WorkerPool::~WorkerPool()
-{ 
-	StopWorkers();
-	taskMan.workSubmittedCondVar.notify_all();
+WorkerPool::~WorkerPool ()
+{
+	StopWorkers ();
+	taskMan.workSubmittedCondVar.notify_all ();
 }
 
-void WorkerPool::StopWorkers()
+void WorkerPool::StopWorkers ()
 {
 	for (auto& worker : workers)
 	{
@@ -292,8 +290,8 @@ bool JobTester ()
 			jtc.MulNumAddNum (2, 0);
 	});
 
-	tMan.Submit (std::move (t1), TaskType::currentFrame );
-	tMan.Submit(std::move (t2), TaskType::currentFrame);
+	tMan.Submit (std::move (t1), TaskType::currentFrame);
+	tMan.Submit (std::move (t2), TaskType::currentFrame);
 
 
 	workerPool.StopWorkers ();

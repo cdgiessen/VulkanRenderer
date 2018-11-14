@@ -117,6 +117,11 @@ if(MSVC)
 	#target_compile_options(VulkanApp PRIVATE "/Debug:fastlink")
 endif(MSVC)
 
+if(UNIX)
+	set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+	set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+endif(UNIX)
+
 #json
 #target_include_directories(VulkanApp PUBLIC third-party/json)
 target_link_libraries(VulkanApp PUBLIC nlohmann_json)

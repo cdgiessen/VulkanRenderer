@@ -142,11 +142,6 @@ public:
 
 	TerrainChunkBuffer chunkBuffer;
 
-	std::mutex workerMutex;
-	std::condition_variable workerConditionVariable;
-
-	//ConcurrentQueue<TerrainCreationData> terrainCreationWork;
-
 	std::shared_ptr<job::TaskSignal> workContinueSignal;
 
 	bool isCreatingTerrain = true; //while condition for worker threads
@@ -171,9 +166,6 @@ private:
 	void LoadSettingsFromFile();
 
 	void StopActiveJobs();
-
-	//void StartWorkerThreads();
-	//void StopWorkerThreads();
 
 	std::shared_ptr<MeshData> WaterMesh;
 
