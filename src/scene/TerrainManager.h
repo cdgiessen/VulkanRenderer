@@ -11,6 +11,7 @@
 //#include <foonathan/memory/container.hpp> // vector, list, list_node_size
 //#include <foonathan/memory/memory_pool.hpp> // memory_pool
 
+#include "core/JobSystem.h"
 #include "core/CoreTools.h"
 #include "core/TimeManager.h"
 
@@ -144,7 +145,9 @@ public:
 	std::mutex workerMutex;
 	std::condition_variable workerConditionVariable;
 
-	ConcurrentQueue<TerrainCreationData> terrainCreationWork;
+	//ConcurrentQueue<TerrainCreationData> terrainCreationWork;
+
+	std::shared_ptr<job::TaskSignal> workContinueSignal;
 
 	bool isCreatingTerrain = true; //while condition for worker threads
 
@@ -167,8 +170,10 @@ private:
 	void SaveSettingsToFile();
 	void LoadSettingsFromFile();
 
-	void StartWorkerThreads();
-	void StopWorkerThreads();
+	void StopActiveJobs();
+
+	//void StartWorkerThreads();
+	//void StopWorkerThreads();
 
 	std::shared_ptr<MeshData> WaterMesh;
 

@@ -17,8 +17,10 @@ void Task::operator() ()
 {
 	if (auto sbp = signalBlock.lock ())
 	{
-		m_job ();
-		sbp->Signal ();
+		if (!sbp->IsCancelled()) {
+			m_job();
+		}
+		sbp->Signal();
 	}
 }
 
@@ -64,6 +66,15 @@ void TaskSignal::WaitOn (std::shared_ptr<TaskSignal> taskSig)
 	predicates.push_back (taskSig);
 }
 
+void TaskSignal::Cancel(){
+	cancelled = true;
+}
+
+bool TaskSignal::IsCancelled() {
+	return cancelled;
+}
+
+
 bool TaskSignal::IsReadyToRun ()
 {
 	std::lock_guard<std::mutex> lg (pred_lock);
@@ -102,10 +113,19 @@ std::optional<Task> TaskPool::GetTask ()
 	return {};
 }
 
+bool TaskPool::HasTasks() {
+	return !tasks.empty();
+}
+
+
 TaskManager::TaskManager () {}
 
 
 void TaskManager::Submit(Task&& task, TaskType type){ 
+	currentFrameTasks.AddTask(std::move(task));
+	workSubmittedCondVar.notify_one();
+	return;
+
 	switch (type) {
 		default:
 		case(TaskType::currentFrame):
@@ -117,6 +137,7 @@ void TaskManager::Submit(Task&& task, TaskType type){
 		case(TaskType::nextFrame):
 		break;
 	}		
+	workSubmittedCondVar.notify_one();
 }
 
 void TaskManager::Submit(std::vector<Task> tasks, TaskType type){
@@ -131,11 +152,16 @@ void TaskManager::Submit(std::vector<Task> tasks, TaskType type){
 		case(TaskType::nextFrame):
 			break;
 	}
+	workSubmittedCondVar.notify_all();
 }
 
 //void TaskManager::AddTask (Task&& task) { currentFrameTasks.AddTask (std::move (task)); }
 
-std::optional<Task> TaskManager::GetTask () { return currentFrameTasks.GetTask (); }
+std::optional<Task> TaskManager::GetTask () { 
+	if(currentFrameTasks.HasTasks())
+		return currentFrameTasks.GetTask();
+	else return asyncTasks.GetTask();
+}
 
 Worker::Worker (TaskManager& taskMan) : taskMan (taskMan), workerThread{ &Worker::Work, this } {}
 
@@ -150,13 +176,18 @@ void Worker::Work ()
 {
 	while (isWorking)
 	{
-		// taskMan.WaitOn();
+		{
+			std::unique_lock<std::mutex> lock(taskMan.workSubmittedLock);
+			taskMan.workSubmittedCondVar.wait(lock);
+		}
+
 		auto task = taskMan.GetTask ();
 		while (task.has_value ())
 		{
 			(*task) ();
 			task = taskMan.GetTask ();
 		}
+
 	}
 }
 
@@ -175,6 +206,7 @@ WorkerPool::WorkerPool (TaskManager& taskMan, int workerCount)
 WorkerPool::~WorkerPool()
 { 
 	StopWorkers();
+	taskMan.workSubmittedCondVar.notify_all();
 }
 
 void WorkerPool::StopWorkers()

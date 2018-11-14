@@ -7,7 +7,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "ImGui/imgui.h"
+#include <ImGui/imgui.h>
 
 #include "core/Logger.h"
 
@@ -24,66 +24,66 @@ TerrainCreationData::TerrainCreationData (
 {
 }
 
-void TerrainCreationWorker (TerrainManager* man)
-{
-
-	while (man->isCreatingTerrain)
-	{
-		{
-			std::unique_lock<std::mutex> lock (man->workerMutex);
-			man->workerConditionVariable.wait (lock);
-		}
-
-		while (!man->terrainCreationWork.empty ())
-		{
-			auto data = man->terrainCreationWork.pop_if ();
-			if (data.has_value ())
-			{
-				glm::vec3 center =
-				    glm::vec3 ((data)->coord.pos.x, man->curCameraPos.y, (data)->coord.pos.y);
-				float distanceToViewer = glm::distance (man->curCameraPos, center);
-				if (distanceToViewer < man->settings.viewDistance * man->settings.width * 1.5)
-				{
-
-
-					auto terrain = std::make_unique<Terrain> (man->renderer,
-					    man->chunkBuffer,
-					    man->protoGraph,
-					    data->numCells,
-					    data->maxLevels,
-					    data->heightScale,
-					    data->coord);
-
-					// std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
-
-					// terrain->terrainSplatMap = man->resourceMan.
-					// 	texManager.loadTextureFromRGBAPixelData(
-					// 		data->sourceImageResolution + 1,
-					// 		data->sourceImageResolution + 1, imgData);
-
-					terrain->InitTerrain (man->curCameraPos,
-					    man->terrainVulkanTextureArrayAlbedo,
-					    man->terrainVulkanTextureArrayRoughness,
-					    man->terrainVulkanTextureArrayMetallic,
-					    man->terrainVulkanTextureArrayNormal);
-
-					InstancedSceneObject::InstanceData water;
-					water.pos = glm::vec3 ((data)->coord.pos.x, 0, (data)->coord.pos.y);
-					water.rot = glm::vec3 (0, 0, 0);
-					water.scale = man->settings.width;
-					man->instancedWaters->AddInstance (water);
-
-					{
-						std::lock_guard<std::mutex> lk (man->terrain_mutex);
-						man->terrains.push_back (std::move (terrain));
-					}
-				}
-			}
-			// break out of loop if work shouldn't be continued
-			if (!man->isCreatingTerrain) return;
-		}
-	}
-}
+// void TerrainCreationWorker (TerrainManager* man)
+//{
+//
+//	while (man->isCreatingTerrain)
+//	{
+//		{
+//			std::unique_lock<std::mutex> lock (man->workerMutex);
+//			man->workerConditionVariable.wait (lock);
+//		}
+//
+//		while (!man->terrainCreationWork.empty ())
+//		{
+//			auto data = man->terrainCreationWork.pop_if ();
+//			if (data.has_value ())
+//			{
+//				glm::vec3 center =
+//				    glm::vec3 ((data)->coord.pos.x, man->curCameraPos.y, (data)->coord.pos.y);
+//				float distanceToViewer = glm::distance (man->curCameraPos, center);
+//				if (distanceToViewer < man->settings.viewDistance * man->settings.width * 1.5)
+//				{
+//
+//
+//					auto terrain = std::make_unique<Terrain> (man->renderer,
+//					    man->chunkBuffer,
+//					    man->protoGraph,
+//					    data->numCells,
+//					    data->maxLevels,
+//					    data->heightScale,
+//					    data->coord);
+//
+//					// std::vector<RGBA_pixel>* imgData = terrain->LoadSplatMapFromGenerator();
+//
+//					// terrain->terrainSplatMap = man->resourceMan.
+//					// 	texManager.loadTextureFromRGBAPixelData(
+//					// 		data->sourceImageResolution + 1,
+//					// 		data->sourceImageResolution + 1, imgData);
+//
+//					terrain->InitTerrain (man->curCameraPos,
+//					    man->terrainVulkanTextureArrayAlbedo,
+//					    man->terrainVulkanTextureArrayRoughness,
+//					    man->terrainVulkanTextureArrayMetallic,
+//					    man->terrainVulkanTextureArrayNormal);
+//
+//					InstancedSceneObject::InstanceData water;
+//					water.pos = glm::vec3 ((data)->coord.pos.x, 0, (data)->coord.pos.y);
+//					water.rot = glm::vec3 (0, 0, 0);
+//					water.scale = man->settings.width;
+//					man->instancedWaters->AddInstance (water);
+//
+//					{
+//						std::lock_guard<std::mutex> lk (man->terrain_mutex);
+//						man->terrains.push_back (std::move (terrain));
+//					}
+//				}
+//			}
+//			// break out of loop if work shouldn't be continued
+//			if (!man->isCreatingTerrain) return;
+//		}
+//	}
+//}
 
 TerrainChunkBuffer::TerrainChunkBuffer (VulkanRenderer& renderer, int count, TerrainManager& man)
 : renderer (renderer),
@@ -278,37 +278,46 @@ TerrainManager::TerrainManager (
 
 	instancedWaters->InitInstancedSceneObject ();
 
-	StartWorkerThreads ();
+	//StartWorkerThreads ();
+	workContinueSignal = std::make_shared<job::TaskSignal> ();
 }
 
 TerrainManager::~TerrainManager () { CleanUpTerrain (); }
 
+/*
 void TerrainManager::StartWorkerThreads ()
 {
-	isCreatingTerrain = true;
-	for (int i = 0; i < WorkerThreads; i++)
-	{
-		terrainCreationWorkers.push_back (std::thread (TerrainCreationWorker, this));
-	}
+    //isCreatingTerrain = true;
+    //for (int i = 0; i < WorkerThreads; i++)
+    //{
+    //	terrainCreationWorkers.push_back (std::thread (TerrainCreationWorker, this));
+    //}
 }
 
 void TerrainManager::StopWorkerThreads ()
 {
-	isCreatingTerrain = false;
-	workerConditionVariable.notify_all ();
+    isCreatingTerrain = false;
+    workerConditionVariable.notify_all ();
 
-	for (auto& thread : terrainCreationWorkers)
-	{
-		thread.join ();
-	}
-	terrainCreationWorkers.clear ();
+    for (auto& thread : terrainCreationWorkers)
+    {
+        thread.join ();
+    }
+    terrainCreationWorkers.clear ();
+}
+*/
+
+void TerrainManager::StopActiveJobs ()
+{
+	workContinueSignal->Cancel ();
+	workContinueSignal->Wait();
 }
 
 
 void TerrainManager::CleanUpTerrain ()
 {
-
-	StopWorkerThreads ();
+	StopActiveJobs();
+	//StopWorkerThreads ();
 	terrains.clear ();
 	// instancedWaters->RemoveAllInstances();
 	// instancedWaters->CleanUp();
@@ -367,10 +376,13 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 
 	if (recreateTerrain)
 	{
-		StopWorkerThreads ();
+		
+		//StopWorkerThreads ();
 		CleanUpTerrain ();
-		StartWorkerThreads ();
-		// need to rework to involve remaking the graph
+		workContinueSignal = std::make_shared<job::TaskSignal>();
+		/*
+		    StartWorkerThreads ();
+		*/	// need to rework to involve remaking the graph
 		// GenerateTerrain(resourceMan, renderer, camera);
 		recreateTerrain = false;
 	}
@@ -466,11 +478,53 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 				    settings.sourceImageResolution + 1,
 				    terGrid);
 
-				terrain_mutex.lock ();
-				terrainCreationWork.push_back (TerrainCreationData (
-				    settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale, coord));
-				terrain_mutex.unlock ();
-				workerConditionVariable.notify_one ();
+				// terrain_mutex.lock ();
+
+				/*auto terCreateData = TerrainCreationData (
+				    settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale, coord);*/
+
+				auto t = job::Task (workContinueSignal, [this, coord] {
+					auto terCreateData = TerrainCreationData(
+						settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale, coord);
+
+					glm::vec3 center = glm::vec3 (
+					    terCreateData.coord.pos.x, curCameraPos.y, terCreateData.coord.pos.y);
+					float distanceToViewer = glm::distance (curCameraPos, center);
+					if (distanceToViewer < settings.viewDistance * settings.width * 1.5)
+					{
+						auto terrain = std::make_unique<Terrain> (renderer,
+						    chunkBuffer,
+						    protoGraph,
+						    terCreateData.numCells,
+						    terCreateData.maxLevels,
+						    terCreateData.heightScale,
+						    terCreateData.coord);
+
+						terrain->InitTerrain (curCameraPos,
+						    terrainVulkanTextureArrayAlbedo,
+						    terrainVulkanTextureArrayRoughness,
+						    terrainVulkanTextureArrayMetallic,
+						    terrainVulkanTextureArrayNormal);
+
+						InstancedSceneObject::InstanceData water;
+						water.pos = glm::vec3 (terCreateData.coord.pos.x, 0, terCreateData.coord.pos.y);
+						water.rot = glm::vec3 (0, 0, 0);
+						water.scale = settings.width;
+						instancedWaters->AddInstance (water);
+
+						{
+							std::lock_guard<std::mutex> lk (terrain_mutex);
+							terrains.push_back (std::move (terrain));
+						}
+					}
+				});
+
+				taskManager.Submit(std::move(t), job::TaskType::currentFrame);
+
+				// terrainCreationWork.push_back (TerrainCreationData (
+				//    settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale, coord));
+				// terrain_mutex.unlock ();
+				// workerConditionVariable.notify_one ();
 
 				/*InstancedSceneObject::InstanceData water;
 				water.pos = glm::vec3(pos.x, 0, pos.y);
@@ -621,7 +675,7 @@ void TerrainManager::UpdateTerrainGUI ()
 			recreateTerrain = true;
 		}
 		ImGui::Text ("Terrain Count %lu", terrains.size ());
-		ImGui::Text ("Generating %i Terrains", terrainCreationWork.size ());
+		//ImGui::Text ("Generating %i Terrains", terrainCreationWork.size ());
 		ImGui::Text ("Quad Count %i", chunkBuffer.ActiveQuadCount ());
 		ImGui::Text ("All terrains update Time: %lu(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds ());
 
