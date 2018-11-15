@@ -328,8 +328,8 @@ VulkanTexture::VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCrea
 // 		bufferCopyRegion.imageSubresource.baseArrayLayer = layer;
 // 		bufferCopyRegion.imageSubresource.layerCount = 1;
 // 		bufferCopyRegion.imageExtent.width =
-// static_cast<uint32_t>(textureResource->dataDescription.width); 		bufferCopyRegion.imageExtent.height
-// = static_cast<uint32_t>(textureResource->dataDescription.height); 		bufferCopyRegion.imageExtent.depth
+// static_cast<uint32_t>(textureResource->dataDescription.width); bufferCopyRegion.imageExtent.height
+// = static_cast<uint32_t>(textureResource->dataDescription.height); bufferCopyRegion.imageExtent.depth
 // = static_cast<uint32_t>(textureResource->dataDescription.depth); 		bufferCopyRegion.bufferOffset =
 // offset; 		bufferCopyRegions.push_back(bufferCopyRegion);
 // 		// Increase offset into staging buffer for next level / face

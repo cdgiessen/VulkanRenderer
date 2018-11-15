@@ -419,8 +419,8 @@ void TerrainManager::RenderDepthPrePass (VkCommandBuffer commandBuffer)
 
 void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe)
 {
-	if (!*terrainVulkanTextureArrayAlbedo->readyToUse || !*terrainVulkanTextureArrayRoughness->readyToUse ||
-	    !*terrainVulkanTextureArrayMetallic->readyToUse || !*terrainVulkanTextureArrayNormal->readyToUse)
+	if (*terrainVulkanTextureArrayAlbedo->readyToUse && *terrainVulkanTextureArrayRoughness->readyToUse &&
+	    *terrainVulkanTextureArrayMetallic->readyToUse && *terrainVulkanTextureArrayNormal->readyToUse)
 	{
 		std::lock_guard<std::mutex> lock (terrain_mutex);
 		for (auto& ter : terrains)

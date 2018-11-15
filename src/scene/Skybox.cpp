@@ -170,7 +170,7 @@ void Skybox::UpdateUniform (glm::mat4 proj, glm::mat4 view)
 
 void Skybox::WriteToCommandBuffer (VkCommandBuffer commandBuffer)
 {
-	if (!*vulkanCubeMap->readyToUse) return;
+	if (*vulkanCubeMap->readyToUse == false) return;
 
 	vkCmdBindDescriptorSets (
 	    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, normal->GetLayout (), 2, 1, &m_descriptorSet.set, 0, nullptr);

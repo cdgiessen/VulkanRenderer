@@ -22,8 +22,8 @@ auto as_integer (Enumeration const value) -> typename std::underlying_type<Enume
 
 ProcTerrainNodeGraph::ProcTerrainNodeGraph ()
 {
-	RecreateOutputNode ();
-	// LoadGraphFromFile ("assets/graphs/default_terrain.json");
+	// RecreateOutputNode ();
+	LoadGraphFromFile ("assets/graphs/default_terrain.json");
 }
 
 
@@ -101,18 +101,22 @@ void ProcTerrainNodeGraph::DeleteConnection (ConId con)
 		auto& c = connections.at (con);
 
 		ResetNodeInternalLinkByID (nodes.at (c.output).internalNodeID, c.output_slot_id);
-		
-		for (auto& in : nodes.at(c.input).outputSlot.connections) {
-			if (in == con) {
+
+		for (auto& in : nodes.at (c.input).outputSlot.connections)
+		{
+			if (in == con)
+			{
 				in = -1;
 			}
 		}
-		for (auto& out : nodes.at(c.output).inputSlots) {
-			if (out.connection == con) {
+		for (auto& out : nodes.at (c.output).inputSlots)
+		{
+			if (out.connection == con)
+			{
 				out.connection = -1;
 			}
 		}
-		
+
 
 		connections.erase (it);
 		// auto found = std::find (connections.begin (), connections.end (), con);
@@ -540,7 +544,7 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 		{
 			Input::ResetTextInputMode ();
 		}
-		DeleteNode(nodeId);
+		DeleteNode (nodeId);
 		nodes.erase (nodeId);
 	}
 
@@ -780,206 +784,209 @@ void ProcTerrainNodeGraph::SaveGraphFromFile ()
 
 void ProcTerrainNodeGraph::SaveGraphFromFile (std::string fileName)
 {
-	 std::ofstream outFile (fileName);
-	 if (!outFile)
-	 {
-	 	Log.Debug ("Bad file name for terrain graph\n");
-	 	return;
-	 }
-	 nlohmann::json j;
+	std::ofstream outFile (fileName);
+	if (!outFile)
+	{
+		Log.Debug ("Bad file name for terrain graph\n");
+		return;
+	}
+	nlohmann::json j;
 
-	 j["numNodes"] = nodes.size ();
+	j["numNodes"] = nodes.size ();
 
-	 int curNodeIndex = 0;
-	 for (auto& [id, node] : nodes)
-	 {
-	 	nlohmann::json nodeJson;
-	 	nodeJson["id"] = id;
-	 	nodeJson["nodeType"] = as_integer (node.nodeType);
-	 	nodeJson["winPosX"] = node.pos.x;
-	 	nodeJson["winPosY"] = node.pos.y;
-	 	nodeJson["numSlots"] = node.inputSlots.size ();
-
-
-
-	 	for (auto& slot : node.inputSlots)
-	 	{
-	 		nlohmann::json slotJson;
-	 		slotJson["slotName"] = slot.name;
-	 		slotJson["slotType"] = as_integer (slot.conType);
-	 		if (slot.connection == -1)
-	 		{
-	 			slotJson["hasConnection"] = false;
-	 			if (slot.value.type == ConnectionType::Int)
-	 				slotJson["value"] = std::get<int> (slot.value.value);
-	 			else if (slot.value.type == ConnectionType::Float)
-	 				slotJson["value"] = std::get<float> (slot.value.value);
-
-	 			else if (slot.value.type == ConnectionType::Vec2)
-	 			{
-	 				glm::vec2 vec2 = std::get<glm::vec2> (slot.value.value);
-	 				slotJson["value"] = { vec2.x, vec2.y };
-	 			}
-	 			else if (slot.value.type == ConnectionType::Vec3)
-	 			{
-	 				glm::vec3 vec3 = std::get<glm::vec3> (slot.value.value);
-	 				slotJson["value"] = { vec3.x, vec3.y, vec3.z };
-	 			}
-	 			else if (slot.value.type == ConnectionType::Vec4 || slot.value.type == ConnectionType::Color)
-	 			{
-	 				glm::vec4 vec4 = std::get<glm::vec4> (slot.value.value);
-	 				slotJson["value"] = { vec4.x, vec4.y, vec4.z, vec4.w };
-	 			}
-	 		}
-	 		else
-	 		{
-	 			slotJson["hasConnection"] = true;
-	 			slotJson["value"] = connections.at(slot.connection).input;
-	 		}
+	int curNodeIndex = 0;
+	for (auto& [id, node] : nodes)
+	{
+		nlohmann::json nodeJson;
+		nodeJson["id"] = id;
+		nodeJson["nodeType"] = as_integer (node.nodeType);
+		nodeJson["winPosX"] = node.pos.x;
+		nodeJson["winPosY"] = node.pos.y;
+		nodeJson["numSlots"] = node.inputSlots.size ();
 
 
-	 		nodeJson[std::to_string (slot.slotNum)] = slotJson;
-	 	}
 
-	 	j[std::to_string (curNodeIndex)] = nodeJson;
-	 	curNodeIndex++;
-	 }
+		for (auto& slot : node.inputSlots)
+		{
+			nlohmann::json slotJson;
+			slotJson["slotName"] = slot.name;
+			slotJson["slotType"] = as_integer (slot.conType);
+			if (slot.connection == -1)
+			{
+				slotJson["hasConnection"] = false;
+				if (slot.value.type == ConnectionType::Int)
+					slotJson["value"] = std::get<int> (slot.value.value);
+				else if (slot.value.type == ConnectionType::Float)
+					slotJson["value"] = std::get<float> (slot.value.value);
 
-	 outFile << std::setw (4) << j;
-	 outFile.close ();
+				else if (slot.value.type == ConnectionType::Vec2)
+				{
+					glm::vec2 vec2 = std::get<glm::vec2> (slot.value.value);
+					slotJson["value"] = { vec2.x, vec2.y };
+				}
+				else if (slot.value.type == ConnectionType::Vec3)
+				{
+					glm::vec3 vec3 = std::get<glm::vec3> (slot.value.value);
+					slotJson["value"] = { vec3.x, vec3.y, vec3.z };
+				}
+				else if (slot.value.type == ConnectionType::Vec4 || slot.value.type == ConnectionType::Color)
+				{
+					glm::vec4 vec4 = std::get<glm::vec4> (slot.value.value);
+					slotJson["value"] = { vec4.x, vec4.y, vec4.z, vec4.w };
+				}
+			}
+			else
+			{
+				slotJson["hasConnection"] = true;
+				slotJson["value"] = connections.at (slot.connection).input;
+			}
+
+
+			nodeJson[std::to_string (slot.slotNum)] = slotJson;
+		}
+
+		j[std::to_string (curNodeIndex)] = nodeJson;
+		curNodeIndex++;
+	}
+
+	outFile << std::setw (4) << j;
+	outFile.close ();
 }
 
 void ProcTerrainNodeGraph::LoadGraphFromFile ()
 {
-	 const char* filename = noc_file_dialog_open (
-	     NOC_FILE_DIALOG_OPEN, NULL, std::filesystem::current_path ().string ().c_str (), NULL);
-	 if (filename != NULL)
-	 {
-	 	LoadGraphFromFile (std::string (filename));
-	 }
-	 else
-	 {
-	 	Log.Debug ("No file specified, stopping load\n");
-	 }
+	const char* filename = noc_file_dialog_open (
+	    NOC_FILE_DIALOG_OPEN, NULL, std::filesystem::current_path ().string ().c_str (), NULL);
+	if (filename != NULL)
+	{
+		LoadGraphFromFile (std::string (filename));
+	}
+	else
+	{
+		Log.Debug ("No file specified, stopping load\n");
+	}
 }
 
 void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 {
 
-	 std::ifstream inFile (fileName);
-	 if (!inFile)
-	 {
-	 	Log.Debug ("Bad file name\n");
-	 	return;
-	 }
+	std::ifstream inFile (fileName);
+	if (!inFile)
+	{
+		Log.Debug ("Bad file name\n");
+		return;
+	}
 
-	 nlohmann::json j;
+	nlohmann::json j;
 
-	 if (inFile.peek () == std::ifstream::traits_type::eof ())
-	 {
-	 	Log.Error ("Opened file is empty! \n");
-	 	return;
-	 }
+	if (inFile.peek () == std::ifstream::traits_type::eof ())
+	{
+		Log.Error ("Opened file is empty! \n");
+		return;
+	}
 
-	 try
-	 {
-	 	inFile >> j;
-	 }
-	 catch (nlohmann::json::parse_error& e)
-	 {
-	 	Log.Error (fmt::format ("{}\n", e.what ()));
-	 }
-	 inFile.close ();
+	try
+	{
+		inFile >> j;
+	}
+	catch (nlohmann::json::parse_error& e)
+	{
+		Log.Error (fmt::format ("{}\n", e.what ()));
+	}
+	inFile.close ();
 
-	 ResetGraph ();
-	 try
-	 {
-	 	int numNodes = j["numNodes"];
-	 	nodes.reserve (numNodes);
-	 	for (int i = 0; i < numNodes; i++)
-	 	{
-	 		std::string curIndex (std::to_string (i));
-	 		ImVec2 pos = ImVec2 (j[curIndex]["winPosX"], j[curIndex]["winPosY"]);
-	 		int type = j[curIndex]["nodeType"];
-	 		AddNode (static_cast<NodeType> (type), pos, j[curIndex]["id"]);
-	 	}
+	ResetGraph ();
+	try
+	{
+		int numNodes = j["numNodes"];
+		nodes.reserve (numNodes);
+		for (int i = 0; i < numNodes; i++)
+		{
+			std::string curIndex (std::to_string (i));
+			ImVec2 pos = ImVec2 (j[curIndex]["winPosX"], j[curIndex]["winPosY"]);
+			int type = j[curIndex]["nodeType"];
+			AddNode (static_cast<NodeType> (type), pos, j[curIndex]["id"]);
+		}
 
-	 	for (int i = 0; i < numNodes; i++)
-	 	{
-	 		std::string curIndex (std::to_string (i));
-	 		auto node = j[curIndex]["id"];
-	 		for (int slot = 0; slot < nodes.at(node).inputSlots.size (); slot++)
-	 		{
-	 			std::string curSlotIndex (std::to_string (slot));
+		for (int i = 0; i < numNodes; i++)
+		{
+			std::string curIndex (std::to_string (i));
+			auto node = j[curIndex]["id"];
+			for (int slot = 0; slot < nodes.at (node).inputSlots.size (); slot++)
+			{
+				std::string curSlotIndex (std::to_string (slot));
 
-	 			bool hasCon = j[curIndex][curSlotIndex]["hasConnection"];
-	 			if (hasCon)
-	 			{
-	 				int conIndex = j[curIndex][curSlotIndex]["value"];
+				bool hasCon = j[curIndex][curSlotIndex]["hasConnection"];
+				if (hasCon)
+				{
+					int conIndex = j[curIndex][curSlotIndex]["value"];
 
-	 				auto outGoingNode = conIndex;
-	 				if (outGoingNode == -1)
-	 				{
-	 					Log.Error ("Couldn't find node by id in loaded graph\n");
-	 				}
+					auto outGoingNode = conIndex;
+					if (outGoingNode == -1)
+					{
+						Log.Error ("Couldn't find node by id in loaded graph\n");
+					}
 
-	 				int slotType = j[curIndex][curSlotIndex]["slotType"];
-	 				ConId newConnection = NewCon(static_cast<ConnectionType> (slotType), outGoingNode, node, slot);
-						/*std::make_shared<Connection>(
-	 				    static_cast<ConnectionType> (slotType), outGoingNode, node, slot);*/
+					int slotType = j[curIndex][curSlotIndex]["slotType"];
+					ConId newConnection =
+					    NewCon (static_cast<ConnectionType> (slotType), outGoingNode, node, slot);
+					/*std::make_shared<Connection>(
+					static_cast<ConnectionType> (slotType), outGoingNode, node, slot);*/
 
-	 				nodes.at(node).inputSlots[slot].connection = newConnection;
-	 				nodes.at(outGoingNode).outputSlot.connections.push_back (newConnection);
+					nodes.at (node).inputSlots[slot].connection = newConnection;
+					nodes.at (outGoingNode).outputSlot.connections.push_back (newConnection);
 
-	 				connections.at(newConnection).startPosRelNode = nodes.at(outGoingNode).outputSlot.pos;
-					connections.at(newConnection).endPosRelNode = nodes.at(node).inputSlots[slot].pos;
+					connections.at (newConnection).startPosRelNode =
+					    nodes.at (outGoingNode).outputSlot.pos;
+					connections.at (newConnection).endPosRelNode = nodes.at (node).inputSlots[slot].pos;
 
-	 				// node.SetInternalLink(slot, nodes.at(outGoingNode).internal_node);
-	 				SetNodeInternalLinkByID (nodes.at(node).internalNodeID, slot, nodes.at(outGoingNode).internalNodeID);
+					// node.SetInternalLink(slot, nodes.at(outGoingNode).internal_node);
+					SetNodeInternalLinkByID (
+					    nodes.at (node).internalNodeID, slot, nodes.at (outGoingNode).internalNodeID);
 
-	 				//connections.push_back (newConnection);
-	 			}
-	 			else
-	 			{
-	 				int slotType = j[curIndex][curSlotIndex]["slotType"];
-	 				ConnectionType type = static_cast<ConnectionType> (slotType);
+					// connections.push_back (newConnection);
+				}
+				else
+				{
+					int slotType = j[curIndex][curSlotIndex]["slotType"];
+					ConnectionType type = static_cast<ConnectionType> (slotType);
 
-	 				if (type == ConnectionType::Int)
-	 				{
-	 					int valInt = j[curIndex][curSlotIndex]["value"];
-						nodes.at(node).inputSlots[slot].value.value = valInt;
-	 				}
-	 				if (type == ConnectionType::Float)
-	 				{
-	 					float valFloat = j[curIndex][curSlotIndex]["value"];
-						nodes.at(node).inputSlots[slot].value.value = valFloat;
-	 				}
-	 				if (type == ConnectionType::Vec2)
-	 				{
-	 					float arr[2];
-	 					arr[0] = j[curIndex][curSlotIndex]["value"];
-						nodes.at(node).inputSlots[slot].value.value = glm::make_vec2 (arr);
-	 				}
-	 				if (type == ConnectionType::Vec3)
-	 				{
-	 					float arr[3];
-	 					arr[0] = j[curIndex][curSlotIndex]["value"];
-						nodes.at(node).inputSlots[slot].value.value = glm::make_vec3 (arr);
-	 				}
-	 				if (type == ConnectionType::Vec4 || type == ConnectionType::Color)
-	 				{
-	 					float arr[4];
-	 					arr[0] = j[curIndex][curSlotIndex]["value"];
-						nodes.at(node).inputSlots[slot].value.value = glm::make_vec4 (arr);
-	 				}
-	 			}
-	 		}
-	 	}
-	 }
-	 catch (nlohmann::json::parse_error& e)
-	 {
-	 	Log.Error (fmt::format ("{}\n", e.what ()));
-	 }
+					if (type == ConnectionType::Int)
+					{
+						int valInt = j[curIndex][curSlotIndex]["value"];
+						nodes.at (node).inputSlots[slot].value.value = valInt;
+					}
+					if (type == ConnectionType::Float)
+					{
+						float valFloat = j[curIndex][curSlotIndex]["value"];
+						nodes.at (node).inputSlots[slot].value.value = valFloat;
+					}
+					if (type == ConnectionType::Vec2)
+					{
+						float arr[2];
+						arr[0] = j[curIndex][curSlotIndex]["value"];
+						nodes.at (node).inputSlots[slot].value.value = glm::make_vec2 (arr);
+					}
+					if (type == ConnectionType::Vec3)
+					{
+						float arr[3];
+						arr[0] = j[curIndex][curSlotIndex]["value"];
+						nodes.at (node).inputSlots[slot].value.value = glm::make_vec3 (arr);
+					}
+					if (type == ConnectionType::Vec4 || type == ConnectionType::Color)
+					{
+						float arr[4];
+						arr[0] = j[curIndex][curSlotIndex]["value"];
+						nodes.at (node).inputSlots[slot].value.value = glm::make_vec4 (arr);
+					}
+				}
+			}
+		}
+	}
+	catch (nlohmann::json::parse_error& e)
+	{
+		Log.Error (fmt::format ("{}\n", e.what ()));
+	}
 }
 
 NodeId ProcTerrainNodeGraph::AddNode (NodeType nodeType, ImVec2 position, int id)
