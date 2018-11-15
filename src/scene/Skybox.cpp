@@ -27,7 +27,7 @@ void Skybox::SetupUniformBuffer ()
 
 void Skybox::SetupCubeMapImage ()
 {
-	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
+	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 3);
 	vulkanCubeMap = renderer.textureManager.CreateCubeMap (skyboxCubeMap, details);
 }
 
@@ -67,10 +67,10 @@ void Skybox::SetupPipeline ()
 
 	out.UseModelVertexLayout (model.get ());
 
-	out.AddViewport(1.0f,1.0f,0.0f,1.0f,0.0f,0.0f);
-	out.AddScissor(1,1,0,0);
+	out.AddViewport (1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f);
+	out.AddScissor (1, 1, 0, 0);
 
-	out.SetInputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
+	out.SetInputAssembly (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
 
 	out.SetRasterizer (
 	    VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
@@ -89,7 +89,7 @@ void Skybox::SetupPipeline ()
 	out.AddDescriptorLayouts (renderer.GetGlobalLayouts ());
 	out.AddDescriptorLayout (descriptor->GetLayout ());
 
-	out.AddDynamicStates({VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR});
+	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
 	normal = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 
@@ -170,6 +170,8 @@ void Skybox::UpdateUniform (glm::mat4 proj, glm::mat4 view)
 
 void Skybox::WriteToCommandBuffer (VkCommandBuffer commandBuffer)
 {
+	if (!*vulkanCubeMap->readyToUse) return;
+
 	vkCmdBindDescriptorSets (
 	    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, normal->GetLayout (), 2, 1, &m_descriptorSet.set, 0, nullptr);
 	// vkCmdBindPipeline (commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at (0));

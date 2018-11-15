@@ -482,7 +482,7 @@ void InstancedSceneObject::WriteToCommandBuffer (VkCommandBuffer commandBuffer, 
 	//	isReadyToRender = true;
 	//
 
-	if ((*vulkanModel->readyToUse != true) || *vulkanTexture->readyToUse != true) //|| *isFinishedTransfer != true)
+	if (*vulkanModel->readyToUse == false || *vulkanTexture->readyToUse == false) //|| *isFinishedTransfer != true)
 		return;
 
 	VkDeviceSize offsets[] = { 0 };

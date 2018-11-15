@@ -210,7 +210,7 @@ TerrainManager::TerrainManager (
 
 	instancedWaters->InitInstancedSceneObject ();
 
-	//StartWorkerThreads ();
+	// StartWorkerThreads ();
 	workContinueSignal = std::make_shared<job::TaskSignal> ();
 }
 
@@ -220,18 +220,17 @@ TerrainManager::~TerrainManager () { CleanUpTerrain (); }
 void TerrainManager::StopActiveJobs ()
 {
 	workContinueSignal->Cancel ();
-	workContinueSignal->Wait();
+	workContinueSignal->Wait ();
 }
 
 
 void TerrainManager::CleanUpTerrain ()
 {
-	StopActiveJobs();
+	StopActiveJobs ();
 	terrains.clear ();
 	// instancedWaters->RemoveAllInstances();
 	// instancedWaters->CleanUp();
 	activeTerrains.clear ();
-
 }
 
 
@@ -241,10 +240,10 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 
 	if (recreateTerrain)
 	{
-		
-		//StopWorkerThreads ();
+
+		// StopWorkerThreads ();
 		CleanUpTerrain ();
-		workContinueSignal = std::make_shared<job::TaskSignal>();
+		workContinueSignal = std::make_shared<job::TaskSignal> ();
 		/*
 		    StartWorkerThreads ();
 		*/	// need to rework to involve remaking the graph
@@ -344,8 +343,11 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 				    terGrid);
 
 				auto t = job::Task (workContinueSignal, [this, coord] {
-					auto terCreateData = TerrainCreationData(
-						settings.numCells, settings.maxLevels, settings.sourceImageResolution, settings.heightScale, coord);
+					auto terCreateData = TerrainCreationData (settings.numCells,
+					    settings.maxLevels,
+					    settings.sourceImageResolution,
+					    settings.heightScale,
+					    coord);
 
 					glm::vec3 center = glm::vec3 (
 					    terCreateData.coord.pos.x, curCameraPos.y, terCreateData.coord.pos.y);
@@ -379,7 +381,7 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 					}
 				});
 
-				taskManager.Submit(std::move(t), job::TaskType::currentFrame);
+				taskManager.Submit (std::move (t), job::TaskType::currentFrame);
 			}
 		}
 	}
@@ -417,6 +419,8 @@ void TerrainManager::RenderDepthPrePass (VkCommandBuffer commandBuffer)
 
 void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe)
 {
+	if (!*terrainVulkanTextureArrayAlbedo->readyToUse || !*terrainVulkanTextureArrayRoughness->readyToUse ||
+	    !*terrainVulkanTextureArrayMetallic->readyToUse || !*terrainVulkanTextureArrayNormal->readyToUse)
 	{
 		std::lock_guard<std::mutex> lock (terrain_mutex);
 		for (auto& ter : terrains)
@@ -523,7 +527,7 @@ void TerrainManager::UpdateTerrainGUI ()
 			recreateTerrain = true;
 		}
 		ImGui::Text ("Terrain Count %lu", terrains.size ());
-		ImGui::Text ("Generating %i Terrains", workContinueSignal->InQueue());
+		ImGui::Text ("Generating %i Terrains", workContinueSignal->InQueue ());
 		ImGui::Text ("Quad Count %i", chunkBuffer.ActiveQuadCount ());
 		ImGui::Text ("All terrains update Time: %lu(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds ());
 

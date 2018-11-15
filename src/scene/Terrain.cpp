@@ -1081,7 +1081,7 @@ void Terrain::DrawTerrain (VkCommandBuffer cmdBuff, bool ifWireframe)
 {
 	VkDeviceSize offsets[] = { 0 };
 	// return;
-	if (!terrainVulkanSplatMap->readyToUse) return;
+	if (!*terrainVulkanSplatMap->readyToUse) return;
 
 	drawTimer.StartTimer ();
 
