@@ -1,18 +1,15 @@
 #pragma once
 
-#include <thread>
-#include <vector>
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <atomic>
+#include <thread>
 #include <unordered_map>
+#include <vector>
 
-//#include <foonathan/memory/container.hpp> // vector, list, list_node_size
-//#include <foonathan/memory/memory_pool.hpp> // memory_pool
-
-#include "core/JobSystem.h"
 #include "core/CoreTools.h"
+#include "core/JobSystem.h"
 #include "core/TimeManager.h"
 
 #include "util/ConcurrentQueue.h"
@@ -29,77 +26,83 @@
 
 #include "InstancedSceneObject.h"
 
-constexpr size_t vert_size = sizeof(TerrainMeshVertices);
-constexpr size_t ind_size = sizeof(TerrainMeshIndices);
+constexpr size_t vert_size = sizeof (TerrainMeshVertices);
+constexpr size_t ind_size = sizeof (TerrainMeshIndices);
 constexpr int MaxChunkCount = 2048;
 
-struct GeneralSettings {
+struct GeneralSettings
+{
 	bool show_terrain_manager_window = true;
 	float width = 1000;
 	float heightScale = 100.0f;
 	int maxLevels = 4;
 	int gridDimentions = 1;
-	int viewDistance = 1; //terrain chunks to load away from camera;
+	int viewDistance = 1; // terrain chunks to load away from camera;
 	int sourceImageResolution = 256;
-	int numCells = 64; //compile time currently
+	int numCells = 64; // compile time currently
 	int workerThreads = 1;
 };
 
-struct TerrainTextureNamedHandle {
+struct TerrainTextureNamedHandle
+{
 	std::string name;
 	Resource::Texture::TexID handle;
 
-	TerrainTextureNamedHandle(std::string name, Resource::Texture::TexID handle) :
-		name(name), handle(handle) {}
+	TerrainTextureNamedHandle (std::string name, Resource::Texture::TexID handle)
+	: name (name), handle (handle)
+	{
+	}
 };
 
-struct TerrainCreationData {
-	int numCells; int maxLevels;
+struct TerrainCreationData
+{
+	int numCells;
+	int maxLevels;
 	int sourceImageResolution;
 	float heightScale;
 	TerrainCoordinateData coord;
 
-	TerrainCreationData(
-		int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord);
+	TerrainCreationData (
+	    int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord);
 };
 
 class TerrainManager;
 
-class TerrainChunkBuffer {
-public:
-
-	enum class ChunkState {
+class TerrainChunkBuffer
+{
+	public:
+	enum class ChunkState
+	{
 		free,
 		allocated,
 		written,
 		ready,
 	};
 
-	TerrainChunkBuffer(VulkanRenderer& renderer, int count,
-		TerrainManager& man);
-	~TerrainChunkBuffer();
+	TerrainChunkBuffer (VulkanRenderer& renderer, int count, TerrainManager& man);
+	~TerrainChunkBuffer ();
 
-	int Allocate();
-	void Free(int index);
+	int Allocate ();
+	void Free (int index);
 
-	void UpdateChunks();
+	void UpdateChunks ();
 
-	int ActiveQuadCount();
+	int ActiveQuadCount ();
 
-	ChunkState GetChunkState(int index);
-	void SetChunkWritten(int index);
+	ChunkState GetChunkState (int index);
+	void SetChunkWritten (int index);
 
-	Signal GetChunkSignal(int index);
+	Signal GetChunkSignal (int index);
 
-	TerrainMeshVertices* GetDeviceVertexBufferPtr(int index);
-	TerrainMeshIndices* GetDeviceIndexBufferPtr(int index);
+	TerrainMeshVertices* GetDeviceVertexBufferPtr (int index);
+	TerrainMeshIndices* GetDeviceIndexBufferPtr (int index);
 
 	VulkanBufferVertex vert_buffer;
 	VulkanBufferIndex index_buffer;
 
 	TerrainManager& man;
 
-private:
+	private:
 	std::mutex lock;
 
 	VulkanRenderer& renderer;
@@ -118,24 +121,25 @@ private:
 
 class TerrainManager
 {
-public:
-	TerrainManager(InternalGraph::GraphPrototype& protoGraph,
-		Resource::AssetManager& resourceMan, VulkanRenderer& renderer);
-	~TerrainManager();
+	public:
+	TerrainManager (InternalGraph::GraphPrototype& protoGraph,
+	    Resource::AssetManager& resourceMan,
+	    VulkanRenderer& renderer);
+	~TerrainManager ();
 
-	void CleanUpTerrain();
+	void CleanUpTerrain ();
 
-	//void GenerateTerrain(std::shared_ptr<Camera> camera);
+	// void GenerateTerrain(std::shared_ptr<Camera> camera);
 
-	void UpdateTerrains(glm::vec3 cameraPos);
+	void UpdateTerrains (glm::vec3 cameraPos);
 
-	void RenderDepthPrePass(VkCommandBuffer commandBuffer);
-	void RenderTerrain(VkCommandBuffer commandBuffer, bool wireframe);
+	void RenderDepthPrePass (VkCommandBuffer commandBuffer);
+	void RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe);
 
-	void UpdateTerrainGUI();
-	void DrawTerrainTextureViewer();
+	void UpdateTerrainGUI ();
+	void DrawTerrainTextureViewer ();
 
-	float GetTerrainHeightAtLocation(float x, float z);
+	float GetTerrainHeightAtLocation (float x, float z);
 
 	Resource::AssetManager& resourceMan;
 	VulkanRenderer& renderer;
@@ -144,7 +148,7 @@ public:
 
 	std::shared_ptr<job::TaskSignal> workContinueSignal;
 
-	bool isCreatingTerrain = true; //while condition for worker threads
+	bool isCreatingTerrain = true; // while condition for worker threads
 
 	std::mutex terrain_mutex;
 	std::vector<std::unique_ptr<Terrain>> terrains;
@@ -160,12 +164,11 @@ public:
 
 	std::unique_ptr<InstancedSceneObject> instancedWaters;
 
-private:
+	private:
+	void SaveSettingsToFile ();
+	void LoadSettingsFromFile ();
 
-	void SaveSettingsToFile();
-	void LoadSettingsFromFile();
-
-	void StopActiveJobs();
+	void StopActiveJobs ();
 
 	std::shared_ptr<MeshData> WaterMesh;
 
@@ -180,7 +183,7 @@ private:
 	float nextTerrainWidth = 1000;
 	SimpleTimer terrainUpdateTimer;
 
-	int maxNumQuads = 1; //maximum quads managed by this
+	int maxNumQuads = 1; // maximum quads managed by this
 
 	bool drawWindow;
 	int selectedTexture;
@@ -196,6 +199,4 @@ private:
 		"rockSmall.jpg",
 		"Snow.jpg",
 	};
-
 };
-

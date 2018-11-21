@@ -32,13 +32,8 @@ TerrainChunkBuffer::TerrainChunkBuffer (VulkanRenderer& renderer, int count, Ter
   vert_staging (renderer.device, sizeof (TerrainMeshVertices) * count),
   index_staging (renderer.device, sizeof (TerrainMeshIndices) * count)
 {
-	// vert_buffer.CreateVertexBuffer(vertCount * count, vertElementCount);
-	// index_buffer.CreateIndexBuffer(indCount * count);
-
-	// vert_staging.CreateDataBuffer(sizeof(TerrainMeshVertices) * count);
 	vert_staging_ptr = (TerrainMeshVertices*)vert_staging.buffer.allocationInfo.pMappedData;
 
-	// index_staging.CreateDataBuffer(sizeof(TerrainMeshIndices) * count);
 	index_staging_ptr = (TerrainMeshIndices*)index_staging.buffer.allocationInfo.pMappedData;
 
 	chunkStates.resize (count, TerrainChunkBuffer::ChunkState::free);

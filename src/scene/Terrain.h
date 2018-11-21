@@ -190,7 +190,6 @@ class Terrain
 
 	bool UpdateTerrainQuad (int quad, glm::vec3 viewerPos);
 
-	void SetupMeshbuffers ();
 	void SetupUniformBuffer ();
 	void SetupImage ();
 	void SetupPipeline ();
@@ -199,8 +198,6 @@ class Terrain
 	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness,
 	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic,
 	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal);
-
-	void UpdateMeshBuffer ();
 
 	void SubdivideTerrain (int quad, glm::vec3 viewerPos);
 	void UnSubdivide (int quad);

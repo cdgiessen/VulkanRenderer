@@ -200,40 +200,16 @@ void CompileShaders (std::vector<std::string> filenames)
 		buckets.at (index).push_back (filenames.at (i));
 	}
 
-	// for (int i = 0; i < cts; i++)
-	// {
-	// 	if (i == cts - 1)
-	// 	{
-	// 		auto cmds = std::vector<std::string> (std::begin (filenames) + i * filenames.size () / cts,
-	// 		    std::begin (filenames) + (i + 1) / cts);
-	// 		threads.push_back (std::thread (StartShaderCompilation, cmds));
-	// 	}
-	// 	else
-	// 	{
-	// 		auto cmds = std::vector<std::string> (
-	// 		    std::begin (filenames) + i * filenames.size () / cts, std::end (filenames));
-	// 		threads.push_back (std::thread (StartShaderCompilation, cmds));
-	// 	}
-	// }
+	auto signal = std::make_shared<job::TaskSignal> ();
 
-	auto signal = std::make_shared<job::TaskSignal>();
-
-	//std::vector<std::thread> threads;
 	std::vector<job::Task> tasks;
 	for (auto& bucket : buckets)
 	{
-		tasks.push_back(job::Task(signal, [&]() {
-			StartShaderCompilation(bucket);
-		}));
-		//threads.push_back (std::thread (StartShaderCompilation, bucket));
+		tasks.push_back (job::Task (signal, [&]() { StartShaderCompilation (bucket); }));
 	}
-	taskManager.Submit(tasks, job::TaskType::currentFrame);
+	taskManager.Submit (tasks, job::TaskType::currentFrame);
 
-	signal->Wait();
-	//for (auto& t : threads)
-	//{
-	//	t.join ();
-	//}
+	signal->Wait ();
 }
 
 ShaderManager::ShaderManager (VulkanDevice& device) : device (device)
@@ -298,7 +274,6 @@ ShaderModule ShaderManager::loadShaderModule (const std::string& codePath, Shade
 	if (!pos_shaderCode.has_value ())
 	{
 		Log.Error (fmt::format ("Shader at {} wont load, using defaults\n", codePath));
-		// Log::Debug << "Shader at " << codePath << " unable to load, using defaults instead\n";
 
 		switch (type)
 		{

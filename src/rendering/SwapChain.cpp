@@ -15,20 +15,12 @@ VulkanSwapChain::VulkanSwapChain (VulkanDevice& device, Window& window)
 
 	this->instance = device.instance;
 	this->physicalDevice = device.physical_device;
-	// this->window = window;
-
-	// QueueFamilyIndices indices = device.GetFamilyIndices();
-	// present_queue = std::make_unique<CommandQueue>(device, indices.presentFamily);
 
 	createSwapChain ();
 	createImageViews ();
 }
 
-VulkanSwapChain::~VulkanSwapChain ()
-{
-	// Log::Debug << "swapchain deleted\n";
-	DestroySwapchainResources ();
-}
+VulkanSwapChain::~VulkanSwapChain () { DestroySwapchainResources (); }
 
 void VulkanSwapChain::RecreateSwapChain ()
 {
@@ -109,7 +101,6 @@ void VulkanSwapChain::createSwapChain ()
 	}
 }
 
-// 7
 void VulkanSwapChain::createImageViews ()
 {
 	swapChainImageViews.resize (swapChainImages.size ());
@@ -130,7 +121,8 @@ void VulkanSwapChain::createImageViews ()
 	}
 }
 
-void VulkanSwapChain::CreateFramebuffers (std::vector<int> order, std::array<VkImageView, 3> depthImageViews, VkRenderPass renderPass)
+void VulkanSwapChain::CreateFramebuffers (
+    std::vector<int> order, std::array<VkImageView, 3> depthImageViews, VkRenderPass renderPass)
 {
 	swapChainFramebuffers.resize (swapChainImageViews.size ());
 
@@ -139,9 +131,9 @@ void VulkanSwapChain::CreateFramebuffers (std::vector<int> order, std::array<VkI
 	for (size_t i = 0; i < swapChainImageViews.size (); i++)
 	{
 		std::array<VkImageView, 2> attachments;
-		attachments.at(order.at(0)) = depthImageViews[i];
-		attachments.at(order.at(1)) = swapChainImageViews[i];
-		
+		attachments.at (order.at (0)) = depthImageViews[i];
+		attachments.at (order.at (1)) = swapChainImageViews[i];
+
 		VkFramebufferCreateInfo framebufferInfo = initializers::framebufferCreateInfo ();
 		framebufferInfo.renderPass = renderPass;
 		framebufferInfo.attachmentCount = static_cast<uint32_t> (attachments.size ());
@@ -172,7 +164,6 @@ void VulkanSwapChain::DestroySwapchainResources ()
 	}
 
 	vkDestroySwapchainKHR (device.device, swapChain, nullptr);
-	// present_queue.reset();
 }
 
 VkSurfaceFormatKHR VulkanSwapChain::chooseSwapSurfaceFormat ()
@@ -275,7 +266,3 @@ SwapChainSupportDetails VulkanSwapChain::querySwapChainSupport (VkPhysicalDevice
 
 	return details;
 }
-
-// CommandQueue& VulkanSwapChain::PresentQueue() {
-// 	return *present_queue;
-// }

@@ -56,26 +56,10 @@ enum class RenderableType
 	overlay
 };
 
-// struct RendererData
-// {
-// 	PackedArrayPool<VulkanModel> models;
-// 	PackedArrayPool<VulkanMaterial> materials;
-// 	PackedArrayPool<VulkanMaterialInstance> materialInstance;
-// 	PackedArrayPool<Transform> transforms;
-// };
-
-
-// class RenderableModel
-// {
-// 	VulkanModel* model;
-// 	VulkanMaterialInstance* material;
-// 	Transform* transform;
-// };
 
 class RenderSettings
 {
 	public:
-	// Lighting?
 	int cameraCount = 1;
 	int directionalLightCount = 5;
 	int pointLightCount = 16;
@@ -147,25 +131,6 @@ class GPU_DoubleBuffer
 	int cur_index = 0;
 };
 
-// struct GPU_TransformUBO {
-//	glm::mat4 model;
-//	glm::mat4 normal;
-//}
-//
-// struct GPU_StaticTransformBuffer{
-//	GPU_StaticTransformBuffer(VulkanDevice& device, int size, int count) {
-//		data = std::make_unique<VulkanBufferUniform>(device.device, sizeof(GPU_TransformUBO));
-//
-//	}
-//	int Allocate(GPU_TransformUBO transform){
-//		if(size < allocated)
-//
-//	}
-//	int allocated = 0;
-//	std::unique_ptr<VulkanBufferUniform> data;
-//
-//};
-
 class VulkanRenderer
 {
 	public:
@@ -195,9 +160,6 @@ class VulkanRenderer
 	void PrepareDepthPass (int curFrameIndex);
 	void SubmitDepthPass (int curFrameIndex);
 
-	// void BuildDepthPass (VkCommandBuffer cmdBuf);
-	// void BuildCommandBuffers (VkCommandBuffer cmdBuf);
-
 	void PrepareFrame (int curFrameIndex);
 	void SubmitFrame (int curFrameIndex);
 
@@ -220,7 +182,6 @@ class VulkanRenderer
 	VkCommandBuffer GetGraphicsCommandBuffer ();
 	void SubmitGraphicsCommandBufferAndWait (VkCommandBuffer buffer);
 
-	void SaveScreenshotNextFrame ();
 	void ToggleWireframe ();
 
 	void DeviceWaitTillIdle ();
@@ -233,7 +194,6 @@ class VulkanRenderer
 	VkRenderPass GetRelevantRenderpass (RenderableType type);
 
 	ShaderManager shaderManager;
-	// VulkanPipelineManager pipelineManager;
 	VulkanTextureManager textureManager;
 
 	Scene* scene;
@@ -247,8 +207,6 @@ class VulkanRenderer
 
 	GPU_DoubleBuffer dynamic_data;
 
-	// std::unique_ptr<VulkanBufferUniformDynamic> dynamicTransformBuffer;
-
 	std::array<std::shared_ptr<VulkanTexture>, 3> depthBuffer;
 
 	int workerThreadCount = 3;
@@ -258,20 +216,11 @@ class VulkanRenderer
 	std::mutex finishQueueLock;
 	std::vector<std::unique_ptr<GraphicsCommandWorker>> graphicsWorkers;
 
-	// CommandBufferWorkQueue<CommandBufferWork> graphicsSetupWorkQueue;
-
-	// CommandBufferWorkQueue<TransferCommandWork> transferWorkQueue;
-	// std::vector<std::unique_ptr<CommandBufferWorker<TransferCommandWork>>> transferWorkers;
-
 	uint32_t frameIndex = 0; // which of the swapchain images the app is rendering to
 	bool wireframe = false;  // whether or not to use the wireframe pipeline for the scene.
-	bool saveScreenshot = false;
 
 	VkClearColorValue clearColor = { { 0.1f, 0.1f, 0.1f, 1.0f } };
-	// VkClearColorValue clearColor = {{ 0.2f, 0.3f, 0.3f, 1.0f }};
 	VkClearDepthStencilValue depthClearColor = { 0.0f, 0 };
 
 	std::array<VkClearValue, 2> GetFramebufferClearValues ();
-
-	void SaveScreenshot ();
 };

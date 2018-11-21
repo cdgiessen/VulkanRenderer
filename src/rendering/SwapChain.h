@@ -26,11 +26,10 @@ class VulkanSwapChain
 	VulkanSwapChain (VulkanDevice& device, Window& window);
 	~VulkanSwapChain ();
 
-	// void InitSwapChain(Window* window);
-
 	void RecreateSwapChain ();
 
-	void CreateFramebuffers (std::vector<int> order, std::array<VkImageView, 3> depthImageViews, VkRenderPass renderPass);
+	void CreateFramebuffers (
+	    std::vector<int> order, std::array<VkImageView, 3> depthImageViews, VkRenderPass renderPass);
 
 	static SwapChainSupportDetails querySwapChainSupport (VkPhysicalDevice device, VkSurfaceKHR surface);
 
@@ -41,9 +40,6 @@ class VulkanSwapChain
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
-
-	// Active frame buffer index -- not likely needed (as having multiple in flight is useful)
-	// uint32_t currentBuffer = 0;
 
 	private:
 	VulkanDevice& device;

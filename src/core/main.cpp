@@ -7,9 +7,6 @@
 #define VMA_IMPLEMENTATION
 #include "VulkanMemoryAllocator/vk_mem_alloc.h"
 
-//#define TINYGLTF_IMPLEMENTATION //needs stb_image & stb_image_write to be defined above
-//#include "tinygltf/tiny_gltf.h"
-
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image/stb_image.h"
 

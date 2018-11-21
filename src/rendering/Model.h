@@ -35,8 +35,6 @@ class VulkanModel
 	public:
 	VulkanModel (VulkanRenderer& renderer, std::shared_ptr<MeshData> meshData);
 
-	// VulkanBuffer vertices;
-	// VulkanBuffer indices;
 	uint32_t vertexCount = 0;
 	uint32_t vertexElementCount = 0;
 	uint32_t indexCount = 0;
@@ -54,8 +52,6 @@ class VulkanModel
 		uint32_t indexCount;
 	};
 	std::vector<ModelPart> parts;
-
-	// bool loadFromMesh(std::shared_ptr<Mesh> mesh, VulkanRenderer& renderer);
 
 	void BindModel (VkCommandBuffer cmdBuf);
 

@@ -22,7 +22,6 @@ auto as_integer (Enumeration const value) -> typename std::underlying_type<Enume
 
 ProcTerrainNodeGraph::ProcTerrainNodeGraph ()
 {
-	// RecreateOutputNode ();
 	LoadGraphFromFile ("assets/graphs/default_terrain.json");
 }
 
@@ -33,14 +32,6 @@ InternalGraph::GraphPrototype& ProcTerrainNodeGraph::GetGraph () { return protoG
 
 void ProcTerrainNodeGraph::BuildTerGenNodeGraph () {}
 
-// NodeId ProcTerrainNodeGraph::NewNode (NodeType type, std::string name, ConnectionType outputType)
-// {
-// 	int nextID = nextNodeId++;
-// 	nodes.emplace (std::piecewise_construct,
-// 	    std::forward_as_tuple (nextID),
-// 	    std::forward_as_tuple (type, name, outputType, nextID));
-// 	return nextID;
-// }
 ConId ProcTerrainNodeGraph::NewCon (ConnectionType conType, NodeId input, NodeId output, int output_slot_id)
 {
 	int nextID = nextConId++;
@@ -52,9 +43,6 @@ ConId ProcTerrainNodeGraph::NewCon (ConnectionType conType, NodeId input, NodeId
 
 void ProcTerrainNodeGraph::DeleteNode (NodeId nodeId)
 {
-	// auto found = std::find (nodes.begin (), nodes.end (), node);
-	// if (found != nodes.end ())
-	// {
 	auto it = nodes.find (nodeId);
 	if (it != nodes.end ())
 	{
@@ -73,19 +61,6 @@ void ProcTerrainNodeGraph::DeleteNode (NodeId nodeId)
 		}
 		protoGraph.DeleteNode (n.internalNodeID);
 		nodes.erase (it);
-		// for (auto& slot : (*found)->inputSlots)
-		// 	if (slot.connection != nullptr)
-		// 	{
-		// 		ResetNodeInternalLinkByID ((*found)->internalNodeID, slot.slotNum);
-		// 		DeleteConnection (slot.connection);
-		// 	}
-		// for (auto& con : (*found)->outputSlot.connections)
-		// {
-		// 	DeleteConnection (con);
-		// }
-
-		// protoGraph.DeleteNode ((*found)->internalNodeID);
-		// nodes.erase (found);
 	}
 	else
 	{
@@ -119,17 +94,6 @@ void ProcTerrainNodeGraph::DeleteConnection (ConId con)
 
 
 		connections.erase (it);
-		// auto found = std::find (connections.begin (), connections.end (), con);
-		// if (found != connections.end ())
-		// {
-
-		// ResetNodeInternalLinkByID ((*found)->output->internalNodeID, (*found)->output_slot_id);
-
-		//(*found)->input.reset();
-
-		//(*found)->output->internal_node->ResetInputLink(0);
-		//(*found)->output.reset();
-		// connections.erase (found);
 	}
 	else
 	{
@@ -139,14 +103,6 @@ void ProcTerrainNodeGraph::DeleteConnection (ConId con)
 
 void ProcTerrainNodeGraph::ResetGraph ()
 {
-	// while (nodes.size () > 0)
-	// {
-	// 	DeleteNode (nodes.at (0));
-	// }
-	// while (connections.size () > 0)
-	// {
-	// 	DeleteConnection (connections.at (0));
-	// }
 	connections.clear ();
 	nodes.clear ();
 	protoGraph.ResetGraph ();
@@ -155,18 +111,7 @@ void ProcTerrainNodeGraph::ResetGraph ()
 
 void ProcTerrainNodeGraph::RecreateOutputNode ()
 {
-
-
 	outputNode = AddNode (NodeType::Output, startingNodePos, curID++);
-	// outputNode.reset ();
-	// outputNode = std::make_shared<OutputNode> (protoGraph);
-
-	// outputNode->id = curID++;
-	// outputNode->type = NodeType::Output;
-	// outputNode->internalNodeID = protoGraph.AddNode (InternalGraph::NodeType::Output);
-	// SetNodeInternalValueByID (outputNode->internalNodeID, 0, -0.5f);
-	// ResetNodeInternalLinkByID (outputNode->internalNodeID, 0);
-	// nodes.push_back (outputNode);
 }
 
 void ProcTerrainNodeGraph::Draw ()
@@ -217,17 +162,6 @@ void ProcTerrainNodeGraph::DrawMenuBar ()
 
 		if (ImGui::BeginMenu ("Options"))
 		{
-			// static bool enabled = true;
-			// ImGui::MenuItem("Enabled", "", &enabled);
-			// ImGui::BeginChild("child", ImVec2(0, 60), true);
-			// for (int i = 0; i < 10; i++)
-			//	ImGui::Text("Scrolling Text %d", i);
-			// ImGui::EndChild();
-			// static float f = 0.5f;
-			// static int n = 0;
-			// ImGui::SliderFloat("Value", &f, 0.0f, 1.0f);
-			// ImGui::InputFloat("Input", &f, 0.1f);
-			// ImGui::Combo("Combo", &n, "Yes\0No\0Maybe\0\0");
 			ImGui::EndMenu ();
 		}
 		ImGui::EndMenuBar ();
@@ -238,10 +172,11 @@ void ProcTerrainNodeGraph::DrawButtonBar ()
 {
 	ImGui::BeginGroup ();
 
-	// if (ImGui::Button("Reset Viewport")) {
-	//	graphOffset = ImVec2(0, 0);
-	//}
-	// ImGui::SameLine();
+	if (ImGui::Button ("Reset Viewport"))
+	{
+		graphOffset = ImVec2 (0, 0);
+	}
+	ImGui::SameLine ();
 	if (ImGui::Button ("Reset graph - DELETES EVERYTHING!"))
 	{
 		ResetGraph ();
@@ -442,14 +377,8 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 		ImGui::SetCursorScreenPos (windowPos + textPos);
 		ImGui::Text ("%s", node.name.c_str ());
 
-		// ImGui::SliderFloat("##value", &node.Value, 0.0f, 1.0f, "Alpha %.2f");
-		// float dummy_color[3] = { node.Pos.x / ImGui::GetWindowWidth(), node.Pos.y /
-		// ImGui::GetWindowHeight(), fmodf((float)node.ID * 0.5f, 1.0f) };
-		// ImGui::ColorEdit3("##color", &dummy_color[0]);
-
 		// Save the size of what we have emitted and weither any of the widgets are being used
 		bool node_widgets_active = (!old_any_active && ImGui::IsAnyItemActive ());
-		// node.size = ImGui::GetItemRectSize() + NODE_WINDOW_PADDING + NODE_WINDOW_PADDING;
 
 		// Display node box
 		imDrawList->ChannelsSetCurrent (0); // Background
@@ -521,16 +450,6 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 			verticalOffset += node.inputSlots[i].Draw (imDrawList, *this, node, verticalOffset);
 		}
 		node.size = ImVec2 (node.size.x, verticalOffset);
-		//		for (auto& slot : node.inputSlots) {
-		//			slot.Draw(imDrawList, *this, *node);
-		//		}
-
-		if (node_widgets_active || node_moving_active)
-		{
-
-			// selectedNode = node;
-			// node_selected = node.id;
-		}
 
 		if (node_moving_active && ImGui::IsMouseDragging (0) && !posCon.isActive)
 			node.pos = node.pos + ImGui::GetIO ().MouseDelta;
@@ -547,16 +466,6 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 		DeleteNode (nodeId);
 		nodes.erase (nodeId);
 	}
-
-	// while (nodesToDelete.size () > 0)
-	// {
-	// 	if (nodesToDelete.at (0).hasTextInput)
-	// 	{
-	// 		Input::ResetTextInputMode ();
-	// 	}
-	// 	DeleteNode (nodesToDelete.at (0));
-	// 	nodesToDelete.erase (nodesToDelete.begin ());
-	// }
 }
 
 void ProcTerrainNodeGraph::DrawPossibleConnection (ImDrawList* imDrawList)
@@ -645,10 +554,6 @@ void ProcTerrainNodeGraph::DrawPossibleConnection (ImDrawList* imDrawList)
 					    outgoingSlot.node,
 					    incomingSlot.node,
 					    incomingSlot.inputSlotNum);
-					// std::make_shared<Connection> (PossibleConnection::GetActiveSlotType (posCon.slot),
-					//     outgoingSlot.node,
-					//     incomingSlot.node,
-					//     incomingSlot.inputSlotNum);
 
 					nodes.at (incomingSlot.node).inputSlots[incomingSlot.inputSlotNum].connection = newCon;
 					nodes.at (outgoingSlot.node).outputSlot.connections.push_back (newCon);
@@ -930,8 +835,6 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 					int slotType = j[curIndex][curSlotIndex]["slotType"];
 					ConId newConnection =
 					    NewCon (static_cast<ConnectionType> (slotType), outGoingNode, node, slot);
-					/*std::make_shared<Connection>(
-					static_cast<ConnectionType> (slotType), outGoingNode, node, slot);*/
 
 					nodes.at (node).inputSlots[slot].connection = newConnection;
 					nodes.at (outGoingNode).outputSlot.connections.push_back (newConnection);
@@ -940,11 +843,8 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 					    nodes.at (outGoingNode).outputSlot.pos;
 					connections.at (newConnection).endPosRelNode = nodes.at (node).inputSlots[slot].pos;
 
-					// node.SetInternalLink(slot, nodes.at(outGoingNode).internal_node);
 					SetNodeInternalLinkByID (
 					    nodes.at (node).internalNodeID, slot, nodes.at (outGoingNode).internalNodeID);
-
-					// connections.push_back (newConnection);
 				}
 				else
 				{
@@ -1005,131 +905,7 @@ NodeId ProcTerrainNodeGraph::AddNode (NodeType nodeType, ImVec2 position, int id
 	    std::forward_as_tuple (nodeType, nextID, position, protoGraph));
 
 	return nextID;
-	// if (nodeType == NodeType::Output)
-	// {
-
-	// 	outputNode.reset ();
-	// 	outputNode = std::make_shared<OutputNode> (protoGraph);
-
-	// 	if (id >= 0)
-	// 		outputNode->id = id;
-	// 	else
-	// 		outputNode->id = curID;
-	// 	curID++;
-
-	// 	outputNode->type = NodeType::Output;
-	// 	outputNode->pos = position;
-	// 	outputNode->internalNodeID = protoGraph.AddNode (InternalGraph::NodeType::Output);
-	// 	SetNodeInternalValueByID (outputNode->internalNodeID, 0, -0.5f);
-	// 	ResetNodeInternalLinkByID (outputNode->internalNodeID, 0);
-	// 	nodes.push_back (outputNode);
-	// 	return;
-	// }
-
-
-	// switch (nodeType)
-	// {
-	// 	case (NodeType::Addition):
-	// 		newNode = std::make_shared<AdditionNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::Subtraction):
-	// 		newNode = std::make_shared<SubtractionNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::Multiplication):
-	// 		newNode = std::make_shared<MultiplicationNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::Division):
-	// 		newNode = std::make_shared<DivisionNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::Power):
-	// 		newNode = std::make_shared<PowerNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::Max):
-	// 		newNode = std::make_shared<MaxNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::Min):
-	// 		newNode = std::make_shared<MinNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::Blend):
-	// 		newNode = std::make_shared<BlendNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::Clamp):
-	// 		newNode = std::make_shared<ClampNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::Selector):
-	// 		newNode = std::make_shared<SelectorNode> (protoGraph);
-	// 		break;
-
-	// 	case (NodeType::WhiteNoise):
-	// 		newNode = std::make_shared<WhiteNoiseNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::PerlinNoise):
-	// 		newNode = std::make_shared<PerlinNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::SimplexNoise):
-	// 		newNode = std::make_shared<SimplexNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::ValueNoise):
-	// 		newNode = std::make_shared<ValueNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::CubicNoise):
-	// 		newNode = std::make_shared<CubicNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::FractalReturnType):
-	// 		newNode = std::make_shared<FractalReturnType> (protoGraph);
-	// 		break;
-
-	// 	case (NodeType::CellNoise):
-	// 		newNode = std::make_shared<CellNoiseNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::VoroniNoise):
-	// 		newNode = std::make_shared<VoroniNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::CellularReturnType):
-	// 		newNode = std::make_shared<CellularReturnType> (protoGraph);
-	// 		break;
-
-	// 	case (NodeType::ConstantInt):
-	// 		newNode = std::make_shared<ConstantIntNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::ConstantFloat):
-	// 		newNode = std::make_shared<ConstantFloatNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::Invert):
-	// 		newNode = std::make_shared<InvertNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::TextureIndex):
-	// 		newNode = std::make_shared<TextureIndexNode> (protoGraph);
-	// 		break;
-	// 	case (NodeType::ColorCreator):
-	// 		newNode = std::make_shared<ColorCreator> (protoGraph);
-	// 		break;
-	// 	case (NodeType::MonoGradient):
-	// 		newNode = std::make_shared<MonoGradient> (protoGraph);
-	// 		break;
-	// }
-	// if (id >= 0)
-	// 	newNode->id = id;
-	// else
-	// 	newNode->id = curID;
-	// curID++;
-
-	// newNode->type = nodeType;
-	// newNode->pos = position;
-	// nodes.push_back (newNode);
 }
-
-// NodeId ProcTerrainNodeGraph::GetNodeById (int id)
-// {
-// 	for (auto& node : nodes)
-// 	{
-// 		if (id == node->id)
-// 		{
-// 			return node;
-// 		}
-// 	}
-// 	return nullptr;
-// }
 
 ConnectionSlot::ConnectionSlot (int slotNum, ImVec2 pos, ConnectionType type)
 : slotNum (slotNum), conType (type), pos (pos)
@@ -1219,19 +995,9 @@ int InputConnectionSlot::Draw (
 
 	ImGui::SetCursorScreenPos (currentPos + ImVec2 (10, -nodeSlotRadius));
 	ImGui::Text ("%s", name.c_str ());
-	// if (ImGui::BeginPopupContextItem("slot context menu"))
-	//{
-	//	if (ImGui::Selectable("Reset Connection")) {
-	//		if (slot.connection != nullptr)
-	//			//TODO
-	//			//graph.DeleteConnection(slot.connection);
-	//	}
-	//	ImGui::EndPopup();
-	//}
 
 	ImVec2 slotNameSize = ImGui::CalcTextSize (name.c_str ());
 	ImGui::SetCursorScreenPos (currentPos + ImVec2 (5, -nodeSlotRadius + 15));
-	// ImGui::InvisibleButton("slot value", slotNameSize);
 
 	ImGui::PushItemWidth (parentNode.size.x - 10);
 	std::string uniqueID = (std::to_string (parentNode.id * 100 + slotNum));
@@ -1315,11 +1081,6 @@ Connection::Connection (ConnectionType conType, NodeId input, NodeId output, int
 {
 }
 
-// Node::Node (std::string name, ConnectionType outputType)
-// : name (name), outputSlot (0, ImVec2 (size.x, 15), outputType)
-// {
-// }
-
 void ProcTerrainNodeGraph::SetNodeInternalLinkByID (
     InternalGraph::NodeID internalNodeID, int index, InternalGraph::NodeID id)
 {
@@ -1336,9 +1097,6 @@ void ProcTerrainNodeGraph::SetNodeInternalValueByID (
 {
 	protoGraph.GetNodeByID (internalNodeID).SetLinkValue (index, val);
 }
-// void Node::SetInternalLink(int index, InternalGraph::NodeID id) {
-//	->SetInputLink(index, id);
-//}
 
 void Node::AddInputSlot (ConnectionType type, std::string name)
 {
@@ -1380,218 +1138,6 @@ void Node::AddInputSlot (ConnectionType type, std::string name, glm::vec4 defaul
 {
 	inputSlots.push_back (InputConnectionSlot ((int)inputSlots.size (), ImVec2 (0, 40), type, name, defaultValue));
 }
-
-// OutputNode::OutputNode (InternalGraph::GraphPrototype& graph)
-// : Node ("Output", ConnectionType::Float)
-// {
-// 	AddInputSlot (ConnectionType::Float, "HeightMap", -0.5f);
-// 	AddInputSlot (ConnectionType::Color, "Splatmap", glm::vec4 (0));
-
-// 	AddInputSlot (ConnectionType::Int, "Texture 1", 0);
-// 	AddInputSlot (ConnectionType::Int, "Texture 2", 1);
-// 	AddInputSlot (ConnectionType::Int, "Texture 3", 2);
-// 	AddInputSlot (ConnectionType::Int, "Texture 4", 3);
-// }
-
-// BlendNode::BlendNode (InternalGraph::GraphPrototype& graph) : Node ("Blend", ConnectionType::Float)
-// {
-// 	AddInputSlot (ConnectionType::Float, "A", 0.0f, 0.01f, 0.0f, 0.0f);
-// 	AddInputSlot (ConnectionType::Float, "B", 1.0f, 0.01f, 0.0f, 0.0f);
-// 	AddInputSlot (ConnectionType::Float, "Factor", 0.5f, 0.005f, 0.0f, 1.0f);
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::Blend);
-// }
-
-// ClampNode::ClampNode (InternalGraph::GraphPrototype& graph) : Node ("Clamp", ConnectionType::Float)
-// {
-// 	AddInputSlot (ConnectionType::Float, "input", 0.0f, 0.01f, 0.0f, 0.0f);
-// 	AddInputSlot (ConnectionType::Float, "lower", 0.0f, 0.005f, 0.0f, 0.0f);
-// 	AddInputSlot (ConnectionType::Float, "upper", 1.0f, 0.005f, 0.0f, 0.0f);
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::Clamp);
-// }
-
-// SelectorNode::SelectorNode (InternalGraph::GraphPrototype& graph)
-// : Node ("Selector", ConnectionType::Float)
-// {
-// 	AddInputSlot (ConnectionType::Float, "value", 0.0f, 0.01f, 0.0f, 0.0f);
-// 	AddInputSlot (ConnectionType::Float, "a", 0.0f, 0.005f, 0.0f, 0.0f);
-// 	AddInputSlot (ConnectionType::Float, "b", 1.0f, 0.005f, 0.0f, 0.0f);
-// 	AddInputSlot (ConnectionType::Float, "bottom", 0.5f, 0.005f, 0.0f, 0.0f);
-// 	AddInputSlot (ConnectionType::Float, "top", 0.75f, 0.005f, 0.0f, 0.0f);
-// 	AddInputSlot (ConnectionType::Float, "smoothing range", 0.05f, 0.005f, 0.0f, 0.0f);
-
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::Selector);
-// }
-
-// // Maths
-
-// MathNode::MathNode (std::string name) : Node (name, ConnectionType::Float)
-// {
-// 	AddInputSlot (ConnectionType::Float, "A", 0.0f, 0.01f, 0.0f, 0.0f);
-// 	AddInputSlot (ConnectionType::Float, "B", 0.0f, 0.01f, 0.0f, 0.0f);
-// }
-
-// AdditionNode::AdditionNode (InternalGraph::GraphPrototype& graph) : MathNode ("Addition")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::Addition);
-// }
-
-// SubtractionNode::SubtractionNode (InternalGraph::GraphPrototype& graph) : MathNode ("Subtraction")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::Subtraction);
-// }
-
-// MultiplicationNode::MultiplicationNode (InternalGraph::GraphPrototype& graph)
-// : MathNode ("Multiplication")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::Multiplication);
-// }
-
-// DivisionNode::DivisionNode (InternalGraph::GraphPrototype& graph) : MathNode ("Division")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::Division);
-// }
-
-// PowerNode::PowerNode (InternalGraph::GraphPrototype& graph) : MathNode ("Power")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::Power);
-// }
-
-// MaxNode::MaxNode (InternalGraph::GraphPrototype& graph) : MathNode ("Max")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::Max);
-// }
-
-// MinNode::MinNode (InternalGraph::GraphPrototype& graph) : MathNode ("Min")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::Min);
-// }
-
-// // Noise Nodes
-
-// NoiseNode::NoiseNode (std::string name) : Node (name, ConnectionType::Float)
-// {
-// 	AddInputSlot (ConnectionType::Int, "Seed", 1337);
-// 	AddInputSlot (ConnectionType::Float, "Frequency", 2.0f, 0.001f, 0.0f, 10.0f);
-// }
-
-// WhiteNoiseNode::WhiteNoiseNode (InternalGraph::GraphPrototype& graph) : NoiseNode ("White Noise")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::WhiteNoise);
-// }
-
-// // Fractal noises
-
-// FractalNoiseNode::FractalNoiseNode (std::string name) : NoiseNode (name)
-// {
-// 	AddInputSlot (ConnectionType::Int, "Octaves", 4, 0.1f, 0.0f, 10.0f);
-// 	AddInputSlot (ConnectionType::Float, "Persistence", 0.5f, 0.01f, 0.0f, 1.0f);
-// 	AddInputSlot (ConnectionType::Int, "Type", 0, 0.1f, 0, 2);
-// }
-
-// SimplexNode::SimplexNode (InternalGraph::GraphPrototype& graph) : FractalNoiseNode ("Simplex")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::SimplexNoise);
-// }
-
-// PerlinNode::PerlinNode (InternalGraph::GraphPrototype& graph) : FractalNoiseNode ("Perlin")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::PerlinNoise);
-// }
-
-// ValueNode::ValueNode (InternalGraph::GraphPrototype& graph) : FractalNoiseNode ("Value")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::ValueNoise);
-// }
-
-// CubicNode::CubicNode (InternalGraph::GraphPrototype& graph) : FractalNoiseNode ("Cubic")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::CubicNoise);
-// }
-
-// // Cellular noises
-
-// CellularNoiseNode::CellularNoiseNode (std::string name) : NoiseNode (name)
-// {
-// 	AddInputSlot (ConnectionType::Float, "Jitter", 0.5f, 0.01f, 0.0f, 1.0f);
-// 	AddInputSlot (ConnectionType::Int, "Type", 0, 0.1f, 0, 7);
-// }
-
-// VoroniNode::VoroniNode (InternalGraph::GraphPrototype& graph) : CellularNoiseNode ("Voroni")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::VoroniNoise);
-// }
-
-// CellNoiseNode::CellNoiseNode (InternalGraph::GraphPrototype& graph) : CellularNoiseNode ("Cellular")
-// {
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::CellNoise);
-// }
-
-// // Utilities
-
-// ConstantIntNode::ConstantIntNode (InternalGraph::GraphPrototype& graph)
-// : Node ("ConstantInt", ConnectionType::Int)
-// {
-// 	AddInputSlot (ConnectionType::Int, "Value", 0.0f, 0.1f, 0.0f, 0.0f);
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::ConstantInt);
-// }
-
-// ConstantFloatNode::ConstantFloatNode (InternalGraph::GraphPrototype& graph)
-// : Node ("ConstantFloat", ConnectionType::Float)
-// {
-// 	AddInputSlot (ConnectionType::Float, "Value", 0.0f, 0.01f, 0.0f, 0.0f);
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::ConstantFloat);
-// }
-
-// InvertNode::InvertNode (InternalGraph::GraphPrototype& graph)
-// : Node ("Inverter", ConnectionType::Float)
-// {
-// 	AddInputSlot (ConnectionType::Float, "Value", 0.0f, 0.01f, 0.0f, 0.0f);
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::Invert);
-// }
-
-// TextureIndexNode::TextureIndexNode (InternalGraph::GraphPrototype& graph)
-// : Node ("Texture Index", ConnectionType::Int)
-// {
-// 	AddInputSlot (ConnectionType::Int, "Index", 0, 0.1f, 0.0f, 255.0f);
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::TextureIndex);
-// }
-
-// FractalReturnType::FractalReturnType (InternalGraph::GraphPrototype& graph)
-// : Node ("Fractal Type", ConnectionType::Int)
-// {
-// 	AddInputSlot (ConnectionType::Int, "FBM-Billow-Rigid", 0, 0.1f, 0, 2);
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::FractalReturnType);
-// }
-
-// CellularReturnType::CellularReturnType (InternalGraph::GraphPrototype& graph)
-// : Node ("Cellular Type", ConnectionType::Int)
-// {
-// 	// CellValue, Distance, Distance2, Distance2Add, Distance2Sub, Distance2Mul, Distance2Div, NoiseLookup, Distance2Cave
-// 	AddInputSlot (ConnectionType::Int, "Value-Distance-2-Add-Sub-Mul-Div-Cave", 0, 0.1f, 0, 7);
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::FractalReturnType);
-// }
-
-// // Colors
-
-// ColorCreator::ColorCreator (InternalGraph::GraphPrototype& graph)
-// : Node ("ColorCreator", ConnectionType::Color)
-// {
-// 	AddInputSlot (ConnectionType::Float, "Red", 0.0f, 0.01f, 0.0f, 1.0f);
-// 	AddInputSlot (ConnectionType::Float, "Blue", 0.0f, 0.01f, 0.0f, 1.0f);
-// 	AddInputSlot (ConnectionType::Float, "Green", 0.0f, 0.01f, 0.0f, 1.0f);
-// 	AddInputSlot (ConnectionType::Float, "Alpha", 0.0f, 0.01f, 0.0f, 1.0f);
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::ColorCreator);
-// }
-
-// MonoGradient::MonoGradient (InternalGraph::GraphPrototype& graph)
-// : Node ("MonoGradient", ConnectionType::Float)
-// {
-// 	AddInputSlot (ConnectionType::Float, "input", 0.0f, 0.01f, 0.0f, 1.0f);
-// 	AddInputSlot (ConnectionType::Float, "lower bound", 0.0f, 0.01f, 0.0f, 0.0f);
-// 	AddInputSlot (ConnectionType::Float, "upper bound", 1.0f, 0.01f, 0.0f, 0.0f);
-// 	AddInputSlot (ConnectionType::Float, "blend factor", 0.0f, 0.01f, 0.0f, 1.0f);
-// 	internalNodeID = graph.AddNode (InternalGraph::NodeType::MonoGradient);
-// }
 
 Node::Node (NodeType type, NodeId id, ImVec2 position, InternalGraph::GraphPrototype& graph)
 : nodeType (type), id (id), pos (position), outputSlot (0, ImVec2 (size.x, 15), ConnectionType::Float)

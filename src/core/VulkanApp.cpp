@@ -34,7 +34,6 @@ void VulkanAppSettings::Load ()
 	else
 	{
 		Log.Debug (fmt::format ("Settings file didn't exist, creating one\n"));
-		// Log::Debug << "Settings file didn't exist, creating one";
 		Save ();
 	}
 }
@@ -165,7 +164,6 @@ void VulkanApp::DebugOverlay (bool* show_debug_overlay)
 	if (verbose) ImGui::Text ("Last frame time%f(s)", timeManager.PreviousFrameTime ());
 	ImGui::Separator ();
 	ImGui::Text ("Mouse Position: (%.1f,%.1f)", ImGui::GetIO ().MousePos.x, ImGui::GetIO ().MousePos.y);
-	// ImGui::SliderFloat("Temp spin", &tempCameraSpeed, -5.0f, 5.0f);
 	ImGui::End ();
 }
 
@@ -206,11 +204,9 @@ void VulkanApp::ControlsWindow (bool* show_controls_window)
 		ImGui::Text ("Change Move Speed: E/Q");
 		ImGui::Text ("Unlock Mouse: Enter");
 		ImGui::Text ("Show Wireframe: X");
-		// ImGui::Text("Show Normals: N");
 		ImGui::Text ("Toggle Flying: F");
 		ImGui::Text ("Hide Gui: H");
 		// ImGui::Text("Toggle Fullscreen: G");
-		ImGui::Text ("Screenshot: F10 - EXPERIMENTAL!");
 		ImGui::Text ("Exit: Escape");
 	}
 	ImGui::End ();
@@ -222,9 +218,6 @@ void VulkanApp::ControllerWindow (bool* show_controller_window)
 
 	if (ImGui::Begin ("Controller View", show_controller_window))
 	{
-
-		// auto joys = Input::inputDirector.GetConnectedJoysticks ();
-
 		for (int i = 0; i < 16; i++)
 		{
 			if (Input::IsJoystickConnected (i))
@@ -267,11 +260,6 @@ void VulkanApp::BuildImgui ()
 
 		scene.UpdateSceneGUI ();
 
-		if (panels.log)
-		{
-			// appLog.Draw("Example: Log", &panels.log);
-		}
-
 		imgui_nodeGraph_terrain.Draw ();
 
 		bool open = true;
@@ -284,8 +272,6 @@ void VulkanApp::BuildImgui ()
 
 void VulkanApp::HandleInputs ()
 {
-	// Log::Debug << camera->Position.x << " " << camera->Position.y << " " << camera->Position.z << "\n";
-
 	double deltaTime = timeManager.DeltaTime ();
 
 	if (!Input::GetTextInputMode ())
@@ -338,42 +324,18 @@ void VulkanApp::HandleInputs ()
 		{
 			vulkanRenderer.ToggleWireframe ();
 			Log.Debug (fmt::format ("Wireframe toggle"));
-			//			Log::Debug << "wireframe toggled" << "\n";
 		}
 
 		if (Input::GetKeyDown (Input::KeyCode::F))
 		{
 			scene.walkOnGround = !scene.walkOnGround;
 			Log.Debug (fmt::format ("flight mode toggled"));
-			// Log::Debug << "flight mode toggled "  << "\n";
 		}
 
 		if (Input::GetKeyDown (Input::KeyCode::H))
 		{
 			Log.Debug (fmt::format ("gui visibility toggled\n"));
-			// Log::Debug << "gui visibility toggled "  << "\n";
 			panels.showGui = !panels.showGui;
-		}
-
-		if (Input::GetKeyDown (Input::KeyCode::F10))
-		{
-			Log.Debug (fmt::format ("Screenshot taken\n"));
-			// Log::Debug << "screenshot taken "<<"\n";
-			vulkanRenderer.SaveScreenshotNextFrame ();
-		}
-
-		if (Input::GetKeyDown (Input::KeyCode::DIGIT_0) && Input::GetKey (Input::KeyCode::DIGIT_9))
-		{
-			/*scene.reset();
-			Log::Debug << "Scene reset\n";
-
-			vulkanRenderer.reset();
-			Log::Debug << "Renderer reset\n";
-
-			vulkanRenderer = std::make_unique<VulkanRenderer>(settings.useValidationLayers, window.get());
-
-			scene = std::make_unique<Scene>(resourceManager.get(), vulkanRenderer.get(), imgui_nodeGraph_terrain.GetGraph());
-			vulkanRenderer.scene = scene.get();*/
 		}
 	}
 	else

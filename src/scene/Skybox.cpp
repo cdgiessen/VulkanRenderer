@@ -5,9 +5,7 @@ Skybox::Skybox (VulkanRenderer& renderer)
 
   };
 
-Skybox::~Skybox (){
-	// renderer.pipelineManager.DeleteManagedPipeline (mvp);
-};
+Skybox::~Skybox (){};
 
 void Skybox::InitSkybox ()
 {
@@ -22,7 +20,6 @@ void Skybox::SetupUniformBuffer ()
 {
 	skyboxUniformBuffer =
 	    std::make_shared<VulkanBufferUniform> (renderer.device, sizeof (SkyboxUniformBuffer));
-	// skyboxUniformBuffer->CreateUniformBuffer(sizeof(SkyboxUniformBuffer));
 }
 
 void Skybox::SetupCubeMapImage ()
@@ -92,66 +89,6 @@ void Skybox::SetupPipeline ()
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
 	normal = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
-
-	// VulkanPipeline &pipeMan = renderer.pipelineManager;
-	// mvp = pipeMan.CreateManagedPipeline();
-
-	// auto vert = renderer.shaderManager.loadShaderModule("assets/shaders/skybox.vert.spv", ShaderModuleType::vertex);
-	// auto frag = renderer.shaderManager.loadShaderModule("assets/shaders/skybox.frag.spv", ShaderModuleType::fragment);
-
-	// ShaderModuleSet set(vert, frag, {}, {}, {});
-	// pipeMan.SetShaderModuleSet(mvp, set);
-	// //pipeMan.SetVertexShader(mvp, loadShaderModule(renderer.device.device, "assets/shaders/skybox.vert.spv"));
-	// //pipeMan.SetFragmentShader(mvp, loadShaderModule(renderer.device.device, "assets/shaders/skybox.frag.spv"));
-
-	// pipeMan.SetVertexInput (mvp,
-	//     Vertex_PosNormTexColor::getBindingDescription (),
-	//     Vertex_PosNormTexColor::getAttributeDescriptions ());
-	// pipeMan.SetInputAssembly (mvp, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-	// pipeMan.SetViewport (mvp,
-	//     (float)renderer.vulkanSwapChain.swapChainExtent.width,
-	//     (float)renderer.vulkanSwapChain.swapChainExtent.height,
-	//     0.0f,
-	//     1.0f,
-	//     0.0f,
-	//     0.0f);
-	// pipeMan.SetScissor (mvp,
-	//     renderer.vulkanSwapChain.swapChainExtent.width,
-	//     renderer.vulkanSwapChain.swapChainExtent.height,
-	//     0,
-	//     0);
-	// pipeMan.SetViewportState (mvp, 1, 1, 0);
-	// pipeMan.SetRasterizer (
-	//     mvp, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-	// pipeMan.SetMultisampling (mvp, VK_SAMPLE_COUNT_1_BIT);
-	// pipeMan.SetDepthStencil (mvp, VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER_OR_EQUAL, VK_FALSE, VK_FALSE);
-	// pipeMan.SetColorBlendingAttachment (mvp,
-	//     VK_FALSE,
-	//     VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-	//     VK_BLEND_OP_ADD,
-	//     VK_BLEND_FACTOR_SRC_COLOR,
-	//     VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
-	//     VK_BLEND_OP_ADD,
-	//     VK_BLEND_FACTOR_ONE,
-	//     VK_BLEND_FACTOR_ZERO);
-	// pipeMan.SetColorBlending (mvp, 1, &mvp->pco.colorBlendAttachment);
-
-	// std::vector<VkDynamicState> dynamicStateEnables = {
-	// 	VK_DYNAMIC_STATE_VIEWPORT,
-	// 	VK_DYNAMIC_STATE_SCISSOR,
-	// };
-
-	// pipeMan.SetDynamicState(mvp, dynamicStateEnables);
-
-	// std::vector<VkDescriptorSetLayout> layouts;
-	// renderer.AddGlobalLayouts(layouts);
-	// layouts.push_back(descriptor->GetLayout());
-	// pipeMan.SetDescriptorSetLayout(mvp, layouts);
-
-	// pipeMan.BuildPipelineLayout(mvp);
-	// pipeMan.BuildPipeline(mvp, renderer.renderPass->Get(), 0);
-
-	// pipeMan.CleanShaderResources(mvp);
 }
 
 void Skybox::UpdateUniform (glm::mat4 proj, glm::mat4 view)
@@ -161,10 +98,6 @@ void Skybox::UpdateUniform (glm::mat4 proj, glm::mat4 view)
 	sbo.view = glm::mat4 (glm::mat3 (view));
 
 	skyboxUniformBuffer->CopyToBuffer (&sbo, sizeof (SkyboxUniformBuffer));
-	/*
-	skyboxUniformBuffer.map(renderer.device.device);
-	skyboxUniformBuffer.copyTo(&sbo, sizeof(sbo));
-	skyboxUniformBuffer.unmap();*/
 };
 
 
@@ -174,7 +107,6 @@ void Skybox::WriteToCommandBuffer (VkCommandBuffer commandBuffer)
 
 	vkCmdBindDescriptorSets (
 	    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, normal->GetLayout (), 2, 1, &m_descriptorSet.set, 0, nullptr);
-	// vkCmdBindPipeline (commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->pipelines->at (0));
 
 	normal->Bind (commandBuffer);
 
