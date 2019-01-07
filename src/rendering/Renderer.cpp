@@ -70,7 +70,7 @@ VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::
 
 : settings ("render_settings.json"),
   device (validationLayer, window),
-  vulkanSwapChain (device, device.window),
+  vulkanSwapChain (device, device.instance.window),
   shaderManager (device),
   textureManager (*this, resourceMan.texManager),
   graphicsPrimaryCommandPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue ()),
@@ -247,7 +247,7 @@ VkFormat VulkanRenderer::FindSupportedFormat (
 	for (VkFormat format : candidates)
 	{
 		VkFormatProperties props;
-		vkGetPhysicalDeviceFormatProperties (device.physical_device, format, &props);
+		vkGetPhysicalDeviceFormatProperties (device.physical_device.physical_device, format, &props);
 
 		if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
 		{

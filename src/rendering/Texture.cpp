@@ -364,7 +364,7 @@ VkSampler VulkanTexture::CreateImageSampler (VkFilter mag,
 	samplerCreateInfo.maxLod = (useMipMaps) ? mipLevels : 0.0f; // Max level-of-detail should match mip level count
 	samplerCreateInfo.anisotropyEnable = anisotropy; // Enable anisotropic filtering
 	samplerCreateInfo.maxAnisotropy =
-	    (anisotropy) ? renderer.device.physical_device_properties.limits.maxSamplerAnisotropy : 1;
+	    (anisotropy) ? renderer.device.physical_device.physical_device_properties.limits.maxSamplerAnisotropy : 1;
 	samplerCreateInfo.borderColor = borderColor;
 
 	VkSampler sampler;

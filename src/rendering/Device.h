@@ -13,18 +13,13 @@
 
 #include "util/ConcurrentQueue.h"
 
-class Window;
 
 
 #include "RenderStructs.h"
 #include "RenderTools.h"
 #include "Wrappers.h"
 
-const std::vector<const char*> VALIDATION_LAYERS = { "VK_LAYER_LUNARG_standard_validation"
-
-};
-
-const std::vector<const char*> DEVICE_EXTENSIONS = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+class Window;
 
 struct QueueFamilyIndices
 {
@@ -48,16 +43,77 @@ struct VMA_MemoryResource
 	VmaAllocator allocator;
 };
 
+class VulkanInstance
+{
+	public:
+
+	VulkanInstance (std::string appName, bool validationLayersEnabled, Window& window);
+	~VulkanInstance ();
+	
+	VkInstance instance;
+	VkSurfaceKHR surface;
+	Window& window;
+
+	private:
+	bool validationLayersEnabled = false;
+
+	bool CheckValidationLayerSupport ();
+	void SetupDebugCallback ();
+	void CreateSurface ();
+
+
+	VkResult CreateDebugReportCallbackEXT (VkInstance instance,
+	    const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
+	    const VkAllocationCallbacks* pAllocator,
+	    VkDebugReportCallbackEXT* pCallback);
+
+	void DestroyDebugReportCallbackEXT (
+	    VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator);
+
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback (VkDebugReportFlagsEXT flags,
+	    VkDebugReportObjectTypeEXT objType,
+	    uint64_t obj,
+	    size_t location,
+	    int32_t code,
+	    const char* layerPrefix,
+	    const char* msg,
+	    void* userData);
+
+	VkDebugReportCallbackEXT callback;
+};
+
+class VulkanPhysicalDevice
+{
+	public:
+	VulkanPhysicalDevice (VkInstance instance, VkSurfaceKHR surface);
+	~VulkanPhysicalDevice ();
+	bool IsDeviceSuitable (VkPhysicalDevice device, VkSurfaceKHR surface);
+
+	bool CheckDeviceExtensionSupport (VkPhysicalDevice device);
+
+	QueueFamilyIndices FindQueueFamilies (VkPhysicalDevice physDevice, VkSurfaceKHR windowSurface);
+
+	VkPhysicalDeviceFeatures QueryDeviceFeatures ();
+
+		VkPhysicalDevice physical_device;
+
+	VkPhysicalDeviceProperties physical_device_properties;
+	VkPhysicalDeviceFeatures physical_device_features;
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+
+
+	QueueFamilyIndices familyIndices;
+};
+
 class VulkanDevice
 {
 	public:
-	Window& window;
 
-	VkInstance instance;
-	VkDebugReportCallbackEXT callback;
+	VulkanInstance instance;
+	VulkanPhysicalDevice physical_device;
+
 	VkDevice device;
 
-	VkPhysicalDevice physical_device;
 
 	bool singleQueueDevice; // for devices with only 1 queue (intel integrated
 	                        // specifically)
@@ -68,10 +124,6 @@ class VulkanDevice
 		transfer,
 		present
 	};
-
-	VkPhysicalDeviceProperties physical_device_properties;
-	VkPhysicalDeviceFeatures physical_device_features;
-	VkPhysicalDeviceMemoryProperties memoryProperties;
 
 	VulkanDevice (bool validationLayers, Window& window);
 
@@ -93,8 +145,6 @@ class VulkanDevice
 	VkSurfaceKHR GetSurface ();
 
 	private:
-	QueueFamilyIndices familyIndices;
-
 	std::unique_ptr<CommandQueue> graphics_queue;
 	std::unique_ptr<CommandQueue> compute_queue;
 	std::unique_ptr<CommandQueue> transfer_queue;
@@ -105,45 +155,9 @@ class VulkanDevice
 	VMA_MemoryResource allocator_general;
 	VMA_MemoryResource allocator_linear_tiling;
 
-	VkSurfaceKHR surface;
-
-	void CreateInstance (std::string appName);
-
-	bool IsDeviceSuitable (VkPhysicalDevice device, VkSurfaceKHR surface);
-
-	bool CheckDeviceExtensionSupport (VkPhysicalDevice device);
-
-	bool CheckValidationLayerSupport ();
-
-	void SetupDebugCallback ();
-
-	void CreateSurface (VkSurfaceKHR& surface);
-
-	void PickPhysicalDevice (VkSurfaceKHR& surface);
-
 	void CreateLogicalDevice ();
 	void CreateQueues ();
 
 	void CreateVulkanAllocator ();
 
-	QueueFamilyIndices FindQueueFamilies (VkPhysicalDevice physDevice, VkSurfaceKHR windowSurface);
-
-	VkPhysicalDeviceFeatures QueryDeviceFeatures ();
-
-	VkResult CreateDebugReportCallbackEXT (VkInstance instance,
-	    const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
-	    const VkAllocationCallbacks* pAllocator,
-	    VkDebugReportCallbackEXT* pCallback);
-
-	void DestroyDebugReportCallbackEXT (
-	    VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator);
-
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback (VkDebugReportFlagsEXT flags,
-	    VkDebugReportObjectTypeEXT objType,
-	    uint64_t obj,
-	    size_t location,
-	    int32_t code,
-	    const char* layerPrefix,
-	    const char* msg,
-	    void* userData);
 };

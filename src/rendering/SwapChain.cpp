@@ -13,8 +13,8 @@ VulkanSwapChain::VulkanSwapChain (VulkanDevice& device, Window& window)
 : device (device), window (window)
 {
 
-	this->instance = device.instance;
-	this->physicalDevice = device.physical_device;
+	this->instance = device.instance.instance;
+	this->physicalDevice = device.physical_device.physical_device;
 
 	createSwapChain ();
 	createImageViews ();

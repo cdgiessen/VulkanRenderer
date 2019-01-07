@@ -26,7 +26,8 @@ VulkanBuffer::VulkanBuffer (VulkanDevice& device,
 {
 	if (dynamicAlignment == DynamicallyAligned::T)
 	{
-		size_t minUboAlignment = device.physical_device_properties.limits.minUniformBufferOffsetAlignment;
+		size_t minUboAlignment =
+		    device.physical_device.physical_device_properties.limits.minUniformBufferOffsetAlignment;
 		alignment = m_size;
 		if (minUboAlignment > 0)
 		{

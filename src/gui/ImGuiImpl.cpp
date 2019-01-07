@@ -1394,7 +1394,7 @@ void PrepareImGui (Window* window, VulkanRenderer* vulkanRenderer)
 	    vulkanRenderer->device.device, &pool_info, VK_NULL_HANDLE, &init_data.descriptor_pool));
 
 	init_data.allocator = VK_NULL_HANDLE;
-	init_data.gpu = vulkanRenderer->device.physical_device;
+	init_data.gpu = vulkanRenderer->device.physical_device.physical_device;
 	init_data.device = vulkanRenderer->device.device;
 	init_data.render_pass = vulkanRenderer->GetRelevantRenderpass (RenderableType::overlay);
 	// init_data.pipeline_cache = vulkanRenderer->pipelineManager.GetPipelineCache();
