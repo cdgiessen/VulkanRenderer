@@ -2,21 +2,12 @@
 
 #include <functional>
 #include <memory>
-#include <mutex>
-#include <set>
-#include <thread>
 #include <vector>
 
 #include <cstring>
 
 #include <vulkan/vulkan.h>
 
-#include "util/ConcurrentQueue.h"
-
-
-
-#include "RenderStructs.h"
-#include "RenderTools.h"
 #include "Wrappers.h"
 
 class Window;

@@ -5,6 +5,8 @@
 #include "Buffer.h"
 #include "Device.h"
 
+//////// Fence ////////////
+
 VulkanFence::VulkanFence (VulkanDevice& device, long int timeout, VkFenceCreateFlags flags)
 : device (device), timeout (timeout)
 {
@@ -43,6 +45,8 @@ std::vector<VkFence> CreateFenceArray (std::vector<VulkanFence>& fences)
 	return outFences;
 }
 
+///////////// Semaphore ///////////////
+
 VulkanSemaphore::VulkanSemaphore (VulkanDevice& device) : device (device)
 {
 	VkSemaphoreCreateInfo semaphoreInfo = initializers::semaphoreCreateInfo ();
@@ -64,6 +68,8 @@ std::vector<VkSemaphore> CreateSemaphoreArray (std::vector<std::shared_ptr<Vulka
 
 	return outSems;
 }
+
+///////////// Command Queue ////////////////
 
 CommandQueue::CommandQueue (const VulkanDevice& device, int queueFamily) : device (device)
 {
@@ -119,6 +125,8 @@ void CommandQueue::WaitForFences (VkFence fence)
 	vkWaitForFences (device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
 }
 
+/////// Command Pool ////////////
+
 CommandPool::CommandPool (VulkanDevice& device, VkCommandPoolCreateFlags flags, CommandQueue* queue)
 : device (device)
 {
@@ -134,9 +142,23 @@ CommandPool::CommandPool (VulkanDevice& device, VkCommandPoolCreateFlags flags, 
 	}
 }
 
+CommandPool::CommandPool(CommandPool&& cmd):device(device), queue(cmd.queue) {
+	std::lock_guard<std::mutex> lock (cmd.poolLock);
+	commandPool = cmd.commandPool;
+	cmd.commandPool = nullptr;
+}
+CommandPool& CommandPool::operator= (CommandPool&& cmd) {
+	std::lock_guard<std::mutex> lock (cmd.poolLock);
+	commandPool = cmd.commandPool;
+	queue = cmd.queue;
+	cmd.commandPool = nullptr;
+	return *this;
+}
+
 CommandPool::~CommandPool ()
 {
 	std::lock_guard<std::mutex> lock (poolLock);
+	if(commandPool != nullptr)
 	vkDestroyCommandPool (device.device, commandPool, nullptr);
 }
 
@@ -267,6 +289,26 @@ void CommandPool::WriteToBuffer (VkCommandBuffer buf, std::function<void(VkComma
 	cmds (buf);
 }
 
+///////// CommandPoolGroup /////////
+
+CommandPoolGroup::CommandPoolGroup(VulkanDevice& device):
+	graphicsPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue()),
+	transferPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.TransferQueue()),
+	computePool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.ComputeQueue())
+{
+
+}
+
+CommandPoolManager::CommandPoolManager(int num_groups, VulkanDevice& device) {
+	for (int i = 0; i < num_groups; i++) groups.emplace_back( device);
+}
+
+CommandPoolGroup& CommandPoolManager::Get (int index)
+{
+	return groups.at (index);
+}
+//////// GraphicsCommandWorker /////////
+
 GraphicsCommandWorker::GraphicsCommandWorker (VulkanDevice& device,
     ConcurrentQueue<GraphicsWork>& workQueue,
     std::vector<GraphicsCleanUpWork>& finishQueue,
@@ -340,6 +382,7 @@ void GraphicsCommandWorker::Work ()
 	isDoneWorking = true;
 }
 
+///////// FrameObject //////////
 
 FrameObject::FrameObject (VulkanDevice& device, int frameIndex)
 : device (device),
@@ -347,13 +390,14 @@ FrameObject::FrameObject (VulkanDevice& device, int frameIndex)
   commandPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue ()),
   imageAvailSem (device),
   renderFinishSem (device),
-  commandFence (device),
+  commandFence (device, DEFAULT_FENCE_TIMEOUT, VK_FENCE_CREATE_SIGNALED_BIT),
   depthFence (device, DEFAULT_FENCE_TIMEOUT, VK_FENCE_CREATE_SIGNALED_BIT)
 {
 	primaryCmdBuf = commandPool.GetPrimaryCommandBuffer (false);
 }
 
 FrameObject::~FrameObject () { commandPool.FreeCommandBuffer (primaryCmdBuf); }
+
 
 VkResult FrameObject::AquireNextSwapchainImage (VkSwapchainKHR swapchain)
 {

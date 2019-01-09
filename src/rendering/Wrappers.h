@@ -106,6 +106,10 @@ class CommandPool
 {
 	public:
 	CommandPool (VulkanDevice& device, VkCommandPoolCreateFlags flags, CommandQueue* queue);
+	CommandPool(CommandPool& cmd) = delete;
+	CommandPool& operator= (const CommandPool& cmd) = delete;
+	CommandPool (CommandPool&& cmd);
+	CommandPool& operator= (CommandPool&& cmd);
 	~CommandPool ();
 
 	VkBool32 ResetPool ();
@@ -137,6 +141,27 @@ class CommandPool
 	std::mutex poolLock;
 	VkCommandPool commandPool;
 	CommandQueue* queue;
+};
+
+class CommandPoolGroup
+{
+	public:
+	CommandPoolGroup (VulkanDevice& device);
+
+	CommandPool graphicsPool;
+	CommandPool transferPool;
+	CommandPool computePool;
+};
+
+class CommandPoolManager
+{
+	public:
+	CommandPoolManager (int num_groups, VulkanDevice& device);
+
+	CommandPoolGroup& Get (int index);
+
+	private:
+	std::vector<CommandPoolGroup> groups;
 };
 
 enum class WorkType
@@ -261,8 +286,6 @@ class GraphicsCommandWorker
 	CommandPool transferPool;
 	CommandPool computePool;
 };
-
-
 
 class FrameObject
 {

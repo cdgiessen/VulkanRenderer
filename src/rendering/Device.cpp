@@ -2,13 +2,12 @@
 
 #include <GLFW/glfw3.h>
 
-#include "Initializers.h"
-#include "SwapChain.h"
-
 #include "core/Logger.h"
 #include "core/Window.h"
 
-#include <iostream>
+#include "Initializers.h"
+#include "SwapChain.h"
+#include "RenderTools.h"
 
 std::vector<const char*> VALIDATION_LAYERS = { "VK_LAYER_LUNARG_standard_validation"
 
@@ -16,7 +15,7 @@ std::vector<const char*> VALIDATION_LAYERS = { "VK_LAYER_LUNARG_standard_validat
 
 const std::vector<const char*> DEVICE_EXTENSIONS = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
-
+//////// VMA Memory Resource ////////
 
 void VMA_MemoryResource::Create (
     VkPhysicalDevice physical_device, VkDevice device, VkAllocationCallbacks* custom_allocator)
