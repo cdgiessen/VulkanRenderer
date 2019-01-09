@@ -122,7 +122,7 @@ void VulkanApp::Run ()
 			if (timeManager.ExactTimeSinceFrameStart () < 1.0 / settings.MaxFPS)
 			{
 				std::this_thread::sleep_for (std::chrono::duration<double> (
-				    1.0 / settings.MaxFPS - timeManager.ExactTimeSinceFrameStart ()));
+				    1.0 / settings.MaxFPS - timeManager.ExactTimeSinceFrameStart () - (1.0 / settings.MaxFPS ) / 10.0));
 			}
 		}
 		timeManager.EndFrameTimer ();

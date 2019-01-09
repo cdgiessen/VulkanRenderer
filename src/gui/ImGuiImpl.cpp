@@ -1389,7 +1389,13 @@ void PrepareImGui (Window* window, VulkanRenderer* vulkanRenderer)
 		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, maxSets },
 		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, maxSets },
 		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, maxSets } };
-	VkDescriptorPoolCreateInfo pool_info = initializers::descriptorPoolCreateInfo (pool_size, maxSets * 11);
+	
+	VkDescriptorPoolCreateInfo pool_info{};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.poolSizeCount = static_cast<uint32_t> (pool_size.size ());
+	pool_info.pPoolSizes = pool_size.data ();
+	pool_info.maxSets = maxSets * 11;
+
 	VK_CHECK_RESULT (vkCreateDescriptorPool (
 	    vulkanRenderer->device.device, &pool_info, VK_NULL_HANDLE, &init_data.descriptor_pool));
 

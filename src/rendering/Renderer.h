@@ -200,6 +200,7 @@ class VulkanRenderer
 
 	private:
 	CommandPool graphicsPrimaryCommandPool;
+	CommandPool transferPrimaryCommandPool;
 
 	std::vector<std::unique_ptr<FrameObject>> frameObjects;
 

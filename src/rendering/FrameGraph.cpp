@@ -1,7 +1,7 @@
 #include "FrameGraph.h"
 
 #include "Initializers.h"
-
+#include "Device.h"
 #include "Renderer.h"
 
 void SubpassDescription::AddSubpassDependency (std::string subpass)

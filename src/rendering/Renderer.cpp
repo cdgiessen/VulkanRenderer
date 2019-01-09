@@ -74,6 +74,7 @@ VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::
   shaderManager (device),
   textureManager (*this, resourceMan.texManager),
   graphicsPrimaryCommandPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue ()),
+transferPrimaryCommandPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.TransferQueue()),
   dynamic_data (device, settings)
 
 {
@@ -415,6 +416,9 @@ void VulkanRenderer::SubmitWork (WorkType workType,
     std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
     std::vector<Signal> signals)
 {
+
+
+
 	workQueue.push_back (
 	    GraphicsWork (work, workType, device, waitSemaphores, signalSemaphores, buffersToClean, signals));
 }

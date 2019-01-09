@@ -5,14 +5,12 @@
 //#include "VulkanMemoryAllocator/vk_mem_alloc.h"
 
 #include "Buffer.h"
-#include "Device.h"
-#include "RenderStructs.h"
-#include "RenderTools.h"
 
 #include "core/CoreTools.h"
 #include "resources/Mesh.h"
 
 class VulkanRenderer;
+using Signal = std::shared_ptr<bool>;
 
 class VertexLayout
 {

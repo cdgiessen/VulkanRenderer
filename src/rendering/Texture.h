@@ -5,12 +5,12 @@
 
 #include "Buffer.h"
 #include "Descriptor.h"
-#include "RenderStructs.h"
 
 #include "VulkanMemoryAllocator/vk_mem_alloc.h"
 #include "resources/Texture.h"
 
 class VulkanRenderer;
+using Signal = std::shared_ptr<bool>;
 
 struct TexCreateDetails
 {

@@ -1,27 +1,21 @@
 #pragma once
 
-#include <array>
-#include <memory>
-#include <set>
-#include <string>
-#include <utility>
-#include <vector>
-
 #include <atomic>
 #include <condition_variable>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <thread>
+#include <utility>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 
 #include "Buffer.h"
-#include "RenderStructs.h"
-#include "RenderTools.h"
 
 #include "util/ConcurrentQueue.h"
 
-
+using Signal = std::shared_ptr<bool>;
 
 // Default fence timeout in nanoseconds
 constexpr long DEFAULT_FENCE_TIMEOUT = 1000000000;
@@ -61,6 +55,7 @@ class VulkanSemaphore
 	VkSemaphore Get ();
 	VkSemaphore* GetPtr ();
 
+	std::mutex sem_lock;
 	private:
 	VulkanDevice& device;
 	VkSemaphore semaphore;
@@ -106,7 +101,7 @@ class CommandPool
 {
 	public:
 	CommandPool (VulkanDevice& device, VkCommandPoolCreateFlags flags, CommandQueue* queue);
-	CommandPool(CommandPool& cmd) = delete;
+	CommandPool (CommandPool& cmd) = delete;
 	CommandPool& operator= (const CommandPool& cmd) = delete;
 	CommandPool (CommandPool&& cmd);
 	CommandPool& operator= (CommandPool&& cmd);

@@ -165,7 +165,10 @@ std::optional<Task> TaskManager::GetTask ()
 		return asyncTasks.GetTask ();
 }
 
-Worker::Worker (TaskManager& taskMan) : taskMan (taskMan), workerThread{ &Worker::Work, this } {}
+Worker::Worker (TaskManager& taskMan, int threadID)
+: taskMan (taskMan), workerThread{ &Worker::Work, this }, threadID (threadID)
+{
+}
 
 Worker::~Worker ()
 {
@@ -197,7 +200,7 @@ WorkerPool::WorkerPool (TaskManager& taskMan, int workerCount)
 {
 	for (int i = 0; i < workerCount; i++)
 	{
-		workers.push_back (std::make_unique<Worker> (taskMan));
+		workers.push_back (std::make_unique<Worker> (taskMan, i));
 	}
 }
 

@@ -102,8 +102,6 @@ class TaskManager
 
 	std::optional<Task> GetTask ();
 
-	void EndSubmission ();
-
 	private:
 	//int jobCount = 0;
 	TaskPool currentFrameTasks;
@@ -118,7 +116,7 @@ class TaskManager
 class Worker
 {
 	public:
-	Worker (TaskManager& taskMan);
+	Worker (TaskManager& taskMan, int threadID);
 	~Worker ();
 
 	void Stop ();
@@ -126,7 +124,7 @@ class Worker
 	private:
 	void Work ();
 	TaskManager& taskMan;
-
+	int threadID;
 	std::thread workerThread;
 	std::atomic_bool isWorking = true;
 };

@@ -16,7 +16,7 @@ DescriptorResource::DescriptorResource(VkDescriptorType type) : type(type) {
 void DescriptorResource::FillResource(
 	VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
 {
-	VkDescriptorBufferInfo bufferInfo;
+	VkDescriptorBufferInfo bufferInfo{};
 	bufferInfo.buffer = buffer;
 	bufferInfo.offset = offset;
 	bufferInfo.range = range;
@@ -26,7 +26,11 @@ void DescriptorResource::FillResource(
 void DescriptorResource::FillResource(
 	VkSampler sampler, VkImageView imageView, VkImageLayout layout)
 {
-	info = initializers::descriptorImageInfo(sampler, imageView, layout);
+	VkDescriptorImageInfo descriptorImageInfo{};
+	descriptorImageInfo.sampler = sampler;
+	descriptorImageInfo.imageView = imageView;
+	descriptorImageInfo.imageLayout = layout;
+	info = descriptorImageInfo;
 }
 
 DescriptorUse::DescriptorUse(uint32_t bindPoint, uint32_t count, DescriptorResource resource)

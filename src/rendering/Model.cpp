@@ -3,6 +3,7 @@
 #include <iterator>
 #include <numeric>
 
+#include "Initializers.h"
 #include "Renderer.h"
 
 std::vector<VkVertexInputBindingDescription> VertexLayout::getBindingDescription (VertexDescription vertDesc)

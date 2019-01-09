@@ -1,13 +1,15 @@
 #include "SwapChain.h"
-#include "RenderTools.h"
-
-#include "core/Window.h"
-
-#include "core/Logger.h"
-
-#include "FrameGraph.h"
 
 #include <limits>
+
+#include "core/Logger.h"
+#include "core/Window.h"
+
+#include "Device.h"
+#include "FrameGraph.h"
+#include "Initializers.h"
+#include "RenderTools.h"
+
 
 VulkanSwapChain::VulkanSwapChain (VulkanDevice& device, Window& window)
 : device (device), window (window)

@@ -1,15 +1,12 @@
 #pragma once
 
+#include <array>
 #include <memory>
-#include <set>
-#include <string>
 #include <vector>
 
 #include <vulkan/vulkan.h>
 
-#include "Device.h"
-#include "Initializers.h"
-
+class VulkanDevice;
 class Window;
 
 struct SwapChainSupportDetails

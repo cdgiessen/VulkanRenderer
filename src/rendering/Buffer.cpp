@@ -1,8 +1,12 @@
 #include "Buffer.h"
 
-#include "Device.h"
 #include <cstring>
 #include <functional>
+
+#include "RenderTools.h"
+#include "Device.h"
+
+#include "VulkanMemoryAllocator/vk_mem_alloc.h"
 
 const uint32_t VERTEX_BUFFER_BIND_ID = 0;
 const uint32_t INSTANCE_BUFFER_BIND_ID = 1;
@@ -11,6 +15,9 @@ const uint32_t INSTANCE_BUFFER_BIND_ID = 1;
 //	: device(&device), resource(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 //{
 //}
+
+
+
 
 VulkanBuffer::VulkanBuffer (VulkanDevice& device,
     VkDescriptorType type,
@@ -63,7 +70,7 @@ VulkanBuffer::VulkanBuffer (VulkanDevice& device,
 		Map (&mapped);
 	}
 
-	SetupResource ();
+	resource.FillResource (buffer.buffer, 0, m_size);
 
 	// Log::Debug << "Allocated buffer Memory\n";
 }
@@ -148,12 +155,6 @@ void VulkanBuffer::Flush ()
 	}
 
 	// device->FlushBuffer(buffer);
-}
-
-void VulkanBuffer::SetupResource ()
-{
-	resource.FillResource (buffer.buffer, 0, m_size);
-	// Log::Debug << "Resource details: Size: " << m_size << "\n";
 }
 
 VkDeviceSize VulkanBuffer::Size () const { return m_size; }

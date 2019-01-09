@@ -7,6 +7,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "Device.h"
 #include "Initializers.h"
 #include "RenderTools.h"
 #include "core/CoreTools.h"

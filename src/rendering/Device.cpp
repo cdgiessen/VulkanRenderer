@@ -1,5 +1,6 @@
 #include "Device.h"
 
+#include <set>
 #include <GLFW/glfw3.h>
 
 #include "core/Logger.h"

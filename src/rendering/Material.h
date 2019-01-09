@@ -10,11 +10,12 @@
 
 #include "Buffer.h"
 #include "Descriptor.h"
-#include "Device.h"
 #include "Pipeline.h"
 #include "RenderStructs.h"
 #include "Shader.h"
 #include "Texture.h"
+
+class VulkanDevice;
 
 enum class ResourceType
 {

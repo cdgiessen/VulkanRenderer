@@ -5,8 +5,6 @@
 #include <vulkan/vulkan.h>
 
 
-
-
 namespace initializers
 {
 
@@ -225,20 +223,6 @@ inline VkSubmitInfo submitInfo ()
 	return submitInfo;
 }
 
-// inline VkSubmitInfo submitInfo(
-//	std::vector<VkSemaphore> waitSemaphores, std::vector<VkPipelineStageFlags> stageFlags,
-//	std::vector<VkSemaphore> signalSemaphores)
-//{
-//	VkSubmitInfo submitInfo{};
-//	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-//	submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size();
-//	submitInfo.pSignalSemaphores = signalSemaphores.data();
-//	submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
-//	submitInfo.pWaitSemaphores = waitSemaphores.data();
-//	submitInfo.pWaitDstStageMask = stageFlags.data();
-//	return submitInfo;
-//}
-
 inline VkViewport viewport (float width, float height, float minDepth, float maxDepth)
 {
 	VkViewport viewport{};
@@ -384,15 +368,6 @@ inline VkDescriptorSetAllocateInfo descriptorSetAllocateInfo (
 	descriptorSetAllocateInfo.pSetLayouts = pSetLayouts;
 	descriptorSetAllocateInfo.descriptorSetCount = descriptorSetCount;
 	return descriptorSetAllocateInfo;
-}
-
-inline VkDescriptorImageInfo descriptorImageInfo (VkSampler sampler, VkImageView imageView, VkImageLayout imageLayout)
-{
-	VkDescriptorImageInfo descriptorImageInfo{};
-	descriptorImageInfo.sampler = sampler;
-	descriptorImageInfo.imageView = imageView;
-	descriptorImageInfo.imageLayout = imageLayout;
-	return descriptorImageInfo;
 }
 
 inline VkWriteDescriptorSet writeDescriptorSet (VkDescriptorSet dstSet,

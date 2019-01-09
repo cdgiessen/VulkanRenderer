@@ -6,9 +6,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "Device.h"
 #include "vulkan/vulkan.h"
 
+class VulkanDevice;
 
 using RenderFunc = std::function<void(VkCommandBuffer cmdBuf)>;
 

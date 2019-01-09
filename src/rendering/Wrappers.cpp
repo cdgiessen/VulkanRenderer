@@ -4,6 +4,7 @@
 
 #include "Buffer.h"
 #include "Device.h"
+#include "RenderTools.h"
 
 //////// Fence ////////////
 

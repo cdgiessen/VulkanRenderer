@@ -6,31 +6,6 @@
 
 #include "core/Logger.h"
 
-void setTransferBarrier (
-    VkCommandBuffer cmdbuffer, VkBuffer bufferr, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-
-void SetImageLayout (VkCommandBuffer cmdbuffer,
-    VkImage image,
-    VkImageLayout oldImageLayout,
-    VkImageLayout newImageLayout,
-    VkImageSubresourceRange subresourceRange,
-    VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-    VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-
-// Fixed sub resource on first mip level and layer
-void SetImageLayout (VkCommandBuffer cmdbuffer,
-    VkImage image,
-    VkImageAspectFlags aspectMask,
-    VkImageLayout oldImageLayout,
-    VkImageLayout newImageLayout,
-    VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-    VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-
-void SetMemoryBarrier (VkCommandBuffer cmdBuffer,
-    VkAccessFlags srcAccessMask,
-    VkAccessFlags dstAccessMask,
-    VkPipelineStageFlags srcStageFlags,
-    VkPipelineStageFlags dstStageFlags);
 
 VkSampleCountFlagBits getMaxUsableSampleCount (VkPhysicalDeviceProperties properties);
 

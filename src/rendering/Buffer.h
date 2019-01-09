@@ -5,7 +5,6 @@
 #include <vulkan/vulkan.h>
 
 #include "Descriptor.h"
-#include "RenderTools.h"
 
 #include "VulkanMemoryAllocator/vk_mem_alloc.h"
 
@@ -94,8 +93,6 @@ class VulkanBuffer
 	bool persistantlyMapped = false;
 
 	size_t alignment = -1;
-
-	void SetupResource ();
 };
 
 

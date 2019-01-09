@@ -4,8 +4,9 @@
 #include <string>
 #include <vector>
 
-#include "Device.h"
 #include <vulkan/vulkan.h>
+
+class VulkanDevice;
 
 VkShaderModule loadShaderModule (VkDevice device, const std::string& codePath);
 
