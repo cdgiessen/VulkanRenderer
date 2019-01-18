@@ -16,7 +16,7 @@
 // 		// ProjectionType::orthographic
 // 		// glm::ortho()
 // 	}
-// 	return glm::mat4 ();
+// 	return glm::mat4 (1.0f);
 // }
 
 // glm::mat4 ViewCamera::CalcViewMatrix ()
@@ -25,9 +25,9 @@
 // 	// cd.at(0).projView = proj * cd.at(0).view;
 // 	// cd.at(0).cameraDir = camera->Front;
 // 	// cd.at(0).cameraPos = camera->Position;
-// 	return glm::mat4 ();
+// 	return glm::mat4 (1.0f);
 // }
-// glm::mat4 ViewCamera::CalcViewFrustum () { return glm::mat4 (); }
+// glm::mat4 ViewCamera::CalcViewFrustum () { return glm::mat4 (1.0f); }
 
 // GPU_CameraData ViewCamera::CameraData ()
 // {

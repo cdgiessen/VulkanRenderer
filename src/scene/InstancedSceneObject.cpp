@@ -55,7 +55,7 @@ void InstancedSceneObject::SetupUniformBuffer ()
 	/*uniformBuffer->CreateUniformBuffer(sizeof(ModelBufferObject));*/
 
 	ModelBufferObject ubo = {};
-	ubo.model = glm::mat4 ();
+	ubo.model = glm::mat4 (1.0f);
 	ubo.model = glm::translate (ubo.model, glm::vec3 (0, 0, 0));
 	// ubo.model = glm::rotate(ubo.model, time / 2.0f, glm::vec3(0.5, 1, 0));
 	ubo.normal = glm::transpose (glm::inverse (glm::mat3 (ubo.model)));

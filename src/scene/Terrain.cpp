@@ -313,7 +313,7 @@ void Terrain::SetupUniformBuffer ()
 	uniformBuffer = std::make_shared<VulkanBufferUniform> (renderer.device, sizeof (ModelBufferObject));
 
 	ModelBufferObject mbo;
-	mbo.model = glm::mat4 ();
+	mbo.model = glm::mat4 (1.0f);
 	mbo.model = glm::translate (mbo.model, glm::vec3 (coordinateData.pos.x, 0, coordinateData.pos.y));
 	mbo.normal = glm::transpose (glm::inverse (mbo.model));
 	uniformBuffer->CopyToBuffer (&mbo, sizeof (ModelBufferObject));
