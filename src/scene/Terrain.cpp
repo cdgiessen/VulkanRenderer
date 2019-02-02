@@ -393,7 +393,7 @@ void Terrain::SetupPipeline ()
 	    "assets/shaders/terrain.frag.spv", ShaderModuleType::fragment);
 	out.SetShaderModuleSet (ShaderModuleSet (vert, frag));
 
-	VertexLayout layout (VertexDescription ({ 3, 3, 2 }));
+	VertexLayout layout (Vert_PosNormUv);
 	out.AddVertexLayouts (layout.bindingDesc, layout.attribDesc);
 
 	out.SetInputAssembly (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);

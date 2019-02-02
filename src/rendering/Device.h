@@ -53,24 +53,30 @@ class VulkanInstance
 	void CreateSurface ();
 
 
-	VkResult CreateDebugReportCallbackEXT (VkInstance instance,
-	    const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
-	    const VkAllocationCallbacks* pAllocator,
-	    VkDebugReportCallbackEXT* pCallback);
+	//VkResult CreateDebugReportCallbackEXT (VkInstance instance,
+	//    const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
+	//    const VkAllocationCallbacks* pAllocator,
+	//    VkDebugReportCallbackEXT* pCallback);
 
-	void DestroyDebugReportCallbackEXT (
-	    VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator);
+	//void DestroyDebugReportCallbackEXT (
+	//    VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator);
 
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback (VkDebugReportFlagsEXT flags,
-	    VkDebugReportObjectTypeEXT objType,
-	    uint64_t obj,
-	    size_t location,
-	    int32_t code,
-	    const char* layerPrefix,
-	    const char* msg,
-	    void* userData);
+	//VkDebugReportCallbackEXT callback;
 
-	VkDebugReportCallbackEXT callback;
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debugUtilsCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData);
+
+	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, 
+		const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
+		const VkAllocationCallbacks* pAllocator, 
+		VkDebugUtilsMessengerEXT* pDebugMessenger);
+
+	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+	VkDebugUtilsMessengerEXT debugMessenger;
+
 };
 
 class VulkanPhysicalDevice

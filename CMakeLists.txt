@@ -9,10 +9,6 @@ endif(MSVC)
 if(UNIX)
 endif(UNIX)
 
-#list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-#set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-
-#include(cotire)
 
 project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
 
@@ -28,8 +24,6 @@ find_package(Vulkan REQUIRED)
 
 find_package(Bullet) 
 
-#find_package(spirv_cross_reflect CONFIG REQUIRED) 
-
 #gtk include for linux file window
 if(UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
@@ -42,86 +36,25 @@ if(UNIX)
 	add_definitions(${GTK3_CFLAGS_OTHER}) 
 endif(UNIX)
 
-#memory
-
-#set(FOONATHAN_MEMORY_BUILD_EXAMPLES OFF)
-#set(FOONATHAN_MEMORY_BUILD_TESTS OFF)
-#set(FOONATHAN_MEMORY_BUILD_TOOLS OFF)
-
-#add_subdirectory(ext/memory)
 
 # main files to compile
+add_executable(VulkanApp)
+add_subdirectory(src)
 
-add_executable(VulkanApp 
+#include the different source directories in include path
+target_include_directories(VulkanApp PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
-src/core/main.cpp
-src/core/CoreTools.cpp
-src/core/VulkanApp.cpp
-src/core/JobSystem.cpp
-src/core/Input.cpp
-src/core/Logger.cpp
-src/core/TimeManager.cpp
-src/core/Window.cpp
-
-src/util/Gradient.cpp
-
-src/gui/ImGuiImpl.cpp
-src/gui/ProcTerrainNodeGraph.cpp
-src/gui/InternalGraph.cpp
-
-src/rendering/Buffer.cpp
-src/rendering/Device.cpp
-src/rendering/Descriptor.cpp
-src/rendering/FrameGraph.cpp
-src/rendering/Material.cpp
-src/rendering/Model.cpp
-src/rendering/Pipeline.cpp
-src/rendering/Renderer.cpp
-src/rendering/RenderTools.cpp
-src/rendering/Shader.cpp
-src/rendering/SwapChain.cpp
-src/rendering/Texture.cpp
-src/rendering/ViewCamera.cpp
-src/rendering/Wrappers.cpp
-
-src/resources/Material.cpp
-src/resources/Mesh.cpp
-src/resources/Texture.cpp
-src/resources/ResourceManager.cpp
-
-src/scene/Camera.cpp
-src/scene/Entity.cpp
-src/scene/GameObject.cpp
-src/scene/InstancedSceneObject.cpp
-src/scene/Scene.cpp
-src/scene/Skybox.cpp
-src/scene/Terrain.cpp
-src/scene/TerrainManager.cpp
-src/scene/Transform.cpp
-
-third-party/ImGui/imgui.cpp
-third-party/ImGui/imgui_draw.cpp
-
-third-party/FastNoiseSIMD/FastNoiseSIMD.cpp
-third-party/FastNoiseSIMD/FastNoiseSIMD_avx2.cpp
-third-party/FastNoiseSIMD/FastNoiseSIMD_avx512.cpp
-third-party/FastNoiseSIMD/FastNoiseSIMD_internal.cpp
-third-party/FastNoiseSIMD/FastNoiseSIMD_neon.cpp
-third-party/FastNoiseSIMD/FastNoiseSIMD_sse2.cpp
-third-party/FastNoiseSIMD/FastNoiseSIMD_sse41.cpp
-)
 
 if(MSVC)
 	target_compile_options(VulkanApp PRIVATE "/std:c++17")
 	target_compile_options(VulkanApp PRIVATE "/permissive-")
-	#target_compile_options(VulkanApp PRIVATE "/Debug:fastlink")
 endif(MSVC)
 
 OPTION(THREADSANITIZER "Enable thread sanitizer on unix platforms" ON)
 
 if(UNIX)
 	if(THREADSANITIZER)
-	set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+	set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak")
 	set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 	endif(THREADSANITIZER)
 
@@ -129,7 +62,6 @@ if(UNIX)
 endif(UNIX)
 
 #json
-#target_include_directories(VulkanApp PUBLIC third-party/json)
 target_link_libraries(VulkanApp PUBLIC nlohmann_json)
 
 #glm
@@ -149,12 +81,6 @@ if(BULLET_FOUND)
 	target_link_libraries(VulkanApp PRIVATE ${BULLET_LIBRARIES})
 endif(BULLET_FOUND)
 
-#spirv-cross
-target_link_libraries(VulkanApp PRIVATE spirv-cross-reflect)
-
-#glslang
-target_link_libraries(VulkanApp PRIVATE glslang)
-
 #fmt
 target_link_libraries(VulkanApp PRIVATE fmt)
 
@@ -162,40 +88,12 @@ target_link_libraries(VulkanApp PRIVATE fmt)
 if(UNIX)
 	target_link_libraries(VulkanApp PRIVATE ${GTK3_LIBRARIES})
 
+	#g++-8 still requires this, not necessary with g++-9 hopefully
 	target_link_libraries(VulkanApp PRIVATE stdc++fs)
 endif(UNIX)
-
-#include the different source directories in include path
-target_include_directories(VulkanApp PRIVATE ${CMAKE_SOURCE_DIR}/src)
-
-#Third party files included in repo
-target_include_directories(VulkanApp PRIVATE ${CMAKE_SOURCE_DIR}/third-party)
-
-#memory
-#target_link_libraries(VulkanApp PUBLIC foonathan_memory)
-
-#set_target_properties(VulkanApp PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
-#cotire(VulkanApp)
 
 # copy files over
 add_custom_command(TARGET VulkanApp POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets)
-
-#copy glslangvalidator to binary dir
-if(MSVC)
-add_custom_command(TARGET VulkanApp POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy
-		$ENV{VULKAN_SDK}/Bin/glslangValidator.exe $<TARGET_FILE_DIR:VulkanApp>)
-endif(MSVC)
-
-if(UNIX)
-add_custom_command(TARGET VulkanApp POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy
-		$ENV{VULKAN_SDK}/bin/glslangValidator $<TARGET_FILE_DIR:VulkanApp>)
-endif(UNIX)
-
-# add_custom_target(CopyAssets ALL POST_BUILD
-# 	COMMAND ${CMAKE_COMMAND} -E copy_directory
-# 		${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets)
 

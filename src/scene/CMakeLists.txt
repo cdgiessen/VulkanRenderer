@@ -1,0 +1,12 @@
+target_sources(VulkanApp PUBLIC
+
+${CMAKE_CURRENT_SOURCE_DIR}/Camera.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/Entity.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/GameObject.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/InstancedSceneObject.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/Scene.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/Skybox.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/Terrain.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/TerrainManager.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/Transform.cpp
+)

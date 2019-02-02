@@ -117,7 +117,7 @@ void InstancedSceneObject::SetupPipeline ()
 	    "assets/shaders/instancedSceneObject.frag.spv", ShaderModuleType::fragment);
 	out.SetShaderModuleSet (ShaderModuleSet (vert, frag));
 
-	VertexLayout layout (VertexDescription ({ 3, 3, 2 }));
+	VertexLayout layout (Vert_PosNormUv);
 
 	out.AddVertexLayouts (layout.bindingDesc, layout.attribDesc);
 
