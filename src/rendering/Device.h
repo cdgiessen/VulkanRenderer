@@ -37,53 +37,47 @@ struct VMA_MemoryResource
 class VulkanInstance
 {
 	public:
-
-	VulkanInstance (std::string appName, bool validationLayersEnabled, Window& window);
+	VulkanInstance (std::string appName, bool validationLayersEnabled);
 	~VulkanInstance ();
-	
+
 	VkInstance instance;
-	VkSurfaceKHR surface;
-	Window& window;
 
 	private:
 	bool validationLayersEnabled = false;
 
 	bool CheckValidationLayerSupport ();
 	void SetupDebugCallback ();
-	void CreateSurface ();
 
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debugUtilsCallback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	    VkDebugUtilsMessageTypeFlagsEXT messageType,
+	    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+	    void* pUserData);
 
-	//VkResult CreateDebugReportCallbackEXT (VkInstance instance,
-	//    const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
-	//    const VkAllocationCallbacks* pAllocator,
-	//    VkDebugReportCallbackEXT* pCallback);
+	VkResult CreateDebugUtilsMessengerEXT (VkInstance instance,
+	    const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+	    const VkAllocationCallbacks* pAllocator,
+	    VkDebugUtilsMessengerEXT* pDebugMessenger);
 
-	//void DestroyDebugReportCallbackEXT (
-	//    VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator);
-
-	//VkDebugReportCallbackEXT callback;
-
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugUtilsCallback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    void* pUserData);
-
-	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, 
-		const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
-		const VkAllocationCallbacks* pAllocator, 
-		VkDebugUtilsMessengerEXT* pDebugMessenger);
-
-	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
-	VkDebugUtilsMessengerEXT debugMessenger;
-
+	void DestroyDebugUtilsMessengerEXT (
+	    VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+	VkDebugUtilsMessengerEXT debugMessenger = nullptr;
 };
 
-class VulkanPhysicalDevice
+struct VulkanSurface
 {
-	public:
-	VulkanPhysicalDevice (VkInstance instance, VkSurfaceKHR surface);
+	VulkanSurface (VulkanInstance const& instance, Window& window);
+	~VulkanSurface ();
+
+	VkSurfaceKHR surface;
+	Window& window;
+	VulkanInstance const& instance;
+};
+
+struct VulkanPhysicalDevice
+{
+	VulkanPhysicalDevice (VulkanInstance const& instance, VulkanSurface const& surface);
 	~VulkanPhysicalDevice ();
+
 	bool IsDeviceSuitable (VkPhysicalDevice device, VkSurfaceKHR surface);
 
 	bool CheckDeviceExtensionSupport (VkPhysicalDevice device);
@@ -92,21 +86,23 @@ class VulkanPhysicalDevice
 
 	VkPhysicalDeviceFeatures QueryDeviceFeatures ();
 
-		VkPhysicalDevice physical_device;
+	VkPhysicalDevice physical_device;
 
 	VkPhysicalDeviceProperties physical_device_properties;
 	VkPhysicalDeviceFeatures physical_device_features;
 	VkPhysicalDeviceMemoryProperties memoryProperties;
-
 
 	QueueFamilyIndices familyIndices;
 };
 
 class VulkanDevice
 {
-	public:
+	private:
+	bool enableValidationLayers = false;
 
+	public:
 	VulkanInstance instance;
+	VulkanSurface surface;
 	VulkanPhysicalDevice physical_device;
 
 	VkDevice device;
@@ -147,8 +143,6 @@ class VulkanDevice
 	std::unique_ptr<CommandQueue> transfer_queue;
 	std::unique_ptr<CommandQueue> present_queue;
 
-	bool enableValidationLayers = false;
-
 	VMA_MemoryResource allocator_general;
 	VMA_MemoryResource allocator_linear_tiling;
 
@@ -156,5 +150,4 @@ class VulkanDevice
 	void CreateQueues ();
 
 	void CreateVulkanAllocator ();
-
 };

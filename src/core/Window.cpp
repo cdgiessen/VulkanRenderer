@@ -87,7 +87,7 @@ void Window::showWindow (bool show)
 	}
 }
 
-GLFWwindow* Window::getWindowContext () { return window; }
+GLFWwindow* Window::getWindowContext () const { return window; }
 
 bool Window::CheckForWindowResizing () { return updateWindowSize; }
 

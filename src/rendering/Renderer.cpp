@@ -70,11 +70,12 @@ VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::
 
 : settings ("render_settings.json"),
   device (validationLayer, window),
-  vulkanSwapChain (device, device.instance.window),
+  vulkanSwapChain (device, window),
   shaderManager (device),
   textureManager (*this, resourceMan.texManager),
-  graphicsPrimaryCommandPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue ()),
-transferPrimaryCommandPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.TransferQueue()),
+  graphicsPrimaryCommandPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.GraphicsQueue ()),
+  transferPrimaryCommandPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.TransferQueue ()),
+  computePrimaryCommandPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.ComputeQueue ()),
   dynamic_data (device, settings)
 
 {
@@ -83,11 +84,11 @@ transferPrimaryCommandPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_B
 		frameObjects.push_back (std::make_unique<FrameObject> (device, i));
 	}
 
-	for (int i = 0; i < workerThreadCount; i++)
-	{
-		graphicsWorkers.push_back (
-		    std::make_unique<GraphicsCommandWorker> (device, workQueue, finishQueue, finishQueueLock));
-	}
+	// for (int i = 0; i < workerThreadCount; i++)
+	// {
+	// 	graphicsWorkers.push_back (
+	// 	    std::make_unique<GraphicsCommandWorker> (device, workQueue, finishQueue, finishQueueLock));
+	// }
 
 	ContrustFrameGraph ();
 
@@ -106,26 +107,8 @@ transferPrimaryCommandPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_B
 
 VulkanRenderer::~VulkanRenderer ()
 {
+	DeviceWaitTillIdle ();
 	ImGui_ImplGlfwVulkan_Shutdown ();
-
-	for (auto& worker : graphicsWorkers)
-		worker->StopWork ();
-	workQueue.notify_all ();
-	for (auto& worker : graphicsWorkers)
-	{
-		while (!worker->IsFinishedWorking ())
-		{
-		}
-	}
-	{
-		std::lock_guard<std::mutex> lk (finishQueueLock);
-		for (auto& work : finishQueue)
-		{
-			work.fence->WaitTillTrue ();
-			work.pool->FreeCommandBuffer (work.cmdBuf);
-		}
-	}
-	graphicsWorkers.clear ();
 
 	if (settings.memory_dump) device.LogMemory ();
 }
@@ -172,27 +155,48 @@ void VulkanRenderer::RenderFrame ()
 	frameIndex = (frameIndex + 1) % frameObjects.size ();
 	dynamic_data.AdvanceFrameCounter ();
 
-	std::vector<GraphicsCleanUpWork> nextFramesWork;
+	int i = 0;
+	std::lock_guard<std::mutex> lk (finishQueueLock);
+
+	for (auto it = finishQueue.begin (); it != finishQueue.end ();)
 	{
-		std::lock_guard<std::mutex> lk (finishQueueLock);
-		for (auto& work : finishQueue)
+		if (it->cmdBuf.fence->Check ())
 		{
-			if (work.fence->Check ())
+			for (auto& sig : it->signals)
 			{
-				for (auto& sig : work.signals)
-				{
-					if (sig != nullptr) *sig = true;
-				}
-				work.pool->FreeCommandBuffer (work.cmdBuf);
+				if (sig != nullptr) *sig = true;
 			}
-			else
-			{
-				nextFramesWork.push_back (std::move (work));
-			}
+			it->cmdBuf.Free ();
+			it = finishQueue.erase (it);
 		}
-		finishQueue.clear ();
-		finishQueue = std::move (nextFramesWork);
+		else
+		{
+			++it;
+		}
 	}
+
+
+
+	// for (auto& work : finishQueue)
+	// {
+	// 	if (work.cmdBuf.fence->Check ())
+	// 	{
+	// 		for (auto& sig : work.signals)
+	// 		{
+	// 			if (sig != nullptr) *sig = true;
+	// 		}
+	// 		work.cmdBuf.Free ();
+	// 	}
+	// 	else
+	// 	{
+	// 		nextFramesWork.push_back (i);
+	// 		// nextFramesWork.push_back (std::move (work));
+	// 	}
+	// 	i++;
+	// }
+
+	// finishQueue.clear ();
+	// // finishQueue = std::move (nextFramesWork);
 }
 
 void VulkanRenderer::CreatePresentResources ()
@@ -322,23 +326,6 @@ std::array<VkClearValue, 2> VulkanRenderer::GetFramebufferClearValues ()
 	return clearValues;
 }
 
-void VulkanRenderer::PrepareDepthPass (int curFrameIndex)
-{
-	frameObjects.at (curFrameIndex)->PrepareDepthPass ();
-}
-
-void VulkanRenderer::SubmitDepthPass (int curFrameIndex)
-{
-	frameObjects.at (curFrameIndex)->EndDepthPass ();
-
-	auto curSubmitInfo = frameObjects.at (curFrameIndex)->GetDepthSubmitInfo ();
-
-	VkPipelineStageFlags stageMasks = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-	curSubmitInfo.pWaitDstStageMask = &stageMasks;
-
-	device.GraphicsQueue ().Submit (curSubmitInfo, frameObjects.at (curFrameIndex)->GetDepthFence ());
-}
-
 void VulkanRenderer::PrepareFrame (int curFrameIndex)
 {
 	VkResult result = frameObjects.at (curFrameIndex)->AquireNextSwapchainImage (vulkanSwapChain.swapChain);
@@ -416,67 +403,55 @@ void VulkanRenderer::SubmitWork (WorkType workType,
     std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
     std::vector<Signal> signals)
 {
+	CommandBuffer cmdBuf = CommandBuffer (graphicsPrimaryCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
+	std::shared_ptr<VulkanFence> fence = std::make_shared<VulkanFence> (device);
 
+	switch (workType)
+	{
+		case (WorkType::graphics):
+			cmdBuf = CommandBuffer (graphicsPrimaryCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+			break;
+		case (WorkType::transfer):
+			cmdBuf = CommandBuffer (transferPrimaryCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+			break;
+		case (WorkType::compute):
+			cmdBuf = CommandBuffer (computePrimaryCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+			break;
+	}
 
-	workQueue.push_back (
-	    GraphicsWork (work, workType, device, waitSemaphores, signalSemaphores, buffersToClean, signals));
+	cmdBuf.Allocate ();
+	cmdBuf.Begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	work (cmdBuf.Get ());
+	cmdBuf.End ();
+	cmdBuf.SetFence (fence);
+	cmdBuf.SetWaitSemaphores (waitSemaphores);
+	cmdBuf.SetSignalSemaphores (signalSemaphores);
+	cmdBuf.Submit ();
+
+	{
+		std::lock_guard<std::mutex> lk (finishQueueLock);
+		finishQueue.push_back (GraphicsCleanUpWork (cmdBuf, buffersToClean, signals));
+	}
 }
 
 
 VkCommandBuffer VulkanRenderer::GetGraphicsCommandBuffer ()
 {
 
-	return graphicsPrimaryCommandPool.GetPrimaryCommandBuffer ();
+	return graphicsPrimaryCommandPool.GetCommandBuffer (VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 }
 
 void VulkanRenderer::SubmitGraphicsCommandBufferAndWait (VkCommandBuffer commandBuffer)
 {
 	if (commandBuffer == VK_NULL_HANDLE) return;
 
-	VkFence fence;
-	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo ();
-	VK_CHECK_RESULT (vkCreateFence (device.device, &fenceInfo, nullptr, &fence));
-	graphicsPrimaryCommandPool.SubmitPrimaryCommandBuffer (commandBuffer, fence);
+	VulkanFence fence = VulkanFence (device);
+	graphicsPrimaryCommandPool.ReturnCommandBuffer (commandBuffer, fence);
 
-	device.GraphicsQueue ().WaitForFences (fence);
+	device.GraphicsQueue ().WaitForFences (fence.Get ());
 
-	vkDestroyFence (device.device, fence, nullptr);
 	graphicsPrimaryCommandPool.FreeCommandBuffer (commandBuffer);
-}
-
-void WaitForSubmissionFinish (VkDevice device,
-    CommandPool* pool,
-    VkCommandBuffer buf,
-    VkFence fence,
-    std::vector<Signal> readySignal,
-    std::vector<VulkanBuffer> bufsToClean)
-{
-
-	vkWaitForFences (device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-	if (vkGetFenceStatus (device, fence) == VK_SUCCESS)
-	{
-		for (auto& sig : readySignal)
-			*sig = true;
-	}
-	else if (vkGetFenceStatus (device, fence) == VK_NOT_READY)
-	{
-		Log.Error (fmt::format ("Transfer timout exceeded maximum fence timout!\n"));
-		vkWaitForFences (device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-		if (vkGetFenceStatus (device, fence) == VK_SUCCESS)
-		{
-			for (auto& sig : readySignal)
-				*sig = true;
-		}
-	}
-	else if (vkGetFenceStatus (device, fence) == VK_ERROR_DEVICE_LOST)
-	{
-		throw std::runtime_error ("Fence lost device!\n");
-	}
-
-	vkDestroyFence (device, fence, nullptr);
-
-	pool->FreeCommandBuffer (buf);
 }
 
 void InsertImageMemoryBarrier (VkCommandBuffer cmdbuffer,

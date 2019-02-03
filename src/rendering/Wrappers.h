@@ -30,13 +30,11 @@ class VulkanFence
 
 	bool Check ();
 
-	void WaitTillTrue ();
-	void WaitTillFalse ();
+	void Wait (bool condition = VK_TRUE);
 
 	VkFence Get ();
 
 	void Reset ();
-
 
 	private:
 	VulkanDevice& device;
@@ -56,6 +54,7 @@ class VulkanSemaphore
 	VkSemaphore* GetPtr ();
 
 	std::mutex sem_lock;
+
 	private:
 	VulkanDevice& device;
 	VkSemaphore semaphore;
@@ -100,32 +99,29 @@ class CommandQueue
 class CommandPool
 {
 	public:
-	CommandPool (VulkanDevice& device, VkCommandPoolCreateFlags flags, CommandQueue* queue);
+	CommandPool (VulkanDevice& device, VkCommandPoolCreateFlags flags, CommandQueue& queue);
 	CommandPool (CommandPool& cmd) = delete;
 	CommandPool& operator= (const CommandPool& cmd) = delete;
-	CommandPool (CommandPool&& cmd);
-	CommandPool& operator= (CommandPool&& cmd);
 	~CommandPool ();
 
 	VkBool32 ResetPool ();
 	VkBool32 ResetCommandBuffer (VkCommandBuffer cmdBuf);
 
-	VkCommandBuffer GetOneTimeUseCommandBuffer ();
-	VkCommandBuffer GetPrimaryCommandBuffer (bool beginBufferRecording = true);
-	VkCommandBuffer GetSecondaryCommandBuffer (bool beginBufferRecording = true);
+	VkCommandBuffer GetCommandBuffer (VkCommandBufferLevel level, VkCommandBufferUsageFlags flags = 0);
 
-	VkBool32 SubmitCommandBuffer (VkCommandBuffer,
+	VkBool32 ReturnCommandBuffer (VkCommandBuffer,
 	    VulkanFence& fence,
-	    std::vector<std::shared_ptr<VulkanSemaphore>>& waitSemaphores,
-	    std::vector<std::shared_ptr<VulkanSemaphore>>& signalSemaphores);
+	    std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores = {},
+	    std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores = {});
 
-	VkBool32 SubmitOneTimeUseCommandBuffer (VkCommandBuffer cmdBuffer, VkFence fence = nullptr);
-	VkBool32 SubmitPrimaryCommandBuffer (VkCommandBuffer buf, VkFence fence = nullptr);
+	void SubmitCommandBuffer (VkCommandBuffer,
+	    VulkanFence& fence,
+	    std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores = {},
+	    std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores = {});
 
 	VkCommandBuffer AllocateCommandBuffer (VkCommandBufferLevel level);
 
-	void BeginBufferRecording (VkCommandBuffer buf,
-	    VkCommandBufferUsageFlagBits flags = (VkCommandBufferUsageFlagBits) (0));
+	void BeginBufferRecording (VkCommandBuffer buf, VkCommandBufferUsageFlags flags = 0);
 	void EndBufferRecording (VkCommandBuffer buf);
 	void FreeCommandBuffer (VkCommandBuffer buf);
 
@@ -134,8 +130,53 @@ class CommandPool
 	private:
 	VulkanDevice& device;
 	std::mutex poolLock;
+	CommandQueue& queue;
 	VkCommandPool commandPool;
-	CommandQueue* queue;
+};
+
+class CommandBuffer
+{
+	public:
+	enum class State
+	{
+		error,
+		empty,
+		allocated,
+		recording,
+		ready,
+		submitted
+	};
+
+	explicit CommandBuffer (CommandPool& pool, VkCommandBufferLevel level);
+
+	void Allocate ();
+
+	void Begin (VkCommandBufferUsageFlags flags = 0);
+	void End ();
+
+	void SetFence (std::shared_ptr<VulkanFence>& fence);
+	void SetWaitSemaphores (std::vector<std::shared_ptr<VulkanSemaphore>>& sems);
+	void SetSignalSemaphores (std::vector<std::shared_ptr<VulkanSemaphore>>& sems);
+
+	void Submit ();
+
+	void Wait ();
+
+	void Free ();
+
+	VkCommandBuffer Get () { return cmdBuf; }
+	VkCommandBuffer* GetPtr () { return &cmdBuf; }
+
+
+	std::shared_ptr<VulkanFence> fence;
+	std::vector<std::shared_ptr<VulkanSemaphore>> wait_semaphores;
+	std::vector<std::shared_ptr<VulkanSemaphore>> signal_semaphores;
+
+	private:
+	CommandPool* pool; // can't be copied if its a reference...
+	VkCommandBufferLevel level;
+	State state = State::empty;
+	VkCommandBuffer cmdBuf = nullptr;
 };
 
 class CommandPoolGroup
@@ -148,17 +189,6 @@ class CommandPoolGroup
 	CommandPool computePool;
 };
 
-class CommandPoolManager
-{
-	public:
-	CommandPoolManager (int num_groups, VulkanDevice& device);
-
-	CommandPoolGroup& Get (int index);
-
-	private:
-	std::vector<CommandPoolGroup> groups;
-};
-
 enum class WorkType
 {
 	graphics,
@@ -166,120 +196,17 @@ enum class WorkType
 	compute,
 };
 
-struct GraphicsWork
-{
-	std::function<void(const VkCommandBuffer)> work;
-
-	std::shared_ptr<VulkanFence> fence;
-	WorkType type;
-
-	std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores;
-	std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores;
-	std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean;
-	std::vector<Signal> signals; // signal on cpu completion of work
-
-	explicit GraphicsWork (std::function<void(const VkCommandBuffer)> work,
-	    WorkType type,
-	    VulkanDevice& device,
-	    std::vector<std::shared_ptr<VulkanSemaphore>>& waitSemaphores,
-	    std::vector<std::shared_ptr<VulkanSemaphore>>& signalSemaphores,
-	    std::vector<std::shared_ptr<VulkanBuffer>>& buffersToClean,
-	    std::vector<Signal>& signals)
-	: work (work),
-	  type (type),
-	  fence (std::make_shared<VulkanFence> (device)),
-	  waitSemaphores (waitSemaphores),
-	  signalSemaphores (signalSemaphores),
-	  buffersToClean (buffersToClean),
-	  signals (signals)
-	{
-	}
-
-	GraphicsWork (const GraphicsWork& work) = default;
-	GraphicsWork& operator= (const GraphicsWork& work) = default;
-	GraphicsWork (GraphicsWork&& work) = default;
-	GraphicsWork& operator= (GraphicsWork&& work) = default;
-};
-
 struct GraphicsCleanUpWork
 {
-	std::shared_ptr<VulkanFence> fence;
-	std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores;
-	std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores;
-	CommandPool* pool;
-	VkCommandBuffer cmdBuf;
+	CommandBuffer cmdBuf;
 	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
 	std::vector<Signal> signals;
 
-	explicit GraphicsCleanUpWork (GraphicsWork& work, CommandPool* pool, VkCommandBuffer cmdBuf)
-	: pool (pool),
-	  cmdBuf (cmdBuf),
-	  fence (work.fence),
-	  buffers (work.buffersToClean),
-	  signals (work.signals),
-	  waitSemaphores (work.waitSemaphores),
-	  signalSemaphores (work.signalSemaphores)
+	explicit GraphicsCleanUpWork (
+	    CommandBuffer cmdBuf, std::vector<std::shared_ptr<VulkanBuffer>>& buffers, std::vector<Signal>& signals)
+	: cmdBuf (cmdBuf), buffers (buffers), signals (signals)
 	{
 	}
-
-	explicit GraphicsCleanUpWork (std::shared_ptr<VulkanFence>& fence,
-	    std::vector<std::shared_ptr<VulkanSemaphore>>& waitSemaphores,
-	    std::vector<std::shared_ptr<VulkanSemaphore>>& signalSemaphores,
-	    CommandPool* pool,
-	    VkCommandBuffer cmdBuf,
-	    std::vector<std::shared_ptr<VulkanBuffer>>& buffers,
-	    std::vector<Signal>& signals)
-	: fence (fence),
-	  pool (pool),
-	  cmdBuf (cmdBuf),
-	  buffers (buffers),
-	  signals (signals),
-	  waitSemaphores (waitSemaphores),
-	  signalSemaphores (signalSemaphores)
-	{
-	}
-
-
-	GraphicsCleanUpWork (const GraphicsCleanUpWork& work) = default;
-	GraphicsCleanUpWork& operator= (const GraphicsCleanUpWork& work) = default;
-	GraphicsCleanUpWork (GraphicsCleanUpWork&& work) = default;
-	GraphicsCleanUpWork& operator= (GraphicsCleanUpWork&& work) = default;
-};
-
-class GraphicsCommandWorker
-{
-	public:
-	GraphicsCommandWorker (VulkanDevice& device,
-	    ConcurrentQueue<GraphicsWork>& workQueue,
-	    std::vector<GraphicsCleanUpWork>& finishQueue,
-	    std::mutex& finishQueueLock,
-	    bool startActive = true);
-
-	GraphicsCommandWorker (const GraphicsCommandWorker& other) = delete; // copy
-	GraphicsCommandWorker (GraphicsCommandWorker&& other) = delete;      // move
-	GraphicsCommandWorker& operator= (const GraphicsCommandWorker&) = default;
-	GraphicsCommandWorker& operator= (GraphicsCommandWorker&&) = default;
-
-	~GraphicsCommandWorker ();
-
-	void StopWork ();
-
-	bool IsFinishedWorking ();
-
-	private:
-	VulkanDevice& device;
-	void Work ();
-	std::thread workingThread;
-
-	std::atomic_bool keepWorking = true; // default to start working
-	ConcurrentQueue<GraphicsWork>& workQueue;
-	std::mutex& finishQueueLock;
-	std::vector<GraphicsCleanUpWork>& finishQueue;
-	std::atomic_bool isDoneWorking = false;
-
-	CommandPool graphicsPool;
-	CommandPool transferPool;
-	CommandPool computePool;
 };
 
 class FrameObject
@@ -288,14 +215,7 @@ class FrameObject
 	FrameObject (VulkanDevice& device, int frameD);
 	~FrameObject ();
 
-
-
 	VkResult AquireNextSwapchainImage (VkSwapchainKHR swapchain);
-	void WaitTillDepthReady ();
-	void WaitTillReady ();
-
-	void PrepareDepthPass ();
-	void EndDepthPass ();
 
 	void PrepareFrame ();
 	void SubmitFrame ();
@@ -305,11 +225,9 @@ class FrameObject
 	VkSubmitInfo GetSubmitInfo ();
 	VkPresentInfoKHR GetPresentInfo ();
 
-	VkCommandBuffer GetDepthCmdBuf ();
 	VkCommandBuffer GetPrimaryCmdBuf ();
 
 	VkFence GetCommandFence ();
-	VkFence GetDepthFence ();
 
 	private:
 	VulkanDevice& device;
@@ -320,10 +238,8 @@ class FrameObject
 	VulkanSemaphore imageAvailSem;
 	VulkanSemaphore renderFinishSem;
 
-	VulkanFence depthFence;
-	VulkanFence commandFence;
+	std::shared_ptr<VulkanFence> commandFence;
 
 	CommandPool commandPool;
-	VkCommandBuffer primaryCmdBuf;
-	VkCommandBuffer depthCmdBuf;
+	CommandBuffer primary_command_buffer;
 };

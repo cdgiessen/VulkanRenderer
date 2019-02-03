@@ -25,15 +25,15 @@ bool VulkanFence::Check ()
 		return true;
 	else if (out == VK_NOT_READY)
 		return false;
-	throw std::runtime_error ("DEVICE_LOST");
+	assert (out == VK_SUCCESS || out == VK_NOT_READY);
 	return false;
 }
 
-void VulkanFence::WaitTillTrue () { vkWaitForFences (device.device, 1, &fence, VK_TRUE, timeout); }
-void VulkanFence::WaitTillFalse ()
+void VulkanFence::Wait (bool condition)
 {
-	vkWaitForFences (device.device, 1, &fence, VK_FALSE, timeout);
+	vkWaitForFences (device.device, 1, &fence, condition, timeout);
 }
+
 VkFence VulkanFence::Get () { return fence; }
 
 void VulkanFence::Reset () { vkResetFences (device.device, 1, &fence); }
@@ -128,53 +128,37 @@ void CommandQueue::WaitForFences (VkFence fence)
 
 /////// Command Pool ////////////
 
-CommandPool::CommandPool (VulkanDevice& device, VkCommandPoolCreateFlags flags, CommandQueue* queue)
-: device (device)
+CommandPool::CommandPool (VulkanDevice& device, VkCommandPoolCreateFlags flags, CommandQueue& queue)
+: device (device), queue (queue)
 {
-	this->queue = queue;
-
 	VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo ();
-	cmd_pool_info.queueFamilyIndex = queue->GetQueueFamily ();
+	cmd_pool_info.queueFamilyIndex = queue.GetQueueFamily ();
 	cmd_pool_info.flags = flags;
 
-	if (vkCreateCommandPool (device.device, &cmd_pool_info, nullptr, &commandPool) != VK_SUCCESS)
-	{
-		throw std::runtime_error ("failed to create graphics command pool!");
-	}
-}
-
-CommandPool::CommandPool(CommandPool&& cmd):device(device), queue(cmd.queue) {
-	std::lock_guard<std::mutex> lock (cmd.poolLock);
-	commandPool = cmd.commandPool;
-	cmd.commandPool = nullptr;
-}
-CommandPool& CommandPool::operator= (CommandPool&& cmd) {
-	std::lock_guard<std::mutex> lock (cmd.poolLock);
-	commandPool = cmd.commandPool;
-	queue = cmd.queue;
-	cmd.commandPool = nullptr;
-	return *this;
+	auto res = vkCreateCommandPool (device.device, &cmd_pool_info, nullptr, &commandPool);
+	assert (res == VK_SUCCESS);
 }
 
 CommandPool::~CommandPool ()
 {
 	std::lock_guard<std::mutex> lock (poolLock);
-	if(commandPool != nullptr)
-	vkDestroyCommandPool (device.device, commandPool, nullptr);
+	if (commandPool != nullptr) vkDestroyCommandPool (device.device, commandPool, nullptr);
 }
 
 VkBool32 CommandPool::ResetPool ()
 {
 
 	std::lock_guard<std::mutex> lock (poolLock);
-	vkResetCommandPool (device.device, commandPool, 0);
+	auto res = vkResetCommandPool (device.device, commandPool, 0);
+	assert (res == VK_SUCCESS);
 	return VK_TRUE;
 }
 
 VkBool32 CommandPool::ResetCommandBuffer (VkCommandBuffer cmdBuf)
 {
 	std::lock_guard<std::mutex> lock (poolLock);
-	vkResetCommandBuffer (cmdBuf, {});
+	auto res = vkResetCommandBuffer (cmdBuf, {});
+	assert (res == VK_SUCCESS);
 	return VK_TRUE;
 }
 
@@ -185,104 +169,61 @@ VkCommandBuffer CommandPool::AllocateCommandBuffer (VkCommandBufferLevel level)
 	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo (commandPool, level, 1);
 
 	std::lock_guard<std::mutex> lock (poolLock);
-	vkAllocateCommandBuffers (device.device, &allocInfo, &buf);
-
+	auto res = vkAllocateCommandBuffers (device.device, &allocInfo, &buf);
+	assert (res == VK_SUCCESS);
 	return buf;
 }
 
-void CommandPool::BeginBufferRecording (VkCommandBuffer buf, VkCommandBufferUsageFlagBits flags)
+void CommandPool::BeginBufferRecording (VkCommandBuffer buf, VkCommandBufferUsageFlags flags)
 {
 	std::lock_guard<std::mutex> lock (poolLock);
 	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo ();
 	beginInfo.flags = flags;
 
-	vkBeginCommandBuffer (buf, &beginInfo);
+	auto res = vkBeginCommandBuffer (buf, &beginInfo);
+	assert (res == VK_SUCCESS);
 }
 
 void CommandPool::EndBufferRecording (VkCommandBuffer buf)
 {
 	std::lock_guard<std::mutex> lock (poolLock);
-	vkEndCommandBuffer (buf);
+	auto res = vkEndCommandBuffer (buf);
+	assert (res == VK_SUCCESS);
 }
 
 void CommandPool::FreeCommandBuffer (VkCommandBuffer buf)
 {
-
 	std::lock_guard<std::mutex> lock (poolLock);
 	vkFreeCommandBuffers (device.device, commandPool, 1, &buf);
 }
 
-VkCommandBuffer CommandPool::GetOneTimeUseCommandBuffer ()
+VkCommandBuffer CommandPool::GetCommandBuffer (VkCommandBufferLevel level, VkCommandBufferUsageFlags flags)
 {
-	VkCommandBuffer cmdBuffer = AllocateCommandBuffer (VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+	VkCommandBuffer cmdBuffer = AllocateCommandBuffer (level);
 
-	BeginBufferRecording (cmdBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	BeginBufferRecording (cmdBuffer, flags);
 
 	return cmdBuffer;
 }
 
-VkCommandBuffer CommandPool::GetPrimaryCommandBuffer (bool beginBufferRecording)
-{
-
-	VkCommandBuffer cmdBuffer = AllocateCommandBuffer (VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
-	if (beginBufferRecording == true) BeginBufferRecording (cmdBuffer);
-
-	return cmdBuffer;
-}
-
-VkCommandBuffer CommandPool::GetSecondaryCommandBuffer (bool beginBufferRecording)
-{
-	VkCommandBuffer cmdBuffer = AllocateCommandBuffer (VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-
-	if (beginBufferRecording == true) BeginBufferRecording (cmdBuffer);
-
-	return cmdBuffer;
-}
-
-
-VkBool32 CommandPool::SubmitCommandBuffer (VkCommandBuffer cmdBuffer,
+VkBool32 CommandPool::ReturnCommandBuffer (VkCommandBuffer cmdBuffer,
     VulkanFence& fence,
-    std::vector<std::shared_ptr<VulkanSemaphore>>& waitSemaphores,
-    std::vector<std::shared_ptr<VulkanSemaphore>>& signalSemaphores)
+    std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores,
+    std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores)
 {
 	EndBufferRecording (cmdBuffer);
-	queue->SubmitCommandBuffer (cmdBuffer, fence, waitSemaphores, signalSemaphores);
+	queue.SubmitCommandBuffer (cmdBuffer, fence, waitSemaphores, signalSemaphores);
 
 	return VK_TRUE;
 }
 
-
-VkBool32 CommandPool::SubmitOneTimeUseCommandBuffer (VkCommandBuffer cmdBuffer, VkFence fence)
+void CommandPool::SubmitCommandBuffer (VkCommandBuffer cmdBuffer,
+    VulkanFence& fence,
+    std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores,
+    std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores)
 {
-	EndBufferRecording (cmdBuffer);
-
-	if (fence == nullptr)
-	{
-		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo ();
-		VK_CHECK_RESULT (vkCreateFence (device.device, &fenceInfo, nullptr, &fence))
-	}
-
-	queue->SubmitCommandBuffer (cmdBuffer, fence);
-
-	return VK_TRUE;
+	queue.SubmitCommandBuffer (cmdBuffer, fence, waitSemaphores, signalSemaphores);
 }
-
-VkBool32 CommandPool::SubmitPrimaryCommandBuffer (VkCommandBuffer cmdBuffer, VkFence fence)
-{
-	EndBufferRecording (cmdBuffer);
-
-	if (fence == nullptr)
-	{
-		VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo ();
-		VK_CHECK_RESULT (vkCreateFence (device.device, &fenceInfo, nullptr, &fence))
-	}
-
-	queue->SubmitCommandBuffer (cmdBuffer, fence);
-
-	return VK_TRUE;
-}
-
 
 void CommandPool::WriteToBuffer (VkCommandBuffer buf, std::function<void(VkCommandBuffer)> cmds)
 {
@@ -290,97 +231,77 @@ void CommandPool::WriteToBuffer (VkCommandBuffer buf, std::function<void(VkComma
 	cmds (buf);
 }
 
+///////// CommandBuffer /////////
+
+CommandBuffer::CommandBuffer (CommandPool& pool, VkCommandBufferLevel level)
+: pool (&pool), level (level)
+{
+}
+
+void CommandBuffer::Allocate ()
+{
+	assert (state == State::empty);
+	cmdBuf = pool->AllocateCommandBuffer (level);
+	state = State::allocated;
+}
+
+void CommandBuffer::Begin (VkCommandBufferUsageFlags flags)
+{
+	assert (state == State::allocated);
+	pool->BeginBufferRecording (cmdBuf, flags);
+	state = State::recording;
+}
+void CommandBuffer::End ()
+{
+	assert (state == State::recording);
+	pool->EndBufferRecording (cmdBuf);
+	state = State::ready;
+}
+
+void CommandBuffer::SetFence (std::shared_ptr<VulkanFence>& fence) { this->fence = fence; }
+void CommandBuffer::SetWaitSemaphores (std::vector<std::shared_ptr<VulkanSemaphore>>& sems)
+{
+	for (auto& s : sems)
+	{
+		wait_semaphores.push_back (s);
+	}
+}
+void CommandBuffer::SetSignalSemaphores (std::vector<std::shared_ptr<VulkanSemaphore>>& sems)
+{
+	for (auto& s : sems)
+	{
+		signal_semaphores.push_back (s);
+	}
+}
+
+void CommandBuffer::Submit ()
+{
+	assert (state == State::ready);
+	pool->SubmitCommandBuffer (cmdBuf, *fence.get ());
+	state = State::submitted;
+}
+
+void CommandBuffer::Wait ()
+{
+	// assert (state == State::submitted);
+	fence->Wait ();
+	fence->Reset ();
+	state = State::allocated;
+}
+
+void CommandBuffer::Free ()
+{
+	pool->FreeCommandBuffer (cmdBuf);
+	state = State::empty;
+}
+
 ///////// CommandPoolGroup /////////
 
-CommandPoolGroup::CommandPoolGroup(VulkanDevice& device):
-	graphicsPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue()),
-	transferPool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.TransferQueue()),
-	computePool(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.ComputeQueue())
+CommandPoolGroup::CommandPoolGroup (VulkanDevice& device)
+: graphicsPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.GraphicsQueue ()),
+  transferPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.TransferQueue ()),
+  computePool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.ComputeQueue ())
 {
-
-}
-
-CommandPoolManager::CommandPoolManager(int num_groups, VulkanDevice& device) {
-	for (int i = 0; i < num_groups; i++) groups.emplace_back( device);
-}
-
-CommandPoolGroup& CommandPoolManager::Get (int index)
-{
-	return groups.at (index);
-}
-//////// GraphicsCommandWorker /////////
-
-GraphicsCommandWorker::GraphicsCommandWorker (VulkanDevice& device,
-    ConcurrentQueue<GraphicsWork>& workQueue,
-    std::vector<GraphicsCleanUpWork>& finishQueue,
-    std::mutex& finishQueueLock,
-    bool startActive)
-:
-
-  device (device),
-  graphicsPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue ()),
-  transferPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.TransferQueue ()),
-  computePool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.ComputeQueue ()),
-  workQueue (workQueue),
-  finishQueue (finishQueue),
-  finishQueueLock (finishQueueLock)
-{
-	workingThread = std::thread{ &GraphicsCommandWorker::Work, this };
-}
-
-GraphicsCommandWorker::~GraphicsCommandWorker ()
-{
-	StopWork ();
-	workingThread.join ();
-}
-
-void GraphicsCommandWorker::StopWork () { keepWorking = false; }
-
-bool GraphicsCommandWorker::IsFinishedWorking () { return isDoneWorking; }
-
-void GraphicsCommandWorker::Work ()
-{
-	while (keepWorking)
-	{
-
-		workQueue.wait_on_value ();
-
-		while (!workQueue.empty ())
-		{
-			auto pos_work = workQueue.pop_if ();
-			if (pos_work.has_value ())
-			{
-
-
-				VkCommandBuffer cmdBuf;
-				CommandPool* pool;
-
-				switch (pos_work->type)
-				{
-					case (WorkType::graphics):
-						pool = &graphicsPool;
-						break;
-					case (WorkType::transfer):
-						pool = &transferPool;
-						break;
-					case (WorkType::compute):
-						pool = &computePool;
-						break;
-				}
-
-				cmdBuf = pool->GetOneTimeUseCommandBuffer ();
-				pos_work->work (cmdBuf);
-				pool->SubmitCommandBuffer (
-				    cmdBuf, *pos_work->fence, pos_work->waitSemaphores, pos_work->signalSemaphores);
-
-				{
-					std::lock_guard<std::mutex> lk (finishQueueLock);
-					finishQueue.push_back (GraphicsCleanUpWork (*pos_work, pool, cmdBuf));
-				}
-			}
-		}
-	}
-	isDoneWorking = true;
 }
 
 ///////// FrameObject //////////
@@ -388,16 +309,17 @@ void GraphicsCommandWorker::Work ()
 FrameObject::FrameObject (VulkanDevice& device, int frameIndex)
 : device (device),
   frameIndex (frameIndex),
-  commandPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &device.GraphicsQueue ()),
+  commandPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.GraphicsQueue ()),
   imageAvailSem (device),
   renderFinishSem (device),
-  commandFence (device, DEFAULT_FENCE_TIMEOUT, VK_FENCE_CREATE_SIGNALED_BIT),
-  depthFence (device, DEFAULT_FENCE_TIMEOUT, VK_FENCE_CREATE_SIGNALED_BIT)
+  commandFence (std::make_shared<VulkanFence> (device, DEFAULT_FENCE_TIMEOUT, VK_FENCE_CREATE_SIGNALED_BIT)),
+  primary_command_buffer (commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY)
 {
-	primaryCmdBuf = commandPool.GetPrimaryCommandBuffer (false);
+	primary_command_buffer.Allocate ();
+	primary_command_buffer.SetFence (commandFence);
 }
 
-FrameObject::~FrameObject () { commandPool.FreeCommandBuffer (primaryCmdBuf); }
+FrameObject::~FrameObject () { primary_command_buffer.Free (); }
 
 
 VkResult FrameObject::AquireNextSwapchainImage (VkSwapchainKHR swapchain)
@@ -406,52 +328,23 @@ VkResult FrameObject::AquireNextSwapchainImage (VkSwapchainKHR swapchain)
 	    device.device, swapchain, std::numeric_limits<uint64_t>::max (), imageAvailSem.Get (), VK_NULL_HANDLE, &swapChainIndex);
 }
 
-void FrameObject::PrepareDepthPass ()
-{
-	WaitTillReady ();
-	commandPool.BeginBufferRecording (depthCmdBuf, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-}
-
-void FrameObject::EndDepthPass () { commandPool.EndBufferRecording (depthCmdBuf); }
-
 void FrameObject::PrepareFrame ()
 {
-	WaitTillReady ();
-	commandPool.BeginBufferRecording (primaryCmdBuf, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+	primary_command_buffer.Wait ();
+	primary_command_buffer.Begin (VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 }
 
-void FrameObject::WaitTillReady ()
-{
-	commandFence.WaitTillTrue ();
-	commandFence.Reset ();
-}
-
-void FrameObject::SubmitFrame () { commandPool.EndBufferRecording (primaryCmdBuf); }
-
-VkSubmitInfo FrameObject::GetDepthSubmitInfo ()
-{
-
-	VkSubmitInfo submitInfo = initializers::submitInfo ();
-	// submitInfo.signalSemaphoreCount = 1;
-	// submitInfo.pSignalSemaphores = renderFinishSem.GetPtr();
-	// submitInfo.waitSemaphoreCount = 1;
-	// submitInfo.pWaitSemaphores = imageAvailSem.GetPtr();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &depthCmdBuf;
-
-	return submitInfo;
-}
+void FrameObject::SubmitFrame () { primary_command_buffer.End (); }
 
 VkSubmitInfo FrameObject::GetSubmitInfo ()
 {
-
 	VkSubmitInfo submitInfo = initializers::submitInfo ();
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = renderFinishSem.GetPtr ();
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = imageAvailSem.GetPtr ();
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &primaryCmdBuf;
+	submitInfo.pCommandBuffers = primary_command_buffer.GetPtr ();
 
 	return submitInfo;
 }
@@ -468,10 +361,6 @@ VkPresentInfoKHR FrameObject::GetPresentInfo ()
 	return presentInfo;
 }
 
-VkCommandBuffer FrameObject::GetDepthCmdBuf () { return depthCmdBuf; }
+VkCommandBuffer FrameObject::GetPrimaryCmdBuf () { return primary_command_buffer.Get (); }
 
-VkCommandBuffer FrameObject::GetPrimaryCmdBuf () { return primaryCmdBuf; }
-
-VkFence FrameObject::GetCommandFence () { return commandFence.Get (); }
-
-VkFence FrameObject::GetDepthFence () { return depthFence.Get (); }
+VkFence FrameObject::GetCommandFence () { return commandFence->Get (); }

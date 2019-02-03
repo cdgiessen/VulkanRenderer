@@ -157,9 +157,6 @@ class VulkanRenderer
 	void CreateDepthResources ();
 	void CreatePresentResources ();
 
-	void PrepareDepthPass (int curFrameIndex);
-	void SubmitDepthPass (int curFrameIndex);
-
 	void PrepareFrame (int curFrameIndex);
 	void SubmitFrame (int curFrameIndex);
 
@@ -201,6 +198,7 @@ class VulkanRenderer
 	private:
 	CommandPool graphicsPrimaryCommandPool;
 	CommandPool transferPrimaryCommandPool;
+	CommandPool computePrimaryCommandPool;
 
 	std::vector<std::unique_ptr<FrameObject>> frameObjects;
 
@@ -212,10 +210,8 @@ class VulkanRenderer
 
 	int workerThreadCount = 3;
 
-	ConcurrentQueue<GraphicsWork> workQueue;
 	std::vector<GraphicsCleanUpWork> finishQueue;
 	std::mutex finishQueueLock;
-	std::vector<std::unique_ptr<GraphicsCommandWorker>> graphicsWorkers;
 
 	uint32_t frameIndex = 0; // which of the swapchain images the app is rendering to
 	bool wireframe = false;  // whether or not to use the wireframe pipeline for the scene.

@@ -1,13 +1,10 @@
 #pragma once
 
 #include <vector>
-#include <string>
 #include <variant>
-#include <memory>
 
 #include <vulkan/vulkan.h>
 
-// foward declarations
 class VulkanDevice;
 
 class DescriptorPoolSize {

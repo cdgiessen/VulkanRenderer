@@ -14,7 +14,7 @@ public:
 	void showWindow(bool show = true);
 	void setSizeLimits(const glm::ivec2& minSize, const glm::ivec2& maxSize);
 
-	GLFWwindow* getWindowContext();
+	GLFWwindow* getWindowContext() const;
 	bool CheckForWindowResizing();
 	void SetWindowResizeDone();
 	bool CheckForWindowClose();
