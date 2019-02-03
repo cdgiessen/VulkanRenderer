@@ -145,6 +145,7 @@ class VulkanDevice
 
 	VMA_MemoryResource allocator_general;
 	VMA_MemoryResource allocator_linear_tiling;
+	VMA_MemoryResource allocator_optimal_tiling;
 
 	void CreateLogicalDevice ();
 	void CreateQueues ();

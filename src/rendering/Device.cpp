@@ -263,6 +263,7 @@ VulkanDevice::~VulkanDevice ()
 {
 	allocator_general.Free ();
 	allocator_linear_tiling.Free ();
+	allocator_optimal_tiling.Free ();
 
 	vkDestroyDevice (device, nullptr);
 }
@@ -271,6 +272,7 @@ void VulkanDevice::LogMemory ()
 {
 	allocator_general.LogVMA ();
 	allocator_linear_tiling.LogVMA ();
+	allocator_optimal_tiling.LogVMA ();
 }
 
 bool VulkanPhysicalDevice::IsDeviceSuitable (VkPhysicalDevice device, VkSurfaceKHR surface)
@@ -500,6 +502,7 @@ void VulkanDevice::CreateVulkanAllocator ()
 {
 	allocator_general.Create (physical_device.physical_device, device);
 	allocator_linear_tiling.Create (physical_device.physical_device, device);
+	allocator_optimal_tiling.Create (physical_device.physical_device, device);
 }
 
 
@@ -507,6 +510,9 @@ VmaAllocator VulkanDevice::GetGeneralAllocator () { return allocator_general.all
 
 VmaAllocator VulkanDevice::GetImageLinearAllocator () { return allocator_linear_tiling.allocator; }
 
-VmaAllocator VulkanDevice::GetImageOptimalAllocator () { return allocator_general.allocator; }
+VmaAllocator VulkanDevice::GetImageOptimalAllocator ()
+{
+	return allocator_optimal_tiling.allocator;
+}
 
 VkSurfaceKHR VulkanDevice::GetSurface () { return surface.surface; }
