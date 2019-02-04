@@ -10,3 +10,6 @@
 [submodule "ext/fmt"]
 	path = ext/fmt
 	url = https://github.com/fmtlib/fmt
+[submodule "ext/SG14"]
+	path = ext/SG14
+	url = https://github.com/WG21-SG14/SG14
