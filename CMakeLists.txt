@@ -3,17 +3,12 @@ cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
 include(CMakeToolsHelpers OPTIONAL)
 
 set(CMAKE_CXX_STANDARD 17)
-if(MSVC)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
-endif(MSVC)
-if(UNIX)
-endif(UNIX)
-
 
 project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
 
-
 #libraries
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+
 add_subdirectory(ext)
 
 find_package(glfw3 REQUIRED)
@@ -83,6 +78,10 @@ endif(BULLET_FOUND)
 
 #fmt
 target_link_libraries(VulkanApp PRIVATE fmt)
+
+#SG14
+target_link_libraries(VulkanApp PRIVATE sg14)
+target_include_directories(VulkanApp PRIVATE ${SG14_INCLUDE_DIRECTORY})
 
 #gtk
 if(UNIX)
