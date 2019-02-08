@@ -3,6 +3,8 @@
 #include <glm/glm.hpp>
 #include <numeric>
 
+#include <fx/gltf.h>
+
 #include "core/CoreTools.h"
 #include "core/Logger.h"
 
@@ -73,8 +75,9 @@ std::shared_ptr<MeshData> createSinglePlane ()
 	verts.reserve ((dim + 1) * (dim + 1) * 6);
 	indices.reserve ((dim) * (dim)*6 * 6);
 
-	AddPlane(verts, indices, dim, 0, glm::vec3(-1,0,-1), glm::vec3(-1,0,1), glm::vec3(1,0,-1), glm::vec3(1,0,1));
-	
+	AddPlane (
+	    verts, indices, dim, 0, glm::vec3 (-1, 0, -1), glm::vec3 (-1, 0, 1), glm::vec3 (1, 0, -1), glm::vec3 (1, 0, 1));
+
 	return std::make_shared<MeshData> (Vert_PosNormUv, verts, indices);
 };
 
@@ -88,8 +91,10 @@ std::shared_ptr<MeshData> createDoublePlane ()
 	verts.reserve ((dim + 1) * (dim + 1) * 6);
 	indices.reserve ((dim) * (dim)*6 * 6);
 
-	AddPlane(verts, indices, dim, 0, glm::vec3(-1,0,-1), glm::vec3(-1,0,1), glm::vec3(1,0,-1), glm::vec3(-1,0,1));
-		AddPlane(verts, indices, dim, 0, glm::vec3(-1,1,-1), glm::vec3(-1,1,1), glm::vec3(1,1,-1), glm::vec3(1,1,1));
+	AddPlane (
+	    verts, indices, dim, 0, glm::vec3 (-1, 0, -1), glm::vec3 (-1, 0, 1), glm::vec3 (1, 0, -1), glm::vec3 (-1, 0, 1));
+	AddPlane (
+	    verts, indices, dim, 0, glm::vec3 (-1, 1, -1), glm::vec3 (-1, 1, 1), glm::vec3 (1, 1, -1), glm::vec3 (1, 1, 1));
 
 	return std::make_shared<MeshData> (Vert_PosNormUv, verts, indices);
 };
@@ -145,14 +150,14 @@ std::shared_ptr<MeshData> createCube ()
 	verts.reserve ((dim + 1) * (dim + 1) * 6);
 	indices.reserve ((dim) * (dim)*6 * 6);
 
-	glm::vec3 dlb{-1,-1,-1};
-	glm::vec3 dlf{-1,-1,1};
-	glm::vec3 drb{1,-1,-1};
-	glm::vec3 drf{1,-1,1};
-	glm::vec3 ulb{-1,1,-1};
-	glm::vec3 ulf{-1,1,1};
-	glm::vec3 urb{1,1,-1};
-	glm::vec3 urf{1,1,1};
+	glm::vec3 dlb{ -1, -1, -1 };
+	glm::vec3 dlf{ -1, -1, 1 };
+	glm::vec3 drb{ 1, -1, -1 };
+	glm::vec3 drf{ 1, -1, 1 };
+	glm::vec3 ulb{ -1, 1, -1 };
+	glm::vec3 ulf{ -1, 1, 1 };
+	glm::vec3 urb{ 1, 1, -1 };
+	glm::vec3 urf{ 1, 1, 1 };
 
 
 	AddPlane (verts, indices, dim, 0, urf, urb, ulf, ulb);
@@ -174,14 +179,14 @@ std::shared_ptr<MeshData> createSphere (int dim)
 	verts.reserve ((dim + 1) * (dim + 1) * 6);
 	indices.reserve ((dim) * (dim)*6 * 6);
 
-	glm::vec3 dlb{-1,-1,-1};
-	glm::vec3 dlf{-1,-1,1};
-	glm::vec3 drb{1,-1,-1};
-	glm::vec3 drf{1,-1,1};
-	glm::vec3 ulb{-1,1,-1};
-	glm::vec3 ulf{-1,1,1};
-	glm::vec3 urb{1,1,-1};
-	glm::vec3 urf{1,1,1};
+	glm::vec3 dlb{ -1, -1, -1 };
+	glm::vec3 dlf{ -1, -1, 1 };
+	glm::vec3 drb{ 1, -1, -1 };
+	glm::vec3 drf{ 1, -1, 1 };
+	glm::vec3 ulb{ -1, 1, -1 };
+	glm::vec3 ulf{ -1, 1, 1 };
+	glm::vec3 urb{ 1, 1, -1 };
+	glm::vec3 urf{ 1, 1, 1 };
 
 
 	AddPlane (verts, indices, dim, 0, urf, urb, ulf, ulb);
