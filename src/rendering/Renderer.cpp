@@ -148,8 +148,7 @@ void VulkanRenderer::RenderFrame ()
 	frameGraph->FillCommandBuffer (frameObjects.at (frameIndex)->GetPrimaryCmdBuf (),
 	    vulkanSwapChain.swapChainFramebuffers[frameIndex],
 	    { 0, 0 },
-	    vulkanSwapChain.swapChainExtent,
-	    GetFramebufferClearValues ());
+	    vulkanSwapChain.swapChainExtent);
 	SubmitFrame (frameIndex);
 
 	frameIndex = (frameIndex + 1) % frameObjects.size ();
@@ -288,8 +287,10 @@ void VulkanRenderer::ContrustFrameGraph ()
 	// SubpassDescription::DepthStencilAccess::read_write); main_work.AddSubpass(depth_subpass);
 
 	SubpassDescription color_subpass ("sub_color");
-	color_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
 	color_subpass.AddColorOutput ("img_color");
+	color_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
+	color_subpass.AddClearColor ("img_color", { 0.1f, 0.1f, 0.1f, 1.0f });
+	color_subpass.AddClearColor ("img_depth", { 0.0f, 0 });
 	// color_subpass.AddSubpassDependency("sub_depth");
 	main_work.AddSubpass (color_subpass);
 
@@ -318,13 +319,13 @@ void VulkanRenderer::ContrustFrameGraph ()
 }
 
 
-std::array<VkClearValue, 2> VulkanRenderer::GetFramebufferClearValues ()
-{
-	std::array<VkClearValue, 2> clearValues;
-	clearValues[0].color = clearColor;
-	clearValues[1].depthStencil = depthClearColor;
-	return clearValues;
-}
+// std::array<VkClearValue, 2> VulkanRenderer::GetFramebufferClearValues ()
+// {
+// 	std::array<VkClearValue, 2> clearValues;
+// 	clearValues[0].color = clearColor;
+// 	clearValues[1].depthStencil = depthClearColor;
+// 	return clearValues;
+// }
 
 void VulkanRenderer::PrepareFrame (int curFrameIndex)
 {

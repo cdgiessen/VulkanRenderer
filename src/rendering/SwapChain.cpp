@@ -231,39 +231,32 @@ SwapChainSupportDetails VulkanSwapChain::querySwapChainSupport (VkPhysicalDevice
 
 	SwapChainSupportDetails details;
 
-	if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR (device, surface, &details.capabilities) != VK_SUCCESS)
-	{
-		throw std::runtime_error ("failed to get physical device surface capabilities!");
-	}
+	VK_CHECK_RESULT (vkGetPhysicalDeviceSurfaceCapabilitiesKHR (device, surface, &details.capabilities));
 	uint32_t formatCount;
-	if (vkGetPhysicalDeviceSurfaceFormatsKHR (device, surface, &formatCount, nullptr) != VK_SUCCESS)
+
+	VkResult res = vkGetPhysicalDeviceSurfaceFormatsKHR (device, surface, &formatCount, nullptr);
+	if (res != VK_SUCCESS)
 	{
-		throw std::runtime_error ("failed to get physical device surface formats count!");
+		throw std::runtime_error ("Failed to get device surface formats");
 	}
+	assert (res == VK_SUCCESS);
 
 	if (formatCount != 0)
 	{
 		details.formats.resize (formatCount);
-		if (vkGetPhysicalDeviceSurfaceFormatsKHR (device, surface, &formatCount, details.formats.data ()) != VK_SUCCESS)
-		{
-			throw std::runtime_error ("failed to get physical device surface formats!");
-		}
+		VkResult res = vkGetPhysicalDeviceSurfaceFormatsKHR (
+		    device, surface, &formatCount, details.formats.data ());
+		assert (res == VK_SUCCESS);
 	}
 
 	uint32_t presentModeCount;
-	if (vkGetPhysicalDeviceSurfacePresentModesKHR (device, surface, &presentModeCount, nullptr) != VK_SUCCESS)
-	{
-		throw std::runtime_error ("failed to get physical device surface present modes count!");
-	}
+	VK_CHECK_RESULT (vkGetPhysicalDeviceSurfacePresentModesKHR (device, surface, &presentModeCount, nullptr));
 
 	if (presentModeCount != 0)
 	{
 		details.present_modes.resize (presentModeCount);
-		if (vkGetPhysicalDeviceSurfacePresentModesKHR (
-		        device, surface, &presentModeCount, details.present_modes.data ()) != VK_SUCCESS)
-		{
-			throw std::runtime_error ("failed to get physical device surface present modes!");
-		}
+		VK_CHECK_RESULT (vkGetPhysicalDeviceSurfacePresentModesKHR (
+		    device, surface, &presentModeCount, details.present_modes.data ()));
 	}
 
 	return details;

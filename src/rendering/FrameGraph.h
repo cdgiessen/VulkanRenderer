@@ -62,6 +62,8 @@ struct SubpassDescription
 
 	void AddColorOutput (std::string name);
 
+	void AddClearColor (std::string attachment_name, VkClearValue value);
+
 	enum class DepthStencilAccess
 	{
 		read_write,
@@ -86,6 +88,8 @@ struct SubpassDescription
 	std::optional<std::string> depth_stencil_attachment;
 	DepthStencilAccess depth_stencil_access;
 	std::vector<std::string> preserve_attachments;
+
+	std::unordered_map<std::string, VkClearValue> clear_values;
 };
 
 struct VulkanSubpassDescription
@@ -117,6 +121,7 @@ struct VulkanSubpassDescription
 		{
 			desc.pDepthStencilAttachment = &ar_depth_stencil;
 		}
+
 		return desc;
 	}
 };
@@ -159,6 +164,7 @@ struct RenderPassDescription
 	std::vector<VkSubpassDependency> sb_dependencies;
 
 	std::vector<AttachmentUse> attachmentUses;
+	std::vector<VkClearValue> clear_values;
 };
 using RenderPassMap = std::unordered_map<std::string, RenderPassDescription>;
 class VulkanRenderer;
@@ -169,11 +175,7 @@ struct RenderPass
 
 	void SetSubpassDrawFuncs (std::vector<RenderFunc> funcs);
 
-	void BuildCmdBuf (VkCommandBuffer cmdBuf,
-	    VkFramebuffer framebuffer,
-	    VkOffset2D offset,
-	    VkExtent2D extent,
-	    std::array<VkClearValue, 2> clearValues);
+	void BuildCmdBuf (VkCommandBuffer cmdBuf, VkFramebuffer framebuffer, VkOffset2D offset, VkExtent2D extent);
 
 	std::vector<RenderFunc> subpassFuncs;
 	VkRenderPass rp;
@@ -202,11 +204,7 @@ class FrameGraph
 	VkRenderPass Get (int index) const;
 	void SetDrawFuncs (int index, std::vector<RenderFunc> funcs);
 
-	void FillCommandBuffer (VkCommandBuffer cmdBuf,
-	    VkFramebuffer fb,
-	    VkOffset2D offset,
-	    VkExtent2D extent,
-	    std::array<VkClearValue, 2> clearValues);
+	void FillCommandBuffer (VkCommandBuffer cmdBuf, VkFramebuffer fb, VkOffset2D offset, VkExtent2D extent);
 
 	std::vector<int> OrderAttachments (std::vector<std::string> names);
 

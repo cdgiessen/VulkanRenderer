@@ -1,7 +1,7 @@
 #include "FrameGraph.h"
 
-#include "Initializers.h"
 #include "Device.h"
+#include "Initializers.h"
 #include "Renderer.h"
 
 void SubpassDescription::AddSubpassDependency (std::string subpass)
@@ -46,6 +46,12 @@ std::vector<std::string> SubpassDescription::AttachmentsUsed (AttachmentMap cons
 	if (depth_stencil_attachment.has_value ()) attachments.push_back (*depth_stencil_attachment);
 	return attachments;
 }
+
+void SubpassDescription::AddClearColor (std::string attachment_name, VkClearValue color)
+{
+	clear_values[attachment_name] = color;
+}
+
 
 AttachmentUse::AttachmentUse (RenderPassAttachment rpAttach, int index)
 : format (rpAttach.format), index (index), rpAttach (rpAttach)
@@ -331,6 +337,15 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	renderPassInfo.dependencyCount = (uint32_t)sb_dependencies.size ();
 	renderPassInfo.pDependencies = sb_dependencies.data ();
 
+
+	for (auto& subpass : subpasses)
+	{
+		for (auto& [name, color] : subpass.clear_values)
+		{
+			clear_values.push_back (color);
+		}
+	}
+
 	return renderPassInfo;
 }
 
@@ -350,14 +365,10 @@ RenderPass::RenderPass (VkDevice device, RenderPassDescription desc, AttachmentM
 
 void RenderPass::SetSubpassDrawFuncs (std::vector<RenderFunc> funcs) { subpassFuncs = funcs; }
 
-void RenderPass::BuildCmdBuf (VkCommandBuffer cmdBuf,
-    VkFramebuffer framebuffer,
-    VkOffset2D offset,
-    VkExtent2D extent,
-    std::array<VkClearValue, 2> clearValues)
+void RenderPass::BuildCmdBuf (VkCommandBuffer cmdBuf, VkFramebuffer framebuffer, VkOffset2D offset, VkExtent2D extent)
 {
 	VkRenderPassBeginInfo renderPassInfo =
-	    initializers::renderPassBeginInfo (rp, framebuffer, offset, extent, clearValues);
+	    initializers::renderPassBeginInfo (rp, framebuffer, offset, extent, desc.clear_values);
 
 
 	vkCmdBeginRenderPass (cmdBuf, &renderPassInfo, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
@@ -430,12 +441,11 @@ void FrameGraph::SetDrawFuncs (int index, std::vector<RenderFunc> funcs)
 VkRenderPass FrameGraph::Get (int index) const { return renderPasses.at (index).rp; }
 
 
-void FrameGraph::FillCommandBuffer (
-    VkCommandBuffer cmdBuf, VkFramebuffer fb, VkOffset2D offset, VkExtent2D extent, std::array<VkClearValue, 2> clearValues)
+void FrameGraph::FillCommandBuffer (VkCommandBuffer cmdBuf, VkFramebuffer fb, VkOffset2D offset, VkExtent2D extent)
 {
 	for (auto& rp : renderPasses)
 	{
-		rp.BuildCmdBuf (cmdBuf, fb, offset, extent, clearValues);
+		rp.BuildCmdBuf (cmdBuf, fb, offset, extent);
 	}
 }
 

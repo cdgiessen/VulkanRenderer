@@ -192,15 +192,12 @@ void VulkanInstance::DestroyDebugUtilsMessengerEXT (
 VulkanSurface::VulkanSurface (VulkanInstance const& instance, Window& window)
 : instance (instance), window (window)
 {
-	// VK_CHECK_RESULT(glfwCreateWindowSurface(instance, window, nullptr, &surface));
-	VkResult res = glfwCreateWindowSurface (instance.instance, window.getWindowContext (), nullptr, &surface);
-	if (res != VK_SUCCESS)
-	{
-		Log.Error (fmt::format ("{}\n", errorString (res)));
-
-		//		Log::Error << errorString (res) << "\n";
-		throw std::runtime_error ("failed to create window surface!");
-	}
+	VK_CHECK_RESULT (glfwCreateWindowSurface (instance.instance, window.getWindowContext (), nullptr, &surface));
+	// if (res != VK_SUCCESS)
+	// {
+	// 	Log.Error (fmt::format ("{}\n", errorString (res)));
+	// 	throw std::runtime_error ("failed to create window surface!");
+	// }
 }
 
 VulkanSurface::~VulkanSurface () { vkDestroySurfaceKHR (instance.instance, surface, nullptr); }
@@ -297,10 +294,11 @@ bool VulkanPhysicalDevice::IsDeviceSuitable (VkPhysicalDevice device, VkSurfaceK
 bool VulkanPhysicalDevice::CheckDeviceExtensionSupport (VkPhysicalDevice device)
 {
 	uint32_t extensionCount;
-	vkEnumerateDeviceExtensionProperties (device, nullptr, &extensionCount, nullptr);
+	VK_CHECK_RESULT (vkEnumerateDeviceExtensionProperties (device, nullptr, &extensionCount, nullptr));
 
 	std::vector<VkExtensionProperties> availableExtensions (extensionCount);
-	vkEnumerateDeviceExtensionProperties (device, nullptr, &extensionCount, availableExtensions.data ());
+	VK_CHECK_RESULT (vkEnumerateDeviceExtensionProperties (
+	    device, nullptr, &extensionCount, availableExtensions.data ()));
 
 	std::set<std::string> requiredExtensions (DEVICE_EXTENSIONS.begin (), DEVICE_EXTENSIONS.end ());
 
@@ -338,6 +336,7 @@ QueueFamilyIndices VulkanPhysicalDevice::FindQueueFamilies (VkPhysicalDevice phy
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties (physDevice, &queueFamilyCount, nullptr);
 
+
 	std::vector<VkQueueFamilyProperties> queueFamilies (queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties (physDevice, &queueFamilyCount, queueFamilies.data ());
 
@@ -365,7 +364,7 @@ QueueFamilyIndices VulkanPhysicalDevice::FindQueueFamilies (VkPhysicalDevice phy
 		}
 
 		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR (physDevice, i, surface, &presentSupport);
+		VK_CHECK_RESULT (vkGetPhysicalDeviceSurfaceSupportKHR (physDevice, i, surface, &presentSupport));
 
 		if (queueFamily.queueCount > 0 && presentSupport)
 		{
@@ -446,11 +445,7 @@ void VulkanDevice::CreateLogicalDevice ()
 	{
 		createInfo.enabledLayerCount = 0;
 	}
-
-	if (vkCreateDevice (physical_device.physical_device, &createInfo, nullptr, &device) != VK_SUCCESS)
-	{
-		throw std::runtime_error ("failed to create logical device!");
-	}
+	VK_CHECK_RESULT (vkCreateDevice (physical_device.physical_device, &createInfo, nullptr, &device));
 }
 
 void VulkanDevice::CreateQueues ()
