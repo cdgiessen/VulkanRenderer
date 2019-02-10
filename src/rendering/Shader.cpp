@@ -187,7 +187,10 @@ void SaveShaderDatabaseFile ()
 void StartShaderCompilation (std::vector<std::string> strs)
 {
 	for (auto& str : strs)
-		std::system (str.c_str ());
+	{
+		int ret = std::system (str.c_str ());
+		if (ret != 0) Log.Error (fmt::format ("Failed to compile {}", str));
+	}
 }
 
 void CompileShaders (std::vector<std::string> filenames)

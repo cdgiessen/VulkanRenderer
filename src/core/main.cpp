@@ -4,6 +4,8 @@
 #include "Logger.h"
 #include "VulkanApp.h"
 
+#include "util/MemoryPool.h"
+
 #define VMA_IMPLEMENTATION
 #include "VulkanMemoryAllocator/vk_mem_alloc.h"
 
@@ -15,6 +17,8 @@
 
 int main (int argc, char* argv[])
 {
+	//  Test_MemoryPool ();
+
 	std::unique_ptr<VulkanApp> vkApp;
 	try
 	{

@@ -9,17 +9,18 @@
 #include "core/TimeManager.h"
 
 #include "Camera.h"
-#include "Terrain.h"
-#include "Skybox.h"
 #include "GameObject.h"
-#include "TerrainManager.h"
 #include "InstancedSceneObject.h"
+#include "Skybox.h"
+#include "Terrain.h"
+#include "TerrainManager.h"
 
 #include "Transform.h"
 
 //#include <gltf2\glTF2.hpp>
 
-struct SkySettings {
+struct SkySettings
+{
 	bool show_skyEditor = true;
 	bool autoMove = false;
 	float moveSpeed = 0.0002f;
@@ -32,23 +33,25 @@ struct SkySettings {
 
 class Scene
 {
-public:
-	Scene(Resource::AssetManager& resourceMan, VulkanRenderer& renderer,
-		TimeManager& timeManager, InternalGraph::GraphPrototype& graph);
-	~Scene();
+	public:
+	Scene (Resource::AssetManager& resourceMan,
+	    VulkanRenderer& renderer,
+	    TimeManager& timeManager,
+	    InternalGraph::GraphPrototype& graph);
+	~Scene ();
 
-	void UpdateScene();
-	void RenderDepthPrePass(VkCommandBuffer commandBuffer);
-	void RenderScene(VkCommandBuffer commandBuffer, bool wireframe);
-	void UpdateSceneGUI();
+	void UpdateScene ();
+	void RenderDepthPrePass (VkCommandBuffer commandBuffer);
+	void RenderScene (VkCommandBuffer commandBuffer, bool wireframe);
+	void UpdateSceneGUI ();
 
-	Camera* GetCamera();
+	Camera* GetCamera ();
 
 	bool drawNormals = false;
 	bool walkOnGround = false;
-private:
 
-	VulkanRenderer & renderer;
+	private:
+	VulkanRenderer& renderer;
 	Resource::AssetManager& resourceMan;
 	TimeManager& timeManager;
 
@@ -70,8 +73,8 @@ private:
 	float heightOfGround = 1.4f;
 
 	SkySettings skySettings;
-	void UpdateSunData();
-	void DrawSkySettingsGui();
+	void UpdateSunData ();
+	void DrawSkySettingsGui ();
 
 	bool pressedControllerJumpButton = false;
 	bool releasedControllerJumpButton = false;
@@ -81,4 +84,3 @@ private:
 	PBR_Material testMat;
 	InstancedSceneObject::InstanceData testInstanceData;
 };
-

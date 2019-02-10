@@ -3,10 +3,11 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
-enum class Camera_Movement {
+enum class Camera_Movement
+{
 	FORWARD,
 	BACKWARD,
 	LEFT,
@@ -17,66 +18,62 @@ enum class Camera_Movement {
 
 class Camera
 {
-public:
+	public:
 	// Camera Attributes
-	glm::dvec3 Position;
-	glm::dvec3 Front;
-	glm::dvec3 Up;
-	glm::dvec3 Right;
-	glm::dvec3 WorldUp;
+	glm::vec3 Position;
+	glm::vec3 Front;
+	glm::vec3 Up;
+	glm::vec3 Right;
+	glm::vec3 WorldUp;
 
 	// Eular Angles
-	double Yaw = -90.0f;
-	double Pitch = 0.0f;
-	
+	float Yaw = -90.0f;
+	float Pitch = 0.0f;
+
 	// Camera options
-	double MovementSpeed = 20.0f;
-	double MouseSensitivity = 0.3f;
-	double Zoom = 45.0f;
+	float MovementSpeed = 20.0f;
+	float MouseSensitivity = 0.3f;
+	float Zoom = 45.0f;
 
 	// Joystick
-	double joystickMoveAccel = 1.0f;
-	double joystickLookAccel = 60.0f;
+	float joystickMoveAccel = 1.0f;
+	float joystickLookAccel = 60.0f;
 
 	// Constructor with vectors
-	Camera(glm::dvec3 position, glm::dvec3 up, double pitch, double yaw);
+	Camera (glm::vec3 position, glm::vec3 up, float pitch, float yaw);
 
 	// Returns the view matrix calculated using Eular Angles and the LookAt Matrix
-	glm::mat4 GetViewMatrix()
-	{
-		return glm::lookAt(Position, Position + Front, Up);
-	}
+	glm::mat4 GetViewMatrix () { return glm::lookAt (Position, Position + Front, Up); }
 
 	// Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-	void ProcessKeyboard(Camera_Movement direction, double deltaTime);
+	void ProcessKeyboard (Camera_Movement direction, float deltaTime);
 
-	void ProcessJoystickMove(double x, double y, double zL, double zR, double deltaTime);
-	void ProcessJoystickLook(double x, double y, double deltaTime);
+	void ProcessJoystickMove (float x, float y, float zL, float zR, float deltaTime);
+	void ProcessJoystickLook (float x, float y, float deltaTime);
 
 
 	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-	void ProcessMouseMovement(double xoffset, double yoffset, bool constrainPitch = true);
+	void ProcessMouseMovement (float xoffset, float yoffset, bool constrainPitch = true);
 
 	// Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-	void ProcessMouseScroll(double yoffset, double deltaTime);
+	void ProcessMouseScroll (float yoffset, float deltaTime);
 
-	//alter the speed of movement
-	void ChangeCameraSpeed(Camera_Movement direction, double deltaTime);
+	// alter the speed of movement
+	void ChangeCameraSpeed (Camera_Movement direction, float deltaTime);
 
-private:
+	private:
 	// Calculates the front vector from the Camera's (updated) Eular Angles
-	void updateCameraVectors()
+	void updateCameraVectors ()
 	{
 		// Calculate the new Front vector
-		glm::dvec3 front;
-		front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-		front.y = sin(glm::radians(Pitch));
-		front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-		Front = glm::normalize(front);
+		glm::vec3 front;
+		front.x = cos (glm::radians (Yaw)) * cos (glm::radians (Pitch));
+		front.y = sin (glm::radians (Pitch));
+		front.z = sin (glm::radians (Yaw)) * cos (glm::radians (Pitch));
+		Front = glm::normalize (front);
 		// Also re-calculate the Right and Up vector
-		Right = glm::normalize(glm::cross(Front, WorldUp));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-		Up = glm::normalize(glm::cross(Right, Front));
+		Right = glm::normalize (glm::cross (Front,
+		    WorldUp)); // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+		Up = glm::normalize (glm::cross (Right, Front));
 	}
 };
-
-

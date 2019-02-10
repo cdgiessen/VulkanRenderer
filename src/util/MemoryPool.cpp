@@ -1,32 +1,53 @@
 #include "MemoryPool.h"
 
+#include <algorithm>
 #include <iostream>
+#include <iterator>
+#include <random>
 #include <stdlib.h>
+#include <unordered_map>
 
-struct Vec3 {
-    float x,y,z;
+#include "core/Logger.h"
+
+struct Vec3
+{
+	float x, y, z;
 };
 
-void Test_MemoryPool(){
+void Test_MemoryPool ()
+{
 
+	int pool_size = 5000;
 
+	Pool<float> p_f (pool_size);
 
-    Pool<float> p_f(1000);
-    Pool<Vec3> p_vec3(10000);
-    
-    auto id = p_f.allocate();
-    auto data = p_f.at(id);
-    data = 42.24f;
+	std::vector<int> nums;
+	for (int i = 0; i < pool_size; i++)
+	{
+		nums.push_back (i);
+	}
 
-    std::cout << p_f.at(id) << "\n";
+	std::random_device rd;
+	std::mt19937 g (rd ());
 
-    for(int i = 0; i < 5000; i++){
-        Pool<float>::ID ids[100];
-        for(int i = 0; i < 100; i++){
-            ids[i] = p_f.allocate();
-        }
-        for(int i = 0; i < 100; i++){
-            p_f.deallocate(ids[i]);
-        }
-    }
+	std::shuffle (nums.begin (), nums.end (), g);
+
+	std::unordered_map<int, Pool<float>::ID> order;
+	float x = 0;
+	for (int i = 0; i < pool_size; i++)
+	{
+
+		Pool<float>::ID id = p_f.allocate ();
+		p_f.at (id) = x;
+		x += 0.01f;
+
+		order[nums.at (i)] = id;
+	}
+	for (auto& [i, id] : order)
+	{
+		p_f.deallocate (id);
+	}
+
+	Log.Debug (fmt::format ("pool size = {}", p_f.current_load ()));
+	Log.Debug (" \n");
 }

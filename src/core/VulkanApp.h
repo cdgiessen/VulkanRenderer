@@ -3,12 +3,12 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
-#include "JobSystem.h"
-#include "Window.h"
+#include "CoreTools.h"
 #include "Input.h"
+#include "JobSystem.h"
 #include "Logger.h"
 #include "TimeManager.h"
-#include "CoreTools.h"
+#include "Window.h"
 
 #include "resources/ResourceManager.h"
 
@@ -19,7 +19,8 @@
 #include "gui/ImGuiImpl.h"
 #include "gui/ProcTerrainNodeGraph.h"
 
-struct ImGUI_PanelSettings {
+struct ImGUI_PanelSettings
+{
 	bool showGui = true;
 	bool camera_controls = true;
 	bool log = true;
@@ -27,11 +28,12 @@ struct ImGUI_PanelSettings {
 	bool controls_list = true;
 };
 
-class VulkanAppSettings {
-public:
-	VulkanAppSettings(std::string fileName);
-	void Load();
-	void Save();
+class VulkanAppSettings
+{
+	public:
+	VulkanAppSettings (std::string fileName);
+	void Load ();
+	void Save ();
 
 	int screenWidth = 800;
 	int screenHeight = 600;
@@ -41,25 +43,26 @@ public:
 
 	bool isFrameCapped = true;
 	double MaxFPS = 100.0f;
-private:
+
+	private:
 	std::string fileName;
 };
 
 class VulkanApp
 {
-public:
-	VulkanApp();
-	~VulkanApp();
+	public:
+	VulkanApp ();
+	~VulkanApp ();
 
-	void Run();
-	void HandleInputs();
+	void Run ();
+	void HandleInputs ();
 
-	void RecreateSwapChain();
+	void RecreateSwapChain ();
 
-private:
+	private:
 	VulkanAppSettings settings;
 
-	//job::TaskManager taskManager;
+	// job::TaskManager taskManager;
 	job::WorkerPool workerPool;
 
 	TimeManager timeManager;
@@ -77,15 +80,14 @@ private:
 
 
 	////ImGUI functions
-	void BuildImgui();
+	void BuildImgui ();
 
-	void DebugOverlay(bool* show_debug_overlay);
-	void CameraWindow(bool* show_camera_overlay);
-	void ControlsWindow(bool* show_controls_window);
-	void ControllerWindow(bool* show_controller_window);
-	//ImGui resources
+	void DebugOverlay (bool* show_debug_overlay);
+	void CameraWindow (bool* show_camera_overlay);
+	void ControlsWindow (bool* show_controls_window);
+	void ControllerWindow (bool* show_controller_window);
+	// ImGui resources
 	SimpleTimer imGuiTimer;
 
 	float tempCameraSpeed = 0.0f;
 };
-

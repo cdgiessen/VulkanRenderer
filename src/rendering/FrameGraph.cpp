@@ -1,5 +1,7 @@
 #include "FrameGraph.h"
 
+#include <map>
+
 #include "Device.h"
 #include "Initializers.h"
 #include "Renderer.h"
@@ -337,15 +339,21 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	renderPassInfo.dependencyCount = (uint32_t)sb_dependencies.size ();
 	renderPassInfo.pDependencies = sb_dependencies.data ();
 
+	std::map<int, VkClearValue> map_clearColors;
 
+	// get all the clear colors by name, put them in a map by their index
 	for (auto& subpass : subpasses)
 	{
 		for (auto& [name, color] : subpass.clear_values)
 		{
-			clear_values.push_back (color);
+			map_clearColors[used_attachments.at (name)] = color;
 		}
 	}
-
+	// traverse the map in order to get a vector of the clear colors
+	for (auto& [index, color] : map_clearColors)
+	{
+		clear_values.push_back (color);
+	}
 	return renderPassInfo;
 }
 
