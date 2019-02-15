@@ -84,23 +84,7 @@ VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::
 		frameObjects.push_back (std::make_unique<FrameObject> (device, i));
 	}
 
-	// for (int i = 0; i < workerThreadCount; i++)
-	// {
-	// 	graphicsWorkers.push_back (
-	// 	    std::make_unique<GraphicsCommandWorker> (device, workQueue, finishQueue, finishQueueLock));
-	// }
-
-	ContrustFrameGraph ();
-
-	CreateDepthResources ();
-	std::array<VkImageView, 3> depthImageViews = { depthBuffer.at (0)->textureImageView,
-		depthBuffer.at (1)->textureImageView,
-		depthBuffer.at (2)->textureImageView };
-
-	auto imageViewOrder = frameGraph->OrderAttachments ({ "img_depth", "img_color" });
-
-	vulkanSwapChain.CreateFramebuffers (
-	    imageViewOrder, depthImageViews, GetRelevantRenderpass (RenderableType::opaque));
+	CreatePresentResources ();
 
 	PrepareImGui (&window, this);
 }
@@ -173,29 +157,6 @@ void VulkanRenderer::RenderFrame ()
 			++it;
 		}
 	}
-
-
-
-	// for (auto& work : finishQueue)
-	// {
-	// 	if (work.cmdBuf.fence->Check ())
-	// 	{
-	// 		for (auto& sig : work.signals)
-	// 		{
-	// 			if (sig != nullptr) *sig = true;
-	// 		}
-	// 		work.cmdBuf.Free ();
-	// 	}
-	// 	else
-	// 	{
-	// 		nextFramesWork.push_back (i);
-	// 		// nextFramesWork.push_back (std::move (work));
-	// 	}
-	// 	i++;
-	// }
-
-	// finishQueue.clear ();
-	// // finishQueue = std::move (nextFramesWork);
 }
 
 void VulkanRenderer::CreatePresentResources ()
@@ -317,15 +278,6 @@ void VulkanRenderer::ContrustFrameGraph ()
 
 	frameGraph->SetDrawFuncs (0, { main_draw });
 }
-
-
-// std::array<VkClearValue, 2> VulkanRenderer::GetFramebufferClearValues ()
-// {
-// 	std::array<VkClearValue, 2> clearValues;
-// 	clearValues[0].color = clearColor;
-// 	clearValues[1].depthStencil = depthClearColor;
-// 	return clearValues;
-// }
 
 void VulkanRenderer::PrepareFrame (int curFrameIndex)
 {

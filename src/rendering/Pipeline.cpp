@@ -11,9 +11,9 @@
 
 
 void PipelineOutline::SetShaderModuleSet (ShaderModuleSet set) { this->set = set; }
-void PipelineOutline::UseModelVertexLayout (VulkanModel* model)
+void PipelineOutline::UseModelVertexLayout (VulkanModel& model)
 {
-	auto vl = model->GetVertexLayout ();
+	auto vl = model.GetVertexLayout ();
 	vertexInputBindingDescription.insert (
 	    std::end (vertexInputBindingDescription), std::begin (vl.bindingDesc), std::end (vl.bindingDesc));
 	vertexInputAttributeDescriptions.insert (

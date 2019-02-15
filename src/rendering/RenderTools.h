@@ -6,7 +6,6 @@
 
 #include "core/Logger.h"
 
-
 VkSampleCountFlagBits getMaxUsableSampleCount (VkPhysicalDeviceProperties properties);
 
 /** @brief Returns an error code as a string */

@@ -62,7 +62,7 @@ void Skybox::SetupPipeline ()
 	    "assets/shaders/skybox.frag.spv", ShaderModuleType::fragment);
 	out.SetShaderModuleSet (ShaderModuleSet (vert, frag));
 
-	out.UseModelVertexLayout (model.get ());
+	out.UseModelVertexLayout (*model.get ());
 
 	out.AddViewport (1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f);
 	out.AddScissor (1, 1, 0, 0);

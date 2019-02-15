@@ -40,8 +40,6 @@ class VulkanSwapChain
 
 	private:
 	VulkanDevice& device;
-	VkInstance instance;
-	VkPhysicalDevice physicalDevice;
 
 	Window& window;
 

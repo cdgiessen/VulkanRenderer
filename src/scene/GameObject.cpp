@@ -120,7 +120,7 @@ void GameObject::SetupPipeline ()
 	    "assets/shaders/pbr.frag.spv", ShaderModuleType::fragment);
 	out.SetShaderModuleSet (ShaderModuleSet (pbr_vert, pbr_frag));
 
-	out.UseModelVertexLayout (gameObjectModel.get ());
+	out.UseModelVertexLayout (*gameObjectModel.get ());
 
 	out.SetInputAssembly (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
 
@@ -207,7 +207,7 @@ void GameObject::Draw (VkCommandBuffer commandBuffer, bool wireframe, bool drawN
 		return;
 	}
 
-	VkDeviceSize offsets[] = { 0 };
+	// VkDeviceSize offsets[] = { 0 };
 
 	// vkCmdBindVertexBuffers(commandBuffer, 0, 1, &gameObjectModel.vertices.buffer, offsets);
 	// vkCmdBindIndexBuffer(commandBuffer, gameObjectModel.indices.buffer, 0, VK_INDEX_TYPE_UINT32);

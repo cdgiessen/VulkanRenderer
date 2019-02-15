@@ -411,6 +411,45 @@ void FrameGraphBuilder::AddRenderPass (RenderPassDescription renderPass)
 	renderPasses[renderPass.name] = renderPass;
 }
 
+FrameBuffer::FrameBuffer (
+    VulkanDevice& device, std::vector<VkImage> images, RenderPass renderPass, uint32_t width, uint32_t height, uint32_t layers)
+: device (device)
+{
+	views.resize (images.size ());
+	int i = 0;
+	for (auto& image : images)
+	{
+		VkImageViewCreateInfo viewInfo = initializers::imageViewCreateInfo ();
+		viewInfo.image = image;
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		viewInfo.format = VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
+		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		viewInfo.subresourceRange.baseMipLevel = 0;
+		viewInfo.subresourceRange.levelCount = 1;
+		viewInfo.subresourceRange.baseArrayLayer = 0;
+		viewInfo.subresourceRange.layerCount = 1;
+
+		VK_CHECK_RESULT (vkCreateImageView (device.device, &viewInfo, nullptr, &views.at (i)));
+	}
+
+	VkFramebufferCreateInfo framebufferInfo = initializers::framebufferCreateInfo ();
+	framebufferInfo.renderPass = renderPass.rp;
+	framebufferInfo.attachmentCount = static_cast<uint32_t> (views.size ());
+	framebufferInfo.pAttachments = views.data ();
+	framebufferInfo.width = width;
+	framebufferInfo.height = height;
+	framebufferInfo.layers = layers;
+
+	VK_CHECK_RESULT (vkCreateFramebuffer (device.device, &framebufferInfo, nullptr, &framebuffer));
+}
+
+FrameBuffer::~FrameBuffer ()
+{
+	vkDestroyFramebuffer (device.device, framebuffer, nullptr);
+	for (auto& view : views)
+		vkDestroyImageView (device.device, view, nullptr);
+}
+
 FrameGraph::FrameGraph (FrameGraphBuilder builder, VulkanDevice& device)
 : device (device), builder (builder)
 {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include <glm/glm.hpp>
 
@@ -16,11 +16,13 @@ using Signal = std::shared_ptr<bool>;
 
 /* Common uniform buffers */
 
-struct GlobalData {
+struct GlobalData
+{
 	float time;
 };
 
-struct CameraData {
+struct CameraData
+{
 	glm::mat4 projView;
 	glm::mat4 view;
 	glm::vec3 cameraDir;
@@ -30,31 +32,36 @@ struct CameraData {
 
 /* Lighting */
 
-struct DirectionalLight {
+struct DirectionalLight
+{
 	glm::vec3 direction;
 	float intensity = 0.0f;
 	glm::vec3 color;
 	float dum = 0.0f;
 
-	DirectionalLight() {};
-	DirectionalLight(glm::vec3 dir, float intensity, glm::vec3 color) :
-		direction(dir), intensity(intensity), color(color)
-	{}
+	DirectionalLight (){};
+	DirectionalLight (glm::vec3 dir, float intensity, glm::vec3 color)
+	: direction (dir), intensity (intensity), color (color)
+	{
+	}
 };
 
-struct PointLight {
+struct PointLight
+{
 	glm::vec3 position;
 	float attenuation = 0.0f;
 	glm::vec3 color;
 	float cufOff = 0.0f;
 
-	PointLight() {};
-	PointLight(glm::vec3 position, float attenuation, glm::vec3 color) :
-		position(position), attenuation(attenuation), color(color)
-	{}
+	PointLight (){};
+	PointLight (glm::vec3 position, float attenuation, glm::vec3 color)
+	: position (position), attenuation (attenuation), color (color)
+	{
+	}
 };
 
-struct  SpotLight {
+struct SpotLight
+{
 	glm::vec3 position;
 	float attenuation = 0.0f;
 	glm::vec3 direction;
@@ -63,20 +70,23 @@ struct  SpotLight {
 	float outerCutOff = 0.0f;
 
 
-	SpotLight() {};
-	SpotLight(glm::vec3 position, glm::vec3 dir, glm::vec3 color, float attenuation, float cutoff, float outerCutOff) :
-		position(position), direction(dir), attenuation(attenuation), color(color), cutoff(cutoff), outerCutOff(outerCutOff)
-	{}
+	SpotLight (){};
+	SpotLight (glm::vec3 position, glm::vec3 dir, glm::vec3 color, float attenuation, float cutoff, float outerCutOff)
+	: position (position), direction (dir), attenuation (attenuation), color (color), cutoff (cutoff), outerCutOff (outerCutOff)
+	{
+	}
 };
 
 /* Model and Normal matrices */
 
-struct TransformMatrixData {
+struct TransformMatrixData
+{
 	glm::mat4 model;
 	glm::mat4 normal;
 };
 
-struct ModelBufferObject {
+struct ModelBufferObject
+{
 	glm::mat4 model;
 	glm::mat4 normal;
 
@@ -84,22 +94,26 @@ struct ModelBufferObject {
 	glm::mat4 paddingTwo;
 };
 
-struct ModelPushConstant {
+struct ModelPushConstant
+{
 	glm::mat4 model;
 	glm::mat4 normal;
 };
 
-struct StaticModelBuffer {
+struct StaticModelBuffer
+{
 	glm::mat4 model;
 };
 
-struct StaticModelPushConstant {
+struct StaticModelPushConstant
+{
 	glm::mat4 model;
 };
 
 /* Materials */
 
-struct PBR_Mat_Tex {
+struct PBR_Mat_Tex
+{
 	std::shared_ptr<VulkanTexture> tx_albedo;
 	std::shared_ptr<VulkanTexture> tx_metallic;
 	std::shared_ptr<VulkanTexture> tx_roughness;
@@ -108,12 +122,13 @@ struct PBR_Mat_Tex {
 	std::shared_ptr<VulkanTexture> tx_normal;
 };
 
-struct PBR_Material {
-	glm::vec3 albedo = glm::vec3(0.5, 0.5, 0.5);
+struct PBR_Material
+{
+	glm::vec3 albedo = glm::vec3 (0.5, 0.5, 0.5);
 	float metallic = 0.1f;
 	float roughness = 0.5f;
 	float ao = 1;
-	glm::vec3 emmisive = glm::vec3(0.0, 0.0, 0.0);
+	glm::vec3 emmisive = glm::vec3 (0.0, 0.0, 0.0);
 
 	bool useTexAlbedo = false;
 	bool useTexMetallic = false;
@@ -130,4 +145,4 @@ struct PBR_Material {
 	std::shared_ptr<VulkanTexture> tx_normal;
 };
 
-const glm::mat4 depthReverserMatrix = glm::mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1);
+const glm::mat4 depthReverserMatrix = glm::mat4 (1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1);

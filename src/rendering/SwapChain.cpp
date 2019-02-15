@@ -14,10 +14,6 @@
 VulkanSwapChain::VulkanSwapChain (VulkanDevice& device, Window& window)
 : device (device), window (window)
 {
-
-	this->instance = device.instance.instance;
-	this->physicalDevice = device.physical_device.physical_device;
-
 	createSwapChain ();
 	createImageViews ();
 }
@@ -34,7 +30,7 @@ void VulkanSwapChain::RecreateSwapChain ()
 
 void VulkanSwapChain::createSwapChain ()
 {
-	details = querySwapChainSupport (physicalDevice, device.GetSurface ());
+	details = querySwapChainSupport (device.physical_device.physical_device, device.GetSurface ());
 
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat ();
 	VkPresentModeKHR presentMode = chooseSwapPresentMode ();
@@ -61,7 +57,7 @@ void VulkanSwapChain::createSwapChain ()
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 	VkFormatProperties formatProps;
-	vkGetPhysicalDeviceFormatProperties (physicalDevice, swapChainImageFormat, &formatProps);
+	vkGetPhysicalDeviceFormatProperties (device.physical_device.physical_device, swapChainImageFormat, &formatProps);
 	if (formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)
 	{
 		createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -127,8 +123,6 @@ void VulkanSwapChain::CreateFramebuffers (
     std::vector<int> order, std::array<VkImageView, 3> depthImageViews, VkRenderPass renderPass)
 {
 	swapChainFramebuffers.resize (swapChainImageViews.size ());
-
-
 
 	for (size_t i = 0; i < swapChainImageViews.size (); i++)
 	{

@@ -16,7 +16,6 @@ int VertexDescription::ElementCount () const
 void AddPlane (std::vector<float>& verts,
     std::vector<uint16_t>& indices,
     int dim,
-    int faceNum,
     glm::vec3 topLeft,
     glm::vec3 topRight,
     glm::vec3 bottomLeft,
@@ -32,6 +31,7 @@ void AddPlane (std::vector<float>& verts,
 
 	glm::vec3 normal = glm::cross (t1, t2);
 
+	size_t offset = verts.size () / 8;
 	for (float i = 0; i <= dim; i++)
 	{
 		for (float j = 0; j <= dim; j++)
@@ -54,12 +54,12 @@ void AddPlane (std::vector<float>& verts,
 	{
 		for (int j = 0; j < dim; j++)
 		{
-			indices.push_back ((dim + 1) * (dim + 1) * faceNum + i * (dim + 1) + j);
-			indices.push_back ((dim + 1) * (dim + 1) * faceNum + i * (dim + 1) + j + 1);
-			indices.push_back ((dim + 1) * (dim + 1) * faceNum + (i + 1) * (dim + 1) + j);
-			indices.push_back ((dim + 1) * (dim + 1) * faceNum + i * (dim + 1) + j + 1);
-			indices.push_back ((dim + 1) * (dim + 1) * faceNum + (i + 1) * (dim + 1) + j + 1);
-			indices.push_back ((dim + 1) * (dim + 1) * faceNum + (i + 1) * (dim + 1) + j);
+			indices.push_back (offset + i * (dim + 1) + j);
+			indices.push_back (offset + i * (dim + 1) + j + 1);
+			indices.push_back (offset + (i + 1) * (dim + 1) + j);
+			indices.push_back (offset + i * (dim + 1) + j + 1);
+			indices.push_back (offset + (i + 1) * (dim + 1) + j + 1);
+			indices.push_back (offset + (i + 1) * (dim + 1) + j);
 		}
 	}
 }
@@ -76,7 +76,7 @@ std::shared_ptr<MeshData> createSinglePlane ()
 	indices.reserve ((dim) * (dim)*6 * 6);
 
 	AddPlane (
-	    verts, indices, dim, 0, glm::vec3 (-1, 0, -1), glm::vec3 (-1, 0, 1), glm::vec3 (1, 0, -1), glm::vec3 (1, 0, 1));
+	    verts, indices, dim, glm::vec3 (-1, 0, -1), glm::vec3 (-1, 0, 1), glm::vec3 (1, 0, -1), glm::vec3 (1, 0, 1));
 
 	return std::make_shared<MeshData> (Vert_PosNormUv, verts, indices);
 };
@@ -92,9 +92,9 @@ std::shared_ptr<MeshData> createDoublePlane ()
 	indices.reserve ((dim) * (dim)*6 * 6);
 
 	AddPlane (
-	    verts, indices, dim, 0, glm::vec3 (-1, 0, -1), glm::vec3 (-1, 0, 1), glm::vec3 (1, 0, -1), glm::vec3 (-1, 0, 1));
+	    verts, indices, dim, glm::vec3 (-1, 0, -1), glm::vec3 (-1, 0, 1), glm::vec3 (1, 0, -1), glm::vec3 (-1, 0, 1));
 	AddPlane (
-	    verts, indices, dim, 0, glm::vec3 (-1, 1, -1), glm::vec3 (-1, 1, 1), glm::vec3 (1, 1, -1), glm::vec3 (1, 1, 1));
+	    verts, indices, dim, glm::vec3 (-1, 1, -1), glm::vec3 (-1, 1, 1), glm::vec3 (1, 1, -1), glm::vec3 (1, 1, 1));
 
 	return std::make_shared<MeshData> (Vert_PosNormUv, verts, indices);
 };
@@ -142,11 +142,10 @@ std::shared_ptr<MeshData> createFlatPlane (int dim, glm::vec3 size)
 
 
 
-std::shared_ptr<MeshData> createCube ()
+std::shared_ptr<MeshData> createCube (int dim)
 {
 	std::vector<float> verts;
 	std::vector<uint16_t> indices;
-	int dim = 1;
 	verts.reserve ((dim + 1) * (dim + 1) * 6);
 	indices.reserve ((dim) * (dim)*6 * 6);
 
@@ -160,52 +159,150 @@ std::shared_ptr<MeshData> createCube ()
 	glm::vec3 urf{ 1, 1, 1 };
 
 
-	AddPlane (verts, indices, dim, 0, urf, urb, ulf, ulb);
-	AddPlane (verts, indices, dim, 1, dlf, dlb, drf, drb);
-	AddPlane (verts, indices, dim, 2, drf, drb, urf, urb);
-	AddPlane (verts, indices, dim, 3, ulf, ulb, dlf, dlb);
-	AddPlane (verts, indices, dim, 4, ulf, dlf, urf, drf);
-	AddPlane (verts, indices, dim, 5, urb, drb, ulb, dlb);
+	AddPlane (verts, indices, dim, urf, urb, ulf, ulb);
+	AddPlane (verts, indices, dim, dlf, dlb, drf, drb);
+	AddPlane (verts, indices, dim, drf, drb, urf, urb);
+	AddPlane (verts, indices, dim, ulf, ulb, dlf, dlb);
+	AddPlane (verts, indices, dim, ulf, dlf, urf, drf);
+	AddPlane (verts, indices, dim, urb, drb, ulb, dlb);
 
 	return std::make_shared<MeshData> (Vert_PosNormUv, verts, indices);
 }
 
 std::shared_ptr<MeshData> createSphere (int dim)
 {
+	auto cube = createCube (dim);
+
+	// normalize it so all vertexes are equidistant from the center
+	for (int i = 0; i < cube->vertexData.size (); i += 8)
+	{
+		glm::vec3 pos = glm::normalize (glm::vec3 (
+		    cube->vertexData.at (i + 0), cube->vertexData.at (i + 1), cube->vertexData.at (i + 2)));
+		cube->vertexData.at (i + 0) = pos.x;
+		cube->vertexData.at (i + 1) = pos.y;
+		cube->vertexData.at (i + 2) = pos.z;
+		cube->vertexData.at (i + 3) = pos.x;
+		cube->vertexData.at (i + 4) = pos.y;
+		cube->vertexData.at (i + 5) = pos.z;
+	}
+
+	return cube;
+};
+
+
+void Add_subdiv_triangle (
+    std::vector<float>& verts, std::vector<uint16_t>& indices, glm::vec3 top, glm::vec3 left, glm::vec3 down, int dim)
+{
+	uint16_t offset = verts.size () / 8;
+	for (float i = 0; i < dim; i++)
+	{
+		for (float j = 0; j < dim + 1 - i; j++)
+		{
+
+			glm::vec3 pos = glm::mix (glm::mix (top, left, j / (dim - i)), down, i / (dim));
+
+			verts.push_back (pos.x);
+			verts.push_back (pos.y);
+			verts.push_back (pos.z);
+			verts.push_back (0.0);
+			verts.push_back (1.0);
+			verts.push_back (0.0);
+			verts.push_back (i);
+			verts.push_back (j);
+		}
+	}
+
+	// i/dim is a NaN, better to just duplicate it once below for the last vertex
+	glm::vec3 pos = down;
+
+	verts.push_back (pos.x);
+	verts.push_back (pos.y);
+	verts.push_back (pos.z);
+	verts.push_back (0.0);
+	verts.push_back (1.0);
+	verts.push_back (0.0);
+	verts.push_back (1);
+	verts.push_back (0);
+
+	int base = 0;
+	int next_base = dim + 1;
+	for (int i = 0; i < dim; i++)
+	{
+		int across = dim - i;
+
+		indices.push_back (offset + base);
+		indices.push_back (offset + base + 1);
+		indices.push_back (offset + next_base);
+
+		for (int j = 1; j < dim - i; j++)
+		{
+			indices.push_back (offset + base + j);
+			indices.push_back (offset + next_base + j);
+			indices.push_back (offset + next_base + j - 1);
+
+			indices.push_back (offset + base + j);
+			indices.push_back (offset + base + j + 1);
+			indices.push_back (offset + next_base + j);
+		}
+		base = next_base;
+		next_base += across;
+	}
+}
+
+
+// subdivide triangle into 4 segments, and recursively subdivide the center one
+void subdiv_triangle (std::vector<float>& verts,
+    std::vector<uint16_t>& indices,
+    glm::vec3 top,
+    glm::vec3 bottom_left,
+    glm::vec3 bottom_right,
+    int levels,
+    int subdivs)
+{
+	Add_subdiv_triangle (
+	    verts, indices, top, glm::mix (top, bottom_left, 0.5), glm::mix (top, bottom_right, 0.5), subdivs);
+	Add_subdiv_triangle (
+	    verts, indices, glm::mix (top, bottom_left, 0.5), bottom_left, glm::mix (bottom_left, bottom_right, 0.5), subdivs);
+	Add_subdiv_triangle (
+	    verts, indices, glm::mix (top, bottom_right, 0.5), glm::mix (bottom_left, bottom_right, 0.5), bottom_right, subdivs);
+
+	if (levels == 0)
+	{
+		Add_subdiv_triangle (verts,
+		    indices,
+		    glm::mix (top, bottom_left, 0.5),
+		    glm::mix (bottom_left, bottom_right, 0.5),
+		    glm::mix (top, bottom_right, 0.5),
+		    subdivs);
+	}
+	else
+	{
+		subdiv_triangle (verts,
+		    indices,
+		    glm::mix (top, bottom_left, 0.5),
+		    glm::mix (bottom_left, bottom_right, 0.5),
+		    glm::mix (top, bottom_right, 0.5),
+		    levels - 1,
+		    subdivs);
+	}
+}
+
+std::shared_ptr<MeshData> create_water_plane_subdiv (int levels, int subdivs)
+{
 
 	std::vector<float> verts;
 	std::vector<uint16_t> indices;
 
-	verts.reserve ((dim + 1) * (dim + 1) * 6);
-	indices.reserve ((dim) * (dim)*6 * 6);
+	float max_float = 5000000.0f;
 
-	glm::vec3 dlb{ -1, -1, -1 };
-	glm::vec3 dlf{ -1, -1, 1 };
-	glm::vec3 drb{ 1, -1, -1 };
-	glm::vec3 drf{ 1, -1, 1 };
-	glm::vec3 ulb{ -1, 1, -1 };
-	glm::vec3 ulf{ -1, 1, 1 };
-	glm::vec3 urb{ 1, 1, -1 };
-	glm::vec3 urf{ 1, 1, 1 };
+	float neg_vert_offset = (max_float / 2.0f) * glm::tan (glm::radians (30.0f));
+	float pos_vert_offset = -(max_float / 2.0f) / glm::cos (glm::radians (30.0f));
 
+	glm::vec3 top{ 0, 0, pos_vert_offset };
+	glm::vec3 bottom_left{ -(max_float / 2.0f), 0, neg_vert_offset };
+	glm::vec3 bottom_right{ (max_float / 2.0f), 0, neg_vert_offset };
 
-	AddPlane (verts, indices, dim, 0, urf, urb, ulf, ulb);
-	AddPlane (verts, indices, dim, 1, dlf, dlb, drf, drb);
-	AddPlane (verts, indices, dim, 2, drf, drb, urf, urb);
-	AddPlane (verts, indices, dim, 3, ulf, ulb, dlf, dlb);
-	AddPlane (verts, indices, dim, 4, ulf, dlf, urf, drf);
-	AddPlane (verts, indices, dim, 5, urb, drb, ulb, dlb);
-
-	for (int i = 0; i < verts.size () / 8; i++)
-	{
-		glm::vec3 pos = glm::normalize (glm::vec3 (verts[i + 0], verts[i + 1], verts[i + 2]));
-		verts[i + 0] = pos.x;
-		verts[i + 1] = pos.y;
-		verts[i + 2] = pos.z;
-		verts[i + 3] = pos.x;
-		verts[i + 4] = pos.y;
-		verts[i + 5] = pos.z;
-	}
+	subdiv_triangle (verts, indices, top, bottom_left, bottom_right, levels, subdivs);
 
 	return std::make_shared<MeshData> (Vert_PosNormUv, verts, indices);
-};
+}

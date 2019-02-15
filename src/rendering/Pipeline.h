@@ -13,7 +13,7 @@ class PipelineOutline
 {
 	public:
 	void SetShaderModuleSet (ShaderModuleSet set);
-	void UseModelVertexLayout (VulkanModel* model);
+	void UseModelVertexLayout (VulkanModel& model);
 	void AddVertexLayout (VkVertexInputBindingDescription bind, VkVertexInputAttributeDescription attrib);
 	void AddVertexLayouts (std::vector<VkVertexInputBindingDescription> binds,
 	    std::vector<VkVertexInputAttributeDescription> attribs);

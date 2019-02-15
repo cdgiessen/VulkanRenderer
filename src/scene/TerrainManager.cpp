@@ -9,8 +9,8 @@
 
 #include <ImGui/imgui.h>
 
-#include "rendering/Initializers.h"
 #include "core/Logger.h"
+#include "rendering/Initializers.h"
 
 
 constexpr auto TerrainSettingsFileName = "terrain_settings.json";
@@ -197,14 +197,7 @@ TerrainManager::TerrainManager (
 	terrainVulkanTextureArrayNormal =
 	    renderer.textureManager.CreateTexture2DArray (terrainTextureArrayNormal, details);
 
-	instancedWaters = std::make_unique<InstancedSceneObject> (renderer);
-	instancedWaters->SetFragmentShaderToUse ("assets/shaders/water.frag.spv");
-	instancedWaters->SetBlendMode (VK_TRUE);
-	instancedWaters->SetCullMode (VK_CULL_MODE_NONE);
-	instancedWaters->LoadModel (createFlatPlane (settings.numCells, glm::vec3 (1, 0, 1)));
-	instancedWaters->LoadTexture (resourceMan.texManager.GetTexIDByName ("TileableWaterTexture"));
-
-	instancedWaters->InitInstancedSceneObject ();
+	water_plane = std::make_unique<Water> (resourceMan, renderer);
 
 	// StartWorkerThreads ();
 	workContinueSignal = std::make_shared<job::TaskSignal> ();
@@ -224,8 +217,6 @@ void TerrainManager::CleanUpTerrain ()
 {
 	StopActiveJobs ();
 	terrains.clear ();
-	// instancedWaters->RemoveAllInstances();
-	// instancedWaters->CleanUp();
 	activeTerrains.clear ();
 }
 
@@ -271,12 +262,6 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 				auto activeIt = std::find (
 				    std::begin (activeTerrains), std::end (activeTerrains), (*it)->coordinateData.gridPos);
 				if (activeIt != std::end (activeTerrains)) activeTerrains.erase (activeIt);
-
-				InstancedSceneObject::InstanceData water;
-				water.pos = glm::vec3 ((*it)->coordinateData.pos.x, 0, (*it)->coordinateData.pos.y);
-				water.rot = glm::vec3 (0, 0, 0);
-				water.scale = settings.width;
-				instancedWaters->RemoveInstance (water);
 			}
 		}
 	}
@@ -363,13 +348,6 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 						    terrainVulkanTextureArrayRoughness,
 						    terrainVulkanTextureArrayMetallic,
 						    terrainVulkanTextureArrayNormal);
-
-						InstancedSceneObject::InstanceData water;
-						water.pos = glm::vec3 (terCreateData.coord.pos.x, 0, terCreateData.coord.pos.y);
-						water.rot = glm::vec3 (0, 0, 0);
-						water.scale = settings.width;
-						instancedWaters->AddInstance (water);
-
 						{
 							std::lock_guard<std::mutex> lk (terrain_mutex);
 							terrains.push_back (std::move (terrain));
@@ -397,7 +375,7 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 	//}
 	terrainUpdateTimer.EndTimer ();
 
-	instancedWaters->UploadData ();
+	water_plane->UpdateUniform (cameraPos);
 
 	chunkBuffer.UpdateChunks ();
 }
@@ -415,6 +393,7 @@ void TerrainManager::RenderDepthPrePass (VkCommandBuffer commandBuffer)
 
 void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe)
 {
+
 	if (*terrainVulkanTextureArrayAlbedo->readyToUse && *terrainVulkanTextureArrayRoughness->readyToUse &&
 	    *terrainVulkanTextureArrayMetallic->readyToUse && *terrainVulkanTextureArrayNormal->readyToUse)
 	{
@@ -424,8 +403,7 @@ void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wirefram
 			ter->DrawTerrain (commandBuffer, wireframe);
 		}
 	}
-
-	instancedWaters->WriteToCommandBuffer (commandBuffer, wireframe);
+	water_plane->Draw (commandBuffer, wireframe);
 }
 
 // TODO : Reimplement getting height at terrain location

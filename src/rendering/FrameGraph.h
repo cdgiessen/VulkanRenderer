@@ -195,6 +195,23 @@ struct FrameGraphBuilder
 	std::string lastPass;
 };
 
+class FrameBuffer
+{
+	public:
+	FrameBuffer (
+	    VulkanDevice& device, std::vector<VkImage> images, RenderPass renderPass, uint32_t width, uint32_t height, uint32_t layers);
+	~FrameBuffer ();
+
+	VkFramebuffer Get () { return framebuffer; }
+
+	private:
+	VulkanDevice& device;
+
+	VkFramebuffer framebuffer;
+	std::vector<VkImageView> views;
+	std::vector<VkImage> image;
+};
+
 class FrameGraph
 {
 	public:

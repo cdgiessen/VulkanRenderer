@@ -22,9 +22,9 @@
 #include "gui/InternalGraph.h"
 
 #include "Camera.h"
-#include "Terrain.h"
-
 #include "InstancedSceneObject.h"
+#include "Terrain.h"
+#include "Water.h"
 
 constexpr size_t vert_size = sizeof (TerrainMeshVertices);
 constexpr size_t ind_size = sizeof (TerrainMeshIndices);
@@ -162,7 +162,7 @@ class TerrainManager
 
 	GeneralSettings settings;
 
-	std::unique_ptr<InstancedSceneObject> instancedWaters;
+	std::unique_ptr<Water> water_plane;
 
 	private:
 	void SaveSettingsToFile ();
