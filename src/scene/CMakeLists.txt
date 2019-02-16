@@ -1,5 +1,6 @@
 target_sources(VulkanApp PUBLIC
 
+${CMAKE_CURRENT_SOURCE_DIR}/Water.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/Camera.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/Entity.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/GameObject.cpp

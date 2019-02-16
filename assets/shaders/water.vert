@@ -34,9 +34,16 @@ out gl_PerVertex { vec4 gl_Position; };
 
 void main ()
 {
+	vec3 vert_pos = inPosition;
+	vec3 pos = inPosition + cam.cameraPos; // for y value comp
+	float t = global.time / 5;
+
+	float disp = sin (t + pos.x / 10) * cos (t + pos.z / 11);
+	vert_pos.y = disp * 2;
 	outTexCoord = inTexCoord;
-	gl_Position = cam.projView * vec4 (inPosition, 1.0);
+
+	gl_Position = cam.projView * mnd.model * vec4 (vert_pos, 1.0);
 
 	outNormal = (mnd.normal * vec4 (inNormal, 1.0f)).xyz;
-	outFragPos = (vec4 (inPosition, 1.0)).xyz;
+	outFragPos = (vec4 (pos, 1.0)).xyz;
 }

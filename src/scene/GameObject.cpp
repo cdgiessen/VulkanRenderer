@@ -1,6 +1,7 @@
 #include "GameObject.h"
 
 #include "core/Logger.h"
+#include <glm/gtc/matrix_transform.hpp>
 
 GameObject::GameObject (VulkanRenderer& renderer) : renderer (renderer) {}
 

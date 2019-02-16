@@ -14,7 +14,7 @@ int VertexDescription::ElementCount () const
 }
 
 void AddPlane (std::vector<float>& verts,
-    std::vector<uint16_t>& indices,
+    std::vector<uint32_t>& indices,
     int dim,
     glm::vec3 topLeft,
     glm::vec3 topRight,
@@ -68,7 +68,7 @@ void AddPlane (std::vector<float>& verts,
 std::shared_ptr<MeshData> createSinglePlane ()
 {
 	std::vector<float> verts;
-	std::vector<uint16_t> indices;
+	std::vector<uint32_t> indices;
 
 	int dim = 1;
 
@@ -84,7 +84,7 @@ std::shared_ptr<MeshData> createSinglePlane ()
 std::shared_ptr<MeshData> createDoublePlane ()
 {
 	std::vector<float> verts;
-	std::vector<uint16_t> indices;
+	std::vector<uint32_t> indices;
 
 	int dim = 1;
 
@@ -103,7 +103,7 @@ std::shared_ptr<MeshData> createDoublePlane ()
 std::shared_ptr<MeshData> createFlatPlane (int dim, glm::vec3 size)
 {
 	std::vector<float> verts;
-	std::vector<uint16_t> indices;
+	std::vector<uint32_t> indices;
 
 	verts.resize ((dim + 1) * (dim + 1) * 8);
 	indices.resize ((dim) * (dim)*6);
@@ -145,7 +145,7 @@ std::shared_ptr<MeshData> createFlatPlane (int dim, glm::vec3 size)
 std::shared_ptr<MeshData> createCube (int dim)
 {
 	std::vector<float> verts;
-	std::vector<uint16_t> indices;
+	std::vector<uint32_t> indices;
 	verts.reserve ((dim + 1) * (dim + 1) * 6);
 	indices.reserve ((dim) * (dim)*6 * 6);
 
@@ -189,16 +189,14 @@ std::shared_ptr<MeshData> createSphere (int dim)
 	return cube;
 };
 
-
-void Add_subdiv_triangle (
-    std::vector<float>& verts, std::vector<uint16_t>& indices, glm::vec3 top, glm::vec3 left, glm::vec3 down, int dim)
+void Add_subdiv_triangle_no_seam_fix (
+    std::vector<float>& verts, std::vector<uint32_t>& indices, glm::vec3 top, glm::vec3 left, glm::vec3 down, int dim)
 {
-	uint16_t offset = verts.size () / 8;
+	uint32_t offset = verts.size () / 8;
 	for (float i = 0; i < dim; i++)
 	{
 		for (float j = 0; j < dim + 1 - i; j++)
 		{
-
 			glm::vec3 pos = glm::mix (glm::mix (top, left, j / (dim - i)), down, i / (dim));
 
 			verts.push_back (pos.x);
@@ -223,6 +221,7 @@ void Add_subdiv_triangle (
 	verts.push_back (0.0);
 	verts.push_back (1);
 	verts.push_back (0);
+
 
 	int base = 0;
 	int next_base = dim + 1;
@@ -250,9 +249,84 @@ void Add_subdiv_triangle (
 }
 
 
+void Add_subdiv_triangle (
+    std::vector<float>& verts, std::vector<uint32_t>& indices, glm::vec3 top, glm::vec3 left, glm::vec3 down, int dim)
+{
+	uint32_t offset = verts.size () / 8;
+	for (float i = 0; i < dim; i++)
+	{
+		for (float j = 0; j < dim + 1 - i; j++)
+		{
+			glm::vec3 pos = glm::mix (glm::mix (top, left, j / (dim - i)), down, i / (dim));
+
+			verts.push_back (pos.x);
+			verts.push_back (pos.y);
+			verts.push_back (pos.z);
+			verts.push_back (0.0);
+			verts.push_back (1.0);
+			verts.push_back (0.0);
+			verts.push_back (i);
+			verts.push_back (j);
+		}
+
+		// seam fix vertex
+		glm::vec3 pos = glm::mix (glm::mix (top, left, (dim - i) / (dim - i)), down, (i + 0.5) / (dim));
+
+		verts.push_back (pos.x);
+		verts.push_back (pos.y);
+		verts.push_back (pos.z);
+		verts.push_back (0.0);
+		verts.push_back (1.0);
+		verts.push_back (0.0);
+		verts.push_back (1);
+		verts.push_back (0);
+	}
+
+	// i/dim is a NaN, better to just duplicate it once below for the last vertex
+	glm::vec3 pos = down;
+
+	verts.push_back (pos.x);
+	verts.push_back (pos.y);
+	verts.push_back (pos.z);
+	verts.push_back (0.0);
+	verts.push_back (1.0);
+	verts.push_back (0.0);
+	verts.push_back (1);
+	verts.push_back (0);
+
+	int base = 0;
+	int next_base = dim + 2;
+	for (int i = 0; i < dim; i++)
+	{
+		int across = dim - i + 1;
+		for (int j = 0; j < dim - i - 1; j++)
+		{
+			indices.push_back (offset + base + j);
+			indices.push_back (offset + base + j + 1);
+			indices.push_back (offset + next_base + j + 1);
+
+			indices.push_back (offset + base + j);
+			indices.push_back (offset + next_base + j + 1);
+			indices.push_back (offset + next_base + j);
+		}
+
+		indices.push_back (offset + base + across - 2);
+		indices.push_back (offset + base + across - 1);
+		indices.push_back (offset + base + across);
+
+		indices.push_back (offset + base + across - 2);
+		indices.push_back (offset + base + across);
+		indices.push_back (offset + next_base + across - 2);
+
+		base = next_base;
+		next_base += across;
+	}
+}
+
+
 // subdivide triangle into 4 segments, and recursively subdivide the center one
 void subdiv_triangle (std::vector<float>& verts,
-    std::vector<uint16_t>& indices,
+    std::vector<uint32_t>& indices,
     glm::vec3 top,
     glm::vec3 bottom_left,
     glm::vec3 bottom_right,
@@ -262,18 +336,18 @@ void subdiv_triangle (std::vector<float>& verts,
 	Add_subdiv_triangle (
 	    verts, indices, top, glm::mix (top, bottom_left, 0.5), glm::mix (top, bottom_right, 0.5), subdivs);
 	Add_subdiv_triangle (
-	    verts, indices, glm::mix (top, bottom_left, 0.5), bottom_left, glm::mix (bottom_left, bottom_right, 0.5), subdivs);
+	    verts, indices, bottom_left, glm::mix (top, bottom_left, 0.5), glm::mix (bottom_left, bottom_right, 0.5), subdivs);
 	Add_subdiv_triangle (
-	    verts, indices, glm::mix (top, bottom_right, 0.5), glm::mix (bottom_left, bottom_right, 0.5), bottom_right, subdivs);
+	    verts, indices, bottom_right, glm::mix (top, bottom_right, 0.5), glm::mix (bottom_left, bottom_right, 0.5), subdivs);
 
 	if (levels == 0)
 	{
-		Add_subdiv_triangle (verts,
+		Add_subdiv_triangle_no_seam_fix (verts,
 		    indices,
 		    glm::mix (top, bottom_left, 0.5),
 		    glm::mix (bottom_left, bottom_right, 0.5),
 		    glm::mix (top, bottom_right, 0.5),
-		    subdivs);
+		    subdivs * 2);
 	}
 	else
 	{
@@ -291,7 +365,7 @@ std::shared_ptr<MeshData> create_water_plane_subdiv (int levels, int subdivs)
 {
 
 	std::vector<float> verts;
-	std::vector<uint16_t> indices;
+	std::vector<uint32_t> indices;
 
 	float max_float = 5000000.0f;
 

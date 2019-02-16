@@ -156,18 +156,13 @@ class VulkanBufferIndex : public VulkanBuffer
 {
 	public:
 	VulkanBufferIndex (VulkanDevice& device, uint32_t count);
-	VulkanBufferIndex (VulkanDevice& device, uint16_t count);
-	// VulkanBufferIndex (VulkanDevice& device, int count, bool use32bitIndices);
 	void BindIndexBuffer (VkCommandBuffer cmdBuf);
-	bool is32bit;
 };
 
 class VulkanBufferStagingIndex : public VulkanBuffer
 {
 	public:
 	VulkanBufferStagingIndex (VulkanDevice& device, uint32_t count, void* pData);
-	VulkanBufferStagingIndex (VulkanDevice& device, uint16_t count, void* pData);
-	bool is32bit;
 };
 
 class VulkanBufferInstance : public VulkanBuffer

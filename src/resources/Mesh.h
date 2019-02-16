@@ -31,19 +31,14 @@ static VertexDescription Vert_PosNormUvCol = VertexDescription ({ Vert3, Vert3, 
 class MeshData
 {
 	public:
-	MeshData (VertexDescription desc, std::vector<float> vertexData, std::vector<uint16_t> indexData)
+	MeshData (VertexDescription desc, std::vector<float> vertexData, std::vector<uint32_t> indexData)
 	: desc (desc), vertexData (vertexData), indexData (indexData)
 	{
 	}
 
-	// MeshData (VertexDescription desc, std::vector<float>&& vertexData, std::vector<uint16_t>&&
-	// indexData) : desc (desc), vertexData (std::move (vertexData)), indexData (indexData)
-	//{
-	//}
-
 	const VertexDescription desc;
 	std::vector<float> vertexData;
-	std::vector<uint16_t> indexData;
+	std::vector<uint32_t> indexData;
 
 	private:
 };
