@@ -24,7 +24,6 @@
 #include "Camera.h"
 #include "InstancedSceneObject.h"
 #include "Terrain.h"
-#include "Water.h"
 
 constexpr size_t vert_size = sizeof (TerrainMeshVertices);
 constexpr size_t ind_size = sizeof (TerrainMeshIndices);
@@ -161,8 +160,6 @@ class TerrainManager
 	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal;
 
 	GeneralSettings settings;
-
-	std::unique_ptr<Water> water_plane;
 
 	private:
 	void SaveSettingsToFile ();

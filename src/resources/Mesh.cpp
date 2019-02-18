@@ -192,7 +192,7 @@ std::shared_ptr<MeshData> createSphere (int dim)
 void Add_subdiv_triangle_no_seam_fix (
     std::vector<float>& verts, std::vector<uint32_t>& indices, glm::vec3 top, glm::vec3 left, glm::vec3 down, int dim)
 {
-	uint32_t offset = verts.size () / 8;
+	uint32_t offset = verts.size () / 3;
 	for (float i = 0; i < dim; i++)
 	{
 		for (float j = 0; j < dim + 1 - i; j++)
@@ -202,11 +202,6 @@ void Add_subdiv_triangle_no_seam_fix (
 			verts.push_back (pos.x);
 			verts.push_back (pos.y);
 			verts.push_back (pos.z);
-			verts.push_back (0.0);
-			verts.push_back (1.0);
-			verts.push_back (0.0);
-			verts.push_back (i);
-			verts.push_back (j);
 		}
 	}
 
@@ -216,11 +211,6 @@ void Add_subdiv_triangle_no_seam_fix (
 	verts.push_back (pos.x);
 	verts.push_back (pos.y);
 	verts.push_back (pos.z);
-	verts.push_back (0.0);
-	verts.push_back (1.0);
-	verts.push_back (0.0);
-	verts.push_back (1);
-	verts.push_back (0);
 
 
 	int base = 0;
@@ -252,7 +242,7 @@ void Add_subdiv_triangle_no_seam_fix (
 void Add_subdiv_triangle (
     std::vector<float>& verts, std::vector<uint32_t>& indices, glm::vec3 top, glm::vec3 left, glm::vec3 down, int dim)
 {
-	uint32_t offset = verts.size () / 8;
+	uint32_t offset = verts.size () / 3;
 	for (float i = 0; i < dim; i++)
 	{
 		for (float j = 0; j < dim + 1 - i; j++)
@@ -262,11 +252,6 @@ void Add_subdiv_triangle (
 			verts.push_back (pos.x);
 			verts.push_back (pos.y);
 			verts.push_back (pos.z);
-			verts.push_back (0.0);
-			verts.push_back (1.0);
-			verts.push_back (0.0);
-			verts.push_back (i);
-			verts.push_back (j);
 		}
 
 		// seam fix vertex
@@ -275,11 +260,6 @@ void Add_subdiv_triangle (
 		verts.push_back (pos.x);
 		verts.push_back (pos.y);
 		verts.push_back (pos.z);
-		verts.push_back (0.0);
-		verts.push_back (1.0);
-		verts.push_back (0.0);
-		verts.push_back (1);
-		verts.push_back (0);
 	}
 
 	// i/dim is a NaN, better to just duplicate it once below for the last vertex
@@ -288,11 +268,6 @@ void Add_subdiv_triangle (
 	verts.push_back (pos.x);
 	verts.push_back (pos.y);
 	verts.push_back (pos.z);
-	verts.push_back (0.0);
-	verts.push_back (1.0);
-	verts.push_back (0.0);
-	verts.push_back (1);
-	verts.push_back (0);
 
 	int base = 0;
 	int next_base = dim + 2;
@@ -378,5 +353,5 @@ std::shared_ptr<MeshData> create_water_plane_subdiv (int levels, int subdivs)
 
 	subdiv_triangle (verts, indices, top, bottom_left, bottom_right, levels, subdivs);
 
-	return std::make_shared<MeshData> (Vert_PosNormUv, verts, indices);
+	return std::make_shared<MeshData> (Vert_Pos, verts, indices);
 }

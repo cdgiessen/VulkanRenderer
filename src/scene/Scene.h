@@ -14,6 +14,7 @@
 #include "Skybox.h"
 #include "Terrain.h"
 #include "TerrainManager.h"
+#include "Water.h"
 
 #include "Transform.h"
 
@@ -42,7 +43,9 @@ class Scene
 
 	void UpdateScene ();
 	void RenderDepthPrePass (VkCommandBuffer commandBuffer);
-	void RenderScene (VkCommandBuffer commandBuffer, bool wireframe);
+	void RenderOpaque (VkCommandBuffer commandBuffer, bool wireframe);
+	void RenderTransparent (VkCommandBuffer commandBuffer, bool wireframe);
+	void RenderSkybox (VkCommandBuffer commandBuffer);
 	void UpdateSceneGUI ();
 
 	Camera* GetCamera ();
@@ -61,6 +64,7 @@ class Scene
 
 	std::vector<std::unique_ptr<GameObject>> gameObjects;
 	std::unique_ptr<TerrainManager> terrainManager;
+	std::unique_ptr<Water> water_plane;
 	std::unique_ptr<InstancedSceneObject> treesInstanced;
 	std::unique_ptr<InstancedSceneObject> rocksInstanced;
 

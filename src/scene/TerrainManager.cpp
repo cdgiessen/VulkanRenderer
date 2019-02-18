@@ -198,8 +198,6 @@ TerrainManager::TerrainManager (
 	terrainVulkanTextureArrayNormal =
 	    renderer.textureManager.CreateTexture2DArray (terrainTextureArrayNormal, details);
 
-	water_plane = std::make_unique<Water> (resourceMan, renderer);
-
 	// StartWorkerThreads ();
 	workContinueSignal = std::make_shared<job::TaskSignal> ();
 }
@@ -376,8 +374,6 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 	//}
 	terrainUpdateTimer.EndTimer ();
 
-	water_plane->UpdateUniform (cameraPos);
-
 	chunkBuffer.UpdateChunks ();
 }
 
@@ -404,7 +400,6 @@ void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wirefram
 			ter->DrawTerrain (commandBuffer, wireframe);
 		}
 	}
-	water_plane->Draw (commandBuffer, wireframe);
 }
 
 // TODO : Reimplement getting height at terrain location

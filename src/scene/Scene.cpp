@@ -135,6 +135,8 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	// gltf2 integration
 	// std::shared_ptr< gltf2::Asset> tree_test = std::make_shared<gltf2::Asset>();
 	//*tree_test = gltf2::load("Resources/Assets/tree_test.gltf");
+
+	water_plane = std::make_unique<Water> (resourceMan, renderer);
 }
 
 Scene::~Scene ()
@@ -221,6 +223,8 @@ void Scene::UpdateScene ()
 
 	if (UpdateTerrain && terrainManager != nullptr)
 		terrainManager->UpdateTerrains (camera->Position);
+
+	water_plane->UpdateUniform (camera->Position);
 }
 
 void Scene::RenderDepthPrePass (VkCommandBuffer commandBuffer)
@@ -233,11 +237,8 @@ void Scene::RenderDepthPrePass (VkCommandBuffer commandBuffer)
 }
 
 
-void Scene::RenderScene (VkCommandBuffer commandBuffer, bool wireframe)
+void Scene::RenderOpaque (VkCommandBuffer commandBuffer, bool wireframe)
 {
-	VkDeviceSize offsets[] = { 0 };
-
-
 	for (auto& obj : gameObjects)
 	{
 		obj->Draw (commandBuffer, wireframe, drawNormals);
@@ -246,7 +247,15 @@ void Scene::RenderScene (VkCommandBuffer commandBuffer, bool wireframe)
 	// treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
 
 	if (terrainManager != nullptr) terrainManager->RenderTerrain (commandBuffer, wireframe);
+}
 
+void Scene::RenderTransparent (VkCommandBuffer cmdBuf, bool wireframe)
+{
+	water_plane->Draw (cmdBuf, wireframe);
+}
+
+void Scene::RenderSkybox (VkCommandBuffer commandBuffer)
+{
 	skybox->WriteToCommandBuffer (commandBuffer);
 }
 
