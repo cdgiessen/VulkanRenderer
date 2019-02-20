@@ -931,11 +931,7 @@ bool ConnectionSlot::IsHoveredOver (ImVec2 parentPos) const
 ConnectionType ConnectionSlot::GetType () { return conType; }
 
 InputConnectionSlot::InputConnectionSlot (int slotNum, ImVec2 pos, ConnectionType type, std::string name)
-: ConnectionSlot (slotNum, pos, type, name),
-  value (type),
-  sliderStepSize (sliderStepSize),
-  lowerBound (lowerBound),
-  upperBound (upperBound)
+: ConnectionSlot (slotNum, pos, type, name), value (type)
 {
 	switch (value.type)
 	{
@@ -956,6 +952,9 @@ InputConnectionSlot::InputConnectionSlot (int slotNum, ImVec2 pos, ConnectionTyp
 			break;
 		case (ConnectionType::Vec4):
 			value.value = glm::vec4 (0);
+			break;
+		default:
+			value.value = 0;
 			break;
 	}
 }
@@ -1044,6 +1043,8 @@ int InputConnectionSlot::Draw (
 			    sliderStepSize,
 			    lowerBound,
 			    upperBound);
+			break;
+		default:
 			break;
 	}
 	graph.SetNodeInternalValueByID (parentNode.internalNodeID, slotNum, value.value);

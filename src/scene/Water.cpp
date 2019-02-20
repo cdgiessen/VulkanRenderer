@@ -5,10 +5,10 @@
 
 Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : renderer (renderer)
 {
-	mesh = create_water_plane_subdiv (15, 50);
+	mesh = create_water_plane_subdiv (13, 40);
 	model = std::make_unique<VulkanModel> (renderer, mesh);
 
-	texture = resourceMan.texManager.GetTexIDByName ("TileableWaterTexture");
+	texture = resourceMan.texManager.GetTexIDByName ("water_normal");
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8);
 	vulkanTexture = renderer.textureManager.CreateTexture2D (texture, details);
 
@@ -27,11 +27,14 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 	    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (
 	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
+	// m_bindings.push_back (VulkanDescriptor::CreateBinding (
+	//    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
 	descriptor->SetupLayout (m_bindings);
 
 	std::vector<DescriptorPoolSize> poolSizes;
 	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
 	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+	// poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	descriptor->SetupPool (poolSizes);
 
 	m_descriptorSet = descriptor->CreateDescriptorSet ();
@@ -39,6 +42,7 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 	std::vector<DescriptorUse> writes;
 	writes.push_back (DescriptorUse (0, 1, uniformBuffer->resource));
 	writes.push_back (DescriptorUse (1, 1, vulkanTexture->resource));
+	// writes.push_back (DescriptorUse (2, 1, renderer.Get_depth_tex ()->resource));
 	descriptor->UpdateDescriptorSet (m_descriptorSet, writes);
 
 	PipelineOutline out;
@@ -57,7 +61,7 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 	out.AddScissor (1, 1, 0, 0);
 
 	out.SetRasterizer (
-	    VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	    VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 
 	out.SetMultisampling (VK_SAMPLE_COUNT_1_BIT);
 	out.SetDepthStencil (VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
@@ -78,7 +82,7 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 	pipe = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 
 	out.SetRasterizer (
-	    VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
+	    VK_POLYGON_MODE_LINE, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 
 	wireframe = std::make_unique<Pipeline> (
 	    renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));

@@ -23,6 +23,8 @@ std::string formatTypeToString (FormatType type)
 			return "jpg";
 		case (FormatType::png):
 			return "png";
+		default:
+			return "Image type not valid!";
 	}
 	return "";
 }
@@ -54,6 +56,8 @@ nlohmann::json TexResource::to_json () const
 		case (LayoutType::cubemap2D):
 			j["layout"] = "cubemap2D";
 			break;
+		default:
+			break;
 	}
 	switch (fileFormatType)
 	{
@@ -62,6 +66,8 @@ nlohmann::json TexResource::to_json () const
 			break;
 		case (FormatType::jpg):
 			j["format"] = "jpg";
+			break;
+		default:
 			break;
 	}
 	switch (channels)
@@ -200,8 +206,7 @@ void Manager::LoadTextureList ()
 		{
 			auto tex = from_json_TexResource (*it);
 			textureResources[tex.id] = tex;
-			tasks.push_back(
-			    job::Task ( signal, [=] { LoadTextureFromFile (tex.id); }));
+			tasks.push_back (job::Task (signal, [=] { LoadTextureFromFile (tex.id); }));
 			// workers.push_back(std::thread(&Manager::LoadTextureFromFile, this, tex.id));
 			// LoadTextureFromFile (tex.id);
 			/*Log.Debug (fmt::format ("Tex {}, name {}, width={}, height={}\n",
@@ -212,7 +217,7 @@ void Manager::LoadTextureList ()
 			count++;
 		}
 		id_counter = count;
-		taskManager.Submit(tasks, job::TaskType::currentFrame);
+		taskManager.Submit (tasks, job::TaskType::currentFrame);
 		signal->Wait ();
 		// for (auto& w : workers) {
 		//	w.join();
@@ -296,7 +301,7 @@ void Manager::LoadTextureFromFile (TexID id)
 	std::lock_guard<std::mutex> lg (lock);
 	textureData.push_back (std::move (texData));
 
-	Log.Debug(fmt::format("Tex {}\n", id));
+	Log.Debug (fmt::format ("Tex {}\n", id));
 }
 
 TexID CreateNewTextureFromByteArray (int width, int height, std::byte* data) { return 0; }

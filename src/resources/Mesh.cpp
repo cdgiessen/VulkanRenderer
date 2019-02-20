@@ -311,7 +311,7 @@ void subdiv_triangle (std::vector<float>& verts,
 	Add_subdiv_triangle (
 	    verts, indices, top, glm::mix (top, bottom_left, 0.5), glm::mix (top, bottom_right, 0.5), subdivs);
 	Add_subdiv_triangle (
-	    verts, indices, bottom_left, glm::mix (top, bottom_left, 0.5), glm::mix (bottom_left, bottom_right, 0.5), subdivs);
+	    verts, indices, bottom_left, glm::mix (bottom_left, bottom_right, 0.5), glm::mix (top, bottom_left, 0.5), subdivs);
 	Add_subdiv_triangle (
 	    verts, indices, bottom_right, glm::mix (top, bottom_right, 0.5), glm::mix (bottom_left, bottom_right, 0.5), subdivs);
 

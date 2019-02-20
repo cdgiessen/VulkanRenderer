@@ -6,12 +6,12 @@
     "channels": "rgb",
     "dataDescription": {
       "channels": 3,
-      "width": 1024,
-      "height": 1024,
+      "width": 600,
+      "height": 600,
       "depth": 1,
       "layers": 1
     },
-    "name": "TileableWaterTexture"
+    "name": "water_normal"
   },
   {
     "id": 1,

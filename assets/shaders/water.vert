@@ -31,24 +31,25 @@ out gl_PerVertex { vec4 gl_Position; };
 
 float height (vec3 pos)
 {
-	float t = global.time / 5;
-	return sin (t + pos.x / 10) * cos (t + pos.z / 11);
+	float t = global.time / 3;
+	return sin (t + pos.x / 8) * cos (t + pos.z / 7) + sin (1.4 * t + pos.x / 5) * cos (0.7 * t + pos.z / 6);
 }
 
 void main ()
 {
 	vec3 vert_pos = inPosition;
-	vec3 pos = inPosition + cam.cameraPos; // for y value comp
+	outFragPos = vert_pos;
+	vec3 static_pos = inPosition + cam.cameraPos; // for y value comp
 
-	float disp = height (pos);
-	vert_pos.y = disp * 2;
+	float disp = height (static_pos);
+
+	float xDiff = (height (static_pos + vec3 (0.1, 0, 0)) - height (static_pos + vec3 (-0.1, 0, 0)));
+	float zDiff = (height (static_pos + vec3 (0, 0, 0.1)) - height (static_pos + vec3 (0, 0, -0.1)));
+
+	vec3 out_norm = vec3 (xDiff, 0.5, zDiff);
+
+	vert_pos += vec3 (xDiff, disp * 1, yDiff);
 
 	gl_Position = cam.projView * mnd.model * vec4 (vert_pos, 1.0);
-
-	vec3 out_norm = normalize (vec3 (height (pos + vec3 (1, 0, 0)) - height (pos + vec3 (-1, 0, 0)),
-	    2,
-	    height (pos + vec3 (0, 0, 1)) - height (pos + vec3 (0, 0, -1))));
-
-	outNormal = (mnd.normal * vec4 (out_norm, 1.0f)).xyz;
-	outFragPos = (vec4 (vert_pos, 1.0)).xyz;
+	outNormal = normalize (out_norm);
 }

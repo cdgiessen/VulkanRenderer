@@ -56,7 +56,8 @@ layout (set = 1, binding = 2) uniform SpotLightData { SpotLight lights[SpotLight
 spot;
 
 // texture sampling
-layout (set = 2, binding = 1) uniform sampler2D waterTex;
+layout (set = 2, binding = 1) uniform sampler2D water_normal;
+layout (set = 2, binding = 2) uniform sampler2D depth;
 
 layout (location = 0) in vec3 inFragPos;
 layout (location = 1) in vec3 inNormal;
@@ -188,16 +189,22 @@ vec3 LightingContribution (vec3 N, vec3 V, vec3 F0)
 	return Lo;
 }
 
-// vec3 DirPhongLighting(vec3 view, vec3 dir, vec3 normal, vec3 color, float intensity) {
-//	vec3 light = normalize(dir);
-//	vec3 halfway = normalize(light + view);
-//	vec3 reflect = reflect(-light, normal);
-//	vec3 diffuse = max(dot(normal, light), 0.0f)* vec3(0.8f);
-//	vec3 specular = pow(max(dot(view, reflect), 0.0), 16.0f)* vec3(0.25f);
-//	vec3 contrib = (diffuse + specular)* vec3(intensity) * color;
+vec3 perturbNormal (vec3 texNormal, vec2 inTexCoord)
+{
+	vec3 tangentNormal = texNormal * 2.0 - 1.0;
 
-//	return contrib;
-//}
+	vec3 q1 = dFdx (inFragPos);
+	vec3 q2 = dFdy (inFragPos);
+	vec2 st1 = dFdx (inTexCoord);
+	vec2 st2 = dFdy (inTexCoord);
+
+	vec3 N = normalize (inNormal);
+	vec3 T = normalize (q1 * st2.t - q2 * st1.t);
+	vec3 B = -normalize (cross (N, T));
+	mat3 TBN = mat3 (T, B, N);
+
+	return normalize (TBN * tangentNormal);
+}
 
 void main ()
 {
@@ -206,11 +213,12 @@ void main ()
 
 	vec2 sampPoint = inFragPos.xz * 0.25f;
 
+	vec4 lighterBlue = vec4 (87.0 / 255.0, 174.0 / 255.0, 249.0 / 255.0, 1);
 	vec4 baseBlue = vec4 (0.129, 0.404, 1.0f, 1.0f);
 	// float samp1 = dot(texture(waterTex, vec2(cos(time) + sampPoint.x, cos(time) + sampPoint.y +
 	// 0.1f)).xyz, vec3(0.299, 0.587, 0.114)); float samp2 = dot(texture(waterTex, vec2(cos(time*
 	// 0.5f) + sampPoint.x + 0.1f, sin(time) + sampPoint.y)).xyz, vec3(0.299, 0.587, 0.114));
-	vec4 sampAll = baseBlue;
+	vec4 sampAll = lighterBlue;
 
 
 	float newTime = inTime * 0.05f;
@@ -225,8 +233,10 @@ void main ()
 	vec4 texColor = vec4 (0.65) * sampAll + vec4 (0.45) * (causticsSampler (uvModified, inTime * 0.2f) +
 	                                                          causticsSampler (uvModified2, inTime * 0.6f));
 
+	vec3 normal = texture (water_normal, -uvModified).xyz;
+	vec3 normal2 = texture (water_normal, uvModified2).xyz;
 
-	vec3 N = normalize (inNormal);
+	vec3 N = perturbNormal (normalize (normal + normal2), inFragPos.xz);
 	vec3 V = normalize (cam.cameraPos - inFragPos);
 
 	vec3 F0 = vec3 (0.04);
@@ -235,26 +245,5 @@ void main ()
 	vec3 ambient = vec3 (0.0);
 	vec3 lighting = ambient + LightingContribution (N, V, F0);
 
-	// vec3 viewVec = normalize(-cam.cameraDir);
-	//
-	// vec3 normalVec = normalize(inNormal);
-
-	// vec3 pointLightContrib = vec3(0.0f);
-	// for(int i = 0; i < PointLightCount; i++){
-	//	vec3 lightVec = normalize(point.lights[i].position - inFragPos).xyz;
-	//	vec3 reflectVec = reflect(-lightVec, normalVec);
-	//	vec3 halfwayVec = normalize(viewVec + point.lights[i].position);
-
-	//	float separation = distance(point.lights[i].position, inFragPos);
-	//	float attenuation = 1.0f/(separation*separation);
-
-	//	vec3 diffuse = max(dot(normalVec, lightVec), 0.0) * vec3(1.0f) * attenuation *
-	// point.lights[i].color; 	vec3 specular = pow(max(dot(viewVec, reflectVec), 0.0), 16.0) *
-	// vec3(0.75f)* attenuation * point.lights[i].color; 	pointLightContrib += (diffuse + specular);
-	//}
-
-	// vec3 dirContrib = DirPhongLighting(viewVec, sun.light[0].direction, normalVec, sun.light[0].color, sun.light[0].intensity);
-
 	outColor = texColor * vec4 (lighting, 1.0f);
-	// outColor = texColor * vec4(pointLightContrib, 1.0f);
 }

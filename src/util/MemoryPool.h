@@ -17,7 +17,7 @@ class Pool
 		Node (uint32_t next, uint8_t gen)
 		{
 			uint32_t gen32 = gen << 24;
-			this->data = 0xFFFFFF & next | (gen32);
+			this->data = (0xFFFFFF & next) | (gen32);
 		}
 
 		uint32_t next () const { return 0xFFFFFF & data; }
@@ -25,7 +25,7 @@ class Pool
 
 		void set_next_node (uint32_t next_node)
 		{
-			uint32_t i32 = 0xFFFFFF & next_node;
+			uint32_t i32 = (0xFFFFFF & next_node);
 			data = gen () | i32;
 		}
 
@@ -48,7 +48,7 @@ class Pool
 		ID (uint32_t id, uint8_t gen)
 		{
 			uint32_t gen32 = gen << 24;
-			data = 0xFFFFFF & id | (gen32);
+			data = (0xFFFFFF & id) | (gen32);
 		}
 
 		uint32_t id () const { return 0xFFFFFF & data; }

@@ -66,7 +66,7 @@ void InputDirector::SetupInputDirector (Window* window)
 {
 	this->window = window;
 
-	double xpos, ypos;
+	double xpos = 0.0, ypos = 0.0;
 	glfwGetCursorPos (window->getWindowContext (), &xpos, &ypos);
 	mousePosition = mousePositionPrevious = glm::dvec2 (xpos, ypos);
 
@@ -112,9 +112,12 @@ std::array<int, JoystickCount> InputDirector::GetConnectedJoysticks ()
 {
 	std::array<int, JoystickCount> joys;
 
-	int i = 0;
+	int next = 0;
 	for (int i = 0; i < JoystickCount; i++)
-		if (joystickData.at (i).IsConnected ()) joys.at (i++) = joystickData.at (i).joystickIndex;
+		if (joystickData.at (i).IsConnected ())
+		{
+			joys.at (next++) = joystickData.at (i).joystickIndex;
+		}
 
 	return joys;
 }

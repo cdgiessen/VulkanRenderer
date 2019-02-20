@@ -178,7 +178,6 @@ TerrainManager::TerrainManager (
 		settings.maxLevels = 0;
 	}
 	LoadSettingsFromFile ();
-	settings.viewDistance = 0;
 
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8);
 

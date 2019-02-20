@@ -195,6 +195,8 @@ class VulkanRenderer
 
 	Scene* scene;
 
+	std::shared_ptr<VulkanTexture> Get_depth_tex () { return depthBuffer[0]; }
+
 	private:
 	CommandPool graphicsPrimaryCommandPool;
 	CommandPool transferPrimaryCommandPool;

@@ -218,6 +218,7 @@ void main ()
 	    texArrayNormal, vec3 (inTexCoord.x * texSampleDensity, inTexCoord.y * texSampleDensity, 3)));
 	vec3 normal = normalize (
 	    normal1 * texColor.x + normal2 * texColor.y + normal3 * texColor.z + normal4 * texColor.w);
+
 	vec3 viewVec = normalize (-cam.cameraDir);
 
 	// vec3 normalVec = normalize(inNormal);
@@ -232,8 +233,8 @@ void main ()
 	//	float attenuation = 1.0f/(separation*separation);
 
 	//	vec3 diffuse = max(dot(normalVec, lightVec), 0.0) * vec3(1.0f) * attenuation *
-	//point.lights[i].color; 	vec3 specular = pow(max(dot(viewVec, reflectVec), 0.0), 16.0) *
-	//vec3(0.75f)* attenuation * point.lights[i].color; 	pointLightContrib += (diffuse + specular);
+	// point.lights[i].color; 	vec3 specular = pow(max(dot(viewVec, reflectVec), 0.0), 16.0) *
+	// vec3(0.75f)* attenuation * point.lights[i].color; 	pointLightContrib += (diffuse + specular);
 	//}
 
 	// vec3 dirContrib = DirPhongLighting(viewVec, sun.light[0].direction, normalVec,
@@ -245,7 +246,8 @@ void main ()
 	vec3 ambient = vec3 (0.002);
 	vec3 lighting = ambient + LightingContribution (N, V, F0, albedo, roughness, metalness);
 
-	// float belowWaterLevelDarkening = -1*(((-clamp(inFragPos.y, -5.5, -0.5) - 0.5)/5) - 1);
+	float belowWaterLevelDarkening = -1 * (((-clamp (inFragPos.y, -7, -0.5) - 0.5) / 5) - 1);
+
 
 	// outColor = (vec4(0,0,0,0) + inColor) * vec4((pointLightContrib + dirContrib), 1.0f);
 	// outColor = vec4(lighting, 1.0f);
@@ -253,5 +255,10 @@ void main ()
 	vec3 color = lighting / (lighting + vec3 (1.0));
 	outColor = vec4 (pow (color, vec3 (1.0 / 2.2)), 1.0f);
 
-	// outColor *= belowWaterLevelDarkening;
+	float r = outColor.r * belowWaterLevelDarkening;
+	float g = outColor.g * belowWaterLevelDarkening;
+	float b = outColor.b * clamp (belowWaterLevelDarkening * 0.8, 0, 1);
+
+
+	outColor = vec4 (r, g, b, 1.0f);
 }

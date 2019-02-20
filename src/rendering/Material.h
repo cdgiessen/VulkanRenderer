@@ -43,7 +43,7 @@ struct MaterialDataSlot
 	ResourceStages stage;
 	DescriptorResource resource;
 
-	MaterialDataSlot (ResourceType type, ResourceStages stage, DescriptorResource resources)
+	MaterialDataSlot (ResourceType type, ResourceStages stage, DescriptorResource resource)
 	: type (type), stage (stage), resource (resource)
 	{
 	}
@@ -139,20 +139,20 @@ class VulkanMaterial
 	std::shared_ptr<VulkanBufferUniform> value_data;
 };
 
-class VulkanMaterialInstance
-{
-	public:
-	void Bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout);
+// class VulkanMaterialInstance
+// {
+// 	public:
+// 	void Bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout);
 
-	private:
-	VulkanDevice& device;
+// 	private:
+// 	VulkanDevice& device;
 
-	DescriptorSet descriptorSet;
-	VulkanDescriptor descriptor;
+// 	DescriptorSet descriptorSet;
+// 	VulkanDescriptor descriptor;
 
 
-	std::vector<std::shared_ptr<VulkanTexture>> textures;
-	std::vector<std::shared_ptr<VulkanTexture>> textureArrays;
-	std::vector<MaterialOptions> value_var;
-	std::shared_ptr<VulkanBufferUniform> value_data;
-};
+// 	std::vector<std::shared_ptr<VulkanTexture>> textures;
+// 	std::vector<std::shared_ptr<VulkanTexture>> textureArrays;
+// 	std::vector<MaterialOptions> value_var;
+// 	std::shared_ptr<VulkanBufferUniform> value_data;
+// };
