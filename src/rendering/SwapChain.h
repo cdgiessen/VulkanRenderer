@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <memory>
 #include <vector>
 
@@ -26,7 +25,7 @@ class VulkanSwapChain
 	void RecreateSwapChain ();
 
 	void CreateFramebuffers (
-	    std::vector<int> order, std::array<VkImageView, 3> depthImageViews, VkRenderPass renderPass);
+	    std::vector<int> order, std::vector<VkImageView> depthImageViews, VkRenderPass renderPass);
 
 	static SwapChainSupportDetails querySwapChainSupport (VkPhysicalDevice device, VkSurfaceKHR surface);
 

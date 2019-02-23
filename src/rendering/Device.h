@@ -110,14 +110,6 @@ class VulkanDevice
 
 	bool singleQueueDevice; // for devices with only 1 queue (intel integrated
 	                        // specifically)
-	enum class CommandQueueType
-	{
-		graphics,
-		compute,
-		transfer,
-		present
-	};
-
 	VulkanDevice (bool validationLayers, Window& window);
 
 	~VulkanDevice ();

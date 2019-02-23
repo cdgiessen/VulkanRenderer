@@ -21,6 +21,7 @@ using Signal = std::shared_ptr<bool>;
 constexpr long DEFAULT_FENCE_TIMEOUT = 1000000000;
 
 class VulkanDevice;
+class VulkanSwapChain;
 
 class VulkanFence
 {
@@ -73,20 +74,19 @@ class CommandQueue
 	CommandQueue (CommandQueue&& cmd) = delete;
 	CommandQueue& operator= (CommandQueue&& cmd) = delete;
 
-	void Submit (VkSubmitInfo info, VkFence fence);
-
-	void SubmitCommandBuffer (VkCommandBuffer buf, VkFence fence);
+	void SubmitCommandBuffer (VkCommandBuffer buffer, VulkanFence& fence);
 
 	void SubmitCommandBuffer (VkCommandBuffer buffer,
 	    VulkanFence& fence,
 	    std::vector<std::shared_ptr<VulkanSemaphore>>& waitSemaphores,
 	    std::vector<std::shared_ptr<VulkanSemaphore>>& signalSemaphores);
 
-	int GetQueueFamily ();
-	std::mutex& GetQueueMutex ();
-	VkQueue GetQueue ();
+	void Submit (VkSubmitInfo& submitInfo, VulkanFence& fence);
 
-	void WaitForFences (VkFence fence);
+	int GetQueueFamily ();
+
+	VkResult PresentQueueSubmit (VkPresentInfoKHR presentInfo);
+	void QueueWaitIdle ();
 
 	private:
 	const VulkanDevice& device;
@@ -95,11 +95,10 @@ class CommandQueue
 	int queueFamily;
 };
 
-
 class CommandPool
 {
 	public:
-	CommandPool (VulkanDevice& device, VkCommandPoolCreateFlags flags, CommandQueue& queue);
+	CommandPool (VulkanDevice& device, CommandQueue& queue, VkCommandPoolCreateFlags flags = 0);
 	CommandPool (CommandPool& cmd) = delete;
 	CommandPool& operator= (const CommandPool& cmd) = delete;
 	~CommandPool ();
@@ -147,36 +146,50 @@ class CommandBuffer
 		submitted
 	};
 
-	explicit CommandBuffer (CommandPool& pool, VkCommandBufferLevel level);
+	explicit CommandBuffer (CommandPool& pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-	void Allocate ();
+	CommandBuffer& Allocate ();
 
-	void Begin (VkCommandBufferUsageFlags flags = 0);
-	void End ();
+	CommandBuffer& Begin (VkCommandBufferUsageFlags flags = 0);
+	CommandBuffer& End ();
 
-	void SetFence (std::shared_ptr<VulkanFence>& fence);
-	void SetWaitSemaphores (std::vector<std::shared_ptr<VulkanSemaphore>>& sems);
-	void SetSignalSemaphores (std::vector<std::shared_ptr<VulkanSemaphore>>& sems);
+	CommandBuffer& SetFence (std::shared_ptr<VulkanFence> fence);
 
-	void Submit ();
+	CommandBuffer& Submit ();
+	CommandBuffer& Submit (std::vector<std::shared_ptr<VulkanSemaphore>>& waits,
+	    std::vector<std::shared_ptr<VulkanSemaphore>>& signals);
 
-	void Wait ();
+	CommandBuffer& Wait ();
 
-	void Free ();
+	CommandBuffer& Free ();
 
 	VkCommandBuffer Get () { return cmdBuf; }
 	VkCommandBuffer* GetPtr () { return &cmdBuf; }
 
-
-	std::shared_ptr<VulkanFence> fence;
-	std::vector<std::shared_ptr<VulkanSemaphore>> wait_semaphores;
-	std::vector<std::shared_ptr<VulkanSemaphore>> signal_semaphores;
+	VulkanFence& GetFence () { return *fence.get (); }
 
 	private:
 	CommandPool* pool; // can't be copied if its a reference...
 	VkCommandBufferLevel level;
 	State state = State::empty;
 	VkCommandBuffer cmdBuf = nullptr;
+
+	std::shared_ptr<VulkanFence> fence;
+};
+
+///////// Single Use Command Buffer ////////
+
+class SingleUseCommandBuffer
+{
+	public:
+	SingleUseCommandBuffer (VulkanDevice& device);
+	void Submit ();
+	VkCommandBuffer Get () { return buffer.Get (); }
+
+	private:
+	VulkanDevice& device;
+	CommandPool pool;
+	CommandBuffer buffer;
 };
 
 class CommandPoolGroup
@@ -218,16 +231,11 @@ class FrameObject
 	VkResult AquireNextSwapchainImage (VkSwapchainKHR swapchain);
 
 	void PrepareFrame ();
-	void SubmitFrame ();
+	void Submit (CommandQueue& queue);
 
-	VkSubmitInfo GetDepthSubmitInfo ();
-
-	VkSubmitInfo GetSubmitInfo ();
-	VkPresentInfoKHR GetPresentInfo ();
+	VkResult Present (VulkanSwapChain& swapChain, CommandQueue& presentQueue);
 
 	VkCommandBuffer GetPrimaryCmdBuf ();
-
-	VkFence GetCommandFence ();
 
 	private:
 	VulkanDevice& device;
@@ -239,7 +247,8 @@ class FrameObject
 	VulkanSemaphore renderFinishSem;
 
 	std::shared_ptr<VulkanFence> commandFence;
-
 	CommandPool commandPool;
 	CommandBuffer primary_command_buffer;
+
+	VkPipelineStageFlags stageMasks = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 };

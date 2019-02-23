@@ -120,7 +120,7 @@ void VulkanSwapChain::createImageViews ()
 }
 
 void VulkanSwapChain::CreateFramebuffers (
-    std::vector<int> order, std::array<VkImageView, 3> depthImageViews, VkRenderPass renderPass)
+    std::vector<int> order, std::vector<VkImageView> depthImageViews, VkRenderPass renderPass)
 {
 	swapChainFramebuffers.resize (swapChainImageViews.size ());
 

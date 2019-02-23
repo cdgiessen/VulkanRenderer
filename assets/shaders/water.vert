@@ -48,7 +48,7 @@ void main ()
 
 	vec3 out_norm = vec3 (xDiff, 0.5, zDiff);
 
-	vert_pos += vec3 (xDiff, disp * 1, yDiff);
+	vert_pos += vec3 (xDiff, disp * 1, zDiff);
 
 	gl_Position = cam.projView * mnd.model * vec4 (vert_pos, 1.0);
 	outNormal = normalize (out_norm);

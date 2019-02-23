@@ -19,6 +19,8 @@ find_package(Vulkan REQUIRED)
 
 find_package(Bullet) 
 
+find_package(OpenAL REQUIRED)
+
 #gtk include for linux file window
 if(UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
@@ -30,7 +32,6 @@ if(UNIX)
 	link_directories(${GTK3_LIBRARY_DIRS})
 	add_definitions(${GTK3_CFLAGS_OTHER}) 
 endif(UNIX)
-
 
 # main files to compile
 add_executable(VulkanApp)
@@ -56,6 +57,8 @@ if(UNIX)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif(UNIX)
 
+
+
 #json
 target_link_libraries(VulkanApp PUBLIC nlohmann_json)
 
@@ -75,6 +78,10 @@ if(BULLET_FOUND)
 	target_include_directories(VulkanApp PRIVATE ${BULLET_INCLUDE_DIRS})
 	target_link_libraries(VulkanApp PRIVATE ${BULLET_LIBRARIES})
 endif(BULLET_FOUND)
+
+#openal
+target_link_libraries(VulkanApp PRIVATE ${OPENAL_LIBRARIES})
+target_include_directories(VulkanApp PRIVATE ${OPENAL_INCLUDE_DIRS})
 
 #fmt
 target_link_libraries(VulkanApp PRIVATE fmt)

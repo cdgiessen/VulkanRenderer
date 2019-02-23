@@ -73,9 +73,9 @@ VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::
   vulkanSwapChain (device, window),
   shaderManager (device),
   textureManager (*this, resourceMan.texManager),
-  graphicsPrimaryCommandPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.GraphicsQueue ()),
-  transferPrimaryCommandPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.TransferQueue ()),
-  computePrimaryCommandPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.ComputeQueue ()),
+  graphicsPrimaryCommandPool (device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+  transferPrimaryCommandPool (device, device.TransferQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+  computePrimaryCommandPool (device, device.ComputeQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
   dynamic_data (device, settings)
 
 {
@@ -143,7 +143,7 @@ void VulkanRenderer::RenderFrame ()
 
 	for (auto it = finishQueue.begin (); it != finishQueue.end ();)
 	{
-		if (it->cmdBuf.fence->Check ())
+		if (it->cmdBuf.GetFence ().Check ())
 		{
 			for (auto& sig : it->signals)
 			{
@@ -164,9 +164,9 @@ void VulkanRenderer::CreatePresentResources ()
 	ContrustFrameGraph ();
 
 	CreateDepthResources ();
-	std::array<VkImageView, 3> depthImageViews = { depthBuffer.at (0)->textureImageView,
-		depthBuffer.at (1)->textureImageView,
-		depthBuffer.at (2)->textureImageView };
+	std::vector<VkImageView> depthImageViews;
+	for (auto& d : depthBuffers)
+		depthImageViews.push_back (d->textureImageView);
 
 	auto imageViewOrder = frameGraph->OrderAttachments ({ "img_depth", "img_color" });
 
@@ -179,7 +179,7 @@ void VulkanRenderer::RecreateSwapChain ()
 	Log.Debug (fmt::format ("Recreating Swapchain\n"));
 
 	for (int i = 0; i < 3; i++)
-		depthBuffer.at (i).reset ();
+		depthBuffers.at (i).reset ();
 
 	frameGraph.reset ();
 
@@ -202,8 +202,8 @@ void VulkanRenderer::CreateDepthResources ()
 {
 	VkFormat depthFormat = FindDepthFormat ();
 	for (int i = 0; i < 3; i++)
-		depthBuffer.at (i) = textureManager.CreateDepthImage (
-		    depthFormat, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height);
+		depthBuffers.push_back (textureManager.CreateDepthImage (
+		    depthFormat, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height));
 }
 
 VkFormat VulkanRenderer::FindSupportedFormat (
@@ -320,26 +320,10 @@ void VulkanRenderer::PrepareFrame (int curFrameIndex)
 
 void VulkanRenderer::SubmitFrame (int curFrameIndex)
 {
-	frameObjects.at (curFrameIndex)->SubmitFrame ();
+	frameObjects.at (curFrameIndex)->Submit (device.GraphicsQueue ());
 
-	auto curSubmitInfo = frameObjects.at (curFrameIndex)->GetSubmitInfo ();
+	VkResult result = frameObjects.at (curFrameIndex)->Present (vulkanSwapChain, device.PresentQueue ());
 
-	VkPipelineStageFlags stageMasks = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-	curSubmitInfo.pWaitDstStageMask = &stageMasks;
-
-	device.GraphicsQueue ().Submit (curSubmitInfo, frameObjects.at (curFrameIndex)->GetCommandFence ());
-
-	auto curPresentInfo = frameObjects.at (curFrameIndex)->GetPresentInfo ();
-
-	VkSwapchainKHR swapChains[] = { vulkanSwapChain.swapChain };
-	curPresentInfo.swapchainCount = 1;
-	curPresentInfo.pSwapchains = swapChains;
-
-	VkResult result;
-	{
-		std::lock_guard<std::mutex> lock (device.PresentQueue ().GetQueueMutex ());
-		result = vkQueuePresentKHR (device.PresentQueue ().GetQueue (), &curPresentInfo);
-	}
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
 		RecreateSwapChain ();
@@ -348,9 +332,8 @@ void VulkanRenderer::SubmitFrame (int curFrameIndex)
 	{
 		throw std::runtime_error ("failed to present swap chain image!");
 	}
-	// FINALLY!!!! -- not quite... then again
-	std::lock_guard<std::mutex> lock (device.PresentQueue ().GetQueueMutex ());
-	vkQueueWaitIdle (device.PresentQueue ().GetQueue ());
+
+	device.PresentQueue ().QueueWaitIdle ();
 }
 
 std::shared_ptr<VulkanDescriptor> VulkanRenderer::GetVulkanDescriptor ()
@@ -382,6 +365,7 @@ void VulkanRenderer::SubmitWork (WorkType workType,
 
 	std::shared_ptr<VulkanFence> fence = std::make_shared<VulkanFence> (device);
 
+	// Can't copy fence, so can't reassign CommandBuffer...
 	switch (workType)
 	{
 		case (WorkType::graphics):
@@ -398,11 +382,9 @@ void VulkanRenderer::SubmitWork (WorkType workType,
 	cmdBuf.Allocate ();
 	cmdBuf.Begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 	work (cmdBuf.Get ());
-	cmdBuf.End ();
 	cmdBuf.SetFence (fence);
-	cmdBuf.SetWaitSemaphores (waitSemaphores);
-	cmdBuf.SetSignalSemaphores (signalSemaphores);
-	cmdBuf.Submit ();
+	cmdBuf.End ();
+	cmdBuf.Submit (waitSemaphores, signalSemaphores);
 
 	{
 		std::lock_guard<std::mutex> lk (finishQueueLock);
@@ -424,7 +406,7 @@ void VulkanRenderer::SubmitGraphicsCommandBufferAndWait (VkCommandBuffer command
 	VulkanFence fence = VulkanFence (device);
 	graphicsPrimaryCommandPool.ReturnCommandBuffer (commandBuffer, fence);
 
-	device.GraphicsQueue ().WaitForFences (fence.Get ());
+	fence.Wait ();
 
 	graphicsPrimaryCommandPool.FreeCommandBuffer (commandBuffer);
 }

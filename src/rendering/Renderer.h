@@ -195,8 +195,6 @@ class VulkanRenderer
 
 	Scene* scene;
 
-	std::shared_ptr<VulkanTexture> Get_depth_tex () { return depthBuffer[0]; }
-
 	private:
 	CommandPool graphicsPrimaryCommandPool;
 	CommandPool transferPrimaryCommandPool;
@@ -208,7 +206,7 @@ class VulkanRenderer
 
 	GPU_DoubleBuffer dynamic_data;
 
-	std::array<std::shared_ptr<VulkanTexture>, 3> depthBuffer;
+	std::vector<std::shared_ptr<VulkanTexture>> depthBuffers;
 
 	int workerThreadCount = 3;
 

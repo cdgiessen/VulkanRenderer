@@ -5,6 +5,7 @@
 #include "Buffer.h"
 #include "Device.h"
 #include "RenderTools.h"
+#include "SwapChain.h"
 
 //////// Fence ////////////
 
@@ -78,20 +79,12 @@ CommandQueue::CommandQueue (const VulkanDevice& device, int queueFamily) : devic
 	this->queueFamily = queueFamily;
 }
 
-void CommandQueue::Submit (VkSubmitInfo submitInfo, VkFence fence)
+void CommandQueue::SubmitCommandBuffer (VkCommandBuffer buffer, VulkanFence& fence)
 {
-	std::lock_guard<std::mutex> lock (submissionMutex);
-	VK_CHECK_RESULT (vkQueueSubmit (queue, 1, &submitInfo, fence));
-}
+	auto waits = std::vector<std::shared_ptr<VulkanSemaphore>> ();
+	auto signals = std::vector<std::shared_ptr<VulkanSemaphore>> ();
 
-void CommandQueue::SubmitCommandBuffer (VkCommandBuffer buffer, VkFence fence)
-{
-	const auto stageMasks = std::vector<VkPipelineStageFlags>{ VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
-	auto submitInfo = initializers::submitInfo ();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &buffer;
-	submitInfo.pWaitDstStageMask = stageMasks.data ();
-	Submit (submitInfo, fence);
+	SubmitCommandBuffer (buffer, fence, waits, signals);
 }
 
 void CommandQueue::SubmitCommandBuffer (VkCommandBuffer cmdBuffer,
@@ -111,24 +104,33 @@ void CommandQueue::SubmitCommandBuffer (VkCommandBuffer cmdBuffer,
 	submitInfo.waitSemaphoreCount = (uint32_t)waits.size ();
 	submitInfo.pWaitSemaphores = waits.data ();
 	submitInfo.pWaitDstStageMask = stageMasks.data ();
-	Submit (submitInfo, fence.Get ());
+
+	Submit (submitInfo, fence);
+}
+
+void CommandQueue::Submit (VkSubmitInfo& submitInfo, VulkanFence& fence)
+{
+	std::lock_guard<std::mutex> lock (submissionMutex);
+	VK_CHECK_RESULT (vkQueueSubmit (queue, 1, &submitInfo, fence.Get ()));
 }
 
 
 int CommandQueue::GetQueueFamily () { return queueFamily; }
 
-VkQueue CommandQueue::GetQueue () { return queue; }
-
-std::mutex& CommandQueue::GetQueueMutex () { return submissionMutex; }
-
-void CommandQueue::WaitForFences (VkFence fence)
+VkResult CommandQueue::PresentQueueSubmit (VkPresentInfoKHR presentInfo)
 {
-	vkWaitForFences (device.device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+	std::lock_guard<std::mutex> lock (submissionMutex);
+	return vkQueuePresentKHR (queue, &presentInfo);
 }
 
+void CommandQueue::QueueWaitIdle ()
+{
+	std::lock_guard<std::mutex> lock (submissionMutex);
+	vkQueueWaitIdle (queue);
+}
 /////// Command Pool ////////////
 
-CommandPool::CommandPool (VulkanDevice& device, VkCommandPoolCreateFlags flags, CommandQueue& queue)
+CommandPool::CommandPool (VulkanDevice& device, CommandQueue& queue, VkCommandPoolCreateFlags flags)
 : device (device), queue (queue)
 {
 	VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo ();
@@ -238,69 +240,84 @@ CommandBuffer::CommandBuffer (CommandPool& pool, VkCommandBufferLevel level)
 {
 }
 
-void CommandBuffer::Allocate ()
+CommandBuffer& CommandBuffer::Allocate ()
 {
 	assert (state == State::empty);
 	cmdBuf = pool->AllocateCommandBuffer (level);
 	state = State::allocated;
+	return *this;
 }
 
-void CommandBuffer::Begin (VkCommandBufferUsageFlags flags)
+CommandBuffer& CommandBuffer::Begin (VkCommandBufferUsageFlags flags)
 {
 	assert (state == State::allocated);
 	pool->BeginBufferRecording (cmdBuf, flags);
 	state = State::recording;
+	return *this;
 }
-void CommandBuffer::End ()
+CommandBuffer& CommandBuffer::End ()
 {
 	assert (state == State::recording);
 	pool->EndBufferRecording (cmdBuf);
 	state = State::ready;
+	return *this;
 }
 
-void CommandBuffer::SetFence (std::shared_ptr<VulkanFence>& fence) { this->fence = fence; }
-void CommandBuffer::SetWaitSemaphores (std::vector<std::shared_ptr<VulkanSemaphore>>& sems)
+CommandBuffer& CommandBuffer::SetFence (std::shared_ptr<VulkanFence> fence)
 {
-	for (auto& s : sems)
-	{
-		wait_semaphores.push_back (s);
-	}
-}
-void CommandBuffer::SetSignalSemaphores (std::vector<std::shared_ptr<VulkanSemaphore>>& sems)
-{
-	for (auto& s : sems)
-	{
-		signal_semaphores.push_back (s);
-	}
+	this->fence = fence;
+	return *this;
 }
 
-void CommandBuffer::Submit ()
+CommandBuffer& CommandBuffer::Submit ()
 {
 	assert (state == State::ready);
 	pool->SubmitCommandBuffer (cmdBuf, *fence.get ());
 	state = State::submitted;
+	return *this;
 }
 
-void CommandBuffer::Wait ()
+CommandBuffer& CommandBuffer::Submit (std::vector<std::shared_ptr<VulkanSemaphore>>& wats,
+    std::vector<std::shared_ptr<VulkanSemaphore>>& signals)
+{
+	assert (state == State::ready);
+	pool->SubmitCommandBuffer (cmdBuf, *fence.get (), wats, signals);
+	state = State::submitted;
+	return *this;
+}
+
+CommandBuffer& CommandBuffer::Wait ()
 {
 	// assert (state == State::submitted);
 	fence->Wait ();
 	fence->Reset ();
 	state = State::allocated;
+	return *this;
 }
 
-void CommandBuffer::Free ()
+CommandBuffer& CommandBuffer::Free ()
 {
 	pool->FreeCommandBuffer (cmdBuf);
 	state = State::empty;
+	return *this;
 }
+
+///////// Single Use Command Buffer ////////
+
+SingleUseCommandBuffer::SingleUseCommandBuffer (VulkanDevice& device)
+: device (device), pool (device, device.GraphicsQueue ()), buffer (pool)
+{
+	buffer.Allocate ().Begin ();
+}
+
+void SingleUseCommandBuffer::Submit () { buffer.End ().Submit ().Wait ().Free (); }
 
 ///////// CommandPoolGroup /////////
 
 CommandPoolGroup::CommandPoolGroup (VulkanDevice& device)
-: graphicsPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.GraphicsQueue ()),
-  transferPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.TransferQueue ()),
-  computePool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.ComputeQueue ())
+: graphicsPool (device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+  transferPool (device, device.TransferQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+  computePool (device, device.ComputeQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
 {
 }
 
@@ -309,7 +326,7 @@ CommandPoolGroup::CommandPoolGroup (VulkanDevice& device)
 FrameObject::FrameObject (VulkanDevice& device, int frameIndex)
 : device (device),
   frameIndex (frameIndex),
-  commandPool (device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, device.GraphicsQueue ()),
+  commandPool (device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
   imageAvailSem (device),
   renderFinishSem (device),
   commandFence (std::make_shared<VulkanFence> (device, DEFAULT_FENCE_TIMEOUT, VK_FENCE_CREATE_SIGNALED_BIT)),
@@ -334,10 +351,10 @@ void FrameObject::PrepareFrame ()
 	primary_command_buffer.Begin (VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 }
 
-void FrameObject::SubmitFrame () { primary_command_buffer.End (); }
-
-VkSubmitInfo FrameObject::GetSubmitInfo ()
+void FrameObject::Submit (CommandQueue& queue)
 {
+	primary_command_buffer.End ();
+
 	VkSubmitInfo submitInfo = initializers::submitInfo ();
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = renderFinishSem.GetPtr ();
@@ -345,22 +362,24 @@ VkSubmitInfo FrameObject::GetSubmitInfo ()
 	submitInfo.pWaitSemaphores = imageAvailSem.GetPtr ();
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = primary_command_buffer.GetPtr ();
+	submitInfo.pWaitDstStageMask = &stageMasks;
 
-	return submitInfo;
+	queue.Submit (submitInfo, *commandFence.get ());
 }
 
-VkPresentInfoKHR FrameObject::GetPresentInfo ()
+VkResult FrameObject::Present (VulkanSwapChain& swapChain, CommandQueue& presentQueue)
 {
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pWaitSemaphores = renderFinishSem.GetPtr ();
-
 	presentInfo.pImageIndices = &swapChainIndex;
-	return presentInfo;
+
+	VkSwapchainKHR swapChains[] = { swapChain.swapChain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+
+	return presentQueue.PresentQueueSubmit (presentInfo);
 }
 
 VkCommandBuffer FrameObject::GetPrimaryCmdBuf () { return primary_command_buffer.Get (); }
-
-VkFence FrameObject::GetCommandFence () { return commandFence->Get (); }
