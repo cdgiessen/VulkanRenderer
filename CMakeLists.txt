@@ -21,6 +21,8 @@ find_package(Bullet)
 
 find_package(OpenAL REQUIRED)
 
+set(GLSLANG_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang)
+
 #gtk include for linux file window
 if(UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
@@ -89,6 +91,10 @@ target_link_libraries(VulkanApp PRIVATE fmt)
 #SG14
 target_link_libraries(VulkanApp PRIVATE sg14)
 target_include_directories(VulkanApp PRIVATE ${SG14_INCLUDE_DIRECTORY})
+
+#glslang
+target_include_directories(VulkanApp PRIVATE ${GLSLANG_INCLUDE_DIR})
+target_link_libraries(VulkanApp PRIVATE glslang SPIRV)
 
 #gtk
 if(UNIX)

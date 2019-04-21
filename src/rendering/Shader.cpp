@@ -7,6 +7,10 @@
 
 #include <nlohmann/json.hpp>
 
+#include <SPIRV/GlslangToSpv.h>
+#include <StandAlone/DirStackFileIncluder.h>
+#include <glslang/Public/ShaderLang.h>
+
 #include "Device.h"
 #include "Initializers.h"
 #include "RenderTools.h"

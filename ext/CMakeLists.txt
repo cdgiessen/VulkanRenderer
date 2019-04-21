@@ -5,7 +5,7 @@ set(JSON_MultipleHeaders ON CACHE INTERNAL "")
 find_path(JSON_PATH_FOUND "json" "")
 find_path(FMT_PATH_FOUND "fmt" "")
 find_path(SG14_PATH_FOUND "SG14" "")
-
+find_path(GLSLANG_PATH_FOUND "glslang" "")
 
 if(NOT JSON_PATH_FOUND)
 	message("Updating nlohmann-json")
@@ -30,3 +30,17 @@ if(NOT SG14_PATH_FOUND)
 endif(NOT SG14_PATH_FOUND)
 
 add_subdirectory(SG14)
+
+set(SKIP_GLSLANG_INSTALL ON CACHE BOOL "" FORCE)
+set(ENABLE_HLSL OFF CACHE BOOL "" FORCE)
+set(ENABLE_OPT ON CACHE BOOL "" FORCE)
+set(ENABLE_GLSLANG_INSTALL OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+if(NOT GLSLANG_PATH_FOUND)
+	message("Updating glslang")
+	execute_process(COMMAND git submodule update --init --recursive glslang
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT GLSLANG_PATH_FOUND)
+
+add_subdirectory(glslang)
