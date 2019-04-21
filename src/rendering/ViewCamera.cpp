@@ -1,46 +1,79 @@
-// #include "ViewCamera.h"
-// #include <glm/gtc/matrix_transform.hpp>
+#include "ViewCamera.h"
 
-// const glm::mat4 depthReverserMatrix{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1 };
+#define GLM_FORCE_RADIANS
+#include <glm/gtc/matrix_transform.hpp>
 
+const glm::mat4 depthReverserMatrix{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1 };
 
-// glm::mat4 ViewCamera::UpdateProjMatrix (ProjectionType projectionType)
-// {
-// 	this->projectionType = projectionType;
-// 	if (projectionType == ProjectionType::perspective)
-// 	{
-// 		// glm::lookAt(Position, Position + Front, Up);
-// 	}
-// 	else
-// 	{
-// 		// ProjectionType::orthographic
-// 		// glm::ortho()
-// 	}
-// 	return glm::mat4 (1.0f);
-// }
+const glm::vec3 WorldUp{ 0, 1, 0 };
 
-// glm::mat4 ViewCamera::CalcViewMatrix ()
-// {
-// 	// cd.at(0).view = camera->GetViewMatrix();
-// 	// cd.at(0).projView = proj * cd.at(0).view;
-// 	// cd.at(0).cameraDir = camera->Front;
-// 	// cd.at(0).cameraPos = camera->Position;
-// 	return glm::mat4 (1.0f);
-// }
-// glm::mat4 ViewCamera::CalcViewFrustum () { return glm::mat4 (1.0f); }
+glm::mat4 Camera::ViewMatrix ()
+{
+	if (isViewMatDirty)
+	{
+		isViewMatDirty = false;
+		glm::vec3 front = glm::normalize (rotation * glm::vec3{ 0, 0, 1 });
 
-// GPU_CameraData ViewCamera::CameraData ()
-// {
+		glm::vec3 right = glm::normalize (glm::cross (front, WorldUp));
+		glm::vec3 up = glm::normalize (glm::cross (right, front));
 
+		mat_view = glm::lookAt (position, position + front, up);
+	}
+	return mat_view;
+}
+glm::mat4 Camera::ProjMatrix ()
+{
+	if (isProjMatDirty)
+	{
+		isProjMatDirty = false;
+		if (type == CamType::perspective)
+		{
+			mat_proj = depthReverserMatrix * glm::perspective (fov, aspect, clip_near, clip_far);
+		}
+		else
+		{
+			mat_proj = glm::ortho (-size, size, -size, size, clip_near, clip_far);
+		}
+	}
+	return mat_proj;
+}
 
-// 	// glm::mat4 proj = depthReverserMatrix * glm::perspective(glm::radians(45.0f),
-// 	//	renderer.vulkanSwapChain.swapChainExtent.width /
-// 	//(float)renderer.vulkanSwapChain.swapChainExtent.height, 	0.05f, 10000000.0f); proj[1][1] *= -1;
+glm::mat4 Camera::ViewProjMatrix () { return ProjMatrix () * ViewMatrix (); }
 
-// 	// CameraData cd;
-// 	// cd.view = camera->GetViewMatrix();
-// 	// cd.projView = proj * cd.view;
-// 	// cd.cameraDir = camera->Front;
-// 	// cd.cameraPos = camera->Position;
-// 	return GPU_CameraData{ projectionMatrix, CalcViewMatrix () };
-// }
+void Camera::FieldOfView (float fov)
+{
+	isProjMatDirty = true;
+	this->fov = fov;
+}
+void Camera::AspectRatio (float aspect)
+{
+	isProjMatDirty = true;
+	this->aspect = aspect;
+}
+void Camera::ViewSize (float size)
+{
+	isProjMatDirty = true;
+	this->size = size;
+}
+
+void Camera::ClipNear (float near)
+{
+	isProjMatDirty = true;
+	this->clip_near = near;
+}
+void Camera::ClipFar (float far)
+{
+	isProjMatDirty = true;
+	this->clip_far = far;
+}
+
+void Camera::Position (glm::vec3 position)
+{
+	isViewMatDirty = true;
+	this->position = position;
+}
+void Camera::Rotation (glm::quat rotation)
+{
+	isViewMatDirty = true;
+	this->rotation = rotation;
+}

@@ -38,10 +38,6 @@ TerrainChunkBuffer::TerrainChunkBuffer (VulkanRenderer& renderer, int count, Ter
 	index_staging_ptr = (TerrainMeshIndices*)index_staging.buffer.allocationInfo.pMappedData;
 
 	chunkStates.resize (count, TerrainChunkBuffer::ChunkState::free);
-	for (int i = 0; i < count; i++)
-	{
-		chunkReadySignals.push_back (std::make_shared<bool> (false));
-	}
 }
 
 
@@ -89,12 +85,6 @@ void TerrainChunkBuffer::SetChunkWritten (int index)
 	chunkStates.at (index) = TerrainChunkBuffer::ChunkState::written;
 }
 
-Signal TerrainChunkBuffer::GetChunkSignal (int index)
-{
-	std::lock_guard<std::mutex> guard (lock);
-	return chunkReadySignals.at (index);
-}
-
 int TerrainChunkBuffer::ActiveQuadCount () { return chunkCount; }
 
 void TerrainChunkBuffer::UpdateChunks ()
@@ -124,9 +114,6 @@ void TerrainChunkBuffer::UpdateChunks ()
 				indexCopyRegions.push_back (
 				    initializers::bufferCopyCreate (ind_size, i * ind_size, i * ind_size));
 
-				//*chunkReadySignals.at(i) = false;
-
-				// signals.push_back(chunkReadySignals.at(i));
 				chunkStates.at (i) = TerrainChunkBuffer::ChunkState::ready;
 				break;
 

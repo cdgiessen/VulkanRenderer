@@ -19,10 +19,10 @@ int main (int argc, char* argv[])
 {
 	//  Test_MemoryPool ();
 
-	std::unique_ptr<VulkanApp> vkApp;
+	VulkanApp* vkApp;
 	try
 	{
-		vkApp = std::make_unique<VulkanApp> ();
+		vkApp = new VulkanApp ();
 	}
 	catch (const std::runtime_error& e)
 	{
@@ -42,7 +42,7 @@ int main (int argc, char* argv[])
 
 	try
 	{
-		vkApp.reset ();
+		delete (vkApp);
 	}
 	catch (const std::runtime_error& e)
 	{

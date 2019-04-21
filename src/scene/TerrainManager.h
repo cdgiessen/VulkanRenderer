@@ -91,7 +91,7 @@ class TerrainChunkBuffer
 	ChunkState GetChunkState (int index);
 	void SetChunkWritten (int index);
 
-	Signal GetChunkSignal (int index);
+	// Signal GetChunkSignal (int index);
 
 	TerrainMeshVertices* GetDeviceVertexBufferPtr (int index);
 	TerrainMeshIndices* GetDeviceIndexBufferPtr (int index);
@@ -113,7 +113,7 @@ class TerrainChunkBuffer
 	TerrainMeshIndices* index_staging_ptr;
 
 	std::vector<ChunkState> chunkStates;
-	std::vector<Signal> chunkReadySignals;
+	// std::vector<Signal> chunkReadySignals;
 
 	std::atomic_int chunkCount = 0;
 };

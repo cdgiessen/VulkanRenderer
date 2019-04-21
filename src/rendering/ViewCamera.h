@@ -1,19 +1,7 @@
 #pragma once
 
-#include <array>
-#include <condition_variable>
-#include <functional>
-#include <memory>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <variant>
-#include <vector>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-
-#include "Buffer.h"
 
 struct GPU_ProjView
 {
@@ -21,58 +9,59 @@ struct GPU_ProjView
 };
 
 
-struct ClipPlanes
+class Camera
 {
+	enum CamType
+	{
+		orthographic,
+		perspective
+	};
+
+	public:
+	// perspective
+	Camera (glm::vec3 position, glm::quat rotation, float fov, float aspect)
+	: position (position), rotation (rotation), type (CamType::perspective), fov (fov), size (aspect)
+	{
+	}
+
+	// orthographic
+	Camera (glm::vec3 position, glm::quat rotation, CamType type, float size)
+	: position (position), rotation (rotation), type (CamType::orthographic), size (size)
+	{
+	}
+
+
+	glm::mat4 ViewMatrix ();
+	glm::mat4 ProjMatrix ();
+	glm::mat4 ViewProjMatrix ();
+
+	void FieldOfView (float fov);
+	void AspectRatio (float aspect);
+	void ViewSize (float size);
+
+	void ClipNear (float near);
+	void ClipFar (float far);
+
+	void Position (glm::vec3 position);
+	void Rotation (glm::quat rotation);
+
+	private:
+	CamType const type;
+	float fov = 1.0f; // radians
+	float aspect = 1.0f;
+	float size = 1.0f;
+
 	float clip_near = 0.01f;
 	float clip_far = 10000.0f;
-};
 
-struct CameraTransform
-{
-	glm::vec3 pos = glm::vec3 (0, 0, 0);
-	glm::vec3 scale = glm::vec3 (1, 1, 1);
-	glm::quat rot = glm::quat (1, 0, 0, 0);
-};
+	glm::vec3 position = glm::vec3 (0, 0, 0);
+	glm::quat rotation = glm::quat (1, 0, 0, 0);
 
-struct PerspectiveCamera
-{
-	float fov = 1.0f;
-	ClipPlanes clipPlanes;
+	glm::mat4 mat_viewProj;
 
-	CameraTransform transform;
-};
+	bool isViewMatDirty = false;
+	glm::mat4 mat_view;
 
-struct OrthogonalCamera
-{
-	float size = 1.0f;
-	ClipPlanes clipPlanes;
-
-	CameraTransform transform;
-};
-
-class ViewSurface
-{
-	// ViewCamera& cam;
-	struct Viewport
-	{
-		int x = 0, y = 0;
-		int width = 1, height = 1;
-	} viewport;
-	struct Sciossor
-	{
-		int offsetX = 0, offsetY = 0;
-		int width = 1, height = 1;
-	} scissor;
-
-	// RenderPass& renderPass;
-};
-
-class ViewManager
-{
-	int AddCamera (std::variant<PerspectiveCamera, OrthogonalCamera> camera);
-	int AddSurfaces (ViewSurface surface);
-
-
-	std::unique_ptr<VulkanBufferUniformPersistant> camera_data;
-	std::vector<glm::mat4> projectionMatrices;
+	bool isProjMatDirty = false;
+	glm::mat4 mat_proj;
 };

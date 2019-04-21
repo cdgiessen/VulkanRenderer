@@ -3,18 +3,16 @@
 #include "Device.h"
 #include "rendering/Initializers.h"
 
-DescriptorPoolSize::DescriptorPoolSize(VkDescriptorType type, uint32_t count) : type(type), count(count) {
+DescriptorPoolSize::DescriptorPoolSize (VkDescriptorType type, uint32_t count)
+: type (type), count (count){};
+
+VkDescriptorPoolSize DescriptorPoolSize::GetPoolSize ()
+{
+	return initializers::descriptorPoolSize (type, count);
 };
 
-VkDescriptorPoolSize DescriptorPoolSize::GetPoolSize() {
-	return initializers::descriptorPoolSize(type, count);
-};
-
-DescriptorResource::DescriptorResource(VkDescriptorType type) : type(type) {
-
-}
-void DescriptorResource::FillResource(
-	VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
+DescriptorResource::DescriptorResource (VkDescriptorType type) : type (type) {}
+void DescriptorResource::FillResource (VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
 {
 	VkDescriptorBufferInfo bufferInfo{};
 	bufferInfo.buffer = buffer;
@@ -23,8 +21,7 @@ void DescriptorResource::FillResource(
 	info = bufferInfo;
 }
 
-void DescriptorResource::FillResource(
-	VkSampler sampler, VkImageView imageView, VkImageLayout layout)
+void DescriptorResource::FillResource (VkSampler sampler, VkImageView imageView, VkImageLayout layout)
 {
 	VkDescriptorImageInfo descriptorImageInfo{};
 	descriptorImageInfo.sampler = sampler;
@@ -33,14 +30,14 @@ void DescriptorResource::FillResource(
 	info = descriptorImageInfo;
 }
 
-DescriptorUse::DescriptorUse(uint32_t bindPoint, uint32_t count, DescriptorResource resource)
-	: bindPoint(bindPoint), count(count), resource(resource)
+DescriptorUse::DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorResource resource)
+: bindPoint (bindPoint), count (count), resource (resource)
 {
-
 }
 
 
-VkWriteDescriptorSet DescriptorUse::GetWriteDescriptorSet(VkDescriptorSet set) {
+VkWriteDescriptorSet DescriptorUse::GetWriteDescriptorSet (VkDescriptorSet set)
+{
 	VkWriteDescriptorSet writeDescriptorSet{};
 	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	writeDescriptorSet.dstSet = set;
@@ -48,102 +45,106 @@ VkWriteDescriptorSet DescriptorUse::GetWriteDescriptorSet(VkDescriptorSet set) {
 	writeDescriptorSet.dstBinding = bindPoint;
 	writeDescriptorSet.descriptorCount = count;
 
-	if (resource.info.index() == 0)
-		writeDescriptorSet.pBufferInfo = std::get_if<VkDescriptorBufferInfo>(&resource.info);
+	if (resource.info.index () == 0)
+		writeDescriptorSet.pBufferInfo = std::get_if<VkDescriptorBufferInfo> (&resource.info);
 	else
-		writeDescriptorSet.pImageInfo = std::get_if<VkDescriptorImageInfo>(&resource.info);
+		writeDescriptorSet.pImageInfo = std::get_if<VkDescriptorImageInfo> (&resource.info);
 
 	return writeDescriptorSet;
 }
 
-void DescriptorSet::BindDescriptorSet(VkCommandBuffer cmdBuf, VkPipelineLayout layout) {
-	vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &set, 0, nullptr);
-}
-
-VulkanDescriptor::VulkanDescriptor(VulkanDevice& device) : device(device) {
-
-}
-
-VulkanDescriptor::~VulkanDescriptor() {
-	if (layoutMade)
-		vkDestroyDescriptorSetLayout(device.device, layout, nullptr);
-	if (poolMade)
-		vkDestroyDescriptorPool(device.device, pool, nullptr);
-}
-
-void VulkanDescriptor::SetupLayout(std::vector<VkDescriptorSetLayoutBinding> bindings)
+void DescriptorSet::BindDescriptorSet (VkCommandBuffer cmdBuf, VkPipelineLayout layout)
 {
-	VkDescriptorSetLayoutCreateInfo layoutInfo =
-		initializers::descriptorSetLayoutCreateInfo(bindings);
+	vkCmdBindDescriptorSets (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &set, 0, nullptr);
+}
 
-	if (vkCreateDescriptorSetLayout(device.device, &layoutInfo, nullptr, &layout) != VK_SUCCESS)
+VulkanDescriptor::VulkanDescriptor (VulkanDevice& device) : device (device) {}
+
+VulkanDescriptor::~VulkanDescriptor ()
+{
+	if (layoutMade) vkDestroyDescriptorSetLayout (device.device, layout, nullptr);
+	if (poolMade) vkDestroyDescriptorPool (device.device, pool, nullptr);
+}
+
+void VulkanDescriptor::SetupLayout (std::vector<VkDescriptorSetLayoutBinding>& bindings)
+{
+	VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo (bindings);
+
+	if (vkCreateDescriptorSetLayout (device.device, &layoutInfo, nullptr, &layout) != VK_SUCCESS)
 	{
-		throw std::runtime_error("failed to create descriptor set layout!");
+		throw std::runtime_error ("failed to create descriptor set layout!");
 	}
 	layoutMade = true;
 }
 
-void VulkanDescriptor::SetupPool(std::vector<DescriptorPoolSize> poolSizes, int maxSets) {
+void VulkanDescriptor::SetupPool (std::vector<DescriptorPoolSize> poolSizes, int maxSets)
+{
 
 	std::vector<VkDescriptorPoolSize> poolMembers;
-	for (auto& member : poolSizes) {
-		poolMembers.push_back(member.GetPoolSize());
+	for (auto& member : poolSizes)
+	{
+		poolMembers.push_back (member.GetPoolSize ());
 	}
 
-	VkDescriptorPoolCreateInfo poolInfo = initializers::descriptorPoolCreateInfo(
-		static_cast<uint32_t>(poolMembers.size()), poolMembers.data(), maxSets);
+	VkDescriptorPoolCreateInfo poolInfo = initializers::descriptorPoolCreateInfo (
+	    static_cast<uint32_t> (poolMembers.size ()), poolMembers.data (), maxSets);
 
 	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-	if (vkCreateDescriptorPool(device.device, &poolInfo, nullptr, &pool) != VK_SUCCESS)
+	if (vkCreateDescriptorPool (device.device, &poolInfo, nullptr, &pool) != VK_SUCCESS)
 	{
-		throw std::runtime_error("failed to create descriptor pool!");
+		throw std::runtime_error ("failed to create descriptor pool!");
 	}
 
 	poolMade = true;
 }
 
 
-VkDescriptorSetLayoutBinding VulkanDescriptor::CreateBinding(VkDescriptorType type, VkShaderStageFlags stages, uint32_t binding, uint32_t descriptorCount) {
+VkDescriptorSetLayoutBinding VulkanDescriptor::CreateBinding (
+    VkDescriptorType type, VkShaderStageFlags stages, uint32_t binding, uint32_t descriptorCount)
+{
 
-	return initializers::descriptorSetLayoutBinding(type, stages, binding, descriptorCount);
+	return initializers::descriptorSetLayoutBinding (type, stages, binding, descriptorCount);
 }
 
-DescriptorSet VulkanDescriptor::CreateDescriptorSet() {
+DescriptorSet VulkanDescriptor::CreateDescriptorSet ()
+{
 	DescriptorSet set;
 	VkDescriptorSetLayout layouts[] = { layout };
-	VkDescriptorSetAllocateInfo allocInfo =
-		initializers::descriptorSetAllocateInfo(pool, layouts, 1);
+	VkDescriptorSetAllocateInfo allocInfo = initializers::descriptorSetAllocateInfo (pool, layouts, 1);
 
-	VkResult res = vkAllocateDescriptorSets(device.device, &allocInfo, &(set.set));
+	VkResult res = vkAllocateDescriptorSets (device.device, &allocInfo, &(set.set));
 	if (res != VK_SUCCESS)
 	{
-		if (res == VK_ERROR_FRAGMENTED_POOL)throw std::runtime_error("failed to allocate descriptor set! FRAGMENTED_POOL");
-		else if (res == VK_ERROR_OUT_OF_POOL_MEMORY) throw std::runtime_error("failed to allocate descriptor set! OUT_OF_POOL_MEMORY");
-		else if (res == VK_ERROR_OUT_OF_HOST_MEMORY)throw std::runtime_error("failed to allocate descriptor set! OUT_OF_HOST_MEMORY");
-		else if (res == VK_ERROR_OUT_OF_DEVICE_MEMORY)throw std::runtime_error("failed to allocate descriptor set! OUT_OF_DEVICE_MEMORY");
+		if (res == VK_ERROR_FRAGMENTED_POOL)
+			throw std::runtime_error ("failed to allocate descriptor set! FRAGMENTED_POOL");
+		else if (res == VK_ERROR_OUT_OF_POOL_MEMORY)
+			throw std::runtime_error ("failed to allocate descriptor set! OUT_OF_POOL_MEMORY");
+		else if (res == VK_ERROR_OUT_OF_HOST_MEMORY)
+			throw std::runtime_error ("failed to allocate descriptor set! OUT_OF_HOST_MEMORY");
+		else if (res == VK_ERROR_OUT_OF_DEVICE_MEMORY)
+			throw std::runtime_error ("failed to allocate descriptor set! OUT_OF_DEVICE_MEMORY");
 	}
 
 	return set;
 }
 
-void VulkanDescriptor::UpdateDescriptorSet(DescriptorSet set, std::vector<DescriptorUse> descriptors) {
+void VulkanDescriptor::UpdateDescriptorSet (DescriptorSet set, std::vector<DescriptorUse> descriptors)
+{
 
 	std::vector<VkWriteDescriptorSet> writes;
-	for (auto& descriptor : descriptors) {
-		writes.push_back(descriptor.GetWriteDescriptorSet(set.set));
+	for (auto& descriptor : descriptors)
+	{
+		writes.push_back (descriptor.GetWriteDescriptorSet (set.set));
 	}
 
-	vkUpdateDescriptorSets(device.device,
-		static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
-
+	vkUpdateDescriptorSets (device.device, static_cast<uint32_t> (writes.size ()), writes.data (), 0, nullptr);
 }
 
-void VulkanDescriptor::FreeDescriptorSet(DescriptorSet set) {
+void VulkanDescriptor::FreeDescriptorSet (DescriptorSet set)
+{
 
-	vkFreeDescriptorSets(device.device, pool, 1, &set.set);
+	vkFreeDescriptorSets (device.device, pool, 1, &set.set);
 }
 
-VkDescriptorSetLayout VulkanDescriptor::GetLayout() {
-	return layout;
-}
+VkDescriptorSetLayout VulkanDescriptor::GetLayout () { return layout; }
