@@ -6,6 +6,7 @@ find_path(JSON_PATH_FOUND "json" "")
 find_path(FMT_PATH_FOUND "fmt" "")
 find_path(SG14_PATH_FOUND "SG14" "")
 
+
 if(NOT JSON_PATH_FOUND)
 	message("Updating nlohmann-json")
 	execute_process(COMMAND git submodule update --init --recursive json
