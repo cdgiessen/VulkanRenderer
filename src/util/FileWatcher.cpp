@@ -1,7 +1,4 @@
-#include <FileWatcher.h>
-
-#include <thread>
-
+#include "FileWatcher.h"
 
 FileWatcher::FileWatcher (std::string path_to_watch, std::chrono::duration<int, std::milli> delay)
 : path_to_watch{ path_to_watch }, delay{ delay }
@@ -11,10 +8,25 @@ FileWatcher::FileWatcher (std::string path_to_watch, std::chrono::duration<int, 
 		paths_[file.path ().string ()] = std::filesystem::last_write_time (file);
 	}
 }
-// Monitor "path_to_watch" for changes and in case of a change execute the user supplied "action" function
-void FileWatcher::start (const std::function<void(std::string, FileStatus)>& action)
+
+FileWatcher::~FileWatcher () { Stop (); }
+
+
+void FileWatcher::Start (const std::function<void(std::string, FileStatus)>& action)
 {
-	while (running_)
+	watcher = std::thread (&FileWatcher::Watch, this, action);
+}
+
+void FileWatcher::Stop ()
+{
+	is_running = false;
+	watcher.join ();
+}
+
+// Monitor "path_to_watch" for changes and in case of a change execute the user supplied "action" function
+void FileWatcher::Watch (const std::function<void(std::string, FileStatus)>& action)
+{
+	while (is_running)
 	{
 		// Wait for "delay" milliseconds
 		std::this_thread::sleep_for (delay);

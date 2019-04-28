@@ -391,7 +391,10 @@ void Terrain::SetupPipeline ()
 	    "assets/shaders/terrain.vert.spv", ShaderModuleType::vertex);
 	auto frag = renderer.shaderManager.loadShaderModule (
 	    "assets/shaders/terrain.frag.spv", ShaderModuleType::fragment);
-	out.SetShaderModuleSet (ShaderModuleSet (vert, frag));
+
+	ShaderModuleSet shader_set;
+	shader_set.Vertex (vert).Fragment (frag);
+	out.SetShaderModuleSet (shader_set);
 
 	VertexLayout layout (Vert_PosNormUv);
 	out.AddVertexLayouts (layout.bindingDesc, layout.attribDesc);

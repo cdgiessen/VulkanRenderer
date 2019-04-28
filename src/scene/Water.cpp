@@ -51,7 +51,10 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 	    "assets/shaders/water.vert.spv", ShaderModuleType::vertex);
 	auto water_frag = renderer.shaderManager.loadShaderModule (
 	    "assets/shaders/water.frag.spv", ShaderModuleType::fragment);
-	out.SetShaderModuleSet (ShaderModuleSet (water_vert, water_frag));
+
+	ShaderModuleSet water_shaders;
+	water_shaders.Vertex (water_vert).Fragment (water_frag);
+	out.SetShaderModuleSet (water_shaders);
 
 	out.UseModelVertexLayout (*model.get ());
 

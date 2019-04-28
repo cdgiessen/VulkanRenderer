@@ -1,5 +1,6 @@
 #include "Shader.h"
 
+#include <atomic>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -81,58 +82,66 @@ ShaderModule::ShaderModule () {}
 ShaderModule::ShaderModule (ShaderModuleType type, VkShaderModule module)
 : type (type), module (module)
 {
+}
+
+VkPipelineShaderStageCreateInfo ShaderModule::GetCreateInfo ()
+{
 	switch (type)
 	{
 		case (ShaderModuleType::vertex):
-			createInfo = initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_VERTEX_BIT, module);
-			break;
-
+			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_VERTEX_BIT, module);
 		case (ShaderModuleType::fragment):
-			createInfo = initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_FRAGMENT_BIT, module);
-			break;
-
+			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_FRAGMENT_BIT, module);
 		case (ShaderModuleType::geometry):
-			createInfo = initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_GEOMETRY_BIT, module);
-			break;
-
+			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_GEOMETRY_BIT, module);
 		case (ShaderModuleType::tessEval):
-			createInfo = initializers::pipelineShaderStageCreateInfo (
+			return initializers::pipelineShaderStageCreateInfo (
 			    VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, module);
-			break;
-
 		case (ShaderModuleType::tessControl):
-			createInfo = initializers::pipelineShaderStageCreateInfo (
-			    VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, module);
-			break;
+			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, module);
+		case (ShaderModuleType::compute):
+			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_COMPUTE_BIT, module);
 	}
+	Log.Error ("Shader module type not correct");
+	return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_VERTEX_BIT, module);
 };
 
 ShaderModuleSet::ShaderModuleSet (){};
 
-
-ShaderModuleSet::ShaderModuleSet (ShaderModule vert,
-    std::optional<ShaderModule> frag,
-    std::optional<ShaderModule> geom,
-    std::optional<ShaderModule> tessEval,
-    std::optional<ShaderModule> tessControl)
-:
-
-  vert (vert),
-  frag (frag),
-  geom (geom),
-  tessEval (tessEval),
-  tessControl (tessControl)
+ShaderModuleSet& ShaderModuleSet::Vertex (ShaderModule vert)
 {
+	this->vert = vert;
+	return *this;
+}
+ShaderModuleSet& ShaderModuleSet::Fragment (ShaderModule frag)
+{
+	this->frag = frag;
+	return *this;
+}
+ShaderModuleSet& ShaderModuleSet::Geometry (ShaderModule geom)
+{
+	this->geom = geom;
+	return *this;
+}
+ShaderModuleSet& ShaderModuleSet::TessControl (ShaderModule tesc)
+{
+	this->tesc = tesc;
+	return *this;
+}
+ShaderModuleSet& ShaderModuleSet::TessEval (ShaderModule tese)
+{
+	this->tese = tese;
+	return *this;
 }
 
 std::vector<VkPipelineShaderStageCreateInfo> ShaderModuleSet::ShaderStageCreateInfos ()
 {
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-	shaderStages.push_back (vert.createInfo);
-	if (frag.has_value ()) shaderStages.push_back (frag->createInfo);
-	if (geom.has_value ()) shaderStages.push_back (geom->createInfo);
-	if (tessControl.has_value ()) shaderStages.push_back (tessControl->createInfo);
-	if (tessEval.has_value ()) shaderStages.push_back (tessEval->createInfo);
+	if (vert.has_value ()) shaderStages.push_back (vert->GetCreateInfo ());
+	if (frag.has_value ()) shaderStages.push_back (frag->GetCreateInfo ());
+	if (geom.has_value ()) shaderStages.push_back (geom->GetCreateInfo ());
+	if (tesc.has_value ()) shaderStages.push_back (tesc->GetCreateInfo ());
+	if (tese.has_value ()) shaderStages.push_back (tese->GetCreateInfo ());
 
 	return shaderStages;
 }
@@ -343,4 +352,156 @@ std::optional<std::vector<char>> ShaderManager::readShaderFile (const std::strin
 	file.close ();
 
 	return buffer;
+}
+
+static std::atomic_bool is_setup = false;
+
+ShaderCompiler::ShaderCompiler ()
+{
+	if (!is_setup)
+	{
+		is_setup = true;
+		glslang::InitializeProcess ();
+	}
+}
+
+std::string GetFilePath (const std::string& str)
+{
+	size_t found = str.find_last_of ("/\\");
+	return str.substr (0, found);
+	// size_t FileName = str.substr(found+1);
+}
+
+std::string GetSuffix (const std::string& name)
+{
+	const size_t pos = name.rfind ('.');
+	return (pos == std::string::npos) ? "" : name.substr (name.rfind ('.') + 1);
+}
+
+ShaderModuleType GetShaderStage (const std::string& stage)
+{
+	if (stage == "vert")
+	{
+		return ShaderModuleType::vertex;
+	}
+	else if (stage == "tesc")
+	{
+		return ShaderModuleType::tessControl;
+	}
+	else if (stage == "tese")
+	{
+		return ShaderModuleType::tessEval;
+	}
+	else if (stage == "geom")
+	{
+		return ShaderModuleType::geometry;
+	}
+	else if (stage == "frag")
+	{
+		return ShaderModuleType::fragment;
+	}
+	else if (stage == "comp")
+	{
+		return ShaderModuleType::compute;
+	}
+	else
+	{
+		assert (0 && "Unknown shader stage");
+		return ShaderModuleType::error;
+	}
+}
+
+const std::vector<uint32_t> ShaderCompiler::LoadAndCompileShader (const std::string& filename)
+{
+	auto shader_string = load_file (filename).value ();
+	auto shader_type = GetShaderStage (GetSuffix (filename));
+	return CompileShaderString (filename, shader_string, shader_type);
+}
+
+
+// Load GLSL into a string
+std::optional<std::string> ShaderCompiler::load_file (const std::string& filename)
+{
+	std::ifstream file (filename);
+
+	if (!file.is_open ())
+	{
+		Log.Error (fmt::format ("Failed to load shader: {}", filename));
+		return {};
+
+		// throw std::runtime_error ("failed to open file: " + filename);
+	}
+
+	return std::string ((std::istreambuf_iterator<char> (file)), std::istreambuf_iterator<char> ());
+}
+
+const std::vector<unsigned int> ShaderCompiler::CompileShaderString (
+    std::string const& shader_filename, std::string const& shader_string, ShaderModuleType const shader_type)
+{
+	const char* InputCString = shader_string.c_str ();
+
+	// EShLanguage ShaderType = GetShaderStage (GetSuffix (filename));
+	glslang::TShader Shader (static_cast<EShLanguage> (shader_type));
+
+	Shader.setStrings (&InputCString, 1);
+
+	int ClientInputSemanticsVersion = 100; // maps to, say, #define VULKAN 100
+	glslang::EShTargetClientVersion VulkanClientVersion = glslang::EShTargetVulkan_1_0;
+	glslang::EShTargetLanguageVersion TargetVersion = glslang::EShTargetSpv_1_0;
+
+	Shader.setEnvInput (
+	    glslang::EShSourceGlsl, static_cast<EShLanguage> (shader_type), glslang::EShClientVulkan, ClientInputSemanticsVersion);
+	Shader.setEnvClient (glslang::EShClientVulkan, VulkanClientVersion);
+	Shader.setEnvTarget (glslang::EShTargetSpv, TargetVersion);
+
+	const TBuiltInResource DefaultTBuiltInResource = {};
+
+	TBuiltInResource Resources;
+	Resources = DefaultTBuiltInResource;
+	EShMessages messages = (EShMessages) (EShMsgSpvRules | EShMsgVulkanRules);
+
+	const int DefaultVersion = 100;
+
+	DirStackFileIncluder Includer;
+
+	// Get Path of File
+	std::string Path = GetFilePath (shader_filename);
+	Includer.pushExternalLocalDirectory (Path);
+
+	std::string PreprocessedGLSL;
+
+	if (!Shader.preprocess (&Resources, DefaultVersion, ENoProfile, false, false, messages, &PreprocessedGLSL, Includer))
+	{
+		Log.Error (fmt::format ("GLSL Preprocessing Failed for: {}", shader_filename));
+		Log.Error (Shader.getInfoLog ());
+		Log.Error (Shader.getInfoDebugLog ());
+	}
+
+	const char* PreprocessedCStr = PreprocessedGLSL.c_str ();
+	Shader.setStrings (&PreprocessedCStr, 1);
+
+	if (!Shader.parse (&Resources, 100, false, messages))
+	{
+		Log.Error (fmt::format ("GLSL Parsing Failed for: {}", shader_filename));
+		Log.Error (Shader.getInfoLog ());
+		Log.Error (Shader.getInfoDebugLog ());
+	}
+
+	glslang::TProgram Program;
+	Program.addShader (&Shader);
+
+	if (!Program.link (messages))
+	{
+		Log.Error (fmt::format ("GLSL Linking Failed for: {}", shader_filename));
+		Log.Error (Shader.getInfoLog ());
+		Log.Error (Shader.getInfoDebugLog ());
+	}
+
+	std::vector<unsigned int> SpirV;
+	spv::SpvBuildLogger logger;
+	glslang::SpvOptions spvOptions;
+	glslang::GlslangToSpv (
+	    *Program.getIntermediate (static_cast<EShLanguage> (shader_type)), SpirV, &logger, &spvOptions);
+
+	return SpirV;
 }

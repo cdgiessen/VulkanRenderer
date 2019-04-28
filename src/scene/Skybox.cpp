@@ -60,7 +60,10 @@ void Skybox::SetupPipeline ()
 	    "assets/shaders/skybox.vert.spv", ShaderModuleType::vertex);
 	auto frag = renderer.shaderManager.loadShaderModule (
 	    "assets/shaders/skybox.frag.spv", ShaderModuleType::fragment);
-	out.SetShaderModuleSet (ShaderModuleSet (vert, frag));
+
+	ShaderModuleSet shader_set;
+	shader_set.Vertex (vert).Fragment (frag);
+	out.SetShaderModuleSet (shader_set);
 
 	out.UseModelVertexLayout (*model.get ());
 

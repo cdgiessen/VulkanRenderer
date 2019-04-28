@@ -6,6 +6,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "util/FileWatcher.h"
+
 class VulkanDevice;
 
 VkShaderModule loadShaderModule (VkDevice device, const std::string& codePath);
@@ -13,10 +15,12 @@ VkShaderModule loadShaderModule (VkDevice device, const std::string& codePath);
 enum class ShaderModuleType
 {
 	vertex,
-	fragment,
-	geometry,
 	tessControl,
-	tessEval
+	tessEval,
+	geometry,
+	fragment,
+	compute,
+	error
 };
 
 // Manages Shaderlife times
@@ -29,9 +33,10 @@ struct ShaderModule
 	ShaderModule (const ShaderModule& mod) = default;
 	ShaderModule& operator= (const ShaderModule& mod) = default;
 
+	VkPipelineShaderStageCreateInfo GetCreateInfo ();
+
 	ShaderModuleType type;
 	VkShaderModule module;
-	VkPipelineShaderStageCreateInfo createInfo;
 };
 
 class ShaderModuleSet
@@ -40,39 +45,29 @@ class ShaderModuleSet
 	// default, no data set.
 	ShaderModuleSet ();
 
-	// initializes data members
-	ShaderModuleSet (ShaderModule vert,
-	    std::optional<ShaderModule> frag = {},
-	    std::optional<ShaderModule> geom = {},
-	    std::optional<ShaderModule> tessControl = {},
-	    std::optional<ShaderModule> tessEval = {});
+	ShaderModuleSet& Vertex (ShaderModule vert);
+	ShaderModuleSet& Fragment (ShaderModule frag);
+	ShaderModuleSet& Geometry (ShaderModule geom);
+	ShaderModuleSet& TessControl (ShaderModule tesc);
+	ShaderModuleSet& TessEval (ShaderModule tese);
 
 	ShaderModuleSet (const ShaderModuleSet& set) = default;
 	ShaderModuleSet& operator= (const ShaderModuleSet& set) = default;
 
-
 	std::vector<VkPipelineShaderStageCreateInfo> ShaderStageCreateInfos ();
 
 	private:
-	ShaderModule vert;
-
+	std::optional<ShaderModule> vert;
 	std::optional<ShaderModule> frag;
 	std::optional<ShaderModule> geom;
-	std::optional<ShaderModule> tessControl;
-	std::optional<ShaderModule> tessEval;
+	std::optional<ShaderModule> tesc;
+	std::optional<ShaderModule> tese;
 };
 
-class ShaderCharacteristics
-{
-	ShaderModuleType type;
-
-};
-
-class ShaderDatabaseHandle
+struct ShaderDatabaseHandle
 {
 	std::string name;
-	bool compiled = false;
-
+	ShaderModuleType type;
 };
 
 class ShaderDatabase
@@ -86,6 +81,20 @@ class ShaderDatabase
 	// void AddEntry (ShaderDatabaseHandle handle);
 
 	private:
+	FileWatcher fileWatch;
+};
+
+class ShaderCompiler
+{
+	public:
+	ShaderCompiler ();
+	std::vector<uint32_t> const CompileShaderString (
+	    std::string const& shader_filename, std::string const& shader_string, ShaderModuleType const shader_type);
+
+	std::vector<uint32_t> const LoadAndCompileShader (std::string const& filename);
+
+	private:
+	std::optional<std::string> load_file (std::string const& filename);
 };
 
 class ShaderManager
@@ -100,7 +109,7 @@ class ShaderManager
 	private:
 	const VulkanDevice& device;
 	std::vector<ShaderModule> shaderModules;
-
+	ShaderCompiler compiler;
 
 	std::optional<std::vector<char>> readShaderFile (const std::string& filename);
 };

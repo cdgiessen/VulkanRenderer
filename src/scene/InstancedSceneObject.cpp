@@ -2,9 +2,9 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include "ImGui/imgui.h"
 #include "core/Logger.h"
 #include "rendering/Initializers.h"
-#include "ImGui/imgui.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
@@ -115,7 +115,10 @@ void InstancedSceneObject::SetupPipeline ()
 	    "assets/shaders/instancedSceneObject.vert.spv", ShaderModuleType::vertex);
 	auto frag = renderer.shaderManager.loadShaderModule (
 	    "assets/shaders/instancedSceneObject.frag.spv", ShaderModuleType::fragment);
-	out.SetShaderModuleSet (ShaderModuleSet (vert, frag));
+
+	ShaderModuleSet shader_set;
+	shader_set.Vertex (vert).Fragment (frag);
+	out.SetShaderModuleSet (shader_set);
 
 	VertexLayout layout (Vert_PosNormUv);
 

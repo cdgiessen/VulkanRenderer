@@ -119,7 +119,10 @@ void GameObject::SetupPipeline ()
 	    renderer.shaderManager.loadShaderModule ("assets/shaders/pbr.vert.spv", ShaderModuleType::vertex);
 	auto pbr_frag = renderer.shaderManager.loadShaderModule (
 	    "assets/shaders/pbr.frag.spv", ShaderModuleType::fragment);
-	out.SetShaderModuleSet (ShaderModuleSet (pbr_vert, pbr_frag));
+
+	ShaderModuleSet shader_set;
+	shader_set.Vertex (pbr_vert).Fragment (pbr_frag);
+	out.SetShaderModuleSet (shader_set);
 
 	out.UseModelVertexLayout (*gameObjectModel.get ());
 
