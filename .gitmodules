@@ -10,3 +10,9 @@
 [submodule "ext/glslang"]
 	path = ext/glslang
 	url = https://github.com/KhronosGroup/glslang.git
+[submodule "ext/entt"]
+	path = ext/entt
+	url = https://github.com/skypjack/entt
+[submodule "ext/spirv-cross"]
+	path = ext/spirv-cross
+	url = https://github.com/KhronosGroup/SPIRV-Cross

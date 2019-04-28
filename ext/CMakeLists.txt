@@ -1,11 +1,12 @@
 
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-set(JSON_MultipleHeaders ON CACHE INTERNAL "")
-
 find_path(JSON_PATH_FOUND "json" "")
 find_path(FMT_PATH_FOUND "fmt" "")
 find_path(SG14_PATH_FOUND "SG14" "")
 find_path(GLSLANG_PATH_FOUND "glslang" "")
+find_path(SPIRV_CROSS_PATH_FOUND "spirv-cross" "")
+
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+set(JSON_MultipleHeaders ON CACHE INTERNAL "")
 
 if(NOT JSON_PATH_FOUND)
 	message("Updating nlohmann-json")
@@ -44,3 +45,16 @@ if(NOT GLSLANG_PATH_FOUND)
 endif(NOT GLSLANG_PATH_FOUND)
 
 add_subdirectory(glslang)
+
+set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
+set(SPIRV_CROSS_ENABLE_MSL OFF CACHE BOOL "" FORCE)
+set(SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE)
+
+
+if(NOT SPIRV_CROSS_PATH_FOUND)
+	message("Updating SPIRV-Cross")
+	execute_process(COMMAND git submodule update --init --recursive spirv-cross
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT SPIRV_CROSS_PATH_FOUND)
+
+add_subdirectory(spirv-cross)

@@ -9,6 +9,8 @@
 
 #include "ImGui/imgui.h"
 
+#include "entt/entt.hpp"
+
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
 

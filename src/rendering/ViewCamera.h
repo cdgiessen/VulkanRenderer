@@ -25,7 +25,7 @@ class Camera
 	}
 
 	// orthographic
-	Camera (glm::vec3 position, glm::quat rotation, CamType type, float size)
+	Camera (glm::vec3 position, glm::quat rotation, float size)
 	: position (position), rotation (rotation), type (CamType::orthographic), size (size)
 	{
 	}
