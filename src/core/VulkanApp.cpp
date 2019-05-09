@@ -295,7 +295,10 @@ void VulkanApp::HandleInputs ()
 		}
 
 		if (Input::GetKey (Input::KeyCode::W))
+		{
+			Log.Error ("Moving forward");
 			scene.GetCamera ()->ProcessKeyboard (Camera_Movement::FORWARD, deltaTime);
+		}
 		if (Input::GetKey (Input::KeyCode::S))
 			scene.GetCamera ()->ProcessKeyboard (Camera_Movement::BACKWARD, deltaTime);
 		if (Input::GetKey (Input::KeyCode::A))
