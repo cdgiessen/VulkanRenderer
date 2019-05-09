@@ -3,8 +3,6 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
 
 enum class Camera_Movement
 {
@@ -22,9 +20,11 @@ class Camera
 	// Camera Attributes
 	glm::vec3 Position;
 	glm::vec3 Front;
-	glm::vec3 Up;
+	glm::vec3 Up, Down;
 	glm::vec3 Right;
 	glm::vec3 WorldUp;
+
+	bool is_upside_down = false;
 
 	// Eular Angles
 	float Yaw = -90.0f;
@@ -43,7 +43,7 @@ class Camera
 	Camera (glm::vec3 position, glm::vec3 up, float pitch, float yaw);
 
 	// Returns the view matrix calculated using Eular Angles and the LookAt Matrix
-	glm::mat4 GetViewMatrix () { return glm::lookAt (Position, Position + Front, Up); }
+	glm::mat4 GetViewMatrix ();
 
 	// Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
 	void ProcessKeyboard (Camera_Movement direction, float deltaTime);
