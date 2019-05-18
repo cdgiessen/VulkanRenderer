@@ -4,6 +4,8 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
 #include <thread>
 
 #include <nlohmann/json.hpp>
@@ -22,6 +24,40 @@
 #include "spirv_cross.hpp"
 #include "spirv_glsl.hpp"
 #include <utility>
+
+ShaderType GetShaderStage (const std::string& stage)
+{
+	if (stage == "vert" || stage == ".vert")
+	{
+		return ShaderType::vertex;
+	}
+	else if (stage == "tesc" || stage == ".tesc")
+	{
+		return ShaderType::tessControl;
+	}
+	else if (stage == "tese" || stage == ".tese")
+	{
+		return ShaderType::tessEval;
+	}
+	else if (stage == "geom" || stage == ".geom")
+	{
+		return ShaderType::geometry;
+	}
+	else if (stage == "frag" || stage == ".frag")
+	{
+		return ShaderType::fragment;
+	}
+	else if (stage == "comp" || stage == ".comp")
+	{
+		return ShaderType::compute;
+	}
+	else
+	{
+		assert (0 && "Unknown shader stage");
+		return ShaderType::error;
+	}
+}
+
 
 std::vector<uint32_t> load_spirv_file () { return std::vector<uint32_t> (2); }
 
@@ -119,8 +155,7 @@ static uint32_t defaultFragmentShader[] = { 0x07230203,
 
 ShaderModule::ShaderModule () {}
 
-ShaderModule::ShaderModule (ShaderModuleType type, VkShaderModule module)
-: type (type), module (module)
+ShaderModule::ShaderModule (ShaderType type, VkShaderModule module) : type (type), module (module)
 {
 }
 
@@ -128,18 +163,18 @@ VkPipelineShaderStageCreateInfo ShaderModule::GetCreateInfo ()
 {
 	switch (type)
 	{
-		case (ShaderModuleType::vertex):
+		case (ShaderType::vertex):
 			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_VERTEX_BIT, module);
-		case (ShaderModuleType::fragment):
+		case (ShaderType::fragment):
 			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_FRAGMENT_BIT, module);
-		case (ShaderModuleType::geometry):
+		case (ShaderType::geometry):
 			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_GEOMETRY_BIT, module);
-		case (ShaderModuleType::tessEval):
+		case (ShaderType::tessEval):
 			return initializers::pipelineShaderStageCreateInfo (
 			    VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, module);
-		case (ShaderModuleType::tessControl):
+		case (ShaderType::tessControl):
 			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, module);
-		case (ShaderModuleType::compute):
+		case (ShaderType::compute):
 			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_COMPUTE_BIT, module);
 	}
 	Log.Error ("Shader module type not correct");
@@ -193,49 +228,125 @@ std::vector<VkPipelineShaderStageCreateInfo> ShaderModuleSet::ShaderStageCreateI
 //	return cftime;
 //}
 
-void ReadInShaderDatabaseFile (std::string fileName)
+void to_json (nlohmann::json& j, const ShaderDatabase::DBHandle& handle)
 {
-	// if (fileExists (fileName))
-	// {
-	// 	try
-	// 	{
-	// 		std::ifstream input (fileName);
-	// 		nlohmann::json j;
-	// 		input >> j;
-
-
-	// 		memory_dump = j["memory_dump_on_exit"];
-	// 		directionalLightCount = j["directional_light_count"];
-	// 		pointLightCount = j["point_light_count"];
-	// 		spotLightCount = j["spot_light_count"];
-	// 	}
-	// 	catch (std::runtime_error e)
-	// 	{
-	// 		Log::Debug << "Shader Database file was incorrect, creating a new one";
-	// 		SaveShaderDatabaseFile ();
-	// 	}
-	// }
-	// else
-	// {
-	// 	Log::Debug << "Shader Database doesn't exist, creating one";
-	// 	SaveShaderDatabaseFile ();
-	// }
+	j = nlohmann::json ({ { "filename", handle.filename },
+	    { "type", static_cast<int> (handle.type) },
+	    { "glsl_last_write_time", handle.glsl_last_write_time.time_since_epoch ().count () },
+	    { "spirv_last_write_time", handle.spirv_last_write_time.time_since_epoch ().count () } });
 }
 
-void SaveShaderDatabaseFile ()
+void from_json (const nlohmann::json& j, ShaderDatabase::DBHandle& handle)
 {
-	// nlohmann::json j;
+	j.at ("filename").get_to (handle.filename);
+	j.at ("type").get_to (handle.type);
 
-	// j["memory_dump_on_exit"] = memory_dump;
+	auto glsl_time = std::chrono::time_point_cast<std::chrono::milliseconds> (handle.glsl_last_write_time)
+	                     .time_since_epoch ()
+	                     .count ();
+	j.at ("glsl_last_write_time").get_to (glsl_time);
 
-	// j["directional_light_count"] = directionalLightCount;
-	// j["point_light_count"] = pointLightCount;
-	// j["spot_light_count"] = spotLightCount;
-
-	// std::ofstream outFile (fileName);
-	// outFile << std::setw (4) << j;
-	// outFile.close ();
+	auto spriv_time = std::chrono::time_point_cast<std::chrono::milliseconds> (handle.spirv_last_write_time)
+	                      .time_since_epoch ()
+	                      .count ();
+	j.at ("spirv_last_write_time").get_to (spriv_time);
 }
+
+ShaderDatabase::ShaderDatabase () : fileWatch ("assets/shaders")
+{
+	Load ();
+	Refresh ();
+}
+void ShaderDatabase::Load ()
+{
+	if (fileExists (database_path))
+	{
+		try
+		{
+			std::ifstream input (database_path);
+			nlohmann::json j;
+
+			input >> j;
+			entries.reserve (j["shader_count"]);
+			if (j["shader_count"] > 0)
+			{
+				for (auto& entry : j)
+				{
+					entries.push_back (entry);
+				}
+			}
+		}
+		catch (nlohmann::detail::parse_error e)
+		{
+			Log.Debug ("Shader Database file was bas, creating a new one\n");
+			Save ();
+		}
+		catch (std::runtime_error e)
+		{
+			Log.Debug ("Shader Database file was incorrect, creating a new one\n");
+			Save ();
+		}
+	}
+	else
+	{
+		Log.Debug ("Shader Database doesn't exist, creating one\n");
+		Save ();
+	}
+}
+
+void ShaderDatabase::Save ()
+{
+	nlohmann::json j;
+
+	for (auto& entry : entries)
+	{
+		j[entry.filename] = entry;
+	}
+
+	j["shader_count"] = entries.size ();
+
+	std::ofstream outFile (database_path);
+	outFile << std::setw (4) << j;
+	outFile.close ();
+}
+
+void ShaderDatabase::Refresh ()
+{
+	namespace fs = std::filesystem;
+	for (auto& e : entries)
+	{
+		fs::path glsl_path = shader_path + e.filename;
+		e.glsl_last_write_time = fs::last_write_time (glsl_path);
+
+		fs::path spirv_path = shader_path + e.filename + ".spv";
+		e.spirv_last_write_time = fs::last_write_time (spirv_path);
+	}
+}
+
+
+void ShaderDatabase::Discover ()
+{
+	namespace fs = std::filesystem;
+
+	std::vector<fs::path> glsl_paths;
+	std::vector<fs::path> spirv_paths;
+
+	for (auto const& entry : fs::directory_iterator (shader_path))
+	{
+		auto stem = entry.path ().stem ().string ();
+		auto ext = entry.path ().extension ().string ();
+		if (ext == ".spv")
+		{
+			spirv_paths.push_back (entry);
+		}
+		if (ext == ".vert" || ext == ".frag" || ext == ".geom" || ext == ".tesc" || ext == ".tese" || ext == ".comp")
+		{
+			glsl_paths.push_back (entry);
+		}
+	}
+}
+
+
 
 void StartShaderCompilation (std::vector<std::string> strs)
 {
@@ -245,6 +356,9 @@ void StartShaderCompilation (std::vector<std::string> strs)
 		if (ret != 0) Log.Error (fmt::format ("Failed to compile {}", str));
 	}
 }
+
+std::vector<uint32_t> CompileShaderToSpivModule (std::string filename) {}
+
 
 void CompileShaders (std::vector<std::string> filenames)
 {
@@ -320,7 +434,7 @@ ShaderManager::~ShaderManager ()
 	}
 }
 
-ShaderModule ShaderManager::loadShaderModule (const std::string& codePath, ShaderModuleType type)
+ShaderModule ShaderManager::loadShaderModule (const std::string& codePath, ShaderType type)
 {
 	VkShaderModuleCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -334,12 +448,12 @@ ShaderModule ShaderManager::loadShaderModule (const std::string& codePath, Shade
 
 		switch (type)
 		{
-			case (ShaderModuleType::vertex):
+			case (ShaderType::vertex):
 				createInfo.codeSize = sizeof (defaultVertexShader);
 				createInfo.pCode = (uint32_t*)defaultVertexShader;
 
 				break;
-			case (ShaderModuleType::fragment):
+			case (ShaderType::fragment):
 				createInfo.codeSize = sizeof (defaultFragmentShader);
 				createInfo.pCode = (uint32_t*)defaultFragmentShader;
 
@@ -418,44 +532,11 @@ std::string GetSuffix (const std::string& name)
 	return (pos == std::string::npos) ? "" : name.substr (name.rfind ('.') + 1);
 }
 
-ShaderModuleType GetShaderStage (const std::string& stage)
-{
-	if (stage == "vert")
-	{
-		return ShaderModuleType::vertex;
-	}
-	else if (stage == "tesc")
-	{
-		return ShaderModuleType::tessControl;
-	}
-	else if (stage == "tese")
-	{
-		return ShaderModuleType::tessEval;
-	}
-	else if (stage == "geom")
-	{
-		return ShaderModuleType::geometry;
-	}
-	else if (stage == "frag")
-	{
-		return ShaderModuleType::fragment;
-	}
-	else if (stage == "comp")
-	{
-		return ShaderModuleType::compute;
-	}
-	else
-	{
-		assert (0 && "Unknown shader stage");
-		return ShaderModuleType::error;
-	}
-}
-
 const std::vector<uint32_t> ShaderCompiler::LoadAndCompileShader (const std::string& filename)
 {
 	auto shader_string = load_file (filename).value ();
 	auto shader_type = GetShaderStage (GetSuffix (filename));
-	return CompileShaderString (filename, shader_string, shader_type);
+	return CompileShaderString (filename, shader_string, shader_type).value ();
 }
 
 
@@ -475,8 +556,8 @@ std::optional<std::string> ShaderCompiler::load_file (const std::string& filenam
 	return std::string ((std::istreambuf_iterator<char> (file)), std::istreambuf_iterator<char> ());
 }
 
-const std::vector<unsigned int> ShaderCompiler::CompileShaderString (
-    std::string const& shader_filename, std::string const& shader_string, ShaderModuleType const shader_type)
+std::optional<std::vector<unsigned int>> const ShaderCompiler::CompileShaderString (
+    std::string const& shader_filename, std::string const& shader_string, ShaderType const shader_type)
 {
 	const char* InputCString = shader_string.c_str ();
 
@@ -515,6 +596,7 @@ const std::vector<unsigned int> ShaderCompiler::CompileShaderString (
 		Log.Error (fmt::format ("GLSL Preprocessing Failed for: {}", shader_filename));
 		Log.Error (Shader.getInfoLog ());
 		Log.Error (Shader.getInfoDebugLog ());
+		return {};
 	}
 
 	const char* PreprocessedCStr = PreprocessedGLSL.c_str ();
@@ -525,6 +607,7 @@ const std::vector<unsigned int> ShaderCompiler::CompileShaderString (
 		Log.Error (fmt::format ("GLSL Parsing Failed for: {}", shader_filename));
 		Log.Error (Shader.getInfoLog ());
 		Log.Error (Shader.getInfoDebugLog ());
+		return {};
 	}
 
 	glslang::TProgram Program;
@@ -535,6 +618,7 @@ const std::vector<unsigned int> ShaderCompiler::CompileShaderString (
 		Log.Error (fmt::format ("GLSL Linking Failed for: {}", shader_filename));
 		Log.Error (Shader.getInfoLog ());
 		Log.Error (Shader.getInfoDebugLog ());
+		return {};
 	}
 
 	std::vector<unsigned int> SpirV;

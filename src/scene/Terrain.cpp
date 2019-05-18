@@ -6,6 +6,7 @@
 #include "rendering/RenderStructs.h"
 
 #include "TerrainManager.h"
+#include "rendering/Initializers.h"
 
 TerrainQuad::TerrainQuad (TerrainChunkBuffer& chunkBuffer,
     glm::vec2 pos,
@@ -44,8 +45,8 @@ void TerrainQuad::Setup ()
 	vertices = (TerrainMeshVertices*)chunkBuffer.GetDeviceVertexBufferPtr (index);
 	indices = (TerrainMeshIndices*)chunkBuffer.GetDeviceIndexBufferPtr (index);
 
-	GenerateTerrainChunk (
-	    std::ref (terrain->fastGraphUser), terrain->heightScale, terrain->coordinateData.size.x);
+	// GenerateTerrainChunk (
+	//    std::ref (terrain->fastGraphUser), terrain->heightScale, terrain->coordinateData.size.x);
 	chunkBuffer.SetChunkWritten (index);
 	// quadSignal = chunkBuffer.GetChunkSignal(index);
 }
@@ -227,14 +228,15 @@ Terrain::Terrain (VulkanRenderer& renderer,
     int numCells,
     int maxLevels,
     float heightScale,
-    TerrainCoordinateData coords)
+    TerrainCoordinateData coords,
+    VulkanModel* grid)
 : renderer (renderer),
   chunkBuffer (chunkBuffer),
   maxLevels (maxLevels),
   heightScale (heightScale),
   coordinateData (coords),
-  fastGraphUser (protoGraph, 1337, coords.sourceImageResolution, coords.noisePos, coords.noiseSize.x)
-
+  fastGraphUser (protoGraph, 1337, coords.sourceImageResolution, coords.noisePos, coords.noiseSize.x),
+  terrainGrid (grid)
 {
 
 	// simple calculation right now, does the absolute max number of quads possible with given max
@@ -249,7 +251,7 @@ Terrain::Terrain (VulkanRenderer& renderer,
 		maxNumQuads = 1 + 16 + 20 + 25 + 50 * maxLevels;
 		// maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads (like if everything was subdivided)
 	}
-
+	heightMapData = fastGraphUser.GetHeightMap ().GetImageVectorData ();
 
 	splatMapData = fastGraphUser.GetSplatMapPtr ();
 	splatMapSize = (int)glm::pow (coords.sourceImageResolution, 2);
@@ -321,6 +323,19 @@ void Terrain::SetupUniformBuffer ()
 
 void Terrain::SetupImage ()
 {
+
+
+	TexCreateDetails details (VK_FORMAT_R32_SFLOAT,
+	    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+	    true,
+	    8,
+	    coordinateData.sourceImageResolution,
+	    coordinateData.sourceImageResolution);
+	details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+	heightMapTexture = std::make_shared<VulkanTexture> (renderer, details, heightMapData);
+
+
 	if (splatMapData != nullptr)
 	{
 		TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM,
@@ -350,7 +365,7 @@ void Terrain::SetupDescriptorSets (std::shared_ptr<VulkanTexture> terrainVulkanT
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (
 	    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1));
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (
-	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
+	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (
 	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (
@@ -359,10 +374,13 @@ void Terrain::SetupDescriptorSets (std::shared_ptr<VulkanTexture> terrainVulkanT
 	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4, 1));
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (
 	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 5, 1));
+	m_bindings.push_back (VulkanDescriptor::CreateBinding (
+	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 6, 1));
 	descriptor->SetupLayout (m_bindings);
 
 	std::vector<DescriptorPoolSize> poolSizes;
 	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
@@ -375,11 +393,12 @@ void Terrain::SetupDescriptorSets (std::shared_ptr<VulkanTexture> terrainVulkanT
 
 	std::vector<DescriptorUse> writes;
 	writes.push_back (DescriptorUse (0, 1, uniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, terrainVulkanSplatMap->resource));
-	writes.push_back (DescriptorUse (2, 1, terrainVulkanTextureArrayAlbedo->resource));
-	writes.push_back (DescriptorUse (3, 1, terrainVulkanTextureArrayRoughness->resource));
-	writes.push_back (DescriptorUse (4, 1, terrainVulkanTextureArrayMetallic->resource));
-	writes.push_back (DescriptorUse (5, 1, terrainVulkanTextureArrayNormal->resource));
+	writes.push_back (DescriptorUse (1, 1, heightMapTexture->resource));
+	writes.push_back (DescriptorUse (2, 1, terrainVulkanSplatMap->resource));
+	writes.push_back (DescriptorUse (3, 1, terrainVulkanTextureArrayAlbedo->resource));
+	writes.push_back (DescriptorUse (4, 1, terrainVulkanTextureArrayRoughness->resource));
+	writes.push_back (DescriptorUse (5, 1, terrainVulkanTextureArrayMetallic->resource));
+	writes.push_back (DescriptorUse (6, 1, terrainVulkanTextureArrayNormal->resource));
 	descriptor->UpdateDescriptorSet (descriptorSet, writes);
 }
 
@@ -387,10 +406,8 @@ void Terrain::SetupPipeline ()
 {
 	PipelineOutline out;
 
-	auto vert = renderer.shaderManager.loadShaderModule (
-	    "assets/shaders/terrain.vert.spv", ShaderModuleType::vertex);
-	auto frag = renderer.shaderManager.loadShaderModule (
-	    "assets/shaders/terrain.frag.spv", ShaderModuleType::fragment);
+	auto vert = renderer.shaderManager.loadShaderModule ("assets/shaders/terrain.vert.spv", ShaderType::vertex);
+	auto frag = renderer.shaderManager.loadShaderModule ("assets/shaders/terrain.frag.spv", ShaderType::fragment);
 
 	ShaderModuleSet shader_set;
 	shader_set.Vertex (vert).Fragment (frag);
@@ -422,6 +439,9 @@ void Terrain::SetupPipeline ()
 	out.AddDescriptorLayout (descriptor->GetLayout ());
 
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
+
+	out.AddPushConstantRange (
+	    initializers::pushConstantRange (VK_SHADER_STAGE_VERTEX_BIT, sizeof (HeightMapBound), 0));
 
 	normal = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 
@@ -597,7 +617,7 @@ void Terrain::PopulateQuadOffsets (int quad, std::vector<VkDeviceSize>& vert, st
 	}
 }
 
-void Terrain::DrawDepthPrePass (VkCommandBuffer cmdBuff)
+void Terrain::DrawDepthPrePass (VkCommandBuffer cmdBuf)
 {
 	VkDeviceSize offsets[] = { 0 };
 
@@ -611,17 +631,17 @@ void Terrain::DrawDepthPrePass (VkCommandBuffer cmdBuff)
 
 	for (int i = 0; i < vertexOffsettings.size (); i++)
 	{
-		vkCmdBindVertexBuffers (cmdBuff, 0, 1, &chunkBuffer.vert_buffer.buffer.buffer, &vertexOffsettings[i]);
-		vkCmdBindIndexBuffer (cmdBuff, chunkBuffer.index_buffer.buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
+		vkCmdBindVertexBuffers (cmdBuf, 0, 1, &chunkBuffer.vert_buffer.buffer.buffer, &vertexOffsettings[i]);
+		vkCmdBindIndexBuffer (cmdBuf, chunkBuffer.index_buffer.buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
 
-		vkCmdDrawIndexed (cmdBuff, static_cast<uint32_t> (indCount), 1, 0, 0, 0);
+		vkCmdDrawIndexed (cmdBuf, static_cast<uint32_t> (indCount), 1, 0, 0, 0);
 	}
 }
 
-void Terrain::DrawTerrain (VkCommandBuffer cmdBuff, bool ifWireframe)
+void Terrain::DrawTerrain (VkCommandBuffer cmdBuf, bool ifWireframe)
 {
 	VkDeviceSize offsets[] = { 0 };
-	// return;
+
 	if (*terrainVulkanSplatMap->readyToUse == false) return;
 
 	drawTimer.StartTimer ();
@@ -640,26 +660,60 @@ void Terrain::DrawTerrain (VkCommandBuffer cmdBuff, bool ifWireframe)
 	    &modelMatrixData);*/
 
 	if (ifWireframe)
-		wireframe->Bind (cmdBuff);
+		wireframe->Bind (cmdBuf);
 	else
-		normal->Bind (cmdBuff);
+		normal->Bind (cmdBuf);
 
 	// vkCmdBindPipeline (cmdBuff,
 	//    VK_PIPELINE_BIND_POINT_GRAPHICS,
 	//    ifWireframe ? mvp->pipelines->at (1) : mvp->pipelines->at (0));
 	vkCmdBindDescriptorSets (
-	    cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, normal->GetLayout (), 2, 1, &descriptorSet.set, 0, nullptr);
+	    cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, normal->GetLayout (), 2, 1, &descriptorSet.set, 0, nullptr);
 
 	for (int i = 0; i < vertexOffsettings.size (); i++)
 	{
-		vkCmdBindVertexBuffers (cmdBuff, 0, 1, &chunkBuffer.vert_buffer.buffer.buffer, &vertexOffsettings[i]);
-		vkCmdBindIndexBuffer (cmdBuff, chunkBuffer.index_buffer.buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
+		vkCmdBindVertexBuffers (cmdBuf, 0, 1, &chunkBuffer.vert_buffer.buffer.buffer, &vertexOffsettings[i]);
+		vkCmdBindIndexBuffer (cmdBuf, chunkBuffer.index_buffer.buffer.buffer, indexOffsettings[i], VK_INDEX_TYPE_UINT32);
 
-		vkCmdDrawIndexed (cmdBuff, static_cast<uint32_t> (indCount), 1, 0, 0, 0);
+		vkCmdDrawIndexed (cmdBuf, static_cast<uint32_t> (indCount), 1, 0, 0, 0);
 	}
 
-
 	drawTimer.EndTimer ();
+}
+
+void Terrain::DrawTerrainRecursive (int quad, VkCommandBuffer cmdBuf, bool ifWireframe)
+{
+	if (quadMap.at (quad).isSubdivided)
+	{
+		DrawTerrainRecursive (quadMap.at (quad).subQuads.UpRight, cmdBuf, ifWireframe);
+		DrawTerrainRecursive (quadMap.at (quad).subQuads.UpLeft, cmdBuf, ifWireframe);
+		DrawTerrainRecursive (quadMap.at (quad).subQuads.DownRight, cmdBuf, ifWireframe);
+		DrawTerrainRecursive (quadMap.at (quad).subQuads.DownLeft, cmdBuf, ifWireframe);
+	}
+	else
+	{
+		vkCmdPushConstants (cmdBuf,
+		    normal->GetLayout (),
+		    VK_SHADER_STAGE_VERTEX_BIT,
+		    0,
+		    sizeof (HeightMapBound),
+		    &quadMap.at (quad).bound);
+
+		vkCmdDrawIndexed (cmdBuf, static_cast<uint32_t> (indCount), 1, 0, 0, 0);
+	}
+}
+
+void Terrain::DrawTerrainGrid (VkCommandBuffer cmdBuf, bool ifWireframe)
+{
+	if (ifWireframe)
+		wireframe->Bind (cmdBuf);
+	else
+		normal->Bind (cmdBuf);
+	vkCmdBindDescriptorSets (
+	    cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, normal->GetLayout (), 2, 1, &descriptorSet.set, 0, nullptr);
+	terrainGrid->BindModel (cmdBuf);
+
+	DrawTerrainRecursive (0, cmdBuf, ifWireframe);
 }
 
 float Terrain::GetHeightAtLocation (float x, float z)

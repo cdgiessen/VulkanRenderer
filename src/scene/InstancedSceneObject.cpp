@@ -112,9 +112,9 @@ void InstancedSceneObject::SetupPipeline ()
 	PipelineOutline out;
 
 	auto vert = renderer.shaderManager.loadShaderModule (
-	    "assets/shaders/instancedSceneObject.vert.spv", ShaderModuleType::vertex);
+	    "assets/shaders/instancedSceneObject.vert.spv", ShaderType::vertex);
 	auto frag = renderer.shaderManager.loadShaderModule (
-	    "assets/shaders/instancedSceneObject.frag.spv", ShaderModuleType::fragment);
+	    "assets/shaders/instancedSceneObject.frag.spv", ShaderType::fragment);
 
 	ShaderModuleSet shader_set;
 	shader_set.Vertex (vert).Fragment (frag);
@@ -180,8 +180,8 @@ void InstancedSceneObject::SetupPipeline ()
 	// //pipeMan.SetVertexShader(mvp, loadShaderModule(renderer.device.device, "assets/shaders/instancedSceneObject.vert.spv"));
 	// //pipeMan.SetFragmentShader(mvp, fragShaderModule);
 
-	// auto vert = renderer.shaderManager.loadShaderModule("assets/shaders/instancedSceneObject.vert.spv", ShaderModuleType::vertex);
-	// auto frag = renderer.shaderManager.loadShaderModule(fragShaderPath, ShaderModuleType::fragment);
+	// auto vert = renderer.shaderManager.loadShaderModule("assets/shaders/instancedSceneObject.vert.spv", ShaderType::vertex);
+	// auto frag = renderer.shaderManager.loadShaderModule(fragShaderPath, ShaderType::fragment);
 
 	// ShaderModuleSet set(vert, frag, {}, {}, {});
 	// pipeMan.SetShaderModuleSet(mvp, set);

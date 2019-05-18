@@ -116,9 +116,9 @@ void GameObject::SetupPipeline ()
 	PipelineOutline out;
 
 	auto pbr_vert =
-	    renderer.shaderManager.loadShaderModule ("assets/shaders/pbr.vert.spv", ShaderModuleType::vertex);
-	auto pbr_frag = renderer.shaderManager.loadShaderModule (
-	    "assets/shaders/pbr.frag.spv", ShaderModuleType::fragment);
+	    renderer.shaderManager.loadShaderModule ("assets/shaders/pbr.vert.spv", ShaderType::vertex);
+	auto pbr_frag =
+	    renderer.shaderManager.loadShaderModule ("assets/shaders/pbr.frag.spv", ShaderType::fragment);
 
 	ShaderModuleSet shader_set;
 	shader_set.Vertex (pbr_vert).Fragment (pbr_frag);

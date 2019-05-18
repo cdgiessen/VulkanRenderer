@@ -44,6 +44,9 @@ class VulkanTexture
 
 	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::byte* texData, int byteCount);
 
+	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::vector<float>* data);
+
+
 	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails);
 
 	~VulkanTexture ();

@@ -178,8 +178,6 @@ void VulkanRenderer::RecreateSwapChain ()
 {
 	Log.Debug (fmt::format ("Recreating Swapchain\n"));
 
-	// for (int i = 0; i < 3; i++)
-	//	depthBuffers.at (i).reset ();
 	depthBuffers.clear ();
 
 	frameGraph.reset ();

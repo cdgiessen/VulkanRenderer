@@ -23,7 +23,7 @@
 #include "gui/InternalGraph.h"
 
 
-const int NumCells = 64;
+const int NumCells = 32;
 const int vertCount = (NumCells + 1) * (NumCells + 1);
 const int indCount = NumCells * NumCells * 6;
 const int vertElementCount = 8;
@@ -61,6 +61,12 @@ struct TerrainCoordinateData
 
 class TerrainChunkBuffer;
 class Terrain;
+
+struct HeightMapBound
+{
+	glm::vec2 tl = glm::vec2 (0.0, 0.0);
+	glm::vec2 br = glm::vec2 (1.0, 1.0);
+};
 
 struct TerrainQuad
 {
@@ -108,6 +114,8 @@ struct TerrainQuad
 	TerrainMeshVertices* vertices;
 	TerrainMeshIndices* indices;
 
+	HeightMapBound bound;
+
 	Signal quadSignal;
 
 	// index into terrain's quadMap
@@ -119,7 +127,6 @@ struct TerrainQuad
 		int DownRight = -1;
 	} subQuads;
 };
-
 
 class Terrain
 {
@@ -146,12 +153,18 @@ class Terrain
 
 	DescriptorSet descriptorSet;
 
+	std::vector<float>* heightMapData;
+	std::shared_ptr<VulkanTexture> heightMapTexture;
+
 	std::byte* splatMapData;
 	int splatMapSize;
 	std::shared_ptr<VulkanTexture> terrainVulkanSplatMap;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
-	// TerrainPushConstant modelMatrixData;
+
+
+	VulkanModel* terrainGrid;
+
 
 	InternalGraph::GraphUser fastGraphUser;
 
@@ -165,7 +178,8 @@ class Terrain
 	    int numCells,
 	    int maxLevels,
 	    float heightScale,
-	    TerrainCoordinateData coordinateData);
+	    TerrainCoordinateData coordinateData,
+	    VulkanModel* terrainGrid);
 	~Terrain ();
 
 	void InitTerrain (glm::vec3 cameraPos,
@@ -178,6 +192,8 @@ class Terrain
 	void DrawDepthPrePass (VkCommandBuffer cmdBuff);
 	void DrawTerrain (VkCommandBuffer cmdBuff, bool wireframe);
 
+	void DrawTerrainRecursive (int quad, VkCommandBuffer cmdBuf, bool ifWireframe);
+	void DrawTerrainGrid (VkCommandBuffer cmdBuf, bool ifWireframe);
 	// std::vector<RGBA_pixel>* LoadSplatMapFromGenerator();
 
 	float GetHeightAtLocation (float x, float z);

@@ -20,7 +20,10 @@ void FileWatcher::Start (const std::function<void(std::string, FileStatus)>& act
 void FileWatcher::Stop ()
 {
 	is_running = false;
-	watcher.join ();
+	if (watcher.joinable ())
+	{
+		watcher.join ();
+	}
 }
 
 // Monitor "path_to_watch" for changes and in case of a change execute the user supplied "action" function

@@ -47,10 +47,10 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 
 	PipelineOutline out;
 
-	auto water_vert = renderer.shaderManager.loadShaderModule (
-	    "assets/shaders/water.vert.spv", ShaderModuleType::vertex);
-	auto water_frag = renderer.shaderManager.loadShaderModule (
-	    "assets/shaders/water.frag.spv", ShaderModuleType::fragment);
+	auto water_vert =
+	    renderer.shaderManager.loadShaderModule ("assets/shaders/water.vert.spv", ShaderType::vertex);
+	auto water_frag =
+	    renderer.shaderManager.loadShaderModule ("assets/shaders/water.frag.spv", ShaderType::fragment);
 
 	ShaderModuleSet water_shaders;
 	water_shaders.Vertex (water_vert).Fragment (water_frag);

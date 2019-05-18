@@ -129,7 +129,8 @@ void TerrainChunkBuffer::UpdateChunks ()
 
 	if (vertexCopyRegions.size () > 0)
 	{
-		renderer.SubmitWork (WorkType::transfer,
+		renderer.SubmitWork (
+		    WorkType::transfer,
 		    [=](const VkCommandBuffer cmdBuf) {
 			    std::vector<VkBufferCopy> vRegions = vertexCopyRegions;
 			    std::vector<VkBufferCopy> iRegions = indexCopyRegions;
@@ -183,6 +184,9 @@ TerrainManager::TerrainManager (
 	terrainTextureArrayNormal = resourceMan.texManager.GetTexIDByName ("terrain_normal");
 	terrainVulkanTextureArrayNormal =
 	    renderer.textureManager.CreateTexture2DArray (terrainTextureArrayNormal, details);
+
+	terrainGridMesh = createFlatPlane (32, glm::vec3 (1.0f));
+	terrainGridModel = std::make_shared<VulkanModel> (renderer, terrainGridMesh);
 
 	// StartWorkerThreads ();
 	workContinueSignal = std::make_shared<job::TaskSignal> ();
@@ -326,7 +330,8 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 						    terCreateData.numCells,
 						    terCreateData.maxLevels,
 						    terCreateData.heightScale,
-						    terCreateData.coord);
+						    terCreateData.coord,
+						    terrainGridModel.get ());
 
 						terrain->InitTerrain (curCameraPos,
 						    terrainVulkanTextureArrayAlbedo,
@@ -360,7 +365,7 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 	//}
 	terrainUpdateTimer.EndTimer ();
 
-	chunkBuffer.UpdateChunks ();
+	// chunkBuffer.UpdateChunks ();
 }
 
 void TerrainManager::RenderDepthPrePass (VkCommandBuffer commandBuffer)
@@ -383,7 +388,8 @@ void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wirefram
 		std::lock_guard<std::mutex> lock (terrain_mutex);
 		for (auto& ter : terrains)
 		{
-			ter->DrawTerrain (commandBuffer, wireframe);
+			ter->DrawTerrainGrid (commandBuffer, wireframe);
+			// ter->DrawTerrain (commandBuffer, wireframe);
 		}
 	}
 }

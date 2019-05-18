@@ -167,7 +167,8 @@ class TerrainManager
 
 	void StopActiveJobs ();
 
-	std::shared_ptr<MeshData> WaterMesh;
+	std::shared_ptr<MeshData> terrainGridMesh;
+	std::shared_ptr<VulkanModel> terrainGridModel;
 
 	Resource::Texture::TexID terrainTextureArrayAlbedo;
 	Resource::Texture::TexID terrainTextureArrayRoughness;
