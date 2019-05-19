@@ -17,16 +17,12 @@
 
 #include "core/CoreTools.h"
 #include "resources/Texture.h"
-#include "util/Gradient.h"
-#include "util/MemoryPool.h"
 
 #include "gui/InternalGraph.h"
 
 
 const int NumCells = 64;
-const int vertCount = (NumCells + 1) * (NumCells + 1);
 const int indCount = NumCells * NumCells * 6;
-const int vertElementCount = 8;
 
 struct TerrainCoordinateData
 {
@@ -43,7 +39,6 @@ struct TerrainCoordinateData
 	}
 };
 
-class TerrainChunkBuffer;
 class Terrain;
 
 struct HeightMapBound
@@ -58,8 +53,7 @@ struct HeightMapBound
 
 struct TerrainQuad
 {
-	TerrainQuad (
-	    glm::vec2 pos,
+	TerrainQuad (glm::vec2 pos,
 	    glm::vec2 size,
 	    glm::i32vec2 logicalPos,
 	    glm::i32vec2 logicalSize,
@@ -83,7 +77,7 @@ struct TerrainQuad
 	bool isSubdivided = false;
 
 	Terrain* terrain; // who owns it
-	int index = -1; // index into chunkBuffer
+	int index = -1;   // index into chunkBuffer
 
 	HeightMapBound bound;
 
@@ -100,7 +94,6 @@ struct TerrainQuad
 class Terrain
 {
 	public:
-	
 	std::unordered_map<int, TerrainQuad> quadMap;
 
 	int rootQuad = 0;
@@ -135,8 +128,6 @@ class Terrain
 
 
 	InternalGraph::GraphUser fastGraphUser;
-
-	Gradient splatmapTextureGradient;
 
 	SimpleTimer drawTimer;
 
@@ -182,6 +173,5 @@ class Terrain
 	void SubdivideTerrain (int quad, glm::vec3 viewerPos);
 	void UnSubdivide (int quad);
 
-	//void PopulateQuadOffsets (int quad, std::vector<VkDeviceSize>& vert, std::vector<VkDeviceSize>& ind);
-
+	// void PopulateQuadOffsets (int quad, std::vector<VkDeviceSize>& vert, std::vector<VkDeviceSize>& ind);
 };

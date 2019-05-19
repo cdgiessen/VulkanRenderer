@@ -26,7 +26,7 @@ VulkanBuffer::VulkanBuffer (VulkanDevice& device,
     VmaMemoryUsage allocUsage,
     VmaAllocationCreateFlags allocFlags,
     void* memToCopy,
-    PersistantlyMapped persistantlyMapped,
+    PersistentlyMapped persistentlyMapped,
     DynamicallyAligned dynamicAlignment,
     int count)
 : device (&device), resource (type), m_size (bufferSize)
@@ -64,9 +64,9 @@ VulkanBuffer::VulkanBuffer (VulkanDevice& device,
 		memcpy (buffer.allocationInfo.pMappedData, memToCopy, m_size);
 	}
 
-	if (persistantlyMapped == PersistantlyMapped::T)
+	if (persistentlyMapped == PersistentlyMapped::T)
 	{
-		this->persistantlyMapped = true;
+		this->persistentlyMapped = true;
 		Map (&mapped);
 	}
 
@@ -77,7 +77,7 @@ VulkanBuffer::VulkanBuffer (VulkanDevice& device,
 
 // void VulkanBuffer::CleanBuffer() {
 
-// 	//if (persistantlyMapped) {
+// 	//if (persistentlyMapped) {
 // 	//	Unmap();
 // 	//}
 
@@ -94,7 +94,7 @@ VulkanBuffer::VulkanBuffer (VulkanBuffer&& buf)
   m_size (buf.m_size),
   mapped (buf.mapped),
   created (buf.created),
-  persistantlyMapped (buf.persistantlyMapped)
+  persistentlyMapped (buf.persistentlyMapped)
 {
 	movedFrom = false;
 	buf.movedFrom = true;
@@ -108,7 +108,7 @@ VulkanBuffer& VulkanBuffer::operator= (VulkanBuffer&& buf)
 	m_size = buf.m_size;
 	mapped = buf.mapped;
 	created = buf.created;
-	persistantlyMapped = buf.persistantlyMapped;
+	persistentlyMapped = buf.persistentlyMapped;
 	movedFrom = false;
 	buf.movedFrom = true;
 	return *this;
@@ -118,7 +118,7 @@ VulkanBuffer::~VulkanBuffer ()
 {
 	if (!movedFrom)
 	{
-		if (persistantlyMapped)
+		if (persistentlyMapped)
 		{
 			Unmap ();
 		}
@@ -176,13 +176,20 @@ void AlignedMemcpy (uint8_t bytes, VkDeviceSize destMemAlignment, void* src, voi
 
 void VulkanBuffer::CopyToBuffer (void* pData, VkDeviceSize size)
 {
-	if (persistantlyMapped)
+	if (pData == nullptr)
 	{
+		Log.Error ("CopyToBuffer needs valid pData pointer\n");
+		return;
+	}
+	if (persistentlyMapped)
+	{
+		assert (mapped != nullptr);
 		memcpy (mapped, pData, (size_t)size);
 	}
 	else
 	{
 		this->Map (&mapped);
+		assert (mapped != nullptr);
 		memcpy (mapped, pData, (size_t)size);
 
 		// VkDeviceSize bufAlignment = device->physical_device_properties.limits.minUniformBufferOffsetAlignment;
@@ -210,7 +217,7 @@ VulkanBufferUniformPersistant::VulkanBufferUniformPersistant (VulkanDevice& devi
       (VmaMemoryUsage)VMA_MEMORY_USAGE_CPU_TO_GPU,
       VMA_ALLOCATION_CREATE_MAPPED_BIT,
       nullptr,
-      PersistantlyMapped::T)
+      PersistentlyMapped::T)
 {
 }
 
@@ -227,7 +234,7 @@ VulkanBufferUniformDynamic::VulkanBufferUniformDynamic (VulkanDevice& device, Vk
       VMA_MEMORY_USAGE_CPU_TO_GPU,
       VMA_ALLOCATION_CREATE_MAPPED_BIT,
       nullptr,
-      PersistantlyMapped::F,
+      PersistentlyMapped::F,
       DynamicallyAligned::T,
       count)
 {
@@ -325,7 +332,6 @@ VulkanBufferIndex::VulkanBufferIndex (VulkanDevice& device, uint32_t count)
 
 void VulkanBufferIndex::BindIndexBuffer (VkCommandBuffer cmdBuf)
 {
-	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindIndexBuffer (cmdBuf, buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
@@ -376,7 +382,7 @@ VulkanBufferInstancePersistant::VulkanBufferInstancePersistant (
       VMA_MEMORY_USAGE_CPU_ONLY,
       VMA_ALLOCATION_CREATE_MAPPED_BIT,
       nullptr,
-      PersistantlyMapped::T)
+      PersistentlyMapped::T)
 {
 }
 

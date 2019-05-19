@@ -28,7 +28,7 @@ TerrainCreationData::TerrainCreationData (
 
 TerrainManager::TerrainManager (
     InternalGraph::GraphPrototype& protoGraph, Resource::AssetManager& resourceMan, VulkanRenderer& renderer)
-: protoGraph (protoGraph), renderer (renderer), resourceMan (resourceMan)
+: resourceMan (resourceMan), renderer (renderer), protoGraph (protoGraph)
 {
 	if (settings.maxLevels < 0)
 	{
@@ -252,7 +252,7 @@ void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wirefram
 	}
 }
 
-// TODO : Reimplement getting height at terrain location
+// TODO : Re-implement getting height at terrain location
 float TerrainManager::GetTerrainHeightAtLocation (float x, float z)
 {
 	std::lock_guard<std::mutex> lock (terrain_mutex);
@@ -277,9 +277,9 @@ void TerrainManager::SaveSettingsToFile ()
 	j["terrain_width"] = settings.width;
 	j["height_scale"] = settings.heightScale;
 	j["max_levels"] = settings.maxLevels;
-	j["grid_dimentions"] = settings.gridDimentions;
+	j["grid_dimensions"] = settings.gridDimensions;
 	j["view_distance"] = settings.viewDistance;
-	j["souce_iamge_resolution"] = settings.sourceImageResolution;
+	j["source_image_resolution"] = settings.sourceImageResolution;
 	j["worker_threads"] = settings.workerThreads;
 
 	std::ofstream outFile (TerrainSettingsFileName);
@@ -300,9 +300,9 @@ void TerrainManager::LoadSettingsFromFile ()
 		settings.width = j["terrain_width"];
 		settings.heightScale = j["height_scale"];
 		settings.maxLevels = j["max_levels"];
-		settings.gridDimentions = j["grid_dimentions"];
+		settings.gridDimensions = j["grid_dimensions"];
 		settings.viewDistance = j["view_distance"];
-		settings.sourceImageResolution = j["souce_iamge_resolution"];
+		settings.sourceImageResolution = j["source_image_resolution"];
 		settings.workerThreads = j["worker_threads"];
 		if (settings.workerThreads < 1) settings.workerThreads = 1;
 	}
@@ -323,6 +323,7 @@ void TerrainManager::UpdateTerrainGUI ()
 	if (ImGui::Begin ("Terrain Info", &settings.show_terrain_manager_window))
 	{
 
+		std::lock_guard<std::mutex> lk (terrain_mutex);
 		ImGui::BeginGroup ();
 		if (ImGui::Button ("Save"))
 		{
@@ -334,10 +335,9 @@ void TerrainManager::UpdateTerrainGUI ()
 			LoadSettingsFromFile ();
 		}
 		ImGui::EndGroup ();
-
 		ImGui::SliderFloat ("Width", &nextTerrainWidth, 100, 10000);
 		ImGui::SliderInt ("Max Subdivision", &settings.maxLevels, 0, 10);
-		ImGui::SliderInt ("Grid Width", &settings.gridDimentions, 1, 10);
+		ImGui::SliderInt ("Grid Width", &settings.gridDimensions, 1, 10);
 		ImGui::SliderFloat ("Height Scale", &settings.heightScale, 1, 1000);
 		ImGui::SliderInt ("Image Resolution", &settings.sourceImageResolution, 32, 2048);
 		ImGui::SliderInt ("View Distance", &settings.viewDistance, 1, 32);
@@ -351,7 +351,6 @@ void TerrainManager::UpdateTerrainGUI ()
 		ImGui::Text ("All terrains update Time: %lu(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds ());
 
 		{
-			std::lock_guard<std::mutex> lk (terrain_mutex);
 			for (auto& ter : terrains)
 			{
 				ImGui::Text ("Terrain Draw Time: %lu(uS)", ter->drawTimer.GetElapsedTimeMicroSeconds ());

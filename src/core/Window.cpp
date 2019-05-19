@@ -115,7 +115,7 @@ glm::ivec2 Window::GetWindowSize ()
 
 void Window::ErrorHandler (int error, const char* description)
 {
-	Log.Error (fmt::format ("{}\n", description));
+	Log.Error (fmt::format ("Error Code:{}, {}\n", error, description));
 }
 
 void Window::KeyboardHandler (GLFWwindow* window, int key, int scancode, int action, int mods)

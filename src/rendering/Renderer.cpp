@@ -47,7 +47,7 @@ void RenderSettings::Load ()
 	}
 	else
 	{
-		Log.Debug (fmt::format ("Render Settings not found, creting one\n"));
+		Log.Debug (fmt::format ("Render Settings not found, creating one\n"));
 		Save ();
 	}
 }
@@ -79,7 +79,7 @@ VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::
   dynamic_data (device, settings)
 
 {
-	for (int i = 0; i < vulkanSwapChain.swapChainImages.size (); i++)
+	for (size_t i = 0; i < vulkanSwapChain.swapChainImages.size (); i++)
 	{
 		frameObjects.push_back (std::make_unique<FrameObject> (device, i));
 	}
@@ -138,7 +138,6 @@ void VulkanRenderer::RenderFrame ()
 	frameIndex = (frameIndex + 1) % frameObjects.size ();
 	dynamic_data.AdvanceFrameCounter ();
 
-	int i = 0;
 	std::lock_guard<std::mutex> lk (finishQueueLock);
 
 	for (auto it = finishQueue.begin (); it != finishQueue.end ();)
@@ -186,7 +185,7 @@ void VulkanRenderer::RecreateSwapChain ()
 	frameObjects.clear ();
 	vulkanSwapChain.RecreateSwapChain ();
 
-	for (int i = 0; i < vulkanSwapChain.swapChainImages.size (); i++)
+	for (size_t i = 0; i < vulkanSwapChain.swapChainImages.size (); i++)
 	{
 		frameObjects.push_back (std::make_unique<FrameObject> (device, i));
 	}
@@ -302,7 +301,7 @@ void VulkanRenderer::ContrustFrameGraph ()
 
 void VulkanRenderer::PrepareFrame (int curFrameIndex)
 {
-	VkResult result = frameObjects.at (curFrameIndex)->AquireNextSwapchainImage (vulkanSwapChain.swapChain);
+	VkResult result = frameObjects.at (curFrameIndex)->AcquireNextSwapchainImage (vulkanSwapChain.swapChain);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || (result == VK_SUBOPTIMAL_KHR))
 	{
@@ -434,19 +433,18 @@ void InsertImageMemoryBarrier (VkCommandBuffer cmdbuffer,
 GPU_DoubleBuffer::GPU_DoubleBuffer (VulkanDevice& device, RenderSettings& settings)
 : device (device)
 {
-	int num_buffers = 3;
 	for (auto& data : d_buffers)
 	{
 		data.globalVariableBuffer =
 		    std::make_unique<VulkanBufferUniformPersistant> (device, sizeof (GlobalData));
-		data.cameraDataBuffer = std::make_unique<VulkanBufferUniformPersistant> (
-		    device, sizeof (CameraData) * settings.cameraCount);
-		data.sunBuffer = std::make_unique<VulkanBufferUniformPersistant> (
-		    device, sizeof (DirectionalLight) * settings.directionalLightCount);
-		data.pointLightsBuffer = std::make_unique<VulkanBufferUniformPersistant> (
-		    device, sizeof (PointLight) * settings.pointLightCount);
-		data.spotLightsBuffer = std::make_unique<VulkanBufferUniformPersistant> (
-		    device, sizeof (SpotLight) * settings.spotLightCount);
+		data.cameraDataBuffer = std::make_unique<VulkanBufferUniformArrayPersistant<CameraData>> (
+		    device, settings.cameraCount);
+		data.sunBuffer = std::make_unique<VulkanBufferUniformArrayPersistant<DirectionalLight>> (
+		    device, settings.directionalLightCount);
+		data.pointLightsBuffer = std::make_unique<VulkanBufferUniformArrayPersistant<PointLight>> (
+		    device, settings.pointLightCount);
+		data.spotLightsBuffer = std::make_unique<VulkanBufferUniformArrayPersistant<SpotLight>> (
+		    device, settings.spotLightCount);
 
 		data.dynamicTransformBuffer = std::make_unique<VulkanBufferUniformDynamic> (
 		    device, MaxTransformCount, sizeof (TransformMatrixData));
@@ -560,14 +558,10 @@ void GPU_DoubleBuffer::Update (GlobalData& globalData,
     std::vector<SpotLight>& spotLights)
 {
 	d_buffers.at (cur_index).globalVariableBuffer->CopyToBuffer (&globalData, sizeof (GlobalData));
-	d_buffers.at (cur_index).cameraDataBuffer->CopyToBuffer (
-	    cameraData.data (), cameraData.size () * sizeof (CameraData));
-	d_buffers.at (cur_index).sunBuffer->CopyToBuffer (
-	    directionalLights.data (), directionalLights.size () * sizeof (DirectionalLight));
-	d_buffers.at (cur_index).pointLightsBuffer->CopyToBuffer (
-	    pointLights.data (), pointLights.size () * sizeof (PointLight));
-	d_buffers.at (cur_index).spotLightsBuffer->CopyToBuffer (
-	    spotLights.data (), spotLights.size () * sizeof (SpotLight));
+	d_buffers.at (cur_index).cameraDataBuffer->CopyArrayToBuffer (cameraData);
+	d_buffers.at (cur_index).sunBuffer->CopyArrayToBuffer (directionalLights);
+	d_buffers.at (cur_index).pointLightsBuffer->CopyArrayToBuffer (pointLights);
+	d_buffers.at (cur_index).spotLightsBuffer->CopyArrayToBuffer (spotLights);
 }
 
 

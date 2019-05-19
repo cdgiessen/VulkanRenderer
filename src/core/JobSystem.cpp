@@ -111,7 +111,11 @@ std::optional<Task> TaskPool::GetTask ()
 	return {};
 }
 
-bool TaskPool::HasTasks () { return !tasks.empty (); }
+bool TaskPool::HasTasks ()
+{
+	std::lock_guard<std::mutex> lg (queueLock);
+	return !tasks.empty ();
+}
 
 
 TaskManager::TaskManager () {}
@@ -165,15 +169,17 @@ std::optional<Task> TaskManager::GetTask ()
 		return asyncTasks.GetTask ();
 }
 
-Worker::Worker (TaskManager& taskMan, int threadID)
-: taskMan (taskMan), workerThread{ &Worker::Work, this }, threadID (threadID)
-{
-}
+Worker::Worker (TaskManager& taskMan, int threadID) : taskMan (taskMan), threadID (threadID) {}
+
+void Worker::Start () { workerThread = std::thread (&Worker::Work, this); }
 
 Worker::~Worker ()
 {
 	Stop ();
-	workerThread.join ();
+	if (workerThread.joinable ())
+	{
+		workerThread.join ();
+	}
 }
 void Worker::Stop () { isWorking = false; }
 
@@ -201,6 +207,10 @@ WorkerPool::WorkerPool (TaskManager& taskMan, int workerCount)
 	for (int i = 0; i < workerCount; i++)
 	{
 		workers.push_back (std::make_unique<Worker> (taskMan, i));
+	}
+	for (auto& worker : workers)
+	{
+		worker->Start ();
 	}
 }
 

@@ -46,13 +46,28 @@ if(MSVC)
 	target_compile_options(VulkanApp PRIVATE "/permissive-")
 endif(MSVC)
 
-OPTION(THREADSANITIZER "Enable thread sanitizer on unix platforms" ON)
+OPTION(TSAN "Enable thread sanitizer on unix platforms" ON)
+OPTION(ASAN "Enable address sanitizer on unix platforms" OFF)
+OPTION(LSAN "Enable leak sanitizer on unix platforms" OFF)
+OPTION(UBSAN "Enable undefined behavior sanitizer on unix platforms" OFF)
 
 if(UNIX)
-	if(THREADSANITIZER)
-	set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak")
-	set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak")
-	endif(THREADSANITIZER)
+	if(DEBUG)
+		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wextra -Wall")
+		set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer")
+	endif(DEBUG)
+	if(TSAN)
+		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=thread")
+	endif(TSAN)
+	if(ASAN)
+		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+	endif(ASAN)
+	if(LSAN)
+		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=leak")
+	endif(LSAN)
+	if(UBSAN)
+		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=undefined")
+	endif(UBSAN)
 
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif(UNIX)
@@ -103,8 +118,10 @@ target_include_directories(VulkanApp PRIVATE ${ENTT_INCLUDE_DIR}/src/)
 if(UNIX)
 	target_link_libraries(VulkanApp PRIVATE ${GTK3_LIBRARIES})
 
-	#g++-8 still requires this, not necessary with g++-9 hopefully
+	#g++-8 still requires this, not necessary with g++-9
 	target_link_libraries(VulkanApp PRIVATE stdc++fs)
+
+	target_compile_options(VulkanApp PRIVATE -Wall -Wextra -Wpedantic)
 endif(UNIX)
 
 # copy files over

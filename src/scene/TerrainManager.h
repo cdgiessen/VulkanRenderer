@@ -13,7 +13,6 @@
 #include "core/TimeManager.h"
 
 #include "util/ConcurrentQueue.h"
-#include "util/MemoryPool.h"
 
 #include "rendering/Renderer.h"
 
@@ -32,7 +31,7 @@ struct GeneralSettings
 	float width = 1000;
 	float heightScale = 100.0f;
 	int maxLevels = 4;
-	int gridDimentions = 1;
+	int gridDimensions = 1;
 	int viewDistance = 1; // terrain chunks to load away from camera;
 	int sourceImageResolution = 256;
 	int numCells = 64; // compile time currently
@@ -105,12 +104,6 @@ class TerrainManager
 	bool recreateTerrain = true;
 	float nextTerrainWidth = 1000;
 	SimpleTimer terrainUpdateTimer;
-
-	int maxNumQuads = 1; // maximum quads managed by this
-
-	bool drawWindow;
-	int selectedTexture;
-
 
 	std::vector<std::string> terrainTextureFileNames = {
 		"dirt.jpg",

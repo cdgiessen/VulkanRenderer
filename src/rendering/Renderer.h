@@ -102,10 +102,10 @@ class GPU_DoubleBuffer
 	struct Dynamic
 	{
 		std::unique_ptr<VulkanBufferUniformPersistant> globalVariableBuffer;
-		std::unique_ptr<VulkanBufferUniformPersistant> cameraDataBuffer;
-		std::unique_ptr<VulkanBufferUniformPersistant> sunBuffer;
-		std::unique_ptr<VulkanBufferUniformPersistant> pointLightsBuffer;
-		std::unique_ptr<VulkanBufferUniformPersistant> spotLightsBuffer;
+		std::unique_ptr<VulkanBufferUniformArrayPersistant<CameraData>> cameraDataBuffer;
+		std::unique_ptr<VulkanBufferUniformArrayPersistant<DirectionalLight>> sunBuffer;
+		std::unique_ptr<VulkanBufferUniformArrayPersistant<PointLight>> pointLightsBuffer;
+		std::unique_ptr<VulkanBufferUniformArrayPersistant<SpotLight>> spotLightsBuffer;
 
 		std::unique_ptr<VulkanBufferUniformDynamic> dynamicTransformBuffer;
 
@@ -207,8 +207,6 @@ class VulkanRenderer
 	GPU_DoubleBuffer dynamic_data;
 
 	std::vector<std::shared_ptr<VulkanTexture>> depthBuffers;
-
-	int workerThreadCount = 3;
 
 	std::vector<GraphicsCleanUpWork> finishQueue;
 	std::mutex finishQueueLock;

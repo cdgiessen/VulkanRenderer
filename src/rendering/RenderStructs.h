@@ -72,7 +72,7 @@ struct SpotLight
 
 	SpotLight (){};
 	SpotLight (glm::vec3 position, glm::vec3 dir, glm::vec3 color, float attenuation, float cutoff, float outerCutOff)
-	: position (position), direction (dir), attenuation (attenuation), color (color), cutoff (cutoff), outerCutOff (outerCutOff)
+	: position (position), attenuation (attenuation), direction (dir), cutoff (cutoff), color (color), outerCutOff (outerCutOff)
 	{
 	}
 };

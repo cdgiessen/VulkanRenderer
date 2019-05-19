@@ -4,8 +4,8 @@
 
 bool fileExists (const std::string& filename)
 {
-	std::ifstream f (filename.c_str ());
-	return !f.fail ();
+	std::ifstream f{ filename };
+	return f.is_open ();
 }
 
 std::vector<char> readFile (const std::string& filename)

@@ -34,7 +34,7 @@ class Pool
 			uint8_t g = gen ();
 			g++;
 			uint32_t gen32 = g << 24;
-			data = g | next ();
+			data = gen32 | next (); // is this right?
 		}
 
 		private:

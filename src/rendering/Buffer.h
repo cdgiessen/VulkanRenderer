@@ -29,7 +29,7 @@ class VulkanDevice;
 class VulkanBuffer
 {
 	public:
-	enum class PersistantlyMapped
+	enum class PersistentlyMapped
 	{ // can't muck up types this way
 		F,
 		T
@@ -49,7 +49,7 @@ class VulkanBuffer
 	    VmaMemoryUsage allocUsage,
 	    VmaAllocationCreateFlags allocFlags = (VmaAllocationCreateFlagBits) (0),
 	    void* memToCopy = nullptr,
-	    PersistantlyMapped persistantlyMapped = PersistantlyMapped::F,
+	    PersistentlyMapped persistentlyMapped = PersistentlyMapped::F,
 	    DynamicallyAligned dynamicAlignment = DynamicallyAligned::F,
 	    int count = 0);
 
@@ -90,12 +90,10 @@ class VulkanBuffer
 	bool created = false;
 	bool movedFrom = false;
 
-	bool persistantlyMapped = false;
+	bool persistentlyMapped = false;
 
 	size_t alignment = -1;
 };
-
-
 
 class VulkanBufferUniform : public VulkanBuffer
 {
@@ -107,6 +105,30 @@ class VulkanBufferUniformPersistant : public VulkanBuffer
 {
 	public:
 	VulkanBufferUniformPersistant (VulkanDevice& device, VkDeviceSize size);
+};
+
+template <typename T> class VulkanBufferUniformArrayPersistant : public VulkanBuffer
+{
+	public:
+	VulkanBufferUniformArrayPersistant (VulkanDevice& device, int count)
+	: VulkanBuffer (device,
+	      VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+	      sizeof (T) * count,
+	      (VkBufferUsageFlags) (VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+	      (VmaMemoryUsage)VMA_MEMORY_USAGE_CPU_TO_GPU,
+	      VMA_ALLOCATION_CREATE_MAPPED_BIT,
+	      nullptr,
+	      PersistentlyMapped::T)
+	{
+	}
+
+	void CopyArrayToBuffer (std::vector<T>& data)
+	{
+		if (data.size () > 0)
+		{
+			CopyToBuffer (data.data (), data.size () * sizeof (T));
+		}
+	}
 };
 
 class VulkanBufferUniformStaging : public VulkanBuffer

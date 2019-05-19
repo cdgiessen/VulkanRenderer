@@ -185,7 +185,7 @@ Node::Node (NodeType in_type) : nodeType (in_type)
 			myNoise = std::shared_ptr<FastNoiseSIMD> (FastNoiseSIMD::NewFastNoiseSIMD ());
 			break;
 
-		case InternalGraph::NodeType::VoroniNoise:
+		case InternalGraph::NodeType::VoronoiNoise:
 			AddNodeInputLinks (inputLinks, { LinkType::Int, LinkType::Float, LinkType::Float, LinkType::Int });
 			isNoiseNode = true;
 			myNoise = std::shared_ptr<FastNoiseSIMD> (FastNoiseSIMD::NewFastNoiseSIMD ());
@@ -237,9 +237,6 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 	// LinkTypeVariants reA, reB;
 	float a, b, c, d, alpha;
 	float value, lower, upper, smooth;
-
-	auto val = (inputLinks.at (0));
-
 
 	switch (nodeType)
 	{
@@ -550,12 +547,10 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 		case InternalGraph::NodeType::WhiteNoise:
 		case InternalGraph::NodeType::CellNoise:
 		case InternalGraph::NodeType::CubicNoise:
-		case InternalGraph::NodeType::VoroniNoise:
+		case InternalGraph::NodeType::VoronoiNoise:
 
 			retVal = (noiseImage.BoundedLookUp (x, z) + 1.0f) / 2.0f;
 			return retVal;
-			// Log::Debug << val << "\n";
-
 			break;
 
 		case NodeType::ColorCreator:
@@ -725,7 +720,7 @@ void Node::SetupNodeForComputation (NoiseSourceInfo info)
 				    myNoise);
 				break;
 
-			case InternalGraph::NodeType::VoroniNoise:
+			case InternalGraph::NodeType::VoronoiNoise:
 				myNoise->SetCellularJitter (std::get<float> (inputLinks.at (2).GetValue ()));
 				myNoise->SetCellularReturnType (FastNoiseSIMD::CellularReturnType::CellValue);
 				noiseImage.SetImageData (info.cellsWide,
@@ -840,9 +835,12 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm:
 	{
 		for (int z = 0; z < cellsWide; z++)
 		{
-			glm::vec4 val = glm::normalize (std::get<glm::vec4> (outputNode->GetSplatMapValue (z, x)));
+
+			glm::vec4 val = std::get<glm::vec4> (outputNode->GetSplatMapValue (z, x));
+			// val = glm::normalize (val);
 			// Resource::Texture::Pixel_RGBA pixel = Resource::Texture::Pixel_RGBA(
 
+			assert (!std::isnan (val.x));
 			std::byte r =
 			    static_cast<std::byte> (static_cast<uint8_t> (glm::clamp (val.x, 0.0f, 1.0f) * 255.0f));
 			std::byte g =
@@ -858,7 +856,8 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm:
 			outputSplatmap.at (i++) = a;
 		}
 	}
-	glm::vec4 val = glm::normalize (std::get<glm::vec4> (outputNode->GetSplatMapValue (0, 0)));
+	glm::vec4 val = std::get<glm::vec4> (outputNode->GetSplatMapValue (0, 0));
+	val = glm::normalize (val);
 
 	// Log::Debug << val.x << " "<< val.y << " "<< val.z << " "<< val.w << " " << "\n";
 
@@ -870,7 +869,7 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm:
 	}
 }
 
-const float GraphUser::SampleHeightMap (const float x, const float z) const
+float GraphUser::SampleHeightMap (const float x, const float z) const
 {
 	return BilinearImageSample2D (outputHeightMap, x, z);
 }

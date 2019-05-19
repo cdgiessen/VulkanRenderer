@@ -176,9 +176,10 @@ VkPipelineShaderStageCreateInfo ShaderModule::GetCreateInfo ()
 			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, module);
 		case (ShaderType::compute):
 			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_COMPUTE_BIT, module);
+		case (ShaderType::error):
+			Log.Error ("Shader module type not correct");
+			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_VERTEX_BIT, module);
 	}
-	Log.Error ("Shader module type not correct");
-	return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_VERTEX_BIT, module);
 };
 
 ShaderModuleSet::ShaderModuleSet (){};
@@ -224,8 +225,7 @@ std::vector<VkPipelineShaderStageCreateInfo> ShaderModuleSet::ShaderStageCreateI
 // time_t LastTimeWritten (std::filesystem::path entry)
 //{
 //	auto timeEntry = std::filesystem::last_write_time (entry);
-//	time_t cftime = std::chrono::system_clock::to_time_t (timeEntry);
-//	return cftime;
+//	return std::chrono::system_clock::to_time_t (timeEntry);
 //}
 
 void to_json (nlohmann::json& j, const ShaderDatabase::DBHandle& handle)
@@ -246,10 +246,10 @@ void from_json (const nlohmann::json& j, ShaderDatabase::DBHandle& handle)
 	                     .count ();
 	j.at ("glsl_last_write_time").get_to (glsl_time);
 
-	auto spriv_time = std::chrono::time_point_cast<std::chrono::milliseconds> (handle.spirv_last_write_time)
+	auto spirv_time = std::chrono::time_point_cast<std::chrono::milliseconds> (handle.spirv_last_write_time)
 	                      .time_since_epoch ()
 	                      .count ();
-	j.at ("spirv_last_write_time").get_to (spriv_time);
+	j.at ("spirv_last_write_time").get_to (spirv_time);
 }
 
 ShaderDatabase::ShaderDatabase () : fileWatch ("assets/shaders")
@@ -357,7 +357,7 @@ void StartShaderCompilation (std::vector<std::string> strs)
 	}
 }
 
-std::vector<uint32_t> CompileShaderToSpivModule (std::string filename) { return {}; }
+// std::vector<uint32_t> CompileShaderToSpivModule (std::string filename) { return {}; }
 
 
 void CompileShaders (std::vector<std::string> filenames)
@@ -365,7 +365,7 @@ void CompileShaders (std::vector<std::string> filenames)
 	unsigned int cts = std::thread::hardware_concurrency ();
 
 	std::vector<std::vector<std::string>> buckets (cts);
-	for (int i = 0; i < filenames.size (); i++)
+	for (size_t i = 0; i < filenames.size (); i++)
 	{
 		int index = i % cts;
 		buckets.at (index).push_back (filenames.at (i));

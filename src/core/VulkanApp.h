@@ -26,6 +26,7 @@ struct ImGUI_PanelSettings
 	bool log = true;
 	bool debug_overlay = true;
 	bool controls_list = true;
+	bool controller_list = true;
 };
 
 class VulkanAppSettings

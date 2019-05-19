@@ -75,7 +75,7 @@ class TaskPool
 
 	std::optional<Task> GetTask ();
 
-	bool HasTasks();
+	bool HasTasks ();
 
 	private:
 	std::mutex queueLock;
@@ -103,7 +103,7 @@ class TaskManager
 	std::optional<Task> GetTask ();
 
 	private:
-	//int jobCount = 0;
+	// int jobCount = 0;
 	TaskPool currentFrameTasks;
 	TaskPool asyncTasks;
 
@@ -119,7 +119,10 @@ class Worker
 	Worker (TaskManager& taskMan, int threadID);
 	~Worker ();
 
+	void Start (); // delayed thread starting
 	void Stop ();
+
+	int ThreadID () { return threadID; };
 
 	private:
 	void Work ();
@@ -136,6 +139,8 @@ class WorkerPool
 	~WorkerPool ();
 
 	void StopWorkers ();
+
+	int WorkerCount () { return workerCount; };
 
 	private:
 	TaskManager& taskMan;

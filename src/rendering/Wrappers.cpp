@@ -339,7 +339,7 @@ FrameObject::FrameObject (VulkanDevice& device, int frameIndex)
 FrameObject::~FrameObject () { primary_command_buffer.Free (); }
 
 
-VkResult FrameObject::AquireNextSwapchainImage (VkSwapchainKHR swapchain)
+VkResult FrameObject::AcquireNextSwapchainImage (VkSwapchainKHR swapchain)
 {
 	return vkAcquireNextImageKHR (
 	    device.device, swapchain, std::numeric_limits<uint64_t>::max (), imageAvailSem.Get (), VK_NULL_HANDLE, &swapChainIndex);

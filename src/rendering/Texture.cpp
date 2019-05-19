@@ -10,6 +10,20 @@
 
 #include "core/Logger.h"
 
+void BeginTransferAndMipMapGenWork (VulkanRenderer& renderer,
+    std::shared_ptr<VulkanBuffer> buffer,
+    const VkImageSubresourceRange subresourceRange,
+    const std::vector<VkBufferImageCopy> bufferCopyRegions,
+    VkImageLayout imageLayout,
+    VkImage image,
+    VkBuffer vk_buffer,
+    int width,
+    int height,
+    int depth,
+    Signal signal,
+    int layers,
+    int mipLevels);
+
 void SetImageLayout (VkCommandBuffer cmdbuffer,
     VkImage image,
     VkImageLayout oldImageLayout,
@@ -537,7 +551,7 @@ void GenerateMipMaps (
 		    initializers::imageSubresourceRangeCreateInfo (VK_IMAGE_ASPECT_COLOR_BIT, 1, layers);
 		mipSubRange.baseMipLevel = i;
 
-		// Transiton current mip level to transfer dest
+		// Transition current mip level to transfer dest
 		SetImageLayout (cmdBuf,
 		    image,
 		    VK_IMAGE_LAYOUT_UNDEFINED,
@@ -550,7 +564,7 @@ void GenerateMipMaps (
 		vkCmdBlitImage (
 		    cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit, VK_FILTER_LINEAR);
 
-		// Transiton current mip level to transfer source for read in next iteration
+		// Transition current mip level to transfer source for read in next iteration
 		SetImageLayout (cmdBuf,
 		    image,
 		    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,

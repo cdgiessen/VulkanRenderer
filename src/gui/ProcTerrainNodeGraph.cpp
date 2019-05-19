@@ -229,7 +229,7 @@ void ProcTerrainNodeGraph::DrawNodeButtons ()
 	}
 	if (ImGui::Button ("Voronoi", ImVec2 (-1.0f, 0.0f)))
 	{
-		AddNode (NodeType::VoroniNoise, startingNodePos);
+		AddNode (NodeType::VoronoiNoise, startingNodePos);
 	}
 	if (ImGui::Button ("Cellular", ImVec2 (-1.0f, 0.0f)))
 	{
@@ -377,7 +377,7 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 		ImGui::SetCursorScreenPos (windowPos + textPos);
 		ImGui::Text ("%s", node.name.c_str ());
 
-		// Save the size of what we have emitted and weither any of the widgets are being used
+		// Save the size of what we have emitted and wether any of the widgets are being used
 		bool node_widgets_active = (!old_any_active && ImGui::IsAnyItemActive ());
 
 		// Display node box
@@ -1306,14 +1306,14 @@ Node::Node (NodeType type, NodeId id, ImVec2 position, InternalGraph::GraphProto
 			internalNodeID = graph.AddNode (InternalGraph::NodeType::CellNoise);
 
 			break;
-		case (NodeType::VoroniNoise):
-			name = "VoroniNoise";
+		case (NodeType::VoronoiNoise):
+			name = "VoronoiNoise";
 
 			AddInputSlot (ConnectionType::Int, "Seed", 1337);
 			AddInputSlot (ConnectionType::Float, "Frequency", 2.0f, 0.001f, 0.0f, 10.0f);
 			AddInputSlot (ConnectionType::Float, "Jitter", 0.5f, 0.01f, 0.0f, 1.0f);
 			AddInputSlot (ConnectionType::Int, "Type", 0, 0.1f, 0, 7);
-			internalNodeID = graph.AddNode (InternalGraph::NodeType::VoroniNoise);
+			internalNodeID = graph.AddNode (InternalGraph::NodeType::VoronoiNoise);
 
 			break;
 		case (NodeType::ConstantInt):

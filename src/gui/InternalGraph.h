@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <map>
 #include <memory>
 #include <optional>
@@ -24,7 +25,7 @@ struct NodeHandle
 	Node* handle;
 };
 
-// Convinience typedef of the map of nodes
+// Convenience typedef of the map of nodes
 typedef std::map<NodeID, Node> NodeMap;
 
 template <typename T> class NoiseImage2D
@@ -36,14 +37,14 @@ template <typename T> class NoiseImage2D
 	~NoiseImage2D ();
 
 	// size, in pixels, of the image;
-	const int GetSize () const;
+	int GetSize () const;
 
-	// dimention of the image
-	const int GetImageWidth () const;
+	// dimension of the image
+	int GetImageWidth () const;
 
 	void SetWidth (int width);
 
-	const size_t GetSizeBytes () const;
+	size_t GetSizeBytes () const;
 
 	// No error look
 	const T LookUp (int x, int z) const;
@@ -68,7 +69,7 @@ template <typename T> class NoiseImage2D
 };
 
 template <typename T>
-static const float BilinearImageSample2D (const NoiseImage2D<T>& noiseImage, const float x, const float z)
+static float BilinearImageSample2D (const NoiseImage2D<T>& noiseImage, const float x, const float z)
 {
 	const int cellScale = noiseImage.GetImageWidth () - 1; // cellsWide - 1;
 
@@ -144,11 +145,11 @@ void NoiseImage2D<T>::SetImageData (int width, T* data, std::shared_ptr<FastNois
 	image = std::shared_ptr<T> (data, [=](T* ptr) { noiseHolder->FreeNoiseSet (ptr); });
 }
 
-template <typename T> const int NoiseImage2D<T>::GetSize () const { return width * width; }
+template <typename T> int NoiseImage2D<T>::GetSize () const { return width * width; }
 
-template <typename T> const size_t NoiseImage2D<T>::GetSizeBytes () const { return GetSize () * 4; }
+template <typename T> size_t NoiseImage2D<T>::GetSizeBytes () const { return GetSize () * 4; }
 
-template <typename T> const int NoiseImage2D<T>::GetImageWidth () const { return width; }
+template <typename T> int NoiseImage2D<T>::GetImageWidth () const { return width; }
 
 // Changes the width then frees and allocates new image
 template <typename T> void NoiseImage2D<T>::SetWidth (int width) { this->width = width; }
@@ -195,7 +196,7 @@ template <typename T> std::byte* NoiseImage2D<T>::GetByteDataPtr ()
 }
 
 template <typename T>
-static const float BilinearImageSample2D (const NoiseImage2D<T>& noiseImage, const float x, const float z);
+static float BilinearImageSample2D (const NoiseImage2D<T>& noiseImage, const float x, const float z);
 
 enum class LinkType
 {
@@ -236,7 +237,7 @@ enum class NodeType
 	CubicNoise,
 
 	CellNoise,
-	VoroniNoise,
+	VoronoiNoise,
 
 	ColorCreator,
 	MonoGradient,
@@ -368,7 +369,7 @@ class GraphUser
 	public:
 	GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm::i32vec2 pos, float scale);
 
-	const float SampleHeightMap (const float x, const float z) const;
+	float SampleHeightMap (const float x, const float z) const;
 	NoiseImage2D<float>& GetHeightMap ();
 
 	std::byte* GetSplatMapPtr ();

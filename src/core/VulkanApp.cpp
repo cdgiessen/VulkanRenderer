@@ -17,8 +17,8 @@ void VulkanAppSettings::Load ()
 {
 	if (fileExists (fileName))
 	{
-		std::ifstream input (fileName);
-		nlohmann::json settings;
+		std::ifstream input{ fileName };
+		nlohmann::json settings{};
 		input >> settings;
 
 		screenWidth = settings["initial-screen-size"]["width"];
@@ -265,7 +265,7 @@ void VulkanApp::BuildImgui ()
 
 		bool open = true;
 
-		// ControllerWindow(&open);
+		ControllerWindow (&panels.controller_list);
 	}
 	imGuiTimer.EndTimer ();
 	// Log::Debug << imGuiTimer.GetElapsedTimeNanoSeconds() << "\n";

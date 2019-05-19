@@ -69,8 +69,7 @@ class ConnectionSlot
 	ConnectionSlot (int slotNum, ImVec2 pos, ConnectionType type);
 	ConnectionSlot (int slotNum, ImVec2 pos, ConnectionType type, std::string name);
 
-	virtual int Draw (
-	    ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) = 0;
+	// int Draw (ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) = 0;
 	bool IsHoveredOver (ImVec2 parentPos) const;
 	ConnectionType GetType ();
 
@@ -99,7 +98,7 @@ class InputConnectionSlot : public ConnectionSlot
 	    float lowerBound,
 	    float upperBound);
 
-	int Draw (ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) override;
+	int Draw (ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset);
 
 	ConId connection = -1;
 	SlotValueHolder value;
@@ -111,7 +110,7 @@ class OutputConnectionSlot : public ConnectionSlot
 	public:
 	OutputConnectionSlot (int slotNum, ImVec2 pos, ConnectionType type);
 
-	int Draw (ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset) override;
+	int Draw (ImDrawList* imDrawList, ProcTerrainNodeGraph& graph, const Node& parentNode, const int verticalOffset);
 
 	std::vector<ConId> connections;
 };
@@ -139,7 +138,7 @@ enum class NodeType
 	CubicNoise,
 
 	CellNoise,
-	VoroniNoise,
+	VoronoiNoise,
 
 	ConstantInt,
 	ConstantFloat,
@@ -158,9 +157,9 @@ class Node
 	Node (NodeType type, NodeId id, ImVec2 position, InternalGraph::GraphPrototype& graph);
 
 	std::string name;
+	NodeId id = -1;
 	ImVec2 pos = ImVec2 (200, 150);
 	ImVec2 size = ImVec2 (100, 100);
-	NodeId id = -1;
 	NodeType nodeType;
 
 	std::vector<InputConnectionSlot> inputSlots;
@@ -273,7 +272,6 @@ class ProcTerrainNodeGraph
 
 	InternalGraph::GraphPrototype protoGraph;
 
-	int nextNodeId = 0;
 	std::unordered_map<NodeId, Node> nodes;
 	int nextConId = 0;
 	std::unordered_map<ConId, Connection> connections;

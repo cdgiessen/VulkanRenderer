@@ -228,7 +228,7 @@ class FrameObject
 	FrameObject (VulkanDevice& device, int frameD);
 	~FrameObject ();
 
-	VkResult AquireNextSwapchainImage (VkSwapchainKHR swapchain);
+	VkResult AcquireNextSwapchainImage (VkSwapchainKHR swapchain);
 
 	void PrepareFrame ();
 	void Submit (CommandQueue& queue);

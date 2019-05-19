@@ -68,7 +68,7 @@ Terrain::Terrain (VulkanRenderer& renderer,
 	}
 	else
 	{
-		// with current quad density this is the average upper bound (kidna a guess but its probably more than enough for now (had to add 25 cause it wasn't enough lol!)
+		// with current quad density this is the average upper bound (kinda a guess but its probably more than enough for now (had to add 25 cause it wasn't enough lol!)
 		maxNumQuads = 1 + 16 + 20 + 25 + 50 * maxLevels;
 		// maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads (like if everything was subdivided)
 	}
@@ -298,8 +298,6 @@ void Terrain::UpdateTerrainQuad (int quad, glm::vec3 viewerPos)
 		UpdateTerrainQuad (quadMap.at (quad).subQuads.UpLeft, viewerPos);
 		UpdateTerrainQuad (quadMap.at (quad).subQuads.DownRight, viewerPos);
 		UpdateTerrainQuad (quadMap.at (quad).subQuads.DownLeft, viewerPos);
-
-		
 	}
 }
 
@@ -352,7 +350,8 @@ void Terrain::SubdivideTerrain (int quad, glm::vec3 viewerPos)
 	        glm::i32vec2 (q.subDivPos.x * 2 + 1, q.subDivPos.y * 2),
 	        GetHeightAtLocation (TerrainQuad::GetUVvalueFromLocalIndex (
 	                                 NumCells / 2, NumCells, q.level + 1, q.subDivPos.x * 2 + 1),
-	            TerrainQuad::GetUVvalueFromLocalIndex (NumCells / 2, NumCells, q.level + 1, q.subDivPos.y * 2)),
+	            TerrainQuad::GetUVvalueFromLocalIndex (
+	                NumCells / 2, NumCells, q.level + 1, q.subDivPos.y * 2)),
 	        this)));
 
 	q.subQuads.DownLeft = FindEmptyIndex ();
