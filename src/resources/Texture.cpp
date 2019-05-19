@@ -198,7 +198,6 @@ void Manager::LoadTextureList ()
 	{
 		Log.Debug (fmt::format ("Loaded {} textuers\n", textureResources.size ()));
 		int count = 0;
-		// std::vector<std::thread> workers;
 
 		auto signal = std::make_shared<job::TaskSignal> ();
 		std::vector<job::Task> tasks;
@@ -207,21 +206,11 @@ void Manager::LoadTextureList ()
 			auto tex = from_json_TexResource (*it);
 			textureResources[tex.id] = tex;
 			tasks.push_back (job::Task (signal, [=] { LoadTextureFromFile (tex.id); }));
-			// workers.push_back(std::thread(&Manager::LoadTextureFromFile, this, tex.id));
-			// LoadTextureFromFile (tex.id);
-			/*Log.Debug (fmt::format ("Tex {}, name {}, width={}, height={}\n",
-			    tex.id,
-			    tex.name,
-			    tex.dataDescription.width,
-			    tex.dataDescription.height));*/
 			count++;
 		}
 		id_counter = count;
 		taskManager.Submit (tasks, job::TaskType::currentFrame);
 		signal->Wait ();
-		// for (auto& w : workers) {
-		//	w.join();
-		//}
 	}
 	catch (nlohmann::json::parse_error& e)
 	{
@@ -251,8 +240,7 @@ void Manager::SaveTextureList ()
 
 void Manager::LoadTextureFromFile (TexID id)
 {
-
-	auto& texRes = textureResources.at (id);
+	auto texRes = GetTexResourceByID (id);
 	auto texData = std::make_unique<TexData> (texRes.dataDescription);
 	texRes.SetDataPtr (texData.get ());
 
@@ -298,7 +286,7 @@ void Manager::LoadTextureFromFile (TexID id)
 		}
 	}
 
-	std::lock_guard<std::mutex> lg (lock);
+	std::lock_guard<std::mutex> lg (data_lock);
 	textureData.push_back (std::move (texData));
 
 	Log.Debug (fmt::format ("Tex {}\n", id));
@@ -308,13 +296,13 @@ TexID CreateNewTextureFromByteArray (int width, int height, std::byte* data) { r
 
 TexResource Manager::GetTexResourceByID (TexID id)
 {
-	std::lock_guard<std::mutex> lk (lock);
+	std::lock_guard<std::mutex> lk (resource_lock);
 	return textureResources.at (id);
 }
 
 TexID Manager::GetTexIDByName (std::string s)
 {
-	std::lock_guard<std::mutex> lk (lock);
+	std::lock_guard<std::mutex> lk (resource_lock);
 	for (auto const& [key, val] : textureResources)
 	{
 		if (val.name == s) return key;

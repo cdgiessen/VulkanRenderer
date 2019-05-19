@@ -128,26 +128,3 @@ class VulkanTextureManager
 
 	std::vector<std::shared_ptr<VulkanTexture>> vulkanTextures;
 };
-
-// static void GenerateMipMaps (
-//     VkCommandBuffer cmdBuf, VkImage image, VkImageLayout finalImageLayout, int width, int height, int depth, int layers, int mipLevels);
-
-// static void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
-//     VkImage image,
-//     VkBuffer stagingBuffer,
-//     const VkImageSubresourceRange subresourceRange,
-//     std::vector<VkBufferImageCopy> bufferCopyRegions);
-
-// static void BeginTransferAndMipMapGenWork (VulkanRenderer& renderer,
-//     std::shared_ptr<VulkanBuffer> buffer,
-//     const VkImageSubresourceRange subresourceRange,
-//     const std::vector<VkBufferImageCopy> bufferCopyRegions,
-//     VkImageLayout imageLayout,
-//     VkImage image,
-//     VkBuffer vk_buffer,
-//     int width,
-//     int height,
-//     int depth,
-//     Signal signal,
-//     int layers,
-//     int mipLevels);

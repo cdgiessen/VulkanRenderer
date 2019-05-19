@@ -378,7 +378,6 @@ class GraphUser
 
 	private:
 	NodeMap nodeMap;
-	Node* outputNode;
 
 	NoiseSourceInfo info;
 

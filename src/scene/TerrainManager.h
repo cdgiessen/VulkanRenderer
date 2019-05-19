@@ -35,7 +35,6 @@ struct GeneralSettings
 	int viewDistance = 1; // terrain chunks to load away from camera;
 	int sourceImageResolution = 256;
 	int numCells = 64; // compile time currently
-	int workerThreads = 1;
 };
 
 struct TerrainCreationData
@@ -85,7 +84,8 @@ class TerrainManager
 	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic;
 	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal;
 
-	GeneralSettings settings;
+	GeneralSettings gui_settings; // for gui to edit (main)
+	GeneralSettings t_settings;   // for terrains to use (copy)
 
 	private:
 	void SaveSettingsToFile ();

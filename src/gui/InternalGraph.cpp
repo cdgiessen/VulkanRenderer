@@ -792,18 +792,14 @@ NodeMap GraphPrototype::GetNodeMap () const { return nodeMap; }
 
 
 GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm::i32vec2 pos, float scale)
-: info (seed, cellsWide, scale, pos)
+: info (seed, cellsWide, scale, pos), nodeMap (graph.GetNodeMap ())
 {
 	// glm::ivec2(pos.x * (cellsWide) / scale, pos.y * (cellsWide) / scale), scale / (cellsWide)
 
-	// NoiseSourceInfo info = NoiseSourceInfo(seed, cellsWide, scale, pos);
-	this->nodeMap = graph.GetNodeMap ();
-
-	// auto&!!!
-	for (auto& node : nodeMap) // it = nodeMap.begin(); it != nodeMap.end(); it++)
+	for (auto& node : nodeMap)
 	{
 		for (auto& link : node.second.inputLinks)
-		{ // linkIt = node.second.inputLinks.begin(); linkIt != it->second.inputLinks.end(); linkIt++) {
+		{
 			if (link.HasInputNode ())
 			{
 				Node* n = &nodeMap.at (link.GetInputNode ());
@@ -817,14 +813,14 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm:
 		node.second.SetupNodeForComputation (info);
 	}
 
-	outputNode = &nodeMap[graph.GetOutputNodeID ()];
+	Node& outputNode = nodeMap[graph.GetOutputNodeID ()];
 
 	outputHeightMap = NoiseImage2D<float> (cellsWide);
 	for (int x = 0; x < cellsWide; x++)
 	{
 		for (int z = 0; z < cellsWide; z++)
 		{
-			float val = std::get<float> (outputNode->GetHeightMapValue (x, z));
+			float val = std::get<float> (outputNode.GetHeightMapValue (x, z));
 			outputHeightMap.SetPixelValue (x, z, val);
 		}
 	}
@@ -836,7 +832,7 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm:
 		for (int z = 0; z < cellsWide; z++)
 		{
 
-			glm::vec4 val = std::get<glm::vec4> (outputNode->GetSplatMapValue (z, x));
+			glm::vec4 val = std::get<glm::vec4> (outputNode.GetSplatMapValue (z, x));
 			// val = glm::normalize (val);
 			// Resource::Texture::Pixel_RGBA pixel = Resource::Texture::Pixel_RGBA(
 
@@ -856,8 +852,8 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm:
 			outputSplatmap.at (i++) = a;
 		}
 	}
-	glm::vec4 val = std::get<glm::vec4> (outputNode->GetSplatMapValue (0, 0));
-	val = glm::normalize (val);
+	glm::vec4 val = std::get<glm::vec4> (outputNode.GetSplatMapValue (0, 0));
+	// val = glm::normalize (val);
 
 	// Log::Debug << val.x << " "<< val.y << " "<< val.z << " "<< val.w << " " << "\n";
 

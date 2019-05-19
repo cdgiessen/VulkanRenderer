@@ -1084,15 +1084,15 @@ bool ImGui_ImplGlfwVulkan_CreateDeviceObjects ()
 	attribute_desc[0].location = 0;
 	attribute_desc[0].binding = binding_desc[0].binding;
 	attribute_desc[0].format = VK_FORMAT_R32G32_SFLOAT;
-	attribute_desc[0].offset = (size_t) (&((ImDrawVert*)0)->pos);
+	attribute_desc[0].offset = 0; //(size_t) (&((ImDrawVert*)0)->pos);
 	attribute_desc[1].location = 1;
 	attribute_desc[1].binding = binding_desc[0].binding;
 	attribute_desc[1].format = VK_FORMAT_R32G32_SFLOAT;
-	attribute_desc[1].offset = (size_t) (&((ImDrawVert*)0)->uv);
+	attribute_desc[1].offset = 8; //(size_t) (&((ImDrawVert*)0)->uv);
 	attribute_desc[2].location = 2;
 	attribute_desc[2].binding = binding_desc[0].binding;
 	attribute_desc[2].format = VK_FORMAT_R8G8B8A8_UNORM;
-	attribute_desc[2].offset = (size_t) (&((ImDrawVert*)0)->col);
+	attribute_desc[2].offset = 16; //(size_t) (&((ImDrawVert*)0)->col);
 
 	VkPipelineVertexInputStateCreateInfo vertex_info = {};
 	vertex_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -1389,7 +1389,7 @@ void PrepareImGui (Window* window, VulkanRenderer* vulkanRenderer)
 		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, maxSets },
 		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, maxSets },
 		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, maxSets } };
-	
+
 	VkDescriptorPoolCreateInfo pool_info{};
 	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	pool_info.poolSizeCount = static_cast<uint32_t> (pool_size.size ());

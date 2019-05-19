@@ -8,11 +8,10 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
-#include <thread>
-#include <mutex>
 
 #include <glm/fwd.hpp>
 
@@ -167,8 +166,10 @@ class Manager
 	private:
 	std::atomic_int id_counter = 0;
 
-	std::mutex lock;
+	std::mutex resource_lock;
 	std::unordered_map<TexID, TexResource> textureResources;
+
+	std::mutex data_lock;
 	std::vector<std::unique_ptr<TexData>> textureData;
 };
 

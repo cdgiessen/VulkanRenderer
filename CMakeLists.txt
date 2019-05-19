@@ -46,9 +46,9 @@ if(MSVC)
 	target_compile_options(VulkanApp PRIVATE "/permissive-")
 endif(MSVC)
 
-OPTION(TSAN "Enable thread sanitizer on unix platforms" ON)
-OPTION(ASAN "Enable address sanitizer on unix platforms" OFF)
-OPTION(LSAN "Enable leak sanitizer on unix platforms" OFF)
+OPTION(TSAN "Enable thread sanitizer on unix platforms" OFF)
+OPTION(ASAN "Enable address sanitizer on unix platforms" ON)
+OPTION(LSAN "Enable leak sanitizer on unix platforms" ON)
 OPTION(UBSAN "Enable undefined behavior sanitizer on unix platforms" OFF)
 
 if(UNIX)
