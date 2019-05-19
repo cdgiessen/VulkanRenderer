@@ -25,6 +25,7 @@ class Camera
 	glm::vec3 WorldUp;
 
 	bool is_upside_down = false;
+	bool constrainPitch = true;
 
 	// Eular Angles
 	float Yaw = -90.0f;

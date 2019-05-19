@@ -25,141 +25,10 @@ TerrainCreationData::TerrainCreationData (
 {
 }
 
-TerrainChunkBuffer::TerrainChunkBuffer (VulkanRenderer& renderer, int count, TerrainManager& man)
-: renderer (renderer),
-  man (man),
-  vert_buffer (renderer.device, vertCount * count, vertElementCount),
-  index_buffer (renderer.device, (uint32_t)indCount * (uint32_t)count),
-  vert_staging (renderer.device, sizeof (TerrainMeshVertices) * count),
-  index_staging (renderer.device, sizeof (TerrainMeshIndices) * count)
-{
-	vert_staging_ptr = (TerrainMeshVertices*)vert_staging.buffer.allocationInfo.pMappedData;
-
-	index_staging_ptr = (TerrainMeshIndices*)index_staging.buffer.allocationInfo.pMappedData;
-
-	chunkStates.resize (count, TerrainChunkBuffer::ChunkState::free);
-}
-
-
-TerrainChunkBuffer::~TerrainChunkBuffer ()
-{
-	// if (chunkCount <= 0) Log::Error << "Not all terrain chunks were freed!\n";
-}
-
-
-int TerrainChunkBuffer::Allocate ()
-{
-	std::lock_guard<std::mutex> guard (lock);
-	for (int i = 0; i < chunkStates.size (); i++)
-	{
-		if (chunkStates.at (i) == TerrainChunkBuffer::ChunkState::free)
-		{
-			chunkStates.at (i) = TerrainChunkBuffer::ChunkState::allocated;
-			chunkCount++;
-			return i;
-		}
-	}
-	// should never reach here!
-	throw std::runtime_error ("Ran out of terrain chunkStates!");
-}
-
-
-void TerrainChunkBuffer::Free (int index)
-{
-	std::lock_guard<std::mutex> guard (lock);
-	if (chunkStates.at (index) == TerrainChunkBuffer::ChunkState::free)
-		throw std::runtime_error ("Trying to free a free chunk! What?");
-	chunkStates.at (index) = TerrainChunkBuffer::ChunkState::free;
-	chunkCount--;
-}
-
-TerrainChunkBuffer::ChunkState TerrainChunkBuffer::GetChunkState (int index)
-{
-	std::lock_guard<std::mutex> guard (lock);
-	return chunkStates.at (index);
-}
-
-void TerrainChunkBuffer::SetChunkWritten (int index)
-{
-	std::lock_guard<std::mutex> guard (lock);
-	chunkStates.at (index) = TerrainChunkBuffer::ChunkState::written;
-}
-
-int TerrainChunkBuffer::ActiveQuadCount () { return chunkCount; }
-
-void TerrainChunkBuffer::UpdateChunks ()
-{
-	std::lock_guard<std::mutex> guard (lock);
-
-	std::vector<VkBufferCopy> vertexCopyRegions;
-	std::vector<VkBufferCopy> indexCopyRegions;
-
-	std::vector<Signal> signals;
-
-	for (int i = 0; i < chunkStates.size (); i++)
-	{
-		switch (chunkStates.at (i))
-		{
-			case (TerrainChunkBuffer::ChunkState::free):
-				break;
-
-			case (TerrainChunkBuffer::ChunkState::allocated):
-				break;
-
-				// needs to have its data uploaded
-			case (TerrainChunkBuffer::ChunkState::written):
-
-				vertexCopyRegions.push_back (
-				    initializers::bufferCopyCreate (vert_size, i * vert_size, i * vert_size));
-				indexCopyRegions.push_back (
-				    initializers::bufferCopyCreate (ind_size, i * ind_size, i * ind_size));
-
-				chunkStates.at (i) = TerrainChunkBuffer::ChunkState::ready;
-				break;
-
-				// data is on gpu, ready to draw
-			case (TerrainChunkBuffer::ChunkState::ready):
-				break;
-		}
-	}
-	VkBuffer vert = vert_buffer.buffer.buffer;
-	VkBuffer vert_s = vert_staging.buffer.buffer;
-	VkBuffer index = index_buffer.buffer.buffer;
-	VkBuffer index_s = index_staging.buffer.buffer;
-
-	if (vertexCopyRegions.size () > 0)
-	{
-		renderer.SubmitWork (
-		    WorkType::transfer,
-		    [=](const VkCommandBuffer cmdBuf) {
-			    std::vector<VkBufferCopy> vRegions = vertexCopyRegions;
-			    std::vector<VkBufferCopy> iRegions = indexCopyRegions;
-
-			    vkCmdCopyBuffer (cmdBuf, vert_s, vert, vRegions.size (), vRegions.data ());
-			    vkCmdCopyBuffer (cmdBuf, index_s, index, iRegions.size (), iRegions.data ());
-		    },
-		    {},
-		    {},
-		    {},
-		    std::move (signals));
-	}
-}
-
-TerrainMeshVertices* TerrainChunkBuffer::GetDeviceVertexBufferPtr (int index)
-{
-	return vert_staging_ptr + index;
-}
-TerrainMeshIndices* TerrainChunkBuffer::GetDeviceIndexBufferPtr (int index)
-{
-	return index_staging_ptr + index;
-}
 
 TerrainManager::TerrainManager (
     InternalGraph::GraphPrototype& protoGraph, Resource::AssetManager& resourceMan, VulkanRenderer& renderer)
-: protoGraph (protoGraph),
-  renderer (renderer),
-  resourceMan (resourceMan),
-  chunkBuffer (renderer, MaxChunkCount, *this)
+: protoGraph (protoGraph), renderer (renderer), resourceMan (resourceMan)
 {
 	if (settings.maxLevels < 0)
 	{
@@ -185,7 +54,7 @@ TerrainManager::TerrainManager (
 	terrainVulkanTextureArrayNormal =
 	    renderer.textureManager.CreateTexture2DArray (terrainTextureArrayNormal, details);
 
-	terrainGridMesh = createFlatPlane (32, glm::vec3 (1.0f));
+	terrainGridMesh = createFlatPlane (settings.numCells, glm::vec3 (1.0f));
 	terrainGridModel = std::make_shared<VulkanModel> (renderer, terrainGridMesh);
 
 	// StartWorkerThreads ();
@@ -325,7 +194,7 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 					if (distanceToViewer < settings.viewDistance * settings.width * 1.5)
 					{
 						auto terrain = std::make_unique<Terrain> (renderer,
-						    chunkBuffer,
+
 						    protoGraph,
 						    terCreateData.numCells,
 						    terCreateData.maxLevels,
@@ -366,17 +235,6 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 	terrainUpdateTimer.EndTimer ();
 
 	// chunkBuffer.UpdateChunks ();
-}
-
-void TerrainManager::RenderDepthPrePass (VkCommandBuffer commandBuffer)
-{
-	{
-		std::lock_guard<std::mutex> lock (terrain_mutex);
-		for (auto& ter : terrains)
-		{
-			ter->DrawDepthPrePass (commandBuffer);
-		}
-	}
 }
 
 void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe)
@@ -490,7 +348,6 @@ void TerrainManager::UpdateTerrainGUI ()
 		}
 		ImGui::Text ("Terrain Count %lu", terrains.size ());
 		ImGui::Text ("Generating %i Terrains", workContinueSignal->InQueue ());
-		ImGui::Text ("Quad Count %i", chunkBuffer.ActiveQuadCount ());
 		ImGui::Text ("All terrains update Time: %lu(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds ());
 
 		{
@@ -501,64 +358,6 @@ void TerrainManager::UpdateTerrainGUI ()
 				ImGui::Text ("Terrain Quad Count %d", ter->numQuads);
 			}
 		}
-	}
-	ImGui::End ();
-}
-
-void TerrainManager::DrawTerrainTextureViewer ()
-{
-
-	ImGui::SetNextWindowSize (ImVec2 (300, 200), ImGuiSetCond_FirstUseEver);
-	ImGui::SetNextWindowPos (ImVec2 (0, 475), ImGuiSetCond_FirstUseEver);
-
-
-	if (ImGui::Begin ("Textures", &drawWindow, ImGuiWindowFlags_MenuBar))
-	{
-
-		if (ImGui::BeginMenuBar ())
-		{
-			if (ImGui::BeginMenu ("File"))
-			{
-				if (ImGui::MenuItem ("Open Texture"))
-				{
-				}
-				if (ImGui::MenuItem ("Close")) drawWindow = false;
-				ImGui::EndMenu ();
-			}
-			ImGui::EndMenuBar ();
-		}
-
-		// left
-		ImGui::BeginChild ("left pane", ImVec2 (150, 0), true);
-		for (int i = 0; i < terrainTextureHandles.size (); i++)
-		{
-			// char label[128];
-			// sprintf(label, "%s", terrainTextureHandles.at(i).name.c_str());
-			if (ImGui::Selectable (terrainTextureHandles.at (i).name.c_str (), selectedTexture == i))
-				selectedTexture = i;
-		}
-
-		ImGui::EndChild ();
-
-		ImGui::SameLine ();
-
-		ImGui::BeginGroup ();
-		ImGui::BeginChild ("item view", ImVec2 (0, -ImGui::GetItemsLineHeightWithSpacing ())); // Leave room for 1 line below us
-		ImGui::Text ("MyObject: %d", selectedTexture);
-		ImGui::Separator ();
-
-
-		ImGui::TextWrapped ("TODO: Add texture preview");
-
-		ImGui::EndChild ();
-
-		ImGui::BeginChild ("buttons");
-		if (ImGui::Button ("PlaceHolder"))
-		{
-		}
-		ImGui::EndChild ();
-
-		ImGui::EndGroup ();
 	}
 	ImGui::End ();
 }

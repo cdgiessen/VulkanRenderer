@@ -357,7 +357,7 @@ void StartShaderCompilation (std::vector<std::string> strs)
 	}
 }
 
-std::vector<uint32_t> CompileShaderToSpivModule (std::string filename) {}
+std::vector<uint32_t> CompileShaderToSpivModule (std::string filename) { return {}; }
 
 
 void CompileShaders (std::vector<std::string> filenames)

@@ -229,16 +229,6 @@ void Scene::UpdateScene ()
 	water_plane->UpdateUniform (camera->Position);
 }
 
-void Scene::RenderDepthPrePass (VkCommandBuffer commandBuffer)
-{
-	for (auto& obj : gameObjects)
-	{
-		obj->DrawDepthPrePass (commandBuffer);
-	}
-	if (terrainManager != nullptr) terrainManager->RenderDepthPrePass (commandBuffer);
-}
-
-
 void Scene::RenderOpaque (VkCommandBuffer commandBuffer, bool wireframe)
 {
 	for (auto& obj : gameObjects)
@@ -253,7 +243,7 @@ void Scene::RenderOpaque (VkCommandBuffer commandBuffer, bool wireframe)
 
 void Scene::RenderTransparent (VkCommandBuffer cmdBuf, bool wireframe)
 {
-	water_plane->Draw (cmdBuf, wireframe);
+	//water_plane->Draw (cmdBuf, wireframe);
 }
 
 void Scene::RenderSkybox (VkCommandBuffer commandBuffer)
@@ -300,7 +290,6 @@ void Scene::UpdateSceneGUI ()
 	if (terrainManager != nullptr)
 	{
 		terrainManager->UpdateTerrainGUI ();
-		terrainManager->DrawTerrainTextureViewer ();
 	}
 
 	DrawSkySettingsGui ();

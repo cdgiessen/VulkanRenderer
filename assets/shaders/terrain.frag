@@ -257,10 +257,10 @@ void main ()
 	vec3 color = lighting / (lighting + vec3 (1.0));
 	outColor = vec4 (pow (color, vec3 (1.0 / 2.2)), 1.0f);
 
-	float r = outColor.r * belowWaterLevelDarkening;
-	float g = outColor.g * belowWaterLevelDarkening;
-	float b = outColor.b * clamp (belowWaterLevelDarkening * 0.8, 0, 1);
-
-
-	outColor = vec4 (r, g, b, 1.0f);
+	//float r = outColor.r * belowWaterLevelDarkening;
+	//float g = outColor.g * belowWaterLevelDarkening;
+	//float b = outColor.b * clamp (belowWaterLevelDarkening * 0.8, 0, 1);
+	//
+	//
+	//outColor = vec4 (r, g, b, 1.0f);
 }

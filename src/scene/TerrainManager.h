@@ -25,9 +25,6 @@
 #include "InstancedSceneObject.h"
 #include "Terrain.h"
 
-constexpr size_t vert_size = sizeof (TerrainMeshVertices);
-constexpr size_t ind_size = sizeof (TerrainMeshIndices);
-constexpr int MaxChunkCount = 2048;
 
 struct GeneralSettings
 {
@@ -42,17 +39,6 @@ struct GeneralSettings
 	int workerThreads = 1;
 };
 
-struct TerrainTextureNamedHandle
-{
-	std::string name;
-	Resource::Texture::TexID handle;
-
-	TerrainTextureNamedHandle (std::string name, Resource::Texture::TexID handle)
-	: name (name), handle (handle)
-	{
-	}
-};
-
 struct TerrainCreationData
 {
 	int numCells;
@@ -65,59 +51,6 @@ struct TerrainCreationData
 	    int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord);
 };
 
-class TerrainManager;
-
-class TerrainChunkBuffer
-{
-	public:
-	enum class ChunkState
-	{
-		free,
-		allocated,
-		written,
-		ready,
-	};
-
-	TerrainChunkBuffer (VulkanRenderer& renderer, int count, TerrainManager& man);
-	~TerrainChunkBuffer ();
-
-	int Allocate ();
-	void Free (int index);
-
-	void UpdateChunks ();
-
-	int ActiveQuadCount ();
-
-	ChunkState GetChunkState (int index);
-	void SetChunkWritten (int index);
-
-	// Signal GetChunkSignal (int index);
-
-	TerrainMeshVertices* GetDeviceVertexBufferPtr (int index);
-	TerrainMeshIndices* GetDeviceIndexBufferPtr (int index);
-
-	VulkanBufferVertex vert_buffer;
-	VulkanBufferIndex index_buffer;
-
-	TerrainManager& man;
-
-	private:
-	std::mutex lock;
-
-	VulkanRenderer& renderer;
-
-	VulkanBufferData vert_staging;
-	TerrainMeshVertices* vert_staging_ptr;
-
-	VulkanBufferData index_staging;
-	TerrainMeshIndices* index_staging_ptr;
-
-	std::vector<ChunkState> chunkStates;
-	// std::vector<Signal> chunkReadySignals;
-
-	std::atomic_int chunkCount = 0;
-};
-
 class TerrainManager
 {
 	public:
@@ -128,22 +61,16 @@ class TerrainManager
 
 	void CleanUpTerrain ();
 
-	// void GenerateTerrain(std::shared_ptr<Camera> camera);
-
 	void UpdateTerrains (glm::vec3 cameraPos);
 
-	void RenderDepthPrePass (VkCommandBuffer commandBuffer);
 	void RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe);
 
 	void UpdateTerrainGUI ();
-	void DrawTerrainTextureViewer ();
 
 	float GetTerrainHeightAtLocation (float x, float z);
 
 	Resource::AssetManager& resourceMan;
 	VulkanRenderer& renderer;
-
-	TerrainChunkBuffer chunkBuffer;
 
 	std::shared_ptr<job::TaskSignal> workContinueSignal;
 
@@ -175,8 +102,6 @@ class TerrainManager
 	Resource::Texture::TexID terrainTextureArrayMetallic;
 	Resource::Texture::TexID terrainTextureArrayNormal;
 
-	std::vector<std::thread> terrainCreationWorkers;
-
 	bool recreateTerrain = true;
 	float nextTerrainWidth = 1000;
 	SimpleTimer terrainUpdateTimer;
@@ -186,10 +111,6 @@ class TerrainManager
 	bool drawWindow;
 	int selectedTexture;
 
-	int WorkerThreads = 6;
-
-
-	std::vector<TerrainTextureNamedHandle> terrainTextureHandles;
 
 	std::vector<std::string> terrainTextureFileNames = {
 		"dirt.jpg",

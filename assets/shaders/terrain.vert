@@ -26,8 +26,12 @@ layout (set = 2, binding = 1) uniform sampler2D texHeightMap;
 
 layout (push_constant) uniform Bound
 {
-	vec2 tl;
-	vec2 br;
+	vec2 pos_tl;
+	vec2 pos_br;
+	vec2 uv_tl;
+	vec2 uv_br;
+	float height_scale;
+	float width_scale;
 }
 bounds;
 
@@ -43,9 +47,9 @@ layout (location = 2) out vec2 outTexCoord;
 
 out gl_PerVertex { vec4 gl_Position; };
 
-float CalcVerticalDisp (vec2 position)
+float CalcVerticalDisp ()
 {
-	vec2 uv = mix (bounds.tl, bounds.br, position);
+	vec2 uv = mix (bounds.uv_tl, bounds.uv_br, vec2 (inPosition.x, inPosition.z));
 
 	return texture (texHeightMap, uv).r;
 }
@@ -53,10 +57,15 @@ float CalcVerticalDisp (vec2 position)
 void main ()
 {
 	vec3 pos = inPosition;
-	pos.y = CalcVerticalDisp (vec2 (inPosition.x, inPosition.z));
-	gl_Position = cam.projView * mnd.model * vec4 (pos, 1.0);
 
-	outTexCoord = inTexCoord;
+	pos.x =  mix (bounds.pos_tl.x, bounds.pos_br.x, inPosition.x);
+	pos.z =  mix (bounds.pos_tl.y, bounds.pos_br.y, inPosition.z);
+	pos.y = CalcVerticalDisp () * bounds.height_scale;
+	gl_Position = cam.projView * vec4 (pos, 1.0);
+
+	vec2 uv = mix (bounds.uv_tl, bounds.uv_br, vec2 (inPosition.z, inPosition.x));
+
+	outTexCoord = uv;
 	outNormal = inNormal;
-	outFragPos = (mnd.model * vec4 (pos, 1.0)).xyz;
+	outFragPos = (vec4 (pos, 1.0)).xyz;
 }

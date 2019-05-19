@@ -36,11 +36,11 @@ void Camera::ProcessMouseMovement (float xoffset, float yoffset, bool constrainP
 	Pitch += yoffset * MouseSensitivity;
 
 	// Make sure that when pitch is out of bounds, screen doesn't get flipped
-	// if (constrainPitch)
-	//{
-	//	if (Pitch > 89.0f) Pitch = 89.0f;
-	//	if (Pitch < -89.0f) Pitch = -89.0f;
-	//}
+	if (constrainPitch)
+	{
+		if (Pitch > 89.0f) Pitch = 89.0f;
+		if (Pitch < -89.0f) Pitch = -89.0f;
+	}
 
 	is_upside_down = (fmod (Pitch + 90.f, 360) < 180);
 
@@ -62,11 +62,11 @@ void Camera::ProcessJoystickLook (float x, float y, float deltaTime)
 	Yaw += x * joystickLookAccel * deltaTime;
 	Pitch += y * joystickLookAccel * deltaTime;
 
-	// if (true /*constrainPitch*/)
-	//{
-	//	if (Pitch > 89.0f) Pitch = 89.0f;
-	//	if (Pitch < -89.0f) Pitch = -89.0f;
-	//}
+	 if (constrainPitch)
+	{
+		if (Pitch > 89.0f) Pitch = 89.0f;
+		if (Pitch < -89.0f) Pitch = -89.0f;
+	}
 
 	is_upside_down = (fmod (Pitch + 90.f, 360) > 0.5);
 

@@ -23,26 +23,10 @@
 #include "gui/InternalGraph.h"
 
 
-const int NumCells = 32;
+const int NumCells = 64;
 const int vertCount = (NumCells + 1) * (NumCells + 1);
 const int indCount = NumCells * NumCells * 6;
 const int vertElementCount = 8;
-
-using TerrainMeshVertices = std::array<float, vertCount * vertElementCount>;
-using TerrainMeshIndices = std::array<uint32_t, indCount>;
-
-enum class Corner_Enum
-{
-	uR = 0,
-	uL = 1,
-	dR = 2,
-	dL = 3
-};
-
-struct TerrainPushConstant
-{
-	glm::mat4 model;
-};
 
 struct TerrainCoordinateData
 {
@@ -64,13 +48,17 @@ class Terrain;
 
 struct HeightMapBound
 {
-	glm::vec2 tl = glm::vec2 (0.0, 0.0);
-	glm::vec2 br = glm::vec2 (1.0, 1.0);
+	glm::vec2 pos_tl;
+	glm::vec2 pos_br;
+	glm::vec2 uv_tl = glm::vec2 (0.0, 0.0);
+	glm::vec2 uv_br = glm::vec2 (1.0, 1.0);
+	float height_scale = 1;
+	float width_scale = 1;
 };
 
 struct TerrainQuad
 {
-	TerrainQuad (TerrainChunkBuffer& chunkBuffer,
+	TerrainQuad (
 	    glm::vec2 pos,
 	    glm::vec2 size,
 	    glm::i32vec2 logicalPos,
@@ -79,24 +67,11 @@ struct TerrainQuad
 	    glm::i32vec2 subDivPos,
 	    float centerHeightValue,
 	    Terrain* terrain);
-	~TerrainQuad ();
-
-	void Setup ();
 
 	static float GetUVvalueFromLocalIndex (float i, int numCells, int level, int subDivPos);
 
 	// Create a mesh chunk for rendering using fastgraph as the input data
 	void GenerateTerrainChunk (InternalGraph::GraphUser& graphUser, float heightScale, float widthScale);
-
-	enum class State
-	{
-		free,           // nobody owns me
-		waiting_create, // writing to device buffer
-		creating,
-		waiting_upload, // finished device write, ready for upload,
-		uploading,      // is uploading to gpu
-		ready,          // ready to be rendered
-	} state;
 
 	glm::vec2 pos;            // position of corner
 	glm::vec2 size;           // width and length
@@ -108,15 +83,9 @@ struct TerrainQuad
 	bool isSubdivided = false;
 
 	Terrain* terrain; // who owns it
-	TerrainChunkBuffer& chunkBuffer;
 	int index = -1; // index into chunkBuffer
 
-	TerrainMeshVertices* vertices;
-	TerrainMeshIndices* indices;
-
 	HeightMapBound bound;
-
-	Signal quadSignal;
 
 	// index into terrain's quadMap
 	struct SubQuads
@@ -131,8 +100,7 @@ struct TerrainQuad
 class Terrain
 {
 	public:
-	TerrainChunkBuffer& chunkBuffer;
-
+	
 	std::unordered_map<int, TerrainQuad> quadMap;
 
 	int rootQuad = 0;
@@ -173,14 +141,12 @@ class Terrain
 	SimpleTimer drawTimer;
 
 	Terrain (VulkanRenderer& renderer,
-	    TerrainChunkBuffer& chunkBuffer,
 	    InternalGraph::GraphPrototype& protoGraph,
 	    int numCells,
 	    int maxLevels,
 	    float heightScale,
 	    TerrainCoordinateData coordinateData,
 	    VulkanModel* terrainGrid);
-	~Terrain ();
 
 	void InitTerrain (glm::vec3 cameraPos,
 	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo,
@@ -189,8 +155,6 @@ class Terrain
 	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal);
 
 	void UpdateTerrain (glm::vec3 viewerPos);
-	void DrawDepthPrePass (VkCommandBuffer cmdBuff);
-	void DrawTerrain (VkCommandBuffer cmdBuff, bool wireframe);
 
 	void DrawTerrainRecursive (int quad, VkCommandBuffer cmdBuf, bool ifWireframe);
 	void DrawTerrainGrid (VkCommandBuffer cmdBuf, bool ifWireframe);
@@ -204,7 +168,7 @@ class Terrain
 
 	void InitTerrainQuad (int quad, glm::vec3 viewerPos);
 
-	bool UpdateTerrainQuad (int quad, glm::vec3 viewerPos);
+	void UpdateTerrainQuad (int quad, glm::vec3 viewerPos);
 
 	void SetupUniformBuffer ();
 	void SetupImage ();
@@ -218,7 +182,6 @@ class Terrain
 	void SubdivideTerrain (int quad, glm::vec3 viewerPos);
 	void UnSubdivide (int quad);
 
-	void PopulateQuadOffsets (int quad, std::vector<VkDeviceSize>& vert, std::vector<VkDeviceSize>& ind);
-	// std::vector<VkDeviceSize> vertexOffsettings;
-	// std::vector<VkDeviceSize> indexOffsettings;
+	//void PopulateQuadOffsets (int quad, std::vector<VkDeviceSize>& vert, std::vector<VkDeviceSize>& ind);
+
 };
