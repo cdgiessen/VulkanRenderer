@@ -60,12 +60,12 @@ Terrain::Terrain (VulkanRenderer& renderer,
     float heightScale,
     TerrainCoordinateData coords,
     VulkanModel* grid)
-: renderer (renderer),
-  maxLevels (maxLevels),
-  heightScale (heightScale),
+: maxLevels (maxLevels),
+  renderer (renderer),
   coordinateData (coords),
-  fastGraphUser (protoGraph, 1337, coords.sourceImageResolution, coords.noisePos, coords.noiseSize.x),
-  terrainGrid (grid)
+  heightScale (heightScale),
+  terrainGrid (grid),
+  fastGraphUser (protoGraph, 1337, coords.sourceImageResolution, coords.noisePos, coords.noiseSize.x)
 {
 	// simple calculation right now, does the absolute max number of quads possible with given max
 	// level in future should calculate the actual number of max quads, based on distance calculation
@@ -78,10 +78,6 @@ Terrain::Terrain (VulkanRenderer& renderer,
 		maxNumQuads = 1024;
 		// maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads (like if everything was subdivided)
 	}
-	heightMapData = fastGraphUser.GetHeightMap ().GetImageVectorData ();
-
-	splatMapData = fastGraphUser.GetSplatMapPtr ();
-	splatMapSize = (int)glm::pow (coords.sourceImageResolution, 2);
 }
 
 int Terrain::FindEmptyIndex ()
@@ -145,6 +141,12 @@ void Terrain::SetupUniformBuffer ()
 
 void Terrain::SetupImage ()
 {
+
+
+	auto buffer_height = std::make_shared<VulkanBufferStagingResource> (renderer.device,
+	    sizeof (float) * fastGraphUser.GetHeightMap ().size (),
+	    fastGraphUser.GetHeightMap ().data ());
+
 	TexCreateDetails details (VK_FORMAT_R32_SFLOAT,
 	    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 	    true,
@@ -153,24 +155,33 @@ void Terrain::SetupImage ()
 	    coordinateData.sourceImageResolution);
 	details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
-	heightMapTexture = std::make_shared<VulkanTexture> (renderer, details, heightMapData);
+	terrainHeightMap = std::make_shared<VulkanTexture> (renderer, details, buffer_height);
 
-	if (splatMapData != nullptr)
-	{
-		TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM,
-		    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		    true,
-		    8,
-		    coordinateData.sourceImageResolution,
-		    coordinateData.sourceImageResolution);
-		details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		terrainVulkanSplatMap =
-		    renderer.textureManager.CreateTextureFromData (details, splatMapData, splatMapSize);
-	}
-	else
-	{
-		throw std::runtime_error ("Failed to get terrain splat map data!");
-	}
+	auto buffer_splat = std::make_shared<VulkanBufferStagingResource> (renderer.device,
+	    sizeof (glm::i8vec4) * fastGraphUser.GetSplatMap ().size (),
+	    fastGraphUser.GetSplatMap ().data ());
+
+	TexCreateDetails splat_details (VK_FORMAT_R8G8B8A8_UNORM,
+	    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+	    true,
+	    8,
+	    coordinateData.sourceImageResolution,
+	    coordinateData.sourceImageResolution);
+	splat_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	terrainSplatMap = std::make_shared<VulkanTexture> (renderer, splat_details, buffer_splat);
+
+	auto buffer_normal = std::make_shared<VulkanBufferStagingResource> (renderer.device,
+	    sizeof (glm::i16vec4) * fastGraphUser.GetNormalMap ().size (),
+	    fastGraphUser.GetNormalMap ().data ());
+
+	TexCreateDetails norm_details (VK_FORMAT_R16G16B16A16_SNORM,
+	    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+	    true,
+	    8,
+	    coordinateData.sourceImageResolution,
+	    coordinateData.sourceImageResolution);
+	norm_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	terrainNormalMap = std::make_shared<VulkanTexture> (renderer, norm_details, buffer_normal);
 }
 
 void Terrain::SetupDescriptorSets (std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo,
@@ -212,8 +223,8 @@ void Terrain::SetupDescriptorSets (std::shared_ptr<VulkanTexture> terrainVulkanT
 
 	std::vector<DescriptorUse> writes;
 	writes.push_back (DescriptorUse (0, 1, uniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, heightMapTexture->resource));
-	writes.push_back (DescriptorUse (2, 1, terrainVulkanSplatMap->resource));
+	writes.push_back (DescriptorUse (1, 1, terrainHeightMap->resource));
+	writes.push_back (DescriptorUse (2, 1, terrainSplatMap->resource));
 	writes.push_back (DescriptorUse (3, 1, terrainVulkanTextureArrayAlbedo->resource));
 	writes.push_back (DescriptorUse (4, 1, terrainVulkanTextureArrayRoughness->resource));
 	writes.push_back (DescriptorUse (5, 1, terrainVulkanTextureArrayMetallic->resource));

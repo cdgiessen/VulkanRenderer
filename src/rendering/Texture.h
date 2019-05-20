@@ -42,9 +42,9 @@ class VulkanTexture
 	public:
 	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails, Resource::Texture::TexResource textureResource);
 
-		VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::vector<float>* data);
-
-	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::byte* texData, int byteCount);
+	VulkanTexture (VulkanRenderer& renderer,
+	    TexCreateDetails texCreateDetails,
+	    std::shared_ptr<VulkanBufferStagingResource> buffer);
 
 	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails);
 

@@ -106,7 +106,7 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 			float distanceToViewer = glm::distance (cameraPos, center);
 			if (distanceToViewer > t_settings.viewDistance * t_settings.width * 1.5)
 			{
-				if ((*(*it)->terrainVulkanSplatMap->readyToUse) == true)
+				if ((*(*it)->terrainSplatMap->readyToUse) == true)
 				{
 
 					terToDelete.push_back (it);

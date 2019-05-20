@@ -113,12 +113,9 @@ class Terrain
 
 	DescriptorSet descriptorSet;
 
-	std::vector<float>* heightMapData;
-	std::shared_ptr<VulkanTexture> heightMapTexture;
-
-	std::byte* splatMapData;
-	int splatMapSize;
-	std::shared_ptr<VulkanTexture> terrainVulkanSplatMap;
+	std::shared_ptr<VulkanTexture> terrainHeightMap;
+	std::shared_ptr<VulkanTexture> terrainSplatMap;
+	std::shared_ptr<VulkanTexture> terrainNormalMap;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 

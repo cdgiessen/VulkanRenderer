@@ -815,18 +815,20 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm:
 
 	Node& outputNode = nodeMap[graph.GetOutputNodeID ()];
 
-	outputHeightMap = NoiseImage2D<float> (cellsWide);
+	outputHeightMap.reserve (cellsWide * cellsWide);
+	outputSplatMap.reserve (cellsWide * cellsWide);
+	outputNormalMap.reserve (cellsWide * cellsWide);
+
 	for (int x = 0; x < cellsWide; x++)
 	{
 		for (int z = 0; z < cellsWide; z++)
 		{
 			float val = std::get<float> (outputNode.GetHeightMapValue (x, z));
-			outputHeightMap.SetPixelValue (x, z, val);
+			outputHeightMap.push_back (val);
 		}
 	}
 
-	outputSplatmap = std::vector<std::byte> (cellsWide * cellsWide * 4);
-	int i = 0;
+
 	for (int x = 0; x < cellsWide; x++)
 	{
 		for (int z = 0; z < cellsWide; z++)
@@ -846,17 +848,29 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm:
 			std::byte a =
 			    static_cast<std::byte> (static_cast<uint8_t> (glm::clamp (val.w, 0.0f, 1.0f) * 255.0f));
 
-			outputSplatmap.at (i++) = r;
-			outputSplatmap.at (i++) = g;
-			outputSplatmap.at (i++) = b;
-			outputSplatmap.at (i++) = a;
+			outputSplatMap.push_back ({ r, g, b, a });
 		}
 	}
-	glm::vec4 val = std::get<glm::vec4> (outputNode.GetSplatMapValue (0, 0));
-	// val = glm::normalize (val);
 
-	// Log::Debug << val.x << " "<< val.y << " "<< val.z << " "<< val.w << " " << "\n";
+	for (int x = 1; x < cellsWide - 1; x++)
+	{
+		for (int z = 1; z < cellsWide - 1; z++)
+		{
+			float h = outputHeightMap.at ((x)*cellsWide + z);
+			float h_px = outputHeightMap.at ((x)*cellsWide + z + 1);
+			float h_mx = outputHeightMap.at ((x)*cellsWide + z - 1);
+			float h_py = outputHeightMap.at ((x + 1) * cellsWide + z);
+			float h_my = outputHeightMap.at ((x - 1) * cellsWide + z);
 
+			glm::vec3 normal = glm::normalize (glm::vec3 (h_px - h_mx, 2.0f, h_py - h_my));
+
+			uint xy = glm::packSnorm2x16 (glm::vec2 (normal.x, normal.y));
+			glm::i16 x = xy & 0xFFFF0000;
+			glm::i16 y = xy & 0x0000FFFF;
+			glm::i16 n_z = glm::packSnorm2x16 (glm::vec2 (normal.z, 0)) & 0xFFFF0000;
+			outputNormalMap.push_back ({ x, y, n_z, 0 });
+		}
+	}
 
 
 	for (auto& [key, val] : nodeMap)
@@ -865,15 +879,17 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm:
 	}
 }
 
+
+std::vector<float>& GraphUser::GetHeightMap () { return outputHeightMap; }
+std::vector<glm::i8vec4>& GraphUser::GetSplatMap () { return outputSplatMap; }
+std::vector<glm::i16vec4>& GraphUser::GetNormalMap () { return outputNormalMap; }
+
+
 float GraphUser::SampleHeightMap (const float x, const float z) const
 {
-	return BilinearImageSample2D (outputHeightMap, x, z);
+	return 0.f;
+	// TODO:
+	// return BilinearImageSample2D (outputHeightMap, x, z);
 }
-NoiseImage2D<float>& GraphUser::GetHeightMap () { return outputHeightMap; }
-
-std::byte* GraphUser::GetSplatMapPtr () { return outputSplatmap.data (); }
-
-
-NoiseImage2D<uint8_t>& GraphUser::GetVegetationDensityMap () { return vegetationDensityMap; }
 
 } // namespace InternalGraph

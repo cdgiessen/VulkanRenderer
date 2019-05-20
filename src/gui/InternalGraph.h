@@ -10,6 +10,7 @@
 #include "FastNoiseSIMD/FastNoiseSIMD.h"
 
 #include <glm/glm.hpp>
+#include <glm/packing.hpp>
 
 namespace InternalGraph
 {
@@ -370,20 +371,19 @@ class GraphUser
 	GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm::i32vec2 pos, float scale);
 
 	float SampleHeightMap (const float x, const float z) const;
-	NoiseImage2D<float>& GetHeightMap ();
 
-	std::byte* GetSplatMapPtr ();
+	std::vector<float>& GetHeightMap ();
+	std::vector<glm::i8vec4>& GetSplatMap ();
+	std::vector<glm::i16vec4>& GetNormalMap ();
 
-	NoiseImage2D<uint8_t>& GetVegetationDensityMap ();
 
 	private:
 	NodeMap nodeMap;
 
 	NoiseSourceInfo info;
 
-	NoiseImage2D<float> outputHeightMap;
-	std::vector<std::byte> outputSplatmap;
-
-	NoiseImage2D<uint8_t> vegetationDensityMap;
+	std::vector<float> outputHeightMap;
+	std::vector<glm::i8vec4> outputSplatMap;
+	std::vector<glm::i16vec4> outputNormalMap;
 };
 } // namespace InternalGraph
