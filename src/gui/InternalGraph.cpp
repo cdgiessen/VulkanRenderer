@@ -852,23 +852,31 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm:
 		}
 	}
 
-	for (int x = 1; x < cellsWide - 1; x++)
+	for (int x = 0; x < cellsWide - 1; x++)
 	{
-		for (int z = 1; z < cellsWide - 1; z++)
+		for (int z = 0; z < cellsWide - 1; z++)
 		{
-			float h = outputHeightMap.at ((x)*cellsWide + z);
-			float h_px = outputHeightMap.at ((x)*cellsWide + z + 1);
-			float h_mx = outputHeightMap.at ((x)*cellsWide + z - 1);
-			float h_py = outputHeightMap.at ((x + 1) * cellsWide + z);
-			float h_my = outputHeightMap.at ((x - 1) * cellsWide + z);
 
-			glm::vec3 normal = glm::normalize (glm::vec3 (h_px - h_mx, 2.0f, h_py - h_my));
+			if (x > 0 && x < cellsWide - 2 && z > 0 && z < cellsWide - 2)
+			{
 
-			uint xy = glm::packSnorm2x16 (glm::vec2 (normal.x, normal.y));
-			glm::i16 x = xy & 0xFFFF0000;
-			glm::i16 y = xy & 0x0000FFFF;
-			glm::i16 n_z = glm::packSnorm2x16 (glm::vec2 (normal.z, 0)) & 0xFFFF0000;
-			outputNormalMap.push_back ({ x, y, n_z, 0 });
+
+				float h = outputHeightMap.at ((x)*cellsWide + z);
+				float h_px = outputHeightMap.at ((x)*cellsWide + z + 1);
+				float h_mx = outputHeightMap.at ((x)*cellsWide + z - 1);
+				float h_py = outputHeightMap.at ((x + 1) * cellsWide + z);
+				float h_my = outputHeightMap.at ((x - 1) * cellsWide + z);
+
+				glm::vec3 normal = glm::normalize (glm::vec3 (h_px - h_mx, 2.0f, h_py - h_my));
+
+				uint xy = glm::packSnorm2x16 (glm::vec2 (normal.x, normal.y));
+				glm::i16 x = xy & 0xFFFF0000;
+				glm::i16 y = xy & 0x0000FFFF;
+				glm::i16 n_z = glm::packSnorm2x16 (glm::vec2 (normal.z, 0)) & 0xFFFF0000;
+				outputNormalMap.push_back ({ x, y, n_z, 0 });
+			}
+			else
+				outputNormalMap.push_back ({ 0, 1, 0, 0 });
 		}
 	}
 

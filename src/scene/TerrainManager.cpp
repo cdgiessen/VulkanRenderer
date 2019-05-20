@@ -183,29 +183,23 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 					    t_settings.heightScale,
 					    coord);
 
-					glm::vec3 center = glm::vec3 (
-					    terCreateData.coord.pos.x, curCameraPos.y, terCreateData.coord.pos.y);
-					float distanceToViewer = glm::distance (curCameraPos, center);
-					if (distanceToViewer < t_settings.viewDistance * t_settings.width * 1.5)
+					auto terrain = std::make_unique<Terrain> (renderer,
+
+					    protoGraph,
+					    terCreateData.numCells,
+					    terCreateData.maxLevels,
+					    terCreateData.heightScale,
+					    terCreateData.coord,
+					    terrainGridModel.get ());
+
+					terrain->InitTerrain (curCameraPos,
+					    terrainVulkanTextureArrayAlbedo,
+					    terrainVulkanTextureArrayRoughness,
+					    terrainVulkanTextureArrayMetallic,
+					    terrainVulkanTextureArrayNormal);
 					{
-						auto terrain = std::make_unique<Terrain> (renderer,
-
-						    protoGraph,
-						    terCreateData.numCells,
-						    terCreateData.maxLevels,
-						    terCreateData.heightScale,
-						    terCreateData.coord,
-						    terrainGridModel.get ());
-
-						terrain->InitTerrain (curCameraPos,
-						    terrainVulkanTextureArrayAlbedo,
-						    terrainVulkanTextureArrayRoughness,
-						    terrainVulkanTextureArrayMetallic,
-						    terrainVulkanTextureArrayNormal);
-						{
-							std::lock_guard<std::mutex> lk (terrain_mutex);
-							terrains.push_back (std::move (terrain));
-						}
+						std::lock_guard<std::mutex> lk (terrain_mutex);
+						terrains.push_back (std::move (terrain));
 					}
 				});
 

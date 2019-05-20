@@ -142,17 +142,13 @@ void Terrain::SetupUniformBuffer ()
 void Terrain::SetupImage ()
 {
 
-
+	int length = fastGraphUser.image_length ();
 	auto buffer_height = std::make_shared<VulkanBufferStagingResource> (renderer.device,
 	    sizeof (float) * fastGraphUser.GetHeightMap ().size (),
 	    fastGraphUser.GetHeightMap ().data ());
 
-	TexCreateDetails details (VK_FORMAT_R32_SFLOAT,
-	    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-	    true,
-	    8,
-	    coordinateData.sourceImageResolution,
-	    coordinateData.sourceImageResolution);
+	TexCreateDetails details (
+	    VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 	details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
 	terrainHeightMap = std::make_shared<VulkanTexture> (renderer, details, buffer_height);
@@ -161,12 +157,8 @@ void Terrain::SetupImage ()
 	    sizeof (glm::i8vec4) * fastGraphUser.GetSplatMap ().size (),
 	    fastGraphUser.GetSplatMap ().data ());
 
-	TexCreateDetails splat_details (VK_FORMAT_R8G8B8A8_UNORM,
-	    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-	    true,
-	    8,
-	    coordinateData.sourceImageResolution,
-	    coordinateData.sourceImageResolution);
+	TexCreateDetails splat_details (
+	    VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 	splat_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 	terrainSplatMap = std::make_shared<VulkanTexture> (renderer, splat_details, buffer_splat);
 
@@ -174,12 +166,8 @@ void Terrain::SetupImage ()
 	    sizeof (glm::i16vec4) * fastGraphUser.GetNormalMap ().size (),
 	    fastGraphUser.GetNormalMap ().data ());
 
-	TexCreateDetails norm_details (VK_FORMAT_R16G16B16A16_SNORM,
-	    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-	    true,
-	    8,
-	    coordinateData.sourceImageResolution,
-	    coordinateData.sourceImageResolution);
+	TexCreateDetails norm_details (
+	    VK_FORMAT_R16G16B16A16_SNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 	norm_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 	terrainNormalMap = std::make_shared<VulkanTexture> (renderer, norm_details, buffer_normal);
 }
@@ -197,7 +185,7 @@ void Terrain::SetupDescriptorSets (std::shared_ptr<VulkanTexture> terrainVulkanT
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (
 	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1));
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (
-	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
+	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1));
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (
 	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1));
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (
@@ -206,10 +194,13 @@ void Terrain::SetupDescriptorSets (std::shared_ptr<VulkanTexture> terrainVulkanT
 	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 5, 1));
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (
 	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 6, 1));
+	m_bindings.push_back (VulkanDescriptor::CreateBinding (
+	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 7, 1));
 	descriptor->SetupLayout (m_bindings);
 
 	std::vector<DescriptorPoolSize> poolSizes;
 	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
@@ -224,11 +215,12 @@ void Terrain::SetupDescriptorSets (std::shared_ptr<VulkanTexture> terrainVulkanT
 	std::vector<DescriptorUse> writes;
 	writes.push_back (DescriptorUse (0, 1, uniformBuffer->resource));
 	writes.push_back (DescriptorUse (1, 1, terrainHeightMap->resource));
-	writes.push_back (DescriptorUse (2, 1, terrainSplatMap->resource));
-	writes.push_back (DescriptorUse (3, 1, terrainVulkanTextureArrayAlbedo->resource));
-	writes.push_back (DescriptorUse (4, 1, terrainVulkanTextureArrayRoughness->resource));
-	writes.push_back (DescriptorUse (5, 1, terrainVulkanTextureArrayMetallic->resource));
-	writes.push_back (DescriptorUse (6, 1, terrainVulkanTextureArrayNormal->resource));
+	writes.push_back (DescriptorUse (2, 1, terrainNormalMap->resource));
+	writes.push_back (DescriptorUse (3, 1, terrainSplatMap->resource));
+	writes.push_back (DescriptorUse (4, 1, terrainVulkanTextureArrayAlbedo->resource));
+	writes.push_back (DescriptorUse (5, 1, terrainVulkanTextureArrayRoughness->resource));
+	writes.push_back (DescriptorUse (6, 1, terrainVulkanTextureArrayMetallic->resource));
+	writes.push_back (DescriptorUse (7, 1, terrainVulkanTextureArrayNormal->resource));
 	descriptor->UpdateDescriptorSet (descriptorSet, writes);
 }
 
@@ -288,9 +280,6 @@ void Terrain::SetupPipeline ()
 	out.AddDescriptorLayout (descriptor->GetLayout ());
 
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
-
-	// out.AddPushConstantRange (
-	//    initializers::pushConstantRange (VK_SHADER_STAGE_VERTEX_BIT, sizeof (HeightMapBound), 0));
 
 	normal = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 

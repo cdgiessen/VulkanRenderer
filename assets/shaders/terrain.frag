@@ -53,11 +53,12 @@ spot;
 
 // texture sampling
 layout (set = 2, binding = 1) uniform sampler2D texHeightMap;
-layout (set = 2, binding = 2) uniform sampler2D texSplatMap;
-layout (set = 2, binding = 3) uniform sampler2DArray texArrayAlbedo;
-layout (set = 2, binding = 4) uniform sampler2DArray texArrayRoughness;
-layout (set = 2, binding = 5) uniform sampler2DArray texArrayMetalness;
-layout (set = 2, binding = 6) uniform sampler2DArray texArrayNormal;
+layout (set = 2, binding = 2) uniform sampler2D texNormalMap;
+layout (set = 2, binding = 3) uniform sampler2D texSplatMap;
+layout (set = 2, binding = 4) uniform sampler2DArray texArrayAlbedo;
+layout (set = 2, binding = 5) uniform sampler2DArray texArrayRoughness;
+layout (set = 2, binding = 6) uniform sampler2DArray texArrayMetalness;
+layout (set = 2, binding = 7) uniform sampler2DArray texArrayNormal;
 
 layout (location = 0) in vec3 inFragPos;
 layout (location = 1) in vec3 inNormal;
@@ -257,10 +258,10 @@ void main ()
 	vec3 color = lighting / (lighting + vec3 (1.0));
 	outColor = vec4 (pow (color, vec3 (1.0 / 2.2)), 1.0f);
 
-	//float r = outColor.r * belowWaterLevelDarkening;
-	//float g = outColor.g * belowWaterLevelDarkening;
-	//float b = outColor.b * clamp (belowWaterLevelDarkening * 0.8, 0, 1);
+	// float r = outColor.r * belowWaterLevelDarkening;
+	// float g = outColor.g * belowWaterLevelDarkening;
+	// float b = outColor.b * clamp (belowWaterLevelDarkening * 0.8, 0, 1);
 	//
 	//
-	//outColor = vec4 (r, g, b, 1.0f);
+	// outColor = vec4 (r, g, b, 1.0f);
 }

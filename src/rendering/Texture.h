@@ -115,10 +115,6 @@ class VulkanTextureManager
 
 	std::shared_ptr<VulkanTexture> CreateDepthImage (VkFormat depthFormat, int width, int height);
 
-	std::shared_ptr<VulkanTexture> CreateTextureFromData (
-	    TexCreateDetails texCreateDetails, std::byte* texData, int byteCount);
-
-
 	private:
 	VulkanRenderer& renderer;
 	Resource::Texture::Manager& texManager;

@@ -63,9 +63,6 @@ struct TerrainQuad
 
 	static float GetUVvalueFromLocalIndex (float i, int numCells, int level, int subDivPos);
 
-	// Create a mesh chunk for rendering using fastgraph as the input data
-	void GenerateTerrainChunk (InternalGraph::GraphUser& graphUser, float heightScale, float widthScale);
-
 	glm::vec2 pos;            // position of corner
 	glm::vec2 size;           // width and length
 	glm::i32vec2 logicalPos;  // where in the proc-gen space it is (for noise images)

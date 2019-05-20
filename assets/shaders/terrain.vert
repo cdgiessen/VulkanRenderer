@@ -22,19 +22,9 @@ layout (set = 2, binding = 0) uniform ModelMatrixData
 }
 mnd;
 
+// height and normal map
 layout (set = 2, binding = 1) uniform sampler2D texHeightMap;
-
-// layout (push_constant) uniform Bound
-//{
-//	vec2 pos_tl;
-//	vec2 pos_br;
-//	vec2 uv_tl;
-//	vec2 uv_br;
-//	float height_scale;
-//	float width_scale;
-//}
-// bounds;
-
+layout (set = 2, binding = 2) uniform sampler2D texNormalMap;
 
 
 layout (location = 0) in vec3 inPosition;
@@ -66,8 +56,9 @@ void main ()
 	new_pos.y = height * h_w_pp.x;
 	gl_Position = cam.projView * vec4 (new_pos, 1.0);
 
+	vec3 new_norm = texture (texNormalMap, new_uv.yx).rgb;
 
 	outTexCoord = new_uv;
-	outNormal = inNormal;
+	outNormal = new_norm;
 	outFragPos = (vec4 (new_pos, 1.0)).xyz;
 }

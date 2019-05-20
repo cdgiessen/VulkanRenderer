@@ -372,6 +372,8 @@ class GraphUser
 
 	float SampleHeightMap (const float x, const float z) const;
 
+	int image_length () { return info.cellsWide; }
+
 	std::vector<float>& GetHeightMap ();
 	std::vector<glm::i8vec4>& GetSplatMap ();
 	std::vector<glm::i16vec4>& GetNormalMap ();

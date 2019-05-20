@@ -704,10 +704,3 @@ std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateDepthImage (VkFormat 
 	vulkanTextures.push_back (std::make_shared<VulkanTexture> (renderer, texCreateDetails));
 	return vulkanTextures.back ();
 }
-
-std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateTextureFromData (
-    TexCreateDetails texCreateDetails, std::byte* texData, int byteCount)
-{
-	vulkanTextures.push_back (std::make_shared<VulkanTexture> (renderer, texCreateDetails, texData, byteCount));
-	return vulkanTextures.back ();
-}
