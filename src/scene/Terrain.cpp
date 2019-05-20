@@ -31,18 +31,18 @@ TerrainQuad::TerrainQuad (glm::vec2 pos,
 	bound.h_w_pp = glm::vec4 (terrain->heightScale, terrain->coordinateData.size.x, -2, -3);
 
 	glm::vec2 br = pos + size;
-	bound.pos = glm::vec4 (pos.y, pos.x, br.y, br.x);
+	bound.pos = glm::vec4 (pos.x, pos.y, br.x, br.y);
 
 	if (level == 0)
 	{
-		bound.uv = glm::vec4 (0, 0, 1, 1);
+		bound.uv = glm::vec4 (0.f, 0.f, 1.f, 1.f);
 	}
 	else
 	{
 		float powLevel = (float)(1 << (level));
-		glm::vec2 uv_tl = glm::vec2 (subDivPos.y / powLevel, subDivPos.x / powLevel);
-		glm::vec2 uv_br = glm::vec2 ((NumCells + 1) / (powLevel * NumCells) + subDivPos.y / powLevel,
-		    (NumCells + 1) / (powLevel * NumCells) + subDivPos.x / powLevel);
+		glm::vec2 uv_tl = glm::vec2 (subDivPos.x / powLevel, subDivPos.y / powLevel);
+		glm::vec2 uv_br = glm::vec2 ((NumCells + 1) / (powLevel * NumCells) + subDivPos.x / powLevel,
+		    (NumCells + 1) / (powLevel * NumCells) + subDivPos.y / powLevel);
 		bound.uv = glm::vec4 (uv_tl.x, uv_tl.y, uv_br.x, uv_br.y);
 	}
 }
@@ -67,7 +67,6 @@ Terrain::Terrain (VulkanRenderer& renderer,
   fastGraphUser (protoGraph, 1337, coords.sourceImageResolution, coords.noisePos, coords.noiseSize.x),
   terrainGrid (grid)
 {
-
 	// simple calculation right now, does the absolute max number of quads possible with given max
 	// level in future should calculate the actual number of max quads, based on distance calculation
 	if (maxLevels <= 0)
@@ -76,8 +75,7 @@ Terrain::Terrain (VulkanRenderer& renderer,
 	}
 	else
 	{
-		// with current quad density this is the average upper bound (kinda a guess but its probably more than enough for now (had to add 25 cause it wasn't enough lol!)
-		maxNumQuads = 1 + 16 + 20 + 25 + 50 * maxLevels;
+		maxNumQuads = 1024;
 		// maxNumQuads = (int)((1.0 - glm::pow(4, maxLevels + 1)) / (-3.0)); //legitimate max number of quads (like if everything was subdivided)
 	}
 	heightMapData = fastGraphUser.GetHeightMap ().GetImageVectorData ();
@@ -137,7 +135,7 @@ void Terrain::SetupUniformBuffer ()
 
 	ModelBufferObject mbo;
 	mbo.model = glm::mat4 (1.0f);
-	//mbo.model = glm::translate (mbo.model, glm::vec3 (coordinateData.pos.x, 0, coordinateData.pos.y));
+	// mbo.model = glm::translate (mbo.model, glm::vec3 (coordinateData.pos.x, 0, coordinateData.pos.y));
 	mbo.normal = glm::transpose (glm::inverse (mbo.model));
 	uniformBuffer->CopyToBuffer (&mbo, sizeof (ModelBufferObject));
 
@@ -452,7 +450,7 @@ void Terrain::DrawTerrainGrid (VkCommandBuffer cmdBuf, bool ifWireframe)
 
 	DrawTerrainRecursive (0, cmdBuf, ifWireframe, instances);
 
-	instanceBuffer->CopyToBuffer (instances.data (), sizeof(HeightMapBound) *instances.size());
+	instanceBuffer->CopyToBuffer (instances.data (), sizeof (HeightMapBound) * instances.size ());
 
 	terrainGrid->BindModel (cmdBuf);
 	instanceBuffer->BindInstanceBuffer (cmdBuf);

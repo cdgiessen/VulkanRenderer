@@ -176,8 +176,7 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 				    t_settings.sourceImageResolution + 1,
 				    terGrid);
 
-				// auto t =
-				job::Task (workContinueSignal, [this, coord] {
+				auto t = job::Task (workContinueSignal, [this, coord] {
 					auto terCreateData = TerrainCreationData (t_settings.numCells,
 					    t_settings.maxLevels,
 					    t_settings.sourceImageResolution,
@@ -208,9 +207,9 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 							terrains.push_back (std::move (terrain));
 						}
 					}
-				}) ();
+				});
 
-				// taskManager.Submit (std::move (t), job::TaskType::currentFrame);
+				taskManager.Submit (std::move (t), job::TaskType::currentFrame);
 			}
 		}
 	}
