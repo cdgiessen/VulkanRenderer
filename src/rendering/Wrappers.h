@@ -163,6 +163,8 @@ class CommandBuffer
 
 	CommandBuffer& Free ();
 
+	CommandBuffer& WriteTo (std::function<void(const VkCommandBuffer)> work);
+
 	VkCommandBuffer Get () { return cmdBuf; }
 	VkCommandBuffer* GetPtr () { return &cmdBuf; }
 

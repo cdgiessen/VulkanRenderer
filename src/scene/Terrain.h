@@ -41,7 +41,6 @@ struct TerrainCoordinateData
 
 class Terrain;
 
-static int heightmapboundsize = 16;
 struct HeightMapBound
 {
 	glm::vec4 pos;

@@ -255,6 +255,14 @@ CommandBuffer& CommandBuffer::Begin (VkCommandBufferUsageFlags flags)
 	state = State::recording;
 	return *this;
 }
+
+CommandBuffer& CommandBuffer::WriteTo (std::function<void(const VkCommandBuffer)> work)
+{
+	assert (state == State::recording);
+	pool->WriteToBuffer (cmdBuf, work);
+	return *this;
+}
+
 CommandBuffer& CommandBuffer::End ()
 {
 	assert (state == State::recording);

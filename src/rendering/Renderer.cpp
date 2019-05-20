@@ -379,7 +379,7 @@ void VulkanRenderer::SubmitWork (WorkType workType,
 
 	cmdBuf.Allocate ();
 	cmdBuf.Begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-	work (cmdBuf.Get ());
+	cmdBuf.WriteTo (work);
 	cmdBuf.SetFence (fence);
 	cmdBuf.End ();
 	cmdBuf.Submit (waitSemaphores, signalSemaphores);

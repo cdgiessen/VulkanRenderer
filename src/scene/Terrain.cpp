@@ -41,8 +41,8 @@ TerrainQuad::TerrainQuad (glm::vec2 pos,
 	{
 		float powLevel = (float)(1 << (level));
 		glm::vec2 uv_tl = glm::vec2 (subDivPos.x / powLevel, subDivPos.y / powLevel);
-		glm::vec2 uv_br = glm::vec2 ((NumCells + 1) / (powLevel * NumCells) + subDivPos.x / powLevel,
-		    (NumCells + 1) / (powLevel * NumCells) + subDivPos.y / powLevel);
+		glm::vec2 uv_br =
+		    glm::vec2 (1.0f / powLevel + subDivPos.x / powLevel, 1.0f / powLevel + subDivPos.y / powLevel);
 		bound.uv = glm::vec4 (uv_tl.x, uv_tl.y, uv_br.x, uv_br.y);
 	}
 }
@@ -135,8 +135,7 @@ void Terrain::SetupUniformBuffer ()
 	mbo.normal = glm::transpose (glm::inverse (mbo.model));
 	uniformBuffer->CopyToBuffer (&mbo, sizeof (ModelBufferObject));
 
-	instanceBuffer =
-	    std::make_shared<VulkanBufferInstancePersistant> (renderer.device, 2048, heightmapboundsize);
+	instanceBuffer = std::make_shared<VulkanBufferInstancePersistant> (renderer.device, 2048, 16);
 }
 
 void Terrain::SetupImage ()
