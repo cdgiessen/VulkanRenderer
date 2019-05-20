@@ -1,40 +1,39 @@
 #pragma once
 
-#include <vector>
-#include <queue>
-#include <mutex>
 #include <algorithm>
 #include <condition_variable>
+#include <mutex>
 #include <optional>
+#include <queue>
+#include <vector>
 
 
-template <typename T>
-class ConcurrentQueue
+template <typename T> class ConcurrentQueue
 {
-public:
-	ConcurrentQueue();
-	~ConcurrentQueue();
+	public:
+	ConcurrentQueue ();
+	~ConcurrentQueue ();
 
-	void pop();
+	void pop ();
 
-	//Optionally returns the front value if it exists, else returns nothing
-	std::optional<T> pop_if();
+	// Optionally returns the front value if it exists, else returns nothing
+	std::optional<T> pop_if ();
 
-	void push_back(const T& item);
+	void push_back (const T& item);
 
-	void push_back(T&& item);
+	void push_back (T&& item);
 
-	void remove(T& item);
+	void remove (T& item);
 
-	int size();
+	int size ();
 
-	bool empty();
+	bool empty ();
 
-	void wait_on_value();
+	void wait_on_value ();
 
-	void notify_all();
+	void notify_all ();
 
-private:
+	private:
 	std::deque<T> m_queue;
 	std::mutex m_mutex;
 	std::condition_variable m_cond;
@@ -42,81 +41,71 @@ private:
 };
 
 
-template <typename T>
-ConcurrentQueue<T>::ConcurrentQueue() {};
+template <typename T> ConcurrentQueue<T>::ConcurrentQueue () {}
 
-template <typename T>
-ConcurrentQueue<T>::~ConcurrentQueue() {};
+template <typename T> ConcurrentQueue<T>::~ConcurrentQueue () {}
 
-template <typename T>
-void ConcurrentQueue<T>::pop()
+template <typename T> void ConcurrentQueue<T>::pop ()
 {
-	std::unique_lock<std::mutex> mlock(m_mutex);
-	if (!m_queue.empty())
-		m_queue.pop_front();
+	std::unique_lock<std::mutex> mlock (m_mutex);
+	if (!m_queue.empty ()) m_queue.pop_front ();
 }
 
-template <typename T>
-std::optional<T> ConcurrentQueue<T>::pop_if()
+template <typename T> std::optional<T> ConcurrentQueue<T>::pop_if ()
 {
-	std::unique_lock<std::mutex> mlock(m_mutex);
-	if (!m_queue.empty()) {
-		auto ret = m_queue.front();
-		m_queue.pop_front();
-		return std::move(ret);
+	std::unique_lock<std::mutex> mlock (m_mutex);
+	if (!m_queue.empty ())
+	{
+		auto ret = m_queue.front ();
+		m_queue.pop_front ();
+		return std::move (ret);
 	}
 	return {};
 }
 
-template <typename T>
-void ConcurrentQueue<T>::push_back(const T& item)
+template <typename T> void ConcurrentQueue<T>::push_back (const T& item)
 {
 
-	std::unique_lock<std::mutex> mlock(m_mutex);
-	m_queue.push_back(item);
-	m_cond.notify_one(); // notify one waiting thread
-
+	std::unique_lock<std::mutex> mlock (m_mutex);
+	m_queue.push_back (item);
+	m_cond.notify_one (); // notify one waiting thread
 }
 
-template <typename T>
-void ConcurrentQueue<T>::push_back(T&& item)
+template <typename T> void ConcurrentQueue<T>::push_back (T&& item)
 {
 
-	std::unique_lock<std::mutex> mlock(m_mutex);
-	m_queue.push_back(std::move(item));
-	m_cond.notify_one(); // notify one waiting thread
-
+	std::unique_lock<std::mutex> mlock (m_mutex);
+	m_queue.push_back (std::move (item));
+	m_cond.notify_one (); // notify one waiting thread
 }
 
-template <typename T>
-void ConcurrentQueue<T>::remove(T& item) {
-	std::unique_lock<std::mutex> mlock(m_mutex);
-	auto iter = std::find(std::begin(m_queue), std::end(m_queue), item);
-	m_queue.erase(iter);
-}
-
-template <typename T>
-int ConcurrentQueue<T>::size()
+template <typename T> void ConcurrentQueue<T>::remove (T& item)
 {
-	std::unique_lock<std::mutex> mlock(m_mutex);
-	return (int)m_queue.size();
+	std::unique_lock<std::mutex> mlock (m_mutex);
+	auto iter = std::find (std::begin (m_queue), std::end (m_queue), item);
+	m_queue.erase (iter);
 }
 
-template <typename T>
-bool ConcurrentQueue<T>::empty()
+template <typename T> int ConcurrentQueue<T>::size ()
 {
-	std::unique_lock<std::mutex> mlock(m_mutex);
-	return m_queue.empty();
+	std::unique_lock<std::mutex> mlock (m_mutex);
+	return (int)m_queue.size ();
 }
 
-template <typename T>
-void ConcurrentQueue<T>::wait_on_value() {
-	std::unique_lock<std::mutex> lk(m_cond_lock);
-	m_cond.wait(lk);
+template <typename T> bool ConcurrentQueue<T>::empty ()
+{
+	std::unique_lock<std::mutex> mlock (m_mutex);
+	return m_queue.empty ();
 }
 
-template <typename T>
-void ConcurrentQueue<T>::notify_all() {
-	std::unique_lock<std::mutex> lk(m_cond_lock);
-	m_cond.notify_all();
+template <typename T> void ConcurrentQueue<T>::wait_on_value ()
+{
+	std::unique_lock<std::mutex> lk (m_cond_lock);
+	m_cond.wait (lk);
+}
+
+template <typename T> void ConcurrentQueue<T>::notify_all ()
+{
+	std::unique_lock<std::mutex> lk (m_cond_lock);
+	m_cond.notify_all ();
 }

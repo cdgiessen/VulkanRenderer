@@ -42,7 +42,6 @@ void VMA_MemoryResource::LogVMA (bool detailedOutput)
 	vmaBuildStatsString (allocator, &str, detailedOutput);
 	Log.Debug (fmt::format ("Allocator Data Dump:\n {}\n", str));
 
-	// Log::Debug << "Allocator Data Dump:\n" << std::string (str) << "\n";
 	vmaFreeStatsString (allocator, str);
 }
 
