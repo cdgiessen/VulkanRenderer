@@ -32,7 +32,7 @@ struct GeneralSettings
 	float heightScale = 100.0f;
 	int maxLevels = 4;
 	int gridDimensions = 1;
-	int viewDistance = 1; // terrain chunks to load away from camera;
+	int viewDistance = 3; // terrain chunks to load away from camera;
 	int sourceImageResolution = 256;
 	int numCells = 64; // compile time currently
 };

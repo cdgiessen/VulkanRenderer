@@ -28,15 +28,23 @@ TerrainQuad::TerrainQuad (glm::vec2 pos,
   heightValAtCenter (0),
   terrain (terrain)
 {
-	bound.height_scale = terrain->heightScale;
-	bound.width_scale = terrain->coordinateData.size.x;
-	bound.pos_tl = pos;
-	bound.pos_br = pos + size;
+	bound.h_w_pp = glm::vec4 (terrain->heightScale, terrain->coordinateData.size.x, -2, -3);
 
-	float powLevel = (float)(1 << (level));
-	bound.uv_tl = glm::vec2 (subDivPos.y / powLevel, subDivPos.x / powLevel);
-	bound.uv_br = glm::vec2 ((NumCells + 1) / (powLevel * NumCells) + subDivPos.y / powLevel,
-	    (NumCells + 1) / (powLevel * NumCells) + subDivPos.x / powLevel);
+	glm::vec2 br = pos + size;
+	bound.pos = glm::vec4 (pos.y, pos.x, br.y, br.x);
+
+	if (level == 0)
+	{
+		bound.uv = glm::vec4 (0, 0, 1, 1);
+	}
+	else
+	{
+		float powLevel = (float)(1 << (level));
+		glm::vec2 uv_tl = glm::vec2 (subDivPos.y / powLevel, subDivPos.x / powLevel);
+		glm::vec2 uv_br = glm::vec2 ((NumCells + 1) / (powLevel * NumCells) + subDivPos.y / powLevel,
+		    (NumCells + 1) / (powLevel * NumCells) + subDivPos.x / powLevel);
+		bound.uv = glm::vec4 (uv_tl.x, uv_tl.y, uv_br.x, uv_br.y);
+	}
 }
 
 float TerrainQuad::GetUVvalueFromLocalIndex (float i, int numCells, int level, int subDivPos)
@@ -125,14 +133,16 @@ void Terrain::UpdateTerrain (glm::vec3 viewerPos)
 
 void Terrain::SetupUniformBuffer ()
 {
-
 	uniformBuffer = std::make_shared<VulkanBufferUniform> (renderer.device, sizeof (ModelBufferObject));
 
 	ModelBufferObject mbo;
 	mbo.model = glm::mat4 (1.0f);
-	mbo.model = glm::translate (mbo.model, glm::vec3 (coordinateData.pos.x, 0, coordinateData.pos.y));
+	//mbo.model = glm::translate (mbo.model, glm::vec3 (coordinateData.pos.x, 0, coordinateData.pos.y));
 	mbo.normal = glm::transpose (glm::inverse (mbo.model));
 	uniformBuffer->CopyToBuffer (&mbo, sizeof (ModelBufferObject));
+
+	instanceBuffer =
+	    std::make_shared<VulkanBufferInstancePersistant> (renderer.device, 2048, heightmapboundsize);
 }
 
 void Terrain::SetupImage ()
@@ -227,6 +237,25 @@ void Terrain::SetupPipeline ()
 	VertexLayout layout (Vert_PosNormUv);
 	out.AddVertexLayouts (layout.bindingDesc, layout.attribDesc);
 
+#define VERTEX_BUFFER_BIND_ID 0
+#define INSTANCE_BUFFER_BIND_ID 1
+
+	std::vector<VkVertexInputBindingDescription> instanceBufferBinding = { initializers::vertexInputBindingDescription (
+		INSTANCE_BUFFER_BIND_ID, sizeof (HeightMapBound), VK_VERTEX_INPUT_RATE_INSTANCE) };
+
+	std::vector<VkVertexInputAttributeDescription> instanceBufferAttribute = {
+		initializers::vertexInputAttributeDescription (
+		    INSTANCE_BUFFER_BIND_ID, 3, VK_FORMAT_R32G32B32A32_SFLOAT, 0), // Location 4: pos
+		initializers::vertexInputAttributeDescription (
+		    INSTANCE_BUFFER_BIND_ID, 4, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof (float) * 4), // Location 5: yv
+		initializers::vertexInputAttributeDescription (
+		    INSTANCE_BUFFER_BIND_ID, 5, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof (float) * 8), // Location 6: h_w_pp
+		initializers::vertexInputAttributeDescription (
+		    INSTANCE_BUFFER_BIND_ID, 6, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof (float) * 12) // Location padd
+	};
+
+	out.AddVertexLayouts (instanceBufferBinding, instanceBufferAttribute);
+
 	out.SetInputAssembly (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
 
 	out.AddViewport (1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f);
@@ -251,8 +280,8 @@ void Terrain::SetupPipeline ()
 
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
-	out.AddPushConstantRange (
-	    initializers::pushConstantRange (VK_SHADER_STAGE_VERTEX_BIT, sizeof (HeightMapBound), 0));
+	// out.AddPushConstantRange (
+	//    initializers::pushConstantRange (VK_SHADER_STAGE_VERTEX_BIT, sizeof (HeightMapBound), 0));
 
 	normal = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 
@@ -392,25 +421,19 @@ void Terrain::UnSubdivide (int quad)
 	}
 }
 
-void Terrain::DrawTerrainRecursive (int quad, VkCommandBuffer cmdBuf, bool ifWireframe)
+void Terrain::DrawTerrainRecursive (
+    int quad, VkCommandBuffer cmdBuf, bool ifWireframe, std::vector<HeightMapBound>& instances)
 {
 	if (quadMap.at (quad).isSubdivided)
 	{
-		DrawTerrainRecursive (quadMap.at (quad).subQuads.UpRight, cmdBuf, ifWireframe);
-		DrawTerrainRecursive (quadMap.at (quad).subQuads.UpLeft, cmdBuf, ifWireframe);
-		DrawTerrainRecursive (quadMap.at (quad).subQuads.DownRight, cmdBuf, ifWireframe);
-		DrawTerrainRecursive (quadMap.at (quad).subQuads.DownLeft, cmdBuf, ifWireframe);
+		DrawTerrainRecursive (quadMap.at (quad).subQuads.UpRight, cmdBuf, ifWireframe, instances);
+		DrawTerrainRecursive (quadMap.at (quad).subQuads.UpLeft, cmdBuf, ifWireframe, instances);
+		DrawTerrainRecursive (quadMap.at (quad).subQuads.DownRight, cmdBuf, ifWireframe, instances);
+		DrawTerrainRecursive (quadMap.at (quad).subQuads.DownLeft, cmdBuf, ifWireframe, instances);
 	}
 	else
 	{
-		vkCmdPushConstants (cmdBuf,
-		    normal->GetLayout (),
-		    VK_SHADER_STAGE_VERTEX_BIT,
-		    0,
-		    sizeof (HeightMapBound),
-		    &quadMap.at (quad).bound);
-
-		vkCmdDrawIndexed (cmdBuf, static_cast<uint32_t> (indCount), 1, 0, 0, 0);
+		instances.push_back (quadMap.at (quad).bound);
 	}
 }
 
@@ -424,7 +447,17 @@ void Terrain::DrawTerrainGrid (VkCommandBuffer cmdBuf, bool ifWireframe)
 	    cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, normal->GetLayout (), 2, 1, &descriptorSet.set, 0, nullptr);
 	terrainGrid->BindModel (cmdBuf);
 
-	DrawTerrainRecursive (0, cmdBuf, ifWireframe);
+	std::vector<HeightMapBound> instances;
+	instances.reserve (numQuads);
+
+	DrawTerrainRecursive (0, cmdBuf, ifWireframe, instances);
+
+	instanceBuffer->CopyToBuffer (instances.data (), sizeof(HeightMapBound) *instances.size());
+
+	terrainGrid->BindModel (cmdBuf);
+	instanceBuffer->BindInstanceBuffer (cmdBuf);
+
+	vkCmdDrawIndexed (cmdBuf, static_cast<uint32_t> (indCount), instances.size (), 0, 0, 0);
 }
 
 float Terrain::GetHeightAtLocation (float x, float z)

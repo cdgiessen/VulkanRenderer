@@ -243,7 +243,7 @@ void Scene::RenderOpaque (VkCommandBuffer commandBuffer, bool wireframe)
 
 void Scene::RenderTransparent (VkCommandBuffer cmdBuf, bool wireframe)
 {
-	//water_plane->Draw (cmdBuf, wireframe);
+	water_plane->Draw (cmdBuf, wireframe);
 }
 
 void Scene::RenderSkybox (VkCommandBuffer commandBuffer)

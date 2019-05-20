@@ -176,20 +176,15 @@ void AlignedMemcpy (uint8_t bytes, VkDeviceSize destMemAlignment, void* src, voi
 
 void VulkanBuffer::CopyToBuffer (void* pData, VkDeviceSize size)
 {
-	if (pData == nullptr)
-	{
-		Log.Error ("CopyToBuffer needs valid pData pointer\n");
-		return;
-	}
 	if (persistentlyMapped)
 	{
-		assert (mapped != nullptr);
+		//assert (mapped != nullptr);
 		memcpy (mapped, pData, (size_t)size);
 	}
 	else
 	{
 		this->Map (&mapped);
-		assert (mapped != nullptr);
+		//assert (mapped != nullptr);
 		memcpy (mapped, pData, (size_t)size);
 
 		// VkDeviceSize bufAlignment = device->physical_device_properties.limits.minUniformBufferOffsetAlignment;

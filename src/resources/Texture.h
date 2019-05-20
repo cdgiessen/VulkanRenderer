@@ -160,7 +160,7 @@ class Manager
 	void LoadTextureFromFile (TexID id);
 
 	TexID GetTexIDByName (std::string s);
-	TexResource GetTexResourceByID (int id);
+	TexResource& GetTexResourceByID (int id);
 
 
 	private:

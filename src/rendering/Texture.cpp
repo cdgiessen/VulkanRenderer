@@ -10,20 +10,6 @@
 
 #include "core/Logger.h"
 
-void BeginTransferAndMipMapGenWork (VulkanRenderer& renderer,
-    std::shared_ptr<VulkanBuffer> buffer,
-    const VkImageSubresourceRange subresourceRange,
-    const std::vector<VkBufferImageCopy> bufferCopyRegions,
-    VkImageLayout imageLayout,
-    VkImage image,
-    VkBuffer vk_buffer,
-    int width,
-    int height,
-    int depth,
-    Signal signal,
-    int layers,
-    int mipLevels);
-
 void SetImageLayout (VkCommandBuffer cmdbuffer,
     VkImage image,
     VkImageLayout oldImageLayout,
@@ -266,7 +252,7 @@ VulkanTexture::VulkanTexture (
 }
 
 VulkanTexture::VulkanTexture (
-    VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::byte* texData, int byteCount)
+    VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::vector<float>* data)
 : renderer (renderer), resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
 	readyToUse = std::make_shared<bool> (false);
@@ -288,7 +274,8 @@ VulkanTexture::VulkanTexture (
 	    imageExtent,
 	    VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 
-	auto buffer = std::make_shared<VulkanBufferStagingResource> (renderer.device, byteCount * 4, texData);
+	auto buffer = std::make_shared<VulkanBufferStagingResource> (
+	    renderer.device, sizeof (float) * data->size (), data->data ());
 
 	InitImage2D (imageCreateInfo);
 
@@ -365,7 +352,7 @@ VulkanTexture::VulkanTexture (
 }
 
 VulkanTexture::VulkanTexture (
-    VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::vector<float>* data)
+    VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::byte* texData, int byteCount)
 : renderer (renderer), resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
 	readyToUse = std::make_shared<bool> (false);
@@ -387,8 +374,7 @@ VulkanTexture::VulkanTexture (
 	    imageExtent,
 	    VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 
-	auto buffer = std::make_shared<VulkanBufferStagingResource> (
-	    renderer.device, sizeof (float) * data->size (), data->data ());
+	auto buffer = std::make_shared<VulkanBufferStagingResource> (renderer.device, byteCount * 4, texData);
 
 	InitImage2D (imageCreateInfo);
 
@@ -551,7 +537,7 @@ void GenerateMipMaps (
 		    initializers::imageSubresourceRangeCreateInfo (VK_IMAGE_ASPECT_COLOR_BIT, 1, layers);
 		mipSubRange.baseMipLevel = i;
 
-		// Transition current mip level to transfer dest
+		// Transiton current mip level to transfer dest
 		SetImageLayout (cmdBuf,
 		    image,
 		    VK_IMAGE_LAYOUT_UNDEFINED,
@@ -564,7 +550,7 @@ void GenerateMipMaps (
 		vkCmdBlitImage (
 		    cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit, VK_FILTER_LINEAR);
 
-		// Transition current mip level to transfer source for read in next iteration
+		// Transiton current mip level to transfer source for read in next iteration
 		SetImageLayout (cmdBuf,
 		    image,
 		    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -789,7 +775,7 @@ VulkanTextureManager::~VulkanTextureManager () {}
 std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateTexture2D (
     Resource::Texture::TexID texture, TexCreateDetails texCreateDetails)
 {
-	auto resource = texManager.GetTexResourceByID (texture);
+	auto& resource = texManager.GetTexResourceByID (texture);
 	vulkanTextures.push_back (std::make_shared<VulkanTexture> (renderer, texCreateDetails, resource));
 	return vulkanTextures.back ();
 }
@@ -797,7 +783,7 @@ std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateTexture2D (
 std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateTexture2DArray (
     Resource::Texture::TexID textures, TexCreateDetails texCreateDetails)
 {
-	auto resource = texManager.GetTexResourceByID (textures);
+	auto& resource = texManager.GetTexResourceByID (textures);
 	vulkanTextures.push_back (std::make_shared<VulkanTexture> (renderer, texCreateDetails, resource));
 	return vulkanTextures.back ();
 }
@@ -805,7 +791,7 @@ std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateTexture2DArray (
 std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateCubeMap (
     Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails)
 {
-	auto resource = texManager.GetTexResourceByID (cubeMap);
+	auto& resource = texManager.GetTexResourceByID (cubeMap);
 	vulkanTextures.push_back (std::make_shared<VulkanTexture> (renderer, texCreateDetails, resource));
 	return vulkanTextures.back ();
 }

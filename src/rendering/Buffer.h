@@ -107,30 +107,6 @@ class VulkanBufferUniformPersistant : public VulkanBuffer
 	VulkanBufferUniformPersistant (VulkanDevice& device, VkDeviceSize size);
 };
 
-template <typename T> class VulkanBufferUniformArrayPersistant : public VulkanBuffer
-{
-	public:
-	VulkanBufferUniformArrayPersistant (VulkanDevice& device, int count)
-	: VulkanBuffer (device,
-	      VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-	      sizeof (T) * count,
-	      (VkBufferUsageFlags) (VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-	      (VmaMemoryUsage)VMA_MEMORY_USAGE_CPU_TO_GPU,
-	      VMA_ALLOCATION_CREATE_MAPPED_BIT,
-	      nullptr,
-	      PersistentlyMapped::T)
-	{
-	}
-
-	void CopyArrayToBuffer (std::vector<T>& data)
-	{
-		if (data.size () > 0)
-		{
-			CopyToBuffer (data.data (), data.size () * sizeof (T));
-		}
-	}
-};
-
 class VulkanBufferUniformStaging : public VulkanBuffer
 {
 	public:

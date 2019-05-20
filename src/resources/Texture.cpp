@@ -240,7 +240,7 @@ void Manager::SaveTextureList ()
 
 void Manager::LoadTextureFromFile (TexID id)
 {
-	auto texRes = GetTexResourceByID (id);
+	auto& texRes = GetTexResourceByID (id);
 	auto texData = std::make_unique<TexData> (texRes.dataDescription);
 	texRes.SetDataPtr (texData.get ());
 
@@ -294,7 +294,7 @@ void Manager::LoadTextureFromFile (TexID id)
 
 TexID CreateNewTextureFromByteArray (int width, int height, std::byte* data) { return 0; }
 
-TexResource Manager::GetTexResourceByID (TexID id)
+TexResource& Manager::GetTexResourceByID (TexID id)
 {
 	std::lock_guard<std::mutex> lk (resource_lock);
 	return textureResources.at (id);

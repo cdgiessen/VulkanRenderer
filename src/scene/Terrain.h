@@ -41,14 +41,13 @@ struct TerrainCoordinateData
 
 class Terrain;
 
+static int heightmapboundsize = 16;
 struct HeightMapBound
 {
-	glm::vec2 pos_tl;
-	glm::vec2 pos_br;
-	glm::vec2 uv_tl = glm::vec2 (0.0, 0.0);
-	glm::vec2 uv_br = glm::vec2 (1.0, 1.0);
-	float height_scale = 1;
-	float width_scale = 1;
+	glm::vec4 pos;
+	glm::vec4 uv;
+	glm::vec4 h_w_pp;
+	glm::vec4 dumb;
 };
 
 struct TerrainQuad
@@ -123,6 +122,7 @@ class Terrain
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 
+	std::shared_ptr<VulkanBufferInstancePersistant> instanceBuffer;
 
 	VulkanModel* terrainGrid;
 
@@ -147,7 +147,8 @@ class Terrain
 
 	void UpdateTerrain (glm::vec3 viewerPos);
 
-	void DrawTerrainRecursive (int quad, VkCommandBuffer cmdBuf, bool ifWireframe);
+	void DrawTerrainRecursive (
+	    int quad, VkCommandBuffer cmdBuf, bool ifWireframe, std::vector<HeightMapBound>& instances);
 	void DrawTerrainGrid (VkCommandBuffer cmdBuf, bool ifWireframe);
 	// std::vector<RGBA_pixel>* LoadSplatMapFromGenerator();
 

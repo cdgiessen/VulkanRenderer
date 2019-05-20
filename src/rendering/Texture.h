@@ -42,10 +42,9 @@ class VulkanTexture
 	public:
 	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails, Resource::Texture::TexResource textureResource);
 
+		VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::vector<float>* data);
+
 	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::byte* texData, int byteCount);
-
-	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::vector<float>* data);
-
 
 	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails);
 
@@ -59,10 +58,6 @@ class VulkanTexture
 		VmaAllocator allocator = nullptr;
 	} image;
 
-	protected:
-	VulkanRenderer& renderer;
-
-	public:
 	VkImageView textureImageView = VK_NULL_HANDLE;
 	VkSampler textureSampler = VK_NULL_HANDLE;
 	VkImageLayout textureImageLayout;
@@ -73,6 +68,8 @@ class VulkanTexture
 	Signal readyToUse;
 
 	protected:
+	VulkanRenderer& renderer;
+
 	int mipLevels;
 	int layers;
 
@@ -128,3 +125,26 @@ class VulkanTextureManager
 
 	std::vector<std::shared_ptr<VulkanTexture>> vulkanTextures;
 };
+
+static void GenerateMipMaps (
+    VkCommandBuffer cmdBuf, VkImage image, VkImageLayout finalImageLayout, int width, int height, int depth, int layers, int mipLevels);
+
+static void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
+    VkImage image,
+    VkBuffer stagingBuffer,
+    const VkImageSubresourceRange subresourceRange,
+    std::vector<VkBufferImageCopy> bufferCopyRegions);
+
+static void BeginTransferAndMipMapGenWork (VulkanRenderer& renderer,
+    std::shared_ptr<VulkanBuffer> buffer,
+    const VkImageSubresourceRange subresourceRange,
+    const std::vector<VkBufferImageCopy> bufferCopyRegions,
+    VkImageLayout imageLayout,
+    VkImage image,
+    VkBuffer vk_buffer,
+    int width,
+    int height,
+    int depth,
+    Signal signal,
+    int layers,
+    int mipLevels);
