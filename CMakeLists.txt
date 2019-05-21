@@ -121,7 +121,7 @@ if(UNIX)
 	#g++-8 still requires this, not necessary with g++-9
 	target_link_libraries(VulkanApp PRIVATE stdc++fs)
 
-	target_compile_options(VulkanApp PRIVATE -Wall -Wextra -Wpedantic)
+	target_compile_options(VulkanApp PRIVATE -Wall -Wextra)
 endif(UNIX)
 
 # copy files over
