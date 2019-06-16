@@ -72,7 +72,8 @@ if(UNIX)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif(UNIX)
 
-
+#cml
+target_link_libraries(VulkanApp PUBLIC cml)
 
 #json
 target_link_libraries(VulkanApp PUBLIC nlohmann_json)

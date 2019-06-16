@@ -16,3 +16,6 @@
 [submodule "ext/spirv-cross"]
 	path = ext/spirv-cross
 	url = https://github.com/KhronosGroup/SPIRV-Cross
+[submodule "ext/cml"]
+	path = ext/cml
+	url = https://github.com/cdgiessen/cml
