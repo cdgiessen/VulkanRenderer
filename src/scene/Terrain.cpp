@@ -8,6 +8,7 @@
 #include "TerrainManager.h"
 #include "rendering/Initializers.h"
 
+
 TerrainQuad::TerrainQuad (glm::vec2 pos,
     glm::vec2 size,
     glm::i32vec2 logicalPos,

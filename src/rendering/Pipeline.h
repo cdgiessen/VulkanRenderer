@@ -101,3 +101,13 @@ class Pipeline
 	VkPipeline pipeline;
 	VkPipelineLayout layout;
 };
+
+class PipelineManager
+{
+	public:
+	PipelineManager (VulkanRenderer& renderer);
+
+
+	private:
+	VulkanRenderer& renderer;
+};

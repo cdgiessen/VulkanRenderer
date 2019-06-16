@@ -75,7 +75,6 @@ class VulkanTexture
 
 	void InitImage2D (VkImageCreateInfo imageInfo);
 	void InitDepthImage (VkImageCreateInfo imageInfo);
-	void InitStagingImage2D (VkImageCreateInfo imageInfo);
 
 	VkSampler CreateImageSampler (VkFilter mag = VK_FILTER_LINEAR,
 	    VkFilter min = VK_FILTER_LINEAR,
@@ -95,15 +94,12 @@ class VulkanTexture
 	    VkComponentMapping components,
 	    int mipLevels,
 	    int layers);
-
-	void updateDescriptor ();
 };
 
 class VulkanTextureManager
 {
 	public:
 	VulkanTextureManager (VulkanRenderer& renderer, Resource::Texture::Manager& texManager);
-	~VulkanTextureManager ();
 
 	std::shared_ptr<VulkanTexture> CreateTexture2D (
 	    Resource::Texture::TexID texture, TexCreateDetails texCreateDetails);
@@ -121,15 +117,6 @@ class VulkanTextureManager
 
 	std::vector<std::shared_ptr<VulkanTexture>> vulkanTextures;
 };
-
-void GenerateMipMaps (
-    VkCommandBuffer cmdBuf, VkImage image, VkImageLayout finalImageLayout, int width, int height, int depth, int layers, int mipLevels);
-
-void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
-    VkImage image,
-    VkBuffer stagingBuffer,
-    const VkImageSubresourceRange subresourceRange,
-    std::vector<VkBufferImageCopy> bufferCopyRegions);
 
 void BeginTransferAndMipMapGenWork (VulkanRenderer& renderer,
     std::shared_ptr<VulkanBuffer> buffer,

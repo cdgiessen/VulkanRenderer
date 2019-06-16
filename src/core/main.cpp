@@ -1,5 +1,4 @@
 
-
 #include "CoreTools.h"
 #include "Logger.h"
 #include "VulkanApp.h"

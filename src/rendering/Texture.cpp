@@ -142,7 +142,136 @@ void SetImageLayout (VkCommandBuffer cmdbuffer,
 	SetImageLayout (cmdbuffer, image, oldImageLayout, newImageLayout, subresourceRange, srcStageMask, dstStageMask);
 }
 
+void GenerateMipMaps (
+    VkCommandBuffer cmdBuf, VkImage image, VkImageLayout finalImageLayout, int width, int height, int depth, int layers, int mipLevels)
+{
+	// We copy down the whole mip chain doing a blit from mip-1 to mip
+	// An alternative way would be to always blit from the first mip level and
+	// sample that one down
 
+	// Copy down mips from n-1 to n
+	for (int32_t i = 1; i < mipLevels; i++)
+	{
+
+		VkImageBlit imageBlit{};
+
+		// Source
+		imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageBlit.srcSubresource.layerCount = layers;
+		imageBlit.srcSubresource.baseArrayLayer = 0;
+		imageBlit.srcSubresource.mipLevel = i - 1;
+		imageBlit.srcOffsets[1].x = int32_t (width >> (i - 1));
+		imageBlit.srcOffsets[1].y = int32_t (height >> (i - 1));
+		imageBlit.srcOffsets[1].z = 1;
+
+		// Destination
+		imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageBlit.dstSubresource.layerCount = layers;
+		imageBlit.dstSubresource.baseArrayLayer = 0;
+		imageBlit.dstSubresource.mipLevel = i;
+		imageBlit.dstOffsets[1].x = int32_t (width >> i);
+		imageBlit.dstOffsets[1].y = int32_t (height >> i);
+		imageBlit.dstOffsets[1].z = 1;
+
+		VkImageSubresourceRange mipSubRange =
+		    initializers::imageSubresourceRangeCreateInfo (VK_IMAGE_ASPECT_COLOR_BIT, 1, layers);
+		mipSubRange.baseMipLevel = i;
+
+		// Transiton current mip level to transfer dest
+		SetImageLayout (cmdBuf,
+		    image,
+		    VK_IMAGE_LAYOUT_UNDEFINED,
+		    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		    mipSubRange,
+		    VK_PIPELINE_STAGE_TRANSFER_BIT,
+		    VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+		// Blit from previous level
+		vkCmdBlitImage (
+		    cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit, VK_FILTER_LINEAR);
+
+		// Transiton current mip level to transfer source for read in next iteration
+		SetImageLayout (cmdBuf,
+		    image,
+		    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		    mipSubRange,
+		    VK_PIPELINE_STAGE_TRANSFER_BIT,
+		    VK_PIPELINE_STAGE_TRANSFER_BIT);
+	}
+
+	VkImageSubresourceRange subresourceRange =
+	    initializers::imageSubresourceRangeCreateInfo (VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, layers);
+
+	// After the loop, all mip layers are in TRANSFER_SRC layout, so transition
+	// all to SHADER_READ
+
+	if (finalImageLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+		Log.Error (fmt::format ("Final image layout Undefined!\n"));
+	SetImageLayout (cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, finalImageLayout, subresourceRange);
+}
+
+void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
+    VkImage image,
+    VkBuffer stagingBuffer,
+    const VkImageSubresourceRange subresourceRange,
+    std::vector<VkBufferImageCopy> bufferCopyRegions)
+{
+
+	SetImageLayout (transferCmdBuf, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
+
+	vkCmdCopyBufferToImage (transferCmdBuf,
+	    stagingBuffer,
+	    image,
+	    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	    bufferCopyRegions.size (),
+	    bufferCopyRegions.data ());
+
+	SetImageLayout (
+	    transferCmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresourceRange);
+}
+
+void BeginTransferAndMipMapGenWork (VulkanRenderer& renderer,
+    std::shared_ptr<VulkanBuffer> buffer,
+    const VkImageSubresourceRange subresourceRange,
+    const std::vector<VkBufferImageCopy> bufferCopyRegions,
+    VkImageLayout imageLayout,
+    VkImage image,
+    VkBuffer vk_buffer,
+    int width,
+    int height,
+    int depth,
+    Signal signal,
+    int layers,
+    int mipLevels)
+{
+	if (renderer.device.singleQueueDevice)
+	{
+		std::function<void(const VkCommandBuffer)> work = [=](const VkCommandBuffer cmdBuf) {
+			SetLayoutAndTransferRegions (cmdBuf, image, vk_buffer, subresourceRange, bufferCopyRegions);
+
+			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
+		};
+
+		renderer.SubmitWork (WorkType::graphics, work, {}, {}, { buffer }, { signal });
+	}
+	else
+	{
+		auto sem = std::make_shared<VulkanSemaphore> (renderer.device);
+
+		std::function<void(const VkCommandBuffer)> transferWork = [=](const VkCommandBuffer cmdBuf) {
+			SetLayoutAndTransferRegions (cmdBuf, image, vk_buffer, subresourceRange, bufferCopyRegions);
+		};
+
+		std::function<void(const VkCommandBuffer)> mipMapGenWork = [=](const VkCommandBuffer cmdBuf) {
+			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
+		};
+
+		renderer.SubmitWork (WorkType::transfer, transferWork, {}, { sem }, { buffer }, {});
+
+		renderer.SubmitWork (WorkType::graphics, mipMapGenWork, { sem }, {}, {}, { signal });
+	}
+}
 
 VulkanTexture::VulkanTexture (
     VulkanRenderer& renderer, TexCreateDetails texCreateDetails, Resource::Texture::TexResource textureResource)
@@ -248,7 +377,7 @@ VulkanTexture::VulkanTexture (
 	    mipLevels,
 	    layers);
 
-	updateDescriptor ();
+	resource.FillResource (textureSampler, textureImageView, textureImageLayout);
 }
 
 VulkanTexture::VulkanTexture (VulkanRenderer& renderer,
@@ -346,7 +475,7 @@ VulkanTexture::VulkanTexture (VulkanRenderer& renderer,
 	    mipLevels,
 	    layers);
 
-	updateDescriptor ();
+	resource.FillResource (textureSampler, textureImageView, textureImageLayout);
 }
 
 VulkanTexture::VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails)
@@ -396,80 +525,7 @@ VulkanTexture::~VulkanTexture ()
 		vkDestroySampler (renderer.device.device, textureSampler, nullptr);
 }
 
-void VulkanTexture::updateDescriptor ()
-{
-	resource.FillResource (textureSampler, textureImageView, textureImageLayout);
-}
 
-void GenerateMipMaps (
-    VkCommandBuffer cmdBuf, VkImage image, VkImageLayout finalImageLayout, int width, int height, int depth, int layers, int mipLevels)
-{
-	// We copy down the whole mip chain doing a blit from mip-1 to mip
-	// An alternative way would be to always blit from the first mip level and
-	// sample that one down
-
-	// Copy down mips from n-1 to n
-	for (int32_t i = 1; i < mipLevels; i++)
-	{
-
-		VkImageBlit imageBlit{};
-
-		// Source
-		imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		imageBlit.srcSubresource.layerCount = layers;
-		imageBlit.srcSubresource.baseArrayLayer = 0;
-		imageBlit.srcSubresource.mipLevel = i - 1;
-		imageBlit.srcOffsets[1].x = int32_t (width >> (i - 1));
-		imageBlit.srcOffsets[1].y = int32_t (height >> (i - 1));
-		imageBlit.srcOffsets[1].z = 1;
-
-		// Destination
-		imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		imageBlit.dstSubresource.layerCount = layers;
-		imageBlit.dstSubresource.baseArrayLayer = 0;
-		imageBlit.dstSubresource.mipLevel = i;
-		imageBlit.dstOffsets[1].x = int32_t (width >> i);
-		imageBlit.dstOffsets[1].y = int32_t (height >> i);
-		imageBlit.dstOffsets[1].z = 1;
-
-		VkImageSubresourceRange mipSubRange =
-		    initializers::imageSubresourceRangeCreateInfo (VK_IMAGE_ASPECT_COLOR_BIT, 1, layers);
-		mipSubRange.baseMipLevel = i;
-
-		// Transiton current mip level to transfer dest
-		SetImageLayout (cmdBuf,
-		    image,
-		    VK_IMAGE_LAYOUT_UNDEFINED,
-		    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		    mipSubRange,
-		    VK_PIPELINE_STAGE_TRANSFER_BIT,
-		    VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-		// Blit from previous level
-		vkCmdBlitImage (
-		    cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit, VK_FILTER_LINEAR);
-
-		// Transiton current mip level to transfer source for read in next iteration
-		SetImageLayout (cmdBuf,
-		    image,
-		    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		    mipSubRange,
-		    VK_PIPELINE_STAGE_TRANSFER_BIT,
-		    VK_PIPELINE_STAGE_TRANSFER_BIT);
-	}
-
-	VkImageSubresourceRange subresourceRange =
-	    initializers::imageSubresourceRangeCreateInfo (VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, layers);
-
-	// After the loop, all mip layers are in TRANSFER_SRC layout, so transition
-	// all to SHADER_READ
-
-	// if (finalImageLayout == VK_IMAGE_LAYOUT_UNDEFINED)
-	// Log::Debug << "final layout is undefined!\n";
-	SetImageLayout (
-	    cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
-}
 
 VkSampler VulkanTexture::CreateImageSampler (VkFilter mag,
     VkFilter min,
@@ -531,27 +587,6 @@ VkImageView VulkanTexture::CreateImageView (VkImage image,
 	return imageView;
 }
 
-void AlignedTextureMemcpy (
-    int layers, int dst_layer_width, int height, int width, int src_row_width, int dst_row_width, char* src, char* dst)
-{
-
-	int offset = 0;
-	int texOff = 0;
-	for (int i = 0; i < layers; i++)
-	{
-		for (int r = 0; r < height; r++)
-		{
-			memcpy (dst + offset, src + texOff, width * 4);
-			offset += dst_row_width;
-			texOff += src_row_width;
-		}
-		if (texOff < dst_layer_width * i)
-		{
-			texOff = dst_layer_width * i;
-		}
-	}
-}
-
 void VulkanTexture::InitImage2D (VkImageCreateInfo imageInfo)
 {
 
@@ -584,92 +619,11 @@ void VulkanTexture::InitDepthImage (VkImageCreateInfo imageInfo)
 	    image.allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
 }
 
-void VulkanTexture::InitStagingImage2D (VkImageCreateInfo imageInfo)
-{
-
-	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-
-	VmaAllocationCreateInfo stagingImageAllocCreateInfo = {};
-	stagingImageAllocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-	stagingImageAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-
-	image.allocator = renderer.device.GetImageOptimalAllocator ();
-	VK_CHECK_RESULT (vmaCreateImage (image.allocator,
-	    &imageInfo,
-	    &stagingImageAllocCreateInfo,
-	    &image.image,
-	    &image.allocation,
-	    &image.allocationInfo));
-}
-
-void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
-    VkImage image,
-    VkBuffer stagingBuffer,
-    const VkImageSubresourceRange subresourceRange,
-    std::vector<VkBufferImageCopy> bufferCopyRegions)
-{
-
-	SetImageLayout (transferCmdBuf, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
-
-	vkCmdCopyBufferToImage (transferCmdBuf,
-	    stagingBuffer,
-	    image,
-	    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-	    bufferCopyRegions.size (),
-	    bufferCopyRegions.data ());
-
-	SetImageLayout (
-	    transferCmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresourceRange);
-}
-
-void BeginTransferAndMipMapGenWork (VulkanRenderer& renderer,
-    std::shared_ptr<VulkanBuffer> buffer,
-    const VkImageSubresourceRange subresourceRange,
-    const std::vector<VkBufferImageCopy> bufferCopyRegions,
-    VkImageLayout imageLayout,
-    VkImage image,
-    VkBuffer vk_buffer,
-    int width,
-    int height,
-    int depth,
-    Signal signal,
-    int layers,
-    int mipLevels)
-{
-	if (renderer.device.singleQueueDevice)
-	{
-		std::function<void(const VkCommandBuffer)> work = [=](const VkCommandBuffer cmdBuf) {
-			SetLayoutAndTransferRegions (cmdBuf, image, vk_buffer, subresourceRange, bufferCopyRegions);
-
-			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
-		};
-
-		renderer.SubmitWork (WorkType::graphics, work, {}, {}, { buffer }, { signal });
-	}
-	else
-	{
-		auto sem = std::make_shared<VulkanSemaphore> (renderer.device);
-
-		std::function<void(const VkCommandBuffer)> transferWork = [=](const VkCommandBuffer cmdBuf) {
-			SetLayoutAndTransferRegions (cmdBuf, image, vk_buffer, subresourceRange, bufferCopyRegions);
-		};
-
-		std::function<void(const VkCommandBuffer)> mipMapGenWork = [=](const VkCommandBuffer cmdBuf) {
-			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
-		};
-
-		renderer.SubmitWork (WorkType::transfer, transferWork, {}, { sem }, { buffer }, {});
-
-		renderer.SubmitWork (WorkType::graphics, mipMapGenWork, { sem }, {}, {}, { signal });
-	}
-}
-
 VulkanTextureManager::VulkanTextureManager (VulkanRenderer& renderer, Resource::Texture::Manager& texManager)
 : renderer (renderer), texManager (texManager)
 {
 }
 
-VulkanTextureManager::~VulkanTextureManager () {}
 
 std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateTexture2D (
     Resource::Texture::TexID texture, TexCreateDetails texCreateDetails)

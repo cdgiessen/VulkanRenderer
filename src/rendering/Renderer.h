@@ -40,14 +40,6 @@ namespace Resource
 class AssetManager;
 }
 
-struct Transform
-{
-	glm::vec3 pos = glm::vec3 (0, 0, 0);
-	glm::vec3 scale = glm::vec3 (1, 1, 1);
-	glm::quat rot = glm::quat (1, 0, 0, 0);
-};
-
-
 enum class RenderableType
 {
 	opaque,
@@ -182,13 +174,13 @@ class VulkanRenderer
 	void ToggleWireframe ();
 
 	void DeviceWaitTillIdle ();
+	VkRenderPass GetRelevantRenderpass (RenderableType type);
 
 	RenderSettings settings;
 
 	VulkanDevice device;
 	VulkanSwapChain vulkanSwapChain;
 	std::unique_ptr<FrameGraph> frameGraph;
-	VkRenderPass GetRelevantRenderpass (RenderableType type);
 
 	ShaderManager shaderManager;
 	VulkanTextureManager textureManager;

@@ -4,6 +4,7 @@ find_path(FMT_PATH_FOUND "fmt" "")
 find_path(SG14_PATH_FOUND "SG14" "")
 find_path(GLSLANG_PATH_FOUND "glslang" "")
 find_path(SPIRV_CROSS_PATH_FOUND "spirv-cross" "")
+find_path(CML_PATH_FOUND "cml" "")
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_MultipleHeaders ON CACHE INTERNAL "")
@@ -58,3 +59,12 @@ if(NOT SPIRV_CROSS_PATH_FOUND)
 endif(NOT SPIRV_CROSS_PATH_FOUND)
 
 add_subdirectory(spirv-cross)
+
+if(NOT CML_PATH_FOUND)
+	message("Updating cml")
+	execute_process(COMMAND git submodule update --init --recursive cml
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT CML_PATH_FOUND)
+
+
+add_subdirectory(cml)
