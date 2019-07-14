@@ -5,6 +5,7 @@ find_path(SG14_PATH_FOUND "SG14" "")
 find_path(GLSLANG_PATH_FOUND "glslang" "")
 find_path(SPIRV_CROSS_PATH_FOUND "spirv-cross" "")
 find_path(CML_PATH_FOUND "cml" "")
+find_path(DTEX_PATH_FOUND "DTex" "")
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_MultipleHeaders ON CACHE INTERNAL "")
@@ -68,3 +69,11 @@ endif(NOT CML_PATH_FOUND)
 
 
 add_subdirectory(cml)
+
+if(NOT DTEX_PATH_FOUND)
+	message("Updating DTex")
+	execute_process(COMMAND git submodule update --init --recursive DTex 
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT DTEX_PATH_FOUND)
+
+add_subdirectory(DTex)

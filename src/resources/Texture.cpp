@@ -2,6 +2,8 @@
 
 #include <iomanip>
 
+#include "DTex/DTex.hpp"
+
 #include "stb_image/stb_image.h"
 
 #include "core/CoreTools.h"

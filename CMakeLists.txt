@@ -88,6 +88,9 @@ target_link_libraries(VulkanApp PRIVATE fmt)
 #SG14
 target_include_directories(VulkanApp PRIVATE ${SG14_INCLUDE_DIRECTORY})
 
+#DTex
+target_link_libraries(VulkanApp PRIVATE DTex)
+
 #glm
 target_link_libraries(VulkanApp PUBLIC glm)
 

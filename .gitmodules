@@ -19,3 +19,6 @@
 [submodule "ext/cml"]
 	path = ext/cml
 	url = https://github.com/cdgiessen/cml
+[submodule "ext/DTex"]
+	path = ext/DTex
+	url = https://github.com/Didgy74/DTex
