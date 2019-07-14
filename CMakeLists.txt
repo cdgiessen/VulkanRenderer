@@ -63,7 +63,9 @@ if(UNIX)
 		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
 	endif(ASAN)
 	if(LSAN)
-		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=leak")
+		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+		set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
+
 	endif(LSAN)
 	if(UBSAN)
 		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=undefined")
@@ -71,6 +73,8 @@ if(UNIX)
 
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif(UNIX)
+
+set(CMAKE_CXX_FLAGS_DEBUG "ASAN_OPTIONS=1")
 
 #cml
 target_link_libraries(VulkanApp PUBLIC cml)
