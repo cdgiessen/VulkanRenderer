@@ -726,17 +726,17 @@ void ProcTerrainNodeGraph::SaveGraphFromFile (std::string fileName)
 
 				else if (slot.value.type == ConnectionType::Vec2)
 				{
-					glm::vec2 vec2 = std::get<glm::vec2> (slot.value.value);
+					cml::vec2f vec2 = std::get<cml::vec2f> (slot.value.value);
 					slotJson["value"] = { vec2.x, vec2.y };
 				}
 				else if (slot.value.type == ConnectionType::Vec3)
 				{
-					glm::vec3 vec3 = std::get<glm::vec3> (slot.value.value);
+					cml::vec3f vec3 = std::get<cml::vec3f> (slot.value.value);
 					slotJson["value"] = { vec3.x, vec3.y, vec3.z };
 				}
 				else if (slot.value.type == ConnectionType::Vec4 || slot.value.type == ConnectionType::Color)
 				{
-					glm::vec4 vec4 = std::get<glm::vec4> (slot.value.value);
+					cml::vec4f vec4 = std::get<cml::vec4f> (slot.value.value);
 					slotJson["value"] = { vec4.x, vec4.y, vec4.z, vec4.w };
 				}
 			}
@@ -865,19 +865,20 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 					{
 						float arr[2];
 						arr[0] = j[curIndex][curSlotIndex]["value"];
-						nodes.at (node).inputSlots[slot].value.value = glm::make_vec2 (arr);
+						nodes.at (node).inputSlots[slot].value.value = cml::vec2f (arr[0], arr[1]);
 					}
 					if (type == ConnectionType::Vec3)
 					{
 						float arr[3];
 						arr[0] = j[curIndex][curSlotIndex]["value"];
-						nodes.at (node).inputSlots[slot].value.value = glm::make_vec3 (arr);
+						nodes.at (node).inputSlots[slot].value.value = cml::vec3f (arr[0], arr[1], arr[2]);
 					}
 					if (type == ConnectionType::Vec4 || type == ConnectionType::Color)
 					{
 						float arr[4];
 						arr[0] = j[curIndex][curSlotIndex]["value"];
-						nodes.at (node).inputSlots[slot].value.value = glm::make_vec4 (arr);
+						nodes.at (node).inputSlots[slot].value.value =
+						    cml::vec4f (arr[0], arr[1], arr[2], arr[3]);
 					}
 				}
 			}
@@ -942,16 +943,16 @@ InputConnectionSlot::InputConnectionSlot (int slotNum, ImVec2 pos, ConnectionTyp
 			value.value = 0.0f;
 			break;
 		case (ConnectionType::Color):
-			value.value = glm::vec4 (0);
+			value.value = cml::vec4f (0);
 			break;
 		case (ConnectionType::Vec2):
-			value.value = glm::vec2 (0);
+			value.value = cml::vec2f (0);
 			break;
 		case (ConnectionType::Vec3):
-			value.value = glm::vec3 (0);
+			value.value = cml::vec3f (0);
 			break;
 		case (ConnectionType::Vec4):
-			value.value = glm::vec4 (0);
+			value.value = cml::vec4f (0);
 			break;
 		default:
 			value.value = 0;
@@ -1018,28 +1019,28 @@ int InputConnectionSlot::Draw (
 			break;
 		case (ConnectionType::Vec2):
 			ImGui::DragFloat2 (std::string ("##vec2" + uniqueID).c_str (),
-			    glm::value_ptr (std::get<glm::vec2> (value.value)),
+			    &(std::get<cml::vec2f> (value.value).x),
 			    sliderStepSize,
 			    lowerBound,
 			    upperBound);
 			break;
 		case (ConnectionType::Vec3):
 			ImGui::DragFloat3 (std::string ("##vec3" + uniqueID).c_str (),
-			    glm::value_ptr (std::get<glm::vec3> (value.value)),
+			    &(std::get<cml::vec3f> (value.value).x),
 			    sliderStepSize,
 			    lowerBound,
 			    upperBound);
 			break;
 		case (ConnectionType::Vec4):
 			ImGui::DragFloat4 (std::string ("##vec4" + uniqueID).c_str (),
-			    glm::value_ptr (std::get<glm::vec4> (value.value)),
+			    &(std::get<cml::vec4f> (value.value).x),
 			    sliderStepSize,
 			    lowerBound,
 			    upperBound);
 			break;
 		case (ConnectionType::Color):
 			ImGui::DragFloat4 (std::string ("##color" + uniqueID).c_str (),
-			    glm::value_ptr (std::get<glm::vec4> (value.value)),
+			    &(std::get<cml::vec4f> (value.value).x),
 			    sliderStepSize,
 			    lowerBound,
 			    upperBound);
@@ -1125,17 +1126,17 @@ void Node::AddInputSlot (ConnectionType type,
 	    (int)inputSlots.size (), ImVec2 (0, 40), type, name, defaultValue, sliderStepSize, lowerBound, upperBound));
 }
 
-void Node::AddInputSlot (ConnectionType type, std::string name, glm::vec2 defaultValue)
+void Node::AddInputSlot (ConnectionType type, std::string name, cml::vec2f defaultValue)
 {
 	inputSlots.push_back (InputConnectionSlot ((int)inputSlots.size (), ImVec2 (0, 40), type, name, defaultValue));
 }
 
-void Node::AddInputSlot (ConnectionType type, std::string name, glm::vec3 defaultValue)
+void Node::AddInputSlot (ConnectionType type, std::string name, cml::vec3f defaultValue)
 {
 	inputSlots.push_back (InputConnectionSlot ((int)inputSlots.size (), ImVec2 (0, 40), type, name, defaultValue));
 }
 
-void Node::AddInputSlot (ConnectionType type, std::string name, glm::vec4 defaultValue)
+void Node::AddInputSlot (ConnectionType type, std::string name, cml::vec4f defaultValue)
 {
 	inputSlots.push_back (InputConnectionSlot ((int)inputSlots.size (), ImVec2 (0, 40), type, name, defaultValue));
 }
@@ -1150,7 +1151,7 @@ Node::Node (NodeType type, NodeId id, ImVec2 position, InternalGraph::GraphProto
 			name = "Output";
 
 			AddInputSlot (ConnectionType::Float, "HeightMap", -0.5f);
-			AddInputSlot (ConnectionType::Color, "Splatmap", glm::vec4 (0));
+			AddInputSlot (ConnectionType::Color, "Splatmap", cml::vec4f (0));
 
 			AddInputSlot (ConnectionType::Int, "Texture 1", 0);
 			AddInputSlot (ConnectionType::Int, "Texture 2", 1);

@@ -18,8 +18,6 @@ int main (int argc, char* argv[])
 {
 	//  Test_MemoryPool ();
 
-	int* mem_leak = new int();
-
 	VulkanApp* vkApp;
 	try
 	{

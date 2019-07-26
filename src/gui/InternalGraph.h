@@ -9,13 +9,15 @@
 
 #include "FastNoiseSIMD/FastNoiseSIMD.h"
 
+#include <cml/cml.h>
+
 #include <glm/glm.hpp>
 #include <glm/packing.hpp>
 
 namespace InternalGraph
 {
 
-using LinkTypeVariants = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4>;
+using LinkTypeVariants = std::variant<int, float, cml::vec2f, cml::vec3f, cml::vec4f>;
 using NodeID = int;
 
 class Node;
@@ -80,9 +82,9 @@ static float BilinearImageSample2D (const NoiseImage2D<T>& noiseImage, const flo
 	const int realX = (int)xScaled;
 	const int realZ = (int)zScaled;
 
-	const int realXPlus1 = (int)glm::clamp (
+	const int realXPlus1 = (int)cml::clamp (
 	    xScaled + 1, 0.0f, (float)cellScale); // make sure its not greater than the image size
-	const int realZPlus1 = (int)glm::clamp (zScaled + 1, 0.0f, (float)cellScale);
+	const int realZPlus1 = (int)cml::clamp (zScaled + 1, 0.0f, (float)cellScale);
 
 	const float UL = noiseImage.BoundedLookUp (realX, realZ);
 	const float UR = noiseImage.BoundedLookUp (realX, realZPlus1);
@@ -251,9 +253,9 @@ class InputLink
 	InputLink ();
 	InputLink (float in);
 	InputLink (int in);
-	InputLink (glm::vec2 in);
-	InputLink (glm::vec3 in);
-	InputLink (glm::vec4 in);
+	InputLink (cml::vec2f in);
+	InputLink (cml::vec3f in);
+	InputLink (cml::vec4f in);
 
 	void SetInputNode (NodeID id);
 	void ResetInputNode ();
@@ -280,9 +282,9 @@ struct NoiseSourceInfo
 	int seed;
 	int cellsWide;
 	float scale;
-	glm::i32vec2 pos;
+	cml::vec2i pos;
 
-	NoiseSourceInfo (int seed, int cellsWide, float scale, glm::i32vec2 pos)
+	NoiseSourceInfo (int seed, int cellsWide, float scale, cml::vec2i pos)
 	: seed (seed), cellsWide (cellsWide), scale (scale), pos (pos)
 	{
 	}
@@ -368,15 +370,15 @@ class GraphPrototype
 class GraphUser
 {
 	public:
-	GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm::i32vec2 pos, float scale);
+	GraphUser (const GraphPrototype& graph, int seed, int cellsWide, cml::vec2<int32_t> pos, float scale);
 
 	float SampleHeightMap (const float x, const float z) const;
 
 	int image_length () { return info.cellsWide; }
 
 	std::vector<float>& GetHeightMap ();
-	std::vector<glm::i8vec4>& GetSplatMap ();
-	std::vector<glm::i16vec4>& GetNormalMap ();
+	std::vector<cml::vec4<int8_t>>& GetSplatMap ();
+	std::vector<cml::vec4<int16_t>>& GetNormalMap ();
 
 
 	private:
@@ -385,7 +387,7 @@ class GraphUser
 	NoiseSourceInfo info;
 
 	std::vector<float> outputHeightMap;
-	std::vector<glm::i8vec4> outputSplatMap;
-	std::vector<glm::i16vec4> outputNormalMap;
+	std::vector<cml::vec4<int8_t>> outputSplatMap;
+	std::vector<cml::vec4<int16_t>> outputNormalMap;
 };
 } // namespace InternalGraph

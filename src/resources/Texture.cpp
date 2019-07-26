@@ -1,5 +1,6 @@
 #include "Texture.h"
 
+#include <fstream>
 #include <iomanip>
 
 #include "DTex/DTex.hpp"
@@ -265,6 +266,8 @@ void Manager::LoadTextureFromFile (TexID id)
 
 		paths.push_back (path);
 
+		LoadTextureDTex (path);
+
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels;
 		pixels = stbi_load (path.c_str (), &texWidth, &texHeight, &texChannels, 4);
@@ -292,6 +295,33 @@ void Manager::LoadTextureFromFile (TexID id)
 	textureData.push_back (std::move (texData));
 
 	Log.Debug (fmt::format ("Tex {}\n", id));
+}
+
+void Manager::LoadTextureDTex (std::string path)
+{
+	auto loadResult = DTex::LoadFromFile (path);
+	if (loadResult.GetResultInfo () != DTex::ResultInfo::Success)
+	{
+		Log.Error (fmt::format ("Failed to load file '{}'\n", path));
+		Log.Error (fmt::format ("Detailed error: '{}'\n", loadResult.GetErrorMessage ()));
+		return;
+	}
+
+	Log.Debug (fmt::format ("Loaded image at {} \n", path));
+
+	auto& texDoc = loadResult.GetValue ();
+
+	auto bDims = texDoc.GetBaseDimensions ();
+	Log.Debug (fmt::format ("Base dims are x:{}, y:{}, z:{}\n", bDims.width, bDims.height, bDims.depth));
+
+	if (texDoc.GetPixelFormat () == DTex::PixelFormat::BC7)
+		Log.Debug ("Format is VK_FORMAT_BC7_UNORM_BLOCK.\n");
+	else if (texDoc.GetPixelFormat () == DTex::PixelFormat::RGB_8)
+		Log.Debug ("Image format is VK_FORMAT_R8G8B8.\n");
+	else if (texDoc.GetPixelFormat () == DTex::PixelFormat::RGBA_8)
+		Log.Debug ("Image format is VK_FORMAT_R8G8B8A8.\n");
+	if (texDoc.GetTextureType () == DTex::TextureType::Texture2D)
+		Log.Debug ("ImageType is VK_IMAGE_TYPE_2D.\n");
 }
 
 TexID CreateNewTextureFromByteArray (int width, int height, std::byte* data) { return 0; }

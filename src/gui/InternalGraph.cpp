@@ -8,9 +8,9 @@ namespace InternalGraph
 InputLink::InputLink () : value (-1.0f) {}
 InputLink::InputLink (float in) : value (in) {}
 InputLink::InputLink (int in) : value (in) {}
-InputLink::InputLink (glm::vec2 in) : value (in) {}
-InputLink::InputLink (glm::vec3 in) : value (in) {}
-InputLink::InputLink (glm::vec4 in) : value (in) {}
+InputLink::InputLink (cml::vec2f in) : value (in) {}
+InputLink::InputLink (cml::vec3f in) : value (in) {}
+InputLink::InputLink (cml::vec4f in) : value (in) {}
 
 
 void InputLink::SetInputNode (NodeID id)
@@ -71,13 +71,13 @@ void AddNodeInputLinks (std::vector<InputLink>& links, std::vector<LinkType> typ
 				links.push_back (0);
 				break;
 			case LinkType::Vec2:
-				links.push_back (glm::vec2 (0));
+				links.push_back (cml::vec2f (0));
 				break;
 			case LinkType::Vec3:
-				links.push_back (glm::vec3 (0));
+				links.push_back (cml::vec3f (0));
 				break;
 			case LinkType::Vec4:
-				links.push_back (glm::vec4 (0));
+				links.push_back (cml::vec4f (0));
 				break;
 			default:
 				break;
@@ -258,16 +258,16 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					       std::get<int> (inputLinks.at (1).GetValue (x, z));
 					break;
 				case InternalGraph::LinkType::Vec2:
-					return std::get<glm::vec2> (inputLinks.at (0).GetValue (x, z)) +
-					       std::get<glm::vec2> (inputLinks.at (1).GetValue (x, z));
+					return std::get<cml::vec2f> (inputLinks.at (0).GetValue (x, z)) +
+					       std::get<cml::vec2f> (inputLinks.at (1).GetValue (x, z));
 					break;
 				case InternalGraph::LinkType::Vec3:
-					return std::get<glm::vec3> (inputLinks.at (0).GetValue (x, z)) +
-					       std::get<glm::vec3> (inputLinks.at (1).GetValue (x, z));
+					return std::get<cml::vec3f> (inputLinks.at (0).GetValue (x, z)) +
+					       std::get<cml::vec3f> (inputLinks.at (1).GetValue (x, z));
 					break;
 				case InternalGraph::LinkType::Vec4:
-					return std::get<glm::vec4> (inputLinks.at (0).GetValue (x, z)) +
-					       std::get<glm::vec4> (inputLinks.at (1).GetValue (x, z));
+					return std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)) +
+					       std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z));
 					break;
 				default:
 					break;
@@ -288,16 +288,16 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					       std::get<int> (inputLinks.at (1).GetValue (x, z));
 					break;
 				case InternalGraph::LinkType::Vec2:
-					return std::get<glm::vec2> (inputLinks.at (0).GetValue (x, z)) -
-					       std::get<glm::vec2> (inputLinks.at (1).GetValue (x, z));
+					return std::get<cml::vec2f> (inputLinks.at (0).GetValue (x, z)) -
+					       std::get<cml::vec2f> (inputLinks.at (1).GetValue (x, z));
 					break;
 				case InternalGraph::LinkType::Vec3:
-					return std::get<glm::vec3> (inputLinks.at (0).GetValue (x, z)) -
-					       std::get<glm::vec3> (inputLinks.at (1).GetValue (x, z));
+					return std::get<cml::vec3f> (inputLinks.at (0).GetValue (x, z)) -
+					       std::get<cml::vec3f> (inputLinks.at (1).GetValue (x, z));
 					break;
 				case InternalGraph::LinkType::Vec4:
-					return std::get<glm::vec4> (inputLinks.at (0).GetValue (x, z)) -
-					       std::get<glm::vec4> (inputLinks.at (1).GetValue (x, z));
+					return std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)) -
+					       std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z));
 					break;
 				default:
 					break;
@@ -317,16 +317,16 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					       std::get<int> (inputLinks.at (1).GetValue (x, z));
 					break;
 				case InternalGraph::LinkType::Vec2:
-					return std::get<glm::vec2> (inputLinks.at (0).GetValue (x, z)) *
-					       std::get<glm::vec2> (inputLinks.at (1).GetValue (x, z));
+					return std::get<cml::vec2f> (inputLinks.at (0).GetValue (x, z)) *
+					       std::get<cml::vec2f> (inputLinks.at (1).GetValue (x, z));
 					break;
 				case InternalGraph::LinkType::Vec3:
-					return std::get<glm::vec3> (inputLinks.at (0).GetValue (x, z)) *
-					       std::get<glm::vec3> (inputLinks.at (1).GetValue (x, z));
+					return std::get<cml::vec3f> (inputLinks.at (0).GetValue (x, z)) *
+					       std::get<cml::vec3f> (inputLinks.at (1).GetValue (x, z));
 					break;
 				case InternalGraph::LinkType::Vec4:
-					return std::get<glm::vec4> (inputLinks.at (0).GetValue (x, z)) *
-					       std::get<glm::vec4> (inputLinks.at (1).GetValue (x, z));
+					return std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)) *
+					       std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z));
 					break;
 				default:
 					break;
@@ -346,16 +346,16 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					       std::get<int> (inputLinks.at (1).GetValue (x, z));
 					break;
 				case InternalGraph::LinkType::Vec2:
-					return std::get<glm::vec2> (inputLinks.at (0).GetValue (x, z)) /
-					       std::get<glm::vec2> (inputLinks.at (1).GetValue (x, z));
+					return std::get<cml::vec2f> (inputLinks.at (0).GetValue (x, z)) /
+					       std::get<cml::vec2f> (inputLinks.at (1).GetValue (x, z));
 					break;
 				case InternalGraph::LinkType::Vec3:
-					return std::get<glm::vec3> (inputLinks.at (0).GetValue (x, z)) /
-					       std::get<glm::vec3> (inputLinks.at (1).GetValue (x, z));
+					return std::get<cml::vec3f> (inputLinks.at (0).GetValue (x, z)) /
+					       std::get<cml::vec3f> (inputLinks.at (1).GetValue (x, z));
 					break;
 				case InternalGraph::LinkType::Vec4:
-					return std::get<glm::vec4> (inputLinks.at (0).GetValue (x, z)) /
-					       std::get<glm::vec4> (inputLinks.at (1).GetValue (x, z));
+					return std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)) /
+					       std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z));
 					break;
 				default:
 					break;
@@ -367,24 +367,24 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 				case InternalGraph::LinkType::None:
 					break;
 				case InternalGraph::LinkType::Float:
-					return glm::pow (std::get<float> (inputLinks.at (0).GetValue (x, z)),
+					return cml::pow (std::get<float> (inputLinks.at (0).GetValue (x, z)),
 					    std::get<float> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				case InternalGraph::LinkType::Int:
-					return glm::pow ((float)std::get<int> (inputLinks.at (0).GetValue (x, z)),
+					return cml::pow ((float)std::get<int> (inputLinks.at (0).GetValue (x, z)),
 					    (float)std::get<int> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				case InternalGraph::LinkType::Vec2:
-					return glm::pow (std::get<glm::vec2> (inputLinks.at (0).GetValue (x, z)),
-					    std::get<glm::vec2> (inputLinks.at (1).GetValue (x, z)));
+					return cml::pow (std::get<cml::vec2f> (inputLinks.at (0).GetValue (x, z)),
+					    std::get<cml::vec2f> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				case InternalGraph::LinkType::Vec3:
-					return glm::pow (std::get<glm::vec3> (inputLinks.at (0).GetValue (x, z)),
-					    std::get<glm::vec3> (inputLinks.at (1).GetValue (x, z)));
+					return cml::pow (std::get<cml::vec3f> (inputLinks.at (0).GetValue (x, z)),
+					    std::get<cml::vec3f> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				case InternalGraph::LinkType::Vec4:
-					return glm::pow (std::get<glm::vec4> (inputLinks.at (0).GetValue (x, z)),
-					    std::get<glm::vec4> (inputLinks.at (1).GetValue (x, z)));
+					return cml::pow (std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)),
+					    std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				default:
 					break;
@@ -396,24 +396,24 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 				case InternalGraph::LinkType::None:
 					break;
 				case InternalGraph::LinkType::Float:
-					return glm::max (std::get<float> (inputLinks.at (0).GetValue (x, z)),
+					return cml::max (std::get<float> (inputLinks.at (0).GetValue (x, z)),
 					    std::get<float> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				case InternalGraph::LinkType::Int:
-					return glm::max (std::get<int> (inputLinks.at (0).GetValue (x, z)),
+					return cml::max (std::get<int> (inputLinks.at (0).GetValue (x, z)),
 					    std::get<int> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				case InternalGraph::LinkType::Vec2:
-					return glm::max (std::get<glm::vec2> (inputLinks.at (0).GetValue (x, z)),
-					    std::get<glm::vec2> (inputLinks.at (1).GetValue (x, z)));
+					return cml::max (std::get<cml::vec2f> (inputLinks.at (0).GetValue (x, z)),
+					    std::get<cml::vec2f> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				case InternalGraph::LinkType::Vec3:
-					return glm::max (std::get<glm::vec3> (inputLinks.at (0).GetValue (x, z)),
-					    std::get<glm::vec3> (inputLinks.at (1).GetValue (x, z)));
+					return cml::max (std::get<cml::vec3f> (inputLinks.at (0).GetValue (x, z)),
+					    std::get<cml::vec3f> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				case InternalGraph::LinkType::Vec4:
-					return glm::max (std::get<glm::vec4> (inputLinks.at (0).GetValue (x, z)),
-					    std::get<glm::vec4> (inputLinks.at (1).GetValue (x, z)));
+					return cml::max (std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)),
+					    std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				default:
 					break;
@@ -426,24 +426,24 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 				case InternalGraph::LinkType::None:
 					break;
 				case InternalGraph::LinkType::Float:
-					return glm::min (std::get<float> (inputLinks.at (0).GetValue (x, z)),
+					return cml::min (std::get<float> (inputLinks.at (0).GetValue (x, z)),
 					    std::get<float> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				case InternalGraph::LinkType::Int:
-					return glm::min (std::get<int> (inputLinks.at (0).GetValue (x, z)),
+					return cml::min (std::get<int> (inputLinks.at (0).GetValue (x, z)),
 					    std::get<int> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				case InternalGraph::LinkType::Vec2:
-					return glm::min (std::get<glm::vec2> (inputLinks.at (0).GetValue (x, z)),
-					    std::get<glm::vec2> (inputLinks.at (1).GetValue (x, z)));
+					return cml::min (std::get<cml::vec2f> (inputLinks.at (0).GetValue (x, z)),
+					    std::get<cml::vec2f> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				case InternalGraph::LinkType::Vec3:
-					return glm::min (std::get<glm::vec3> (inputLinks.at (0).GetValue (x, z)),
-					    std::get<glm::vec3> (inputLinks.at (1).GetValue (x, z)));
+					return cml::min (std::get<cml::vec3f> (inputLinks.at (0).GetValue (x, z)),
+					    std::get<cml::vec3f> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				case InternalGraph::LinkType::Vec4:
-					return glm::min (std::get<glm::vec4> (inputLinks.at (0).GetValue (x, z)),
-					    std::get<glm::vec4> (inputLinks.at (1).GetValue (x, z)));
+					return cml::min (std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)),
+					    std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z)));
 					break;
 				default:
 					break;
@@ -469,7 +469,7 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					value = std::get<float> (inputLinks.at (0).GetValue (x, z));
 					lower = std::get<float> (inputLinks.at (1).GetValue (x, z));
 					upper = std::get<float> (inputLinks.at (2).GetValue (x, z));
-					retVal = glm::clamp (value, lower, upper);
+					retVal = cml::clamp (value, lower, upper);
 					return retVal;
 				default:
 					break;
@@ -560,7 +560,7 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 			c = std::get<float> (inputLinks.at (2).GetValue (x, z));
 			d = std::get<float> (inputLinks.at (3).GetValue (x, z));
 
-			retVal = glm::vec4 (a, b, c, d);
+			retVal = cml::vec4f (a, b, c, d);
 
 			return retVal;
 			break;
@@ -570,7 +570,7 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 			lower = std::get<float> (inputLinks.at (1).GetValue (x, z));
 			upper = std::get<float> (inputLinks.at (2).GetValue (x, z));
 			smooth = std::get<float> (inputLinks.at (3).GetValue (x, z));
-			// value = glm::clamp(value, lower, upper);
+			// value = cml::clamp(value, lower, upper);
 			retVal = lower + value * (upper - lower);
 			// retVal = ((upper - value) + (value - lower)) / (upper - lower);
 
@@ -791,10 +791,10 @@ void GraphPrototype::SetOutputNodeID (NodeID id) { outputNodeID = id; }
 NodeMap GraphPrototype::GetNodeMap () const { return nodeMap; }
 
 
-GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm::i32vec2 pos, float scale)
+GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, cml::vec2<int32_t> pos, float scale)
 : info (seed, cellsWide, scale, pos), nodeMap (graph.GetNodeMap ())
 {
-	// glm::ivec2(pos.x * (cellsWide) / scale, pos.y * (cellsWide) / scale), scale / (cellsWide)
+	// cml::vec2<int32_t>(pos.x * (cellsWide) / scale, pos.y * (cellsWide) / scale), scale / (cellsWide)
 
 	for (auto& node : nodeMap)
 	{
@@ -834,21 +834,21 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm:
 		for (int z = 0; z < cellsWide; z++)
 		{
 
-			glm::vec4 val = std::get<glm::vec4> (outputNode.GetSplatMapValue (z, x));
-			// val = glm::normalize (val);
+			cml::vec4f val = std::get<cml::vec4f> (outputNode.GetSplatMapValue (z, x));
+			// val = cml::normalize (val);
 			// Resource::Texture::Pixel_RGBA pixel = Resource::Texture::Pixel_RGBA(
 
 			assert (!std::isnan (val.x));
 			std::byte r =
-			    static_cast<std::byte> (static_cast<uint8_t> (glm::clamp (val.x, 0.0f, 1.0f) * 255.0f));
+			    static_cast<std::byte> (static_cast<uint8_t> (cml::clamp (val.x, 0.0f, 1.0f) * 255.0f));
 			std::byte g =
-			    static_cast<std::byte> (static_cast<uint8_t> (glm::clamp (val.y, 0.0f, 1.0f) * 255.0f));
+			    static_cast<std::byte> (static_cast<uint8_t> (cml::clamp (val.y, 0.0f, 1.0f) * 255.0f));
 			std::byte b =
-			    static_cast<std::byte> (static_cast<uint8_t> (glm::clamp (val.z, 0.0f, 1.0f) * 255.0f));
+			    static_cast<std::byte> (static_cast<uint8_t> (cml::clamp (val.z, 0.0f, 1.0f) * 255.0f));
 			std::byte a =
-			    static_cast<std::byte> (static_cast<uint8_t> (glm::clamp (val.w, 0.0f, 1.0f) * 255.0f));
+			    static_cast<std::byte> (static_cast<uint8_t> (cml::clamp (val.w, 0.0f, 1.0f) * 255.0f));
 
-			outputSplatMap.push_back ({ r, g, b, a });
+			outputSplatMap.push_back ({ (int8_t)r, (int8_t)g, (int8_t)b, (int8_t)a });
 		}
 	}
 
@@ -867,16 +867,16 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm:
 				float h_py = outputHeightMap.at ((x + 1) * cellsWide + z);
 				float h_my = outputHeightMap.at ((x - 1) * cellsWide + z);
 
-				glm::vec3 normal = glm::normalize (glm::vec3 (h_px - h_mx, 2.0f, h_py - h_my));
+				cml::vec3f normal = cml::normalize (cml::vec3f (h_px - h_mx, 2.0f, h_py - h_my));
 
-				uint xy = glm::packSnorm2x16 (glm::vec2 (normal.x, normal.y));
-				glm::i16 x = xy & 0xFFFF0000;
-				glm::i16 y = xy & 0x0000FFFF;
-				glm::i16 n_z = glm::packSnorm2x16 (glm::vec2 (normal.z, 0)) & 0xFFFF0000;
-				outputNormalMap.push_back ({ x, y, n_z, 0 });
+				// uint xy = glm::packSnorm2x16 (cml::vec2f (normal.x, normal.y));
+				// glm::i16 x = xy & 0xFFFF0000;
+				// glm::i16 y = xy & 0x0000FFFF;
+				// glm::i16 n_z = glm::packSnorm2x16 (cml::vec2f (normal.z, 0)) & 0xFFFF0000;
+				outputNormalMap.push_back ({ (int16_t)0.5, (int16_t)1, (int16_t)0.5, (int16_t)0 });
 			}
 			else
-				outputNormalMap.push_back ({ 0.5, 1, 0.5, 0 });
+				outputNormalMap.push_back ({ (int16_t)0.5, (int16_t)1, (int16_t)0.5, (int16_t)0 });
 		}
 	}
 
@@ -889,8 +889,8 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, glm:
 
 
 std::vector<float>& GraphUser::GetHeightMap () { return outputHeightMap; }
-std::vector<glm::i8vec4>& GraphUser::GetSplatMap () { return outputSplatMap; }
-std::vector<glm::i16vec4>& GraphUser::GetNormalMap () { return outputNormalMap; }
+std::vector<cml::vec4<int8_t>>& GraphUser::GetSplatMap () { return outputSplatMap; }
+std::vector<cml::vec4<int16_t>>& GraphUser::GetNormalMap () { return outputNormalMap; }
 
 
 float GraphUser::SampleHeightMap (const float x, const float z) const

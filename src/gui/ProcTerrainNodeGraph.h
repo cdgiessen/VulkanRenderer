@@ -16,6 +16,8 @@
 
 #include "ImGui/imgui.h"
 
+#include "cml/cml.h"
+
 
 enum class ConnectionType
 {
@@ -28,7 +30,7 @@ enum class ConnectionType
 	Color,
 };
 
-using SlotValueVariant = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4>;
+using SlotValueVariant = std::variant<int, float, cml::vec2f, cml::vec3f, cml::vec4f>;
 
 struct SlotValueHolder
 {
@@ -170,9 +172,9 @@ class Node
 	    ConnectionType type, std::string name, float defaultValue, float sliderStepSize, float lowerBound, float upperBound);
 	void AddInputSlot (
 	    ConnectionType type, std::string name, int defaultValue, float sliderStepSize, float lowerBound, float upperBound);
-	void AddInputSlot (ConnectionType type, std::string name, glm::vec2 defaultValue);
-	void AddInputSlot (ConnectionType type, std::string name, glm::vec3 defaultValue);
-	void AddInputSlot (ConnectionType type, std::string name, glm::vec4 defaultValue);
+	void AddInputSlot (ConnectionType type, std::string name, cml::vec2f defaultValue);
+	void AddInputSlot (ConnectionType type, std::string name, cml::vec3f defaultValue);
+	void AddInputSlot (ConnectionType type, std::string name, cml::vec4f defaultValue);
 
 	InternalGraph::NodeID internalNodeID;
 

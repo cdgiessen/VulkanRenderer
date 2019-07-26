@@ -1,19 +1,13 @@
 #pragma once
 
-#include <string>
-
 #include <atomic>
 #include <cstddef>
 #include <fstream>
 #include <memory>
 #include <mutex>
 #include <string>
-#include <thread>
-#include <tuple>
 #include <unordered_map>
 #include <vector>
-
-#include <glm/fwd.hpp>
 
 #include <nlohmann/json_fwd.hpp>
 
@@ -158,6 +152,7 @@ class Manager
 	TexID GetNextFreeTexID ();
 
 	void LoadTextureFromFile (TexID id);
+	void LoadTextureDTex (std::string path);
 
 	TexID GetTexIDByName (std::string s);
 	TexResource& GetTexResourceByID (int id);

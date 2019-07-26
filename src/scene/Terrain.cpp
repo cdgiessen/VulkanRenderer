@@ -66,7 +66,11 @@ Terrain::Terrain (VulkanRenderer& renderer,
   coordinateData (coords),
   heightScale (heightScale),
   terrainGrid (grid),
-  fastGraphUser (protoGraph, 1337, coords.sourceImageResolution, coords.noisePos, coords.noiseSize.x)
+  fastGraphUser (protoGraph,
+      1337,
+      coords.sourceImageResolution,
+      cml::vec2<int32_t> (coords.noisePos.x, coords.noisePos.y),
+      coords.noiseSize.x)
 {
 	// simple calculation right now, does the absolute max number of quads possible with given max
 	// level in future should calculate the actual number of max quads, based on distance calculation

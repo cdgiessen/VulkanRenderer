@@ -4,7 +4,7 @@ include(CMakeToolsHelpers OPTIONAL)
 
 set(CMAKE_CXX_STANDARD 17)
 
-project(VulkanRenderer VERSION 0.0.1 LANGUAGES CXX)
+project(VulkanRenderer VERSION 0.0.1)
 
 #libraries
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -74,8 +74,6 @@ if(UNIX)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif(UNIX)
 
-set(CMAKE_CXX_FLAGS_DEBUG "ASAN_OPTIONS=1")
-
 #cml
 target_link_libraries(VulkanApp PUBLIC cml)
 
@@ -89,7 +87,7 @@ target_link_libraries(VulkanApp PRIVATE fmt)
 target_include_directories(VulkanApp PRIVATE ${SG14_INCLUDE_DIRECTORY})
 
 #DTex
-target_link_libraries(VulkanApp PRIVATE DTex)
+target_link_libraries(VulkanApp PRIVATE DTex::DTex)
 
 #glm
 target_link_libraries(VulkanApp PUBLIC glm)
@@ -110,10 +108,8 @@ target_include_directories(VulkanApp PRIVATE ${SPIRV_CROSS_INCLUDE_DIR})
 target_link_libraries(VulkanApp PRIVATE spirv-cross-core spirv-cross-cpp spirv-cross-reflect) 
 
 #bullet physics
-if(BULLET_FOUND)
-	target_include_directories(VulkanApp PRIVATE ${BULLET_INCLUDE_DIRS})
-	target_link_libraries(VulkanApp PRIVATE ${BULLET_LIBRARIES})
-endif(BULLET_FOUND)
+target_include_directories(VulkanApp PRIVATE ${BULLET_INCLUDE_DIRS})
+target_link_libraries(VulkanApp PRIVATE ${BULLET_LIBRARIES})
 
 #openal
 target_link_libraries(VulkanApp PRIVATE ${OPENAL_LIBRARIES})
