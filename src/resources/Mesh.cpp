@@ -255,7 +255,8 @@ void Add_subdiv_triangle (
 		}
 
 		// seam fix vertex
-		cml::vec3f pos = cml::lerp (cml::lerp (top, left, (dim - i) / (dim - i)), down, (i + 0.5) / (dim));
+		cml::vec3f pos =
+		    cml::lerp (cml::lerp (top, left, (dim - i) / (dim - i)), down, (float)(i + 0.5f) / (dim));
 
 		verts.push_back (pos.x);
 		verts.push_back (pos.y);
@@ -309,28 +310,28 @@ void subdiv_triangle (std::vector<float>& verts,
     int subdivs)
 {
 	Add_subdiv_triangle (
-	    verts, indices, top, cml::lerp (top, bottom_left, 0.5), cml::lerp (top, bottom_right, 0.5), subdivs);
+	    verts, indices, top, cml::lerp (top, bottom_left, 0.5f), cml::lerp (top, bottom_right, 0.5f), subdivs);
 	Add_subdiv_triangle (
-	    verts, indices, bottom_left, cml::lerp (bottom_left, bottom_right, 0.5), cml::lerp (top, bottom_left, 0.5), subdivs);
+	    verts, indices, bottom_left, cml::lerp (bottom_left, bottom_right, 0.5f), cml::lerp (top, bottom_left, 0.5f), subdivs);
 	Add_subdiv_triangle (
-	    verts, indices, bottom_right, cml::lerp (top, bottom_right, 0.5), cml::lerp (bottom_left, bottom_right, 0.5), subdivs);
+	    verts, indices, bottom_right, cml::lerp (top, bottom_right, 0.5f), cml::lerp (bottom_left, bottom_right, 0.5f), subdivs);
 
 	if (levels == 0)
 	{
 		Add_subdiv_triangle_no_seam_fix (verts,
 		    indices,
-		    cml::lerp (top, bottom_left, 0.5),
-		    cml::lerp (bottom_left, bottom_right, 0.5),
-		    cml::lerp (top, bottom_right, 0.5),
+		    cml::lerp (top, bottom_left, 0.5f),
+		    cml::lerp (bottom_left, bottom_right, 0.5f),
+		    cml::lerp (top, bottom_right, 0.5f),
 		    subdivs * 2);
 	}
 	else
 	{
 		subdiv_triangle (verts,
 		    indices,
-		    cml::lerp (top, bottom_left, 0.5),
-		    cml::lerp (bottom_left, bottom_right, 0.5),
-		    cml::lerp (top, bottom_right, 0.5),
+		    cml::lerp (top, bottom_left, 0.5f),
+		    cml::lerp (bottom_left, bottom_right, 0.5f),
+		    cml::lerp (top, bottom_right, 0.5f),
 		    levels - 1,
 		    subdivs);
 	}

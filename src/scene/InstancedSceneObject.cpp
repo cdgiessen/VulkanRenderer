@@ -56,7 +56,7 @@ void InstancedSceneObject::SetupUniformBuffer ()
 	ubo.model = cml::mat4f (1.0f);
 	ubo.model = ubo.model.translate (cml::vec3f (0, 0, 0));
 	// ubo.model = cml::rotate(ubo.model, time / 2.0f, cml::vec3f(0.5, 1, 0));
-	ubo.normal = cml::to_mat4 (cml::to_mat3 (ubo.model).inverse ().transpose);
+	ubo.normal = cml::to_mat4 (cml::to_mat3 (ubo.model).inverse ().transpose ());
 
 	uniformBuffer->CopyToBuffer (&ubo, sizeof (ModelBufferObject));
 
@@ -243,7 +243,7 @@ void InstancedSceneObject::SetupPipeline ()
 	//	...
 	//	layout (location = 4) in vec3 instancePos;	Per-Instance
 	// std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {
-	// 	// Per-vertex attributees
+	// 	// Per-vertex attributes
 	// 	// These are advanced for each vertex fetched by the vertex shader
 	// 	initializers::vertexInputAttributeDescription (
 	// 	    VERTEX_BUFFER_BIND_ID, 0, VK_FORMAT_R32G32B32_SFLOAT, 0), // Location 0: Position

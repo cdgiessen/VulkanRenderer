@@ -126,13 +126,13 @@ struct PBR_Material
 	float metallic = 0.1f;
 	float roughness = 0.5f;
 	float ao = 1;
-	cml::vec3f emmisive = cml::vec3f (0.0, 0.0, 0.0);
+	cml::vec3f emissive = cml::vec3f (0.0, 0.0, 0.0);
 
 	bool useTexAlbedo = false;
 	bool useTexMetallic = false;
 	bool useTexRoughness = false;
 	bool useTexAmbientOcclusion = false;
-	bool useTexEmmisive = false;
+	bool useTexEmissive = false;
 	bool useTexNormal = false;
 
 	std::shared_ptr<VulkanTexture> tx_albedo;
@@ -143,4 +143,5 @@ struct PBR_Material
 	std::shared_ptr<VulkanTexture> tx_normal;
 };
 
-const cml::mat4f depthReverserMatrix = cml::mat4f (1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1);
+constexpr cml::mat4f depthReverserMatrix = cml::mat4f (
+    1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f);

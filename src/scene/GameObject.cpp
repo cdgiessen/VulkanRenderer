@@ -25,13 +25,13 @@ void GameObject::LoadModel (std::shared_ptr<MeshData> mesh) { this->gameObjectMe
 void GameObject::SetupUniformBuffer ()
 {
 	uniformBuffer = std::make_shared<VulkanBufferUniform> (renderer.device, sizeof (ModelBufferObject));
-	// uniformBuffer->CreateUniformBufferPersitantlyMapped(sizeof(ModelBufferObject));
+	// uniformBuffer->CreateUniformBufferPersistentlyMapped(sizeof(ModelBufferObject));
 
 	materialBuffer = std::make_shared<VulkanBufferUniform> (renderer.device, sizeof (Phong_Material));
 	//	if (usePBR)
-	//		materialBuffer->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Material));
+	//		materialBuffer->CreateUniformBufferPersistentlyMapped(sizeof(PBR_Material));
 	//	else
-	//		materialBuffer->CreateUniformBufferPersitantlyMapped(sizeof(Phong_Material));
+	//		materialBuffer->CreateUniformBufferPersistentlyMapped(sizeof(Phong_Material));
 	// PBR_Material pbr;
 	// pbr.albedo = cml::vec3f(0, 0, 1);
 	// materialBuffer->CopyToBuffer(&pbr, sizeof(PBR_Material));

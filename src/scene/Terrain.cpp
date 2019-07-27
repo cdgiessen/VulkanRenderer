@@ -11,7 +11,7 @@
 TerrainQuad::TerrainQuad (cml::vec2f pos,
     cml::vec2f size,
     cml::vec2i logicalPos,
-    cml::vec2i logicalSize,
+    cml::vec2f logicalSize,
     int level,
     cml::vec2i subDivPos,
     float centerHeightValue,
@@ -136,7 +136,7 @@ void Terrain::SetupUniformBuffer ()
 	ModelBufferObject mbo;
 	mbo.model = cml::mat4f (1.0f);
 	// mbo.model = cml::translate (mbo.model, cml::vec3f (coordinateData.pos.x, 0, coordinateData.pos.y));
-	mbo.normal = cml::transpose (cml::inverse (mbo.model));
+	mbo.normal = mbo.model.inverse ().transpose ();
 	uniformBuffer->CopyToBuffer (&mbo, sizeof (ModelBufferObject));
 
 	instanceBuffer = std::make_shared<VulkanBufferInstancePersistant> (renderer.device, 2048, 16);
@@ -341,7 +341,7 @@ void Terrain::SubdivideTerrain (int quad, cml::vec3f viewerPos)
 	cml::vec2f new_size = cml::vec2f (q.size.x / 2.0, q.size.y / 2.0);
 
 	cml::vec2i new_lpos = cml::vec2i (q.logicalPos.x, q.logicalPos.y);
-	cml::vec2i new_lsize = cml::vec2i (q.logicalSize.x / 2.0, q.logicalSize.y / 2.0);
+	cml::vec2f new_lsize = cml::vec2f (q.logicalSize.x / 2.0, q.logicalSize.y / 2.0);
 
 	q.subQuads.UpRight = FindEmptyIndex ();
 	quadMap.emplace (std::make_pair (q.subQuads.UpRight,

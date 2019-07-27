@@ -41,7 +41,7 @@ void Camera::ProcessMouseMovement (float xoffset, float yoffset, bool constrainP
 
 	is_upside_down = (fmod (Pitch + 90.f, 360) < 180);
 
-	// Update Front, Right and Up Vectors using the updated Eular angles
+	// Update Front, Right and Up Vectors using the updated Euler angles
 	updateCameraVectors ();
 }
 
@@ -67,7 +67,7 @@ void Camera::ProcessJoystickLook (float x, float y, float deltaTime)
 
 	is_upside_down = (fmod (Pitch + 90.f, 360) > 0.5);
 
-	// Update Front, Right and Up Vectors using the updated Eular angles
+	// Update Front, Right and Up Vectors using the updated Euler angles
 	updateCameraVectors ();
 }
 

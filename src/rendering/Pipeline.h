@@ -24,7 +24,7 @@ class PipelineOutline
 
 	void SetInputAssembly (VkPrimitiveTopology topology, VkBool32 primitiveRestart);
 
-	void AddViewport (float width, float height, float minDepth, float maxDepth, float x, float y);
+	void AddViewport (float width, float height, float minDepth, float maxDepth, float x = 0.0f, float y = 0.0f);
 	void AddViewport (VkViewport viewport);
 
 	void AddScissor (uint32_t width, uint32_t height, uint32_t offsetX, uint32_t offsetY);

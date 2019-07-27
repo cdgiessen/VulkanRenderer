@@ -27,7 +27,7 @@ class Camera
 	bool is_upside_down = false;
 	bool constrainPitch = true;
 
-	// Eular Angles
+	// Euler Angles
 	float Yaw = -90.0f;
 	float Pitch = 0.0f;
 
@@ -43,7 +43,7 @@ class Camera
 	// Constructor with vectors
 	Camera (cml::vec3f position, cml::vec3f up, float pitch, float yaw);
 
-	// Returns the view matrix calculated using Eular Angles and the LookAt Matrix
+	// Returns the view matrix calculated using Euler Angles and the LookAt Matrix
 	cml::mat4f GetViewMatrix ();
 
 	// Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
@@ -63,6 +63,6 @@ class Camera
 	void ChangeCameraSpeed (Camera_Movement direction, float deltaTime);
 
 	private:
-	// Calculates the front vector from the Camera's (updated) Eular Angles
+	// Calculates the front vector from the Camera's (updated) Euler Angles
 	void updateCameraVectors ();
 };

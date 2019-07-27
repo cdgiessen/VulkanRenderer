@@ -55,8 +55,8 @@ void PipelineOutline::AddViewport (VkViewport viewport) { viewports.push_back (v
 void PipelineOutline::AddViewport (float width, float height, float minDepth, float maxDepth, float x, float y)
 {
 	auto viewport = initializers::viewport (width, height, minDepth, maxDepth);
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
+	viewport.x = x;
+	viewport.y = y;
 	viewports.push_back (viewport);
 }
 

@@ -70,7 +70,7 @@ VulkanApp::VulkanApp ()
 : settings ("settings.json"),
   workerPool (taskManager, HardwareThreadCount ()),
   timeManager (),
-  window (settings.isFullscreen, cml::vec3f (settings.screenWidth, settings.screenHeight), cml ::vec3f (10, 10)),
+  window (settings.isFullscreen, cml::vec2i (settings.screenWidth, settings.screenHeight), cml ::vec2i (10, 10)),
   resourceManager (),
   vulkanRenderer (settings.useValidationLayers, window, resourceManager),
   imgui_nodeGraph_terrain (),

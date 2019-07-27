@@ -30,7 +30,7 @@ class SoundSource
 		alSource3f (source, AL_VELOCITY, 0, 0, 0);
 		// check for errors
 		alSourcei (source, AL_LOOPING, AL_FALSE);
-		// check for errros
+		// check for errors
 	}
 	~SoundSource () { alDeleteSources (1, &source); }
 };

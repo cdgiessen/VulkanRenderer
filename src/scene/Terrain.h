@@ -66,7 +66,7 @@ struct TerrainQuad
 	cml::vec2f pos;         // position of corner
 	cml::vec2f size;        // width and length
 	cml::vec2i logicalPos;  // where in the proc-gen space it is (for noise images)
-	cml::vec2i logicalSize; // how wide the area is.
+	cml::vec2f logicalSize; // how wide the area is.
 	cml::vec2i subDivPos;   // where in the subdivision grid it is (for splatmap)
 	int level = 0;          // how deep the quad is
 	float heightValAtCenter = 0;

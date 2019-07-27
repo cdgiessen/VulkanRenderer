@@ -96,7 +96,7 @@ void Skybox::UpdateUniform (cml::mat4f proj, cml::mat4f view)
 {
 	SkyboxUniformBuffer sbo = {};
 	sbo.proj = proj;
-	sbo.view = cml::mat4f (cml::mat3f (view));
+	sbo.view = cml::to_mat4 (cml::to_mat3 (view));
 
 	skyboxUniformBuffer->CopyToBuffer (&sbo, sizeof (SkyboxUniformBuffer));
 };

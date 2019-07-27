@@ -1,15 +1,16 @@
 #include "ViewCamera.h"
 
-const cml::mat4 depthReverserMatrix{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1 };
+const cml::mat4f depthReverserMatrix{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1 };
 
 const cml::vec3f WorldUp{ 0, 1, 0 };
 
-cml::mat4 Camera::ViewMatrix ()
+cml::mat4f Camera::ViewMatrix ()
 {
 	if (isViewMatDirty)
 	{
 		isViewMatDirty = false;
-		cml::vec3f front = cml::normalize (rotation * cml::vec3f{ 0, 0, 1 });
+		cml::vec3f front = cml::vec3f::forward;
+		// cml::vec3f front = cml::normalize (rotation * cml::vec3f{ 0, 0, 1 });
 
 		cml::vec3f right = cml::normalize (cml::cross (front, WorldUp));
 		cml::vec3f up = cml::normalize (cml::cross (right, front));
@@ -18,7 +19,7 @@ cml::mat4 Camera::ViewMatrix ()
 	}
 	return mat_view;
 }
-cml::mat4 Camera::ProjMatrix ()
+cml::mat4f Camera::ProjMatrix ()
 {
 	if (isProjMatDirty)
 	{
@@ -35,7 +36,7 @@ cml::mat4 Camera::ProjMatrix ()
 	return mat_proj;
 }
 
-cml::mat4 Camera::ViewProjMatrix () { return ProjMatrix () * ViewMatrix (); }
+cml::mat4f Camera::ViewProjMatrix () { return ProjMatrix () * ViewMatrix (); }
 
 void Camera::FieldOfView (float fov)
 {

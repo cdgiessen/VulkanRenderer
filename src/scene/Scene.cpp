@@ -156,7 +156,7 @@ void Scene::UpdateScene ()
 	                                                (float)renderer.vulkanSwapChain.swapChainExtent.height,
 	                                            0.05f,
 	                                            10000000.0f);
-	proj.get (1, 1) *= -1.0f;
+	proj.at (1, 1) *= -1.0f;
 
 	std::vector<CameraData> cd (1);
 	cd.at (0).view = camera->GetViewMatrix ();

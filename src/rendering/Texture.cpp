@@ -177,7 +177,7 @@ void GenerateMipMaps (
 		    initializers::imageSubresourceRangeCreateInfo (VK_IMAGE_ASPECT_COLOR_BIT, 1, layers);
 		mipSubRange.baseMipLevel = i;
 
-		// Transiton current mip level to transfer dest
+		// Transiston current mip level to transfer dest
 		SetImageLayout (cmdBuf,
 		    image,
 		    VK_IMAGE_LAYOUT_UNDEFINED,
@@ -190,7 +190,7 @@ void GenerateMipMaps (
 		vkCmdBlitImage (
 		    cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit, VK_FILTER_LINEAR);
 
-		// Transiton current mip level to transfer source for read in next iteration
+		// Transiston current mip level to transfer source for read in next iteration
 		SetImageLayout (cmdBuf,
 		    image,
 		    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,

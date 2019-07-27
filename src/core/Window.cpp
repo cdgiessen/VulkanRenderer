@@ -1,16 +1,17 @@
 #include "Window.h"
 
+#include <climits>
 #include <mutex>
 
 #include <GLFW/glfw3.h>
 
-#include "cml/cml.h"
-
 #include "ImGui/imgui.h"
+#include "cml/cml.h"
 #include "gui/ImGuiImpl.h"
 
 #include "Input.h"
 #include "Logger.h"
+
 
 Window::Window (bool isFullscreen, const cml::vec2i& size, const cml::vec2i& position = { 0, 0 })
 {

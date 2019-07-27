@@ -66,7 +66,7 @@ struct PBR_Mat_Value
 	float metallic = 0.1f;
 	float roughness = 0.5f;
 	float ao = 1;
-	cml::vec3f emmisive = cml::vec3f (0.0, 0.0, 0.0);
+	cml::vec3f emissive = cml::vec3f (0.0, 0.0, 0.0);
 };
 
 using MaterialOptions = std::variant<Phong_Material, PBR_Mat_Value, PBR_Mat_Tex>;
