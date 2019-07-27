@@ -59,7 +59,7 @@ class TerrainManager
 
 	void CleanUpTerrain ();
 
-	void UpdateTerrains (glm::vec3 cameraPos);
+	void UpdateTerrains (cml::vec3f cameraPos);
 
 	void RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe);
 
@@ -76,8 +76,8 @@ class TerrainManager
 
 	std::mutex terrain_mutex;
 	std::vector<std::unique_ptr<Terrain>> terrains;
-	std::vector<glm::i32vec2> activeTerrains;
-	glm::vec3 curCameraPos;
+	std::vector<cml::vec2i> activeTerrains;
+	cml::vec3f curCameraPos;
 	InternalGraph::GraphPrototype& protoGraph;
 	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo;
 	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness;

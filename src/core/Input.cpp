@@ -4,9 +4,6 @@
 
 #include <GLFW/glfw3.h>
 
-#include <glm/glm.hpp>
-#include <glm/vec2.hpp>
-
 #include "Logger.h"
 
 
@@ -32,8 +29,8 @@ bool GetKeyUp (KeyCode code) { return inputDirector.GetKeyUp (code); }
 bool GetMouseButton (int button) { return inputDirector.GetMouseButton (button); }
 bool GetMouseButtonPressed (int button) { return inputDirector.GetMouseButtonPressed (button); }
 bool GetMouseButtonReleased (int button) { return inputDirector.GetMouseButtonReleased (button); }
-glm::dvec2 GetMousePosition () { return inputDirector.GetMousePosition (); }
-glm::dvec2 GetMouseChangeInPosition () { return inputDirector.GetMouseChangeInPosition (); }
+cml::vec2d GetMousePosition () { return inputDirector.GetMousePosition (); }
+cml::vec2d GetMouseChangeInPosition () { return inputDirector.GetMouseChangeInPosition (); }
 double GetMouseScrollX () { return inputDirector.GetMouseScrollX (); }
 double GetMouseScrollY () { return inputDirector.GetMouseScrollY (); }
 
@@ -68,7 +65,7 @@ void InputDirector::SetupInputDirector (Window* window)
 
 	double xpos = 0.0, ypos = 0.0;
 	glfwGetCursorPos (window->getWindowContext (), &xpos, &ypos);
-	mousePosition = mousePositionPrevious = glm::dvec2 (xpos, ypos);
+	mousePosition = mousePositionPrevious = cml::vec2d (xpos, ypos);
 
 	mouseControlStatus = true;
 	glfwSetInputMode (window->getWindowContext (), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -149,8 +146,8 @@ bool InputDirector::GetKeyUp (KeyCode code) { return keysUp[as_integer (code)]; 
 bool InputDirector::GetMouseButton (int button) { return mouseButtons[button]; }
 bool InputDirector::GetMouseButtonPressed (int button) { return mouseButtonsDown[button]; }
 bool InputDirector::GetMouseButtonReleased (int button) { return mouseButtonsUp[button]; }
-glm::dvec2 InputDirector::GetMousePosition () { return mousePosition; }
-glm::dvec2 InputDirector::GetMouseChangeInPosition () { return mouseChangeInPosition; }
+cml::vec2d InputDirector::GetMousePosition () { return mousePosition; }
+cml::vec2d InputDirector::GetMouseChangeInPosition () { return mouseChangeInPosition; }
 double InputDirector::GetMouseScrollX () { return mouseScroll.x; }
 double InputDirector::GetMouseScrollY () { return mouseScroll.y; }
 void InputDirector::SetTextInputMode () { textInputMode = true; }
@@ -240,8 +237,8 @@ void InputDirector::ResetReleasedInput ()
 	std::fill (std::begin (keysUp), std::end (keysUp), 0);
 	std::fill (std::begin (mouseButtonsUp), std::end (mouseButtonsUp), 0);
 	std::fill (std::begin (mouseButtonsDown), std::end (mouseButtonsDown), 0);
-	mouseScroll = glm::dvec2 (0, 0);
-	mouseChangeInPosition = glm::dvec2 (0, 0);
+	mouseScroll = cml::vec2d (0, 0);
+	mouseChangeInPosition = cml::vec2d (0, 0);
 }
 
 void InputDirector::keyEvent (int key, int scancode, int action, int mods)
@@ -293,7 +290,7 @@ void InputDirector::mouseButtonEvent (int button, int action, int mods)
 void InputDirector::mouseMoveEvent (double xoffset, double yoffset)
 {
 
-	mousePosition = glm::dvec2 (xoffset, yoffset);
+	mousePosition = cml::vec2d (xoffset, yoffset);
 
 	mouseChangeInPosition = mousePositionPrevious - mousePosition;
 	mouseChangeInPosition.x *= -1; // coordinates are reversed on y axis (top left vs bottom left)
@@ -303,6 +300,6 @@ void InputDirector::mouseMoveEvent (double xoffset, double yoffset)
 
 void InputDirector::mouseScrollEvent (double xoffset, double yoffset)
 {
-	mouseScroll = glm::dvec2 (xoffset, yoffset);
+	mouseScroll = cml::vec2d (xoffset, yoffset);
 }
 } // namespace Input

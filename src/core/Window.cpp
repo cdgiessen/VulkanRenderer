@@ -4,7 +4,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include <glm/glm.hpp>
+#include "cml/cml.h"
 
 #include "ImGui/imgui.h"
 #include "gui/ImGuiImpl.h"
@@ -12,7 +12,7 @@
 #include "Input.h"
 #include "Logger.h"
 
-Window::Window (bool isFullscreen, const glm::ivec2& size, const glm::ivec2& position = { 0, 0 })
+Window::Window (bool isFullscreen, const cml::vec2i& size, const cml::vec2i& position = { 0, 0 })
 {
 	glfwInit ();
 	glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
@@ -30,7 +30,7 @@ Window::Window (bool isFullscreen, const glm::ivec2& size, const glm::ivec2& pos
 	else
 	{
 		window = glfwCreateWindow (size.x, size.y, "Vulkan Renderer", NULL, NULL);
-		if (position != glm::ivec2{ INT_MIN, INT_MIN })
+		if (position != cml::vec2i{ INT_MIN, INT_MIN })
 		{
 			glfwSetWindowPos (window, position.x, position.y);
 		}
@@ -66,7 +66,7 @@ Window::~Window ()
 	window = nullptr;
 }
 
-void Window::setSizeLimits (const glm::ivec2& minSize, const glm::ivec2& maxSize = {})
+void Window::setSizeLimits (const cml::vec2i& minSize, const cml::vec2i& maxSize = {})
 {
 	glfwSetWindowSizeLimits (window,
 	    minSize.x,
@@ -106,11 +106,11 @@ void Window::SetWindowToClose ()
 	glfwSetWindowShouldClose (window, true);
 }
 
-glm::ivec2 Window::GetWindowSize ()
+cml::vec2i Window::GetWindowSize ()
 {
 	int width, height;
 	glfwGetWindowSize (window, &width, &height);
-	return glm::ivec2 (width, height);
+	return cml::vec2i (width, height);
 }
 
 void Window::ErrorHandler (int error, const char* description)

@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "cml/cml.h"
 
 #include "rendering/Renderer.h"
 
@@ -34,7 +35,7 @@ class Water
 	public:
 	Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer);
 
-	void UpdateUniform (glm::vec3 camera_pos);
+	void UpdateUniform (cml::vec3f camera_pos);
 
 	void Draw (VkCommandBuffer cmdBuf, bool wireframe);
 };

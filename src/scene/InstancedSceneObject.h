@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include <glm/common.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "cml/cml.h"
+
 #include <vulkan/vulkan.h>
 
 #include "rendering/Model.h"
@@ -23,13 +23,13 @@ class InstancedSceneObject
 	// Per-instance data block
 	struct InstanceData
 	{
-		glm::vec3 pos;
-		glm::vec3 rot;
+		cml::vec3f pos;
+		cml::vec3f rot;
 		float scale = 1;
 		int texIndex = 0;
 		// float dummy2;
 		InstanceData () = default;
-		InstanceData (glm::vec3 pos, glm::vec3 rot, float scale, int texIndex)
+		InstanceData (cml::vec3f pos, cml::vec3f rot, float scale, int texIndex)
 		: pos (pos), rot (rot), scale (scale), texIndex (texIndex)
 		{
 		}

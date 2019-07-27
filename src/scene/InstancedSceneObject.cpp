@@ -1,7 +1,5 @@
 #include "InstancedSceneObject.h"
 
-#include <glm/gtc/type_ptr.hpp>
-
 #include "ImGui/imgui.h"
 #include "core/Logger.h"
 #include "rendering/Initializers.h"
@@ -55,10 +53,10 @@ void InstancedSceneObject::SetupUniformBuffer ()
 	/*uniformBuffer->CreateUniformBuffer(sizeof(ModelBufferObject));*/
 
 	ModelBufferObject ubo = {};
-	ubo.model = glm::mat4 (1.0f);
-	ubo.model = glm::translate (ubo.model, glm::vec3 (0, 0, 0));
-	// ubo.model = glm::rotate(ubo.model, time / 2.0f, glm::vec3(0.5, 1, 0));
-	ubo.normal = glm::transpose (glm::inverse (glm::mat3 (ubo.model)));
+	ubo.model = cml::mat4f (1.0f);
+	ubo.model = ubo.model.translate (cml::vec3f (0, 0, 0));
+	// ubo.model = cml::rotate(ubo.model, time / 2.0f, cml::vec3f(0.5, 1, 0));
+	ubo.normal = cml::to_mat4 (cml::to_mat3 (ubo.model).inverse ().transpose);
 
 	uniformBuffer->CopyToBuffer (&ubo, sizeof (ModelBufferObject));
 
@@ -360,8 +358,8 @@ void InstancedSceneObject::AddInstances (std::vector<InstanceData>& newInstances
 {
 	// for (auto it = positions.begin(); it != positions.end(); it++) {
 	//	ModelBufferObject ubo = {};
-	//	ubo.model = glm::translate(ubo.model, *it);
-	//	ubo.normal = glm::mat4();
+	//	ubo.model = cml::translate(ubo.model, *it);
+	//	ubo.normal = cml::mat4f();
 	//	modelUniforms.push_back(ubo);
 	//}
 
@@ -373,7 +371,7 @@ void InstancedSceneObject::AddInstances (std::vector<InstanceData>& newInstances
 	{
 	    InstanceData id;
 	    id.pos = positions[i];
-	    id.rot = glm::vec3(0,0,0);
+	    id.rot = cml::vec3f(0,0,0);
 	    id.scale = 1.0f;
 	    instancesData.push_back(id);
 	}*/
@@ -461,10 +459,10 @@ void InstancedSceneObject::UploadData ()
 {
 	// for (auto it = modelUniforms.begin(); it != modelUniforms.end(); it++) {
 	// ModelBufferObject ubo = {};
-	// ubo.model = glm::mat4();
-	////ubo.model = glm::translate(ubo.model, glm::vec3(50, 0, 0));
-	// ubo.model = glm::rotate(ubo.model, time / 2.0f, glm::vec3(0.5, 1, 0));
-	// ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
+	// ubo.model = cml::mat4f();
+	////ubo.model = cml::translate(ubo.model, cml::vec3f(50, 0, 0));
+	// ubo.model = cml::rotate(ubo.model, time / 2.0f, cml::vec3f(0.5, 1, 0));
+	// ubo.normal = cml::transpose(cml::inverse(cml::mat3f(ubo.model)));
 	//}
 
 	// instanceBuffer->map(renderer.device.device);
@@ -522,8 +520,8 @@ void InstancedSceneObject::ImGuiShowInstances ()
 		}
 		/*
 		for (auto& instance : instancesData) {
-		    ImGui::DragFloat3("Position", ((float*)glm::value_ptr(instance.pos)));
-		    ImGui::DragFloat3("Rotation", ((float*)glm::value_ptr(instance.rot)));
+		    ImGui::DragFloat3("Position", (&(instance.pos.x)));
+		    ImGui::DragFloat3("Rotation", (&(instance.rot.x)));
 		    ImGui::DragFloat("Scale", &instance.scale);
 		    ImGui::Separator();
 	}

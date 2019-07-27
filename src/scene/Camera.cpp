@@ -1,20 +1,17 @@
 #include "Camera.h"
 
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
-
 // Constructor with vectors
-Camera::Camera (glm::vec3 position, glm::vec3 up, float pitch, float yaw)
-: Front (glm::vec3 (0.0f, 0.0f, -1.0f)), Pitch (pitch), Yaw (yaw)
+Camera::Camera (cml::vec3f position, cml::vec3f up, float pitch, float yaw)
+: Front (cml::vec3f (0.0f, 0.0f, -1.0f)), Pitch (pitch), Yaw (yaw)
 {
 	Position = position;
 	WorldUp = up;
 	updateCameraVectors ();
 }
 
-glm::mat4 Camera::GetViewMatrix ()
+cml::mat4f Camera::GetViewMatrix ()
 {
-	return glm::lookAt (Position, Position + Front, is_upside_down ? Up : Down);
+	return cml::lookAt (Position, Position + Front, is_upside_down ? Up : Down);
 }
 
 // Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
@@ -62,7 +59,7 @@ void Camera::ProcessJoystickLook (float x, float y, float deltaTime)
 	Yaw += x * joystickLookAccel * deltaTime;
 	Pitch += y * joystickLookAccel * deltaTime;
 
-	 if (constrainPitch)
+	if (constrainPitch)
 	{
 		if (Pitch > 89.0f) Pitch = 89.0f;
 		if (Pitch < -89.0f) Pitch = -89.0f;
@@ -102,14 +99,14 @@ void Camera::ChangeCameraSpeed (Camera_Movement direction, float deltaTime)
 void Camera::updateCameraVectors ()
 {
 	// Calculate the new Front vector
-	glm::vec3 front;
-	front.x = cos (glm::radians (Yaw)) * cos (glm::radians (Pitch));
-	front.y = sin (glm::radians (Pitch));
-	front.z = sin (glm::radians (Yaw)) * cos (glm::radians (Pitch));
-	Front = glm::normalize (front);
+	cml::vec3f front;
+	front.x = cos (cml::radians (Yaw)) * cos (cml::radians (Pitch));
+	front.y = sin (cml::radians (Pitch));
+	front.z = sin (cml::radians (Yaw)) * cos (cml::radians (Pitch));
+	Front = cml::normalize (front);
 	// Also re-calculate the Right and Up vector
-	Right = glm::normalize (glm::cross (Front,
+	Right = cml::normalize (cml::cross (Front,
 	    WorldUp)); // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-	Up = glm::normalize (glm::cross (Right, Front));
-	Down = glm::normalize (glm::cross (Front, Right));
+	Up = cml::normalize (cml::cross (Right, Front));
+	Down = cml::normalize (cml::cross (Front, Right));
 }

@@ -1,10 +1,8 @@
 #pragma once
 
-#include <glm/common.hpp>
 #include <vulkan/vulkan.h>
 
-
-
+#include "cml/cml.h"
 
 #include "rendering/Material.h"
 #include "rendering/Model.h"
@@ -70,7 +68,7 @@ class GameObject
 
 	std::shared_ptr<VulkanBufferUniform> materialBuffer;
 
-	glm::vec3 position;
+	cml::vec3f position;
 
 	bool isReadyToRender = false;
 };

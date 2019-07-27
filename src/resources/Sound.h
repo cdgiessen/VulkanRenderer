@@ -1,8 +1,8 @@
 #pragma once
 
+#include "cml/cml.h"
 #include <AL/al.h>
 #include <AL/alc.h>
-#include <glm/glm.hpp>
 
 #include <cstring>
 #include <stdio.h>
@@ -12,11 +12,11 @@ class SoundSource
 	float pitch = 1.0f;
 	float gain = 1.0f;
 	bool loop = false;
-	glm::vec3 pos{ 0.0f, 0.0f, 0.0f };
+	cml::vec3f pos{ 0.0f, 0.0f, 0.0f };
 
 	ALuint source;
 
-	SoundSource (glm::vec3 position, bool loop, float pitch, float gain) : pos (position)
+	SoundSource (cml::vec3f position, bool loop, float pitch, float gain) : pos (position)
 	{
 		alGenSources ((ALuint)1, &source);
 		// check for errors

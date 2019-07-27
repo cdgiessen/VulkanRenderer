@@ -3,7 +3,6 @@
 #include <stdio.h>
 
 #include <algorithm>
-#include <math.h>
 #include <memory>
 #include <stdint.h>
 #include <string.h>

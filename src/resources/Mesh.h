@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/fwd.hpp>
+#include "cml/cml.h"
 #include <memory>
 #include <vector>
 
@@ -69,7 +69,7 @@ extern std::shared_ptr<MeshData> createSinglePlane ();
 
 extern std::shared_ptr<MeshData> createDoublePlane ();
 
-extern std::shared_ptr<MeshData> createFlatPlane (int dim, glm::vec3 size);
+extern std::shared_ptr<MeshData> createFlatPlane (int dim, cml::vec3f size);
 
 extern std::shared_ptr<MeshData> createCube (int dim = 1);
 

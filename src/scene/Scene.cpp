@@ -1,8 +1,6 @@
 #include "Scene.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "cml/cml.h"
 
 #include "core/Input.h"
 #include "core/Logger.h"
@@ -21,30 +19,30 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 : renderer (renderer), resourceMan (resourceMan), timeManager (timeManager)
 {
 
-	camera = std::make_unique<Camera> (glm::vec3 (0, 1, -5), glm::vec3 (0, 1, 0), 0, 90);
+	camera = std::make_unique<Camera> (cml::vec3f (0, 1, -5), cml::vec3f (0, 1, 0), 0, 90);
 
 	directionalLights.resize (5);
 	pointLights.resize (5);
 
-	skySettings.sun = DirectionalLight (glm::vec3 (0, 60, 25), 10.0f, glm::vec3 (1.0f, 0.98f, 0.9f));
-	skySettings.moon = DirectionalLight (-glm::vec3 (0, 60, 25), 0.0f, glm::vec3 (0.9f, 0.95f, 1.0f));
+	skySettings.sun = DirectionalLight (cml::vec3f (0, 60, 25), 10.0f, cml::vec3f (1.0f, 0.98f, 0.9f));
+	skySettings.moon = DirectionalLight (-cml::vec3f (0, 60, 25), 0.0f, cml::vec3f (0.9f, 0.95f, 1.0f));
 
 	directionalLights.at (0) = skySettings.sun;
 
 	// pointLights.resize(1);
 	// PointLight pl;
-	// pl.position = glm::vec3(0, 3, 3);
-	// pl.color = glm::vec3(0, 1, 0);
+	// pl.position = cml::vec3f(0, 3, 3);
+	// pl.color = cml::vec3f(0, 1, 0);
 	// pl.attenuation = 5;
 	// pointLights[0] = pl;
 
-	// pointLights[0] = PointLight(glm::vec4(0, 4, 3, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0,
-	// 0.045f, 0.0075f, 1.0f)); pointLights[1] = PointLight(glm::vec4(10, 10, 50, 1), glm::vec4(0,
-	// 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f)); pointLights[2] = PointLight(glm::vec4(50,
-	// 10, 10, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f, 0.0075f, 1.0f)); pointLights[3] =
-	// PointLight(glm::vec4(50, 10, 50, 1), glm::vec4(0, 0, 0, 0), glm::vec4(1.0, 0.045f,
-	// 0.0075f, 1.0f)); pointLights[4] = PointLight(glm::vec4(75, 10, 75, 1), glm::vec4(0, 0, 0, 0),
-	// glm::vec4(1.0, 0.045f, 0.0075f, 1.0f));
+	// pointLights[0] = PointLight(cml::vec4f(0, 4, 3, 1), cml::vec4f(0, 0, 0, 0), cml::vec4f(1.0,
+	// 0.045f, 0.0075f, 1.0f)); pointLights[1] = PointLight(cml::vec4f(10, 10, 50, 1), cml::vec4f(0,
+	// 0, 0, 0), cml::vec4f(1.0, 0.045f, 0.0075f, 1.0f)); pointLights[2] = PointLight(cml::vec4f(50,
+	// 10, 10, 1), cml::vec4f(0, 0, 0, 0), cml::vec4f(1.0, 0.045f, 0.0075f, 1.0f)); pointLights[3] =
+	// PointLight(cml::vec4f(50, 10, 50, 1), cml::vec4f(0, 0, 0, 0), cml::vec4f(1.0, 0.045f,
+	// 0.0075f, 1.0f)); pointLights[4] = PointLight(cml::vec4f(75, 10, 75, 1), cml::vec4f(0, 0, 0,
+	// 0), cml::vec4f(1.0, 0.045f, 0.0075f, 1.0f));
 
 	skybox = std::make_unique<Skybox> (renderer);
 	skybox->skyboxCubeMap = resourceMan.texManager.GetTexIDByName ("Skybox");
@@ -70,8 +68,8 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	//		sphereObject->usePBR = true;
 	//		sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer.device);
 	//		sphereObject->LoadModel(createSphere(10));
-	//		sphereObject->position = glm::vec3(0, i * 2.2, j * 2.2 );
-	//		//sphereObject->pbr_mat.albedo = glm::vec3(0.8, 0.2, 0.2);
+	//		sphereObject->position = cml::vec3f(0, i * 2.2, j * 2.2 );
+	//		//sphereObject->pbr_mat.albedo = cml::vec3f(0.8, 0.2, 0.2);
 	//		sphereObject->pbr_mat.metallic = 0.1f + (float)i / 10.0f;
 	//		sphereObject->pbr_mat.roughness = 0.1f + (float)j / 10.0f;
 
@@ -90,11 +88,11 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	//		sphereObject->usePBR = false;
 	//		sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer.device);
 	//		sphereObject->LoadModel(createSphere(10));
-	//		sphereObject->position = glm::vec3(0, i * 2.2, (float) 8 * 2.2 - j * 2.2 - 30);
+	//		sphereObject->position = cml::vec3f(0, i * 2.2, (float) 8 * 2.2 - j * 2.2 - 30);
 	//		sphereObject->phong_mat.diffuse = (float)(i ) / 10.0;
 	//		sphereObject->phong_mat.specular = (float)j / 6;
 	//																																																																																																																																																	sphereObject->phong_mat.reflectivity
-	//= 128; 		sphereObject->phong_mat.color = glm::vec4(1.0, 0.3, 0.3, 1.0);
+	//= 128; 		sphereObject->phong_mat.color = cml::vec4f(1.0, 0.3, 0.3, 1.0);
 	//		//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture>(renderer.device);
 	//		//sphereObject->gameObjectTexture = resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/Red.png");
 	//		sphereObject->InitGameObject();
@@ -118,8 +116,8 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	// treesInstanced->LoadTexture(resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/grass.jpg"));
 	// treesInstanced->InitInstancedSceneObject(renderer);
 
-	// treesInstanced->AddInstances({ glm::vec3(10,0,10),glm::vec3(10,0,20), glm::vec3(20,0,10),
-	// glm::vec3(10,0,40), glm::vec3(10,0,-40), glm::vec3(100,0,40) });
+	// treesInstanced->AddInstances({ cml::vec3f(10,0,10),cml::vec3f(10,0,20), cml::vec3f(20,0,10),
+	// cml::vec3f(10,0,40), cml::vec3f(10,0,-40), cml::vec3f(100,0,40) });
 	// treesInstanced->UploadInstances();
 
 	std::vector<InstancedSceneObject::InstanceData> data;
@@ -129,7 +127,7 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 			for (int k = 0; k < size; k++)
 			{
 				data.push_back (InstancedSceneObject::InstanceData (
-				    glm::vec3 (i * 2, k * 2, j * 2), glm::vec3 (0, 0, 0), 1, 0));
+				    cml::vec3f (i * 2, k * 2, j * 2), cml::vec3f (0, 0, 0), 1, 0));
 			}
 	// treesInstanced->AddInstances(data);
 	// rocksInstanced = std::make_shared<InstancedSceneObject>(renderer);
@@ -153,12 +151,12 @@ void Scene::UpdateScene ()
 	GlobalData gd;
 	gd.time = (float)timeManager.RunningTime ();
 
-	glm::mat4 proj = depthReverserMatrix * glm::perspective (glm::radians (45.0f),
-	                                           renderer.vulkanSwapChain.swapChainExtent.width /
-	                                               (float)renderer.vulkanSwapChain.swapChainExtent.height,
-	                                           0.05f,
-	                                           10000000.0f);
-	proj[1][1] *= -1;
+	cml::mat4f proj = depthReverserMatrix * cml::perspective (cml::radians (45.0f),
+	                                            renderer.vulkanSwapChain.swapChainExtent.width /
+	                                                (float)renderer.vulkanSwapChain.swapChainExtent.height,
+	                                            0.05f,
+	                                            10000000.0f);
+	proj.get (1, 1) *= -1.0f;
 
 	std::vector<CameraData> cd (1);
 	cd.at (0).view = camera->GetViewMatrix ();
@@ -258,11 +256,11 @@ void Scene::UpdateSunData ()
 		skySettings.horizontalAngle += skySettings.moveSpeed;
 	}
 
-	float X = glm::cos (skySettings.horizontalAngle) * glm::cos (skySettings.verticalAngle);
-	float Z = glm::sin (skySettings.horizontalAngle) * glm::cos (skySettings.verticalAngle);
-	float Y = glm::sin (skySettings.verticalAngle);
-	skySettings.sun.direction = glm::vec3 (X, Y, Z);
-	skySettings.moon.direction = -glm::vec3 (X, Y, Z);
+	float X = cml::cos (skySettings.horizontalAngle) * cml::cos (skySettings.verticalAngle);
+	float Z = cml::sin (skySettings.horizontalAngle) * cml::cos (skySettings.verticalAngle);
+	float Y = cml::sin (skySettings.verticalAngle);
+	skySettings.sun.direction = cml::vec3f (X, Y, Z);
+	skySettings.moon.direction = -cml::vec3f (X, Y, Z);
 
 	directionalLights.at (0) = skySettings.sun;
 	directionalLights.at (1) = skySettings.moon;
@@ -280,7 +278,7 @@ void Scene::DrawSkySettingsGui ()
 		ImGui::DragFloat ("Sun Intensity", &skySettings.sun.intensity, 0.01f);
 		ImGui::DragFloat ("Sun Horizontal", &skySettings.horizontalAngle, 0.01f, 0.0f, 0.0f, "%.5f");
 		ImGui::DragFloat ("Sun Vertical", &skySettings.verticalAngle, 0.01f, 0.0f, 0.0f, "%.5f");
-		ImGui::SliderFloat3 ("Sun Color", ((float*)glm::value_ptr (skySettings.sun.color)), 0.0f, 1.0f);
+		ImGui::SliderFloat3 ("Sun Color", (&(skySettings.sun.color.x)), 0.0f, 1.0f);
 	}
 	ImGui::End ();
 }
@@ -303,12 +301,10 @@ void Scene::UpdateSceneGUI ()
 		{
 
 			ImGui::DragFloat3 (std::string ("Direction##" + std::to_string (i)).c_str (),
-			    (float*)glm::value_ptr (directionalLights[i].direction),
+			    &(directionalLights[i].direction.x),
 			    0.01f);
-			ImGui::SliderFloat3 (std::string ("Color##" + std::to_string (i)).c_str (),
-			    (float*)glm::value_ptr (directionalLights[i].color),
-			    0.0f,
-			    1.0f);
+			ImGui::SliderFloat3 (
+			    std::string ("Color##" + std::to_string (i)).c_str (), &(directionalLights[i].color.x), 0.0f, 1.0f);
 			ImGui::DragFloat (std::string ("Intensity##" + std::to_string (i)).c_str (),
 			    &directionalLights[i].intensity,
 			    0.01f);
@@ -319,10 +315,10 @@ void Scene::UpdateSceneGUI ()
 		{
 
 			ImGui::DragFloat3 (std::string ("Position##" + std::to_string (i + 1000)).c_str (),
-			    ((float*)glm::value_ptr (pointLights[i].position)),
+			    (&(pointLights[i].position.x)),
 			    0.01f);
 			ImGui::SliderFloat3 (std::string ("Color##" + std::to_string (i + 1000)).c_str (),
-			    ((float*)glm::value_ptr (pointLights[i].color)),
+			    (&(pointLights[i].color.x)),
 			    0.0f,
 			    1.0f);
 			ImGui::DragFloat (std::string ("Attenuation##" + std::to_string (i + 1000)).c_str (),
@@ -336,8 +332,8 @@ void Scene::UpdateSceneGUI ()
 
 	if (ImGui::Begin ("instance tester", &value))
 	{
-		ImGui::DragFloat3 ("Position", ((float*)glm::value_ptr (testInstanceData.pos)));
-		ImGui::DragFloat3 ("Rotation", ((float*)glm::value_ptr (testInstanceData.rot)));
+		ImGui::DragFloat3 ("Position", (&(testInstanceData.pos.x)));
+		ImGui::DragFloat3 ("Rotation", (&(testInstanceData.rot.x)));
 		ImGui::DragFloat ("Scale", &testInstanceData.scale);
 		if (ImGui::Button ("Add instance"))
 		{
@@ -359,8 +355,8 @@ void Scene::UpdateSceneGUI ()
 			std::unique_ptr<GameObject> sphereObject = std::make_unique<GameObject> (renderer);
 			sphereObject->usePBR = true;
 			sphereObject->LoadModel (createSphere (10));
-			sphereObject->position = glm::vec3 (x++, 3, 2.2);
-			// sphereObject->pbr_mat.albedo = glm::vec3(0.8, 0.2, 0.2);
+			sphereObject->position = cml::vec3f (x++, 3, 2.2);
+			// sphereObject->pbr_mat.albedo = cml::vec3f(0.8, 0.2, 0.2);
 			sphereObject->pbr_mat.metallic = 0.1f + (float)5 / 10.0f;
 			sphereObject->pbr_mat.roughness = 0.1f + (float)5 / 10.0f;
 
@@ -373,7 +369,7 @@ void Scene::UpdateSceneGUI ()
 	for (auto& go : gameObjects)
 	{
 		go->pbr_mat.albedo = testMat.albedo;
-		go->phong_mat.color = glm::vec4 (testMat.albedo, 1.0f);
+		go->phong_mat.color = cml::to_vec4 (testMat.albedo, 1.0f);
 	}
 }
 

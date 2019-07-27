@@ -5,8 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <glm/common.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "cml/cml.h"
 
 #include "resources/Texture.h"
 
@@ -17,8 +16,8 @@
 
 struct SkyboxUniformBuffer
 {
-	glm::mat4 proj;
-	glm::mat4 view;
+	cml::mat4f proj;
+	cml::mat4f view;
 };
 
 class Skybox
@@ -44,7 +43,7 @@ class Skybox
 
 	void InitSkybox ();
 
-	void UpdateUniform (glm::mat4 proj, glm::mat4 view);
+	void UpdateUniform (cml::mat4f proj, cml::mat4f view);
 
 	void SetupUniformBuffer ();
 	void SetupCubeMapImage ();

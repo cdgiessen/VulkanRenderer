@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/vec3.hpp>
+#include "cml/cml.h"
 
 #include "rendering/Renderer.h"
 

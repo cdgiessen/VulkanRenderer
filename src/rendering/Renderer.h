@@ -30,8 +30,6 @@
 #include "Wrappers.h"
 
 
-#include <glm/gtc/quaternion.hpp>
-
 class Window;
 class Scene;
 

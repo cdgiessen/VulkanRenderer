@@ -1,7 +1,6 @@
 #include "GameObject.h"
 
 #include "core/Logger.h"
-#include <glm/gtc/matrix_transform.hpp>
 
 GameObject::GameObject (VulkanRenderer& renderer) : renderer (renderer) {}
 
@@ -34,7 +33,7 @@ void GameObject::SetupUniformBuffer ()
 	//	else
 	//		materialBuffer->CreateUniformBufferPersitantlyMapped(sizeof(Phong_Material));
 	// PBR_Material pbr;
-	// pbr.albedo = glm::vec3(0, 0, 1);
+	// pbr.albedo = cml::vec3f(0, 0, 1);
 	// materialBuffer->CopyToBuffer(&pbr, sizeof(PBR_Material));
 }
 
@@ -162,17 +161,17 @@ void GameObject::SetupPipeline ()
 void GameObject::UpdateUniformBuffer (float time)
 {
 	// modelPushConstant = {};
-	// modelPushConstant.model = glm::mat4();
-	//   // ubo.model = glm::translate(ubo.model, glm::vec3(50, 0, 0));
-	// modelPushConstant.model = glm::rotate(modelPushConstant.model, time / 2.0f, glm::vec3(0.5, 1, 0));
-	// modelPushConstant.normal = glm::transpose(glm::inverse(glm::mat3(modelPushConstant.model)));
+	// modelPushConstant.model = cml::mat4f();
+	//   // ubo.model = cml::translate(ubo.model, cml::vec3f(50, 0, 0));
+	// modelPushConstant.model = cml::rotate(modelPushConstant.model, time / 2.0f, cml::vec3f(0.5, 1, 0));
+	// modelPushConstant.normal = cml::transpose(cml::inverse(cml::mat3f(modelPushConstant.model)));
 
 	ModelBufferObject ubo = {};
-	ubo.model = glm::mat4 (1.0f);
-	ubo.model = glm::translate (ubo.model, position);
-	// ubo.model = glm::rotate(ubo.model, time * 2.0f, glm::vec3(0.5, 1, 0));
-	// ubo.normal = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
-	ubo.normal = glm::mat4 (1.0f);
+	ubo.model = cml::mat4f (1.0f);
+	ubo.model = ubo.model.translate (position);
+	// ubo.model = cml::rotate(ubo.model, time * 2.0f, cml::vec3f(0.5, 1, 0));
+	// ubo.normal = cml::transpose(cml::inverse(cml::mat3f(ubo.model)));
+	ubo.normal = cml::mat4f (1.0f);
 	uniformBuffer->CopyToBuffer (&ubo, sizeof (ModelBufferObject));
 	// if (usePBR_Tex)
 	//

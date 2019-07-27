@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-#include <glm/glm.hpp>
+#include "cml/cml.h"
 #include <numeric>
 
 #include <fx/gltf.h>
@@ -16,28 +16,28 @@ int VertexDescription::ElementCount () const
 void AddPlane (std::vector<float>& verts,
     std::vector<uint32_t>& indices,
     int dim,
-    glm::vec3 topLeft,
-    glm::vec3 topRight,
-    glm::vec3 bottomLeft,
-    glm::vec3 bottomRight)
+    cml::vec3f topLeft,
+    cml::vec3f topRight,
+    cml::vec3f bottomLeft,
+    cml::vec3f bottomRight)
 {
 
-	glm::vec3 p1 = topLeft;
-	glm::vec3 p2 = topRight;
-	glm::vec3 p3 = bottomLeft;
+	cml::vec3f p1 = topLeft;
+	cml::vec3f p2 = topRight;
+	cml::vec3f p3 = bottomLeft;
 
-	glm::vec3 t1 = p2 - p1;
-	glm::vec3 t2 = p3 - p1;
+	cml::vec3f t1 = p2 - p1;
+	cml::vec3f t2 = p3 - p1;
 
-	glm::vec3 normal = glm::cross (t1, t2);
+	cml::vec3f normal = cml::cross (t1, t2);
 
 	size_t offset = verts.size () / 8;
 	for (float i = 0; i <= dim; i++)
 	{
 		for (float j = 0; j <= dim; j++)
 		{
-			glm::vec3 pos = glm::mix (
-			    glm::mix (topLeft, topRight, j / dim), glm::mix (bottomLeft, bottomRight, j / dim), i / dim);
+			cml::vec3f pos = cml::lerp (
+			    cml::lerp (topLeft, topRight, j / dim), cml::lerp (bottomLeft, bottomRight, j / dim), i / dim);
 
 			verts.push_back (pos.x);
 			verts.push_back (pos.y);
@@ -76,7 +76,7 @@ std::shared_ptr<MeshData> createSinglePlane ()
 	indices.reserve ((dim) * (dim)*6 * 6);
 
 	AddPlane (
-	    verts, indices, dim, glm::vec3 (-1, 0, -1), glm::vec3 (-1, 0, 1), glm::vec3 (1, 0, -1), glm::vec3 (1, 0, 1));
+	    verts, indices, dim, cml::vec3f (-1, 0, -1), cml::vec3f (-1, 0, 1), cml::vec3f (1, 0, -1), cml::vec3f (1, 0, 1));
 
 	return std::make_shared<MeshData> (Vert_PosNormUv, verts, indices);
 };
@@ -92,15 +92,15 @@ std::shared_ptr<MeshData> createDoublePlane ()
 	indices.reserve ((dim) * (dim)*6 * 6);
 
 	AddPlane (
-	    verts, indices, dim, glm::vec3 (-1, 0, -1), glm::vec3 (-1, 0, 1), glm::vec3 (1, 0, -1), glm::vec3 (-1, 0, 1));
+	    verts, indices, dim, cml::vec3f (-1, 0, -1), cml::vec3f (-1, 0, 1), cml::vec3f (1, 0, -1), cml::vec3f (-1, 0, 1));
 	AddPlane (
-	    verts, indices, dim, glm::vec3 (-1, 1, -1), glm::vec3 (-1, 1, 1), glm::vec3 (1, 1, -1), glm::vec3 (1, 1, 1));
+	    verts, indices, dim, cml::vec3f (-1, 1, -1), cml::vec3f (-1, 1, 1), cml::vec3f (1, 1, -1), cml::vec3f (1, 1, 1));
 
 	return std::make_shared<MeshData> (Vert_PosNormUv, verts, indices);
 };
 
 
-std::shared_ptr<MeshData> createFlatPlane (int dim, glm::vec3 size)
+std::shared_ptr<MeshData> createFlatPlane (int dim, cml::vec3f size)
 {
 	std::vector<float> verts;
 	std::vector<uint32_t> indices;
@@ -149,14 +149,14 @@ std::shared_ptr<MeshData> createCube (int dim)
 	verts.reserve ((dim + 1) * (dim + 1) * 6);
 	indices.reserve ((dim) * (dim)*6 * 6);
 
-	glm::vec3 dlb{ -1, -1, -1 };
-	glm::vec3 dlf{ -1, -1, 1 };
-	glm::vec3 drb{ 1, -1, -1 };
-	glm::vec3 drf{ 1, -1, 1 };
-	glm::vec3 ulb{ -1, 1, -1 };
-	glm::vec3 ulf{ -1, 1, 1 };
-	glm::vec3 urb{ 1, 1, -1 };
-	glm::vec3 urf{ 1, 1, 1 };
+	cml::vec3f dlb{ -1, -1, -1 };
+	cml::vec3f dlf{ -1, -1, 1 };
+	cml::vec3f drb{ 1, -1, -1 };
+	cml::vec3f drf{ 1, -1, 1 };
+	cml::vec3f ulb{ -1, 1, -1 };
+	cml::vec3f ulf{ -1, 1, 1 };
+	cml::vec3f urb{ 1, 1, -1 };
+	cml::vec3f urf{ 1, 1, 1 };
 
 
 	AddPlane (verts, indices, dim, urf, urb, ulf, ulb);
@@ -176,7 +176,7 @@ std::shared_ptr<MeshData> createSphere (int dim)
 	// normalize it so all vertexes are equidistant from the center
 	for (int i = 0; i < cube->vertexData.size (); i += 8)
 	{
-		glm::vec3 pos = glm::normalize (glm::vec3 (
+		cml::vec3f pos = cml::normalize (cml::vec3f (
 		    cube->vertexData.at (i + 0), cube->vertexData.at (i + 1), cube->vertexData.at (i + 2)));
 		cube->vertexData.at (i + 0) = pos.x;
 		cube->vertexData.at (i + 1) = pos.y;
@@ -190,14 +190,14 @@ std::shared_ptr<MeshData> createSphere (int dim)
 };
 
 void Add_subdiv_triangle_no_seam_fix (
-    std::vector<float>& verts, std::vector<uint32_t>& indices, glm::vec3 top, glm::vec3 left, glm::vec3 down, int dim)
+    std::vector<float>& verts, std::vector<uint32_t>& indices, cml::vec3f top, cml::vec3f left, cml::vec3f down, int dim)
 {
 	uint32_t offset = verts.size () / 3;
 	for (float i = 0; i < dim; i++)
 	{
 		for (float j = 0; j < dim + 1 - i; j++)
 		{
-			glm::vec3 pos = glm::mix (glm::mix (top, left, j / (dim - i)), down, i / (dim));
+			cml::vec3f pos = cml::lerp (cml::lerp (top, left, j / (dim - i)), down, i / (dim));
 
 			verts.push_back (pos.x);
 			verts.push_back (pos.y);
@@ -206,7 +206,7 @@ void Add_subdiv_triangle_no_seam_fix (
 	}
 
 	// i/dim is a NaN, better to just duplicate it once below for the last vertex
-	glm::vec3 pos = down;
+	cml::vec3f pos = down;
 
 	verts.push_back (pos.x);
 	verts.push_back (pos.y);
@@ -240,14 +240,14 @@ void Add_subdiv_triangle_no_seam_fix (
 
 
 void Add_subdiv_triangle (
-    std::vector<float>& verts, std::vector<uint32_t>& indices, glm::vec3 top, glm::vec3 left, glm::vec3 down, int dim)
+    std::vector<float>& verts, std::vector<uint32_t>& indices, cml::vec3f top, cml::vec3f left, cml::vec3f down, int dim)
 {
 	uint32_t offset = verts.size () / 3;
 	for (float i = 0; i < dim; i++)
 	{
 		for (float j = 0; j < dim + 1 - i; j++)
 		{
-			glm::vec3 pos = glm::mix (glm::mix (top, left, j / (dim - i)), down, i / (dim));
+			cml::vec3f pos = cml::lerp (cml::lerp (top, left, j / (dim - i)), down, i / (dim));
 
 			verts.push_back (pos.x);
 			verts.push_back (pos.y);
@@ -255,7 +255,7 @@ void Add_subdiv_triangle (
 		}
 
 		// seam fix vertex
-		glm::vec3 pos = glm::mix (glm::mix (top, left, (dim - i) / (dim - i)), down, (i + 0.5) / (dim));
+		cml::vec3f pos = cml::lerp (cml::lerp (top, left, (dim - i) / (dim - i)), down, (i + 0.5) / (dim));
 
 		verts.push_back (pos.x);
 		verts.push_back (pos.y);
@@ -263,7 +263,7 @@ void Add_subdiv_triangle (
 	}
 
 	// i/dim is a NaN, better to just duplicate it once below for the last vertex
-	glm::vec3 pos = down;
+	cml::vec3f pos = down;
 
 	verts.push_back (pos.x);
 	verts.push_back (pos.y);
@@ -302,35 +302,35 @@ void Add_subdiv_triangle (
 // subdivide triangle into 4 segments, and recursively subdivide the center one
 void subdiv_triangle (std::vector<float>& verts,
     std::vector<uint32_t>& indices,
-    glm::vec3 top,
-    glm::vec3 bottom_left,
-    glm::vec3 bottom_right,
+    cml::vec3f top,
+    cml::vec3f bottom_left,
+    cml::vec3f bottom_right,
     int levels,
     int subdivs)
 {
 	Add_subdiv_triangle (
-	    verts, indices, top, glm::mix (top, bottom_left, 0.5), glm::mix (top, bottom_right, 0.5), subdivs);
+	    verts, indices, top, cml::lerp (top, bottom_left, 0.5), cml::lerp (top, bottom_right, 0.5), subdivs);
 	Add_subdiv_triangle (
-	    verts, indices, bottom_left, glm::mix (bottom_left, bottom_right, 0.5), glm::mix (top, bottom_left, 0.5), subdivs);
+	    verts, indices, bottom_left, cml::lerp (bottom_left, bottom_right, 0.5), cml::lerp (top, bottom_left, 0.5), subdivs);
 	Add_subdiv_triangle (
-	    verts, indices, bottom_right, glm::mix (top, bottom_right, 0.5), glm::mix (bottom_left, bottom_right, 0.5), subdivs);
+	    verts, indices, bottom_right, cml::lerp (top, bottom_right, 0.5), cml::lerp (bottom_left, bottom_right, 0.5), subdivs);
 
 	if (levels == 0)
 	{
 		Add_subdiv_triangle_no_seam_fix (verts,
 		    indices,
-		    glm::mix (top, bottom_left, 0.5),
-		    glm::mix (bottom_left, bottom_right, 0.5),
-		    glm::mix (top, bottom_right, 0.5),
+		    cml::lerp (top, bottom_left, 0.5),
+		    cml::lerp (bottom_left, bottom_right, 0.5),
+		    cml::lerp (top, bottom_right, 0.5),
 		    subdivs * 2);
 	}
 	else
 	{
 		subdiv_triangle (verts,
 		    indices,
-		    glm::mix (top, bottom_left, 0.5),
-		    glm::mix (bottom_left, bottom_right, 0.5),
-		    glm::mix (top, bottom_right, 0.5),
+		    cml::lerp (top, bottom_left, 0.5),
+		    cml::lerp (bottom_left, bottom_right, 0.5),
+		    cml::lerp (top, bottom_right, 0.5),
 		    levels - 1,
 		    subdivs);
 	}
@@ -344,12 +344,12 @@ std::shared_ptr<MeshData> create_water_plane_subdiv (int levels, int subdivs)
 
 	float max_float = 5000000.0f;
 
-	float neg_vert_offset = (max_float / 2.0f) * glm::tan (glm::radians (30.0f));
-	float pos_vert_offset = -(max_float / 2.0f) / glm::cos (glm::radians (30.0f));
+	float neg_vert_offset = (max_float / 2.0f) * cml::tan (cml::radians (30.0f));
+	float pos_vert_offset = -(max_float / 2.0f) / cml::cos (cml::radians (30.0f));
 
-	glm::vec3 top{ 0, 0, pos_vert_offset };
-	glm::vec3 bottom_left{ -(max_float / 2.0f), 0, neg_vert_offset };
-	glm::vec3 bottom_right{ (max_float / 2.0f), 0, neg_vert_offset };
+	cml::vec3f top{ 0, 0, pos_vert_offset };
+	cml::vec3f bottom_left{ -(max_float / 2.0f), 0, neg_vert_offset };
+	cml::vec3f bottom_right{ (max_float / 2.0f), 0, neg_vert_offset };
 
 	subdiv_triangle (verts, indices, top, bottom_left, bottom_right, levels, subdivs);
 

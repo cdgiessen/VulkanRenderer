@@ -54,7 +54,7 @@ TerrainManager::TerrainManager (
 	terrainVulkanTextureArrayNormal =
 	    renderer.textureManager.CreateTexture2DArray (terrainTextureArrayNormal, details);
 
-	terrainGridMesh = createFlatPlane (gui_settings.numCells, glm::vec3 (1.0f));
+	terrainGridMesh = createFlatPlane (gui_settings.numCells, cml::vec3f (1.0f));
 	terrainGridModel = std::make_shared<VulkanModel> (renderer, terrainGridMesh);
 
 	// StartWorkerThreads ();
@@ -79,7 +79,7 @@ void TerrainManager::CleanUpTerrain ()
 }
 
 
-void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
+void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 {
 	curCameraPos = cameraPos;
 	t_settings = gui_settings;
@@ -101,9 +101,9 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 		// delete terrains too far away
 		for (auto it = std::begin (terrains); it != std::end (terrains); it++)
 		{
-			glm::vec3 center =
-			    glm::vec3 ((*it)->coordinateData.pos.x, cameraPos.y, (*it)->coordinateData.pos.y);
-			float distanceToViewer = glm::distance (cameraPos, center);
+			cml::vec3f center =
+			    cml::vec3f ((*it)->coordinateData.pos.x, cameraPos.y, (*it)->coordinateData.pos.y);
+			float distanceToViewer = cml::distance (cameraPos, center);
 			if (distanceToViewer > t_settings.viewDistance * t_settings.width * 1.5)
 			{
 				if ((*(*it)->terrainSplatMap->readyToUse) == true)
@@ -128,7 +128,7 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 
 	// make new closer terrains
 
-	glm::ivec2 camGrid ((int)((cameraPos.x + 0 * t_settings.width / 2.0) / t_settings.width),
+	cml::vec2i camGrid ((int)((cameraPos.x + 0 * t_settings.width / 2.0) / t_settings.width),
 	    (int)((cameraPos.z + 0 * t_settings.width / 2.0) / t_settings.width));
 
 
@@ -138,11 +138,11 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 		for (int j = 0; j < t_settings.viewDistance * 2; j++)
 		{
 
-			glm::ivec2 terGrid (camGrid.x + i - t_settings.viewDistance, camGrid.y + j - t_settings.viewDistance);
+			cml::vec2i terGrid (camGrid.x + i - t_settings.viewDistance, camGrid.y + j - t_settings.viewDistance);
 
-			glm::vec3 center =
-			    glm::vec3 (terGrid.x * t_settings.width, cameraPos.y, terGrid.y * t_settings.width);
-			float distanceToViewer = glm::distance (cameraPos, center);
+			cml::vec3f center =
+			    cml::vec3f (terGrid.x * t_settings.width, cameraPos.y, terGrid.y * t_settings.width);
+			float distanceToViewer = cml::distance (cameraPos, center);
 
 			// if (distanceToViewer <= t_settings.viewDistance * t_settings.width) {
 
@@ -164,14 +164,14 @@ void TerrainManager::UpdateTerrains (glm::vec3 cameraPos)
 
 				activeTerrains.push_back (terGrid);
 
-				auto pos = glm::vec2 ((terGrid.x) * t_settings.width - t_settings.width / 2,
+				auto pos = cml::vec2f ((terGrid.x) * t_settings.width - t_settings.width / 2,
 				    (terGrid.y) * t_settings.width - t_settings.width / 2);
 
 				TerrainCoordinateData coord = TerrainCoordinateData (pos, // position
-				    glm::vec2 (t_settings.width, t_settings.width),       // size
-				    glm::i32vec2 ((terGrid.x) * t_settings.sourceImageResolution,
+				    cml::vec2f (t_settings.width, t_settings.width),      // size
+				    cml::vec2i ((terGrid.x) * t_settings.sourceImageResolution,
 				        (terGrid.y) * t_settings.sourceImageResolution), // noise position
-				    glm::vec2 (1.0 / (float)t_settings.sourceImageResolution,
+				    cml::vec2f (1.0 / (float)t_settings.sourceImageResolution,
 				        1.0f / (float)t_settings.sourceImageResolution), // noiseSize
 				    t_settings.sourceImageResolution + 1,
 				    terGrid);
@@ -247,8 +247,8 @@ float TerrainManager::GetTerrainHeightAtLocation (float x, float z)
 	std::lock_guard<std::mutex> lock (terrain_mutex);
 	for (auto& terrain : terrains)
 	{
-		glm::vec2 pos = terrain->coordinateData.pos;
-		glm::vec2 size = terrain->coordinateData.size;
+		cml::vec2f pos = terrain->coordinateData.pos;
+		cml::vec2f size = terrain->coordinateData.size;
 		if (pos.x <= x && pos.x + size.x >= x && pos.y <= z && pos.y + size.y >= z)
 		{
 			return terrain->GetHeightAtLocation (

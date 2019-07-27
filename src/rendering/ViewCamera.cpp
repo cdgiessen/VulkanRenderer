@@ -1,44 +1,41 @@
 #include "ViewCamera.h"
 
-#define GLM_FORCE_RADIANS
-#include <glm/gtc/matrix_transform.hpp>
+const cml::mat4 depthReverserMatrix{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1 };
 
-const glm::mat4 depthReverserMatrix{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1 };
+const cml::vec3f WorldUp{ 0, 1, 0 };
 
-const glm::vec3 WorldUp{ 0, 1, 0 };
-
-glm::mat4 Camera::ViewMatrix ()
+cml::mat4 Camera::ViewMatrix ()
 {
 	if (isViewMatDirty)
 	{
 		isViewMatDirty = false;
-		glm::vec3 front = glm::normalize (rotation * glm::vec3{ 0, 0, 1 });
+		cml::vec3f front = cml::normalize (rotation * cml::vec3f{ 0, 0, 1 });
 
-		glm::vec3 right = glm::normalize (glm::cross (front, WorldUp));
-		glm::vec3 up = glm::normalize (glm::cross (right, front));
+		cml::vec3f right = cml::normalize (cml::cross (front, WorldUp));
+		cml::vec3f up = cml::normalize (cml::cross (right, front));
 
-		mat_view = glm::lookAt (position, position + front, up);
+		mat_view = cml::lookAt (position, position + front, up);
 	}
 	return mat_view;
 }
-glm::mat4 Camera::ProjMatrix ()
+cml::mat4 Camera::ProjMatrix ()
 {
 	if (isProjMatDirty)
 	{
 		isProjMatDirty = false;
 		if (type == CamType::perspective)
 		{
-			mat_proj = depthReverserMatrix * glm::perspective (fov, aspect, clip_near, clip_far);
+			mat_proj = depthReverserMatrix * cml::perspective (fov, aspect, clip_near, clip_far);
 		}
 		else
 		{
-			mat_proj = glm::ortho (-size, size, -size, size, clip_near, clip_far);
+			mat_proj = cml::ortho (-size, size, -size, size, clip_near, clip_far);
 		}
 	}
 	return mat_proj;
 }
 
-glm::mat4 Camera::ViewProjMatrix () { return ProjMatrix () * ViewMatrix (); }
+cml::mat4 Camera::ViewProjMatrix () { return ProjMatrix () * ViewMatrix (); }
 
 void Camera::FieldOfView (float fov)
 {
@@ -67,12 +64,12 @@ void Camera::ClipFar (float far)
 	this->clip_far = far;
 }
 
-void Camera::Position (glm::vec3 position)
+void Camera::Position (cml::vec3f position)
 {
 	isViewMatDirty = true;
 	this->position = position;
 }
-void Camera::Rotation (glm::quat rotation)
+void Camera::Rotation (cml::quatf rotation)
 {
 	isViewMatDirty = true;
 	this->rotation = rotation;

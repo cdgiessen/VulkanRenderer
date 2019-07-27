@@ -8,10 +8,9 @@
 
 #include <cml/cml.h>
 
-#include <glm/common.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <vulkan/vulkan.h>
 
+#include "cml/cml.h"
 
 #include "rendering/Model.h"
 #include "rendering/Renderer.h"
@@ -28,14 +27,14 @@ const int indCount = NumCells * NumCells * 6;
 
 struct TerrainCoordinateData
 {
-	glm::vec2 pos;
-	glm::vec2 size;
-	glm::i32vec2 noisePos;
-	glm::vec2 noiseSize;
+	cml::vec2f pos;
+	cml::vec2f size;
+	cml::vec2i noisePos;
+	cml::vec2f noiseSize;
 	int sourceImageResolution;
-	glm::ivec2 gridPos;
+	cml::vec2i gridPos;
 	TerrainCoordinateData (
-	    glm::vec2 pos, glm::vec2 size, glm::i32vec2 noisePos, glm::vec2 noiseSize, int imageRes, glm::ivec2 gridPos)
+	    cml::vec2f pos, cml::vec2f size, cml::vec2i noisePos, cml::vec2f noiseSize, int imageRes, cml::vec2i gridPos)
 	: pos (pos), size (size), noisePos (noisePos), noiseSize (noiseSize), sourceImageResolution (imageRes), gridPos (gridPos)
 	{
 	}
@@ -45,31 +44,31 @@ class Terrain;
 
 struct HeightMapBound
 {
-	glm::vec4 pos;
-	glm::vec4 uv;
-	glm::vec4 h_w_pp;
-	glm::vec4 dumb;
+	cml::vec4f pos;
+	cml::vec4f uv;
+	cml::vec4f h_w_pp;
+	cml::vec4f dumb;
 };
 
 struct TerrainQuad
 {
-	TerrainQuad (glm::vec2 pos,
-	    glm::vec2 size,
-	    glm::i32vec2 logicalPos,
-	    glm::i32vec2 logicalSize,
+	TerrainQuad (cml::vec2f pos,
+	    cml::vec2f size,
+	    cml::vec2i logicalPos,
+	    cml::vec2f logicalSize,
 	    int level,
-	    glm::i32vec2 subDivPos,
+	    cml::vec2i subDivPos,
 	    float centerHeightValue,
 	    Terrain* terrain);
 
 	static float GetUVvalueFromLocalIndex (float i, int numCells, int level, int subDivPos);
 
-	glm::vec2 pos;            // position of corner
-	glm::vec2 size;           // width and length
-	glm::i32vec2 logicalPos;  // where in the proc-gen space it is (for noise images)
-	glm::i32vec2 logicalSize; // how wide the area is.
-	glm::i32vec2 subDivPos;   // where in the subdivision grid it is (for splatmap)
-	int level = 0;            // how deep the quad is
+	cml::vec2f pos;         // position of corner
+	cml::vec2f size;        // width and length
+	cml::vec2i logicalPos;  // where in the proc-gen space it is (for noise images)
+	cml::vec2i logicalSize; // how wide the area is.
+	cml::vec2i subDivPos;   // where in the subdivision grid it is (for splatmap)
+	int level = 0;          // how deep the quad is
 	float heightValAtCenter = 0;
 	bool isSubdivided = false;
 
@@ -134,13 +133,13 @@ class Terrain
 	    TerrainCoordinateData coordinateData,
 	    VulkanModel* terrainGrid);
 
-	void InitTerrain (glm::vec3 cameraPos,
+	void InitTerrain (cml::vec3f cameraPos,
 	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo,
 	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness,
 	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic,
 	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal);
 
-	void UpdateTerrain (glm::vec3 viewerPos);
+	void UpdateTerrain (cml::vec3f viewerPos);
 
 	void DrawTerrainRecursive (
 	    int quad, VkCommandBuffer cmdBuf, bool ifWireframe, std::vector<HeightMapBound>& instances);
@@ -153,9 +152,9 @@ class Terrain
 	int curEmptyIndex = 0;
 	int FindEmptyIndex ();
 
-	void InitTerrainQuad (int quad, glm::vec3 viewerPos);
+	void InitTerrainQuad (int quad, cml::vec3f viewerPos);
 
-	void UpdateTerrainQuad (int quad, glm::vec3 viewerPos);
+	void UpdateTerrainQuad (int quad, cml::vec3f viewerPos);
 
 	void SetupUniformBuffer ();
 	void SetupImage ();
@@ -166,7 +165,7 @@ class Terrain
 	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic,
 	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal);
 
-	void SubdivideTerrain (int quad, glm::vec3 viewerPos);
+	void SubdivideTerrain (int quad, cml::vec3f viewerPos);
 	void UnSubdivide (int quad);
 
 	// void PopulateQuadOffsets (int quad, std::vector<VkDeviceSize>& vert, std::vector<VkDeviceSize>& ind);

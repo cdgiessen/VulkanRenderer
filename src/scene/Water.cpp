@@ -1,7 +1,6 @@
 #include "Water.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "cml/cml.h"
 
 Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : renderer (renderer)
 {
@@ -14,9 +13,9 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 
 	uniformBuffer = std::make_shared<VulkanBufferUniform> (renderer.device, sizeof (ModelBufferObject));
 
-	ubo.model = glm::mat4 (1.0f);
-	ubo.model = glm::translate (ubo.model, glm::vec3 (0, 0, 0));
-	ubo.normal = glm::transpose (glm::inverse (glm::mat3 (ubo.model)));
+	ubo.model = cml::mat4f (1.0f);
+	ubo.model = ubo.model.translate (cml::vec3f (0, 0, 0));
+	ubo.normal = cml::to_mat4 (cml::to_mat3 (ubo.model).inverse ().transpose ());
 
 	uniformBuffer->CopyToBuffer (&ubo, sizeof (ModelBufferObject));
 
@@ -91,11 +90,11 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 	    renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 }
 
-void Water::UpdateUniform (glm::vec3 camera_pos)
+void Water::UpdateUniform (cml::vec3f camera_pos)
 {
 	auto pos = camera_pos;
 	pos.y = 0;
-	ubo.model = glm::translate (glm::mat4 (1.0f), pos);
+	ubo.model = cml::mat4f (1.0f).translate (pos);
 	uniformBuffer->CopyToBuffer (&ubo, sizeof (ModelBufferObject));
 }
 

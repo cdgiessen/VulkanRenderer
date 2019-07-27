@@ -1,39 +1,36 @@
 #pragma once
 
+#include <cml/cml.h>
 #include <vector>
-#include <glm/glm.hpp>
 
-struct Gradient_ControlPoint {
+struct Gradient_ControlPoint
+{
 	float position;
-	glm::vec4 color;
-	
-	Gradient_ControlPoint() : position(0.5f), color(glm::vec4(1, 1, 1, 1)) {
+	cml::vec4f color;
 
-	}
+	Gradient_ControlPoint () : position (0.5f), color (cml::vec4f (1, 1, 1, 1)) {}
 
-	Gradient_ControlPoint(float pos, glm::vec4 color) : position(pos), color(color) {
-
-	}
+	Gradient_ControlPoint (float pos, cml::vec4f color) : position (pos), color (color) {}
 };
 
 
 class Gradient
 {
-public:
-	Gradient();
-	~Gradient();
+	public:
+	Gradient ();
+	~Gradient ();
 
 	bool isBlended;
 
-	void AddControlPoint(float pos, glm::vec4 color);
+	void AddControlPoint (float pos, cml::vec4f color);
 
-	glm::vec4 SampleGradient(float pos);
+	cml::vec4f SampleGradient (float pos);
 
 	std::vector<Gradient_ControlPoint> controlPoints;
 
-	void SetFrontColor(glm::vec4 color);
-	void SetBackColor(glm::vec4 color);
-private:
-	glm::vec4 LinearInterpolate(float val, Gradient_ControlPoint start, Gradient_ControlPoint end);
-};
+	void SetFrontColor (cml::vec4f color);
+	void SetBackColor (cml::vec4f color);
 
+	private:
+	cml::vec4f LinearInterpolate (float val, Gradient_ControlPoint start, Gradient_ControlPoint end);
+};

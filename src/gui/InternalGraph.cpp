@@ -869,11 +869,11 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, cml:
 
 				cml::vec3f normal = cml::normalize (cml::vec3f (h_px - h_mx, 2.0f, h_py - h_my));
 
-				// uint xy = glm::packSnorm2x16 (cml::vec2f (normal.x, normal.y));
-				// glm::i16 x = xy & 0xFFFF0000;
-				// glm::i16 y = xy & 0x0000FFFF;
-				// glm::i16 n_z = glm::packSnorm2x16 (cml::vec2f (normal.z, 0)) & 0xFFFF0000;
-				outputNormalMap.push_back ({ (int16_t)0.5, (int16_t)1, (int16_t)0.5, (int16_t)0 });
+				// uint xy = cml::some_packing_snorm_2x16 (cml::vec2f (normal.x, normal.y));
+				// int16_t x = xy & 0xFFFF0000;
+				// int16_t y = xy & 0x0000FFFF;
+				// int16_t n_z = cml::some_packing_snorm_2x16 (cml::vec2f (normal.z, 0)) & 0xFFFF0000;
+				outputNormalMap.push_back ({ (int16_t)0., (int16_t)1, (int16_t)0., (int16_t)0 });
 			}
 			else
 				outputNormalMap.push_back ({ (int16_t)0.5, (int16_t)1, (int16_t)0.5, (int16_t)0 });

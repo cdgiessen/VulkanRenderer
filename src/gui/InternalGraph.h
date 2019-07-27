@@ -11,9 +11,6 @@
 
 #include <cml/cml.h>
 
-#include <glm/glm.hpp>
-#include <glm/packing.hpp>
-
 namespace InternalGraph
 {
 

@@ -1,13 +1,11 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
+#include "cml/cml.h"
 
 struct GPU_ProjView
 {
-	glm::mat4 projView;
+	cml::mat4f projView;
 };
-
 
 class Camera
 {
@@ -19,21 +17,21 @@ class Camera
 
 	public:
 	// perspective
-	Camera (glm::vec3 position, glm::quat rotation, float fov, float aspect)
+	Camera (cml::vec3f position, cml::quatf rotation, float fov, float aspect)
 	: position (position), rotation (rotation), type (CamType::perspective), fov (fov), size (aspect)
 	{
 	}
 
 	// orthographic
-	Camera (glm::vec3 position, glm::quat rotation, float size)
+	Camera (cml::vec3f position, cml::quatf rotation, float size)
 	: position (position), rotation (rotation), type (CamType::orthographic), size (size)
 	{
 	}
 
 
-	glm::mat4 ViewMatrix ();
-	glm::mat4 ProjMatrix ();
-	glm::mat4 ViewProjMatrix ();
+	cml::mat4f ViewMatrix ();
+	cml::mat4f ProjMatrix ();
+	cml::mat4f ViewProjMatrix ();
 
 	void FieldOfView (float fov);
 	void AspectRatio (float aspect);
@@ -42,8 +40,8 @@ class Camera
 	void ClipNear (float near);
 	void ClipFar (float far);
 
-	void Position (glm::vec3 position);
-	void Rotation (glm::quat rotation);
+	void Position (cml::vec3f position);
+	void Rotation (cml::quatf rotation);
 
 	private:
 	CamType const type;
@@ -54,14 +52,14 @@ class Camera
 	float clip_near = 0.01f;
 	float clip_far = 10000.0f;
 
-	glm::vec3 position = glm::vec3 (0, 0, 0);
-	glm::quat rotation = glm::quat (1, 0, 0, 0);
+	cml::vec3f position = cml::vec3f (0, 0, 0);
+	cml::quatf rotation = cml::quatf (1, 0, 0, 0);
 
-	glm::mat4 mat_viewProj;
+	cml::mat4f mat_viewProj;
 
 	bool isViewMatDirty = false;
-	glm::mat4 mat_view;
+	cml::mat4f mat_view;
 
 	bool isProjMatDirty = false;
-	glm::mat4 mat_proj;
+	cml::mat4f mat_proj;
 };

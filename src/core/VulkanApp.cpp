@@ -7,7 +7,9 @@
 #include <thread>
 #include <vector>
 
-#include <glm/glm.hpp>
+#include "ImGui/imgui.h"
+
+#include "cml/cml.h"
 
 #include <nlohmann/json.hpp>
 
@@ -68,7 +70,7 @@ VulkanApp::VulkanApp ()
 : settings ("settings.json"),
   workerPool (taskManager, HardwareThreadCount ()),
   timeManager (),
-  window (settings.isFullscreen, glm::ivec2 (settings.screenWidth, settings.screenHeight), glm::ivec2 (10, 10)),
+  window (settings.isFullscreen, cml::vec3f (settings.screenWidth, settings.screenHeight), cml ::vec3f (10, 10)),
   resourceManager (),
   vulkanRenderer (settings.useValidationLayers, window, resourceManager),
   imgui_nodeGraph_terrain (),
@@ -78,8 +80,8 @@ VulkanApp::VulkanApp ()
 	/*timeManager = std::make_unique<TimeManager>();
 
 	window = std::make_unique<Window>(settings.isFullscreen,
-	    glm::ivec2(settings.screenWidth, settings.screenHeight),
-	    glm::ivec2(10, 10));*/
+	    cml:vec3(settings.screenWidth, settings.screenHeight),
+	    cml:vec3(10, 10));*/
 	Input::SetupInputDirector (&window);
 
 	/*resourceManager = std::make_unique<ResourceManager>();

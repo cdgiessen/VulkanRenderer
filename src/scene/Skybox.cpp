@@ -92,11 +92,11 @@ void Skybox::SetupPipeline ()
 	normal = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 }
 
-void Skybox::UpdateUniform (glm::mat4 proj, glm::mat4 view)
+void Skybox::UpdateUniform (cml::mat4f proj, cml::mat4f view)
 {
 	SkyboxUniformBuffer sbo = {};
 	sbo.proj = proj;
-	sbo.view = glm::mat4 (glm::mat3 (view));
+	sbo.view = cml::mat4f (cml::mat3f (view));
 
 	skyboxUniformBuffer->CopyToBuffer (&sbo, sizeof (SkyboxUniformBuffer));
 };

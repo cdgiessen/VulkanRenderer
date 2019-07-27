@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 
-#include <glm/glm.hpp>
+#include "cml/cml.h"
 
 class VulkanTexture;
 
@@ -23,24 +23,22 @@ struct GlobalData
 
 struct CameraData
 {
-	glm::mat4 projView;
-	glm::mat4 view;
-	glm::vec3 cameraDir;
-	float dummy;
-	glm::vec3 cameraPos;
+	cml::mat4f projView;
+	cml::mat4f view;
+	cml::vec3f cameraDir;
+	cml::vec3f cameraPos;
 };
 
 /* Lighting */
 
 struct DirectionalLight
 {
-	glm::vec3 direction;
+	cml::vec3f direction;
+	cml::vec3f color;
 	float intensity = 0.0f;
-	glm::vec3 color;
-	float dum = 0.0f;
 
 	DirectionalLight (){};
-	DirectionalLight (glm::vec3 dir, float intensity, glm::vec3 color)
+	DirectionalLight (cml::vec3f dir, float intensity, cml::vec3f color)
 	: direction (dir), intensity (intensity), color (color)
 	{
 	}
@@ -48,13 +46,13 @@ struct DirectionalLight
 
 struct PointLight
 {
-	glm::vec3 position;
+	cml::vec3f position;
+	cml::vec3f color;
 	float attenuation = 0.0f;
-	glm::vec3 color;
 	float cufOff = 0.0f;
 
 	PointLight (){};
-	PointLight (glm::vec3 position, float attenuation, glm::vec3 color)
+	PointLight (cml::vec3f position, float attenuation, cml::vec3f color)
 	: position (position), attenuation (attenuation), color (color)
 	{
 	}
@@ -62,16 +60,16 @@ struct PointLight
 
 struct SpotLight
 {
-	glm::vec3 position;
-	float attenuation = 0.0f;
-	glm::vec3 direction;
+	cml::vec3f position;
+	cml::vec3f direction;
+	cml::vec3f color;
 	float cutoff = 0.0f;
-	glm::vec3 color;
+	float attenuation = 0.0f;
 	float outerCutOff = 0.0f;
 
 
 	SpotLight (){};
-	SpotLight (glm::vec3 position, glm::vec3 dir, glm::vec3 color, float attenuation, float cutoff, float outerCutOff)
+	SpotLight (cml::vec3f position, cml::vec3f dir, cml::vec3f color, float attenuation, float cutoff, float outerCutOff)
 	: position (position), attenuation (attenuation), direction (dir), cutoff (cutoff), color (color), outerCutOff (outerCutOff)
 	{
 	}
@@ -81,33 +79,33 @@ struct SpotLight
 
 struct TransformMatrixData
 {
-	glm::mat4 model;
-	glm::mat4 normal;
+	cml::mat4f model;
+	cml::mat4f normal;
 };
 
 struct ModelBufferObject
 {
-	glm::mat4 model;
-	glm::mat4 normal;
+	cml::mat4f model;
+	cml::mat4f normal;
 
-	glm::mat4 paddingOne;
-	glm::mat4 paddingTwo;
+	cml::mat4f paddingOne;
+	cml::mat4f paddingTwo;
 };
 
 struct ModelPushConstant
 {
-	glm::mat4 model;
-	glm::mat4 normal;
+	cml::mat4f model;
+	cml::mat4f normal;
 };
 
 struct StaticModelBuffer
 {
-	glm::mat4 model;
+	cml::mat4f model;
 };
 
 struct StaticModelPushConstant
 {
-	glm::mat4 model;
+	cml::mat4f model;
 };
 
 /* Materials */
@@ -124,11 +122,11 @@ struct PBR_Mat_Tex
 
 struct PBR_Material
 {
-	glm::vec3 albedo = glm::vec3 (0.5, 0.5, 0.5);
+	cml::vec3f albedo = cml::vec3f (0.5, 0.5, 0.5);
 	float metallic = 0.1f;
 	float roughness = 0.5f;
 	float ao = 1;
-	glm::vec3 emmisive = glm::vec3 (0.0, 0.0, 0.0);
+	cml::vec3f emmisive = cml::vec3f (0.0, 0.0, 0.0);
 
 	bool useTexAlbedo = false;
 	bool useTexMetallic = false;
@@ -145,4 +143,4 @@ struct PBR_Material
 	std::shared_ptr<VulkanTexture> tx_normal;
 };
 
-const glm::mat4 depthReverserMatrix = glm::mat4 (1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1);
+const cml::mat4f depthReverserMatrix = cml::mat4f (1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1);

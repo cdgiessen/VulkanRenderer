@@ -2,7 +2,7 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
+#include "cml/cml.h"
 
 enum class Camera_Movement
 {
@@ -18,11 +18,11 @@ class Camera
 {
 	public:
 	// Camera Attributes
-	glm::vec3 Position;
-	glm::vec3 Front;
-	glm::vec3 Up, Down;
-	glm::vec3 Right;
-	glm::vec3 WorldUp;
+	cml::vec3f Position;
+	cml::vec3f Front;
+	cml::vec3f Up, Down;
+	cml::vec3f Right;
+	cml::vec3f WorldUp;
 
 	bool is_upside_down = false;
 	bool constrainPitch = true;
@@ -41,10 +41,10 @@ class Camera
 	float joystickLookAccel = 60.0f;
 
 	// Constructor with vectors
-	Camera (glm::vec3 position, glm::vec3 up, float pitch, float yaw);
+	Camera (cml::vec3f position, cml::vec3f up, float pitch, float yaw);
 
 	// Returns the view matrix calculated using Eular Angles and the LookAt Matrix
-	glm::mat4 GetViewMatrix ();
+	cml::mat4f GetViewMatrix ();
 
 	// Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
 	void ProcessKeyboard (Camera_Movement direction, float deltaTime);
