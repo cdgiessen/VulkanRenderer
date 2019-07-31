@@ -192,8 +192,6 @@ class VulkanRenderer
 
 	std::vector<std::unique_ptr<FrameObject>> frameObjects;
 
-	std::vector<std::shared_ptr<VulkanDescriptor>> descriptors;
-
 	GPU_DoubleBuffer dynamic_data;
 
 	std::vector<std::shared_ptr<VulkanTexture>> depthBuffers;

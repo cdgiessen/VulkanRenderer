@@ -265,8 +265,6 @@ void VulkanApp::BuildImgui ()
 
 		imgui_nodeGraph_terrain.Draw ();
 
-		bool open = true;
-
 		ControllerWindow (&panels.controller_list);
 	}
 	imGuiTimer.EndTimer ();

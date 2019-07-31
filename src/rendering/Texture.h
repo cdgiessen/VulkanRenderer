@@ -58,18 +58,19 @@ class VulkanTexture
 		VmaAllocator allocator = nullptr;
 	} image;
 
+	protected:
+	VulkanRenderer& renderer;
+
+	public:
+	DescriptorResource resource;
+
 	VkImageView textureImageView = VK_NULL_HANDLE;
 	VkSampler textureSampler = VK_NULL_HANDLE;
 	VkImageLayout textureImageLayout;
 
-	DescriptorResource resource;
-
-
 	Signal readyToUse;
 
 	protected:
-	VulkanRenderer& renderer;
-
 	int mipLevels;
 	int layers;
 

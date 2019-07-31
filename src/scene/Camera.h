@@ -28,8 +28,8 @@ class Camera
 	bool constrainPitch = true;
 
 	// Euler Angles
-	float Yaw = -90.0f;
 	float Pitch = 0.0f;
+	float Yaw = -90.0f;
 
 	// Camera options
 	float MovementSpeed = 20.0f;

@@ -24,8 +24,8 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	directionalLights.resize (5);
 	pointLights.resize (5);
 
-	skySettings.sun = DirectionalLight (cml::vec3f (0, 60, 25), 10.0f, cml::vec3f (1.0f, 0.98f, 0.9f));
-	skySettings.moon = DirectionalLight (-cml::vec3f (0, 60, 25), 0.0f, cml::vec3f (0.9f, 0.95f, 1.0f));
+	skySettings.sun = DirectionalLight (cml::vec3f (0, 60, 25), cml::vec3f (1.0f, 0.98f, 0.9f), 10.0f);
+	skySettings.moon = DirectionalLight (-cml::vec3f (0, 60, 25), cml::vec3f (0.9f, 0.95f, 1.0f), 0.0f);
 
 	directionalLights.at (0) = skySettings.sun;
 
@@ -151,12 +151,11 @@ void Scene::UpdateScene ()
 	GlobalData gd;
 	gd.time = (float)timeManager.RunningTime ();
 
-	cml::mat4f proj = depthReverserMatrix * cml::perspective (cml::radians (45.0f),
-	                                            renderer.vulkanSwapChain.swapChainExtent.width /
-	                                                (float)renderer.vulkanSwapChain.swapChainExtent.height,
-	                                            0.05f,
-	                                            10000000.0f);
-	proj.at (1, 1) *= -1.0f;
+	cml::mat4f proj = cml::perspective (cml::radians (55.0f),
+	    renderer.vulkanSwapChain.swapChainExtent.width /
+	        (float)renderer.vulkanSwapChain.swapChainExtent.height,
+	    0.05f,
+	    100000.f);
 
 	std::vector<CameraData> cd (1);
 	cd.at (0).view = camera->GetViewMatrix ();

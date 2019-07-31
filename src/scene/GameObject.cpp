@@ -167,11 +167,11 @@ void GameObject::UpdateUniformBuffer (float time)
 	// modelPushConstant.normal = cml::transpose(cml::inverse(cml::mat3f(modelPushConstant.model)));
 
 	ModelBufferObject ubo = {};
-	ubo.model = cml::mat4f (1.0f);
+	ubo.model = cml::mat4f ();
 	ubo.model = ubo.model.translate (position);
 	// ubo.model = cml::rotate(ubo.model, time * 2.0f, cml::vec3f(0.5, 1, 0));
 	// ubo.normal = cml::transpose(cml::inverse(cml::mat3f(ubo.model)));
-	ubo.normal = cml::mat4f (1.0f);
+	ubo.normal = cml::mat4f ();
 	uniformBuffer->CopyToBuffer (&ubo, sizeof (ModelBufferObject));
 	// if (usePBR_Tex)
 	//

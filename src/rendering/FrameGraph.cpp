@@ -8,7 +8,7 @@
 
 void SubpassDescription::AddSubpassDependency (std::string subpass)
 {
-	subpass_dependencies.push_back (name);
+	subpass_dependencies.push_back (subpass);
 }
 void SubpassDescription::AddImageInput (std::string name) { input_attachments.push_back (name); }
 void SubpassDescription::AddColorOutput (std::string name) { color_attachments.push_back (name); }
@@ -55,8 +55,8 @@ void SubpassDescription::AddClearColor (std::string attachment_name, VkClearValu
 }
 
 
-AttachmentUse::AttachmentUse (RenderPassAttachment rpAttach, int index)
-: format (rpAttach.format), index (index), rpAttach (rpAttach)
+AttachmentUse::AttachmentUse (RenderPassAttachment rpAttach, uint32_t index)
+: format (rpAttach.format), rpAttach (rpAttach), index (index)
 {
 }
 
@@ -104,7 +104,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 		}
 	}
 
-	// map of attchment names and their index, for quick access - rather than a raw vector
+	// map of attachment names and their index, for quick access - rather than a raw vector
 	std::unordered_map<std::string, uint32_t> used_attachments;
 	index = 0;
 	for (auto& name : used_attachment_names)
@@ -503,9 +503,9 @@ std::vector<int> FrameGraph::OrderAttachments (std::vector<std::string> names)
 		if (rp.desc.name == builder.lastPass)
 		{
 			std::vector<int> out;
-			for (int i = 0; i < names.size (); i++)
+			for (size_t i = 0; i < names.size (); i++)
 			{
-				for (int j = 0; j < rp.desc.attachmentUses.size (); j++)
+				for (size_t j = 0; j < rp.desc.attachmentUses.size (); j++)
 					if (rp.desc.attachmentUses.at (j).rpAttach.name == names.at (i))
 						out.push_back (rp.desc.attachmentUses.at (j).index);
 			}

@@ -412,12 +412,12 @@ VulkanTexture::VulkanTexture (VulkanRenderer& renderer,
 	std::vector<VkBufferImageCopy> bufferCopyRegions;
 	size_t offset = 0;
 
-	for (uint32_t layer = 0; layer < layers; layer++)
+	for (int32_t layer = 0; layer < layers; layer++)
 	{
 		VkBufferImageCopy bufferCopyRegion = {};
 		bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		bufferCopyRegion.imageSubresource.mipLevel = 0;
-		bufferCopyRegion.imageSubresource.baseArrayLayer = layer;
+		bufferCopyRegion.imageSubresource.baseArrayLayer = (uint32_t)layer;
 		bufferCopyRegion.imageSubresource.layerCount = 1;
 		bufferCopyRegion.imageExtent.width = static_cast<uint32_t> (texCreateDetails.desiredWidth);
 		bufferCopyRegion.imageExtent.height = static_cast<uint32_t> (texCreateDetails.desiredHeight);

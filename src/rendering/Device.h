@@ -69,8 +69,8 @@ struct VulkanSurface
 	~VulkanSurface ();
 
 	VkSurfaceKHR surface;
-	Window& window;
 	VulkanInstance const& instance;
+	Window& window;
 };
 
 struct VulkanPhysicalDevice

@@ -128,13 +128,14 @@ struct VulkanSubpassDescription
 
 struct AttachmentUse
 {
-	AttachmentUse (RenderPassAttachment rpAttach, int index);
+	AttachmentUse (RenderPassAttachment rpAttach, uint32_t index);
 
 	VkAttachmentDescription Get ();
 
-	int index = -1;
 
 	VkFormat format;
+	RenderPassAttachment rpAttach;
+	uint32_t index = -1;
 	VkSampleCountFlagBits sampleCount;
 	VkAttachmentLoadOp loadOp;
 	VkAttachmentStoreOp storeOp;
@@ -142,7 +143,6 @@ struct AttachmentUse
 	VkAttachmentStoreOp stencilStoreOp;
 	VkImageLayout initialLayout;
 	VkImageLayout finalLayout;
-	RenderPassAttachment rpAttach;
 };
 
 struct RenderPassDescription

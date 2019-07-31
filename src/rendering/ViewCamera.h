@@ -18,13 +18,13 @@ class Camera
 	public:
 	// perspective
 	Camera (cml::vec3f position, cml::quatf rotation, float fov, float aspect)
-	: position (position), rotation (rotation), type (CamType::perspective), fov (fov), size (aspect)
+	: type (CamType::perspective), fov (fov), size (aspect), position (position), rotation (rotation)
 	{
 	}
 
 	// orthographic
 	Camera (cml::vec3f position, cml::quatf rotation, float size)
-	: position (position), rotation (rotation), type (CamType::orthographic), size (size)
+	: type (CamType::orthographic), size (size), position (position), rotation (rotation)
 	{
 	}
 

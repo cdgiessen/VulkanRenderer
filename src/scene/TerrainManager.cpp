@@ -142,7 +142,7 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 
 			cml::vec3f center =
 			    cml::vec3f (terGrid.x * t_settings.width, cameraPos.y, terGrid.y * t_settings.width);
-			float distanceToViewer = cml::distance (cameraPos, center);
+			// float distanceToViewer = cml::distance (cameraPos, center);
 
 			// if (distanceToViewer <= t_settings.viewDistance * t_settings.width) {
 

@@ -79,15 +79,15 @@ void VulkanMaterial::AddValue (MaterialOptions value)
 	/*value_data = std::make_shared<VulkanBufferUniform>(device);
 
 	if (value.index() == 0) {
-	    value_data->CreateUniformBufferPersitantlyMapped(sizeof(Phong_Material));
+	    value_data->CreateUniformBufferPersistentlyMapped(sizeof(Phong_Material));
 	}
 
 	else if (value.index() == 1) {
-	    value_data->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Mat_Value));
+	    value_data->CreateUniformBufferPersistentlyMapped(sizeof(PBR_Mat_Value));
 	}
 
 	else if (value.index() == 2) {
-	    value_data->CreateUniformBufferPersitantlyMapped(sizeof(PBR_Mat_Tex));
+	    value_data->CreateUniformBufferPersistentlyMapped(sizeof(PBR_Mat_Tex));
 	}*/
 }
 
@@ -100,9 +100,9 @@ void VulkanMaterial::Setup ()
 	// descriptor = VulkanDescriptor(device);
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
-	int index = 0;
+	// int index = 0;
 
-	for (int i = 0; i < dataSlots.size (); i++)
+	for (size_t i = 0; i < dataSlots.size (); i++)
 	{
 		m_bindings.push_back (
 		    VulkanDescriptor::CreateBinding (GetVulkanDescriptorType (dataSlots.at (i).type),
@@ -128,7 +128,7 @@ void VulkanMaterial::Setup ()
 
 	std::vector<DescriptorPoolSize> poolSizes;
 
-	for (int i = 0; i < dataSlots.size (); i++)
+	for (size_t i = 0; i < dataSlots.size (); i++)
 	{
 		poolSizes.push_back (
 		    DescriptorPoolSize (GetVulkanDescriptorType (dataSlots.at (i).type), dataSlots.at (i).count));
@@ -149,7 +149,7 @@ void VulkanMaterial::Setup ()
 
 	std::vector<DescriptorUse> writes;
 
-	for (int i = 0; i < dataSlots.size (); i++)
+	for (size_t i = 0; i < dataSlots.size (); i++)
 	{
 		writes.push_back (DescriptorUse (i, dataSlots.at (i).count, dataSlots.at (i).resource));
 	}

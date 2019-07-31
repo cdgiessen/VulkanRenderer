@@ -13,7 +13,7 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 
 	uniformBuffer = std::make_shared<VulkanBufferUniform> (renderer.device, sizeof (ModelBufferObject));
 
-	ubo.model = cml::mat4f (1.0f);
+	ubo.model = cml::mat4f ();
 	ubo.model = ubo.model.translate (cml::vec3f (0, 0, 0));
 	ubo.normal = cml::to_mat4 (cml::to_mat3 (ubo.model).inverse ().transpose ());
 

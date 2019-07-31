@@ -199,7 +199,7 @@ void Manager::LoadTextureList ()
 
 	try
 	{
-		Log.Debug (fmt::format ("Loaded {} textuers\n", textureResources.size ()));
+		Log.Debug (fmt::format ("Loaded {} textures\n", textureResources.size ()));
 		int count = 0;
 
 		auto signal = std::make_shared<job::TaskSignal> ();
@@ -247,10 +247,10 @@ void Manager::LoadTextureFromFile (TexID id)
 	auto texData = std::make_unique<TexData> (texRes.dataDescription);
 	texRes.SetDataPtr (texData.get ());
 
-	int desiredChannels = texRes.dataDescription.channels;
+	// int desiredChannels = texRes.dataDescription.channels;
 
 	std::vector<std::string> paths;
-	for (int i = 0; i < texRes.dataDescription.layers; i++)
+	for (size_t i = 0; i < texRes.dataDescription.layers; i++)
 	{
 		std::string path;
 		if (texRes.dataDescription.layers != 1)
@@ -266,7 +266,7 @@ void Manager::LoadTextureFromFile (TexID id)
 
 		paths.push_back (path);
 
-		LoadTextureDTex (path);
+		// LoadTextureDTex (path);
 
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels;

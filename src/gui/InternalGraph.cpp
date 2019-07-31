@@ -792,7 +792,7 @@ NodeMap GraphPrototype::GetNodeMap () const { return nodeMap; }
 
 
 GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, cml::vec2<int32_t> pos, float scale)
-: info (seed, cellsWide, scale, pos), nodeMap (graph.GetNodeMap ())
+: nodeMap (graph.GetNodeMap ()), info (seed, cellsWide, scale, pos)
 {
 	// cml::vec2<int32_t>(pos.x * (cellsWide) / scale, pos.y * (cellsWide) / scale), scale / (cellsWide)
 
@@ -861,13 +861,13 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, cml:
 			{
 
 
-				float h = outputHeightMap.at ((x)*cellsWide + z);
+				// float h = outputHeightMap.at ((x)*cellsWide + z);
 				float h_px = outputHeightMap.at ((x)*cellsWide + z + 1);
 				float h_mx = outputHeightMap.at ((x)*cellsWide + z - 1);
 				float h_py = outputHeightMap.at ((x + 1) * cellsWide + z);
 				float h_my = outputHeightMap.at ((x - 1) * cellsWide + z);
 
-				cml::vec3f normal = cml::normalize (cml::vec3f (h_px - h_mx, 2.0f, h_py - h_my));
+				// cml::vec3f normal = cml::normalize (cml::vec3f (h_px - h_mx, 2.0f, h_py - h_my));
 
 				// uint xy = cml::some_packing_snorm_2x16 (cml::vec2f (normal.x, normal.y));
 				// int16_t x = xy & 0xFFFF0000;

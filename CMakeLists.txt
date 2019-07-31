@@ -12,7 +12,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 add_subdirectory(ext)
 
 find_package(glfw3 REQUIRED)
-find_package(glm REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(Bullet REQUIRED) 
 find_package(OpenAL REQUIRED)
@@ -88,9 +87,6 @@ target_include_directories(VulkanApp PRIVATE ${SG14_INCLUDE_DIRECTORY})
 
 #DTex
 target_link_libraries(VulkanApp PRIVATE DTex::DTex)
-
-#glm
-target_link_libraries(VulkanApp PUBLIC glm)
 
 #glfw
 target_link_libraries(VulkanApp PRIVATE glfw)

@@ -23,9 +23,9 @@ TerrainQuad::TerrainQuad (cml::vec2f pos,
   logicalPos (logicalPos),
   logicalSize (logicalSize),
   subDivPos (subDivPos),
-  isSubdivided (false),
   level (level),
   heightValAtCenter (0),
+  isSubdivided (false),
   terrain (terrain)
 {
 	bound.h_w_pp = cml::vec4f (terrain->heightScale, terrain->coordinateData.size.x, -2, -3);
@@ -134,9 +134,8 @@ void Terrain::SetupUniformBuffer ()
 	uniformBuffer = std::make_shared<VulkanBufferUniform> (renderer.device, sizeof (ModelBufferObject));
 
 	ModelBufferObject mbo;
-	mbo.model = cml::mat4f (1.0f);
-	// mbo.model = cml::translate (mbo.model, cml::vec3f (coordinateData.pos.x, 0, coordinateData.pos.y));
-	mbo.normal = mbo.model.inverse ().transpose ();
+	mbo.model = cml::mat4f ().translate (cml::vec3f (coordinateData.pos.x, 0, coordinateData.pos.y));
+	mbo.normal = cml::mat4f (); // mbo.model.inverse ().transpose ();
 	uniformBuffer->CopyToBuffer (&mbo, sizeof (ModelBufferObject));
 
 	instanceBuffer = std::make_shared<VulkanBufferInstancePersistant> (renderer.device, 2048, 16);
@@ -255,7 +254,7 @@ void Terrain::SetupPipeline ()
 		initializers::vertexInputAttributeDescription (
 		    INSTANCE_BUFFER_BIND_ID, 5, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof (float) * 8), // Location 6: h_w_pp
 		initializers::vertexInputAttributeDescription (
-		    INSTANCE_BUFFER_BIND_ID, 6, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof (float) * 12) // Location padd
+		    INSTANCE_BUFFER_BIND_ID, 6, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof (float) * 12) // Location pad
 	};
 
 	out.AddVertexLayouts (instanceBufferBinding, instanceBufferAttribute);

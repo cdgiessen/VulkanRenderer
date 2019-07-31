@@ -98,10 +98,10 @@ class Terrain
 	int maxNumQuads;
 	int numQuads = 1;
 
+	VulkanRenderer& renderer;
 	TerrainCoordinateData coordinateData;
 	float heightScale = 100;
 
-	VulkanRenderer& renderer;
 
 	std::unique_ptr<Pipeline> normal;
 	std::unique_ptr<Pipeline> wireframe;

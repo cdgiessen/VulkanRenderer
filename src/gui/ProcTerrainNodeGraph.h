@@ -158,10 +158,10 @@ class Node
 	Node (NodeType type, NodeId id, ImVec2 position, InternalGraph::GraphPrototype& graph);
 
 	std::string name;
+	NodeType nodeType;
 	NodeId id = -1;
 	ImVec2 pos = ImVec2 (200, 150);
 	ImVec2 size = ImVec2 (100, 100);
-	NodeType nodeType;
 
 	std::vector<InputConnectionSlot> inputSlots;
 	OutputConnectionSlot outputSlot;

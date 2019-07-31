@@ -379,7 +379,7 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 		ImGui::Text ("%s", node.name.c_str ());
 
 		// Save the size of what we have emitted and wether any of the widgets are being used
-		bool node_widgets_active = (!old_any_active && ImGui::IsAnyItemActive ());
+		// bool node_widgets_active = (!old_any_active && ImGui::IsAnyItemActive ());
 
 		// Display node box
 		imDrawList->ChannelsSetCurrent (0); // Background
@@ -446,7 +446,7 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 		node.outputSlot.Draw (imDrawList, *this, node, 0);
 
 		float verticalOffset = 40;
-		for (int i = 0; i < node.inputSlots.size (); i++)
+		for (size_t i = 0; i < node.inputSlots.size (); i++)
 		{
 			verticalOffset += node.inputSlots[i].Draw (imDrawList, *this, node, verticalOffset);
 		}
@@ -601,7 +601,7 @@ HoveredSlotInfo ProcTerrainNodeGraph::GetHoveredSlot ()
 {
 	for (auto& [id, node] : nodes)
 	{
-		for (int i = 0; i < node.inputSlots.size (); i++)
+		for (size_t i = 0; i < node.inputSlots.size (); i++)
 		{
 			if (node.inputSlots[i].IsHoveredOver (windowPos + node.pos))
 				return HoveredSlotInfo (id, false, i);
@@ -818,7 +818,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 		{
 			std::string curIndex (std::to_string (i));
 			auto node = j[curIndex]["id"];
-			for (int slot = 0; slot < nodes.at (node).inputSlots.size (); slot++)
+			for (size_t slot = 0; slot < nodes.at (node).inputSlots.size (); slot++)
 			{
 				std::string curSlotIndex (std::to_string (slot));
 
@@ -866,18 +866,25 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 					{
 						float arr[2];
 						arr[0] = j[curIndex][curSlotIndex]["value"];
+						arr[1] = j[curIndex][curSlotIndex]["value"];
+
 						nodes.at (node).inputSlots[slot].value.value = cml::vec2f (arr[0], arr[1]);
 					}
 					if (type == ConnectionType::Vec3)
 					{
 						float arr[3];
 						arr[0] = j[curIndex][curSlotIndex]["value"];
+						arr[1] = j[curIndex][curSlotIndex]["value"];
+						arr[2] = j[curIndex][curSlotIndex]["value"];
 						nodes.at (node).inputSlots[slot].value.value = cml::vec3f (arr[0], arr[1], arr[2]);
 					}
 					if (type == ConnectionType::Vec4 || type == ConnectionType::Color)
 					{
 						float arr[4];
 						arr[0] = j[curIndex][curSlotIndex]["value"];
+						arr[1] = j[curIndex][curSlotIndex]["value"];
+						arr[2] = j[curIndex][curSlotIndex]["value"];
+						arr[3] = j[curIndex][curSlotIndex]["value"];
 						nodes.at (node).inputSlots[slot].value.value =
 						    cml::vec4f (arr[0], arr[1], arr[2], arr[3]);
 					}
@@ -997,7 +1004,7 @@ int InputConnectionSlot::Draw (
 	ImGui::SetCursorScreenPos (currentPos + ImVec2 (10, -nodeSlotRadius));
 	ImGui::Text ("%s", name.c_str ());
 
-	ImVec2 slotNameSize = ImGui::CalcTextSize (name.c_str ());
+	// ImVec2 slotNameSize = ImGui::CalcTextSize (name.c_str ());
 	ImGui::SetCursorScreenPos (currentPos + ImVec2 (5, -nodeSlotRadius + 15));
 
 	ImGui::PushItemWidth (parentNode.size.x - 10);

@@ -202,7 +202,7 @@ VulkanSurface::VulkanSurface (VulkanInstance const& instance, Window& window)
 VulkanSurface::~VulkanSurface () { vkDestroySurfaceKHR (instance.instance, surface, nullptr); }
 
 
-///////// VulkaPhysicalDevice /////////
+///////// VulkanPhysicalDevice /////////
 
 VulkanPhysicalDevice::VulkanPhysicalDevice (VulkanInstance const& instance, VulkanSurface const& surface)
 {
@@ -211,7 +211,7 @@ VulkanPhysicalDevice::VulkanPhysicalDevice (VulkanInstance const& instance, Vulk
 
 	if (deviceCount == 0)
 	{
-		throw std::runtime_error ("failed to find GPUs with Vulkan support!");
+		throw std::runtime_error ("failed to find GPU's with Vulkan support!");
 	}
 
 	std::vector<VkPhysicalDevice> devices (deviceCount);
@@ -239,7 +239,7 @@ VulkanPhysicalDevice::VulkanPhysicalDevice (VulkanInstance const& instance, Vulk
 
 VulkanPhysicalDevice::~VulkanPhysicalDevice () {}
 
-//////// VulkanDeivce ////////
+//////// VulkanDevice ////////
 
 VulkanDevice::VulkanDevice (bool validationLayers, Window& window)
 : enableValidationLayers (validationLayers),

@@ -39,7 +39,7 @@ void RenderSettings::Load ()
 			pointLightCount = j["point_light_count"];
 			spotLightCount = j["spot_light_count"];
 		}
-		catch (std::runtime_error e)
+		catch (std::runtime_error& e)
 		{
 			Log.Debug (fmt::format ("Render Settings was incorrect, recreating\n"));
 			Save ();
@@ -280,20 +280,20 @@ void VulkanRenderer::ContrustFrameGraph ()
 		ImGui_ImplGlfwVulkan_Render (cmdBuf);
 	};
 
-	auto transparent_draw = [&](VkCommandBuffer cmdBuf) {
-		dynamic_data.BindFrameDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
-		dynamic_data.BindLightingDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
+	/*auto transparent_draw = [&](VkCommandBuffer cmdBuf) {
+	    dynamic_data.BindFrameDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
+	    dynamic_data.BindLightingDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
 
-		VkViewport viewport = initializers::viewport (
-		    (float)vulkanSwapChain.swapChainExtent.width, (float)vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f);
-		vkCmdSetViewport (cmdBuf, 0, 1, &viewport);
+	    VkViewport viewport = initializers::viewport (
+	        (float)vulkanSwapChain.swapChainExtent.width, (float)vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f);
+	    vkCmdSetViewport (cmdBuf, 0, 1, &viewport);
 
-		VkRect2D scissor = initializers::rect2D (
-		    vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, 0, 0);
-		vkCmdSetScissor (cmdBuf, 0, 1, &scissor);
+	    VkRect2D scissor = initializers::rect2D (
+	        vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, 0, 0);
+	    vkCmdSetScissor (cmdBuf, 0, 1, &scissor);
 
-		scene->RenderTransparent (cmdBuf, wireframe);
-	};
+	    scene->RenderTransparent (cmdBuf, wireframe);
+	};*/
 
 	frameGraph->SetDrawFuncs (0, { main_draw });
 	// frameGraph->SetDrawFuncs (0, { transparent_draw });
@@ -334,11 +334,10 @@ void VulkanRenderer::SubmitFrame (int curFrameIndex)
 	device.PresentQueue ().QueueWaitIdle ();
 }
 
+// TODO: refactor this out
 std::shared_ptr<VulkanDescriptor> VulkanRenderer::GetVulkanDescriptor ()
 {
-	std::shared_ptr<VulkanDescriptor> descriptor = std::make_shared<VulkanDescriptor> (device);
-	descriptors.push_back (descriptor);
-	return descriptor;
+	return std::make_shared<VulkanDescriptor> (device);
 }
 
 void VulkanRenderer::AddGlobalLayouts (std::vector<VkDescriptorSetLayout>& layouts)

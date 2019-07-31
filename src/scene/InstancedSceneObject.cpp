@@ -53,7 +53,7 @@ void InstancedSceneObject::SetupUniformBuffer ()
 	/*uniformBuffer->CreateUniformBuffer(sizeof(ModelBufferObject));*/
 
 	ModelBufferObject ubo = {};
-	ubo.model = cml::mat4f (1.0f);
+	ubo.model = cml::mat4f ();
 	ubo.model = ubo.model.translate (cml::vec3f (0, 0, 0));
 	// ubo.model = cml::rotate(ubo.model, time / 2.0f, cml::vec3f(0.5, 1, 0));
 	ubo.normal = cml::to_mat4 (cml::to_mat3 (ubo.model).inverse ().transpose ());

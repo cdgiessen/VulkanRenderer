@@ -22,7 +22,7 @@ std::vector<VkVertexInputAttributeDescription> VertexLayout::getAttributeDescrip
 	std::vector<VkVertexInputAttributeDescription> attrib = {};
 
 	int offset = 0;
-	for (int i = 0; i < vertDesc.layout.size (); i++)
+	for (size_t i = 0; i < vertDesc.layout.size (); i++)
 	{
 		VkFormat vertSize = VK_FORMAT_R32_SFLOAT;
 		if (vertDesc.layout[i] == 2) vertSize = VK_FORMAT_R32G32_SFLOAT;

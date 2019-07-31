@@ -38,8 +38,8 @@ struct DirectionalLight
 	float intensity = 0.0f;
 
 	DirectionalLight (){};
-	DirectionalLight (cml::vec3f dir, float intensity, cml::vec3f color)
-	: direction (dir), intensity (intensity), color (color)
+	DirectionalLight (cml::vec3f dir, cml::vec3f color, float intensity)
+	: direction (dir), color (color), intensity (intensity)
 	{
 	}
 };
@@ -52,8 +52,8 @@ struct PointLight
 	float cufOff = 0.0f;
 
 	PointLight (){};
-	PointLight (cml::vec3f position, float attenuation, cml::vec3f color)
-	: position (position), attenuation (attenuation), color (color)
+	PointLight (cml::vec3f position, cml::vec3f color, float attenuation)
+	: position (position), color (color), attenuation (attenuation)
 	{
 	}
 };
@@ -63,14 +63,14 @@ struct SpotLight
 	cml::vec3f position;
 	cml::vec3f direction;
 	cml::vec3f color;
-	float cutoff = 0.0f;
 	float attenuation = 0.0f;
+	float cutoff = 0.0f;
 	float outerCutOff = 0.0f;
 
 
 	SpotLight (){};
 	SpotLight (cml::vec3f position, cml::vec3f dir, cml::vec3f color, float attenuation, float cutoff, float outerCutOff)
-	: position (position), attenuation (attenuation), direction (dir), cutoff (cutoff), color (color), outerCutOff (outerCutOff)
+	: position (position), direction (dir), color (color), attenuation (attenuation), cutoff (cutoff), outerCutOff (outerCutOff)
 	{
 	}
 };
@@ -142,6 +142,3 @@ struct PBR_Material
 	std::shared_ptr<VulkanTexture> tx_emissiveTexture;
 	std::shared_ptr<VulkanTexture> tx_normal;
 };
-
-constexpr cml::mat4f depthReverserMatrix = cml::mat4f (
-    1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f);

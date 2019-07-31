@@ -334,10 +334,10 @@ CommandPoolGroup::CommandPoolGroup (VulkanDevice& device)
 FrameObject::FrameObject (VulkanDevice& device, int frameIndex)
 : device (device),
   frameIndex (frameIndex),
-  commandPool (device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
   imageAvailSem (device),
   renderFinishSem (device),
   commandFence (std::make_shared<VulkanFence> (device, DEFAULT_FENCE_TIMEOUT, VK_FENCE_CREATE_SIGNALED_BIT)),
+  commandPool (device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
   primary_command_buffer (commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY)
 {
 	primary_command_buffer.Allocate ();
