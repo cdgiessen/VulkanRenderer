@@ -367,14 +367,14 @@ class GraphPrototype
 class GraphUser
 {
 	public:
-	GraphUser (const GraphPrototype& graph, int seed, int cellsWide, cml::vec2<int32_t> pos, float scale);
+	GraphUser (const GraphPrototype& graph, int seed, int cellsWide, cml::vec2<int32_t> pos, float scale, float height_scale);
 
 	float SampleHeightMap (const float x, const float z) const;
 
 	int image_length () { return info.cellsWide; }
 
 	std::vector<float>& GetHeightMap ();
-	std::vector<cml::vec4<int8_t>>& GetSplatMap ();
+	std::vector<cml::vec4<uint8_t>>& GetSplatMap ();
 	std::vector<cml::vec4<int16_t>>& GetNormalMap ();
 
 
@@ -384,7 +384,7 @@ class GraphUser
 	NoiseSourceInfo info;
 
 	std::vector<float> outputHeightMap;
-	std::vector<cml::vec4<int8_t>> outputSplatMap;
+	std::vector<cml::vec4<uint8_t>> outputSplatMap;
 	std::vector<cml::vec4<int16_t>> outputNormalMap;
 };
 } // namespace InternalGraph

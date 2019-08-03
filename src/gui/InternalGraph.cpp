@@ -791,7 +791,8 @@ void GraphPrototype::SetOutputNodeID (NodeID id) { outputNodeID = id; }
 NodeMap GraphPrototype::GetNodeMap () const { return nodeMap; }
 
 
-GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, cml::vec2<int32_t> pos, float scale)
+GraphUser::GraphUser (
+    const GraphPrototype& graph, int seed, int cellsWide, cml::vec2<int32_t> pos, float scale, float height_scale)
 : nodeMap (graph.GetNodeMap ()), info (seed, cellsWide, scale, pos)
 {
 	// cml::vec2<int32_t>(pos.x * (cellsWide) / scale, pos.y * (cellsWide) / scale), scale / (cellsWide)
@@ -848,7 +849,7 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, cml:
 			std::byte a =
 			    static_cast<std::byte> (static_cast<uint8_t> (cml::clamp (val.w, 0.0f, 1.0f) * 255.0f));
 
-			outputSplatMap.push_back ({ (int8_t)r, (int8_t)g, (int8_t)b, (int8_t)a });
+			outputSplatMap.push_back ({ val.x * 255, val.y * 255, val.z * 255, val.w * 255 });
 		}
 	}
 
@@ -862,18 +863,20 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, cml:
 
 
 				// float h = outputHeightMap.at ((x)*cellsWide + z);
-				float h_px = outputHeightMap.at ((x)*cellsWide + z + 1);
-				float h_mx = outputHeightMap.at ((x)*cellsWide + z - 1);
-				float h_py = outputHeightMap.at ((x + 1) * cellsWide + z);
-				float h_my = outputHeightMap.at ((x - 1) * cellsWide + z);
+				float h_px = outputHeightMap.at ((x)*cellsWide + z + 1) * height_scale;
+				float h_mx = outputHeightMap.at ((x)*cellsWide + z - 1) * height_scale;
+				float h_py = outputHeightMap.at ((x + 1) * cellsWide + z) * height_scale;
+				float h_my = outputHeightMap.at ((x - 1) * cellsWide + z) * height_scale;
 
-				// cml::vec3f normal = cml::normalize (cml::vec3f (h_px - h_mx, 2.0f, h_py - h_my));
+				cml::vec3f normal = cml::normalize (cml::vec3f (h_px - h_mx, 2.0f, h_py - h_my));
 
 				// uint xy = cml::some_packing_snorm_2x16 (cml::vec2f (normal.x, normal.y));
 				// int16_t x = xy & 0xFFFF0000;
 				// int16_t y = xy & 0x0000FFFF;
-				// int16_t n_z = cml::some_packing_snorm_2x16 (cml::vec2f (normal.z, 0)) & 0xFFFF0000;
-				outputNormalMap.push_back ({ (int16_t)0., (int16_t)1, (int16_t)0., (int16_t)0 });
+				// int16_t n_z = cml::some_packing_snorm_2x16 (cml::vec2f (normal.z, 0)) &
+				// 0xFFFF0000;
+				outputNormalMap.push_back (
+				    { normal.x * 32768, normal.y * 32768, normal.z * 32768, (uint16_t)0 });
 			}
 			else
 				outputNormalMap.push_back ({ (int16_t)0.5, (int16_t)1, (int16_t)0.5, (int16_t)0 });
@@ -889,7 +892,7 @@ GraphUser::GraphUser (const GraphPrototype& graph, int seed, int cellsWide, cml:
 
 
 std::vector<float>& GraphUser::GetHeightMap () { return outputHeightMap; }
-std::vector<cml::vec4<int8_t>>& GraphUser::GetSplatMap () { return outputSplatMap; }
+std::vector<cml::vec4<uint8_t>>& GraphUser::GetSplatMap () { return outputSplatMap; }
 std::vector<cml::vec4<int16_t>>& GraphUser::GetNormalMap () { return outputNormalMap; }
 
 

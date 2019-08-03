@@ -69,7 +69,8 @@ Terrain::Terrain (VulkanRenderer& renderer,
       1337,
       coords.sourceImageResolution,
       cml::vec2<int32_t> (coords.noisePos.x, coords.noisePos.y),
-      coords.noiseSize.x)
+      coords.noiseSize.x,
+      heightScale)
 {
 	// simple calculation right now, does the absolute max number of quads possible with given max
 	// level in future should calculate the actual number of max quads, based on distance calculation
@@ -156,7 +157,7 @@ void Terrain::SetupImage ()
 	terrainHeightMap = std::make_shared<VulkanTexture> (renderer, details, buffer_height);
 
 	auto buffer_splat = std::make_shared<VulkanBufferStagingResource> (renderer.device,
-	    sizeof (cml::vec4<int8_t>) * fastGraphUser.GetSplatMap ().size (),
+	    sizeof (cml::vec4<uint8_t>) * fastGraphUser.GetSplatMap ().size (),
 	    fastGraphUser.GetSplatMap ().data ());
 
 	TexCreateDetails splat_details (
