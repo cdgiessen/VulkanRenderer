@@ -110,9 +110,9 @@ class Terrain
 
 	DescriptorSet descriptorSet;
 
-	std::shared_ptr<VulkanTexture> terrainHeightMap;
-	std::shared_ptr<VulkanTexture> terrainSplatMap;
-	std::shared_ptr<VulkanTexture> terrainNormalMap;
+	VulkanTextureID terrainHeightMap;
+	VulkanTextureID terrainSplatMap;
+	VulkanTextureID terrainNormalMap;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 
@@ -134,10 +134,10 @@ class Terrain
 	    VulkanModel* terrainGrid);
 
 	void InitTerrain (cml::vec3f cameraPos,
-	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo,
-	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness,
-	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic,
-	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal);
+	    VulkanTextureID terrainVulkanTextureArrayAlbedo,
+	    VulkanTextureID terrainVulkanTextureArrayRoughness,
+	    VulkanTextureID terrainVulkanTextureArrayMetallic,
+	    VulkanTextureID terrainVulkanTextureArrayNormal);
 
 	void UpdateTerrain (cml::vec3f viewerPos);
 
@@ -160,10 +160,10 @@ class Terrain
 	void SetupImage ();
 	void SetupPipeline ();
 
-	void SetupDescriptorSets (std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo,
-	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness,
-	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic,
-	    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal);
+	void SetupDescriptorSets (VulkanTextureID terrainVulkanTextureArrayAlbedo,
+	    VulkanTextureID terrainVulkanTextureArrayRoughness,
+	    VulkanTextureID terrainVulkanTextureArrayMetallic,
+	    VulkanTextureID terrainVulkanTextureArrayNormal);
 
 	void SubdivideTerrain (int quad, cml::vec3f viewerPos);
 	void UnSubdivide (int quad);

@@ -54,8 +54,9 @@ void GameObject::SetupMaterial ()
 
 	mat->AddMaterialDataSlot ({ ResourceType::uniform, ResourceStages::fragment_only, materialBuffer->resource });
 
-	mat->AddMaterialDataSlot (
-	    { ResourceType::texture2D, ResourceStages::fragment_only, gameObjectVulkanTexture->resource });
+	mat->AddMaterialDataSlot ({ ResourceType::texture2D,
+	    ResourceStages::fragment_only,
+	    renderer.textureManager.get_texture (gameObjectVulkanTexture).resource });
 
 	// mat->AddTexture(gameObjectVulkanTexture);
 	mat->Setup ();
@@ -114,13 +115,11 @@ void GameObject::SetupPipeline ()
 {
 	PipelineOutline out;
 
-	auto pbr_vert =
-	    renderer.shaderManager.loadShaderModule ("assets/shaders/pbr.vert.spv", ShaderType::vertex);
-	auto pbr_frag =
-	    renderer.shaderManager.loadShaderModule ("assets/shaders/pbr.frag.spv", ShaderType::fragment);
+	auto pbr_vert = renderer.shaderManager.get_module ("pbr", ShaderType::vertex);
+	auto pbr_frag = renderer.shaderManager.get_module ("pbr", ShaderType::fragment);
 
 	ShaderModuleSet shader_set;
-	shader_set.Vertex (pbr_vert).Fragment (pbr_frag);
+	shader_set.Vertex (pbr_vert.value ()).Fragment (pbr_frag.value ());
 	out.SetShaderModuleSet (shader_set);
 
 	out.UseModelVertexLayout (*gameObjectModel.get ());

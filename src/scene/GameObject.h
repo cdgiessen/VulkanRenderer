@@ -54,7 +54,7 @@ class GameObject
 	std::shared_ptr<VulkanModel> gameObjectModel;
 
 	Resource::Texture::TexID gameObjectTexture;
-	std::shared_ptr<VulkanTexture> gameObjectVulkanTexture;
+	VulkanTextureID gameObjectVulkanTexture;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 	// ModelPushConstant modelPushConstant;

@@ -110,8 +110,8 @@ class VulkanMaterial
 
 	void SetShaders (ShaderModuleSet set);
 
-	void AddTexture (std::shared_ptr<VulkanTexture> tex);
-	void AddTextureArray (std::shared_ptr<VulkanTexture> texArr);
+	void AddTexture (VulkanTextureID tex);
+	void AddTextureArray (VulkanTextureID texArr);
 	void AddValue (MaterialOptions value);
 
 	void AddMaterialDataSlot (MaterialDataSlot slot);
@@ -133,8 +133,8 @@ class VulkanMaterial
 
 	std::vector<MaterialDataSlot> dataSlots;
 
-	std::vector<std::shared_ptr<VulkanTexture>> textures;
-	std::vector<std::shared_ptr<VulkanTexture>> textureArrays;
+	std::vector<VulkanTextureID> textures;
+	std::vector<VulkanTextureID> textureArrays;
 	std::vector<MaterialOptions> value_var;
 	std::shared_ptr<VulkanBufferUniform> value_data;
 };
@@ -151,8 +151,8 @@ class VulkanMaterial
 // 	VulkanDescriptor descriptor;
 
 
-// 	std::vector<std::shared_ptr<VulkanTexture>> textures;
-// 	std::vector<std::shared_ptr<VulkanTexture>> textureArrays;
+// 	std::vector<VulkanTextureID> textures;
+// 	std::vector<VulkanTextureID> textureArrays;
 // 	std::vector<MaterialOptions> value_var;
 // 	std::shared_ptr<VulkanBufferUniform> value_data;
 // };

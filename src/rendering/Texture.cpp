@@ -624,37 +624,57 @@ VulkanTextureManager::VulkanTextureManager (VulkanRenderer& renderer, Resource::
 {
 }
 
-
-std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateTexture2D (
-    Resource::Texture::TexID texture, TexCreateDetails texCreateDetails)
+VulkanTextureID VulkanTextureManager::CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails)
 {
 	auto& resource = texManager.GetTexResourceByID (texture);
-	vulkanTextures.push_back (std::make_shared<VulkanTexture> (renderer, texCreateDetails, resource));
-	return vulkanTextures.back ();
+	auto tex = std::make_unique<VulkanTexture> (renderer, texCreateDetails, resource);
+	std::lock_guard guard (map_lock);
+	texture_map[id_counter] = std::move (tex);
+	return id_counter++;
 }
 
-std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateTexture2DArray (
+VulkanTextureID VulkanTextureManager::CreateTexture2DArray (
     Resource::Texture::TexID textures, TexCreateDetails texCreateDetails)
 {
 	auto& resource = texManager.GetTexResourceByID (textures);
-	vulkanTextures.push_back (std::make_shared<VulkanTexture> (renderer, texCreateDetails, resource));
-	return vulkanTextures.back ();
+	auto tex = std::make_unique<VulkanTexture> (renderer, texCreateDetails, resource);
+	std::lock_guard guard (map_lock);
+	texture_map[id_counter] = std::move (tex);
+	return id_counter++;
 }
 
-std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateCubeMap (
-    Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails)
+VulkanTextureID VulkanTextureManager::CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails)
 {
 	auto& resource = texManager.GetTexResourceByID (cubeMap);
-	vulkanTextures.push_back (std::make_shared<VulkanTexture> (renderer, texCreateDetails, resource));
-	return vulkanTextures.back ();
+	auto tex = std::make_unique<VulkanTexture> (renderer, texCreateDetails, resource);
+	std::lock_guard guard (map_lock);
+	texture_map[id_counter] = std::move (tex);
+	return id_counter++;
 }
 
-std::shared_ptr<VulkanTexture> VulkanTextureManager::CreateDepthImage (VkFormat depthFormat, int width, int height)
+VulkanTextureID VulkanTextureManager::CreateDepthImage (VkFormat depthFormat, int width, int height)
 {
 	TexCreateDetails texCreateDetails;
 	texCreateDetails.format = depthFormat;
 	texCreateDetails.desiredWidth = width;
 	texCreateDetails.desiredHeight = height;
-	vulkanTextures.push_back (std::make_shared<VulkanTexture> (renderer, texCreateDetails));
-	return vulkanTextures.back ();
+	auto tex = std::make_unique<VulkanTexture> (renderer, texCreateDetails);
+	std::lock_guard guard (map_lock);
+	texture_map[id_counter] = std::move (tex);
+	return id_counter++;
+}
+
+VulkanTextureID VulkanTextureManager::CreateTextureFromBuffer (
+    std::shared_ptr<VulkanBufferStagingResource> buffer, TexCreateDetails texCreateDetails)
+{
+	auto tex = std::make_unique<VulkanTexture> (renderer, texCreateDetails, buffer);
+	std::lock_guard guard (map_lock);
+	texture_map[id_counter] = std::move (tex);
+	return id_counter++;
+}
+
+VulkanTexture const& VulkanTextureManager::get_texture (VulkanTextureID id)
+{
+	std::lock_guard guard (map_lock);
+	return *texture_map.at (id);
 }

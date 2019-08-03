@@ -199,9 +199,15 @@ void VulkanRenderer::ToggleWireframe () { wireframe = !wireframe; }
 void VulkanRenderer::CreateDepthResources ()
 {
 	VkFormat depthFormat = FindDepthFormat ();
+	TexCreateDetails texCreateDetails;
+	texCreateDetails.format = depthFormat;
+	texCreateDetails.desiredWidth = vulkanSwapChain.swapChainExtent.width;
+	texCreateDetails.desiredHeight = vulkanSwapChain.swapChainExtent.height;
+
 	for (int i = 0; i < 3; i++)
-		depthBuffers.push_back (textureManager.CreateDepthImage (
-		    depthFormat, vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height));
+	{
+		depthBuffers.push_back (std::make_unique<VulkanTexture> (*this, texCreateDetails));
+	}
 }
 
 VkFormat VulkanRenderer::FindSupportedFormat (

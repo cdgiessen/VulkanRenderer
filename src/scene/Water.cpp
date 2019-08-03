@@ -40,19 +40,17 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 
 	std::vector<DescriptorUse> writes;
 	writes.push_back (DescriptorUse (0, 1, uniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, vulkanTexture->resource));
+	writes.push_back (DescriptorUse (1, 1, renderer.textureManager.get_texture (vulkanTexture).resource));
 	// writes.push_back (DescriptorUse (2, 1, renderer.Get_depth_tex ()->resource));
 	descriptor->UpdateDescriptorSet (m_descriptorSet, writes);
 
 	PipelineOutline out;
 
-	auto water_vert =
-	    renderer.shaderManager.loadShaderModule ("assets/shaders/water.vert.spv", ShaderType::vertex);
-	auto water_frag =
-	    renderer.shaderManager.loadShaderModule ("assets/shaders/water.frag.spv", ShaderType::fragment);
+	auto water_vert = renderer.shaderManager.get_module ("water", ShaderType::vertex);
+	auto water_frag = renderer.shaderManager.get_module ("water", ShaderType::fragment);
 
 	ShaderModuleSet water_shaders;
-	water_shaders.Vertex (water_vert).Fragment (water_frag);
+	water_shaders.Vertex (water_vert.value ()).Fragment (water_frag.value ());
 	out.SetShaderModuleSet (water_shaders);
 
 	out.UseModelVertexLayout (*model.get ());

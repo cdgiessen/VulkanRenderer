@@ -32,11 +32,7 @@ ShaderType GetShaderStage (const std::string& stage);
 struct ShaderModule
 {
 	ShaderModule ();
-
 	ShaderModule (ShaderType type, VkShaderModule module);
-
-	ShaderModule (const ShaderModule& mod) = default;
-	ShaderModule& operator= (const ShaderModule& mod) = default;
 
 	VkPipelineShaderStageCreateInfo GetCreateInfo ();
 
@@ -69,6 +65,33 @@ class ShaderModuleSet
 	std::optional<ShaderModule> tese;
 };
 
+struct ShaderKey
+{
+	std::string name;
+	ShaderType type;
+
+	bool operator== (const ShaderKey& other) const
+	{
+		return (name == other.name && type == other.type);
+	}
+};
+
+namespace std
+{
+
+template <> struct hash<ShaderKey>
+{
+	std::size_t operator() (const ShaderKey& k) const
+	{
+		using std::hash;
+		using std::size_t;
+		using std::string;
+
+		return ((hash<string> () (k.name) ^ (hash<ShaderType> () (k.type) << 1)) >> 1);
+	}
+};
+
+} // namespace std
 
 class ShaderDatabase
 {
@@ -103,13 +126,12 @@ class ShaderCompiler
 {
 	public:
 	ShaderCompiler ();
-	std::optional<std::vector<unsigned int>> const CompileShaderString (
-	    std::string const& shader_filename, std::string const& shader_string, ShaderType const shader_type);
+	std::optional<std::vector<uint32_t>> const compile_glsl_to_spriv (std::string const& shader_name,
+	    std::string const& shader_data,
+	    ShaderType const shader_type,
+	    std::filesystem::path include_path = std::filesystem::path{});
 
-	std::vector<uint32_t> const LoadAndCompileShader (std::string const& filename);
-
-	private:
-	std::optional<std::string> load_file (std::string const& filename);
+	std::optional<std::string> load_file_data (std::string const& filename);
 };
 
 class ShaderManager
@@ -118,14 +140,23 @@ class ShaderManager
 	ShaderManager (VulkanDevice& device);
 	~ShaderManager ();
 
-	ShaderModule loadShaderModule (const std::string& codePath, ShaderType type);
+	std::optional<ShaderKey> load_and_compile_module (std::filesystem::path file);
+	std::optional<ShaderKey> load_module (std::string const& name, std::string const& codePath, ShaderType type);
+	std::optional<ShaderKey> create_module (
+	    std::string const& name, ShaderType type, std::vector<uint32_t> const& code);
 
+	void delete_module (ShaderKey const& key);
+
+	std::optional<ShaderModule> get_module (ShaderKey const& key);
+	std::optional<ShaderModule> get_module (std::string const& name, ShaderType const type);
 
 	private:
 	const VulkanDevice& device;
-	std::vector<ShaderModule> shaderModules;
+
 	ShaderCompiler compiler;
 	ShaderDatabase database;
+
+	std::unordered_map<ShaderKey, ShaderModule> module_map;
 
 	std::optional<std::vector<char>> readShaderFile (const std::string& filename);
 };

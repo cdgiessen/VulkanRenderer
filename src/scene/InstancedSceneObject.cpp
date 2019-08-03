@@ -101,7 +101,7 @@ void InstancedSceneObject::SetupDescriptor ()
 
 	std::vector<DescriptorUse> writes;
 	writes.push_back (DescriptorUse (0, 1, uniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, vulkanTexture->resource));
+	writes.push_back (DescriptorUse (1, 1, renderer.textureManager.get_texture (vulkanTexture).resource));
 	descriptor->UpdateDescriptorSet (m_descriptorSet, writes);
 }
 
@@ -109,13 +109,11 @@ void InstancedSceneObject::SetupPipeline ()
 {
 	PipelineOutline out;
 
-	auto vert = renderer.shaderManager.loadShaderModule (
-	    "assets/shaders/instancedSceneObject.vert.spv", ShaderType::vertex);
-	auto frag = renderer.shaderManager.loadShaderModule (
-	    "assets/shaders/instancedSceneObject.frag.spv", ShaderType::fragment);
+	auto vert = renderer.shaderManager.get_module ("instancedSceneObject", ShaderType::vertex);
+	auto frag = renderer.shaderManager.get_module ("instancedSceneObject", ShaderType::fragment);
 
 	ShaderModuleSet shader_set;
-	shader_set.Vertex (vert).Fragment (frag);
+	shader_set.Vertex (vert.value ()).Fragment (frag.value ());
 	out.SetShaderModuleSet (shader_set);
 
 	VertexLayout layout (Vert_PosNormUv);
@@ -178,8 +176,8 @@ void InstancedSceneObject::SetupPipeline ()
 	// //pipeMan.SetVertexShader(mvp, loadShaderModule(renderer.device.device, "assets/shaders/instancedSceneObject.vert.spv"));
 	// //pipeMan.SetFragmentShader(mvp, fragShaderModule);
 
-	// auto vert = renderer.shaderManager.loadShaderModule("assets/shaders/instancedSceneObject.vert.spv", ShaderType::vertex);
-	// auto frag = renderer.shaderManager.loadShaderModule(fragShaderPath, ShaderType::fragment);
+	// auto vert = renderer.shaderManager.get_module ("instancedSceneObject", ShaderType::vertex);
+	// auto frag = renderer.shaderManager.get_module ("instancedSceneObject", ShaderType::fragment);
 
 	// ShaderModuleSet set(vert, frag, {}, {}, {});
 	// pipeMan.SetShaderModuleSet(mvp, set);
@@ -480,8 +478,8 @@ void InstancedSceneObject::WriteToCommandBuffer (VkCommandBuffer commandBuffer, 
 	//	isReadyToRender = true;
 	//
 
-	if (*vulkanModel->readyToUse == false || *vulkanTexture->readyToUse == false) //|| *isFinishedTransfer != true)
-		return;
+	// if (*vulkanModel->readyToUse == false || *vulkanTexture->readyToUse == false) //||
+	// *isFinishedTransfer != true) 	return;
 
 	VkDeviceSize offsets[] = { 0 };
 

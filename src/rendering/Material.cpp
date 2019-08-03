@@ -61,15 +61,12 @@ VulkanMaterial::~VulkanMaterial () {}
 
 void VulkanMaterial::SetShaders (ShaderModuleSet set) { shaderModules = set; }
 
-void VulkanMaterial::AddTexture (std::shared_ptr<VulkanTexture> tex)
+void VulkanMaterial::AddTexture (VulkanTextureID tex)
 {
 	// textures.push_back(tex);
 }
 
-void VulkanMaterial::AddTextureArray (std::shared_ptr<VulkanTexture> texArr)
-{
-	textureArrays.push_back (texArr);
-}
+void VulkanMaterial::AddTextureArray (VulkanTextureID texArr) { textureArrays.push_back (texArr); }
 
 void VulkanMaterial::AddValue (MaterialOptions value)
 {

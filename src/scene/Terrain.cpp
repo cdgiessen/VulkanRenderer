@@ -91,17 +91,14 @@ int Terrain::FindEmptyIndex ()
 }
 
 void Terrain::InitTerrain (cml::vec3f cameraPos,
-    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo,
-    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness,
-    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic,
-    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal)
+    VulkanTextureID texArrAlbedo,
+    VulkanTextureID texArrRoughness,
+    VulkanTextureID texArrMetallic,
+    VulkanTextureID texArrNormal)
 {
 	SetupUniformBuffer ();
 	SetupImage ();
-	SetupDescriptorSets (terrainVulkanTextureArrayAlbedo,
-	    terrainVulkanTextureArrayRoughness,
-	    terrainVulkanTextureArrayMetallic,
-	    terrainVulkanTextureArrayNormal);
+	SetupDescriptorSets (texArrAlbedo, texArrRoughness, texArrMetallic, texArrNormal);
 	SetupPipeline ();
 
 	quadMap.emplace (std::make_pair (FindEmptyIndex (),
@@ -154,7 +151,7 @@ void Terrain::SetupImage ()
 	    VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 	details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
-	terrainHeightMap = std::make_shared<VulkanTexture> (renderer, details, buffer_height);
+	terrainHeightMap = renderer.textureManager.CreateTextureFromBuffer (buffer_height, details);
 
 	auto buffer_splat = std::make_shared<VulkanBufferStagingResource> (renderer.device,
 	    sizeof (cml::vec4<uint8_t>) * fastGraphUser.GetSplatMap ().size (),
@@ -163,7 +160,7 @@ void Terrain::SetupImage ()
 	TexCreateDetails splat_details (
 	    VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 	splat_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	terrainSplatMap = std::make_shared<VulkanTexture> (renderer, splat_details, buffer_splat);
+	terrainSplatMap = renderer.textureManager.CreateTextureFromBuffer (buffer_splat, splat_details);
 
 	auto buffer_normal = std::make_shared<VulkanBufferStagingResource> (renderer.device,
 	    sizeof (cml::vec4<int16_t>) * fastGraphUser.GetNormalMap ().size (),
@@ -172,13 +169,11 @@ void Terrain::SetupImage ()
 	TexCreateDetails norm_details (
 	    VK_FORMAT_R16G16B16A16_SNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 	norm_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	terrainNormalMap = std::make_shared<VulkanTexture> (renderer, norm_details, buffer_normal);
+	terrainNormalMap = renderer.textureManager.CreateTextureFromBuffer (buffer_normal, norm_details);
 }
 
-void Terrain::SetupDescriptorSets (std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo,
-    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness,
-    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic,
-    std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal)
+void Terrain::SetupDescriptorSets (
+    VulkanTextureID texArrAlbedo, VulkanTextureID texArrRoughness, VulkanTextureID texArrMetallic, VulkanTextureID texArrNormal)
 {
 	descriptor = renderer.GetVulkanDescriptor ();
 
@@ -204,12 +199,6 @@ void Terrain::SetupDescriptorSets (std::shared_ptr<VulkanTexture> terrainVulkanT
 	std::vector<DescriptorPoolSize> poolSizes;
 	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
 	poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 7));
-	// poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
-	// poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
-	// poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
-	// poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
-	// poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
-	// poolSizes.push_back (DescriptorPoolSize (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
 	descriptor->SetupPool (poolSizes, 1);
 
 	// VkDescriptorSetAllocateInfo allocInfoTerrain = initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
@@ -217,13 +206,13 @@ void Terrain::SetupDescriptorSets (std::shared_ptr<VulkanTexture> terrainVulkanT
 
 	std::vector<DescriptorUse> writes;
 	writes.push_back (DescriptorUse (0, 1, uniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, terrainHeightMap->resource));
-	writes.push_back (DescriptorUse (2, 1, terrainNormalMap->resource));
-	writes.push_back (DescriptorUse (3, 1, terrainSplatMap->resource));
-	writes.push_back (DescriptorUse (4, 1, terrainVulkanTextureArrayAlbedo->resource));
-	writes.push_back (DescriptorUse (5, 1, terrainVulkanTextureArrayRoughness->resource));
-	writes.push_back (DescriptorUse (6, 1, terrainVulkanTextureArrayMetallic->resource));
-	writes.push_back (DescriptorUse (7, 1, terrainVulkanTextureArrayNormal->resource));
+	writes.push_back (DescriptorUse (1, 1, renderer.textureManager.get_texture (terrainHeightMap).resource));
+	writes.push_back (DescriptorUse (2, 1, renderer.textureManager.get_texture (terrainNormalMap).resource));
+	writes.push_back (DescriptorUse (3, 1, renderer.textureManager.get_texture (terrainSplatMap).resource));
+	writes.push_back (DescriptorUse (4, 1, renderer.textureManager.get_texture (texArrAlbedo).resource));
+	writes.push_back (DescriptorUse (5, 1, renderer.textureManager.get_texture (texArrRoughness).resource));
+	writes.push_back (DescriptorUse (6, 1, renderer.textureManager.get_texture (texArrMetallic).resource));
+	writes.push_back (DescriptorUse (7, 1, renderer.textureManager.get_texture (texArrNormal).resource));
 	descriptor->UpdateDescriptorSet (descriptorSet, writes);
 }
 
@@ -231,11 +220,11 @@ void Terrain::SetupPipeline ()
 {
 	PipelineOutline out;
 
-	auto vert = renderer.shaderManager.loadShaderModule ("assets/shaders/terrain.vert.spv", ShaderType::vertex);
-	auto frag = renderer.shaderManager.loadShaderModule ("assets/shaders/terrain.frag.spv", ShaderType::fragment);
+	auto vert = renderer.shaderManager.get_module ("terrain", ShaderType::vertex);
+	auto frag = renderer.shaderManager.get_module ("terrain", ShaderType::fragment);
 
 	ShaderModuleSet shader_set;
-	shader_set.Vertex (vert).Fragment (frag);
+	shader_set.Vertex (vert.value ()).Fragment (frag.value ());
 	out.SetShaderModuleSet (shader_set);
 
 	VertexLayout layout (Vert_PosNormUv);

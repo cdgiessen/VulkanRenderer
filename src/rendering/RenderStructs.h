@@ -7,7 +7,7 @@
 
 class VulkanTexture;
 
-
+using VulkanTextureID = int;
 
 
 /* Synchronization */
@@ -112,12 +112,12 @@ struct StaticModelPushConstant
 
 struct PBR_Mat_Tex
 {
-	std::shared_ptr<VulkanTexture> tx_albedo;
-	std::shared_ptr<VulkanTexture> tx_metallic;
-	std::shared_ptr<VulkanTexture> tx_roughness;
-	std::shared_ptr<VulkanTexture> tx_ao;
-	std::shared_ptr<VulkanTexture> tx_emissiveTexture;
-	std::shared_ptr<VulkanTexture> tx_normal;
+	VulkanTextureID tx_albedo;
+	VulkanTextureID tx_metallic;
+	VulkanTextureID tx_roughness;
+	VulkanTextureID tx_ao;
+	VulkanTextureID tx_emissiveTexture;
+	VulkanTextureID tx_normal;
 };
 
 struct PBR_Material
@@ -135,10 +135,10 @@ struct PBR_Material
 	bool useTexEmissive = false;
 	bool useTexNormal = false;
 
-	std::shared_ptr<VulkanTexture> tx_albedo;
-	std::shared_ptr<VulkanTexture> tx_metallic;
-	std::shared_ptr<VulkanTexture> tx_roughness;
-	std::shared_ptr<VulkanTexture> tx_ao;
-	std::shared_ptr<VulkanTexture> tx_emissiveTexture;
-	std::shared_ptr<VulkanTexture> tx_normal;
+	VulkanTextureID tx_albedo;
+	VulkanTextureID tx_metallic;
+	VulkanTextureID tx_roughness;
+	VulkanTextureID tx_ao;
+	VulkanTextureID tx_emissiveTexture;
+	VulkanTextureID tx_normal;
 };

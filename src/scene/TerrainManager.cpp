@@ -106,17 +106,16 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 			float distanceToViewer = cml::distance (cameraPos, center);
 			if (distanceToViewer > t_settings.viewDistance * t_settings.width * 1.5)
 			{
-				if ((*(*it)->terrainSplatMap->readyToUse) == true)
-				{
+				// if ((*(*it)->terrainSplatMap->readyToUse) == true)
+				//{
 
-					terToDelete.push_back (it);
-					// Log::Debug << "deleting terrain at x:" << (*it)->coordinateData.noisePos.x / (*it)->coordinateData.sourceImageResolution
-					//	<< " z: " << (*it)->coordinateData.noisePos.y / (*it)->coordinateData.sourceImageResolution << "\n";
-					auto activeIt = std::find (std::begin (activeTerrains),
-					    std::end (activeTerrains),
-					    (*it)->coordinateData.gridPos);
-					if (activeIt != std::end (activeTerrains)) activeTerrains.erase (activeIt);
-				}
+				terToDelete.push_back (it);
+				// Log::Debug << "deleting terrain at x:" << (*it)->coordinateData.noisePos.x / (*it)->coordinateData.sourceImageResolution
+				//	<< " z: " << (*it)->coordinateData.noisePos.y / (*it)->coordinateData.sourceImageResolution << "\n";
+				auto activeIt = std::find (
+				    std::begin (activeTerrains), std::end (activeTerrains), (*it)->coordinateData.gridPos);
+				if (activeIt != std::end (activeTerrains)) activeTerrains.erase (activeIt);
+				//}
 			}
 		}
 		while (terToDelete.size () > 0)
@@ -229,16 +228,16 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe)
 {
 
-	if (*terrainVulkanTextureArrayAlbedo->readyToUse && *terrainVulkanTextureArrayRoughness->readyToUse &&
-	    *terrainVulkanTextureArrayMetallic->readyToUse && *terrainVulkanTextureArrayNormal->readyToUse)
+	//	if (*terrainVulkanTextureArrayAlbedo->readyToUse && *terrainVulkanTextureArrayRoughness->readyToUse &&
+	//	    *terrainVulkanTextureArrayMetallic->readyToUse && *terrainVulkanTextureArrayNormal->readyToUse)
+	//	{
+	std::lock_guard<std::mutex> lock (terrain_mutex);
+	for (auto& ter : terrains)
 	{
-		std::lock_guard<std::mutex> lock (terrain_mutex);
-		for (auto& ter : terrains)
-		{
-			ter->DrawTerrainGrid (commandBuffer, wireframe);
-			// ter->DrawTerrain (commandBuffer, wireframe);
-		}
+		ter->DrawTerrainGrid (commandBuffer, wireframe);
+		// ter->DrawTerrain (commandBuffer, wireframe);
 	}
+	//	}
 }
 
 // TODO : Re-implement getting height at terrain location

@@ -92,7 +92,7 @@ class InstancedSceneObject
 	std::shared_ptr<VulkanModel> vulkanModel;
 
 	Resource::Texture::TexID texture;
-	std::shared_ptr<VulkanTexture> vulkanTexture;
+	VulkanTextureID vulkanTexture;
 
 	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
 

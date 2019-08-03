@@ -194,7 +194,7 @@ class VulkanRenderer
 
 	GPU_DoubleBuffer dynamic_data;
 
-	std::vector<std::shared_ptr<VulkanTexture>> depthBuffers;
+	std::vector<std::unique_ptr<VulkanTexture>> depthBuffers;
 
 	std::vector<GraphicsCleanUpWork> finishQueue;
 	std::mutex finishQueueLock;

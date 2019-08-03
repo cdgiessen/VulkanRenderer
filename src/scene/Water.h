@@ -24,7 +24,7 @@ class Water
 	std::unique_ptr<Pipeline> wireframe;
 
 	Resource::Texture::TexID texture;
-	std::shared_ptr<VulkanTexture> vulkanTexture;
+	VulkanTextureID vulkanTexture;
 
 	std::shared_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;

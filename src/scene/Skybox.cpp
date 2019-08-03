@@ -48,7 +48,7 @@ void Skybox::SetupDescriptor ()
 
 	std::vector<DescriptorUse> writes;
 	writes.push_back (DescriptorUse (0, 1, skyboxUniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, vulkanCubeMap->resource));
+	writes.push_back (DescriptorUse (1, 1, renderer.textureManager.get_texture (vulkanCubeMap).resource));
 	descriptor->UpdateDescriptorSet (m_descriptorSet, writes);
 }
 
@@ -56,11 +56,11 @@ void Skybox::SetupPipeline ()
 {
 	PipelineOutline out;
 
-	auto vert = renderer.shaderManager.loadShaderModule ("assets/shaders/skybox.vert.spv", ShaderType::vertex);
-	auto frag = renderer.shaderManager.loadShaderModule ("assets/shaders/skybox.frag.spv", ShaderType::fragment);
+	auto vert = renderer.shaderManager.get_module ("skybox", ShaderType::vertex);
+	auto frag = renderer.shaderManager.get_module ("skybox", ShaderType::fragment);
 
 	ShaderModuleSet shader_set;
-	shader_set.Vertex (vert).Fragment (frag);
+	shader_set.Vertex (vert.value ()).Fragment (frag.value ());
 	out.SetShaderModuleSet (shader_set);
 
 	out.UseModelVertexLayout (*model.get ());
@@ -105,7 +105,7 @@ void Skybox::UpdateUniform (cml::mat4f proj, cml::mat4f view)
 
 void Skybox::WriteToCommandBuffer (VkCommandBuffer commandBuffer)
 {
-	if (*vulkanCubeMap->readyToUse == false) return;
+	// if (*vulkanCubeMap->readyToUse == false) return;
 
 	vkCmdBindDescriptorSets (
 	    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, normal->GetLayout (), 2, 1, &m_descriptorSet.set, 0, nullptr);

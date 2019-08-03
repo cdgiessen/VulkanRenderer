@@ -79,10 +79,10 @@ class TerrainManager
 	std::vector<cml::vec2i> activeTerrains;
 	cml::vec3f curCameraPos;
 	InternalGraph::GraphPrototype& protoGraph;
-	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayAlbedo;
-	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayRoughness;
-	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayMetallic;
-	std::shared_ptr<VulkanTexture> terrainVulkanTextureArrayNormal;
+	VulkanTextureID terrainVulkanTextureArrayAlbedo;
+	VulkanTextureID terrainVulkanTextureArrayRoughness;
+	VulkanTextureID terrainVulkanTextureArrayMetallic;
+	VulkanTextureID terrainVulkanTextureArrayNormal;
 
 	GeneralSettings gui_settings; // for gui to edit (main)
 	GeneralSettings t_settings;   // for terrains to use (copy)

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
+#include <thread>
 #include <vulkan/vulkan.h>
 
 #include "Buffer.h"
@@ -97,26 +99,35 @@ class VulkanTexture
 	    int layers);
 };
 
+using VulkanTextureID = int;
+
 class VulkanTextureManager
 {
 	public:
 	VulkanTextureManager (VulkanRenderer& renderer, Resource::Texture::Manager& texManager);
 
-	std::shared_ptr<VulkanTexture> CreateTexture2D (
-	    Resource::Texture::TexID texture, TexCreateDetails texCreateDetails);
+	VulkanTextureID CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails);
 
-	std::shared_ptr<VulkanTexture> CreateTexture2DArray (
-	    Resource::Texture::TexID textures, TexCreateDetails texCreateDetails);
+	VulkanTextureID CreateTexture2DArray (Resource::Texture::TexID textures, TexCreateDetails texCreateDetails);
 
-	std::shared_ptr<VulkanTexture> CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails);
+	VulkanTextureID CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails);
 
-	std::shared_ptr<VulkanTexture> CreateDepthImage (VkFormat depthFormat, int width, int height);
+	VulkanTextureID CreateTextureFromBuffer (
+	    std::shared_ptr<VulkanBufferStagingResource> buffer, TexCreateDetails texCreateDetails);
+
+	VulkanTextureID CreateDepthImage (VkFormat depthFormat, int width, int height);
+
+	void delete_texture (VulkanTextureID id);
+
+	VulkanTexture const& get_texture (VulkanTextureID id);
 
 	private:
 	VulkanRenderer& renderer;
 	Resource::Texture::Manager& texManager;
 
-	std::vector<std::shared_ptr<VulkanTexture>> vulkanTextures;
+	VulkanTextureID id_counter = 0;
+	std::mutex map_lock;
+	std::unordered_map<VulkanTextureID, std::unique_ptr<VulkanTexture>> texture_map;
 };
 
 void BeginTransferAndMipMapGenWork (VulkanRenderer& renderer,

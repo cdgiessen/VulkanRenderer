@@ -6,7 +6,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <thread>
+#include <utility>
 
 #include <nlohmann/json.hpp>
 
@@ -23,7 +23,102 @@
 
 #include "spirv_cross.hpp"
 #include "spirv_glsl.hpp"
-#include <utility>
+
+const TLimits DefaultTBuiltInLimits = {
+	/* .nonInductiveForLoops = */ 1,
+	/* .whileLoops = */ 1,
+	/* .doWhileLoops = */ 1,
+	/* .generalUniformIndexing = */ 1,
+	/* .generalAttributeMatrixVectorIndexing = */ 1,
+	/* .generalVaryingIndexing = */ 1,
+	/* .generalSamplerIndexing = */ 1,
+	/* .generalVariableIndexing = */ 1,
+	/* .generalConstantMatrixVectorIndexing = */ 1,
+};
+
+const TBuiltInResource DefaultTBuiltInResource = { /* .MaxLights = */ 32,
+	/* .MaxClipPlanes = */ 6,
+	/* .MaxTextureUnits = */ 32,
+	/* .MaxTextureCoords = */ 32,
+	/* .MaxVertexAttribs = */ 64,
+	/* .MaxVertexUniformComponents = */ 4096,
+	/* .MaxVaryingFloats = */ 64,
+	/* .MaxVertexTextureImageUnits = */ 32,
+	/* .MaxCombinedTextureImageUnits = */ 80,
+	/* .MaxTextureImageUnits = */ 32,
+	/* .MaxFragmentUniformComponents = */ 4096,
+	/* .MaxDrawBuffers = */ 32,
+	/* .MaxVertexUniformVectors = */ 128,
+	/* .MaxVaryingVectors = */ 8,
+	/* .MaxFragmentUniformVectors = */ 16,
+	/* .MaxVertexOutputVectors = */ 16,
+	/* .MaxFragmentInputVectors = */ 15,
+	/* .MinProgramTexelOffset = */ -8,
+	/* .MaxProgramTexelOffset = */ 7,
+	/* .MaxClipDistances = */ 8,
+	/* .MaxComputeWorkGroupCountX = */ 65535,
+	/* .MaxComputeWorkGroupCountY = */ 65535,
+	/* .MaxComputeWorkGroupCountZ = */ 65535,
+	/* .MaxComputeWorkGroupSizeX = */ 1024,
+	/* .MaxComputeWorkGroupSizeY = */ 1024,
+	/* .MaxComputeWorkGroupSizeZ = */ 64,
+	/* .MaxComputeUniformComponents = */ 1024,
+	/* .MaxComputeTextureImageUnits = */ 16,
+	/* .MaxComputeImageUniforms = */ 8,
+	/* .MaxComputeAtomicCounters = */ 8,
+	/* .MaxComputeAtomicCounterBuffers = */ 1,
+	/* .MaxVaryingComponents = */ 60,
+	/* .MaxVertexOutputComponents = */ 64,
+	/* .MaxGeometryInputComponents = */ 64,
+	/* .MaxGeometryOutputComponents = */ 128,
+	/* .MaxFragmentInputComponents = */ 128,
+	/* .MaxImageUnits = */ 8,
+	/* .MaxCombinedImageUnitsAndFragmentOutputs = */ 8,
+	/* .MaxCombinedShaderOutputResources = */ 8,
+	/* .MaxImageSamples = */ 0,
+	/* .MaxVertexImageUniforms = */ 0,
+	/* .MaxTessControlImageUniforms = */ 0,
+	/* .MaxTessEvaluationImageUniforms = */ 0,
+	/* .MaxGeometryImageUniforms = */ 0,
+	/* .MaxFragmentImageUniforms = */ 8,
+	/* .MaxCombinedImageUniforms = */ 8,
+	/* .MaxGeometryTextureImageUnits = */ 16,
+	/* .MaxGeometryOutputVertices = */ 256,
+	/* .MaxGeometryTotalOutputComponents = */ 1024,
+	/* .MaxGeometryUniformComponents = */ 1024,
+	/* .MaxGeometryVaryingComponents = */ 64,
+	/* .MaxTessControlInputComponents = */ 128,
+	/* .MaxTessControlOutputComponents = */ 128,
+	/* .MaxTessControlTextureImageUnits = */ 16,
+	/* .MaxTessControlUniformComponents = */ 1024,
+	/* .MaxTessControlTotalOutputComponents = */ 4096,
+	/* .MaxTessEvaluationInputComponents = */ 128,
+	/* .MaxTessEvaluationOutputComponents = */ 128,
+	/* .MaxTessEvaluationTextureImageUnits = */ 16,
+	/* .MaxTessEvaluationUniformComponents = */ 1024,
+	/* .MaxTessPatchComponents = */ 120,
+	/* .MaxPatchVertices = */ 32,
+	/* .MaxTessGenLevel = */ 64,
+	/* .MaxViewports = */ 16,
+	/* .MaxVertexAtomicCounters = */ 0,
+	/* .MaxTessControlAtomicCounters = */ 0,
+	/* .MaxTessEvaluationAtomicCounters = */ 0,
+	/* .MaxGeometryAtomicCounters = */ 0,
+	/* .MaxFragmentAtomicCounters = */ 8,
+	/* .MaxCombinedAtomicCounters = */ 8,
+	/* .MaxAtomicCounterBindings = */ 1,
+	/* .MaxVertexAtomicCounterBuffers = */ 0,
+	/* .MaxTessControlAtomicCounterBuffers = */ 0,
+	/* .MaxTessEvaluationAtomicCounterBuffers = */ 0,
+	/* .MaxGeometryAtomicCounterBuffers = */ 0,
+	/* .MaxFragmentAtomicCounterBuffers = */ 1,
+	/* .MaxCombinedAtomicCounterBuffers = */ 1,
+	/* .MaxAtomicCounterBufferSize = */ 16384,
+	/* .MaxTransformFeedbackBuffers = */ 4,
+	/* .MaxTransformFeedbackInterleavedComponents = */ 64,
+	/* .MaxCullDistances = */ 8,
+	/* .MaxCombinedClipAndCullDistances = */ 8,
+	/* .MaxSamples = */ 4 };
 
 ShaderType GetShaderStage (const std::string& stage)
 {
@@ -94,67 +189,7 @@ void test_func ()
 	// Compile to GLSL, ready to give to GL driver.
 	std::string source = glsl.compile ();
 }
-
-VkShaderModule loadShaderModule (VkDevice device, const std::string& codePath)
-{
-	auto shaderCode = readFile (codePath);
-
-	VkShaderModuleCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = shaderCode.size ();
-
-	std::vector<uint32_t> codeAligned (shaderCode.size () / 4 + 1);
-	memcpy (codeAligned.data (), shaderCode.data (), shaderCode.size ());
-
-	createInfo.pCode = codeAligned.data ();
-
-	VkShaderModule shaderModule;
-	if (vkCreateShaderModule (device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
-	{
-		throw std::runtime_error ("failed to create shader module!");
-	}
-
-	return shaderModule;
-}
-// clang-format off
-static uint32_t defaultVertexShader[] = { 0x07230203,
-	0x07230203, 0x00010000, 0x00080002, 0x0000002a, 0x00000000, 0x00020011, 0x00000001, 0x0006000b, 0x00000001, 0x4c534c47, 0x6474732e, 0x3035342e, 0x00000000, 0x0003000e, 0x00000000, 0x00000001,
-	0x0007000f, 0x00000000, 0x00000004, 0x6e69616d, 0x00000000, 0x0000000a, 0x00000020, 0x00030003, 0x00000002, 0x000001c2, 0x00090004, 0x415f4c47, 0x735f4252, 0x72617065, 0x5f657461, 0x64616873,
-	0x6f5f7265, 0x63656a62, 0x00007374, 0x00040005, 0x00000004, 0x6e69616d, 0x00000000, 0x00060005, 0x00000008, 0x505f6c67, 0x65567265, 0x78657472, 0x00000000, 0x00060006, 0x00000008, 0x00000000,
-	0x505f6c67, 0x7469736f, 0x006e6f69, 0x00030005, 0x0000000a, 0x00000000, 0x00070005, 0x0000000f, 0x656d6143, 0x6e556172, 0x726f6669, 0x6675426d, 0x00726566, 0x00050006, 0x0000000f, 0x00000000,
-	0x77656976, 0x00000000, 0x00050006, 0x0000000f, 0x00000001, 0x6a6f7270, 0x00000000, 0x00060006, 0x0000000f, 0x00000002, 0x656d6163, 0x6f506172, 0x00000073, 0x00050006, 0x0000000f, 0x00000003,
-	0x656d6974, 0x00000000, 0x00030005, 0x00000011, 0x006f6263, 0x00070005, 0x00000019, 0x66696e55, 0x426d726f, 0x65666675, 0x6a624f72, 0x00746365, 0x00050006, 0x00000019, 0x00000000, 0x65646f6d,
-	0x0000006c, 0x00050006, 0x00000019, 0x00000001, 0x6d726f6e, 0x00006c61, 0x00030005, 0x0000001b, 0x006f6275, 0x00050005, 0x00000020, 0x6f506e69, 0x69746973, 0x00006e6f, 0x00050048, 0x00000008,
-	0x00000000, 0x0000000b, 0x00000000, 0x00030047, 0x00000008, 0x00000002, 0x00040048, 0x0000000f, 0x00000000, 0x00000005, 0x00050048, 0x0000000f, 0x00000000, 0x00000023, 0x00000000, 0x00050048,
-	0x0000000f, 0x00000000, 0x00000007, 0x00000010, 0x00040048, 0x0000000f, 0x00000001, 0x00000005, 0x00050048, 0x0000000f, 0x00000001, 0x00000023, 0x00000040, 0x00050048, 0x0000000f, 0x00000001,
-	0x00000007, 0x00000010, 0x00050048, 0x0000000f, 0x00000002, 0x00000023, 0x00000080, 0x00050048, 0x0000000f, 0x00000003, 0x00000023, 0x0000008c, 0x00030047, 0x0000000f, 0x00000002, 0x00040047,
-	0x00000011, 0x00000022, 0x00000000, 0x00040047, 0x00000011, 0x00000021, 0x00000000, 0x00040048, 0x00000019, 0x00000000, 0x00000005, 0x00050048, 0x00000019, 0x00000000, 0x00000023, 0x00000000,
-	0x00050048, 0x00000019, 0x00000000, 0x00000007, 0x00000010, 0x00040048, 0x00000019, 0x00000001, 0x00000005, 0x00050048, 0x00000019, 0x00000001, 0x00000023, 0x00000040, 0x00050048, 0x00000019,
-	0x00000001, 0x00000007, 0x00000010, 0x00030047, 0x00000019, 0x00000002, 0x00040047, 0x0000001b, 0x00000022, 0x00000000, 0x00040047, 0x0000001b, 0x00000021, 0x00000001, 0x00040047, 0x00000020,
-	0x0000001e, 0x00000000, 0x00020013, 0x00000002, 0x00030021, 0x00000003, 0x00000002, 0x00030016, 0x00000006, 0x00000020, 0x00040017, 0x00000007, 0x00000006, 0x00000004, 0x0003001e, 0x00000008,
-	0x00000007, 0x00040020, 0x00000009, 0x00000003, 0x00000008, 0x0004003b, 0x00000009, 0x0000000a, 0x00000003, 0x00040015, 0x0000000b, 0x00000020, 0x00000001, 0x0004002b, 0x0000000b, 0x0000000c,
-	0x00000000, 0x00040018, 0x0000000d, 0x00000007, 0x00000004, 0x00040017, 0x0000000e, 0x00000006, 0x00000003, 0x0006001e, 0x0000000f, 0x0000000d, 0x0000000d, 0x0000000e, 0x00000006, 0x00040020,
-	0x00000010, 0x00000002, 0x0000000f, 0x0004003b, 0x00000010, 0x00000011, 0x00000002, 0x0004002b, 0x0000000b, 0x00000012, 0x00000001, 0x00040020, 0x00000013, 0x00000002, 0x0000000d, 0x0004001e,
-	0x00000019, 0x0000000d, 0x0000000d, 0x00040020, 0x0000001a, 0x00000002, 0x00000019, 0x0004003b, 0x0000001a, 0x0000001b, 0x00000002, 0x00040020, 0x0000001f, 0x00000001, 0x0000000e, 0x0004003b,
-	0x0000001f, 0x00000020, 0x00000001, 0x0004002b, 0x00000006, 0x00000022, 0x3f800000, 0x00040020, 0x00000028, 0x00000003, 0x00000007, 0x00050036, 0x00000002, 0x00000004, 0x00000000, 0x00000003,
-	0x000200f8, 0x00000005, 0x00050041, 0x00000013, 0x00000014, 0x00000011, 0x00000012, 0x0004003d, 0x0000000d, 0x00000015, 0x00000014, 0x00050041, 0x00000013, 0x00000016, 0x00000011, 0x0000000c,
-	0x0004003d, 0x0000000d, 0x00000017, 0x00000016, 0x00050092, 0x0000000d, 0x00000018, 0x00000015, 0x00000017, 0x00050041, 0x00000013, 0x0000001c, 0x0000001b, 0x0000000c, 0x0004003d, 0x0000000d,
-	0x0000001d, 0x0000001c, 0x00050092, 0x0000000d, 0x0000001e, 0x00000018, 0x0000001d, 0x0004003d, 0x0000000e, 0x00000021, 0x00000020, 0x00050051, 0x00000006, 0x00000023, 0x00000021, 0x00000000,
-	0x00050051, 0x00000006, 0x00000024, 0x00000021, 0x00000001, 0x00050051, 0x00000006, 0x00000025, 0x00000021, 0x00000002, 0x00070050, 0x00000007, 0x00000026, 0x00000023, 0x00000024, 0x00000025,
-	0x00000022, 0x00050091, 0x00000007, 0x00000027, 0x0000001e, 0x00000026, 0x00050041, 0x00000028, 0x00000029, 0x0000000a, 0x0000000c, 0x0003003e, 0x00000029, 0x00000027, 0x000100fd, 0x00010038};
-
-static uint32_t defaultFragmentShader[] = { 0x07230203,
-	0x07230203, 0x00010000, 0x00080002, 0x0000000d, 0x00000000, 0x00020011, 0x00000001, 0x0006000b, 0x00000001, 0x4c534c47, 0x6474732e, 0x3035342e, 0x00000000, 0x0003000e, 0x00000000, 0x00000001,
-	0x0006000f, 0x00000004, 0x00000004, 0x6e69616d, 0x00000000, 0x00000009, 0x00030010, 0x00000004, 0x00000007, 0x00030003, 0x00000002, 0x000001c2, 0x00090004, 0x415f4c47, 0x735f4252, 0x72617065,
-	0x5f657461, 0x64616873, 0x6f5f7265, 0x63656a62, 0x00007374, 0x00040005, 0x00000004, 0x6e69616d, 0x00000000, 0x00050005, 0x00000009, 0x4374756f, 0x726f6c6f, 0x00000000, 0x00040047, 0x00000009,
-	0x0000001e, 0x00000000, 0x00020013, 0x00000002, 0x00030021, 0x00000003, 0x00000002, 0x00030016, 0x00000006, 0x00000020, 0x00040017, 0x00000007, 0x00000006, 0x00000004, 0x00040020, 0x00000008,
-	0x00000003, 0x00000007, 0x0004003b, 0x00000008, 0x00000009, 0x00000003, 0x0004002b, 0x00000006, 0x0000000a, 0x3f800000, 0x0004002b, 0x00000006, 0x0000000b, 0x00000000, 0x0007002c, 0x00000007,
-	0x0000000c, 0x0000000a, 0x0000000b, 0x0000000a, 0x0000000a, 0x00050036, 0x00000002, 0x00000004, 0x00000000, 0x00000003, 0x000200f8, 0x00000005, 0x0003003e, 0x00000009, 0x0000000c, 0x000100fd,
-	0x00010038 };
-// clang-format on
-
 ShaderModule::ShaderModule () {}
-
 ShaderModule::ShaderModule (ShaderType type, VkShaderModule module) : type (type), module (module)
 {
 }
@@ -346,47 +381,132 @@ void ShaderDatabase::Discover ()
 	}
 }
 
+static std::atomic_bool is_setup = false;
 
-
-void StartShaderCompilation (std::vector<std::string> strs)
+ShaderCompiler::ShaderCompiler ()
 {
-	for (auto& str : strs)
+	if (!is_setup)
 	{
-		int ret = std::system (str.c_str ());
-		if (ret != 0) Log.Error (fmt::format ("Failed to compile {}", str));
+		is_setup = true;
+		glslang::InitializeProcess ();
 	}
 }
 
-// std::vector<uint32_t> CompileShaderToSpivModule (std::string filename) { return {}; }
-
-
-void CompileShaders (std::vector<std::string> filenames)
+// Load GLSL into a string
+std::optional<std::string> ShaderCompiler::load_file_data (const std::string& filename)
 {
-	unsigned int cts = std::thread::hardware_concurrency ();
+	std::ifstream file (filename);
 
-	std::vector<std::vector<std::string>> buckets (cts);
-	for (size_t i = 0; i < filenames.size (); i++)
+	if (!file.is_open ())
 	{
-		int index = i % cts;
-		buckets.at (index).push_back (filenames.at (i));
+		Log.Error (fmt::format ("Failed to load shader: {}", filename));
+		return {};
 	}
 
-	auto signal = std::make_shared<job::TaskSignal> ();
-
-	std::vector<job::Task> tasks;
-	for (auto& bucket : buckets)
-	{
-		tasks.push_back (job::Task (signal, [&]() { StartShaderCompilation (bucket); }));
-	}
-	taskManager.Submit (tasks, job::TaskType::currentFrame);
-
-	signal->Wait ();
+	return std::string ((std::istreambuf_iterator<char> (file)), std::istreambuf_iterator<char> ());
 }
+
+std::optional<std::vector<uint32_t>> const ShaderCompiler::compile_glsl_to_spriv (std::string const& shader_name,
+    std::string const& shader_data,
+    ShaderType const shader_type,
+    std::filesystem::path include_path)
+{
+	const char* InputCString = shader_data.c_str ();
+
+	glslang::TShader Shader (static_cast<EShLanguage> (shader_type));
+
+	Shader.setStrings (&InputCString, 1);
+
+	int ClientInputSemanticsVersion = 110; // maps to, say, #define VULKAN 100
+	glslang::EShTargetClientVersion VulkanClientVersion = glslang::EShTargetVulkan_1_0;
+	glslang::EShTargetLanguageVersion TargetVersion = glslang::EShTargetSpv_1_0;
+
+	Shader.setEnvInput (
+	    glslang::EShSourceGlsl, static_cast<EShLanguage> (shader_type), glslang::EShClientVulkan, ClientInputSemanticsVersion);
+	Shader.setEnvClient (glslang::EShClientVulkan, VulkanClientVersion);
+	Shader.setEnvTarget (glslang::EShTargetSpv, TargetVersion);
+
+	TBuiltInResource Resources;
+	Resources = DefaultTBuiltInResource;
+	Resources.limits = DefaultTBuiltInLimits;
+
+	EShMessages messages = (EShMessages) (EShMsgSpvRules | EShMsgVulkanRules);
+
+	const int DefaultVersion = 100;
+
+	DirStackFileIncluder Includer;
+
+	if (!include_path.empty ())
+	{
+		Includer.pushExternalLocalDirectory (include_path.string ());
+	}
+
+	std::string PreprocessedGLSL;
+
+	if (!Shader.preprocess (&Resources, DefaultVersion, ENoProfile, false, false, messages, &PreprocessedGLSL, Includer))
+	{
+		Log.Error (fmt::format ("GLSL Preprocessing Failed for: {}\n", shader_name));
+		Log.Error (Shader.getInfoLog ());
+		Log.Error (Shader.getInfoDebugLog ());
+		return {};
+	}
+
+	const char* PreprocessedCStr = PreprocessedGLSL.c_str ();
+	Shader.setStrings (&PreprocessedCStr, 1);
+
+	if (!Shader.parse (&Resources, 100, false, messages))
+	{
+		Log.Error (fmt::format ("GLSL Parsing Failed for: {}\n", shader_name));
+		Log.Error (Shader.getInfoLog ());
+		Log.Error (Shader.getInfoDebugLog ());
+		return {};
+	}
+
+	glslang::TProgram Program;
+	Program.addShader (&Shader);
+
+	if (!Program.link (messages))
+	{
+		Log.Error (fmt::format ("GLSL Linking Failed for: {}\n", shader_name));
+		Log.Error (Shader.getInfoLog ());
+		Log.Error (Shader.getInfoDebugLog ());
+		return {};
+	}
+
+	std::vector<uint32_t> SpirV;
+	spv::SpvBuildLogger logger;
+	glslang::SpvOptions spvOptions;
+	glslang::GlslangToSpv (
+	    *Program.getIntermediate (static_cast<EShLanguage> (shader_type)), SpirV, &logger, &spvOptions);
+
+	return SpirV;
+}
+
+// void CompileShaders (std::vector<std::string> filenames)
+// {
+// 	unsigned int cts = std::thread::hardware_concurrency ();
+
+// 	std::vector<std::vector<std::string>> buckets (cts);
+// 	for (size_t i = 0; i < filenames.size (); i++)
+// 	{
+// 		int index = i % cts;
+// 		buckets.at (index).push_back (filenames.at (i));
+// 	}
+
+// 	auto signal = std::make_shared<job::TaskSignal> ();
+
+// 	std::vector<job::Task> tasks;
+// 	for (auto& bucket : buckets)
+// 	{
+// 		tasks.push_back (job::Task (signal, [&]() { StartShaderCompilation (bucket); }));
+// 	}
+// 	taskManager.Submit (tasks, job::TaskType::currentFrame);
+
+// 	signal->Wait ();
+// }
 
 ShaderManager::ShaderManager (VulkanDevice& device) : device (device)
 {
-	shaderModules.reserve (32);
-
 	namespace fs = std::filesystem;
 
 	using namespace std::string_literals;
@@ -408,84 +528,108 @@ ShaderManager::ShaderManager (VulkanDevice& device) : device (device)
 				fs::path in_path = entry.path ();
 				fs::path out_path = entry.path ();
 				out_path += ".spv";
-				std::string cmd;
-#ifdef WIN32
-				cmd = "glslangvalidator.exe -V "s + in_path.generic_string () + " -o "s +
-				      out_path.generic_string ();
-#endif // WIN32
-#ifdef __linux__
-				cmd = "./glslangValidator -V "s + in_path.generic_string () + " -o "s +
-				      out_path.generic_string ();
-#endif // __linux__
-				cmds.push_back (cmd);
+
+				load_and_compile_module (in_path);
+				Log.Debug (fmt::format (
+				    "Compiled shader {}{}\n", in_path.stem ().string (), in_path.extension ().string ()));
 			}
 		}
 	}
-
-	CompileShaders (cmds);
 }
+
+
 
 ShaderManager::~ShaderManager ()
 {
-
-	for (auto& module : shaderModules)
+	for (auto& [key, module] : module_map)
 	{
 		vkDestroyShaderModule (device.device, module.module, nullptr);
 	}
 }
 
-ShaderModule ShaderManager::loadShaderModule (const std::string& codePath, ShaderType type)
+std::optional<ShaderKey> ShaderManager::load_and_compile_module (std::filesystem::path file)
 {
-	VkShaderModuleCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	auto file_data = compiler.load_file_data (file).value ();
+	auto shader_type = GetShaderStage (file.extension ());
+	auto spirv = compiler.compile_glsl_to_spriv (file.stem (), file_data, shader_type);
 
+	if (!spirv.has_value ())
+	{
+		return {};
+	}
+	return create_module (file.stem ().string (), shader_type, spirv.value ());
+}
+
+std::optional<ShaderKey> ShaderManager::load_module (
+    std::string const& name, std::string const& codePath, ShaderType type)
+{
 	std::vector<char> shaderCode;
+	std::vector<uint32_t> codeAligned;
 
 	auto pos_shaderCode = readShaderFile (codePath);
 	if (!pos_shaderCode.has_value ())
 	{
 		Log.Error (fmt::format ("Shader at {} wont load, using defaults\n", codePath));
-
-		switch (type)
-		{
-			case (ShaderType::vertex):
-				createInfo.codeSize = sizeof (defaultVertexShader);
-				createInfo.pCode = (uint32_t*)defaultVertexShader;
-
-				break;
-			case (ShaderType::fragment):
-				createInfo.codeSize = sizeof (defaultFragmentShader);
-				createInfo.pCode = (uint32_t*)defaultFragmentShader;
-
-				break;
-			default:
-				throw std::runtime_error (
-				    "shader type does not exist! (no default geometry or tess shaders");
-		}
+		return {};
 	}
-	else
-	{
-		shaderCode = pos_shaderCode.value ();
 
-		createInfo.codeSize = shaderCode.size ();
+	shaderCode = pos_shaderCode.value ();
 
-		std::vector<uint32_t> codeAligned (shaderCode.size () / 4 + 1);
-		memcpy (codeAligned.data (), shaderCode.data (), shaderCode.size ());
+	codeAligned = std::vector<uint32_t> (shaderCode.size () / 4 + 1);
+	memcpy (codeAligned.data (), shaderCode.data (), shaderCode.size ());
 
-		createInfo.pCode = reinterpret_cast<const uint32_t*> (shaderCode.data ());
-	}
+
+	return create_module (name, type, codeAligned);
+}
+
+std::optional<ShaderKey> ShaderManager::create_module (
+    std::string const& name, ShaderType type, std::vector<uint32_t> const& code)
+{
+	VkShaderModuleCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.pCode = code.data ();
+	createInfo.codeSize = code.size () * 4;
 
 	VkShaderModule vk_shaderModule;
 
 	if (vkCreateShaderModule (device.device, &createInfo, nullptr, &vk_shaderModule) != VK_SUCCESS)
 	{
-		throw std::runtime_error ("failed to create shader module!");
+		Log.Error (fmt::format ("Failed to create VkShaderModule for {}\n", name));
+		return {};
 	}
 
+	ShaderKey key{ name, type };
 	ShaderModule module{ type, vk_shaderModule };
 
-	shaderModules.push_back (module);
-	return module;
+	module_map[key] = module;
+
+	return key;
+}
+
+void ShaderManager::delete_module (ShaderKey const& key)
+{
+	auto search = module_map.find (key);
+	if (search != std::end (module_map))
+	{
+		module_map.erase (search);
+	}
+}
+
+std::optional<ShaderModule> ShaderManager::get_module (ShaderKey const& key)
+{
+	auto mod = module_map.find (key);
+	if (mod != module_map.end ())
+	{
+		return mod->second;
+	}
+	else
+	{
+		return {};
+	}
+}
+std::optional<ShaderModule> ShaderManager::get_module (std::string const& name, ShaderType const type)
+{
+	return get_module ({ name, type });
 }
 
 std::optional<std::vector<char>> ShaderManager::readShaderFile (const std::string& filename)
@@ -506,126 +650,4 @@ std::optional<std::vector<char>> ShaderManager::readShaderFile (const std::strin
 	file.close ();
 
 	return buffer;
-}
-
-static std::atomic_bool is_setup = false;
-
-ShaderCompiler::ShaderCompiler ()
-{
-	if (!is_setup)
-	{
-		is_setup = true;
-		glslang::InitializeProcess ();
-	}
-}
-
-std::string GetFilePath (const std::string& str)
-{
-	size_t found = str.find_last_of ("/\\");
-	return str.substr (0, found);
-	// size_t FileName = str.substr(found+1);
-}
-
-std::string GetSuffix (const std::string& name)
-{
-	const size_t pos = name.rfind ('.');
-	return (pos == std::string::npos) ? "" : name.substr (name.rfind ('.') + 1);
-}
-
-const std::vector<uint32_t> ShaderCompiler::LoadAndCompileShader (const std::string& filename)
-{
-	auto shader_string = load_file (filename).value ();
-	auto shader_type = GetShaderStage (GetSuffix (filename));
-	return CompileShaderString (filename, shader_string, shader_type).value ();
-}
-
-
-// Load GLSL into a string
-std::optional<std::string> ShaderCompiler::load_file (const std::string& filename)
-{
-	std::ifstream file (filename);
-
-	if (!file.is_open ())
-	{
-		Log.Error (fmt::format ("Failed to load shader: {}", filename));
-		return {};
-
-		// throw std::runtime_error ("failed to open file: " + filename);
-	}
-
-	return std::string ((std::istreambuf_iterator<char> (file)), std::istreambuf_iterator<char> ());
-}
-
-std::optional<std::vector<unsigned int>> const ShaderCompiler::CompileShaderString (
-    std::string const& shader_filename, std::string const& shader_string, ShaderType const shader_type)
-{
-	const char* InputCString = shader_string.c_str ();
-
-	// EShLanguage ShaderType = GetShaderStage (GetSuffix (filename));
-	glslang::TShader Shader (static_cast<EShLanguage> (shader_type));
-
-	Shader.setStrings (&InputCString, 1);
-
-	int ClientInputSemanticsVersion = 100; // maps to, say, #define VULKAN 100
-	glslang::EShTargetClientVersion VulkanClientVersion = glslang::EShTargetVulkan_1_0;
-	glslang::EShTargetLanguageVersion TargetVersion = glslang::EShTargetSpv_1_0;
-
-	Shader.setEnvInput (
-	    glslang::EShSourceGlsl, static_cast<EShLanguage> (shader_type), glslang::EShClientVulkan, ClientInputSemanticsVersion);
-	Shader.setEnvClient (glslang::EShClientVulkan, VulkanClientVersion);
-	Shader.setEnvTarget (glslang::EShTargetSpv, TargetVersion);
-
-	const TBuiltInResource DefaultTBuiltInResource = {};
-
-	TBuiltInResource Resources;
-	Resources = DefaultTBuiltInResource;
-	EShMessages messages = (EShMessages) (EShMsgSpvRules | EShMsgVulkanRules);
-
-	const int DefaultVersion = 100;
-
-	DirStackFileIncluder Includer;
-
-	// Get Path of File
-	std::string Path = GetFilePath (shader_filename);
-	Includer.pushExternalLocalDirectory (Path);
-
-	std::string PreprocessedGLSL;
-
-	if (!Shader.preprocess (&Resources, DefaultVersion, ENoProfile, false, false, messages, &PreprocessedGLSL, Includer))
-	{
-		Log.Error (fmt::format ("GLSL Preprocessing Failed for: {}", shader_filename));
-		Log.Error (Shader.getInfoLog ());
-		Log.Error (Shader.getInfoDebugLog ());
-		return {};
-	}
-
-	const char* PreprocessedCStr = PreprocessedGLSL.c_str ();
-	Shader.setStrings (&PreprocessedCStr, 1);
-
-	if (!Shader.parse (&Resources, 100, false, messages))
-	{
-		Log.Error (fmt::format ("GLSL Parsing Failed for: {}", shader_filename));
-		Log.Error (Shader.getInfoLog ());
-		Log.Error (Shader.getInfoDebugLog ());
-		return {};
-	}
-
-	glslang::TProgram Program;
-	Program.addShader (&Shader);
-
-	if (!Program.link (messages))
-	{
-		Log.Error (fmt::format ("GLSL Linking Failed for: {}", shader_filename));
-		Log.Error (Shader.getInfoLog ());
-		Log.Error (Shader.getInfoDebugLog ());
-		return {};
-	}
-
-	std::vector<unsigned int> SpirV;
-	spv::SpvBuildLogger logger;
-	glslang::SpvOptions spvOptions;
-	glslang::GlslangToSpv (
-	    *Program.getIntermediate (static_cast<EShLanguage> (shader_type)), SpirV, &logger, &spvOptions);
-
-	return SpirV;
 }
