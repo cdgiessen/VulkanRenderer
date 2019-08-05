@@ -4,6 +4,8 @@ include(CMakeToolsHelpers OPTIONAL)
 
 set(CMAKE_CXX_STANDARD 17)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 project(VulkanRenderer VERSION 0.0.1)
 
 #libraries
