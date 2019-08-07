@@ -440,19 +440,24 @@ GPU_DoubleBuffer::GPU_DoubleBuffer (VulkanDevice& device, RenderSettings& settin
 {
 	for (auto& data : d_buffers)
 	{
-		data.globalVariableBuffer =
-		    std::make_unique<VulkanBufferUniformPersistant> (device, sizeof (GlobalData));
-		data.cameraDataBuffer = std::make_unique<VulkanBufferUniformPersistant> (
-		    device, sizeof (CameraData) * settings.cameraCount);
-		data.sunBuffer = std::make_unique<VulkanBufferUniformPersistant> (
-		    device, sizeof (DirectionalLight) * settings.directionalLightCount);
-		data.pointLightsBuffer = std::make_unique<VulkanBufferUniformPersistant> (
-		    device, sizeof (PointLight) * settings.pointLightCount);
-		data.spotLightsBuffer = std::make_unique<VulkanBufferUniformPersistant> (
-		    device, sizeof (SpotLight) * settings.spotLightCount);
+		auto globalDetails = uniform_details (sizeof (GlobalData));
+		globalDetails.persistentlyMapped = true;
 
-		data.dynamicTransformBuffer = std::make_unique<VulkanBufferUniformDynamic> (
-		    device, MaxTransformCount, sizeof (TransformMatrixData));
+		auto cameraDetails = uniform_details (sizeof (CameraData) * settings.cameraCount);
+		auto dirLightDetails = uniform_details (sizeof (DirectionalLight) * settings.directionalLightCount);
+		auto pointLightDetails = uniform_details (sizeof (PointLight) * settings.pointLightCount);
+		auto spotLightDetails = uniform_details (sizeof (SpotLight) * settings.spotLightCount);
+
+		data.globalVariableBuffer = std::make_unique<VulkanBuffer> (device, globalDetails);
+
+		data.cameraDataBuffer = std::make_unique<VulkanBuffer> (device, cameraDetails);
+		data.sunBuffer = std::make_unique<VulkanBuffer> (device, dirLightDetails);
+		data.pointLightsBuffer = std::make_unique<VulkanBuffer> (device, pointLightDetails);
+		data.spotLightsBuffer = std::make_unique<VulkanBuffer> (device, spotLightDetails);
+
+
+		auto transformDetails = uniform_dynamic_details (MaxTransformCount * sizeof (TransformMatrixData));
+		data.dynamicTransformBuffer = std::make_unique<VulkanBuffer> (device, transformDetails);
 	}
 
 	// Frame data

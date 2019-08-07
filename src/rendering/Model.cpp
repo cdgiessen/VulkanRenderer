@@ -63,14 +63,18 @@ VulkanModel::VulkanModel (VulkanRenderer& renderer, std::shared_ptr<MeshData> me
 	uint32_t vBufferSize = static_cast<uint32_t> (vertexCount) * sizeof (float);
 	uint32_t iBufferSize = static_cast<uint32_t> (indexCount) * sizeof (uint32_t);
 
+	vmaVertices = std::make_unique<VulkanBuffer> (
+	    renderer.device, vertex_details (vertexCount, vertexElementCount));
+	vmaIndicies = std::make_unique<VulkanBuffer> (renderer.device, index_details (indexCount));
 
-	vmaVertices = std::make_unique<VulkanBufferVertex> (renderer.device, vertexCount);
-	vmaIndicies = std::make_unique<VulkanBufferIndex> (renderer.device, (uint32_t)indexCount);
+	auto vert_stage_details = staging_details (BufferType::vertex, vBufferSize);
+	auto index_stage_details = staging_details (BufferType::index, iBufferSize);
 
-	auto vertexStagingBuffer = std::make_shared<VulkanBufferStagingVertex> (
-	    renderer.device, mesh->vertexData.size (), mesh->vertexData.data ());
-	auto indexStagingBuffer = std::make_shared<VulkanBufferStagingIndex> (
-	    renderer.device, (uint32_t)mesh->indexData.size (), mesh->indexData.data ());
+
+	auto vertexStagingBuffer =
+	    std::make_shared<VulkanBuffer> (renderer.device, vert_stage_details, mesh->vertexData.data ());
+	auto indexStagingBuffer =
+	    std::make_shared<VulkanBuffer> (renderer.device, index_stage_details, mesh->indexData.data ());
 
 	VkBuffer vert = vmaVertices->buffer.buffer;
 	VkBuffer index = vmaIndicies->buffer.buffer;

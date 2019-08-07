@@ -71,14 +71,6 @@ struct PBR_Mat_Value
 
 using MaterialOptions = std::variant<Phong_Material, PBR_Mat_Value, PBR_Mat_Tex>;
 
-// struct MaterialResource {
-//
-//	MaterialResource(std::shared_ptr<VulkanBufferUniform> buffer);
-//	MaterialResource(std::shared_ptr<Texture> texture);
-//
-//
-//};
-
 using DataTypeVar = std::variant<float, cml::vec2f, cml::vec3f, cml::vec4f, int>;
 
 struct VariableUniformSlot
@@ -136,7 +128,7 @@ class VulkanMaterial
 	std::vector<VulkanTextureID> textures;
 	std::vector<VulkanTextureID> textureArrays;
 	std::vector<MaterialOptions> value_var;
-	std::shared_ptr<VulkanBufferUniform> value_data;
+	std::unique_ptr<VulkanBuffer> value_data;
 };
 
 // class VulkanMaterialInstance
@@ -154,5 +146,5 @@ class VulkanMaterial
 // 	std::vector<VulkanTextureID> textures;
 // 	std::vector<VulkanTextureID> textureArrays;
 // 	std::vector<MaterialOptions> value_var;
-// 	std::shared_ptr<VulkanBufferUniform> value_data;
+// 	std::shared_ptr<VulkanBuffer> value_data;
 // };

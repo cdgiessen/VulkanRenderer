@@ -94,13 +94,13 @@ class InstancedSceneObject
 	Resource::Texture::TexID texture;
 	VulkanTextureID vulkanTexture;
 
-	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
+	std::unique_ptr<VulkanBuffer> uniformBuffer;
 
 	std::mutex instanceDataLock;
 	int instanceCount = 0;
 	int maxInstanceCount = 16384;
 	std::vector<InstanceData> instancesData;
-	std::shared_ptr<VulkanBufferInstancePersistant> instanceBuffer;
+	std::shared_ptr<VulkanBuffer> instanceBuffer;
 
 	bool isDirty = false;
 

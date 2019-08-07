@@ -1,18 +1,8 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-
 #include "cml/cml.h"
 
-class VulkanTexture;
-
-using VulkanTextureID = int;
-
-
-/* Synchronization */
-
-using Signal = std::shared_ptr<bool>;
+#include "Texture.h"
 
 /* Common uniform buffers */
 

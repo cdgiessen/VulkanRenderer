@@ -114,9 +114,9 @@ class Terrain
 	VulkanTextureID terrainSplatMap;
 	VulkanTextureID terrainNormalMap;
 
-	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
+	std::shared_ptr<VulkanBuffer> uniformBuffer;
 
-	std::shared_ptr<VulkanBufferInstancePersistant> instanceBuffer;
+	std::shared_ptr<VulkanBuffer> instanceBuffer;
 
 	VulkanModel* terrainGrid;
 

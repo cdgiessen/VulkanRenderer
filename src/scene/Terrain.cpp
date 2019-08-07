@@ -129,22 +129,26 @@ void Terrain::UpdateTerrain (cml::vec3f viewerPos)
 
 void Terrain::SetupUniformBuffer ()
 {
-	uniformBuffer = std::make_shared<VulkanBufferUniform> (renderer.device, sizeof (ModelBufferObject));
+	uniformBuffer =
+	    std::make_shared<VulkanBuffer> (renderer.device, uniform_details (sizeof (ModelBufferObject)));
 
 	ModelBufferObject mbo;
 	mbo.model = cml::mat4f ().translate (cml::vec3f (coordinateData.pos.x, 0, coordinateData.pos.y));
 	mbo.normal = cml::mat4f (); // mbo.model.inverse ().transpose ();
 	uniformBuffer->CopyToBuffer (&mbo, sizeof (ModelBufferObject));
 
-	instanceBuffer = std::make_shared<VulkanBufferInstancePersistant> (renderer.device, 2048, 16);
+	auto inst_details = instance_details (2048, 16);
+	inst_details.persistentlyMapped = true;
+
+	instanceBuffer = std::make_shared<VulkanBuffer> (renderer.device, inst_details);
 }
 
 void Terrain::SetupImage ()
 {
 
 	int length = fastGraphUser.image_length ();
-	auto buffer_height = std::make_shared<VulkanBufferStagingResource> (renderer.device,
-	    sizeof (float) * fastGraphUser.GetHeightMap ().size (),
+	auto buffer_height = std::make_shared<VulkanBuffer> (renderer.device,
+	    staging_details (BufferType::staging, sizeof (float) * fastGraphUser.GetHeightMap ().size ()),
 	    fastGraphUser.GetHeightMap ().data ());
 
 	TexCreateDetails details (
@@ -153,8 +157,9 @@ void Terrain::SetupImage ()
 
 	terrainHeightMap = renderer.textureManager.CreateTextureFromBuffer (buffer_height, details);
 
-	auto buffer_splat = std::make_shared<VulkanBufferStagingResource> (renderer.device,
-	    sizeof (cml::vec4<uint8_t>) * fastGraphUser.GetSplatMap ().size (),
+	auto buffer_splat = std::make_shared<VulkanBuffer> (renderer.device,
+	    staging_details (
+	        BufferType::staging, sizeof (cml::vec4<uint8_t>) * fastGraphUser.GetSplatMap ().size ()),
 	    fastGraphUser.GetSplatMap ().data ());
 
 	TexCreateDetails splat_details (
@@ -162,8 +167,9 @@ void Terrain::SetupImage ()
 	splat_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 	terrainSplatMap = renderer.textureManager.CreateTextureFromBuffer (buffer_splat, splat_details);
 
-	auto buffer_normal = std::make_shared<VulkanBufferStagingResource> (renderer.device,
-	    sizeof (cml::vec4<int16_t>) * fastGraphUser.GetNormalMap ().size (),
+	auto buffer_normal = std::make_shared<VulkanBuffer> (renderer.device,
+	    staging_details (BufferType::staging,
+	        sizeof (cml::vec4<int16_t>) * fastGraphUser.GetNormalMap ().size ()),
 	    fastGraphUser.GetNormalMap ().data ());
 
 	TexCreateDetails norm_details (

@@ -30,7 +30,7 @@ class Water
 	DescriptorSet m_descriptorSet;
 
 	ModelBufferObject ubo = {};
-	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
+	std::shared_ptr<VulkanBuffer> uniformBuffer;
 
 	public:
 	Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer);

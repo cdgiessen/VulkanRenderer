@@ -301,8 +301,9 @@ VulkanTexture::VulkanTexture (
 		imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
 
-	auto buffer = std::make_shared<VulkanBufferStagingResource> (
-	    renderer.device, textureResource.dataDescription.pixelCount * 4, textureResource.GetByteDataPtr ());
+	auto buffer = std::make_shared<VulkanBuffer> (renderer.device,
+	    staging_details (BufferType::staging, textureResource.dataDescription.pixelCount * 4),
+	    textureResource.GetByteDataPtr ());
 
 	InitImage2D (imageCreateInfo);
 
@@ -380,9 +381,8 @@ VulkanTexture::VulkanTexture (
 	resource.FillResource (textureSampler, textureImageView, textureImageLayout);
 }
 
-VulkanTexture::VulkanTexture (VulkanRenderer& renderer,
-    TexCreateDetails texCreateDetails,
-    std::shared_ptr<VulkanBufferStagingResource> buffer)
+VulkanTexture::VulkanTexture (
+    VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::shared_ptr<VulkanBuffer> buffer)
 : renderer (renderer), resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
 	readyToUse = std::make_shared<bool> (false);
@@ -665,7 +665,7 @@ VulkanTextureID VulkanTextureManager::CreateDepthImage (VkFormat depthFormat, in
 }
 
 VulkanTextureID VulkanTextureManager::CreateTextureFromBuffer (
-    std::shared_ptr<VulkanBufferStagingResource> buffer, TexCreateDetails texCreateDetails)
+    std::shared_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails)
 {
 	auto tex = std::make_unique<VulkanTexture> (renderer, texCreateDetails, buffer);
 	std::lock_guard guard (map_lock);

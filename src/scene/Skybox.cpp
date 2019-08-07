@@ -19,7 +19,7 @@ void Skybox::InitSkybox ()
 void Skybox::SetupUniformBuffer ()
 {
 	skyboxUniformBuffer =
-	    std::make_shared<VulkanBufferUniform> (renderer.device, sizeof (SkyboxUniformBuffer));
+	    std::make_unique<VulkanBuffer> (renderer.device, uniform_details (sizeof (SkyboxUniformBuffer)));
 }
 
 void Skybox::SetupCubeMapImage ()

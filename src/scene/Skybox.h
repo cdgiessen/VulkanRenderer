@@ -38,8 +38,7 @@ class Skybox
 	Resource::Texture::TexID skyboxCubeMap;
 	VulkanTextureID vulkanCubeMap;
 
-	std::shared_ptr<VulkanBufferUniform> skyboxUniformBuffer;
-
+	std::unique_ptr<VulkanBuffer> skyboxUniformBuffer;
 
 	void InitSkybox ();
 

@@ -11,7 +11,8 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8);
 	vulkanTexture = renderer.textureManager.CreateTexture2D (texture, details);
 
-	uniformBuffer = std::make_shared<VulkanBufferUniform> (renderer.device, sizeof (ModelBufferObject));
+	uniformBuffer =
+	    std::make_shared<VulkanBuffer> (renderer.device, uniform_details (sizeof (ModelBufferObject)));
 
 	ubo.model = cml::mat4f ();
 	ubo.model = ubo.model.translate (cml::vec3f (0, 0, 0));

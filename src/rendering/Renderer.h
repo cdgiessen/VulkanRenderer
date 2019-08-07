@@ -91,13 +91,13 @@ class GPU_DoubleBuffer
 	private:
 	struct Dynamic
 	{
-		std::unique_ptr<VulkanBufferUniformPersistant> globalVariableBuffer;
-		std::unique_ptr<VulkanBufferUniformPersistant> cameraDataBuffer;
-		std::unique_ptr<VulkanBufferUniformPersistant> sunBuffer;
-		std::unique_ptr<VulkanBufferUniformPersistant> pointLightsBuffer;
-		std::unique_ptr<VulkanBufferUniformPersistant> spotLightsBuffer;
+		std::unique_ptr<VulkanBuffer> globalVariableBuffer;
+		std::unique_ptr<VulkanBuffer> cameraDataBuffer;
+		std::unique_ptr<VulkanBuffer> sunBuffer;
+		std::unique_ptr<VulkanBuffer> pointLightsBuffer;
+		std::unique_ptr<VulkanBuffer> spotLightsBuffer;
 
-		std::unique_ptr<VulkanBufferUniformDynamic> dynamicTransformBuffer;
+		std::unique_ptr<VulkanBuffer> dynamicTransformBuffer;
 
 		DescriptorSet frameDataDescriptorSet;
 		DescriptorSet lightingDescriptorSet;

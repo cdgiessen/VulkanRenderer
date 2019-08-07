@@ -56,7 +56,7 @@ class GameObject
 	Resource::Texture::TexID gameObjectTexture;
 	VulkanTextureID gameObjectVulkanTexture;
 
-	std::shared_ptr<VulkanBufferUniform> uniformBuffer;
+	std::unique_ptr<VulkanBuffer> uniformBuffer;
 	// ModelPushConstant modelPushConstant;
 
 	bool usePBR;
@@ -66,7 +66,7 @@ class GameObject
 	PBR_Material pbr_mat;
 	PBR_Mat_Tex pbr_mat_tex;
 
-	std::shared_ptr<VulkanBufferUniform> materialBuffer;
+	std::unique_ptr<VulkanBuffer> materialBuffer;
 
 	cml::vec3f position;
 

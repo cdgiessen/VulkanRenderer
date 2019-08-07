@@ -44,9 +44,7 @@ class VulkanTexture
 	public:
 	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails, Resource::Texture::TexResource textureResource);
 
-	VulkanTexture (VulkanRenderer& renderer,
-	    TexCreateDetails texCreateDetails,
-	    std::shared_ptr<VulkanBufferStagingResource> buffer);
+	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::shared_ptr<VulkanBuffer> buffer);
 
 	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails);
 
@@ -112,8 +110,7 @@ class VulkanTextureManager
 
 	VulkanTextureID CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails);
 
-	VulkanTextureID CreateTextureFromBuffer (
-	    std::shared_ptr<VulkanBufferStagingResource> buffer, TexCreateDetails texCreateDetails);
+	VulkanTextureID CreateTextureFromBuffer (std::shared_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails);
 
 	VulkanTextureID CreateDepthImage (VkFormat depthFormat, int width, int height);
 

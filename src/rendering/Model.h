@@ -37,8 +37,8 @@ class VulkanModel
 	uint32_t vertexElementCount = 0;
 	uint32_t indexCount = 0;
 
-	std::unique_ptr<VulkanBufferVertex> vmaVertices;
-	std::unique_ptr<VulkanBufferIndex> vmaIndicies;
+	std::unique_ptr<VulkanBuffer> vmaVertices;
+	std::unique_ptr<VulkanBuffer> vmaIndicies;
 
 	Signal readyToUse;
 

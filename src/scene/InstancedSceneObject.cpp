@@ -48,7 +48,8 @@ void InstancedSceneObject::SetBlendMode (VkBool32 blendEnable) { enableBlending 
 
 void InstancedSceneObject::SetupUniformBuffer ()
 {
-	uniformBuffer = std::make_shared<VulkanBufferUniform> (renderer.device, sizeof (ModelBufferObject));
+	uniformBuffer =
+	    std::make_unique<VulkanBuffer> (renderer.device, uniform_details (sizeof (ModelBufferObject)));
 
 	/*uniformBuffer->CreateUniformBuffer(sizeof(ModelBufferObject));*/
 
@@ -64,8 +65,9 @@ void InstancedSceneObject::SetupUniformBuffer ()
 	// uniformBuffer.copyTo(&ubo, sizeof(ModelBufferObject));
 	// uniformBuffer.unmap();
 
-	instanceBuffer = std::make_shared<VulkanBufferInstancePersistant> (
-	    renderer.device, maxInstanceCount, instanceMemberSize);
+	auto inst_details = instance_details (maxInstanceCount, instanceMemberSize);
+	inst_details.persistentlyMapped = true;
+	instanceBuffer = std::make_unique<VulkanBuffer> (renderer.device, inst_details);
 	// instanceBuffer->CreatePersistantInstanceBuffer(maxInstanceCount, instanceMemberSize);
 	// UploadData();
 }
