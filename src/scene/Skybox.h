@@ -30,10 +30,10 @@ class Skybox
 
 	std::unique_ptr<Pipeline> normal;
 
-	std::shared_ptr<VulkanDescriptor> descriptor;
+	std::unique_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;
 
-	std::shared_ptr<VulkanModel> model;
+	std::unique_ptr<VulkanModel> model;
 
 	Resource::Texture::TexID skyboxCubeMap;
 	VulkanTextureID vulkanCubeMap;

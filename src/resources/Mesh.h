@@ -65,17 +65,17 @@ struct NonInterleavedMeshData
 	std::vector<FloatBufferData> buffers;
 };
 
-extern std::shared_ptr<MeshData> createSinglePlane ();
+extern std::unique_ptr<MeshData> createSinglePlane ();
 
-extern std::shared_ptr<MeshData> createDoublePlane ();
+extern std::unique_ptr<MeshData> createDoublePlane ();
 
-extern std::shared_ptr<MeshData> createFlatPlane (int dim, cml::vec3f size);
+extern std::unique_ptr<MeshData> createFlatPlane (int dim, cml::vec3f size);
 
-extern std::shared_ptr<MeshData> createCube (int dim = 1);
+extern std::unique_ptr<MeshData> createCube (int dim = 1);
 
-extern std::shared_ptr<MeshData> createSphere (int dim = 10);
+extern std::unique_ptr<MeshData> createSphere (int dim = 10);
 
-extern std::shared_ptr<MeshData> create_water_plane_subdiv (int levels = 3, int subdivs = 3);
+extern std::unique_ptr<MeshData> create_water_plane_subdiv (int levels = 3, int subdivs = 3);
 namespace Resource
 {
 

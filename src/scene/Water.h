@@ -18,7 +18,6 @@
 class Water
 {
 	VulkanRenderer& renderer;
-	std::shared_ptr<MeshData> mesh;
 	std::unique_ptr<VulkanModel> model;
 	std::unique_ptr<Pipeline> pipe;
 	std::unique_ptr<Pipeline> wireframe;
@@ -26,11 +25,11 @@ class Water
 	Resource::Texture::TexID texture;
 	VulkanTextureID vulkanTexture;
 
-	std::shared_ptr<VulkanDescriptor> descriptor;
+	std::unique_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;
 
 	ModelBufferObject ubo = {};
-	std::shared_ptr<VulkanBuffer> uniformBuffer;
+	std::unique_ptr<VulkanBuffer> uniformBuffer;
 
 	public:
 	Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer);

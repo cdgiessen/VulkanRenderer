@@ -181,19 +181,6 @@ class CommandBuffer
 
 ///////// Single Use Command Buffer ////////
 
-class SingleUseCommandBuffer
-{
-	public:
-	SingleUseCommandBuffer (VulkanDevice& device);
-	void Submit ();
-	VkCommandBuffer Get () { return buffer.Get (); }
-
-	private:
-	VulkanDevice& device;
-	CommandPool pool;
-	CommandBuffer buffer;
-};
-
 class CommandPoolGroup
 {
 	public:

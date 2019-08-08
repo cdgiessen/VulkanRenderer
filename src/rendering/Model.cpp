@@ -51,7 +51,7 @@ void CopyMeshBuffers (const VkCommandBuffer copyCmd,
 	vkCmdCopyBuffer (copyCmd, indexStagingBuffer, indexBuffer, 1, &copyRegion);
 }
 
-VulkanModel::VulkanModel (VulkanRenderer& renderer, std::shared_ptr<MeshData> mesh)
+VulkanModel::VulkanModel (VulkanRenderer& renderer, std::unique_ptr<MeshData> mesh)
 : renderer (renderer), vertLayout (mesh->desc)
 {
 	readyToUse = std::make_shared<bool> (false);

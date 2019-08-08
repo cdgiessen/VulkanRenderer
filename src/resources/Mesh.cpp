@@ -65,7 +65,7 @@ void AddPlane (std::vector<float>& verts,
 }
 
 
-std::shared_ptr<MeshData> createSinglePlane ()
+std::unique_ptr<MeshData> createSinglePlane ()
 {
 	std::vector<float> verts;
 	std::vector<uint32_t> indices;
@@ -78,10 +78,10 @@ std::shared_ptr<MeshData> createSinglePlane ()
 	AddPlane (
 	    verts, indices, dim, cml::vec3f (-1, 0, -1), cml::vec3f (-1, 0, 1), cml::vec3f (1, 0, -1), cml::vec3f (1, 0, 1));
 
-	return std::make_shared<MeshData> (Vert_PosNormUv, verts, indices);
+	return std::make_unique<MeshData> (Vert_PosNormUv, verts, indices);
 };
 
-std::shared_ptr<MeshData> createDoublePlane ()
+std::unique_ptr<MeshData> createDoublePlane ()
 {
 	std::vector<float> verts;
 	std::vector<uint32_t> indices;
@@ -96,11 +96,11 @@ std::shared_ptr<MeshData> createDoublePlane ()
 	AddPlane (
 	    verts, indices, dim, cml::vec3f (-1, 1, -1), cml::vec3f (-1, 1, 1), cml::vec3f (1, 1, -1), cml::vec3f (1, 1, 1));
 
-	return std::make_shared<MeshData> (Vert_PosNormUv, verts, indices);
+	return std::make_unique<MeshData> (Vert_PosNormUv, verts, indices);
 };
 
 
-std::shared_ptr<MeshData> createFlatPlane (int dim, cml::vec3f size)
+std::unique_ptr<MeshData> createFlatPlane (int dim, cml::vec3f size)
 {
 	std::vector<float> verts;
 	std::vector<uint32_t> indices;
@@ -137,12 +137,12 @@ std::shared_ptr<MeshData> createFlatPlane (int dim, cml::vec3f size)
 		}
 	}
 
-	return std::make_shared<MeshData> (Vert_PosNormUv, verts, indices);
+	return std::make_unique<MeshData> (Vert_PosNormUv, verts, indices);
 }
 
 
 
-std::shared_ptr<MeshData> createCube (int dim)
+std::unique_ptr<MeshData> createCube (int dim)
 {
 	std::vector<float> verts;
 	std::vector<uint32_t> indices;
@@ -166,10 +166,10 @@ std::shared_ptr<MeshData> createCube (int dim)
 	AddPlane (verts, indices, dim, ulf, dlf, urf, drf);
 	AddPlane (verts, indices, dim, urb, drb, ulb, dlb);
 
-	return std::make_shared<MeshData> (Vert_PosNormUv, verts, indices);
+	return std::make_unique<MeshData> (Vert_PosNormUv, verts, indices);
 }
 
-std::shared_ptr<MeshData> createSphere (int dim)
+std::unique_ptr<MeshData> createSphere (int dim)
 {
 	auto cube = createCube (dim);
 
@@ -337,7 +337,7 @@ void subdiv_triangle (std::vector<float>& verts,
 	}
 }
 
-std::shared_ptr<MeshData> create_water_plane_subdiv (int levels, int subdivs)
+std::unique_ptr<MeshData> create_water_plane_subdiv (int levels, int subdivs)
 {
 
 	std::vector<float> verts;
@@ -354,5 +354,5 @@ std::shared_ptr<MeshData> create_water_plane_subdiv (int levels, int subdivs)
 
 	subdiv_triangle (verts, indices, top, bottom_left, bottom_right, levels, subdivs);
 
-	return std::make_shared<MeshData> (Vert_Pos, verts, indices);
+	return std::make_unique<MeshData> (Vert_Pos, verts, indices);
 }

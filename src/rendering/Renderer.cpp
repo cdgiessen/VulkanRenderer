@@ -340,12 +340,6 @@ void VulkanRenderer::SubmitFrame (int curFrameIndex)
 	device.PresentQueue ().QueueWaitIdle ();
 }
 
-// TODO: refactor this out
-std::shared_ptr<VulkanDescriptor> VulkanRenderer::GetVulkanDescriptor ()
-{
-	return std::make_shared<VulkanDescriptor> (device);
-}
-
 void VulkanRenderer::AddGlobalLayouts (std::vector<VkDescriptorSetLayout>& layouts)
 {
 	layouts.push_back (dynamic_data.GetFrameDataDescriptorLayout ());

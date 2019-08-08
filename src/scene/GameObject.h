@@ -20,9 +20,6 @@ class GameObject
 
 	void InitGameObject ();
 
-	// void LoadModel (std::string fileName);
-	void LoadModel (std::shared_ptr<MeshData> mesh);
-
 	void SetupUniformBuffer ();
 	void SetupImage ();
 	void SetupModel ();
@@ -42,16 +39,15 @@ class GameObject
 	std::unique_ptr<Pipeline> wireframe;
 
 
-	std::shared_ptr<VulkanDescriptor> descriptor;
+	std::unique_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;
 
-	std::shared_ptr<VulkanMaterial> mat;
+	std::unique_ptr<VulkanMaterial> mat;
 
-	std::shared_ptr<VulkanDescriptor> materialDescriptor;
+	std::unique_ptr<VulkanDescriptor> materialDescriptor;
 	DescriptorSet material_descriptorSet;
 
-	std::shared_ptr<MeshData> gameObjectMesh;
-	std::shared_ptr<VulkanModel> gameObjectModel;
+	std::unique_ptr<VulkanModel> gameObjectModel;
 
 	Resource::Texture::TexID gameObjectTexture;
 	VulkanTextureID gameObjectVulkanTexture;

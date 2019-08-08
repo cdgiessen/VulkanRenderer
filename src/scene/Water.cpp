@@ -4,15 +4,14 @@
 
 Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : renderer (renderer)
 {
-	mesh = create_water_plane_subdiv (13, 40);
-	model = std::make_unique<VulkanModel> (renderer, mesh);
+	model = std::make_unique<VulkanModel> (renderer, create_water_plane_subdiv (13, 40));
 
 	texture = resourceMan.texManager.GetTexIDByName ("water_normal");
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8);
 	vulkanTexture = renderer.textureManager.CreateTexture2D (texture, details);
 
 	uniformBuffer =
-	    std::make_shared<VulkanBuffer> (renderer.device, uniform_details (sizeof (ModelBufferObject)));
+	    std::make_unique<VulkanBuffer> (renderer.device, uniform_details (sizeof (ModelBufferObject)));
 
 	ubo.model = cml::mat4f ();
 	ubo.model = ubo.model.translate (cml::vec3f (0, 0, 0));
@@ -20,7 +19,7 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 
 	uniformBuffer->CopyToBuffer (&ubo, sizeof (ModelBufferObject));
 
-	descriptor = renderer.GetVulkanDescriptor ();
+	descriptor = std::make_unique<VulkanDescriptor> (renderer.device);
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (

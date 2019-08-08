@@ -30,7 +30,7 @@ void Skybox::SetupCubeMapImage ()
 
 void Skybox::SetupDescriptor ()
 {
-	descriptor = renderer.GetVulkanDescriptor ();
+	descriptor = std::make_unique<VulkanDescriptor> (renderer.device);
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (

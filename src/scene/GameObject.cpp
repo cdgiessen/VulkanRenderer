@@ -13,15 +13,6 @@ void GameObject::InitGameObject ()
 	SetupPipeline ();
 }
 
-// void GameObject::LoadModel (std::string filename)
-//{
-//
-//	//gameObjectMesh = std::make_shared<MeshData> ();
-//	// this->gameObjectMesh->importFromFile(filename);
-//}
-
-void GameObject::LoadModel (std::shared_ptr<MeshData> mesh) { this->gameObjectMesh = mesh; }
-
 void GameObject::SetupUniformBuffer ()
 {
 	uniformBuffer =
@@ -47,12 +38,12 @@ void GameObject::SetupImage ()
 
 void GameObject::SetupModel ()
 {
-	gameObjectModel = std::make_shared<VulkanModel> (renderer, gameObjectMesh);
+	gameObjectModel = std::make_unique<VulkanModel> (renderer, createCube ());
 }
 
 void GameObject::SetupMaterial ()
 {
-	mat = std::make_shared<VulkanMaterial> (renderer.device);
+	mat = std::make_unique<VulkanMaterial> (renderer.device);
 
 	mat->AddMaterialDataSlot ({ ResourceType::uniform, ResourceStages::fragment_only, materialBuffer->resource });
 

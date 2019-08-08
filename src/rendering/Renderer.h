@@ -150,7 +150,6 @@ class VulkanRenderer
 	void PrepareFrame (int curFrameIndex);
 	void SubmitFrame (int curFrameIndex);
 
-	std::shared_ptr<VulkanDescriptor> GetVulkanDescriptor ();
 	void AddGlobalLayouts (std::vector<VkDescriptorSetLayout>& layouts);
 	std::vector<VkDescriptorSetLayout> GetGlobalLayouts ();
 

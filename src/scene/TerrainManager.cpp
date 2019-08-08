@@ -54,8 +54,8 @@ TerrainManager::TerrainManager (
 	terrainVulkanTextureArrayNormal =
 	    renderer.textureManager.CreateTexture2DArray (terrainTextureArrayNormal, details);
 
-	terrainGridMesh = createFlatPlane (gui_settings.numCells, cml::vec3f (1.0f));
-	terrainGridModel = std::make_shared<VulkanModel> (renderer, terrainGridMesh);
+	terrainGridModel = std::make_unique<VulkanModel> (
+	    renderer, createFlatPlane (gui_settings.numCells, cml::vec3f (1.0f)));
 
 	// StartWorkerThreads ();
 	workContinueSignal = std::make_shared<job::TaskSignal> ();

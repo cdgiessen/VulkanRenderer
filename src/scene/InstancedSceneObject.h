@@ -49,7 +49,6 @@ class InstancedSceneObject
 
 	void LoadTexture (Resource::Texture::TexID);
 	void LoadModel (std::string fileName);
-	void LoadModel (std::shared_ptr<MeshData> mesh);
 
 	void SetFragmentShaderToUse (std::string frag);
 	void SetCullMode (VkCullModeFlagBits cullMode);
@@ -85,11 +84,10 @@ class InstancedSceneObject
 	std::unique_ptr<Pipeline> normal;
 	std::unique_ptr<Pipeline> wireframe;
 
-	std::shared_ptr<VulkanDescriptor> descriptor;
+	std::unique_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;
 
-	std::shared_ptr<MeshData> mesh;
-	std::shared_ptr<VulkanModel> vulkanModel;
+	std::unique_ptr<VulkanModel> vulkanModel;
 
 	Resource::Texture::TexID texture;
 	VulkanTextureID vulkanTexture;
@@ -100,7 +98,7 @@ class InstancedSceneObject
 	int instanceCount = 0;
 	int maxInstanceCount = 16384;
 	std::vector<InstanceData> instancesData;
-	std::shared_ptr<VulkanBuffer> instanceBuffer;
+	std::unique_ptr<VulkanBuffer> instanceBuffer;
 
 	bool isDirty = false;
 

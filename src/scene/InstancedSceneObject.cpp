@@ -27,13 +27,6 @@ void InstancedSceneObject::InitInstancedSceneObject ()
 	SetupPipeline ();
 }
 
-void InstancedSceneObject::LoadModel (std::string filename)
-{
-	// mesh = std::make_shared<MeshData> ();
-	// this->mesh->importFromFile(filename);
-}
-
-void InstancedSceneObject::LoadModel (std::shared_ptr<MeshData> mesh) { this->mesh = mesh; }
 
 void InstancedSceneObject::LoadTexture (Resource::Texture::TexID tex) { this->texture = tex; }
 
@@ -80,12 +73,12 @@ void InstancedSceneObject::SetupImage ()
 
 void InstancedSceneObject::SetupModel ()
 {
-	vulkanModel = std::make_shared<VulkanModel> (renderer, mesh);
+	vulkanModel = std::make_unique<VulkanModel> (renderer, createCube ());
 }
 
 void InstancedSceneObject::SetupDescriptor ()
 {
-	descriptor = renderer.GetVulkanDescriptor ();
+	descriptor = std::make_unique<VulkanDescriptor> (renderer.device);
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (

@@ -46,7 +46,7 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 
 	skybox = std::make_unique<Skybox> (renderer);
 	skybox->skyboxCubeMap = resourceMan.texManager.GetTexIDByName ("Skybox");
-	skybox->model = std::make_shared<VulkanModel> (renderer, createCube ());
+	skybox->model = std::make_unique<VulkanModel> (renderer, createCube ());
 	skybox->InitSkybox ();
 
 	// auto cubeObject 	= std::make_unique<GameObject> (renderer);
@@ -64,7 +64,7 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	//	for (int j = 0; j < 9; j++)
 	//	{
 
-	//		std::shared_ptr<GameObject> sphereObject = std::make_shared<GameObject>(renderer);
+	//		std::unique_ptr<GameObject> sphereObject = std::make_shared<GameObject>(renderer);
 	//		sphereObject->usePBR = true;
 	//		sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer.device);
 	//		sphereObject->LoadModel(createSphere(10));
@@ -84,7 +84,7 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	//	for (int j = 0; j < 9; j++)
 	//	{
 
-	//		std::shared_ptr<GameObject> sphereObject = std::make_shared<GameObject>(renderer);
+	//		std::unique_ptr<GameObject> sphereObject = std::make_shared<GameObject>(renderer);
 	//		sphereObject->usePBR = false;
 	//		sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer.device);
 	//		sphereObject->LoadModel(createSphere(10));
@@ -100,7 +100,7 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	//	}
 	//}
 
-	// std::shared_ptr<GameObject> pbr_test = std::make_shared<GameObject>(renderer);
+	// std::unique_ptr<GameObject> pbr_test = std::make_shared<GameObject>(renderer);
 	// pbr_test->usePBR = true;
 
 	terrainManager = std::make_unique<TerrainManager> (graph, resourceMan, renderer);
@@ -133,7 +133,7 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	// rocksInstanced = std::make_shared<InstancedSceneObject>(renderer);
 
 	// gltf2 integration
-	// std::shared_ptr< gltf2::Asset> tree_test = std::make_shared<gltf2::Asset>();
+	// std::unique_ptr< gltf2::Asset> tree_test = std::make_shared<gltf2::Asset>();
 	//*tree_test = gltf2::load("Resources/Assets/tree_test.gltf");
 
 	water_plane = std::make_unique<Water> (resourceMan, renderer);
@@ -353,7 +353,6 @@ void Scene::UpdateSceneGUI ()
 		{
 			std::unique_ptr<GameObject> sphereObject = std::make_unique<GameObject> (renderer);
 			sphereObject->usePBR = true;
-			sphereObject->LoadModel (createSphere (10));
 			sphereObject->position = cml::vec3f (x++, 3, 2.2);
 			// sphereObject->pbr_mat.albedo = cml::vec3f(0.8, 0.2, 0.2);
 			sphereObject->pbr_mat.metallic = 0.1f + (float)5 / 10.0f;

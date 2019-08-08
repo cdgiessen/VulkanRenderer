@@ -130,7 +130,7 @@ void Terrain::UpdateTerrain (cml::vec3f viewerPos)
 void Terrain::SetupUniformBuffer ()
 {
 	uniformBuffer =
-	    std::make_shared<VulkanBuffer> (renderer.device, uniform_details (sizeof (ModelBufferObject)));
+	    std::make_unique<VulkanBuffer> (renderer.device, uniform_details (sizeof (ModelBufferObject)));
 
 	ModelBufferObject mbo;
 	mbo.model = cml::mat4f ().translate (cml::vec3f (coordinateData.pos.x, 0, coordinateData.pos.y));
@@ -140,7 +140,7 @@ void Terrain::SetupUniformBuffer ()
 	auto inst_details = instance_details (2048, 16);
 	inst_details.persistentlyMapped = true;
 
-	instanceBuffer = std::make_shared<VulkanBuffer> (renderer.device, inst_details);
+	instanceBuffer = std::make_unique<VulkanBuffer> (renderer.device, inst_details);
 }
 
 void Terrain::SetupImage ()
@@ -181,7 +181,7 @@ void Terrain::SetupImage ()
 void Terrain::SetupDescriptorSets (
     VulkanTextureID texArrAlbedo, VulkanTextureID texArrRoughness, VulkanTextureID texArrMetallic, VulkanTextureID texArrNormal)
 {
-	descriptor = renderer.GetVulkanDescriptor ();
+	descriptor = std::make_unique<VulkanDescriptor> (renderer.device);
 
 	std::vector<VkDescriptorSetLayoutBinding> m_bindings;
 	m_bindings.push_back (VulkanDescriptor::CreateBinding (

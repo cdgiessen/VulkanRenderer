@@ -73,7 +73,7 @@ void VulkanMaterial::AddValue (MaterialOptions value)
 	// value_var = value;
 
 	// value_data.reset();
-	/*value_data = std::make_shared<VulkanBuffer>(device);
+	/*value_data = std::make_shared<VulkanBufferUniform>(device);
 
 	if (value.index() == 0) {
 	    value_data->CreateUniformBufferPersistentlyMapped(sizeof(Phong_Material));

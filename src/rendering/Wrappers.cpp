@@ -310,16 +310,6 @@ CommandBuffer& CommandBuffer::Free ()
 	return *this;
 }
 
-///////// Single Use Command Buffer ////////
-
-SingleUseCommandBuffer::SingleUseCommandBuffer (VulkanDevice& device)
-: device (device), pool (device, device.GraphicsQueue ()), buffer (pool)
-{
-	buffer.Allocate ().Begin ();
-}
-
-void SingleUseCommandBuffer::Submit () { buffer.End ().Submit ().Wait ().Free (); }
-
 ///////// CommandPoolGroup /////////
 
 CommandPoolGroup::CommandPoolGroup (VulkanDevice& device)

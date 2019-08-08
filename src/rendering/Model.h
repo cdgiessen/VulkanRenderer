@@ -31,7 +31,7 @@ class VertexLayout
 class VulkanModel
 {
 	public:
-	VulkanModel (VulkanRenderer& renderer, std::shared_ptr<MeshData> meshData);
+	VulkanModel (VulkanRenderer& renderer, std::unique_ptr<MeshData> meshData);
 
 	uint32_t vertexCount = 0;
 	uint32_t vertexElementCount = 0;

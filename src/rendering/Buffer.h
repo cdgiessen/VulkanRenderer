@@ -99,8 +99,6 @@ inline BufCreateDetails staging_details (BufferType type, VkDeviceSize size)
 class VulkanBuffer
 {
 	public:
-	// Common Setup configs
-
 	explicit VulkanBuffer (VulkanDevice& device, BufCreateDetails details, void const* memToCopy = nullptr);
 
 	VulkanBuffer (const VulkanBuffer& buf) = delete;
@@ -143,91 +141,3 @@ class VulkanBuffer
 
 	BufCreateDetails details;
 };
-
-// class VulkanBufferUniform : public VulkanBuffer
-// {
-// 	public:
-// 	VulkanBufferUniform (VulkanDevice& device, VkDeviceSize size);
-// };
-
-// class VulkanBufferUniformPersistant : public VulkanBuffer
-// {
-// 	public:
-// 	VulkanBufferUniformPersistant (VulkanDevice& device, VkDeviceSize size);
-// };
-
-// class VulkanBufferUniformStaging : public VulkanBuffer
-// {
-// 	public:
-// 	VulkanBufferUniformStaging (VulkanDevice& device, VkDeviceSize size, void* pData);
-// };
-
-// class VulkanBufferUniformDynamic : public VulkanBuffer
-// {
-// 	public:
-// 	VulkanBufferUniformDynamic (VulkanDevice& device, VkDeviceSize size, uint32_t count);
-
-// 	void BindDynamicBufferInstance (
-// 	    VkCommandBuffer cmdBuf, uint32_t instance, VkPipelineLayout pipelineLayout, VkDescriptorSet* descriptorSet);
-// };
-
-// class VulkanBufferStagingResource : public VulkanBuffer
-// {
-// 	public:
-// 	VulkanBufferStagingResource (VulkanDevice& device, VkDeviceSize size, void* pData);
-// };
-
-// class VulkanBufferData : public VulkanBuffer
-// {
-// 	public:
-// 	VulkanBufferData (VulkanDevice& device, VkDeviceSize size);
-// };
-
-// class VulkanBufferVertex : public VulkanBuffer
-// {
-// 	public:
-// 	VulkanBufferVertex (VulkanDevice& device, uint32_t count, uint32_t vertexElementCount);
-// 	VulkanBufferVertex (VulkanDevice& device, uint32_t float_count);
-
-// 	void BindVertexBuffer (VkCommandBuffer cmdBuf);
-// };
-
-// class VulkanBufferStagingVertex : public VulkanBuffer
-// {
-// 	public:
-// 	VulkanBufferStagingVertex (VulkanDevice& device, uint32_t count, uint32_t vertexElementCount, void* pData);
-// 	VulkanBufferStagingVertex (VulkanDevice& device, uint32_t float_count, void* pData);
-// };
-
-// class VulkanBufferIndex : public VulkanBuffer
-// {
-// 	public:
-// 	VulkanBufferIndex (VulkanDevice& device, uint32_t count);
-// 	void BindIndexBuffer (VkCommandBuffer cmdBuf);
-// };
-
-// class VulkanBufferStagingIndex : public VulkanBuffer
-// {
-// 	public:
-// 	VulkanBufferStagingIndex (VulkanDevice& device, uint32_t count, void* pData);
-// };
-
-// class VulkanBufferInstance : public VulkanBuffer
-// {
-// 	public:
-// 	VulkanBufferInstance (VulkanDevice& device, uint32_t count, uint32_t indexElementCount);
-// 	void BindInstanceBuffer (VkCommandBuffer cmdBuf);
-// };
-
-// class VulkanBufferStagingInstance : public VulkanBuffer
-// {
-// 	public:
-// 	VulkanBufferStagingInstance (VulkanDevice& device, uint32_t count, uint32_t indexElementCount, void* pData);
-// };
-
-// class VulkanBufferInstancePersistant : public VulkanBuffer
-// {
-// 	public:
-// 	VulkanBufferInstancePersistant (VulkanDevice& device, uint32_t count, uint32_t
-// indexElementCount); 	void BindInstanceBuffer (VkCommandBuffer cmdBuf);
-// };

@@ -106,7 +106,7 @@ class Terrain
 	std::unique_ptr<Pipeline> normal;
 	std::unique_ptr<Pipeline> wireframe;
 
-	std::shared_ptr<VulkanDescriptor> descriptor;
+	std::unique_ptr<VulkanDescriptor> descriptor;
 
 	DescriptorSet descriptorSet;
 
@@ -114,9 +114,9 @@ class Terrain
 	VulkanTextureID terrainSplatMap;
 	VulkanTextureID terrainNormalMap;
 
-	std::shared_ptr<VulkanBuffer> uniformBuffer;
+	std::unique_ptr<VulkanBuffer> uniformBuffer;
 
-	std::shared_ptr<VulkanBuffer> instanceBuffer;
+	std::unique_ptr<VulkanBuffer> instanceBuffer;
 
 	VulkanModel* terrainGrid;
 
