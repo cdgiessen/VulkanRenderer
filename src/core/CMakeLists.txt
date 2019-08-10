@@ -1,6 +1,5 @@
 target_sources(VulkanApp PUBLIC
 
-${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/CoreTools.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/VulkanApp.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/JobSystem.cpp

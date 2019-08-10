@@ -10,8 +10,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include "StandAlone/DirStackFileIncluder.h"
 #include <SPIRV/GlslangToSpv.h>
-#include <StandAlone/DirStackFileIncluder.h>
 #include <glslang/Public/ShaderLang.h>
 
 #include "Device.h"

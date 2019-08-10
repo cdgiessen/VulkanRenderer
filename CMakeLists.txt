@@ -35,12 +35,12 @@ if(UNIX)
 endif(UNIX)
 
 # main files to compile
-add_executable(VulkanApp)
+add_library(VulkanApp)
 add_subdirectory(src)
 
 #include the different source directories in include path
-target_include_directories(VulkanApp PRIVATE ${CMAKE_SOURCE_DIR}/src)
-
+target_include_directories(VulkanApp PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(VulkanApp PUBLIC ${CMAKE_SOURCE_DIR}/src/third-party)
 
 if(MSVC)
 	target_compile_options(VulkanApp PRIVATE "/std:c++17")
@@ -82,13 +82,13 @@ target_link_libraries(VulkanApp PUBLIC cml)
 target_link_libraries(VulkanApp PUBLIC nlohmann_json)
 
 #fmt
-target_link_libraries(VulkanApp PRIVATE fmt)
+target_link_libraries(VulkanApp PUBLIC fmt)
 
 #SG14
 target_include_directories(VulkanApp PRIVATE ${SG14_INCLUDE_DIRECTORY})
 
 #DTex
-target_link_libraries(VulkanApp PRIVATE DTex::DTex)
+target_link_libraries(VulkanApp PUBLIC DTex::DTex)
 
 #glfw
 target_link_libraries(VulkanApp PRIVATE glfw)
@@ -98,12 +98,12 @@ target_include_directories(VulkanApp PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(VulkanApp PRIVATE ${Vulkan_LIBRARIES})
 
 #glslang
-target_include_directories(VulkanApp PRIVATE ${GLSLANG_INCLUDE_DIR})
-target_link_libraries(VulkanApp PRIVATE glslang SPIRV)
+target_include_directories(VulkanApp PUBLIC ${GLSLANG_INCLUDE_DIR})
+target_link_libraries(VulkanApp PUBLIC glslang SPIRV)
 
 #spirv-cross
-target_include_directories(VulkanApp PRIVATE ${SPIRV_CROSS_INCLUDE_DIR})
-target_link_libraries(VulkanApp PRIVATE spirv-cross-core spirv-cross-cpp spirv-cross-reflect) 
+target_include_directories(VulkanApp PUBLIC ${SPIRV_CROSS_INCLUDE_DIR})
+target_link_libraries(VulkanApp PUBLIC spirv-cross-core spirv-cross-cpp spirv-cross-reflect) 
 
 #bullet physics
 target_include_directories(VulkanApp PRIVATE ${BULLET_INCLUDE_DIRS})
@@ -114,7 +114,7 @@ target_link_libraries(VulkanApp PRIVATE ${OPENAL_LIBRARIES})
 target_include_directories(VulkanApp PRIVATE ${OPENAL_INCLUDE_DIRS})
 
 #entt
-target_include_directories(VulkanApp PRIVATE ${ENTT_INCLUDE_DIR}/src/)
+target_include_directories(VulkanApp PUBLIC ${ENTT_INCLUDE_DIR}/src/)
 
 #gtk
 if(UNIX)
@@ -131,3 +131,6 @@ add_custom_command(TARGET VulkanApp POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets)
 
+add_executable(run_VulkanApp ${PROJECT_SOURCE_DIR}/src/core/main.cpp)
+
+target_link_libraries(run_VulkanApp PRIVATE VulkanApp)

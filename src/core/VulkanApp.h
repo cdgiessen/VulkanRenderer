@@ -92,3 +92,5 @@ class VulkanApp
 
 	float tempCameraSpeed = 0.0f;
 };
+
+extern int run_engine ();

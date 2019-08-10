@@ -313,7 +313,6 @@ class Node
 
 	void SetupInputLinks (NodeMap* map);
 	void SetupNodeForComputation (NoiseSourceInfo info);
-	void CleanNoise ();
 
 	std::vector<InputLink> inputLinks;
 
@@ -341,7 +340,6 @@ class GraphPrototype
 {
 	public:
 	GraphPrototype ();
-	~GraphPrototype ();
 
 	NodeID AddNode (NodeType type);
 

@@ -736,17 +736,7 @@ void Node::SetupNodeForComputation (NoiseSourceInfo info)
 }
 
 
-void Node::CleanNoise ()
-{
-	// if (isNoiseNode) myNoise->FreeNoiseSet (noiseImage.GetImageData ());
-}
-
-GraphPrototype::GraphPrototype ()
-{
-	// Node outputNode(NodeType::Output);
-	// outputNodeID = AddNode(outputNode);
-}
-GraphPrototype::~GraphPrototype () {}
+GraphPrototype::GraphPrototype () {}
 
 void GraphPrototype::ResetGraph ()
 {
@@ -881,12 +871,6 @@ GraphUser::GraphUser (
 			else
 				outputNormalMap.push_back ({ (int16_t)0.5, (int16_t)1, (int16_t)0.5, (int16_t)0 });
 		}
-	}
-
-
-	for (auto& [key, val] : nodeMap)
-	{
-		val.CleanNoise ();
 	}
 }
 
