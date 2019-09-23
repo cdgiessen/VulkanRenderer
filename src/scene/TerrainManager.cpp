@@ -114,7 +114,10 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 				//	<< " z: " << (*it)->coordinateData.noisePos.y / (*it)->coordinateData.sourceImageResolution << "\n";
 				auto activeIt = std::find (
 				    std::begin (activeTerrains), std::end (activeTerrains), (*it)->coordinateData.gridPos);
-				if (activeIt != std::end (activeTerrains)) activeTerrains.erase (activeIt);
+				if (activeIt != std::end (activeTerrains))
+				{
+					activeTerrains.erase (activeIt);
+				}
 				//}
 			}
 		}

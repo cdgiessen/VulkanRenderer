@@ -1,54 +1,12 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
+#extension GL_GOOGLE_include_directive : enable
 
-const int DirectionalLightCount = 5;
-const int PointLightCount = 10;
-const int SpotLightCount = 10;
-const float PI = 3.14159265359;
+#include "globals.glsl"
 
-layout (set = 0, binding = 0) uniform GlobalData { float time; }
-global;
+#include "camera.glsl"
 
-layout (set = 0, binding = 1) uniform CameraData
-{
-	mat4 projView;
-	mat4 view;
-	vec3 cameraDir;
-	vec3 cameraPos;
-}
-cam;
-
-struct DirectionalLight
-{
-	vec3 direction;
-	float intensity;
-	vec3 color;
-	float dum;
-};
-
-struct PointLight
-{
-	vec3 position;
-	float intensity;
-	vec3 color;
-};
-
-struct SpotLight
-{
-	vec3 position;
-	vec3 color;
-	float attenuation;
-	float cutoff;
-};
-
-layout (set = 1, binding = 0) uniform DirectionalLightData { DirectionalLight lights[1]; }
-directional;
-
-layout (set = 1, binding = 1) uniform PointLightData { PointLight lights[PointLightCount]; }
-point;
-
-layout (set = 1, binding = 2) uniform SpotLightData { SpotLight lights[SpotLightCount]; }
-spot;
+#include "lighting.glsl"
 
 layout (set = 2, binding = 1) uniform Phong_Material
 {

@@ -84,6 +84,8 @@ VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::
 		frameObjects.push_back (std::make_unique<FrameObject> (device, i));
 	}
 
+	ContrustFrameGraph ();
+
 	CreatePresentResources ();
 
 	PrepareImGui (&window, this);
@@ -138,30 +140,11 @@ void VulkanRenderer::RenderFrame ()
 	frameIndex = (frameIndex + 1) % frameObjects.size ();
 	dynamic_data.AdvanceFrameCounter ();
 
-	std::lock_guard<std::mutex> lk (finishQueueLock);
-
-	for (auto it = finishQueue.begin (); it != finishQueue.end ();)
-	{
-		if (it->cmdBuf.GetFence ().Check ())
-		{
-			for (auto& sig : it->signals)
-			{
-				if (sig != nullptr) *sig = true;
-			}
-			it->cmdBuf.Free ();
-			it = finishQueue.erase (it);
-		}
-		else
-		{
-			++it;
-		}
-	}
+	clean_finish_queue ();
 }
 
 void VulkanRenderer::CreatePresentResources ()
 {
-	ContrustFrameGraph ();
-
 	CreateDepthResources ();
 	std::vector<VkImageView> depthImageViews;
 	for (auto& d : depthBuffers)
@@ -178,8 +161,6 @@ void VulkanRenderer::RecreateSwapChain ()
 	Log.Debug (fmt::format ("Recreating Swapchain\n"));
 
 	depthBuffers.clear ();
-
-	frameGraph.reset ();
 
 	frameIndex = 0;
 	frameObjects.clear ();
@@ -338,6 +319,28 @@ void VulkanRenderer::SubmitFrame (int curFrameIndex)
 	}
 
 	device.PresentQueue ().QueueWaitIdle ();
+}
+
+void VulkanRenderer::clean_finish_queue ()
+{
+	std::lock_guard<std::mutex> lk (finishQueueLock);
+
+	for (auto it = finishQueue.begin (); it != finishQueue.end ();)
+	{
+		if (it->cmdBuf.GetFence ().Check ())
+		{
+			for (auto& sig : it->signals)
+			{
+				if (sig != nullptr) *sig = true;
+			}
+			it->cmdBuf.Free ();
+			it = finishQueue.erase (it);
+		}
+		else
+		{
+			++it;
+		}
+	}
 }
 
 void VulkanRenderer::AddGlobalLayouts (std::vector<VkDescriptorSetLayout>& layouts)

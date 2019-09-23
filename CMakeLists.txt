@@ -85,7 +85,7 @@ target_link_libraries(VulkanApp PUBLIC nlohmann_json)
 target_link_libraries(VulkanApp PUBLIC fmt)
 
 #SG14
-target_include_directories(VulkanApp PRIVATE ${SG14_INCLUDE_DIRECTORY})
+target_include_directories(VulkanApp PUBLIC ${CMAKE_SOURCE_DIR}/ext/SG14)
 
 #DTex
 target_link_libraries(VulkanApp PUBLIC DTex::DTex)
@@ -127,9 +127,10 @@ if(UNIX)
 endif(UNIX)
 
 # copy files over
-add_custom_command(TARGET VulkanApp POST_BUILD
+add_custom_target(copy_assets ALL
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
-		${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets)
+	${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets
+	DEPENDS VulkanApp)
 
 add_executable(run_VulkanApp ${PROJECT_SOURCE_DIR}/src/core/main.cpp)
 

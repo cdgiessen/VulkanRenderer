@@ -133,6 +133,8 @@ class Terrain
 	    TerrainCoordinateData coordinateData,
 	    VulkanModel* terrainGrid);
 
+	~Terrain ();
+
 	void InitTerrain (cml::vec3f cameraPos,
 	    VulkanTextureID terrainVulkanTextureArrayAlbedo,
 	    VulkanTextureID terrainVulkanTextureArrayRoughness,

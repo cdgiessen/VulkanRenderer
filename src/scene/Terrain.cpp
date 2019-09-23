@@ -85,6 +85,13 @@ Terrain::Terrain (VulkanRenderer& renderer,
 	}
 }
 
+Terrain::~Terrain ()
+{
+	renderer.textureManager.delete_texture (terrainHeightMap);
+	renderer.textureManager.delete_texture (terrainSplatMap);
+	renderer.textureManager.delete_texture (terrainNormalMap);
+}
+
 int Terrain::FindEmptyIndex ()
 {
 	return curEmptyIndex++; // always gets an index one higher

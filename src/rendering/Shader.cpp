@@ -118,7 +118,8 @@ const TBuiltInResource DefaultTBuiltInResource = { /* .MaxLights = */ 32,
 	/* .MaxTransformFeedbackInterleavedComponents = */ 64,
 	/* .MaxCullDistances = */ 8,
 	/* .MaxCombinedClipAndCullDistances = */ 8,
-	/* .MaxSamples = */ 4 };
+	/* .MaxSamples = */ 4,
+	DefaultTBuiltInLimits };
 
 ShaderType GetShaderStage (const std::string& stage)
 {
@@ -212,9 +213,10 @@ VkPipelineShaderStageCreateInfo ShaderModule::GetCreateInfo ()
 		case (ShaderType::compute):
 			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_COMPUTE_BIT, module);
 		case (ShaderType::error):
-			Log.Error ("Shader module type not correct");
-			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_VERTEX_BIT, module);
+			break;
 	}
+	Log.Error ("Shader module type not correct");
+	return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_VERTEX_BIT, module);
 };
 
 ShaderModuleSet::ShaderModuleSet (){};
@@ -311,12 +313,12 @@ void ShaderDatabase::Load ()
 				}
 			}
 		}
-		catch (nlohmann::detail::parse_error e)
+		catch (nlohmann::detail::parse_error& e)
 		{
 			Log.Debug ("Shader Database file was bas, creating a new one\n");
 			Save ();
 		}
-		catch (std::runtime_error e)
+		catch (std::runtime_error& e)
 		{
 			Log.Debug ("Shader Database file was incorrect, creating a new one\n");
 			Save ();
@@ -551,7 +553,8 @@ std::optional<ShaderKey> ShaderManager::load_and_compile_module (std::filesystem
 {
 	auto file_data = compiler.load_file_data (file).value ();
 	auto shader_type = GetShaderStage (file.extension ());
-	auto spirv = compiler.compile_glsl_to_spriv (file.stem (), file_data, shader_type);
+	auto spirv = compiler.compile_glsl_to_spriv (
+	    file.stem (), file_data, shader_type, file.parent_path () / "common");
 
 	if (!spirv.has_value ())
 	{

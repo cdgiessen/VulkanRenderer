@@ -1,5 +1,9 @@
 #pragma once
 
+#include <vector>
+
+#include "SG14/flat_map.h"
+
 #include "cml/cml.h"
 
 struct GPU_ProjView
@@ -56,10 +60,26 @@ class Camera
 	cml::quatf rotation = cml::quatf (1, 0, 0, 0);
 
 	cml::mat4f mat_viewProj;
+	cml::mat4f mat_view;
+	cml::mat4f mat_proj;
 
 	bool isViewMatDirty = false;
-	cml::mat4f mat_view;
-
 	bool isProjMatDirty = false;
-	cml::mat4f mat_proj;
+};
+
+
+using CameraID = int;
+
+class CameraManager
+{
+	public:
+	CameraManager ();
+
+	CameraID create_camera ();
+	Camera& get_camera (CameraID id);
+	void delete_camera (Camera id);
+
+	private:
+	CameraID i = 0;
+	stdext::flat_map<CameraID, Camera> cameras;
 };

@@ -1,5 +1,4 @@
 
-
 layout (set = 0, binding = 1) uniform CameraData
 {
 	mat4 projView;

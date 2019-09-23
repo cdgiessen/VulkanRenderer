@@ -185,6 +185,8 @@ class VulkanRenderer
 	Scene* scene;
 
 	private:
+	void clean_finish_queue ();
+
 	CommandPool graphicsPrimaryCommandPool;
 	CommandPool transferPrimaryCommandPool;
 	CommandPool computePrimaryCommandPool;

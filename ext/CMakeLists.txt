@@ -19,7 +19,7 @@ endif(NOT JSON_PATH_FOUND)
 add_subdirectory(json)
 
 if(NOT FMT_PATH_FOUND)
-	message("Updating fmtlib")
+	message("Updating fmt library")
 	execute_process(COMMAND git submodule update --init --recursive fmt
                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif(NOT FMT_PATH_FOUND)

@@ -1,7 +1,5 @@
 #include "ViewCamera.h"
 
-const cml::mat4f depthReverserMatrix{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1 };
-
 const cml::vec3f WorldUp{ 0, 1, 0 };
 
 cml::mat4f Camera::ViewMatrix ()
@@ -26,7 +24,7 @@ cml::mat4f Camera::ProjMatrix ()
 		isProjMatDirty = false;
 		if (type == CamType::perspective)
 		{
-			mat_proj = depthReverserMatrix * cml::perspective (fov, aspect, clip_near, clip_far);
+			mat_proj = cml::perspective (fov, aspect, clip_near, clip_far);
 		}
 		else
 		{

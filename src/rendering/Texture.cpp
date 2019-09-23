@@ -624,6 +624,11 @@ VulkanTextureManager::VulkanTextureManager (VulkanRenderer& renderer, Resource::
 {
 }
 
+VulkanTextureManager::~VulkanTextureManager ()
+{
+	Log.Debug (fmt::format ("Textures left over {}\n", texture_map.size ()));
+}
+
 VulkanTextureID VulkanTextureManager::CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails)
 {
 	auto& resource = texManager.GetTexResourceByID (texture);
@@ -677,4 +682,11 @@ VulkanTexture const& VulkanTextureManager::get_texture (VulkanTextureID id)
 {
 	std::lock_guard guard (map_lock);
 	return *texture_map.at (id);
+}
+
+
+void VulkanTextureManager::delete_texture (VulkanTextureID id)
+{
+	std::lock_guard guard (map_lock);
+	texture_map.erase (id);
 }

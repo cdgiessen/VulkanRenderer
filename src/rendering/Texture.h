@@ -103,6 +103,7 @@ class VulkanTextureManager
 {
 	public:
 	VulkanTextureManager (VulkanRenderer& renderer, Resource::Texture::Manager& texManager);
+	~VulkanTextureManager ();
 
 	VulkanTextureID CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails);
 
