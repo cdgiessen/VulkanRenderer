@@ -155,7 +155,18 @@ VkBool32 VulkanInstance::debugUtilsCallback (VkDebugUtilsMessageSeverityFlagBits
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData)
 {
-	Log.Debug (fmt::format ("Validation Layer:\n{}\n", pCallbackData->pMessage));
+	if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
+	{
+		Log.Debug (fmt::format ("{} Validation Layer:\n{}\n", messageSeverity, pCallbackData->pMessage));
+	}
+	else if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
+	{
+		Log.Debug (fmt::format ("{} Performance:\n{}\n", messageSeverity, pCallbackData->pMessage));
+	}
+	else
+	{
+		Log.Debug (fmt::format ("{}:\n{}\n", messageSeverity, pCallbackData->pMessage));
+	}
 
 	return VK_FALSE;
 }

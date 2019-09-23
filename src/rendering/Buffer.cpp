@@ -51,7 +51,8 @@ VulkanBuffer::VulkanBuffer (VulkanDevice& device, BufCreateDetails details, void
 		m_size = details.elem_count * alignment;
 	}
 
-	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	bufferInfo.size = m_size;
 	bufferInfo.usage = details.bufferUsage;
 
@@ -101,7 +102,8 @@ void VulkanBuffer::Flush ()
 	vmaGetMemoryTypeProperties (buffer.allocator, buffer.allocationInfo.memoryType, &memFlags);
 	if ((memFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
 	{
-		VkMappedMemoryRange memRange = { VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE };
+		VkMappedMemoryRange memRange{};
+		memRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 		memRange.memory = buffer.allocationInfo.deviceMemory;
 		memRange.offset = buffer.allocationInfo.offset;
 		memRange.size = buffer.allocationInfo.size;

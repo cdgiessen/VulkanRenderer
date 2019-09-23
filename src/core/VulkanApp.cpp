@@ -413,4 +413,5 @@ int run_engine ()
 		Log.Error (fmt::format ("Engine quite in destructor\n{}\n", e.what ()));
 		return EXIT_FAILURE;
 	}
+	return 0;
 }

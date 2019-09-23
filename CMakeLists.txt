@@ -9,7 +9,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 project(VulkanRenderer VERSION 0.0.1)
 
 #libraries
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 add_subdirectory(ext)
 
@@ -24,7 +24,7 @@ set(ENTT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/entt)
 
 #gtk include for linux file window
 if(UNIX)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2 -msse4.1")
 
 	find_package(PkgConfig REQUIRED)
 	pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
@@ -87,9 +87,6 @@ target_link_libraries(VulkanApp PUBLIC fmt)
 #SG14
 target_include_directories(VulkanApp PUBLIC ${CMAKE_SOURCE_DIR}/ext/SG14)
 
-#DTex
-target_link_libraries(VulkanApp PUBLIC DTex::DTex)
-
 #glfw
 target_link_libraries(VulkanApp PRIVATE glfw)
 
@@ -115,6 +112,9 @@ target_include_directories(VulkanApp PRIVATE ${OPENAL_INCLUDE_DIRS})
 
 #entt
 target_include_directories(VulkanApp PUBLIC ${ENTT_INCLUDE_DIR}/src/)
+
+#fx-gltf
+target_link_libraries(VulkanApp PUBLIC fx-gltf)
 
 #gtk
 if(UNIX)

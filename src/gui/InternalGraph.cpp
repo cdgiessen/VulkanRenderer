@@ -830,16 +830,11 @@ GraphUser::GraphUser (
 			// Resource::Texture::Pixel_RGBA pixel = Resource::Texture::Pixel_RGBA(
 
 			assert (!std::isnan (val.x));
-			std::byte r =
-			    static_cast<std::byte> (static_cast<uint8_t> (cml::clamp (val.x, 0.0f, 1.0f) * 255.0f));
-			std::byte g =
-			    static_cast<std::byte> (static_cast<uint8_t> (cml::clamp (val.y, 0.0f, 1.0f) * 255.0f));
-			std::byte b =
-			    static_cast<std::byte> (static_cast<uint8_t> (cml::clamp (val.z, 0.0f, 1.0f) * 255.0f));
-			std::byte a =
-			    static_cast<std::byte> (static_cast<uint8_t> (cml::clamp (val.w, 0.0f, 1.0f) * 255.0f));
 
-			outputSplatMap.push_back ({ val.x * 255, val.y * 255, val.z * 255, val.w * 255 });
+			outputSplatMap.push_back ({ static_cast<uint8_t> (val.x * 255),
+			    static_cast<uint8_t> (val.y * 255),
+			    static_cast<uint8_t> (val.z * 255),
+			    static_cast<uint8_t> (val.w * 255) });
 		}
 	}
 
@@ -865,8 +860,10 @@ GraphUser::GraphUser (
 				// int16_t y = xy & 0x0000FFFF;
 				// int16_t n_z = cml::some_packing_snorm_2x16 (cml::vec2f (normal.z, 0)) &
 				// 0xFFFF0000;
-				outputNormalMap.push_back (
-				    { normal.x * 32768, normal.y * 32768, normal.z * 32768, (uint16_t)0 });
+				outputNormalMap.push_back ({ static_cast<uint16_t> (normal.x * 32768),
+				    static_cast<uint16_t> (normal.y * 32768),
+				    static_cast<uint16_t> (normal.z * 32768),
+				    (uint16_t)0 });
 			}
 			else
 				outputNormalMap.push_back ({ (int16_t)0.5, (int16_t)1, (int16_t)0.5, (int16_t)0 });
