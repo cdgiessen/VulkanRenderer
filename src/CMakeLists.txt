@@ -4,6 +4,5 @@ add_subdirectory(rendering)
 add_subdirectory(resources)
 add_subdirectory(scene)
 add_subdirectory(util)
-add_subdirectory(third-party)
 
 target_include_directories(VulkanApp PRIVATE third-party)

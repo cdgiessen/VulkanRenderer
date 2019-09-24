@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iomanip>
 
-#include "stb_image/stb_image.h"
+#include "stb/stb_image.h"
 
 #include "core/CoreTools.h"
 #include "core/JobSystem.h"

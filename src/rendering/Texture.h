@@ -8,8 +8,8 @@
 #include "Buffer.h"
 #include "Descriptor.h"
 
-#include "VulkanMemoryAllocator/vk_mem_alloc.h"
 #include "resources/Texture.h"
+#include "vk_mem_alloc.h"
 
 class VulkanRenderer;
 using Signal = std::shared_ptr<bool>;

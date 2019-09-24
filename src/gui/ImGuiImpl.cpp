@@ -1251,6 +1251,8 @@ void ImGui_ImplGlfwVulkan_InvalidateDeviceObjects ()
 
 bool ImGui_ImplGlfwVulkan_Init (GLFWwindow* window, bool install_callbacks, ImGui_ImplGlfwVulkan_Init_Data* init_data)
 {
+	ImGui::CreateContext ();
+
 	g_Allocator = init_data->allocator;
 	g_Gpu = init_data->gpu;
 	g_Device = init_data->device;

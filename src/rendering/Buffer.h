@@ -4,7 +4,7 @@
 
 #include "Descriptor.h"
 
-#include "VulkanMemoryAllocator/vk_mem_alloc.h"
+#include "vk_mem_alloc.h"
 
 /*
 Buffer types:

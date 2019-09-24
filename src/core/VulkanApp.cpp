@@ -14,13 +14,13 @@
 #include <nlohmann/json.hpp>
 
 #define VMA_IMPLEMENTATION
-#include "VulkanMemoryAllocator/vk_mem_alloc.h"
+#include "vk_mem_alloc.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image/stb_image.h"
+#include "stb/stb_image.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image/stb_image_write.h"
+#include "stb/stb_image_write.h"
 
 
 VulkanAppSettings::VulkanAppSettings (std::string fileName) : fileName (fileName) { Load (); }
@@ -86,7 +86,6 @@ VulkanApp::VulkanApp ()
   imgui_nodeGraph_terrain (),
   scene (resourceManager, vulkanRenderer, timeManager, imgui_nodeGraph_terrain.GetGraph ())
 {
-
 	/*timeManager = std::make_unique<TimeManager>();
 
 	window = std::make_unique<Window>(settings.isFullscreen,

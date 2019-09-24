@@ -9,6 +9,7 @@ find_path(FX_GLTF_PATH_FOUND "fx-gltf" "")
 find_path(IMGUI_PATH_FOUND "imgui/imgui" "")
 find_path(FASTNOISESIMD_PATH_FOUND "FastNoiseSIMD" "")
 find_path(STB_PATH_FOUND "stb/stb" "")
+find_path(VMA_PATH_FOUND "vma" "")
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_MultipleHeaders ON CACHE INTERNAL "")
@@ -130,4 +131,13 @@ endif(NOT STB_PATH_FOUND)
 
 add_library(stb INTERFACE)
 
-target_include_directories(stb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/stb/)
+target_include_directories(stb INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/stb/)
+
+if(NOT VMA_PATH_FOUND)
+message("Updating VulkanMemoryAllocator")
+execute_process(COMMAND git submodule update --init --recursive vma 
+			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT VMA_PATH_FOUND)
+
+add_library(VulkanMemoryAllocator INTERFACE)
+target_include_directories(VulkanMemoryAllocator INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/vma/src)

@@ -28,8 +28,8 @@
 [submodule "ext/fx-gltf"]
 	path = ext/fx-gltf
 	url = https://github.com/jessey-git/fx-gltf
-[submodule "ext/VulkanMemoryAllocator"]
-	path = ext/VulkanMemoryAllocator
+[submodule "ext/vma"]
+	path = ext/vma
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
 [submodule "ext/stb/stb"]
 	path = ext/stb/stb

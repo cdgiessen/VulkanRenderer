@@ -51,6 +51,11 @@ OPTION(LSAN "Enable leak sanitizer on unix platforms" ON)
 OPTION(UBSAN "Enable undefined behavior sanitizer on unix platforms" OFF)
 
 if(UNIX)
+	target_compile_options(VulkanApp PUBLIC -pthread)
+	
+	#g++-8 still requires this, not necessary with g++-9
+	target_link_libraries(VulkanApp PRIVATE stdc++fs)
+	
 	if(DEBUG)
 		target_compile_options(VulkanApp PUBLIC -Wextra -Wall)
 		target_link_options(VulkanApp PUBLIC -fno-omit-frame-pointer)
@@ -68,8 +73,6 @@ if(UNIX)
 	if(UBSAN)
 		target_compile_options(VulkanApp PUBLIC -fsanitize=undefined)
 	endif(UBSAN)
-
-	target_compile_options(VulkanApp PUBLIC -pthread)
 endif(UNIX)
 
 #cml
@@ -122,16 +125,14 @@ target_link_libraries(VulkanApp PUBLIC fast-noise-simd)
 target_include_directories(VulkanApp PUBLIC ext/FastNoiseSIMD)
 
 #stb
+target_link_libraries(VulkanApp PUBLIC stb)
 
+#vma
+target_link_libraries(VulkanApp PUBLIC VulkanMemoryAllocator)
 
 #gtk
 if(UNIX)
 	target_link_libraries(VulkanApp PRIVATE ${GTK3_LIBRARIES})
-
-	#g++-8 still requires this, not necessary with g++-9
-	target_link_libraries(VulkanApp PRIVATE stdc++fs)
-
-	target_compile_options(VulkanApp PRIVATE -Wall -Wextra)
 endif(UNIX)
 
 # copy files over

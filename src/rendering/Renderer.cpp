@@ -5,9 +5,9 @@
 
 #include "Initializers.h"
 
-#include "VulkanMemoryAllocator/vk_mem_alloc.h"
+#include "vk_mem_alloc.h"
 
-#include "stb_image/stb_image_write.h"
+#include "stb/stb_image_write.h"
 
 #include "gui/ImGuiImpl.h"
 
