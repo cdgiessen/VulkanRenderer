@@ -1,12 +1,10 @@
 #include "ProcTerrainNodeGraph.h"
 
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
+
 #include <nlohmann/json.hpp>
-
-#include <filesystem>
-
-#include "ImGui/imgui.h"
 
 #include "noc/noc_file_dialog.h"
 
@@ -118,8 +116,8 @@ void ProcTerrainNodeGraph::RecreateOutputNode ()
 void ProcTerrainNodeGraph::Draw ()
 {
 
-	ImGui::SetNextWindowSize (ImVec2 (800, 400), ImGuiSetCond_FirstUseEver);
-	ImGui::SetNextWindowPos (ImVec2 (425, 0), ImGuiSetCond_FirstUseEver);
+	ImGui::SetNextWindowSize (ImVec2 (800, 400), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos (ImVec2 (425, 0), ImGuiCond_FirstUseEver);
 
 
 	if (ImGui::Begin ("Node Graph", &window_open, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar))
@@ -325,7 +323,7 @@ void ProcTerrainNodeGraph::DrawNodeCanvas ()
 	ImGui::BeginGroup ();
 	ImGui::PushStyleVar (ImGuiStyleVar_FramePadding, ImVec2 (1, 1));
 	ImGui::PushStyleVar (ImGuiStyleVar_WindowPadding, ImVec2 (0, 0));
-	ImGui::PushStyleColor (ImGuiCol_ChildWindowBg, ImColor (40, 40, 40, 200));
+	ImGui::PushStyleColor (ImGuiCol_ChildWindowBg, ImVec4 (40, 40, 40, 200));
 	ImGui::BeginChild ("scrolling_region", ImVec2 (0, 0), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove);
 	ImGui::PushItemWidth (120.0f);
 
@@ -387,7 +385,7 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 		ImGui::SetCursorScreenPos (windowPos + node.pos);
 		ImGui::InvisibleButton ("node", titleArea);
 
-		if (ImGui::IsItemHovered ())
+		if (ImGui::IsItemHovered (ImGuiHoveredFlags_RectOnly))
 		{
 			node_hovered_in_scene = node.id;
 			open_context_menu |= ImGui::IsMouseClicked (1);

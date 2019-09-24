@@ -5,9 +5,9 @@
 
 #include <GLFW/glfw3.h>
 
-#include "ImGui/imgui.h"
 #include "cml/cml.h"
 #include "gui/ImGuiImpl.h"
+#include "imgui.hpp"
 
 #include "Input.h"
 #include "Logger.h"

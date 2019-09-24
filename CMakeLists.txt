@@ -24,8 +24,6 @@ set(ENTT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/entt)
 
 #gtk include for linux file window
 if(UNIX)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2 -msse4.1")
-
 	find_package(PkgConfig REQUIRED)
 	pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 
@@ -54,25 +52,24 @@ OPTION(UBSAN "Enable undefined behavior sanitizer on unix platforms" OFF)
 
 if(UNIX)
 	if(DEBUG)
-		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wextra -Wall")
-		set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer")
+		target_compile_options(VulkanApp PUBLIC -Wextra -Wall)
+		target_link_options(VulkanApp PUBLIC -fno-omit-frame-pointer)
 	endif(DEBUG)
 	if(TSAN)
-		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=thread")
+		target_compile_options(VulkanApp PUBLIC -fsanitize=thread)
 	endif(TSAN)
 	if(ASAN)
-		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+		target_compile_options(VulkanApp PUBLIC -fsanitize=address)
 	endif(ASAN)
 	if(LSAN)
-		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
-		set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
-
+		target_compile_options(VulkanApp PUBLIC -fsanitize=address)
+		target_link_options(VulkanApp PUBLIC -fsanitize=address)
 	endif(LSAN)
 	if(UBSAN)
-		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=undefined")
+		target_compile_options(VulkanApp PUBLIC -fsanitize=undefined)
 	endif(UBSAN)
 
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+	target_compile_options(VulkanApp PUBLIC -pthread)
 endif(UNIX)
 
 #cml
@@ -115,6 +112,17 @@ target_include_directories(VulkanApp PUBLIC ${ENTT_INCLUDE_DIR}/src/)
 
 #fx-gltf
 target_link_libraries(VulkanApp PUBLIC fx-gltf)
+
+#imgui
+target_link_libraries(VulkanApp PUBLIC ocornut::imgui)
+target_include_directories(VulkanApp PUBLIC ext/imgui)
+
+#fast-noise-simd
+target_link_libraries(VulkanApp PUBLIC fast-noise-simd)
+target_include_directories(VulkanApp PUBLIC ext/FastNoiseSIMD)
+
+#stb
+
 
 #gtk
 if(UNIX)

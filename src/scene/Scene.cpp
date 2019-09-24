@@ -5,7 +5,7 @@
 #include "core/Input.h"
 #include "core/Logger.h"
 
-#include "ImGui/imgui.h"
+#include "imgui.hpp"
 
 #include "entt/entt.hpp"
 
@@ -267,8 +267,8 @@ void Scene::UpdateSunData ()
 
 void Scene::DrawSkySettingsGui ()
 {
-	ImGui::SetNextWindowPos (ImVec2 (0, 675), ImGuiSetCond_FirstUseEver);
-	ImGui::SetNextWindowSize (ImVec2 (356, 180), ImGuiSetCond_FirstUseEver);
+	ImGui::SetNextWindowPos (ImVec2 (0, 675), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize (ImVec2 (356, 180), ImGuiCond_FirstUseEver);
 
 	if (ImGui::Begin ("Sky editor", &skySettings.show_skyEditor))
 	{

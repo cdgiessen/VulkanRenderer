@@ -1,7 +1,7 @@
 #include "InstancedSceneObject.h"
 
-#include "ImGui/imgui.h"
 #include "core/Logger.h"
+#include "imgui.hpp"
 #include "rendering/Initializers.h"
 
 #define VERTEX_BUFFER_BIND_ID 0

@@ -7,7 +7,7 @@
 // ImGui_ImplXXXX_Shutdown(). If you are new to ImGui, see examples/README.txt and documentation at
 // the top of imgui.cpp. https://github.com/ocornut/imgui
 
-#include "ImGui/imgui.h"
+#include "imgui.hpp"
 
 #include "core/Window.h"
 
@@ -1307,7 +1307,7 @@ bool ImGui_ImplGlfwVulkan_Init (GLFWwindow* window, bool install_callbacks, ImGu
 void ImGui_ImplGlfwVulkan_Shutdown ()
 {
 	ImGui_ImplGlfwVulkan_InvalidateDeviceObjects ();
-	ImGui::Shutdown ();
+	ImGui::DestroyContext ();
 	// Log::Debug << "Device of ImGui at shutdown " << g_Device << "\n";
 	vkDestroyDescriptorPool (g_Device, g_DescriptorPool, VK_NULL_HANDLE);
 }

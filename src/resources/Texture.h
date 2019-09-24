@@ -152,7 +152,6 @@ class Manager
 	TexID GetNextFreeTexID ();
 
 	void LoadTextureFromFile (TexID id);
-	void LoadTextureDTex (std::string path);
 
 	TexID GetTexIDByName (std::string s);
 	TexResource& GetTexResourceByID (int id);

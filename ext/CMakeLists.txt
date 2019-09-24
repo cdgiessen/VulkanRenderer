@@ -6,7 +6,9 @@ find_path(GLSLANG_PATH_FOUND "glslang" "")
 find_path(SPIRV_CROSS_PATH_FOUND "spirv-cross" "")
 find_path(CML_PATH_FOUND "cml" "")
 find_path(FX_GLTF_PATH_FOUND "fx-gltf" "")
-
+find_path(IMGUI_PATH_FOUND "imgui/imgui" "")
+find_path(FASTNOISESIMD_PATH_FOUND "FastNoiseSIMD" "")
+find_path(STB_PATH_FOUND "stb/stb" "")
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_MultipleHeaders ON CACHE INTERNAL "")
@@ -80,3 +82,52 @@ if(NOT FX_GLTF_PATH_FOUND)
 endif(NOT FX_GLTF_PATH_FOUND)
 
 add_subdirectory(fx-gltf)
+
+if(NOT IMGUI_PATH_FOUND)
+	message("Updating imgui")
+	execute_process(COMMAND git submodule update --init --recursive imgui/imgui 
+				WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT IMGUI_PATH_FOUND)
+
+add_library(dear-imgui OBJECT
+	${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui/imgui.cpp 
+	${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui/imgui_draw.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui/imgui_widgets.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.hpp)
+
+target_include_directories(dear-imgui PUBLIC imgui/imgui)
+
+add_library(ocornut::imgui ALIAS dear-imgui)
+
+if(NOT FASTNOISESIMD_PATH_FOUND)
+	message("Updating FastNoiseSIMD")
+	execute_process(COMMAND git submodule update --init --recursive FastNoiseSIMD 
+				WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT FASTNOISESIMD_PATH_FOUND)
+
+add_library(fast-noise-simd STATIC 
+${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD.h
+${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_internal.h
+${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_internal.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_avx2.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_avx512.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_neon.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_sse2.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_sse41.cpp
+)
+
+target_include_directories(fast-noise-simd PUBLIC FastNoiseSIMD)
+
+target_compile_options(fast-noise-simd PRIVATE -march=core-avx2 -msse2 -msse4.1 -Wimplicit-fallthrough=0)
+
+
+if(NOT STB_PATH_FOUND)
+	message("Updating stb libraries")
+	execute_process(COMMAND git submodule update --init --recursive stb 
+				WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT STB_PATH_FOUND)
+
+add_library(stb INTERFACE)
+
+target_include_directories(stb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/stb/)

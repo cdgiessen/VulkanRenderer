@@ -13,7 +13,7 @@
 
 #include "InternalGraph.h"
 
-#include "ImGui/imgui.h"
+#include "imgui.hpp"
 
 #include "cml/cml.h"
 

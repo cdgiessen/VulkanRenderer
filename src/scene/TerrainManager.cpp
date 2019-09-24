@@ -7,7 +7,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 #include "core/Logger.h"
 #include "rendering/Initializers.h"
@@ -306,8 +306,8 @@ void TerrainManager::LoadSettingsFromFile ()
 void TerrainManager::UpdateTerrainGUI ()
 {
 
-	ImGui::SetNextWindowSize (ImVec2 (200, 220), ImGuiSetCond_FirstUseEver);
-	ImGui::SetNextWindowPos (ImVec2 (220, 0), ImGuiSetCond_FirstUseEver);
+	ImGui::SetNextWindowSize (ImVec2 (200, 220), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos (ImVec2 (220, 0), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin ("Terrain Info", &gui_settings.show_terrain_manager_window))
 	{
 		ImGui::BeginGroup ();

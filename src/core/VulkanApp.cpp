@@ -7,7 +7,7 @@
 #include <thread>
 #include <vector>
 
-#include "ImGui/imgui.h"
+#include "imgui.hpp"
 
 #include "cml/cml.h"
 
@@ -155,7 +155,7 @@ void VulkanApp::DebugOverlay (bool* show_debug_overlay)
 {
 
 	static bool verbose = false;
-	ImGui::SetNextWindowPos (ImVec2 (0, 0));
+	ImGui::SetNextWindowPos (ImVec2 (0, 0), ImGuiCond_Always);
 	if (!ImGui::Begin ("Debug Stats",
 	        show_debug_overlay,
 	        ImVec2 (0, 0),
@@ -182,7 +182,7 @@ void VulkanApp::DebugOverlay (bool* show_debug_overlay)
 
 void VulkanApp::CameraWindow (bool* show_camera_window)
 {
-	ImGui::SetNextWindowPos (ImVec2 (0, 100), ImGuiSetCond_FirstUseEver);
+	ImGui::SetNextWindowPos (ImVec2 (0, 100), ImGuiCond_Once);
 
 	if (!ImGui::Begin ("Camera Window", show_camera_window))
 	{
@@ -208,7 +208,7 @@ void VulkanApp::CameraWindow (bool* show_camera_window)
 void VulkanApp::ControlsWindow (bool* show_controls_window)
 {
 	return;
-	ImGui::SetNextWindowPos (ImVec2 (0, 250), ImGuiSetCond_FirstUseEver);
+	ImGui::SetNextWindowPos (ImVec2 (0, 250), ImGuiCond_Once);
 	if (ImGui::Begin ("Controls", show_controls_window))
 	{
 		ImGui::Text ("Horizontal Movement: WASD");
@@ -373,7 +373,7 @@ void VulkanApp::HandleInputs ()
 
 	if (Input::GetMouseButtonPressed (Input::GetMouseButtonPressed (0)))
 	{
-		if (!ImGui::IsMouseHoveringAnyWindow ())
+		if (!ImGui::IsWindowHovered (ImGuiHoveredFlags_AnyWindow))
 		{
 			Input::SetMouseControlStatus (true);
 		}
