@@ -1,7 +1,7 @@
 #pragma once
 
+#include <mutex>
 #include <vector>
-
 #include <vulkan/vulkan.h>
 
 #include "Shader.h"
@@ -87,27 +87,33 @@ class PipelineOutline
 };
 
 
-class Pipeline
+struct Pipeline
 {
 	public:
 	Pipeline (VulkanRenderer& renderer, PipelineOutline builder, VkRenderPass renderPass, int subPass = 0);
-	~Pipeline ();
 
-	void Bind (VkCommandBuffer cmdBuf);
-	VkPipelineLayout GetLayout ();
-
-	private:
-	VulkanRenderer& renderer;
 	VkPipeline pipeline;
 	VkPipelineLayout layout;
 };
+
+using PipeID = int;
+
+class VulkanRenderer;
 
 class PipelineManager
 {
 	public:
 	PipelineManager (VulkanRenderer& renderer);
+	~PipelineManager ();
 
+	PipeID MakePipe (PipelineOutline builder, VkRenderPass renderPass, int subPass = 0);
+
+	void BindPipe (PipeID ID, VkCommandBuffer cmdBuf);
+	VkPipelineLayout GetPipeLayout (PipeID ID);
 
 	private:
 	VulkanRenderer& renderer;
+	std::mutex pipe_lock;
+	std::unordered_map<int, Pipeline> pipelines;
+	PipeID cur_id = 0;
 };

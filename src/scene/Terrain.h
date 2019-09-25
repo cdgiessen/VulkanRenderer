@@ -103,8 +103,8 @@ class Terrain
 	float heightScale = 100;
 
 
-	std::unique_ptr<Pipeline> normal;
-	std::unique_ptr<Pipeline> wireframe;
+	PipeID normal;
+	PipeID wireframe;
 
 	std::unique_ptr<VulkanDescriptor> descriptor;
 

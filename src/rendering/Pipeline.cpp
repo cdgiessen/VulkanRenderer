@@ -1,10 +1,7 @@
 #include "Pipeline.h"
 
-#include "Device.h"
 #include "Initializers.h"
 #include "Model.h"
-#include "RenderStructs.h"
-#include "RenderTools.h"
 #include "Renderer.h"
 
 ////// BASIC PIPELINE //////
@@ -133,7 +130,6 @@ void PipelineOutline::AddPushConstantRange (VkPushConstantRange pushConstantRang
 }
 
 Pipeline::Pipeline (VulkanRenderer& renderer, PipelineOutline builder, VkRenderPass renderPass, int subPass)
-: renderer (renderer)
 {
 	auto layoutInfo = initializers::pipelineLayoutCreateInfo (builder.layouts, builder.pushConstantRanges);
 
@@ -188,15 +184,27 @@ Pipeline::Pipeline (VulkanRenderer& renderer, PipelineOutline builder, VkRenderP
 	}
 }
 
-Pipeline::~Pipeline ()
+
+PipelineManager::PipelineManager (VulkanRenderer& renderer) : renderer (renderer) {}
+PipelineManager::~PipelineManager ()
 {
-	vkDestroyPipeline (renderer.device.device, pipeline, nullptr);
-	vkDestroyPipelineLayout (renderer.device.device, layout, nullptr);
+	for (auto& [key, pipe] : pipelines)
+	{
+		vkDestroyPipeline (renderer.device.device, pipe.pipeline, nullptr);
+		vkDestroyPipelineLayout (renderer.device.device, pipe.layout, nullptr);
+	}
 }
 
-void Pipeline::Bind (VkCommandBuffer cmdBuf)
+PipeID PipelineManager::MakePipe (PipelineOutline builder, VkRenderPass renderPass, int subPass)
 {
-	vkCmdBindPipeline (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	auto pipe = Pipeline (renderer, builder, renderPass, subPass);
+	std::lock_guard guard (pipe_lock);
+	pipelines.emplace (cur_id, pipe);
+	return cur_id++;
 }
 
-VkPipelineLayout Pipeline::GetLayout () { return layout; }
+void PipelineManager::BindPipe (PipeID ID, VkCommandBuffer cmdBuf)
+{
+	vkCmdBindPipeline (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.at (ID).pipeline);
+}
+VkPipelineLayout PipelineManager::GetPipeLayout (PipeID ID) { return pipelines.at (ID).layout; }

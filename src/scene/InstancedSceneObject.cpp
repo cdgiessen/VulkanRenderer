@@ -68,7 +68,7 @@ void InstancedSceneObject::SetupUniformBuffer ()
 void InstancedSceneObject::SetupImage ()
 {
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8);
-	vulkanTexture = renderer.textureManager.CreateTexture2D (texture, details);
+	vulkanTexture = renderer.texture_manager.CreateTexture2D (texture, details);
 }
 
 void InstancedSceneObject::SetupModel ()
@@ -96,7 +96,7 @@ void InstancedSceneObject::SetupDescriptor ()
 
 	std::vector<DescriptorUse> writes;
 	writes.push_back (DescriptorUse (0, 1, uniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, renderer.textureManager.get_texture (vulkanTexture).resource));
+	writes.push_back (DescriptorUse (1, 1, renderer.texture_manager.get_texture (vulkanTexture).resource));
 	descriptor->UpdateDescriptorSet (m_descriptorSet, writes);
 }
 
@@ -104,8 +104,8 @@ void InstancedSceneObject::SetupPipeline ()
 {
 	PipelineOutline out;
 
-	auto vert = renderer.shaderManager.get_module ("instancedSceneObject", ShaderType::vertex);
-	auto frag = renderer.shaderManager.get_module ("instancedSceneObject", ShaderType::fragment);
+	auto vert = renderer.shader_manager.get_module ("instancedSceneObject", ShaderType::vertex);
+	auto frag = renderer.shader_manager.get_module ("instancedSceneObject", ShaderType::fragment);
 
 	ShaderModuleSet shader_set;
 	shader_set.Vertex (vert.value ()).Fragment (frag.value ());
@@ -156,13 +156,13 @@ void InstancedSceneObject::SetupPipeline ()
 
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
-	normal = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
+	normal = renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 
 	out.SetRasterizer (
 	    VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 
-	wireframe = std::make_unique<Pipeline> (
-	    renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
+	wireframe =
+	    renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 
 
 	// VulkanPipeline &pipeMan = renderer.pipelineManager;
@@ -171,8 +171,8 @@ void InstancedSceneObject::SetupPipeline ()
 	// //pipeMan.SetVertexShader(mvp, loadShaderModule(renderer.device.device, "assets/shaders/instancedSceneObject.vert.spv"));
 	// //pipeMan.SetFragmentShader(mvp, fragShaderModule);
 
-	// auto vert = renderer.shaderManager.get_module ("instancedSceneObject", ShaderType::vertex);
-	// auto frag = renderer.shaderManager.get_module ("instancedSceneObject", ShaderType::fragment);
+	// auto vert = renderer.shader_manager.get_module ("instancedSceneObject", ShaderType::vertex);
+	// auto frag = renderer.shader_manager.get_module ("instancedSceneObject", ShaderType::fragment);
 
 	// ShaderModuleSet set(vert, frag, {}, {}, {});
 	// pipeMan.SetShaderModuleSet(mvp, set);
@@ -479,14 +479,21 @@ void InstancedSceneObject::WriteToCommandBuffer (VkCommandBuffer commandBuffer, 
 	VkDeviceSize offsets[] = { 0 };
 
 	if (wireframe)
-		this->wireframe->Bind (commandBuffer);
+		renderer.pipeline_manager.BindPipe (wireframe, commandBuffer);
 	else
-		normal->Bind (commandBuffer);
+		renderer.pipeline_manager.BindPipe (normal, commandBuffer);
+
 	// vkCmdBindPipeline (commandBuffer,
 	//    VK_PIPELINE_BIND_POINT_GRAPHICS,
 	//    wireframe ? mvp->pipelines->at (1) : mvp->pipelines->at (0));
-	vkCmdBindDescriptorSets (
-	    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, normal->GetLayout (), 2, 1, &m_descriptorSet.set, 0, nullptr);
+	vkCmdBindDescriptorSets (commandBuffer,
+	    VK_PIPELINE_BIND_POINT_GRAPHICS,
+	    renderer.pipeline_manager.GetPipeLayout (normal),
+	    2,
+	    1,
+	    &m_descriptorSet.set,
+	    0,
+	    nullptr);
 
 	vulkanModel->BindModel (commandBuffer);
 

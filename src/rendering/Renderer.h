@@ -179,8 +179,9 @@ class VulkanRenderer
 	VulkanSwapChain vulkanSwapChain;
 	std::unique_ptr<FrameGraph> frameGraph;
 
-	ShaderManager shaderManager;
-	VulkanTextureManager textureManager;
+	ShaderManager shader_manager;
+	PipelineManager pipeline_manager;
+	VulkanTextureManager texture_manager;
 
 	Scene* scene;
 

@@ -19,8 +19,8 @@ class Water
 {
 	VulkanRenderer& renderer;
 	std::unique_ptr<VulkanModel> model;
-	std::unique_ptr<Pipeline> pipe;
-	std::unique_ptr<Pipeline> wireframe;
+	PipeID pipe;
+	PipeID wireframe;
 
 	Resource::Texture::TexID texture;
 	VulkanTextureID vulkanTexture;

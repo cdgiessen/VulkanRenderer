@@ -8,7 +8,7 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 
 	texture = resourceMan.texManager.GetTexIDByName ("water_normal");
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8);
-	vulkanTexture = renderer.textureManager.CreateTexture2D (texture, details);
+	vulkanTexture = renderer.texture_manager.CreateTexture2D (texture, details);
 
 	uniformBuffer =
 	    std::make_unique<VulkanBuffer> (renderer.device, uniform_details (sizeof (ModelBufferObject)));
@@ -40,14 +40,14 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 
 	std::vector<DescriptorUse> writes;
 	writes.push_back (DescriptorUse (0, 1, uniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, renderer.textureManager.get_texture (vulkanTexture).resource));
+	writes.push_back (DescriptorUse (1, 1, renderer.texture_manager.get_texture (vulkanTexture).resource));
 	// writes.push_back (DescriptorUse (2, 1, renderer.Get_depth_tex ()->resource));
 	descriptor->UpdateDescriptorSet (m_descriptorSet, writes);
 
 	PipelineOutline out;
 
-	auto water_vert = renderer.shaderManager.get_module ("water", ShaderType::vertex);
-	auto water_frag = renderer.shaderManager.get_module ("water", ShaderType::fragment);
+	auto water_vert = renderer.shader_manager.get_module ("water", ShaderType::vertex);
+	auto water_frag = renderer.shader_manager.get_module ("water", ShaderType::fragment);
 
 	ShaderModuleSet water_shaders;
 	water_shaders.Vertex (water_vert.value ()).Fragment (water_frag.value ());
@@ -79,13 +79,13 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
-	pipe = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
+	pipe = renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 
 	out.SetRasterizer (
 	    VK_POLYGON_MODE_LINE, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 
-	wireframe = std::make_unique<Pipeline> (
-	    renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
+	wireframe =
+	    renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 }
 
 void Water::UpdateUniform (cml::vec3f camera_pos)
@@ -100,11 +100,18 @@ void Water::Draw (VkCommandBuffer cmdBuf, bool wireframe)
 {
 	model->BindModel (cmdBuf);
 	if (wireframe)
-		this->wireframe->Bind (cmdBuf);
+		renderer.pipeline_manager.BindPipe (wireframe, cmdBuf);
 	else
-		pipe->Bind (cmdBuf);
-	vkCmdBindDescriptorSets (
-	    cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe->GetLayout (), 2, 1, &m_descriptorSet.set, 0, nullptr);
+		renderer.pipeline_manager.BindPipe (pipe, cmdBuf);
+
+	vkCmdBindDescriptorSets (cmdBuf,
+	    VK_PIPELINE_BIND_POINT_GRAPHICS,
+	    renderer.pipeline_manager.GetPipeLayout (pipe),
+	    2,
+	    1,
+	    &m_descriptorSet.set,
+	    0,
+	    nullptr);
 
 	vkCmdDrawIndexed (cmdBuf, model->indexCount, 1, 0, 0, 0);
 }

@@ -40,19 +40,19 @@ TerrainManager::TerrainManager (
 
 	terrainTextureArrayAlbedo = resourceMan.texManager.GetTexIDByName ("terrain_albedo");
 	terrainVulkanTextureArrayAlbedo =
-	    renderer.textureManager.CreateTexture2DArray (terrainTextureArrayAlbedo, details);
+	    renderer.texture_manager.CreateTexture2DArray (terrainTextureArrayAlbedo, details);
 
 	terrainTextureArrayRoughness = resourceMan.texManager.GetTexIDByName ("terrain_roughness");
 	terrainVulkanTextureArrayRoughness =
-	    renderer.textureManager.CreateTexture2DArray (terrainTextureArrayRoughness, details);
+	    renderer.texture_manager.CreateTexture2DArray (terrainTextureArrayRoughness, details);
 
 	terrainTextureArrayMetallic = resourceMan.texManager.GetTexIDByName ("terrain_metalness");
 	terrainVulkanTextureArrayMetallic =
-	    renderer.textureManager.CreateTexture2DArray (terrainTextureArrayMetallic, details);
+	    renderer.texture_manager.CreateTexture2DArray (terrainTextureArrayMetallic, details);
 
 	terrainTextureArrayNormal = resourceMan.texManager.GetTexIDByName ("terrain_normal");
 	terrainVulkanTextureArrayNormal =
-	    renderer.textureManager.CreateTexture2DArray (terrainTextureArrayNormal, details);
+	    renderer.texture_manager.CreateTexture2DArray (terrainTextureArrayNormal, details);
 
 	terrainGridModel = std::make_unique<VulkanModel> (
 	    renderer, createFlatPlane (gui_settings.numCells, cml::vec3f (1.0f)));

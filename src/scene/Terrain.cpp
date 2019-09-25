@@ -87,9 +87,9 @@ Terrain::Terrain (VulkanRenderer& renderer,
 
 Terrain::~Terrain ()
 {
-	renderer.textureManager.delete_texture (terrainHeightMap);
-	renderer.textureManager.delete_texture (terrainSplatMap);
-	renderer.textureManager.delete_texture (terrainNormalMap);
+	renderer.texture_manager.delete_texture (terrainHeightMap);
+	renderer.texture_manager.delete_texture (terrainSplatMap);
+	renderer.texture_manager.delete_texture (terrainNormalMap);
 }
 
 int Terrain::FindEmptyIndex ()
@@ -162,7 +162,7 @@ void Terrain::SetupImage ()
 	    VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 	details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
-	terrainHeightMap = renderer.textureManager.CreateTextureFromBuffer (buffer_height, details);
+	terrainHeightMap = renderer.texture_manager.CreateTextureFromBuffer (buffer_height, details);
 
 	auto buffer_splat = std::make_shared<VulkanBuffer> (renderer.device,
 	    staging_details (
@@ -172,7 +172,7 @@ void Terrain::SetupImage ()
 	TexCreateDetails splat_details (
 	    VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 	splat_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	terrainSplatMap = renderer.textureManager.CreateTextureFromBuffer (buffer_splat, splat_details);
+	terrainSplatMap = renderer.texture_manager.CreateTextureFromBuffer (buffer_splat, splat_details);
 
 	auto buffer_normal = std::make_shared<VulkanBuffer> (renderer.device,
 	    staging_details (BufferType::staging,
@@ -182,7 +182,7 @@ void Terrain::SetupImage ()
 	TexCreateDetails norm_details (
 	    VK_FORMAT_R16G16B16A16_SNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 	norm_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	terrainNormalMap = renderer.textureManager.CreateTextureFromBuffer (buffer_normal, norm_details);
+	terrainNormalMap = renderer.texture_manager.CreateTextureFromBuffer (buffer_normal, norm_details);
 }
 
 void Terrain::SetupDescriptorSets (
@@ -219,13 +219,13 @@ void Terrain::SetupDescriptorSets (
 
 	std::vector<DescriptorUse> writes;
 	writes.push_back (DescriptorUse (0, 1, uniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, renderer.textureManager.get_texture (terrainHeightMap).resource));
-	writes.push_back (DescriptorUse (2, 1, renderer.textureManager.get_texture (terrainNormalMap).resource));
-	writes.push_back (DescriptorUse (3, 1, renderer.textureManager.get_texture (terrainSplatMap).resource));
-	writes.push_back (DescriptorUse (4, 1, renderer.textureManager.get_texture (texArrAlbedo).resource));
-	writes.push_back (DescriptorUse (5, 1, renderer.textureManager.get_texture (texArrRoughness).resource));
-	writes.push_back (DescriptorUse (6, 1, renderer.textureManager.get_texture (texArrMetallic).resource));
-	writes.push_back (DescriptorUse (7, 1, renderer.textureManager.get_texture (texArrNormal).resource));
+	writes.push_back (DescriptorUse (1, 1, renderer.texture_manager.get_texture (terrainHeightMap).resource));
+	writes.push_back (DescriptorUse (2, 1, renderer.texture_manager.get_texture (terrainNormalMap).resource));
+	writes.push_back (DescriptorUse (3, 1, renderer.texture_manager.get_texture (terrainSplatMap).resource));
+	writes.push_back (DescriptorUse (4, 1, renderer.texture_manager.get_texture (texArrAlbedo).resource));
+	writes.push_back (DescriptorUse (5, 1, renderer.texture_manager.get_texture (texArrRoughness).resource));
+	writes.push_back (DescriptorUse (6, 1, renderer.texture_manager.get_texture (texArrMetallic).resource));
+	writes.push_back (DescriptorUse (7, 1, renderer.texture_manager.get_texture (texArrNormal).resource));
 	descriptor->UpdateDescriptorSet (descriptorSet, writes);
 }
 
@@ -233,8 +233,8 @@ void Terrain::SetupPipeline ()
 {
 	PipelineOutline out;
 
-	auto vert = renderer.shaderManager.get_module ("terrain", ShaderType::vertex);
-	auto frag = renderer.shaderManager.get_module ("terrain", ShaderType::fragment);
+	auto vert = renderer.shader_manager.get_module ("terrain", ShaderType::vertex);
+	auto frag = renderer.shader_manager.get_module ("terrain", ShaderType::fragment);
 
 	ShaderModuleSet shader_set;
 	shader_set.Vertex (vert.value ()).Fragment (frag.value ());
@@ -286,13 +286,13 @@ void Terrain::SetupPipeline ()
 
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
-	normal = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
+	normal = renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 
 	out.SetRasterizer (
 	    VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 
-	wireframe = std::make_unique<Pipeline> (
-	    renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
+	wireframe =
+	    renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 }
 
 void Terrain::InitTerrainQuad (int quad, cml::vec3f viewerPos)
@@ -440,20 +440,27 @@ void Terrain::DrawTerrainRecursive (
 	}
 }
 
-void Terrain::DrawTerrainGrid (VkCommandBuffer cmdBuf, bool ifWireframe)
+void Terrain::DrawTerrainGrid (VkCommandBuffer cmdBuf, bool wireframe)
 {
-	if (ifWireframe)
-		wireframe->Bind (cmdBuf);
+	if (wireframe)
+		renderer.pipeline_manager.BindPipe (wireframe, cmdBuf);
 	else
-		normal->Bind (cmdBuf);
-	vkCmdBindDescriptorSets (
-	    cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, normal->GetLayout (), 2, 1, &descriptorSet.set, 0, nullptr);
+		renderer.pipeline_manager.BindPipe (normal, cmdBuf);
+
+	vkCmdBindDescriptorSets (cmdBuf,
+	    VK_PIPELINE_BIND_POINT_GRAPHICS,
+	    renderer.pipeline_manager.GetPipeLayout (normal),
+	    2,
+	    1,
+	    &descriptorSet.set,
+	    0,
+	    nullptr);
 	terrainGrid->BindModel (cmdBuf);
 
 	std::vector<HeightMapBound> instances;
 	instances.reserve (numQuads);
 
-	DrawTerrainRecursive (0, cmdBuf, ifWireframe, instances);
+	DrawTerrainRecursive (0, cmdBuf, wireframe, instances);
 
 	instanceBuffer->CopyToBuffer (instances.data (), sizeof (HeightMapBound) * instances.size ());
 

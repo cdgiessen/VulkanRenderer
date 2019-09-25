@@ -33,7 +33,7 @@ void GameObject::SetupUniformBuffer ()
 void GameObject::SetupImage ()
 {
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
-	gameObjectVulkanTexture = renderer.textureManager.CreateTexture2D (gameObjectTexture, details);
+	gameObjectVulkanTexture = renderer.texture_manager.CreateTexture2D (gameObjectTexture, details);
 }
 
 void GameObject::SetupModel ()
@@ -49,7 +49,7 @@ void GameObject::SetupMaterial ()
 
 	mat->AddMaterialDataSlot ({ ResourceType::texture2D,
 	    ResourceStages::fragment_only,
-	    renderer.textureManager.get_texture (gameObjectVulkanTexture).resource });
+	    renderer.texture_manager.get_texture (gameObjectVulkanTexture).resource });
 
 	// mat->AddTexture(gameObjectVulkanTexture);
 	mat->Setup ();
@@ -108,8 +108,8 @@ void GameObject::SetupPipeline ()
 {
 	PipelineOutline out;
 
-	auto pbr_vert = renderer.shaderManager.get_module ("pbr", ShaderType::vertex);
-	auto pbr_frag = renderer.shaderManager.get_module ("pbr", ShaderType::fragment);
+	auto pbr_vert = renderer.shader_manager.get_module ("pbr", ShaderType::vertex);
+	auto pbr_frag = renderer.shader_manager.get_module ("pbr", ShaderType::fragment);
 
 	ShaderModuleSet shader_set;
 	shader_set.Vertex (pbr_vert.value ()).Fragment (pbr_frag.value ());
@@ -141,13 +141,13 @@ void GameObject::SetupPipeline ()
 
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
-	normal = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
+	normal = renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 
 	out.SetRasterizer (
 	    VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 
-	wireframe = std::make_unique<Pipeline> (
-	    renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
+	wireframe =
+	    renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 }
 
 void GameObject::UpdateUniformBuffer (float time)
@@ -228,11 +228,12 @@ void GameObject::Draw (VkCommandBuffer commandBuffer, bool wireframe, bool drawN
 	// vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? mvp->pipelines->at(1) : mvp->pipelines->at(0));
 
 	if (wireframe)
-		this->wireframe->Bind (commandBuffer);
+		renderer.pipeline_manager.BindPipe (wireframe, commandBuffer);
 	else
-		normal->Bind (commandBuffer);
+		renderer.pipeline_manager.BindPipe (normal, commandBuffer);
 
-	mat->Bind (commandBuffer, normal->GetLayout ());
+
+	mat->Bind (commandBuffer, renderer.pipeline_manager.GetPipeLayout (normal));
 	gameObjectModel->BindModel (commandBuffer);
 
 	vkCmdDrawIndexed (commandBuffer, static_cast<uint32_t> (gameObjectModel->indexCount), 1, 0, 0, 0);

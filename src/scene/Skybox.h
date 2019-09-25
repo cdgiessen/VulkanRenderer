@@ -28,7 +28,7 @@ class Skybox
 
 	VulkanRenderer& renderer;
 
-	std::unique_ptr<Pipeline> normal;
+	PipeID normal;
 
 	std::unique_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;

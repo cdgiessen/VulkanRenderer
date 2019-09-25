@@ -25,7 +25,7 @@ void Skybox::SetupUniformBuffer ()
 void Skybox::SetupCubeMapImage ()
 {
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 3);
-	vulkanCubeMap = renderer.textureManager.CreateCubeMap (skyboxCubeMap, details);
+	vulkanCubeMap = renderer.texture_manager.CreateCubeMap (skyboxCubeMap, details);
 }
 
 void Skybox::SetupDescriptor ()
@@ -48,7 +48,7 @@ void Skybox::SetupDescriptor ()
 
 	std::vector<DescriptorUse> writes;
 	writes.push_back (DescriptorUse (0, 1, skyboxUniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, renderer.textureManager.get_texture (vulkanCubeMap).resource));
+	writes.push_back (DescriptorUse (1, 1, renderer.texture_manager.get_texture (vulkanCubeMap).resource));
 	descriptor->UpdateDescriptorSet (m_descriptorSet, writes);
 }
 
@@ -56,8 +56,8 @@ void Skybox::SetupPipeline ()
 {
 	PipelineOutline out;
 
-	auto vert = renderer.shaderManager.get_module ("skybox", ShaderType::vertex);
-	auto frag = renderer.shaderManager.get_module ("skybox", ShaderType::fragment);
+	auto vert = renderer.shader_manager.get_module ("skybox", ShaderType::vertex);
+	auto frag = renderer.shader_manager.get_module ("skybox", ShaderType::fragment);
 
 	ShaderModuleSet shader_set;
 	shader_set.Vertex (vert.value ()).Fragment (frag.value ());
@@ -89,7 +89,7 @@ void Skybox::SetupPipeline ()
 
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
-	normal = std::make_unique<Pipeline> (renderer, out, renderer.GetRelevantRenderpass (RenderableType::opaque));
+	normal = renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 }
 
 void Skybox::UpdateUniform (cml::mat4f proj, cml::mat4f view)
@@ -107,10 +107,18 @@ void Skybox::WriteToCommandBuffer (VkCommandBuffer commandBuffer)
 {
 	// if (*vulkanCubeMap->readyToUse == false) return;
 
-	vkCmdBindDescriptorSets (
-	    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, normal->GetLayout (), 2, 1, &m_descriptorSet.set, 0, nullptr);
+	vkCmdBindDescriptorSets (commandBuffer,
+	    VK_PIPELINE_BIND_POINT_GRAPHICS,
+	    renderer.pipeline_manager.GetPipeLayout (normal),
+	    2,
+	    1,
+	    &m_descriptorSet.set,
+	    0,
+	    nullptr);
 
-	normal->Bind (commandBuffer);
+
+	renderer.pipeline_manager.BindPipe (normal, commandBuffer);
+
 
 	model->BindModel (commandBuffer);
 	vkCmdDrawIndexed (commandBuffer, static_cast<uint32_t> (model->indexCount), 1, 0, 0, 0);
