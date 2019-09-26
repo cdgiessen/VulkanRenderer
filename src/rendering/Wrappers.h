@@ -21,7 +21,6 @@ using Signal = std::shared_ptr<bool>;
 constexpr long DEFAULT_FENCE_TIMEOUT = 1000000000;
 
 class VulkanDevice;
-class VulkanSwapChain;
 
 class VulkanFence
 {
@@ -106,7 +105,8 @@ class CommandPool
 	VkBool32 ResetPool ();
 	VkBool32 ResetCommandBuffer (VkCommandBuffer cmdBuf);
 
-	VkCommandBuffer GetCommandBuffer (VkCommandBufferLevel level, VkCommandBufferUsageFlags flags = 0);
+	VkCommandBuffer GetCommandBuffer (VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+	    VkCommandBufferUsageFlags flags = 0);
 
 	VkBool32 ReturnCommandBuffer (VkCommandBuffer,
 	    VulkanFence& fence,
@@ -189,55 +189,4 @@ class CommandPoolGroup
 	CommandPool graphicsPool;
 	CommandPool transferPool;
 	CommandPool computePool;
-};
-
-enum class WorkType
-{
-	graphics,
-	transfer,
-	compute,
-};
-
-struct GraphicsCleanUpWork
-{
-	CommandBuffer cmdBuf;
-	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
-	std::vector<Signal> signals;
-
-	explicit GraphicsCleanUpWork (
-	    CommandBuffer cmdBuf, std::vector<std::shared_ptr<VulkanBuffer>>& buffers, std::vector<Signal>& signals)
-	: cmdBuf (cmdBuf), buffers (buffers), signals (signals)
-	{
-	}
-};
-
-class FrameObject
-{
-	public:
-	FrameObject (VulkanDevice& device, int frameD);
-	~FrameObject ();
-
-	VkResult AcquireNextSwapchainImage (VkSwapchainKHR swapchain);
-
-	void PrepareFrame ();
-	void Submit (CommandQueue& queue);
-
-	VkResult Present (VulkanSwapChain& swapChain, CommandQueue& presentQueue);
-
-	VkCommandBuffer GetPrimaryCmdBuf ();
-
-	private:
-	VulkanDevice& device;
-	uint32_t frameIndex; // which frame in the queue it is
-
-	uint32_t swapChainIndex; // which frame to render to
-
-	VulkanSemaphore imageAvailSem;
-	VulkanSemaphore renderFinishSem;
-
-	std::shared_ptr<VulkanFence> commandFence;
-	CommandPool commandPool;
-	CommandBuffer primary_command_buffer;
-
-	VkPipelineStageFlags stageMasks = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 };

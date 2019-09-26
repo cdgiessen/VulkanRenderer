@@ -4,9 +4,9 @@
 
 #include "stb/stb_image.h"
 
+#include "Device.h"
 #include "Initializers.h"
 #include "RenderTools.h"
-#include "Renderer.h"
 
 #include "core/Logger.h"
 
@@ -231,7 +231,8 @@ void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
 	    transferCmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresourceRange);
 }
 
-void BeginTransferAndMipMapGenWork (VulkanRenderer& renderer,
+void BeginTransferAndMipMapGenWork (VulkanDevice& device,
+    AsyncTaskManager& async_task_man,
     std::shared_ptr<VulkanBuffer> buffer,
     const VkImageSubresourceRange subresourceRange,
     const std::vector<VkBufferImageCopy> bufferCopyRegions,
@@ -245,7 +246,7 @@ void BeginTransferAndMipMapGenWork (VulkanRenderer& renderer,
     int layers,
     int mipLevels)
 {
-	if (renderer.device.singleQueueDevice)
+	if (device.singleQueueDevice)
 	{
 		std::function<void(const VkCommandBuffer)> work = [=](const VkCommandBuffer cmdBuf) {
 			SetLayoutAndTransferRegions (cmdBuf, image, vk_buffer, subresourceRange, bufferCopyRegions);
@@ -253,11 +254,16 @@ void BeginTransferAndMipMapGenWork (VulkanRenderer& renderer,
 			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
 		};
 
-		renderer.SubmitWork (WorkType::graphics, work, {}, {}, { buffer }, { signal });
+		AsyncTask task;
+		task.work = work;
+		task.buffersToClean = { buffer };
+		task.signals = { signal };
+
+		async_task_man.SubmitGraphicsTask (std::move (task));
 	}
 	else
 	{
-		auto sem = std::make_shared<VulkanSemaphore> (renderer.device);
+		auto sem = std::make_shared<VulkanSemaphore> (device);
 
 		std::function<void(const VkCommandBuffer)> transferWork = [=](const VkCommandBuffer cmdBuf) {
 			SetLayoutAndTransferRegions (cmdBuf, image, vk_buffer, subresourceRange, bufferCopyRegions);
@@ -267,15 +273,26 @@ void BeginTransferAndMipMapGenWork (VulkanRenderer& renderer,
 			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
 		};
 
-		renderer.SubmitWork (WorkType::transfer, transferWork, {}, { sem }, { buffer }, {});
+		AsyncTask task_transfer;
+		task_transfer.work = transferWork;
+		task_transfer.buffersToClean = { buffer };
+		task_transfer.signal_sems = { sem };
 
-		renderer.SubmitWork (WorkType::graphics, mipMapGenWork, { sem }, {}, {}, { signal });
+		AsyncTask task_gen_mips;
+		task_gen_mips.work = mipMapGenWork;
+		task_gen_mips.wait_sems = { sem };
+		task_gen_mips.signals = { signal };
+
+		async_task_man.SubmitTransferTask (std::move (task_transfer));
+		async_task_man.SubmitGraphicsTask (std::move (task_gen_mips));
 	}
 }
 
-VulkanTexture::VulkanTexture (
-    VulkanRenderer& renderer, TexCreateDetails texCreateDetails, Resource::Texture::TexResource textureResource)
-: renderer (renderer), resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+VulkanTexture::VulkanTexture (VulkanDevice& device,
+    AsyncTaskManager& async_task_man,
+    TexCreateDetails texCreateDetails,
+    Resource::Texture::TexResource textureResource)
+: device (device), resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
 	readyToUse = std::make_shared<bool> (false);
 
@@ -301,7 +318,7 @@ VulkanTexture::VulkanTexture (
 		imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
 
-	auto buffer = std::make_shared<VulkanBuffer> (renderer.device,
+	auto buffer = std::make_shared<VulkanBuffer> (device,
 	    staging_details (BufferType::staging, textureResource.dataDescription.pixelCount * 4),
 	    textureResource.GetByteDataPtr ());
 
@@ -330,7 +347,8 @@ VulkanTexture::VulkanTexture (
 		          textureResource.dataDescription.depth * 4;
 	}
 
-	BeginTransferAndMipMapGenWork (renderer,
+	BeginTransferAndMipMapGenWork (device,
+	    async_task_man,
 	    buffer,
 	    subresourceRange,
 	    bufferCopyRegions,
@@ -381,9 +399,11 @@ VulkanTexture::VulkanTexture (
 	resource.FillResource (textureSampler, textureImageView, textureImageLayout);
 }
 
-VulkanTexture::VulkanTexture (
-    VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::shared_ptr<VulkanBuffer> buffer)
-: renderer (renderer), resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+VulkanTexture::VulkanTexture (VulkanDevice& device,
+    AsyncTaskManager& async_task_man,
+    TexCreateDetails texCreateDetails,
+    std::shared_ptr<VulkanBuffer> buffer)
+: device (device), resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
 	readyToUse = std::make_shared<bool> (false);
 
@@ -428,7 +448,8 @@ VulkanTexture::VulkanTexture (
 		offset += texCreateDetails.desiredWidth * texCreateDetails.desiredHeight * 4;
 	}
 
-	BeginTransferAndMipMapGenWork (renderer,
+	BeginTransferAndMipMapGenWork (device,
+	    async_task_man,
 	    buffer,
 	    subresourceRange,
 	    bufferCopyRegions,
@@ -478,8 +499,8 @@ VulkanTexture::VulkanTexture (
 	resource.FillResource (textureSampler, textureImageView, textureImageLayout);
 }
 
-VulkanTexture::VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails)
-: renderer (renderer), resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+VulkanTexture::VulkanTexture (VulkanDevice& device, TexCreateDetails texCreateDetails)
+: device (device), resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
 	VkImageCreateInfo imageInfo = initializers::imageCreateInfo (VK_IMAGE_TYPE_2D,
 	    texCreateDetails.format,
@@ -492,7 +513,15 @@ VulkanTexture::VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCrea
 	    VkExtent3D{ (uint32_t)texCreateDetails.desiredWidth, (uint32_t)texCreateDetails.desiredHeight, (uint32_t)1 },
 	    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-	InitDepthImage (imageInfo);
+	imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+	VmaAllocationCreateInfo imageAllocCreateInfo = {};
+	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+	image.allocator = device.GetImageOptimalAllocator ();
+	VK_CHECK_RESULT (vmaCreateImage (
+	    image.allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
+
 
 	textureImageView = VulkanTexture::CreateImageView (image.image,
 	    VK_IMAGE_VIEW_TYPE_2D,
@@ -506,12 +535,17 @@ VulkanTexture::VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCrea
 	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo (
 	    VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-	VkCommandBuffer cmdBuf = renderer.GetGraphicsCommandBuffer ();
+	CommandPool pool (device, device.GraphicsQueue ());
+
+	VkCommandBuffer cmdBuf = pool.GetCommandBuffer ();
 
 	SetImageLayout (
 	    cmdBuf, image.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, subresourceRange);
 
-	renderer.SubmitGraphicsCommandBufferAndWait (cmdBuf);
+	VulkanFence fence = VulkanFence (device);
+
+	pool.ReturnCommandBuffer (cmdBuf, fence);
+	fence.Wait ();
 }
 
 
@@ -520,9 +554,8 @@ VulkanTexture::~VulkanTexture ()
 	vmaDestroyImage (image.allocator, image.image, image.allocation);
 
 	if (textureImageView != VK_NULL_HANDLE)
-		vkDestroyImageView (renderer.device.device, textureImageView, nullptr);
-	if (textureSampler != VK_NULL_HANDLE)
-		vkDestroySampler (renderer.device.device, textureSampler, nullptr);
+		vkDestroyImageView (device.device, textureImageView, nullptr);
+	if (textureSampler != VK_NULL_HANDLE) vkDestroySampler (device.device, textureSampler, nullptr);
 }
 
 
@@ -553,11 +586,11 @@ VkSampler VulkanTexture::CreateImageSampler (VkFilter mag,
 	samplerCreateInfo.maxLod = (useMipMaps) ? mipLevels : 0.0f; // Max level-of-detail should match mip level count
 	samplerCreateInfo.anisotropyEnable = anisotropy; // Enable anisotropic filtering
 	samplerCreateInfo.maxAnisotropy =
-	    (anisotropy) ? renderer.device.physical_device.physical_device_properties.limits.maxSamplerAnisotropy : 1;
+	    (anisotropy) ? device.physical_device.physical_device_properties.limits.maxSamplerAnisotropy : 1;
 	samplerCreateInfo.borderColor = borderColor;
 
 	VkSampler sampler;
-	VK_CHECK_RESULT (vkCreateSampler (renderer.device.device, &samplerCreateInfo, nullptr, &sampler));
+	VK_CHECK_RESULT (vkCreateSampler (device.device, &samplerCreateInfo, nullptr, &sampler));
 
 	return sampler;
 }
@@ -582,7 +615,7 @@ VkImageView VulkanTexture::CreateImageView (VkImage image,
 	viewInfo.subresourceRange.layerCount = layers;
 
 	VkImageView imageView;
-	VK_CHECK_RESULT (vkCreateImageView (renderer.device.device, &viewInfo, nullptr, &imageView));
+	VK_CHECK_RESULT (vkCreateImageView (device.device, &viewInfo, nullptr, &imageView));
 
 	return imageView;
 }
@@ -597,30 +630,19 @@ void VulkanTexture::InitImage2D (VkImageCreateInfo imageInfo)
 
 	if (imageInfo.tiling == VK_IMAGE_TILING_OPTIMAL)
 	{
-		image.allocator = renderer.device.GetImageOptimalAllocator ();
+		image.allocator = device.GetImageOptimalAllocator ();
 	}
 	else if (imageInfo.tiling == VK_IMAGE_TILING_LINEAR)
 	{
-		image.allocator = renderer.device.GetImageLinearAllocator ();
+		image.allocator = device.GetImageLinearAllocator ();
 	}
 	VK_CHECK_RESULT (vmaCreateImage (
 	    image.allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
 }
 
-void VulkanTexture::InitDepthImage (VkImageCreateInfo imageInfo)
-{
-	imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-
-	VmaAllocationCreateInfo imageAllocCreateInfo = {};
-	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-	image.allocator = renderer.device.GetImageOptimalAllocator ();
-	VK_CHECK_RESULT (vmaCreateImage (
-	    image.allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
-}
-
-VulkanTextureManager::VulkanTextureManager (VulkanRenderer& renderer, Resource::Texture::Manager& texManager)
-: renderer (renderer), texManager (texManager)
+VulkanTextureManager::VulkanTextureManager (
+    VulkanDevice& device, Resource::Texture::Manager& texManager, AsyncTaskManager& async_task_manager)
+: device (device), texManager (texManager), async_task_manager (async_task_manager)
 {
 }
 
@@ -632,7 +654,7 @@ VulkanTextureManager::~VulkanTextureManager ()
 VulkanTextureID VulkanTextureManager::CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails)
 {
 	auto& resource = texManager.GetTexResourceByID (texture);
-	auto tex = std::make_unique<VulkanTexture> (renderer, texCreateDetails, resource);
+	auto tex = std::make_unique<VulkanTexture> (device, async_task_manager, texCreateDetails, resource);
 	std::lock_guard guard (map_lock);
 	texture_map[id_counter] = std::move (tex);
 	return id_counter++;
@@ -642,7 +664,7 @@ VulkanTextureID VulkanTextureManager::CreateTexture2DArray (
     Resource::Texture::TexID textures, TexCreateDetails texCreateDetails)
 {
 	auto& resource = texManager.GetTexResourceByID (textures);
-	auto tex = std::make_unique<VulkanTexture> (renderer, texCreateDetails, resource);
+	auto tex = std::make_unique<VulkanTexture> (device, async_task_manager, texCreateDetails, resource);
 	std::lock_guard guard (map_lock);
 	texture_map[id_counter] = std::move (tex);
 	return id_counter++;
@@ -651,7 +673,16 @@ VulkanTextureID VulkanTextureManager::CreateTexture2DArray (
 VulkanTextureID VulkanTextureManager::CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails)
 {
 	auto& resource = texManager.GetTexResourceByID (cubeMap);
-	auto tex = std::make_unique<VulkanTexture> (renderer, texCreateDetails, resource);
+	auto tex = std::make_unique<VulkanTexture> (device, async_task_manager, texCreateDetails, resource);
+	std::lock_guard guard (map_lock);
+	texture_map[id_counter] = std::move (tex);
+	return id_counter++;
+}
+
+VulkanTextureID VulkanTextureManager::CreateTextureFromBuffer (
+    std::shared_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails)
+{
+	auto tex = std::make_unique<VulkanTexture> (device, async_task_manager, texCreateDetails, buffer);
 	std::lock_guard guard (map_lock);
 	texture_map[id_counter] = std::move (tex);
 	return id_counter++;
@@ -663,16 +694,7 @@ VulkanTextureID VulkanTextureManager::CreateDepthImage (VkFormat depthFormat, in
 	texCreateDetails.format = depthFormat;
 	texCreateDetails.desiredWidth = width;
 	texCreateDetails.desiredHeight = height;
-	auto tex = std::make_unique<VulkanTexture> (renderer, texCreateDetails);
-	std::lock_guard guard (map_lock);
-	texture_map[id_counter] = std::move (tex);
-	return id_counter++;
-}
-
-VulkanTextureID VulkanTextureManager::CreateTextureFromBuffer (
-    std::shared_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails)
-{
-	auto tex = std::make_unique<VulkanTexture> (renderer, texCreateDetails, buffer);
+	auto tex = std::make_unique<VulkanTexture> (device, texCreateDetails);
 	std::lock_guard guard (map_lock);
 	texture_map[id_counter] = std::move (tex);
 	return id_counter++;

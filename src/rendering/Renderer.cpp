@@ -69,14 +69,12 @@ void RenderSettings::Save ()
 VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::AssetManager& resourceMan)
 
 : settings ("render_settings.json"),
-  device (validationLayer, window),
+  device (window, validationLayer),
   vulkanSwapChain (device, window),
+  async_task_manager (device),
   shader_manager (device),
-  pipeline_manager (*this),
-  texture_manager (*this, resourceMan.texManager),
-  graphicsPrimaryCommandPool (device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
-  transferPrimaryCommandPool (device, device.TransferQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
-  computePrimaryCommandPool (device, device.ComputeQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+  pipeline_manager (device),
+  texture_manager (device, resourceMan.texManager, async_task_manager),
   dynamic_data (device, settings)
 
 {
@@ -94,6 +92,8 @@ VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::
 
 VulkanRenderer::~VulkanRenderer ()
 {
+	async_task_manager.CleanFinishQueue ();
+
 	DeviceWaitTillIdle ();
 	ImGui_ImplGlfwVulkan_Shutdown ();
 
@@ -141,7 +141,7 @@ void VulkanRenderer::RenderFrame ()
 	frameIndex = (frameIndex + 1) % frameObjects.size ();
 	dynamic_data.AdvanceFrameCounter ();
 
-	clean_finish_queue ();
+	async_task_manager.CleanFinishQueue ();
 }
 
 void VulkanRenderer::CreatePresentResources ()
@@ -188,7 +188,7 @@ void VulkanRenderer::CreateDepthResources ()
 
 	for (int i = 0; i < 3; i++)
 	{
-		depthBuffers.push_back (std::make_unique<VulkanTexture> (*this, texCreateDetails));
+		depthBuffers.push_back (std::make_unique<VulkanTexture> (device, texCreateDetails));
 	}
 }
 
@@ -322,28 +322,6 @@ void VulkanRenderer::SubmitFrame (int curFrameIndex)
 	device.PresentQueue ().QueueWaitIdle ();
 }
 
-void VulkanRenderer::clean_finish_queue ()
-{
-	std::lock_guard<std::mutex> lk (finishQueueLock);
-
-	for (auto it = finishQueue.begin (); it != finishQueue.end ();)
-	{
-		if (it->cmdBuf.GetFence ().Check ())
-		{
-			for (auto& sig : it->signals)
-			{
-				if (sig != nullptr) *sig = true;
-			}
-			it->cmdBuf.Free ();
-			it = finishQueue.erase (it);
-		}
-		else
-		{
-			++it;
-		}
-	}
-}
-
 void VulkanRenderer::AddGlobalLayouts (std::vector<VkDescriptorSetLayout>& layouts)
 {
 	layouts.push_back (dynamic_data.GetFrameDataDescriptorLayout ());
@@ -353,63 +331,6 @@ void VulkanRenderer::AddGlobalLayouts (std::vector<VkDescriptorSetLayout>& layou
 std::vector<VkDescriptorSetLayout> VulkanRenderer::GetGlobalLayouts ()
 {
 	return { dynamic_data.GetFrameDataDescriptorLayout (), dynamic_data.GetLightingDescriptorLayout () };
-}
-
-void VulkanRenderer::SubmitWork (WorkType workType,
-    std::function<void(const VkCommandBuffer)> work,
-    std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores,
-    std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores,
-    std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
-    std::vector<Signal> signals)
-{
-	CommandBuffer cmdBuf = CommandBuffer (graphicsPrimaryCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
-	std::shared_ptr<VulkanFence> fence = std::make_shared<VulkanFence> (device);
-
-	// Can't copy fence, so can't reassign CommandBuffer...
-	switch (workType)
-	{
-		case (WorkType::graphics):
-			cmdBuf = CommandBuffer (graphicsPrimaryCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-			break;
-		case (WorkType::transfer):
-			cmdBuf = CommandBuffer (transferPrimaryCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-			break;
-		case (WorkType::compute):
-			cmdBuf = CommandBuffer (computePrimaryCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-			break;
-	}
-
-	cmdBuf.Allocate ();
-	cmdBuf.Begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-	cmdBuf.WriteTo (work);
-	cmdBuf.SetFence (fence);
-	cmdBuf.End ();
-	cmdBuf.Submit (waitSemaphores, signalSemaphores);
-
-	{
-		std::lock_guard<std::mutex> lk (finishQueueLock);
-		finishQueue.push_back (GraphicsCleanUpWork (cmdBuf, buffersToClean, signals));
-	}
-}
-
-
-VkCommandBuffer VulkanRenderer::GetGraphicsCommandBuffer ()
-{
-
-	return graphicsPrimaryCommandPool.GetCommandBuffer (VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-}
-
-void VulkanRenderer::SubmitGraphicsCommandBufferAndWait (VkCommandBuffer commandBuffer)
-{
-	if (commandBuffer == VK_NULL_HANDLE) return;
-
-	VulkanFence fence = VulkanFence (device);
-	graphicsPrimaryCommandPool.ReturnCommandBuffer (commandBuffer, fence);
-
-	fence.Wait ();
-
-	graphicsPrimaryCommandPool.FreeCommandBuffer (commandBuffer);
 }
 
 void InsertImageMemoryBarrier (VkCommandBuffer cmdbuffer,

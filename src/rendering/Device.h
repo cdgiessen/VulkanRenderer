@@ -110,7 +110,7 @@ class VulkanDevice
 
 	bool singleQueueDevice; // for devices with only 1 queue (intel integrated
 	                        // specifically)
-	VulkanDevice (bool validationLayers, Window& window);
+	VulkanDevice (Window& window, bool validationLayers = false);
 
 	~VulkanDevice ();
 

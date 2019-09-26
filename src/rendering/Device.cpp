@@ -10,7 +10,7 @@
 #include "RenderTools.h"
 #include "SwapChain.h"
 
-std::vector<const char*> VALIDATION_LAYERS = { "VK_LAYER_LUNARG_standard_validation"
+std::vector<const char*> VALIDATION_LAYERS = { "VK_LAYER_KHRONOS_validation"
 
 };
 
@@ -252,7 +252,7 @@ VulkanPhysicalDevice::~VulkanPhysicalDevice () {}
 
 //////// VulkanDevice ////////
 
-VulkanDevice::VulkanDevice (bool validationLayers, Window& window)
+VulkanDevice::VulkanDevice (Window& window, bool validationLayers)
 : enableValidationLayers (validationLayers),
   instance ("My Vulkan App", enableValidationLayers),
   surface (instance, window),

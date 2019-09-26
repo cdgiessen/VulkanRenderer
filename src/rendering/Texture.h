@@ -5,14 +5,29 @@
 #include <thread>
 #include <vulkan/vulkan.h>
 
+#include "AsyncTask.h"
 #include "Buffer.h"
 #include "Descriptor.h"
+#include "Wrappers.h"
 
 #include "resources/Texture.h"
 #include "vk_mem_alloc.h"
 
-class VulkanRenderer;
-using Signal = std::shared_ptr<bool>;
+class VulkanDevice;
+
+void BeginTransferAndMipMapGenWork (VulkanDevice& device,
+    std::shared_ptr<VulkanBuffer> buffer,
+    const VkImageSubresourceRange subresourceRange,
+    const std::vector<VkBufferImageCopy> bufferCopyRegions,
+    VkImageLayout imageLayout,
+    VkImage image,
+    VkBuffer vk_buffer,
+    int width,
+    int height,
+    int depth,
+    Signal signal,
+    int layers,
+    int mipLevels);
 
 struct TexCreateDetails
 {
@@ -42,11 +57,17 @@ struct TexCreateDetails
 class VulkanTexture
 {
 	public:
-	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails, Resource::Texture::TexResource textureResource);
+	VulkanTexture (VulkanDevice& device,
+	    AsyncTaskManager& async_task_man,
+	    TexCreateDetails texCreateDetails,
+	    Resource::Texture::TexResource textureResource);
 
-	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails, std::shared_ptr<VulkanBuffer> buffer);
+	VulkanTexture (VulkanDevice& device,
+	    AsyncTaskManager& async_task_man,
+	    TexCreateDetails texCreateDetails,
+	    std::shared_ptr<VulkanBuffer> buffer);
 
-	VulkanTexture (VulkanRenderer& renderer, TexCreateDetails texCreateDetails);
+	VulkanTexture (VulkanDevice& device, TexCreateDetails texCreateDetails);
 
 	~VulkanTexture ();
 
@@ -59,7 +80,7 @@ class VulkanTexture
 	} image;
 
 	protected:
-	VulkanRenderer& renderer;
+	VulkanDevice& device;
 
 	public:
 	DescriptorResource resource;
@@ -75,7 +96,6 @@ class VulkanTexture
 	int layers;
 
 	void InitImage2D (VkImageCreateInfo imageInfo);
-	void InitDepthImage (VkImageCreateInfo imageInfo);
 
 	VkSampler CreateImageSampler (VkFilter mag = VK_FILTER_LINEAR,
 	    VkFilter min = VK_FILTER_LINEAR,
@@ -102,7 +122,8 @@ using VulkanTextureID = int;
 class VulkanTextureManager
 {
 	public:
-	VulkanTextureManager (VulkanRenderer& renderer, Resource::Texture::Manager& texManager);
+	VulkanTextureManager (
+	    VulkanDevice& device, Resource::Texture::Manager& texManager, AsyncTaskManager& async_task_manager);
 	~VulkanTextureManager ();
 
 	VulkanTextureID CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails);
@@ -120,24 +141,12 @@ class VulkanTextureManager
 	VulkanTexture const& get_texture (VulkanTextureID id);
 
 	private:
-	VulkanRenderer& renderer;
+	VulkanDevice& device;
 	Resource::Texture::Manager& texManager;
+	AsyncTaskManager& async_task_manager;
 
 	VulkanTextureID id_counter = 0;
 	std::mutex map_lock;
 	std::unordered_map<VulkanTextureID, std::unique_ptr<VulkanTexture>> texture_map;
+	std::unordered_map<VulkanTextureID, std::unique_ptr<VulkanTexture>> in_progress_textures;
 };
-
-void BeginTransferAndMipMapGenWork (VulkanRenderer& renderer,
-    std::shared_ptr<VulkanBuffer> buffer,
-    const VkImageSubresourceRange subresourceRange,
-    const std::vector<VkBufferImageCopy> bufferCopyRegions,
-    VkImageLayout imageLayout,
-    VkImage image,
-    VkBuffer vk_buffer,
-    int width,
-    int height,
-    int depth,
-    Signal signal,
-    int layers,
-    int mipLevels);

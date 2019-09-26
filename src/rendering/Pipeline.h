@@ -6,7 +6,7 @@
 
 #include "Shader.h"
 
-class VulkanRenderer;
+class VulkanDevice;
 class VulkanModel;
 
 class PipelineOutline
@@ -90,7 +90,7 @@ class PipelineOutline
 struct Pipeline
 {
 	public:
-	Pipeline (VulkanRenderer& renderer, PipelineOutline builder, VkRenderPass renderPass, int subPass = 0);
+	Pipeline (VulkanDevice& device, PipelineOutline builder, VkRenderPass renderPass, int subPass = 0);
 
 	VkPipeline pipeline;
 	VkPipelineLayout layout;
@@ -98,12 +98,12 @@ struct Pipeline
 
 using PipeID = int;
 
-class VulkanRenderer;
+class VulkanDevice;
 
 class PipelineManager
 {
 	public:
-	PipelineManager (VulkanRenderer& renderer);
+	PipelineManager (VulkanDevice& device);
 	~PipelineManager ();
 
 	PipeID MakePipe (PipelineOutline builder, VkRenderPass renderPass, int subPass = 0);
@@ -112,7 +112,7 @@ class PipelineManager
 	VkPipelineLayout GetPipeLayout (PipeID ID);
 
 	private:
-	VulkanRenderer& renderer;
+	VulkanDevice& device;
 	std::mutex pipe_lock;
 	std::unordered_map<int, Pipeline> pipelines;
 	PipeID cur_id = 0;

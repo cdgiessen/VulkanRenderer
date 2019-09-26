@@ -17,10 +17,12 @@
 #include "util/ConcurrentQueue.h"
 #include "util/PackedArray.h"
 
+#include "AsyncTask.h"
 #include "Buffer.h"
 #include "Descriptor.h"
 #include "Device.h"
 #include "FrameGraph.h"
+#include "FrameResources.h"
 #include "Pipeline.h"
 #include "RenderStructs.h"
 #include "RenderTools.h"
@@ -158,16 +160,6 @@ class VulkanRenderer
 	    const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat FindDepthFormat ();
 
-	void SubmitWork (WorkType workType,
-	    std::function<void(const VkCommandBuffer)> work,
-	    std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores,
-	    std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores,
-	    std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean,
-	    std::vector<Signal> signals);
-
-	VkCommandBuffer GetGraphicsCommandBuffer ();
-	void SubmitGraphicsCommandBufferAndWait (VkCommandBuffer buffer);
-
 	void ToggleWireframe ();
 
 	void DeviceWaitTillIdle ();
@@ -177,29 +169,22 @@ class VulkanRenderer
 
 	VulkanDevice device;
 	VulkanSwapChain vulkanSwapChain;
-	std::unique_ptr<FrameGraph> frameGraph;
+
+	AsyncTaskManager async_task_manager;
 
 	ShaderManager shader_manager;
 	PipelineManager pipeline_manager;
 	VulkanTextureManager texture_manager;
 
 	Scene* scene;
+	std::unique_ptr<FrameGraph> frameGraph;
 
 	private:
-	void clean_finish_queue ();
-
-	CommandPool graphicsPrimaryCommandPool;
-	CommandPool transferPrimaryCommandPool;
-	CommandPool computePrimaryCommandPool;
-
 	std::vector<std::unique_ptr<FrameObject>> frameObjects;
 
 	GPU_DoubleBuffer dynamic_data;
 
 	std::vector<std::unique_ptr<VulkanTexture>> depthBuffers;
-
-	std::vector<GraphicsCleanUpWork> finishQueue;
-	std::mutex finishQueueLock;
 
 	uint32_t frameIndex = 0; // which of the swapchain images the app is rendering to
 	bool wireframe = false;  // whether or not to use the wireframe pipeline for the scene.

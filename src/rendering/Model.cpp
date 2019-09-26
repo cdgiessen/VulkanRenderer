@@ -3,6 +3,7 @@
 #include <iterator>
 #include <numeric>
 
+#include "AsyncTask.h"
 #include "Initializers.h"
 #include "Renderer.h"
 
@@ -85,8 +86,12 @@ VulkanModel::VulkanModel (VulkanRenderer& renderer, std::unique_ptr<MeshData> me
 		CopyMeshBuffers (copyCmd, v_stage, vert, vBufferSize, i_stage, index, iBufferSize);
 	};
 
-	renderer.SubmitWork (
-	    WorkType::transfer, work, {}, {}, { vertexStagingBuffer, indexStagingBuffer }, { readyToUse });
+	AsyncTask transfer;
+	transfer.work = work;
+	transfer.buffersToClean = { vertexStagingBuffer, indexStagingBuffer };
+	transfer.signals = { readyToUse };
+
+	renderer.async_task_manager.SubmitTransferTask (std::move (transfer));
 }
 
 void VulkanModel::BindModel (VkCommandBuffer cmdBuf)
