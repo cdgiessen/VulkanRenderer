@@ -10,6 +10,7 @@ find_path(IMGUI_PATH_FOUND "imgui/imgui" "")
 find_path(FASTNOISESIMD_PATH_FOUND "FastNoiseSIMD" "")
 find_path(STB_PATH_FOUND "stb/stb" "")
 find_path(VMA_PATH_FOUND "vma" "")
+find_path(GLFW_PATH_FOUND "glfw" "")
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_MultipleHeaders ON CACHE INTERNAL "")
@@ -75,6 +76,8 @@ endif(NOT CML_PATH_FOUND)
 add_subdirectory(cml)
 
 set (FX_GLTF_INSTALL OFF CACHE BOOL "" FORCE)
+set (BUILD_TESTING OFF CACHE BOOL "" FORCE)
+
 
 if(NOT FX_GLTF_PATH_FOUND)
 	message("Updating fx-gltf")
@@ -120,7 +123,12 @@ ${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_sse41.cpp
 
 target_include_directories(fast-noise-simd PUBLIC FastNoiseSIMD)
 
+if(UNIX)
 target_compile_options(fast-noise-simd PRIVATE -march=core-avx2 -msse2 -msse4.1 -Wimplicit-fallthrough=0)
+elseif(WIN32)
+target_compile_options(fast-noise-simd PRIVATE /arch:AVX2)
+
+endif()
 
 
 if(NOT STB_PATH_FOUND)
@@ -141,3 +149,19 @@ endif(NOT VMA_PATH_FOUND)
 
 add_library(VulkanMemoryAllocator INTERFACE)
 target_include_directories(VulkanMemoryAllocator INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/vma/src)
+
+target_include_directories(VulkanMemoryAllocator INTERFACE ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(VulkanMemoryAllocator INTERFACE ${Vulkan_LIBRARIES})
+
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+
+if(NOT GLFW_PATH_FOUND)
+	message("Updating glfw")
+	execute_process(COMMAND git submodule update --init --recursive glfw
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT glfw_PATH_FOUND)
+
+add_subdirectory(glfw)

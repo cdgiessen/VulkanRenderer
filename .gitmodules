@@ -34,3 +34,6 @@
 [submodule "ext/stb/stb"]
 	path = ext/stb/stb
 	url = https://github.com/nothings/stb
+[submodule "ext/glfw"]
+	path = ext/glfw
+	url = https://github.com/glfw/glfw

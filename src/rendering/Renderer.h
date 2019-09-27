@@ -10,7 +10,6 @@
 #include <variant>
 #include <vector>
 
-
 #include <vulkan/vulkan.h>
 
 #include "core/CoreTools.h"

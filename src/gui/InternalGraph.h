@@ -173,19 +173,18 @@ template <typename T> const T NoiseImage2D<T>::BoundedLookUp (int x, int z) cons
 	}
 	else
 	{
-		throw new std::runtime_error ("out of bounds");
+		//throw new std::runtime_error ("out of bounds");
 	}
 	return -1;
 }
 
 template <typename T> void NoiseImage2D<T>::SetPixelValue (int x, int z, T value)
 {
-
-
-	if (x >= 0 && x < width && z >= 0 && z < width) data[x * width + z] = value;
+	if (x >= 0 && x < width && z >= 0 && z < width) 
+		data[x * width + z] = value;
 	//	image[x * width + z] = value;
-	else
-		throw new std::runtime_error ("out of bounds");
+	//else
+	//	throw new std::runtime_error ("out of bounds");
 }
 
 template <typename T> std::vector<T>* NoiseImage2D<T>::GetImageVectorData () { return &data; }

@@ -11,12 +11,9 @@ project(VulkanRenderer VERSION 0.0.1)
 #libraries
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-add_subdirectory(ext)
-
-find_package(glfw3 REQUIRED)
 find_package(Vulkan REQUIRED)
-find_package(Bullet REQUIRED) 
-find_package(OpenAL REQUIRED)
+
+add_subdirectory(ext)
 
 set(GLSLANG_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang)
 set(SPIRV_CROSS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-cross)
@@ -88,7 +85,7 @@ target_link_libraries(VulkanApp PUBLIC fmt)
 target_include_directories(VulkanApp PUBLIC ${CMAKE_SOURCE_DIR}/ext/SG14)
 
 #glfw
-target_link_libraries(VulkanApp PRIVATE glfw)
+target_link_libraries(VulkanApp PUBLIC glfw)
 
 #vulkan
 target_include_directories(VulkanApp PRIVATE ${Vulkan_INCLUDE_DIRS})
@@ -101,14 +98,6 @@ target_link_libraries(VulkanApp PUBLIC glslang SPIRV)
 #spirv-cross
 target_include_directories(VulkanApp PUBLIC ${SPIRV_CROSS_INCLUDE_DIR})
 target_link_libraries(VulkanApp PUBLIC spirv-cross-core spirv-cross-cpp spirv-cross-reflect) 
-
-#bullet physics
-target_include_directories(VulkanApp PRIVATE ${BULLET_INCLUDE_DIRS})
-target_link_libraries(VulkanApp PRIVATE ${BULLET_LIBRARIES})
-
-#openal
-target_link_libraries(VulkanApp PRIVATE ${OPENAL_LIBRARIES})
-target_include_directories(VulkanApp PRIVATE ${OPENAL_INCLUDE_DIRS})
 
 #entt
 target_include_directories(VulkanApp PUBLIC ${ENTT_INCLUDE_DIR}/src/)
@@ -135,12 +124,15 @@ if(UNIX)
 	target_link_libraries(VulkanApp PRIVATE ${GTK3_LIBRARIES})
 endif(UNIX)
 
+
 # copy files over
 add_custom_target(copy_assets ALL
-	COMMAND ${CMAKE_COMMAND} -E copy_directory
-	${PROJECT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:VulkanApp>/assets
-	DEPENDS VulkanApp)
+	COMMAND ${CMAKE_COMMAND} -E copy_directory 
+	${PROJECT_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
+	DEPENDS VulkanApp
+	COMMENT "copying assets to build directory")
 
 add_executable(run_VulkanApp ${PROJECT_SOURCE_DIR}/src/core/main.cpp)
 
+add_dependencies(copy_assets run_VulkanApp)
 target_link_libraries(run_VulkanApp PRIVATE VulkanApp)

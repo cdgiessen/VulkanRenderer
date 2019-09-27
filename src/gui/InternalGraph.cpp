@@ -855,15 +855,10 @@ GraphUser::GraphUser (
 
 				cml::vec3f normal = cml::normalize (cml::vec3f (h_px - h_mx, 2.0f, h_py - h_my));
 
-				// uint xy = cml::some_packing_snorm_2x16 (cml::vec2f (normal.x, normal.y));
-				// int16_t x = xy & 0xFFFF0000;
-				// int16_t y = xy & 0x0000FFFF;
-				// int16_t n_z = cml::some_packing_snorm_2x16 (cml::vec2f (normal.z, 0)) &
-				// 0xFFFF0000;
-				outputNormalMap.push_back ({ static_cast<uint16_t> (normal.x * 32768),
-				    static_cast<uint16_t> (normal.y * 32768),
-				    static_cast<uint16_t> (normal.z * 32768),
-				    (uint16_t)0 });
+				int16_t n_x = static_cast<int16_t> (normal.x * 32768);
+				int16_t n_y = static_cast<int16_t> (normal.y * 32768);
+				int16_t n_z = static_cast<int16_t> (normal.z * 32768);
+				outputNormalMap.push_back (cml::vec4<int16_t>{ n_x, n_y, n_z, 0 });
 			}
 			else
 				outputNormalMap.push_back ({ (int16_t)0.5, (int16_t)1, (int16_t)0.5, (int16_t)0 });

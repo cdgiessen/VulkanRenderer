@@ -561,10 +561,10 @@ ShaderManager::~ShaderManager ()
 
 std::optional<ShaderKey> ShaderManager::load_and_compile_module (std::filesystem::path file)
 {
-	auto file_data = compiler.load_file_data (file).value ();
-	auto shader_type = GetShaderStage (file.extension ());
+	auto file_data = compiler.load_file_data (file.string()).value ();
+	auto shader_type = GetShaderStage (file.extension ().string ());
 	auto spirv = compiler.compile_glsl_to_spriv (
-	    file.stem (), file_data, shader_type, file.parent_path () / "common");
+	    file.stem ().string (), file_data, shader_type, file.parent_path () / "common");
 
 	if (!spirv.has_value ())
 	{
