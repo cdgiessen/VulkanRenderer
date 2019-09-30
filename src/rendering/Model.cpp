@@ -66,11 +66,8 @@ VulkanModel::VulkanModel (
 	vmaVertices = std::make_unique<VulkanBuffer> (device, vertex_details (vertexCount, vertexElementCount));
 	vmaIndicies = std::make_unique<VulkanBuffer> (device, index_details (indexCount));
 
-	auto vert_stage_details = staging_details (BufferType::vertex, vBufferSize);
-	auto index_stage_details = staging_details (BufferType::index, iBufferSize);
-
-	auto vertexStagingBuffer = buf_man.CreateBuffer (vert_stage_details);
-	auto indexStagingBuffer = buf_man.CreateBuffer (index_stage_details);
+	auto vertexStagingBuffer = buf_man.CreateBuffer (staging_details (BufferType::vertex, vBufferSize));
+	auto indexStagingBuffer = buf_man.CreateBuffer (staging_details (BufferType::index, iBufferSize));
 
 	buf_man.GetBuffer (vertexStagingBuffer).CopyToBuffer (mesh->vertexData);
 	buf_man.GetBuffer (indexStagingBuffer).CopyToBuffer (mesh->indexData);

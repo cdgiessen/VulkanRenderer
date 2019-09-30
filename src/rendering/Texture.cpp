@@ -256,7 +256,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 
 		AsyncTask task;
 		task.work = work;
-		task.finish_work = [&] { buf_man.FreeBuffer (buffer); };
+		task.finish_work = [=, &buf_man] { buf_man.FreeBuffer (buffer); };
 
 		async_task_man.SubmitTask (TaskType::graphics, std::move (task));
 	}

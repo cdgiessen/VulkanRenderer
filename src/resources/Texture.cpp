@@ -143,9 +143,9 @@ std::optional<TexResource> from_json_TexResource (nlohmann::json j)
 		DataDescription dataDesc (channels, width, height, depth, layers);
 		return TexResource (id, name, layout, channelType, format, dataDesc);
 	}
-	catch (nlohmann::json::parse_error& e)
+	catch (nlohmann::json::exception& e)
 	{
-		Log.Error (fmt::format ("failed to partse texture"));
+		Log.Error (fmt::format ("failed to parse texture\n"));
 		return {};
 	}
 }
@@ -167,7 +167,7 @@ void Manager::LoadTextureList ()
 		{
 			inFile >> j;
 		}
-		catch (nlohmann::json::parse_error& e)
+		catch (nlohmann::json::exception& e)
 		{
 			Log.Debug ("Texture list was invalid json, creating a new one\n");
 			Log.Debug (fmt::format ("Json error: {}\n", e.what ()));
@@ -199,13 +199,14 @@ void Manager::LoadTextureList ()
 			}
 			else
 			{
+				Log.Error ("No Texture Resource\n");
 			}
 		}
 		id_counter = count;
 		taskManager.Submit (tasks, job::TaskType::currentFrame);
 		signal->Wait ();
 	}
-	catch (nlohmann::json::parse_error& e)
+	catch (nlohmann::json::exception& e)
 	{
 		Log.Debug (fmt::format ("Error loading texture list {}\n", e.what ()));
 	}
@@ -227,7 +228,7 @@ void Manager::SaveTextureList ()
 	{
 		outFile << std::setw (4) << j;
 	}
-	catch (nlohmann::json::parse_error& e)
+	catch (nlohmann::json::exception& e)
 	{
 		Log.Debug (fmt::format ("{}\n", e.what ()));
 	}
@@ -256,6 +257,7 @@ void Manager::LoadTextureFromFile (TexID id)
 			path = texture_path / fs::path (texRes.name + std::string (".") +
 			                                formatTypeToString (texRes.fileFormatType));
 		}
+		Log.Debug (fmt::format ("{}\n", path.string ()));
 
 		paths.push_back (path);
 
@@ -265,7 +267,7 @@ void Manager::LoadTextureFromFile (TexID id)
 
 		if (pixels == nullptr)
 		{
-			Log.Error (fmt::format ("Image {} failed to load!\n", path.c_str ()));
+			Log.Error (fmt::format ("Image {} failed to load!\n", path.string ()));
 		}
 		// else if (desiredChannels != texChannels) {
 		//	Log.Error << "Image couldn't load desired channel of " << desiredChannels
@@ -273,9 +275,9 @@ void Manager::LoadTextureFromFile (TexID id)
 		//}
 		else
 		{
-			std::memcpy (texData.get ()->data () + i * texWidth * texHeight * 4,
+			std::memcpy (texData.get ()->data () + i * texWidth * texHeight * texChannels,
 			    pixels,
-			    sizeof (std::byte) * texWidth * texHeight * 4);
+			    sizeof (std::byte) * texWidth * texHeight * texChannels);
 
 
 			stbi_image_free (pixels);

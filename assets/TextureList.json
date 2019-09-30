@@ -4,7 +4,7 @@
     "layout": "single2D",
     "format": "jpg",
     "channels": "rgb",
-    "dataDescription": {
+    "description": {
       "channels": 3,
       "width": 600,
       "height": 600,
@@ -18,7 +18,7 @@
     "layout": "cubemap2D",
     "format": "png",
     "channels": "rgb",
-    "dataDescription": {
+    "description": {
       "channels": 3,
       "width": 900,
       "height": 900,
@@ -32,7 +32,7 @@
     "layout": "array2D",
     "format": "jpg",
     "channels": "rgb",
-    "dataDescription": {
+    "description": {
       "channels": 3,
       "width": 512,
       "height": 512,
@@ -46,7 +46,7 @@
     "layout": "single2D",
     "format": "png",
     "channels": "rgb",
-    "dataDescription": {
+    "description": {
       "channels": 3,
       "width": 64,
       "height": 64,
@@ -60,7 +60,7 @@
     "layout": "array2D",
     "format": "png",
     "channels": "rgb",
-    "dataDescription": {
+    "description": {
       "channels": 3,
       "width": 2048,
       "height": 2048,
@@ -74,7 +74,7 @@
     "layout": "array2D",
     "format": "png",
     "channels": "rgb",
-    "dataDescription": {
+    "description": {
       "channels": 3,
       "width": 2048,
       "height": 2048,
@@ -88,7 +88,7 @@
     "layout": "array2D",
     "format": "png",
     "channels": "rgb",
-    "dataDescription": {
+    "description": {
       "channels": 3,
       "width": 2048,
       "height": 2048,
@@ -102,7 +102,7 @@
     "layout": "array2D",
     "format": "png",
     "channels": "rgb",
-    "dataDescription": {
+    "description": {
       "channels": 3,
       "width": 2048,
       "height": 2048,
@@ -116,7 +116,7 @@
     "layout": "single2D",
     "format": "png",
     "channels": "rgb",
-    "dataDescription": {
+    "description": {
       "channels": 3,
       "width": 96,
       "height": 64,

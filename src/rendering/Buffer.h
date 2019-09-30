@@ -163,7 +163,7 @@ class BufferManager
 	private:
 	VulkanDevice& device;
 
-	BufferID buf_index;
+	BufferID buf_index = 0;
 	std::mutex map_lock;
 	std::unordered_map<BufferID, VulkanBuffer> buffer_map;
 };

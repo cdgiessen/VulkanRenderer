@@ -92,7 +92,7 @@ VulkanBuffer::~VulkanBuffer ()
 }
 
 VulkanBuffer::VulkanBuffer (VulkanBuffer&& other)
-: buffer (other.buffer), resource (other.resource), data (data)
+: buffer (other.buffer), resource (other.resource), data (other.data)
 {
 	other.buffer = VK_NULL_HANDLE;
 	other.data.allocation = VK_NULL_HANDLE;
