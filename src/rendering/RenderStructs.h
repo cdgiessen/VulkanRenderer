@@ -82,22 +82,6 @@ struct ModelBufferObject
 	cml::mat4f paddingTwo;
 };
 
-struct ModelPushConstant
-{
-	cml::mat4f model;
-	cml::mat4f normal;
-};
-
-struct StaticModelBuffer
-{
-	cml::mat4f model;
-};
-
-struct StaticModelPushConstant
-{
-	cml::mat4f model;
-};
-
 /* Materials */
 
 struct PBR_Mat_Tex

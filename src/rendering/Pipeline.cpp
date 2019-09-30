@@ -4,9 +4,6 @@
 #include "Initializers.h"
 #include "Model.h"
 
-////// BASIC PIPELINE //////
-
-
 void PipelineOutline::SetShaderModuleSet (ShaderModuleSet set) { this->set = set; }
 void PipelineOutline::UseModelVertexLayout (VulkanModel& model)
 {
@@ -129,7 +126,8 @@ void PipelineOutline::AddPushConstantRange (VkPushConstantRange pushConstantRang
 	pushConstantRanges.push_back (pushConstantRange);
 }
 
-Pipeline::Pipeline (VulkanDevice& device, PipelineOutline builder, VkRenderPass renderPass, int subPass)
+Pipeline::Pipeline (
+    VulkanDevice& device, VkPipelineCache cache, PipelineOutline builder, VkRenderPass renderPass, int subPass)
 {
 	auto layoutInfo = initializers::pipelineLayoutCreateInfo (builder.layouts, builder.pushConstantRanges);
 
@@ -176,14 +174,24 @@ Pipeline::Pipeline (VulkanDevice& device, PipelineOutline builder, VkRenderPass 
 	    initializers::pipelineDynamicStateCreateInfo (builder.dynamicStates, 0);
 	info.pDynamicState = &dynamicInfo;
 
-	if (vkCreateGraphicsPipelines (device.device, nullptr, 1, &info, nullptr, &pipeline) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines (device.device, cache, 1, &info, nullptr, &pipeline) != VK_SUCCESS)
 	{
 		throw std::runtime_error ("failed to create graphics pipeline!");
 	}
 }
 
 
-PipelineManager::PipelineManager (VulkanDevice& device) : device (device) {}
+PipelineManager::PipelineManager (VulkanDevice& device) : device (device)
+{
+
+	VkPipelineCacheCreateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+	info.initialDataSize = 0;
+	info.pInitialData = nullptr;
+
+	vkCreatePipelineCache (device.device, &info, nullptr, &cache);
+}
+
 PipelineManager::~PipelineManager ()
 {
 	for (auto& [key, pipe] : pipelines)
@@ -191,11 +199,12 @@ PipelineManager::~PipelineManager ()
 		vkDestroyPipeline (device.device, pipe.pipeline, nullptr);
 		vkDestroyPipelineLayout (device.device, pipe.layout, nullptr);
 	}
+	vkDestroyPipelineCache (device.device, cache, nullptr);
 }
 
 PipeID PipelineManager::MakePipe (PipelineOutline builder, VkRenderPass renderPass, int subPass)
 {
-	auto pipe = Pipeline (device, builder, renderPass, subPass);
+	auto pipe = Pipeline (device, cache, builder, renderPass, subPass);
 	std::lock_guard guard (pipe_lock);
 	pipelines.emplace (cur_id, pipe);
 	return cur_id++;

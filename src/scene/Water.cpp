@@ -4,9 +4,10 @@
 
 Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : renderer (renderer)
 {
-	model = std::make_unique<VulkanModel> (renderer, create_water_plane_subdiv (13, 40));
+	model = std::make_unique<VulkanModel> (
+	    renderer.device, renderer.async_task_manager, renderer.buffer_manager, create_water_plane_subdiv (13, 40));
 
-	texture = resourceMan.texManager.GetTexIDByName ("water_normal");
+	texture = resourceMan.texture_manager.GetTexIDByName ("water_normal");
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8);
 	vulkanTexture = renderer.texture_manager.CreateTexture2D (texture, details);
 
@@ -17,7 +18,7 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 	ubo.model = ubo.model.translate (cml::vec3f (0, 0, 0));
 	ubo.normal = cml::to_mat4 (cml::to_mat3 (ubo.model).inverse ().transpose ());
 
-	uniformBuffer->CopyToBuffer (&ubo, sizeof (ModelBufferObject));
+	uniformBuffer->CopyToBuffer (ubo);
 
 	descriptor = std::make_unique<VulkanDescriptor> (renderer.device);
 
@@ -93,7 +94,7 @@ void Water::UpdateUniform (cml::vec3f camera_pos)
 	auto pos = camera_pos;
 	pos.y = 0;
 	ubo.model = cml::mat4f (1.0f).translate (pos);
-	uniformBuffer->CopyToBuffer (&ubo, sizeof (ModelBufferObject));
+	uniformBuffer->CopyToBuffer (ubo);
 }
 
 void Water::Draw (VkCommandBuffer cmdBuf, bool wireframe)

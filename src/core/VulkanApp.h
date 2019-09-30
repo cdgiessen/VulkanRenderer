@@ -1,7 +1,6 @@
 #pragma once
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <filesystem>
 
 #include "CoreTools.h"
 #include "Input.h"
@@ -10,7 +9,7 @@
 #include "TimeManager.h"
 #include "Window.h"
 
-#include "resources/ResourceManager.h"
+#include "resources/Resource.h"
 
 #include "rendering/Renderer.h"
 
@@ -32,7 +31,7 @@ struct ImGUI_PanelSettings
 class VulkanAppSettings
 {
 	public:
-	VulkanAppSettings (std::string fileName);
+	VulkanAppSettings (std::filesystem::path fileName);
 	void Load ();
 	void Save ();
 
@@ -46,7 +45,7 @@ class VulkanAppSettings
 	double MaxFPS = 100.0f;
 
 	private:
-	std::string fileName;
+	std::filesystem::path fileName;
 };
 
 class VulkanApp

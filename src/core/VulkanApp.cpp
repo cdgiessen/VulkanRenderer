@@ -23,13 +23,16 @@
 #include "stb/stb_image_write.h"
 
 
-VulkanAppSettings::VulkanAppSettings (std::string fileName) : fileName (fileName) { Load (); }
+VulkanAppSettings::VulkanAppSettings (std::filesystem::path fileName) : fileName (fileName)
+{
+	Load ();
+}
 
 void VulkanAppSettings::Load ()
 {
-	if (fileExists (fileName))
+	if (std::filesystem::exists (fileName))
 	{
-		std::ifstream input{ fileName };
+		std::ifstream input{ fileName.string () };
 		nlohmann::json settings{};
 		input >> settings;
 
@@ -45,7 +48,7 @@ void VulkanAppSettings::Load ()
 	}
 	else
 	{
-		Log.Debug (fmt::format ("Settings file didn't exist, creating one\n"));
+		Log.Debug ("Settings file didn't exist, creating one\n");
 		Save ();
 	}
 }
@@ -69,37 +72,18 @@ void VulkanAppSettings::Save ()
 	outFile.close ();
 }
 
-unsigned int HardwareThreadCount ()
-{
-	unsigned int concurentThreadsSupported = std::thread::hardware_concurrency ();
-	Log.Debug (fmt::format ("Hardware Threads Available = {}\n", concurentThreadsSupported));
-	return concurentThreadsSupported > 0 ? concurentThreadsSupported : 1;
-}
-
 VulkanApp::VulkanApp ()
 : settings ("settings.json"),
-  workerPool (taskManager, HardwareThreadCount ()),
   timeManager (),
+  workerPool (taskManager, HardwareThreadCount ()),
   window (settings.isFullscreen, cml::vec2i (settings.screenWidth, settings.screenHeight), cml ::vec2i (10, 10)),
   resourceManager (),
   vulkanRenderer (settings.useValidationLayers, window, resourceManager),
   imgui_nodeGraph_terrain (),
   scene (resourceManager, vulkanRenderer, timeManager, imgui_nodeGraph_terrain.GetGraph ())
 {
-	/*timeManager = std::make_unique<TimeManager>();
-
-	window = std::make_unique<Window>(settings.isFullscreen,
-	    cml:vec3(settings.screenWidth, settings.screenHeight),
-	    cml:vec3(10, 10));*/
 	Input::SetupInputDirector (&window);
 
-	/*resourceManager = std::make_unique<ResourceManager>();
-
-
-	vulkanRenderer = std::make_unique<VulkanRenderer>(settings.useValidationLayers, window.get());
-
-	scene = std::make_unique<Scene>(*resourceManager.get(), *vulkanRenderer.get(), *timeManager.get(), imgui_nodeGraph_terrain.GetGraph());
-*/
 	vulkanRenderer.scene = &scene;
 }
 
@@ -277,7 +261,7 @@ void VulkanApp::BuildImgui ()
 		ControllerWindow (&panels.controller_list);
 	}
 	imGuiTimer.EndTimer ();
-	// Log::Debug << imGuiTimer.GetElapsedTimeNanoSeconds() << "\n";
+	// Log.Debug << imGuiTimer.GetElapsedTimeNanoSeconds() << "\n";
 }
 
 void VulkanApp::HandleInputs ()
@@ -333,18 +317,18 @@ void VulkanApp::HandleInputs ()
 		if (Input::GetKeyDown (Input::KeyCode::X))
 		{
 			vulkanRenderer.ToggleWireframe ();
-			Log.Debug (fmt::format ("Wireframe toggle"));
+			Log.Debug ("Wireframe toggle");
 		}
 
 		if (Input::GetKeyDown (Input::KeyCode::F))
 		{
 			scene.walkOnGround = !scene.walkOnGround;
-			Log.Debug (fmt::format ("flight mode toggled"));
+			Log.Debug ("flight mode toggled\n");
 		}
 
 		if (Input::GetKeyDown (Input::KeyCode::H))
 		{
-			Log.Debug (fmt::format ("gui visibility toggled\n"));
+			Log.Debug ("gui visibility toggled\n");
 			panels.showGui = !panels.showGui;
 		}
 	}
@@ -382,10 +366,10 @@ void VulkanApp::HandleInputs ()
 
 int run_engine ()
 {
-	VulkanApp* vkApp;
+	std::unique_ptr<VulkanApp> vkApp;
 	try
 	{
-		vkApp = new VulkanApp ();
+		vkApp = std::make_unique<VulkanApp> ();
 	}
 	catch (const std::runtime_error& e)
 	{
@@ -403,14 +387,5 @@ int run_engine ()
 		return EXIT_FAILURE;
 	}
 
-	try
-	{
-		delete (vkApp);
-	}
-	catch (const std::runtime_error& e)
-	{
-		Log.Error (fmt::format ("Engine quite in destructor\n{}\n", e.what ()));
-		return EXIT_FAILURE;
-	}
-	return 0;
+	return EXIT_SUCCESS;
 }

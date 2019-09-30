@@ -127,7 +127,7 @@ NoiseImage2D<T>::NoiseImage2D (int width) : width (width), isExternallyAllocated
 template <typename T> NoiseImage2D<T>::~NoiseImage2D ()
 {
 	// if (!isExternallyAllocated && image != nullptr) free (image);
-	// Log::Error << "Was this image already freed?\n";
+	// Log.Error << "Was this image already freed?\n";
 }
 
 template <typename T> T* NoiseImage2D<T>::GetImageData ()
@@ -173,17 +173,16 @@ template <typename T> const T NoiseImage2D<T>::BoundedLookUp (int x, int z) cons
 	}
 	else
 	{
-		//throw new std::runtime_error ("out of bounds");
+		// throw new std::runtime_error ("out of bounds");
 	}
 	return -1;
 }
 
 template <typename T> void NoiseImage2D<T>::SetPixelValue (int x, int z, T value)
 {
-	if (x >= 0 && x < width && z >= 0 && z < width) 
-		data[x * width + z] = value;
+	if (x >= 0 && x < width && z >= 0 && z < width) data[x * width + z] = value;
 	//	image[x * width + z] = value;
-	//else
+	// else
 	//	throw new std::runtime_error ("out of bounds");
 }
 

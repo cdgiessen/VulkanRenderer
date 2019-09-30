@@ -4,8 +4,8 @@
 #include <numeric>
 
 #include "AsyncTask.h"
+#include "Device.h"
 #include "Initializers.h"
-#include "Renderer.h"
 
 std::vector<VkVertexInputBindingDescription> VertexLayout::getBindingDescription (VertexDescription vertDesc)
 {
@@ -52,11 +52,10 @@ void CopyMeshBuffers (const VkCommandBuffer copyCmd,
 	vkCmdCopyBuffer (copyCmd, indexStagingBuffer, indexBuffer, 1, &copyRegion);
 }
 
-VulkanModel::VulkanModel (VulkanRenderer& renderer, std::unique_ptr<MeshData> mesh)
-: renderer (renderer), vertLayout (mesh->desc)
+VulkanModel::VulkanModel (
+    VulkanDevice& device, AsyncTaskManager& async_task_man, BufferManager& buf_man, std::unique_ptr<MeshData> mesh)
+: vertLayout (mesh->desc)
 {
-	readyToUse = std::make_shared<bool> (false);
-
 	vertexCount = (uint32_t)mesh->vertexData.size ();
 	vertexElementCount = (uint32_t)mesh->desc.ElementCount ();
 	indexCount = (uint32_t)mesh->indexData.size ();
@@ -64,34 +63,37 @@ VulkanModel::VulkanModel (VulkanRenderer& renderer, std::unique_ptr<MeshData> me
 	uint32_t vBufferSize = static_cast<uint32_t> (vertexCount) * sizeof (float);
 	uint32_t iBufferSize = static_cast<uint32_t> (indexCount) * sizeof (uint32_t);
 
-	vmaVertices = std::make_unique<VulkanBuffer> (
-	    renderer.device, vertex_details (vertexCount, vertexElementCount));
-	vmaIndicies = std::make_unique<VulkanBuffer> (renderer.device, index_details (indexCount));
+	vmaVertices = std::make_unique<VulkanBuffer> (device, vertex_details (vertexCount, vertexElementCount));
+	vmaIndicies = std::make_unique<VulkanBuffer> (device, index_details (indexCount));
 
 	auto vert_stage_details = staging_details (BufferType::vertex, vBufferSize);
 	auto index_stage_details = staging_details (BufferType::index, iBufferSize);
 
+	auto vertexStagingBuffer = buf_man.CreateBuffer (vert_stage_details);
+	auto indexStagingBuffer = buf_man.CreateBuffer (index_stage_details);
 
-	auto vertexStagingBuffer =
-	    std::make_shared<VulkanBuffer> (renderer.device, vert_stage_details, mesh->vertexData.data ());
-	auto indexStagingBuffer =
-	    std::make_shared<VulkanBuffer> (renderer.device, index_stage_details, mesh->indexData.data ());
+	buf_man.GetBuffer (vertexStagingBuffer).CopyToBuffer (mesh->vertexData);
+	buf_man.GetBuffer (indexStagingBuffer).CopyToBuffer (mesh->indexData);
 
-	VkBuffer vert = vmaVertices->buffer.buffer;
-	VkBuffer index = vmaIndicies->buffer.buffer;
-	VkBuffer v_stage = vertexStagingBuffer->buffer.buffer;
-	VkBuffer i_stage = indexStagingBuffer->buffer.buffer;
+	VkBuffer vert = vmaVertices->buffer;
+	VkBuffer index = vmaIndicies->buffer;
+	VkBuffer v_stage = buf_man.GetBuffer (vertexStagingBuffer).buffer;
+	VkBuffer i_stage = buf_man.GetBuffer (indexStagingBuffer).buffer;
 
 	std::function<void(const VkCommandBuffer)> work = [=](const VkCommandBuffer copyCmd) {
 		CopyMeshBuffers (copyCmd, v_stage, vert, vBufferSize, i_stage, index, iBufferSize);
 	};
 
+	std::function<void()> finish_work = [&]() {
+		buf_man.FreeBuffer (vertexStagingBuffer);
+		buf_man.FreeBuffer (indexStagingBuffer);
+	};
+
 	AsyncTask transfer;
 	transfer.work = work;
-	transfer.buffersToClean = { vertexStagingBuffer, indexStagingBuffer };
-	transfer.signals = { readyToUse };
+	transfer.finish_work = finish_work;
 
-	renderer.async_task_manager.SubmitTransferTask (std::move (transfer));
+	async_task_man.SubmitTask (TaskType::transfer, std::move (transfer));
 }
 
 void VulkanModel::BindModel (VkCommandBuffer cmdBuf)
@@ -102,3 +104,9 @@ void VulkanModel::BindModel (VkCommandBuffer cmdBuf)
 
 
 VertexLayout VulkanModel::GetVertexLayout () { return vertLayout; }
+
+ModelManager::ModelManager (
+    Resource::Mesh::Manager& mesh_manager, VulkanDevice& device, AsyncTaskManager& async_task_man, BufferManager& buf_man)
+: mesh_manager (mesh_manager), device (device), async_task_man (async_task_man), buf_man (buf_man)
+{
+}

@@ -15,8 +15,6 @@
 
 #include "util/ConcurrentQueue.h"
 
-using Signal = std::shared_ptr<bool>;
-
 // Default fence timeout in nanoseconds
 constexpr long DEFAULT_FENCE_TIMEOUT = 1000000000;
 
@@ -67,7 +65,7 @@ class CommandQueue
 	public:
 	CommandQueue (const VulkanDevice& device, int queueFamily);
 
-	// No copy or move construction (so that it won't get duplicated)
+	// not a copyable/movable type
 	CommandQueue (const CommandQueue& cmd) = delete;
 	CommandQueue& operator= (const CommandQueue& cmd) = delete;
 	CommandQueue (CommandQueue&& cmd) = delete;
@@ -88,7 +86,7 @@ class CommandQueue
 	void QueueWaitIdle ();
 
 	private:
-	const VulkanDevice& device;
+	VulkanDevice const& device;
 	std::mutex submissionMutex;
 	VkQueue queue;
 	int queueFamily;
@@ -100,6 +98,8 @@ class CommandPool
 	CommandPool (VulkanDevice& device, CommandQueue& queue, VkCommandPoolCreateFlags flags = 0);
 	CommandPool (CommandPool& cmd) = delete;
 	CommandPool& operator= (const CommandPool& cmd) = delete;
+	CommandPool (CommandPool&& cmd);
+	CommandPool& operator= (CommandPool&& cmd) noexcept;
 	~CommandPool ();
 
 	VkBool32 ResetPool ();
@@ -127,10 +127,9 @@ class CommandPool
 	void WriteToBuffer (VkCommandBuffer buf, std::function<void(VkCommandBuffer)> cmd);
 
 	private:
-	VulkanDevice& device;
-	std::mutex poolLock;
-	CommandQueue& queue;
-	VkCommandPool commandPool;
+	VulkanDevice* device;
+	CommandQueue* queue;
+	VkCommandPool command_pool;
 };
 
 class CommandBuffer
@@ -177,16 +176,4 @@ class CommandBuffer
 	VkCommandBuffer cmdBuf = nullptr;
 
 	std::shared_ptr<VulkanFence> fence;
-};
-
-///////// Single Use Command Buffer ////////
-
-class CommandPoolGroup
-{
-	public:
-	CommandPoolGroup (VulkanDevice& device);
-
-	CommandPool graphicsPool;
-	CommandPool transferPool;
-	CommandPool computePool;
 };

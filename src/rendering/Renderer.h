@@ -2,17 +2,16 @@
 
 #include <array>
 #include <condition_variable>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
-#include <variant>
 #include <vector>
 
 #include <vulkan/vulkan.h>
 
-#include "core/CoreTools.h"
 #include "util/ConcurrentQueue.h"
 #include "util/PackedArray.h"
 
@@ -22,6 +21,7 @@
 #include "Device.h"
 #include "FrameGraph.h"
 #include "FrameResources.h"
+#include "Model.h"
 #include "Pipeline.h"
 #include "RenderStructs.h"
 #include "RenderTools.h"
@@ -58,13 +58,13 @@ class RenderSettings
 
 	bool memory_dump = false;
 
-	RenderSettings (std::string fileName);
+	RenderSettings (std::filesystem::path fileName);
 
 	void Load ();
 	void Save ();
 
 	private:
-	std::string fileName;
+	std::filesystem::path fileName;
 };
 
 class GPU_DoubleBuffer
@@ -125,7 +125,7 @@ class GPU_DoubleBuffer
 class VulkanRenderer
 {
 	public:
-	VulkanRenderer (bool enableValidationLayer, Window& window, Resource::AssetManager& resourceMan);
+	VulkanRenderer (bool enableValidationLayer, Window& window, Resource::AssetManager& resource_man);
 
 	VulkanRenderer (const VulkanRenderer& other) = delete; // copy
 	VulkanRenderer (VulkanRenderer&& other) = delete;      // move
@@ -173,6 +173,8 @@ class VulkanRenderer
 
 	ShaderManager shader_manager;
 	PipelineManager pipeline_manager;
+	BufferManager buffer_manager;
+	ModelManager model_manager;
 	VulkanTextureManager texture_manager;
 
 	Scene* scene;

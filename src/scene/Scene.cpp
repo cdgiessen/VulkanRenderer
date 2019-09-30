@@ -45,8 +45,9 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	// 0), cml::vec4f(1.0, 0.045f, 0.0075f, 1.0f));
 
 	skybox = std::make_unique<Skybox> (renderer);
-	skybox->skyboxCubeMap = resourceMan.texManager.GetTexIDByName ("Skybox");
-	skybox->model = std::make_unique<VulkanModel> (renderer, createCube ());
+	skybox->skyboxCubeMap = resourceMan.texture_manager.GetTexIDByName ("Skybox");
+	skybox->model = std::make_unique<VulkanModel> (
+	    renderer.device, renderer.async_task_manager, renderer.buffer_manager, createCube ());
 	skybox->InitSkybox ();
 
 	// auto cubeObject 	= std::make_unique<GameObject> (renderer);
@@ -55,8 +56,8 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 
 	// TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
 
-	// cubeObject->gameObjectTexture = resourceMan.texManager.GetTexIDByName ("ColorGradientCube");
-	// cubeObject->gameObjectVulkanTexture =
+	// cubeObject->gameObjectTexture = resourceMan.texture_manager.GetTexIDByName
+	// ("ColorGradientCube"); cubeObject->gameObjectVulkanTexture =
 	//     renderer.texture_manager.CreateTexture2D (cubeObject->gameObjectTexture, details);
 	// cubeObject->InitGameObject ();
 	// gameObjects.push_back (std::move (cubeObject));
@@ -74,7 +75,7 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	//		sphereObject->pbr_mat.roughness = 0.1f + (float)j / 10.0f;
 
 	//		//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture>(renderer.device);
-	//		//sphereObject->gameObjectTexture = resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/Red.png");
+	//		//sphereObject->gameObjectTexture = resourceMan.texture_manager.loadTextureFromFileRGBA("assets/textures/Red.png");
 	//		sphereObject->InitGameObject();
 	//		gameObjects.push_back(sphereObject);
 	//	}
@@ -94,7 +95,7 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	//																																																																																																																																																	sphereObject->phong_mat.reflectivity
 	//= 128; 		sphereObject->phong_mat.color = cml::vec4f(1.0, 0.3, 0.3, 1.0);
 	//		//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture>(renderer.device);
-	//		//sphereObject->gameObjectTexture = resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/Red.png");
+	//		//sphereObject->gameObjectTexture = resourceMan.texture_manager.loadTextureFromFileRGBA("assets/textures/Red.png");
 	//		sphereObject->InitGameObject();
 	//		gameObjects.push_back(sphereObject);
 	//	}
@@ -113,7 +114,7 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	// treesInstanced->SetBlendMode(VK_FALSE);
 	// treesInstanced->SetCullMode(VK_CULL_MODE_BACK_BIT);
 	// treesInstanced->LoadModel(createCube());
-	// treesInstanced->LoadTexture(resourceMan.texManager.loadTextureFromFileRGBA("assets/textures/grass.jpg"));
+	// treesInstanced->LoadTexture(resourceMan.texture_manager.loadTextureFromFileRGBA("assets/textures/grass.jpg"));
 	// treesInstanced->InitInstancedSceneObject(renderer);
 
 	// treesInstanced->AddInstances({ cml::vec3f(10,0,10),cml::vec3f(10,0,20), cml::vec3f(20,0,10),
@@ -142,7 +143,7 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 Scene::~Scene ()
 {
 
-	// Log::Debug << "scene deleted\n";
+	// Log.Debug << "scene deleted\n";
 }
 
 void Scene::UpdateScene ()
@@ -358,7 +359,8 @@ void Scene::UpdateSceneGUI ()
 			sphereObject->pbr_mat.metallic = 0.1f + (float)5 / 10.0f;
 			sphereObject->pbr_mat.roughness = 0.1f + (float)5 / 10.0f;
 
-			sphereObject->gameObjectTexture = resourceMan.texManager.GetTexIDByName ("Red.png");
+			sphereObject->gameObjectTexture =
+			    resourceMan.texture_manager.GetTexIDByName ("Red.png");
 			sphereObject->InitGameObject ();
 			gameObjects.push_back (std::move (sphereObject));
 		}

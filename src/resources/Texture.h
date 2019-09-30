@@ -5,50 +5,15 @@
 #include <fstream>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include <nlohmann/json_fwd.hpp>
 
 namespace Resource::Texture
 {
 
 using TexID = int;
-
-struct Pixel_R
-{
-	std::byte red;
-
-	Pixel_R (){};
-	Pixel_R (std::byte red) : red (red){};
-};
-
-struct Pixel_RG
-{
-	std::byte red, green;
-
-	Pixel_RG (){};
-	Pixel_RG (std::byte red, std::byte green) : red (red), green (green){};
-};
-
-struct Pixel_RGB
-{
-	std::byte red, green, blue;
-
-	Pixel_RGB (){};
-	Pixel_RGB (std::byte red, std::byte green, std::byte blue)
-	: red (red), green (green), blue (blue){};
-};
-
-struct Pixel_RGBA
-{
-	std::byte red, green, blue, alpha;
-
-	Pixel_RGBA (){};
-	Pixel_RGBA (std::byte red, std::byte green, std::byte blue, std::byte alpha)
-	: red (red), green (green), blue (blue), alpha (alpha){};
-};
 
 struct DataDescription
 {
@@ -92,52 +57,24 @@ enum class ChannelType
 	rgba,       // STBI_rgb_alpha = 4
 };
 
-// struct FileDescription {
-// 	LayoutType layout;
-// 	FormatType format;
-// 	ChannelType channel;
-// 	std::string fileName;
-
-// 	FileDescription(LayoutType layout,
-// 		FormatType format, ChannelType channel,
-// 		std::string fileName):
-// 		layout(layout), format(format),
-// 		channel(channel), fileName(fileName) {}
-// };
-
-class TexData
-{
-	public:
-	TexData (DataDescription data);
-	std::byte* GetDataPtr ();
-
-	private:
-	std::vector<std::byte> data;
-};
-
-
 class TexResource
 {
 	public:
 	TexResource (){};
 	TexResource (TexID id, std::string name, LayoutType layout, ChannelType channels, FormatType format, DataDescription dataDesc)
-	: id (id), name (name), layout (layout), channels (channels), fileFormatType (format), dataDescription (dataDesc)
+	: id (id), name (name), layout (layout), channels (channels), fileFormatType (format), description (dataDesc)
 	{
+		data.resize (description.channels * description.pixelCount);
 	}
-
-	nlohmann::json to_json () const;
-	void SetDataPtr (TexData* texData);
-	std::byte* GetByteDataPtr ();
 
 	TexID id;
 	std::string name;
 	LayoutType layout;
 	ChannelType channels;
 	FormatType fileFormatType;
-	DataDescription dataDescription;
+	DataDescription description;
 
-	private:
-	TexData* dataPtr = nullptr;
+	std::vector<std::byte> data;
 };
 
 class Manager
@@ -164,7 +101,7 @@ class Manager
 	std::unordered_map<TexID, TexResource> textureResources;
 
 	std::mutex data_lock;
-	std::vector<std::unique_ptr<TexData>> textureData;
+	std::vector<std::unique_ptr<std::vector<std::byte>>> textureData;
 };
 
 } // namespace Resource::Texture

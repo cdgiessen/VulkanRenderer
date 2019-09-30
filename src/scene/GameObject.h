@@ -53,7 +53,6 @@ class GameObject
 	VulkanTextureID gameObjectVulkanTexture;
 
 	std::unique_ptr<VulkanBuffer> uniformBuffer;
-	// ModelPushConstant modelPushConstant;
 
 	bool usePBR;
 	bool usePBR_Tex;

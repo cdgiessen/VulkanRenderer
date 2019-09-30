@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <filesystem>
 #include <functional>
 #include <iomanip>
 
@@ -13,7 +14,7 @@
 #include "rendering/Initializers.h"
 
 
-constexpr auto TerrainSettingsFileName = "terrain_settings.json";
+const auto TerrainSettingsFileName = "terrain_settings.json";
 
 TerrainCreationData::TerrainCreationData (
     int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord)
@@ -38,24 +39,26 @@ TerrainManager::TerrainManager (
 
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8);
 
-	terrainTextureArrayAlbedo = resourceMan.texManager.GetTexIDByName ("terrain_albedo");
+	terrainTextureArrayAlbedo = resourceMan.texture_manager.GetTexIDByName ("terrain_albedo");
 	terrainVulkanTextureArrayAlbedo =
 	    renderer.texture_manager.CreateTexture2DArray (terrainTextureArrayAlbedo, details);
 
-	terrainTextureArrayRoughness = resourceMan.texManager.GetTexIDByName ("terrain_roughness");
+	terrainTextureArrayRoughness = resourceMan.texture_manager.GetTexIDByName ("terrain_roughness");
 	terrainVulkanTextureArrayRoughness =
 	    renderer.texture_manager.CreateTexture2DArray (terrainTextureArrayRoughness, details);
 
-	terrainTextureArrayMetallic = resourceMan.texManager.GetTexIDByName ("terrain_metalness");
+	terrainTextureArrayMetallic = resourceMan.texture_manager.GetTexIDByName ("terrain_metalness");
 	terrainVulkanTextureArrayMetallic =
 	    renderer.texture_manager.CreateTexture2DArray (terrainTextureArrayMetallic, details);
 
-	terrainTextureArrayNormal = resourceMan.texManager.GetTexIDByName ("terrain_normal");
+	terrainTextureArrayNormal = resourceMan.texture_manager.GetTexIDByName ("terrain_normal");
 	terrainVulkanTextureArrayNormal =
 	    renderer.texture_manager.CreateTexture2DArray (terrainTextureArrayNormal, details);
 
-	terrainGridModel = std::make_unique<VulkanModel> (
-	    renderer, createFlatPlane (gui_settings.numCells, cml::vec3f (1.0f)));
+	terrainGridModel = std::make_unique<VulkanModel> (renderer.device,
+	    renderer.async_task_manager,
+	    renderer.buffer_manager,
+	    createFlatPlane (gui_settings.numCells, cml::vec3f (1.0f)));
 
 	// StartWorkerThreads ();
 	workContinueSignal = std::make_shared<job::TaskSignal> ();
@@ -106,11 +109,8 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 			float distanceToViewer = cml::distance (cameraPos, center);
 			if (distanceToViewer > t_settings.viewDistance * t_settings.width * 1.5)
 			{
-				// if ((*(*it)->terrainSplatMap->readyToUse) == true)
-				//{
-
 				terToDelete.push_back (it);
-				// Log::Debug << "deleting terrain at x:" << (*it)->coordinateData.noisePos.x / (*it)->coordinateData.sourceImageResolution
+				// Log.Debug << "deleting terrain at x:" << (*it)->coordinateData.noisePos.x / (*it)->coordinateData.sourceImageResolution
 				//	<< " z: " << (*it)->coordinateData.noisePos.y / (*it)->coordinateData.sourceImageResolution << "\n";
 				auto activeIt = std::find (
 				    std::begin (activeTerrains), std::end (activeTerrains), (*it)->coordinateData.gridPos);
@@ -134,7 +134,7 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 	    (int)((cameraPos.z + 0 * t_settings.width / 2.0) / t_settings.width));
 
 
-	// Log::Debug << "cam grid x: " << camGridX << " z: " << camGridZ << "\n";
+	// Log.Debug << "cam grid x: " << camGridX << " z: " << camGridZ << "\n";
 	for (int i = 0; i < t_settings.viewDistance * 2; i++)
 	{
 		for (int j = 0; j < t_settings.viewDistance * 2; j++)
@@ -148,8 +148,8 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 
 			// if (distanceToViewer <= t_settings.viewDistance * t_settings.width) {
 
-			// Log::Debug << "noisePosX " << ter->coordinateData.noisePos.x/ter->coordinateData.sourceImageResolution << "\n";
-			// Log::Debug << "relX " << camGridX + i - t_settings.viewDistance / 2.0 << "\n";
+			// Log.Debug << "noisePosX " << ter->coordinateData.noisePos.x/ter->coordinateData.sourceImageResolution << "\n";
+			// Log.Debug << "relX " << camGridX + i - t_settings.viewDistance / 2.0 << "\n";
 
 			// see if there are any terrains already there
 			bool found = false;
@@ -162,7 +162,7 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 			}
 			if (!found)
 			{
-				// Log::Debug << "creating new terrain at x:" << terGrid.x << " z: " << terGrid.y << "\n";
+				// Log.Debug << "creating new terrain at x:" << terGrid.x << " z: " << terGrid.y << "\n";
 
 				activeTerrains.push_back (terGrid);
 
@@ -178,32 +178,34 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 				    t_settings.sourceImageResolution + 1,
 				    terGrid);
 
-				auto t = job::Task (workContinueSignal, [this, coord] {
-					auto terCreateData = TerrainCreationData (t_settings.numCells,
-					    t_settings.maxLevels,
-					    t_settings.sourceImageResolution,
-					    t_settings.heightScale,
-					    coord);
+				auto t = job::Task (
+				    [this, coord] {
+					    auto terCreateData = TerrainCreationData (t_settings.numCells,
+					        t_settings.maxLevels,
+					        t_settings.sourceImageResolution,
+					        t_settings.heightScale,
+					        coord);
 
-					auto terrain = std::make_unique<Terrain> (renderer,
+					    auto terrain = std::make_unique<Terrain> (renderer,
 
-					    protoGraph,
-					    terCreateData.numCells,
-					    terCreateData.maxLevels,
-					    terCreateData.heightScale,
-					    terCreateData.coord,
-					    terrainGridModel.get ());
+					        protoGraph,
+					        terCreateData.numCells,
+					        terCreateData.maxLevels,
+					        terCreateData.heightScale,
+					        terCreateData.coord,
+					        terrainGridModel.get ());
 
-					terrain->InitTerrain (curCameraPos,
-					    terrainVulkanTextureArrayAlbedo,
-					    terrainVulkanTextureArrayRoughness,
-					    terrainVulkanTextureArrayMetallic,
-					    terrainVulkanTextureArrayNormal);
-					{
-						std::lock_guard<std::mutex> lk (terrain_mutex);
-						terrains.push_back (std::move (terrain));
-					}
-				});
+					    terrain->InitTerrain (curCameraPos,
+					        terrainVulkanTextureArrayAlbedo,
+					        terrainVulkanTextureArrayRoughness,
+					        terrainVulkanTextureArrayMetallic,
+					        terrainVulkanTextureArrayNormal);
+					    {
+						    std::lock_guard<std::mutex> lk (terrain_mutex);
+						    terrains.push_back (std::move (terrain));
+					    }
+				    },
+				    workContinueSignal);
 
 				taskManager.Submit (std::move (t), job::TaskType::currentFrame);
 			}
@@ -221,7 +223,7 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 	terrain_mutex.unlock ();
 
 	// if (terrainUpdateTimer.GetElapsedTimeMicroSeconds() > 1000) {
-	//	Log::Debug << terrainUpdateTimer.GetElapsedTimeMicroSeconds() << "\n";
+	//	Log.Debug << terrainUpdateTimer.GetElapsedTimeMicroSeconds() << "\n";
 	//}
 	terrainUpdateTimer.EndTimer ();
 
@@ -230,10 +232,6 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 
 void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe)
 {
-
-	//	if (*terrainVulkanTextureArrayAlbedo->readyToUse && *terrainVulkanTextureArrayRoughness->readyToUse &&
-	//	    *terrainVulkanTextureArrayMetallic->readyToUse && *terrainVulkanTextureArrayNormal->readyToUse)
-	//	{
 	std::lock_guard<std::mutex> lock (terrain_mutex);
 	for (auto& ter : terrains)
 	{
@@ -279,7 +277,7 @@ void TerrainManager::SaveSettingsToFile ()
 
 void TerrainManager::LoadSettingsFromFile ()
 {
-	if (fileExists (TerrainSettingsFileName))
+	if (std::filesystem::exists (std::filesystem::path (TerrainSettingsFileName)))
 	{
 		std::ifstream input (TerrainSettingsFileName);
 

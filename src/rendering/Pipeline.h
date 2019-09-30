@@ -90,7 +90,7 @@ class PipelineOutline
 struct Pipeline
 {
 	public:
-	Pipeline (VulkanDevice& device, PipelineOutline builder, VkRenderPass renderPass, int subPass = 0);
+	Pipeline (VulkanDevice& device, VkPipelineCache cache, PipelineOutline builder, VkRenderPass renderPass, int subPass = 0);
 
 	VkPipeline pipeline;
 	VkPipelineLayout layout;
@@ -113,6 +113,8 @@ class PipelineManager
 
 	private:
 	VulkanDevice& device;
+	VkPipelineCache cache;
+
 	std::mutex pipe_lock;
 	std::unordered_map<int, Pipeline> pipelines;
 	PipeID cur_id = 0;

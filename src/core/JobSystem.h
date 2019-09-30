@@ -13,6 +13,8 @@
 
 #include "util/ConcurrentQueue.h"
 
+unsigned int HardwareThreadCount ();
+
 namespace job
 {
 
@@ -52,7 +54,7 @@ class TaskSignal
 class Task
 {
 	public:
-	Task (std::weak_ptr<TaskSignal> signalBlock, std::function<void()>&& job);
+	Task (std::function<void()>&& job, std::weak_ptr<TaskSignal> signalBlock);
 
 	void operator() ();
 
@@ -103,9 +105,10 @@ class TaskManager
 	std::optional<Task> GetTask ();
 
 	private:
-	// int jobCount = 0;
 	TaskPool currentFrameTasks;
 	TaskPool asyncTasks;
+
+
 
 	friend Worker;
 	friend WorkerPool;

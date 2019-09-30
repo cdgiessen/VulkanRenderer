@@ -131,7 +131,7 @@ void Terrain::UpdateTerrain (cml::vec3f viewerPos)
 	updateTime.EndTimer ();
 
 	// if (updateTime.GetElapsedTimeMicroSeconds() > 1500)
-	//	Log::Debug << " Update time " << updateTime.GetElapsedTimeMicroSeconds() << "\n";
+	//	Log.Debug << " Update time " << updateTime.GetElapsedTimeMicroSeconds() << "\n";
 }
 
 void Terrain::SetupUniformBuffer ()
@@ -142,7 +142,7 @@ void Terrain::SetupUniformBuffer ()
 	ModelBufferObject mbo;
 	mbo.model = cml::mat4f ().translate (cml::vec3f (coordinateData.pos.x, 0, coordinateData.pos.y));
 	mbo.normal = cml::mat4f (); // mbo.model.inverse ().transpose ();
-	uniformBuffer->CopyToBuffer (&mbo, sizeof (ModelBufferObject));
+	uniformBuffer->CopyToBuffer (mbo);
 
 	auto inst_details = instance_details (2048, 16);
 	inst_details.persistentlyMapped = true;
@@ -154,9 +154,9 @@ void Terrain::SetupImage ()
 {
 
 	int length = fastGraphUser.image_length ();
-	auto buffer_height = std::make_shared<VulkanBuffer> (renderer.device,
-	    staging_details (BufferType::staging, sizeof (float) * fastGraphUser.GetHeightMap ().size ()),
-	    fastGraphUser.GetHeightMap ().data ());
+	auto buffer_height = renderer.buffer_manager.CreateBuffer (
+	    staging_details (BufferType::staging, sizeof (float) * fastGraphUser.GetHeightMap ().size ()));
+	renderer.buffer_manager.GetBuffer (buffer_height).CopyToBuffer (fastGraphUser.GetHeightMap ());
 
 	TexCreateDetails details (
 	    VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
@@ -164,20 +164,18 @@ void Terrain::SetupImage ()
 
 	terrainHeightMap = renderer.texture_manager.CreateTextureFromBuffer (buffer_height, details);
 
-	auto buffer_splat = std::make_shared<VulkanBuffer> (renderer.device,
-	    staging_details (
-	        BufferType::staging, sizeof (cml::vec4<uint8_t>) * fastGraphUser.GetSplatMap ().size ()),
-	    fastGraphUser.GetSplatMap ().data ());
+	auto buffer_splat = renderer.buffer_manager.CreateBuffer (staging_details (
+	    BufferType::staging, sizeof (cml::vec4<uint8_t>) * fastGraphUser.GetSplatMap ().size ()));
+	renderer.buffer_manager.GetBuffer (buffer_splat).CopyToBuffer (fastGraphUser.GetSplatMap ());
 
 	TexCreateDetails splat_details (
 	    VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 	splat_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 	terrainSplatMap = renderer.texture_manager.CreateTextureFromBuffer (buffer_splat, splat_details);
 
-	auto buffer_normal = std::make_shared<VulkanBuffer> (renderer.device,
-	    staging_details (BufferType::staging,
-	        sizeof (cml::vec4<int16_t>) * fastGraphUser.GetNormalMap ().size ()),
-	    fastGraphUser.GetNormalMap ().data ());
+	auto buffer_normal = renderer.buffer_manager.CreateBuffer (staging_details (
+	    BufferType::staging, sizeof (cml::vec4<int16_t>) * fastGraphUser.GetNormalMap ().size ()));
+	renderer.buffer_manager.GetBuffer (buffer_normal).CopyToBuffer (fastGraphUser.GetNormalMap ());
 
 	TexCreateDetails norm_details (
 	    VK_FORMAT_R16G16B16A16_SNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
@@ -462,7 +460,7 @@ void Terrain::DrawTerrainGrid (VkCommandBuffer cmdBuf, bool wireframe)
 
 	DrawTerrainRecursive (0, cmdBuf, wireframe, instances);
 
-	instanceBuffer->CopyToBuffer (instances.data (), sizeof (HeightMapBound) * instances.size ());
+	instanceBuffer->CopyToBuffer (instances);
 
 	terrainGrid->BindModel (cmdBuf);
 	instanceBuffer->BindInstanceBuffer (cmdBuf);

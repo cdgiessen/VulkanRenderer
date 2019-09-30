@@ -17,7 +17,6 @@
 #include "Device.h"
 #include "Initializers.h"
 #include "RenderTools.h"
-#include "core/CoreTools.h"
 #include "core/JobSystem.h"
 #include "core/Logger.h"
 
@@ -306,7 +305,7 @@ ShaderDatabase::ShaderDatabase () : fileWatch ("assets/shaders")
 }
 void ShaderDatabase::Load ()
 {
-	if (fileExists (database_path))
+	if (std::filesystem::exists (database_path))
 	{
 		try
 		{
@@ -510,7 +509,7 @@ std::optional<std::vector<uint32_t>> const ShaderCompiler::compile_glsl_to_spriv
 // 	std::vector<job::Task> tasks;
 // 	for (auto& bucket : buckets)
 // 	{
-// 		tasks.push_back (job::Task (signal, [&]() { StartShaderCompilation (bucket); }));
+// 		tasks.push_back (job::Task ([&]() { StartShaderCompilation (bucket); }, signal));
 // 	}
 // 	taskManager.Submit (tasks, job::TaskType::currentFrame);
 
@@ -561,7 +560,7 @@ ShaderManager::~ShaderManager ()
 
 std::optional<ShaderKey> ShaderManager::load_and_compile_module (std::filesystem::path file)
 {
-	auto file_data = compiler.load_file_data (file.string()).value ();
+	auto file_data = compiler.load_file_data (file.string ()).value ();
 	auto shader_type = GetShaderStage (file.extension ().string ());
 	auto spirv = compiler.compile_glsl_to_spriv (
 	    file.stem ().string (), file_data, shader_type, file.parent_path () / "common");

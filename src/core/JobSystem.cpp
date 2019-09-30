@@ -4,10 +4,17 @@
 
 job::TaskManager taskManager;
 
+unsigned int HardwareThreadCount ()
+{
+	unsigned int concurentThreadsSupported = std::thread::hardware_concurrency ();
+	Log.Debug (fmt::format ("Hardware Threads Available = {}\n", concurentThreadsSupported));
+	return concurentThreadsSupported > 0 ? concurentThreadsSupported : 1;
+}
+
 namespace job
 {
 
-Task::Task (std::weak_ptr<TaskSignal> signalBlock, std::function<void()>&& m_job)
+Task::Task (std::function<void()>&& m_job, std::weak_ptr<TaskSignal> signalBlock)
 : m_job (m_job), signalBlock (signalBlock)
 {
 	if (auto sbp = signalBlock.lock ()) sbp->Notify ();
@@ -241,10 +248,10 @@ class JobTesterClass
 		for (auto& n : nums)
 		{
 			Log.Debug (fmt::format ("{} ", n));
-			//				Log::Debug << n << " ";
+			//				Log.Debug << n << " ";
 		}
 		Log.Debug (fmt::format ("\n"));
-		//			Log::Debug << "\n";
+		//			Log.Debug << "\n";
 	}
 
 	private:
@@ -279,7 +286,7 @@ bool JobTester ()
 {
 	Log.Debug (fmt::format ("Job system test: start\n"));
 
-	//	Log::Debug << "Job system test: Start\n";
+	//	Log.Debug << "Job system test: Start\n";
 	TaskManager tMan;
 
 	WorkerPool workerPool (tMan, 2);
@@ -290,18 +297,22 @@ bool JobTester ()
 	int jobCount = 1000;
 
 	auto signal1 = std::make_shared<TaskSignal> ();
-	Task t1 = Task (signal1, [&]() {
-		for (int i = 0; i < jobCount; i++)
-			jtc.AddNum (1);
-	});
+	Task t1 = Task (
+	    [&]() {
+		    for (int i = 0; i < jobCount; i++)
+			    jtc.AddNum (1);
+	    },
+	    signal1);
 
 	auto signal2 = std::make_shared<TaskSignal> ();
 
 	signal2->WaitOn (signal1);
-	Task t2 = Task (signal2, [&]() {
-		for (int i = 0; i < jobCount; i++)
-			jtc.MulNumAddNum (2, 0);
-	});
+	Task t2 = Task (
+	    [&]() {
+		    for (int i = 0; i < jobCount; i++)
+			    jtc.MulNumAddNum (2, 0);
+	    },
+	    signal2);
 
 	tMan.Submit (std::move (t1), TaskType::currentFrame);
 	tMan.Submit (std::move (t2), TaskType::currentFrame);
@@ -312,7 +323,7 @@ bool JobTester ()
 	jtc.Print ();
 	Log.Debug (fmt::format ("Job system test: done\n"));
 
-	//	Log::Debug << "Job system test: done\n";
+	//	Log.Debug << "Job system test: done\n";
 	return true;
 }
 } // namespace job

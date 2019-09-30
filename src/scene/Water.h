@@ -11,9 +11,8 @@
 #include "rendering/Shader.h"
 #include "rendering/Texture.h"
 
-#include "resources/Asset.h"
 #include "resources/Mesh.h"
-#include "resources/ResourceManager.h"
+#include "resources/Resource.h"
 
 class Water
 {

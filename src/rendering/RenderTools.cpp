@@ -2,8 +2,6 @@
 
 #include <algorithm>
 
-#include "core/CoreTools.h"
-
 std::string errorString (const VkResult errorCode)
 {
 	switch (errorCode)

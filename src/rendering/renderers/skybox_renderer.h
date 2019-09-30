@@ -1,52 +1,40 @@
 #pragma once
 
-
+#include <memory>
 
 #include <vulkan/vulkan.h>
 
 #include "cml/cml.h"
 
-#include "resources/Texture.h"
-
 #include "rendering/Model.h"
 #include "rendering/Renderer.h"
 #include "rendering/Texture.h"
 
-
-struct SkyboxUniformBuffer
-{
-	cml::mat4f proj;
-	cml::mat4f view;
-};
-
-class Skybox
+class SkyboxRenderer
 {
 	public:
-	Skybox (VulkanRenderer& renderer);
-	~Skybox ();
+	SkyboxRenderer (VulkanRenderer& renderer, VulkanTextureID cube_map);
+
 
 	VulkanRenderer& renderer;
 
-	PipeID normal;
+	PipeID pipe;
 
 	std::unique_ptr<VulkanDescriptor> descriptor;
 	DescriptorSet m_descriptorSet;
 
 	std::unique_ptr<VulkanModel> model;
 
-	Resource::Texture::TexID skyboxCubeMap;
-	VulkanTextureID vulkanCubeMap;
+	VulkanTextureID cube_map;
 
 	std::unique_ptr<VulkanBuffer> skyboxUniformBuffer;
 
 	void InitSkybox ();
-
-	void UpdateUniform (cml::mat4f proj, cml::mat4f view);
-
-	void SetupUniformBuffer ();
-	void SetupCubeMapImage ();
 	void SetupDescriptor ();
 	void SetupPipeline ();
 
-	void WriteToCommandBuffer (VkCommandBuffer commandBuffer);
+
+	void UpdateUniform (cml::mat4f proj, cml::mat4f view);
+
+	void Draw (VkCommandBuffer commandBuffer);
 };

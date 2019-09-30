@@ -4,7 +4,7 @@
 
 #include "rendering/Renderer.h"
 
-#include "resources/ResourceManager.h"
+#include "resources/Resource.h"
 
 #include "core/TimeManager.h"
 

@@ -1,27 +1,41 @@
 #include "AsyncTask.h"
 
-AsyncTaskManager::AsyncTaskManager (VulkanDevice& device)
-: device (device),
-  graphics_pool (device, device.GraphicsQueue ()),
-  transfer_pool (device, device.TransferQueue ()),
-  compute_pool (device, device.ComputeQueue ())
+CommandPoolGroup::CommandPoolGroup (VulkanDevice& device)
+: graphics_pool (device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+  transfer_pool (device, device.TransferQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+  compute_pool (device, device.ComputeQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
 {
+}
+
+
+AsyncTaskManager::AsyncTaskManager (VulkanDevice& device) : device (device)
+{
+	unsigned int thread_count = HardwareThreadCount ();
+	for (unsigned int i = 0; i < thread_count; i++)
+	{
+		pools.emplace_back (device);
+	}
 }
 
 AsyncTaskManager::~AsyncTaskManager () {}
 
-void AsyncTaskManager::SubmitGraphicsTask (AsyncTask&& task)
+void AsyncTaskManager::SubmitTask (TaskType type, AsyncTask&& task)
 {
-	SubmitWork (std::move (task), graphics_pool);
+	switch (type)
+	{
+		case (TaskType::transfer):
+			SubmitWork (std::move (task), pools.at (0).transfer_pool);
+
+			break;
+		case (TaskType::compute):
+			SubmitWork (std::move (task), pools.at (0).compute_pool);
+
+			break;
+		default:
+			SubmitWork (std::move (task), pools.at (0).graphics_pool);
+	}
 }
-void AsyncTaskManager::SubmitTransferTask (AsyncTask&& task)
-{
-	SubmitWork (std::move (task), transfer_pool);
-}
-void AsyncTaskManager::SubmitComputeTask (AsyncTask&& task)
-{
-	SubmitWork (std::move (task), compute_pool);
-}
+
 
 
 void AsyncTaskManager::SubmitWork (AsyncTask&& task, CommandPool& pool)
@@ -39,7 +53,7 @@ void AsyncTaskManager::SubmitWork (AsyncTask&& task, CommandPool& pool)
 
 
 	std::lock_guard lk (lock_finish_queue);
-	finish_queue.push_back (GraphicsCleanUpWork (cmdBuf, task.buffersToClean, task.signals));
+	finish_queue.emplace_back (cmdBuf, task.finish_work);
 }
 
 void AsyncTaskManager::CleanFinishQueue ()
@@ -50,10 +64,7 @@ void AsyncTaskManager::CleanFinishQueue ()
 	{
 		if (it->cmdBuf.GetFence ().Check ())
 		{
-			for (auto& sig : it->signals)
-			{
-				if (sig != nullptr) *sig = true;
-			}
+			it->finish_work ();
 			it->cmdBuf.Free ();
 			it = finish_queue.erase (it);
 		}

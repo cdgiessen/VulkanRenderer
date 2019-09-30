@@ -233,40 +233,40 @@ void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
 
 void BeginTransferAndMipMapGenWork (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
-    std::shared_ptr<VulkanBuffer> buffer,
+    BufferManager& buf_man,
+    BufferID buffer,
     const VkImageSubresourceRange subresourceRange,
     const std::vector<VkBufferImageCopy> bufferCopyRegions,
     VkImageLayout imageLayout,
     VkImage image,
-    VkBuffer vk_buffer,
     int width,
     int height,
     int depth,
-    Signal signal,
     int layers,
     int mipLevels)
 {
 	if (device.singleQueueDevice)
 	{
-		std::function<void(const VkCommandBuffer)> work = [=](const VkCommandBuffer cmdBuf) {
-			SetLayoutAndTransferRegions (cmdBuf, image, vk_buffer, subresourceRange, bufferCopyRegions);
+		std::function<void(const VkCommandBuffer)> work = [&](const VkCommandBuffer cmdBuf) {
+			SetLayoutAndTransferRegions (
+			    cmdBuf, image, buf_man.GetBuffer (buffer).buffer, subresourceRange, bufferCopyRegions);
 
 			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
 		};
 
 		AsyncTask task;
 		task.work = work;
-		task.buffersToClean = { buffer };
-		task.signals = { signal };
+		task.finish_work = [&] { buf_man.FreeBuffer (buffer); };
 
-		async_task_man.SubmitGraphicsTask (std::move (task));
+		async_task_man.SubmitTask (TaskType::graphics, std::move (task));
 	}
 	else
 	{
 		auto sem = std::make_shared<VulkanSemaphore> (device);
 
-		std::function<void(const VkCommandBuffer)> transferWork = [=](const VkCommandBuffer cmdBuf) {
-			SetLayoutAndTransferRegions (cmdBuf, image, vk_buffer, subresourceRange, bufferCopyRegions);
+		std::function<void(const VkCommandBuffer)> transferWork = [=, &buf_man](const VkCommandBuffer cmdBuf) {
+			SetLayoutAndTransferRegions (
+			    cmdBuf, image, buf_man.GetBuffer (buffer).buffer, subresourceRange, bufferCopyRegions);
 		};
 
 		std::function<void(const VkCommandBuffer)> mipMapGenWork = [=](const VkCommandBuffer cmdBuf) {
@@ -275,34 +275,32 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 
 		AsyncTask task_transfer;
 		task_transfer.work = transferWork;
-		task_transfer.buffersToClean = { buffer };
+		task_transfer.finish_work = [=, &buf_man] { buf_man.FreeBuffer (buffer); };
 		task_transfer.signal_sems = { sem };
 
 		AsyncTask task_gen_mips;
 		task_gen_mips.work = mipMapGenWork;
 		task_gen_mips.wait_sems = { sem };
-		task_gen_mips.signals = { signal };
 
-		async_task_man.SubmitTransferTask (std::move (task_transfer));
-		async_task_man.SubmitGraphicsTask (std::move (task_gen_mips));
+		async_task_man.SubmitTask (TaskType::transfer, std::move (task_transfer));
+		async_task_man.SubmitTask (TaskType::graphics, std::move (task_gen_mips));
 	}
 }
 
 VulkanTexture::VulkanTexture (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
+    BufferManager& buf_man,
     TexCreateDetails texCreateDetails,
     Resource::Texture::TexResource textureResource)
 : device (device), resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
-	readyToUse = std::make_shared<bool> (false);
-
 	this->mipLevels = texCreateDetails.genMipMaps ? texCreateDetails.mipMapLevelsToGen : 1;
 	this->textureImageLayout = texCreateDetails.imageLayout;
-	this->layers = textureResource.dataDescription.layers;
+	this->layers = textureResource.description.layers;
 
-	VkExtent3D imageExtent = { textureResource.dataDescription.width,
-		textureResource.dataDescription.height,
-		textureResource.dataDescription.depth };
+	VkExtent3D imageExtent = { textureResource.description.width,
+		textureResource.description.height,
+		textureResource.description.depth };
 
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo (VK_IMAGE_TYPE_2D,
 	    texCreateDetails.format,
@@ -318,9 +316,10 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 		imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
 
-	auto buffer = std::make_shared<VulkanBuffer> (device,
-	    staging_details (BufferType::staging, textureResource.dataDescription.pixelCount * 4),
-	    textureResource.GetByteDataPtr ());
+	auto buffer = buf_man.CreateBuffer (
+	    staging_details (BufferType::staging, textureResource.description.pixelCount * 4));
+
+	buf_man.GetBuffer (buffer).CopyToBuffer (textureResource.data);
 
 	InitImage2D (imageCreateInfo);
 
@@ -337,28 +336,27 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 		bufferCopyRegion.imageSubresource.mipLevel = 0;
 		bufferCopyRegion.imageSubresource.baseArrayLayer = layer;
 		bufferCopyRegion.imageSubresource.layerCount = 1;
-		bufferCopyRegion.imageExtent.width = static_cast<uint32_t> (textureResource.dataDescription.width);
-		bufferCopyRegion.imageExtent.height = static_cast<uint32_t> (textureResource.dataDescription.height);
-		bufferCopyRegion.imageExtent.depth = static_cast<uint32_t> (textureResource.dataDescription.depth);
+		bufferCopyRegion.imageExtent.width = static_cast<uint32_t> (textureResource.description.width);
+		bufferCopyRegion.imageExtent.height = static_cast<uint32_t> (textureResource.description.height);
+		bufferCopyRegion.imageExtent.depth = static_cast<uint32_t> (textureResource.description.depth);
 		bufferCopyRegion.bufferOffset = offset;
 		bufferCopyRegions.push_back (bufferCopyRegion);
 		// Increase offset into staging buffer for next level / face
-		offset += textureResource.dataDescription.width * textureResource.dataDescription.height *
-		          textureResource.dataDescription.depth * 4;
+		offset += textureResource.description.width * textureResource.description.height *
+		          textureResource.description.depth * 4;
 	}
 
 	BeginTransferAndMipMapGenWork (device,
 	    async_task_man,
+	    buf_man,
 	    buffer,
 	    subresourceRange,
 	    bufferCopyRegions,
 	    texCreateDetails.imageLayout,
 	    image.image,
-	    buffer->buffer.buffer,
-	    textureResource.dataDescription.width,
-	    textureResource.dataDescription.height,
-	    textureResource.dataDescription.depth,
-	    readyToUse,
+	    textureResource.description.width,
+	    textureResource.description.height,
+	    textureResource.description.depth,
 	    layers,
 	    mipLevels);
 
@@ -401,12 +399,11 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 
 VulkanTexture::VulkanTexture (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
+    BufferManager& buf_man,
     TexCreateDetails texCreateDetails,
-    std::shared_ptr<VulkanBuffer> buffer)
+    BufferID buffer)
 : device (device), resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
-	readyToUse = std::make_shared<bool> (false);
-
 	this->mipLevels = texCreateDetails.genMipMaps ? texCreateDetails.mipMapLevelsToGen : 1;
 	this->textureImageLayout = texCreateDetails.imageLayout;
 	this->layers = 1;
@@ -450,16 +447,15 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 
 	BeginTransferAndMipMapGenWork (device,
 	    async_task_man,
+	    buf_man,
 	    buffer,
 	    subresourceRange,
 	    bufferCopyRegions,
 	    texCreateDetails.imageLayout,
 	    image.image,
-	    buffer->buffer.buffer,
 	    texCreateDetails.desiredWidth,
 	    texCreateDetails.desiredHeight,
 	    1,
-	    readyToUse,
 	    layers,
 	    mipLevels);
 
@@ -640,9 +636,14 @@ void VulkanTexture::InitImage2D (VkImageCreateInfo imageInfo)
 	    image.allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
 }
 
-VulkanTextureManager::VulkanTextureManager (
-    VulkanDevice& device, Resource::Texture::Manager& texManager, AsyncTaskManager& async_task_manager)
-: device (device), texManager (texManager), async_task_manager (async_task_manager)
+VulkanTextureManager::VulkanTextureManager (Resource::Texture::Manager& texture_manager,
+    VulkanDevice& device,
+    AsyncTaskManager& async_task_manager,
+    BufferManager& buffer_manager)
+: device (device),
+  texture_manager (texture_manager),
+  async_task_manager (async_task_manager),
+  buffer_manager (buffer_manager)
 {
 }
 
@@ -653,8 +654,9 @@ VulkanTextureManager::~VulkanTextureManager ()
 
 VulkanTextureID VulkanTextureManager::CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails)
 {
-	auto& resource = texManager.GetTexResourceByID (texture);
-	auto tex = std::make_unique<VulkanTexture> (device, async_task_manager, texCreateDetails, resource);
+	auto& resource = texture_manager.GetTexResourceByID (texture);
+	auto tex = std::make_unique<VulkanTexture> (
+	    device, async_task_manager, buffer_manager, texCreateDetails, resource);
 	std::lock_guard guard (map_lock);
 	texture_map[id_counter] = std::move (tex);
 	return id_counter++;
@@ -663,8 +665,9 @@ VulkanTextureID VulkanTextureManager::CreateTexture2D (Resource::Texture::TexID 
 VulkanTextureID VulkanTextureManager::CreateTexture2DArray (
     Resource::Texture::TexID textures, TexCreateDetails texCreateDetails)
 {
-	auto& resource = texManager.GetTexResourceByID (textures);
-	auto tex = std::make_unique<VulkanTexture> (device, async_task_manager, texCreateDetails, resource);
+	auto& resource = texture_manager.GetTexResourceByID (textures);
+	auto tex = std::make_unique<VulkanTexture> (
+	    device, async_task_manager, buffer_manager, texCreateDetails, resource);
 	std::lock_guard guard (map_lock);
 	texture_map[id_counter] = std::move (tex);
 	return id_counter++;
@@ -672,17 +675,18 @@ VulkanTextureID VulkanTextureManager::CreateTexture2DArray (
 
 VulkanTextureID VulkanTextureManager::CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails)
 {
-	auto& resource = texManager.GetTexResourceByID (cubeMap);
-	auto tex = std::make_unique<VulkanTexture> (device, async_task_manager, texCreateDetails, resource);
+	auto& resource = texture_manager.GetTexResourceByID (cubeMap);
+	auto tex = std::make_unique<VulkanTexture> (
+	    device, async_task_manager, buffer_manager, texCreateDetails, resource);
 	std::lock_guard guard (map_lock);
 	texture_map[id_counter] = std::move (tex);
 	return id_counter++;
 }
 
-VulkanTextureID VulkanTextureManager::CreateTextureFromBuffer (
-    std::shared_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails)
+VulkanTextureID VulkanTextureManager::CreateTextureFromBuffer (BufferID buffer, TexCreateDetails texCreateDetails)
 {
-	auto tex = std::make_unique<VulkanTexture> (device, async_task_manager, texCreateDetails, buffer);
+	auto tex = std::make_unique<VulkanTexture> (
+	    device, async_task_manager, buffer_manager, texCreateDetails, buffer);
 	std::lock_guard guard (map_lock);
 	texture_map[id_counter] = std::move (tex);
 	return id_counter++;

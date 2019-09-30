@@ -8,7 +8,6 @@
 
 #include "noc/noc_file_dialog.h"
 
-#include "core/CoreTools.h"
 #include "core/Input.h"
 #include "core/Logger.h"
 

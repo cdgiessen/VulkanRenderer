@@ -4,39 +4,47 @@
 #include <mutex>
 #include <vector>
 
+#include "Device.h"
 #include "Wrappers.h"
 
-#include "Device.h"
+#include "core/JobSystem.h"
 
-using Signal = std::shared_ptr<bool>;
-
-enum class WorkType
+enum class TaskType
 {
 	graphics,
 	transfer,
-	compute,
+	compute
+};
+
+struct AsyncTask
+{
+	std::shared_ptr<job::TaskSignal> signal;
+	TaskType type;
+	std::function<void(const VkCommandBuffer)> work;
+	std::vector<std::shared_ptr<VulkanSemaphore>> wait_sems;
+	std::vector<std::shared_ptr<VulkanSemaphore>> signal_sems;
+	std::function<void()> finish_work;
 };
 
 struct GraphicsCleanUpWork
 {
 	CommandBuffer cmdBuf;
-	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
-	std::vector<Signal> signals;
+	std::function<void()> finish_work;
 
-	explicit GraphicsCleanUpWork (
-	    CommandBuffer cmdBuf, std::vector<std::shared_ptr<VulkanBuffer>>& buffers, std::vector<Signal>& signals)
-	: cmdBuf (cmdBuf), buffers (buffers), signals (signals)
+	GraphicsCleanUpWork (CommandBuffer cmdBuf, std::function<void()> finish_work)
+	: cmdBuf (cmdBuf), finish_work (finish_work)
 	{
 	}
 };
 
-struct AsyncTask
+class CommandPoolGroup
 {
-	std::function<void(const VkCommandBuffer)> work;
-	std::vector<std::shared_ptr<VulkanSemaphore>> wait_sems;
-	std::vector<std::shared_ptr<VulkanSemaphore>> signal_sems;
-	std::vector<std::shared_ptr<VulkanBuffer>> buffersToClean;
-	std::vector<Signal> signals;
+	public:
+	CommandPoolGroup (VulkanDevice& device);
+
+	CommandPool graphics_pool;
+	CommandPool transfer_pool;
+	CommandPool compute_pool;
 };
 
 class AsyncTaskManager
@@ -45,9 +53,7 @@ class AsyncTaskManager
 	AsyncTaskManager (VulkanDevice& device);
 	~AsyncTaskManager ();
 
-	void SubmitGraphicsTask (AsyncTask&& task);
-	void SubmitTransferTask (AsyncTask&& task);
-	void SubmitComputeTask (AsyncTask&& task);
+	void SubmitTask (TaskType type, AsyncTask&& task);
 
 	void CleanFinishQueue ();
 
@@ -60,9 +66,7 @@ class AsyncTaskManager
 	std::mutex lock_transfer;
 	std::mutex lock_compute;
 
-	CommandPool graphics_pool;
-	CommandPool transfer_pool;
-	CommandPool compute_pool;
+	std::vector<CommandPoolGroup> pools;
 
 	std::mutex lock_finish_queue;
 	std::vector<GraphicsCleanUpWork> finish_queue;

@@ -16,7 +16,7 @@
 class VulkanDevice;
 
 void BeginTransferAndMipMapGenWork (VulkanDevice& device,
-    std::shared_ptr<VulkanBuffer> buffer,
+    BufferID buffer,
     const VkImageSubresourceRange subresourceRange,
     const std::vector<VkBufferImageCopy> bufferCopyRegions,
     VkImageLayout imageLayout,
@@ -25,7 +25,6 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
     int width,
     int height,
     int depth,
-    Signal signal,
     int layers,
     int mipLevels);
 
@@ -59,13 +58,15 @@ class VulkanTexture
 	public:
 	VulkanTexture (VulkanDevice& device,
 	    AsyncTaskManager& async_task_man,
+	    BufferManager& buf_man,
 	    TexCreateDetails texCreateDetails,
 	    Resource::Texture::TexResource textureResource);
 
 	VulkanTexture (VulkanDevice& device,
 	    AsyncTaskManager& async_task_man,
+	    BufferManager& buf_man,
 	    TexCreateDetails texCreateDetails,
-	    std::shared_ptr<VulkanBuffer> buffer);
+	    BufferID buffer);
 
 	VulkanTexture (VulkanDevice& device, TexCreateDetails texCreateDetails);
 
@@ -88,8 +89,6 @@ class VulkanTexture
 	VkImageView textureImageView = VK_NULL_HANDLE;
 	VkSampler textureSampler = VK_NULL_HANDLE;
 	VkImageLayout textureImageLayout;
-
-	Signal readyToUse;
 
 	protected:
 	int mipLevels;
@@ -122,8 +121,10 @@ using VulkanTextureID = int;
 class VulkanTextureManager
 {
 	public:
-	VulkanTextureManager (
-	    VulkanDevice& device, Resource::Texture::Manager& texManager, AsyncTaskManager& async_task_manager);
+	VulkanTextureManager (Resource::Texture::Manager& texture_manager,
+	    VulkanDevice& device,
+	    AsyncTaskManager& async_task_manager,
+	    BufferManager& buf_man);
 	~VulkanTextureManager ();
 
 	VulkanTextureID CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails);
@@ -132,7 +133,7 @@ class VulkanTextureManager
 
 	VulkanTextureID CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails);
 
-	VulkanTextureID CreateTextureFromBuffer (std::shared_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails);
+	VulkanTextureID CreateTextureFromBuffer (BufferID buffer, TexCreateDetails texCreateDetails);
 
 	VulkanTextureID CreateDepthImage (VkFormat depthFormat, int width, int height);
 
@@ -142,11 +143,11 @@ class VulkanTextureManager
 
 	private:
 	VulkanDevice& device;
-	Resource::Texture::Manager& texManager;
+	Resource::Texture::Manager& texture_manager;
 	AsyncTaskManager& async_task_manager;
+	BufferManager& buffer_manager;
 
 	VulkanTextureID id_counter = 0;
 	std::mutex map_lock;
 	std::unordered_map<VulkanTextureID, std::unique_ptr<VulkanTexture>> texture_map;
-	std::unordered_map<VulkanTextureID, std::unique_ptr<VulkanTexture>> in_progress_textures;
 };

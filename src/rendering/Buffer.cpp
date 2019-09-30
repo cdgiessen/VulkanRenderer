@@ -1,7 +1,8 @@
 #include "Buffer.h"
 
+#include <cassert>
 #include <cstring>
-#include <functional>
+
 
 #include "Device.h"
 #include "RenderTools.h"
@@ -11,9 +12,13 @@
 const uint32_t VERTEX_BUFFER_BIND_ID = 0;
 const uint32_t INSTANCE_BUFFER_BIND_ID = 1;
 
-VulkanBuffer::VulkanBuffer (VulkanDevice& device, BufCreateDetails details, void const* memToCopy)
-: device (&device), m_size (details.bufferSize), resource (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER), details (details)
+VulkanBuffer::VulkanBuffer (VulkanDevice& device, BufCreateDetails details)
+: resource (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 {
+	data.device = &device;
+	data.m_size = details.bufferSize;
+	data.type = details.type;
+
 	switch (details.type)
 	{
 		case (BufferType::uniform):
@@ -42,76 +47,92 @@ VulkanBuffer::VulkanBuffer (VulkanDevice& device, BufCreateDetails details, void
 	{
 		size_t minUboAlignment =
 		    device.physical_device.physical_device_properties.limits.minUniformBufferOffsetAlignment;
-		alignment = m_size;
+		data.alignment = data.m_size;
 		if (minUboAlignment > 0)
 		{
-			alignment = (alignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+			data.alignment = (data.alignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
 		}
 
-		m_size = details.elem_count * alignment;
+		data.m_size = details.elem_count * data.alignment;
 	}
 
 	VkBufferCreateInfo bufferInfo{};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = m_size;
+	bufferInfo.size = data.m_size;
 	bufferInfo.usage = details.bufferUsage;
 
 	VmaAllocationCreateInfo allocInfo = {};
 	allocInfo.usage = details.allocUsage;
 	allocInfo.flags = details.allocFlags;
 
-	buffer.allocator = device.GetGeneralAllocator ();
+	data.allocator = device.GetGeneralAllocator ();
 
 	VK_CHECK_RESULT (vmaCreateBuffer (
-	    buffer.allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &buffer.allocationInfo));
-
-	if (memToCopy != nullptr)
-	{
-		memcpy (buffer.allocationInfo.pMappedData, memToCopy, m_size);
-	}
+	    data.allocator, &bufferInfo, &allocInfo, &buffer, &data.allocation, &data.allocationInfo));
 
 	if (details.persistentlyMapped == true)
 	{
-		this->persistentlyMapped = true;
-		Map (&mapped);
+		data.persistentlyMapped = true;
+		Map (&data.mapped);
 	}
 
-	resource.FillResource (buffer.buffer, 0, m_size);
-
-	// Log::Debug << "Allocated buffer Memory\n";
+	resource.FillResource (buffer, 0, data.m_size);
 }
 
 VulkanBuffer::~VulkanBuffer ()
 {
-	if (persistentlyMapped)
+	if (data.allocator != nullptr && buffer != VK_NULL_HANDLE && data.allocation != VK_NULL_HANDLE)
 	{
-		Unmap ();
+		if (data.persistentlyMapped)
+		{
+			Unmap ();
+		}
+		vmaDestroyBuffer (data.allocator, buffer, data.allocation);
 	}
-
-	vmaDestroyBuffer (buffer.allocator, buffer.buffer, buffer.allocation);
-
-	// Log::Debug << "Freed buffer Memory\n";
 }
 
-void VulkanBuffer::Map (void** pData) { vmaMapMemory (buffer.allocator, buffer.allocation, pData); }
-void VulkanBuffer::Unmap () { vmaUnmapMemory (buffer.allocator, buffer.allocation); }
+VulkanBuffer::VulkanBuffer (VulkanBuffer&& other)
+: buffer (other.buffer), resource (other.resource), data (data)
+{
+	other.buffer = VK_NULL_HANDLE;
+	other.data.allocation = VK_NULL_HANDLE;
+	other.data.allocator = nullptr;
+}
+VulkanBuffer& VulkanBuffer::operator= (VulkanBuffer&& other) noexcept
+{
+	if (this != &other)
+	{
+		buffer = other.buffer;
+		resource = other.resource;
+		data = other.data;
+
+		other.buffer = VK_NULL_HANDLE;
+		other.data.allocation = VK_NULL_HANDLE;
+		other.data.allocator = nullptr;
+	}
+
+	return *this;
+}
+
+void VulkanBuffer::Map (void** pData) { vmaMapMemory (data.allocator, data.allocation, pData); }
+void VulkanBuffer::Unmap () { vmaUnmapMemory (data.allocator, data.allocation); }
 
 void VulkanBuffer::Flush ()
 {
 	VkMemoryPropertyFlags memFlags;
-	vmaGetMemoryTypeProperties (buffer.allocator, buffer.allocationInfo.memoryType, &memFlags);
+	vmaGetMemoryTypeProperties (data.allocator, data.allocationInfo.memoryType, &memFlags);
 	if ((memFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
 	{
 		VkMappedMemoryRange memRange{};
 		memRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-		memRange.memory = buffer.allocationInfo.deviceMemory;
-		memRange.offset = buffer.allocationInfo.offset;
-		memRange.size = buffer.allocationInfo.size;
-		vkFlushMappedMemoryRanges (device->device, 1, &memRange);
+		memRange.memory = data.allocationInfo.deviceMemory;
+		memRange.offset = data.allocationInfo.offset;
+		memRange.size = data.allocationInfo.size;
+		vkFlushMappedMemoryRanges (data.device->device, 1, &memRange);
 	}
 }
 
-VkDeviceSize VulkanBuffer::Size () const { return m_size; }
+VkDeviceSize VulkanBuffer::Size () const { return data.m_size; }
 
 void AlignedMemcpy (uint8_t bytes, VkDeviceSize destMemAlignment, void* src, void* dst)
 {
@@ -125,43 +146,61 @@ void AlignedMemcpy (uint8_t bytes, VkDeviceSize destMemAlignment, void* src, voi
 	}
 }
 
-void VulkanBuffer::CopyToBuffer (void* pData, VkDeviceSize size)
+void VulkanBuffer::CopyToBuffer (void const* pData, size_t size)
 {
-	if (persistentlyMapped)
+	if (data.persistentlyMapped)
 	{
-		assert (mapped != nullptr);
-		memcpy (mapped, pData, (size_t)size);
+		assert (data.mapped != nullptr);
+		memcpy (data.mapped, pData, size);
 	}
 	else
 	{
-		this->Map (&mapped);
-		assert (mapped != nullptr);
-		memcpy (mapped, pData, (size_t)size);
-
-		// VkDeviceSize bufAlignment = device->physical_device_properties.limits.minUniformBufferOffsetAlignment;
-
-		// AlignedMemcpy((size_t)size, bufAlignment, pData, mapped);
-
+		this->Map (&data.mapped);
+		assert (data.mapped != nullptr);
+		memcpy (data.mapped, pData, size);
 		this->Unmap ();
 	}
 }
 
 void VulkanBuffer::BindVertexBuffer (VkCommandBuffer cmdBuf)
 {
-	assert (details.type == BufferType::vertex);
+	assert (data.type == BufferType::vertex);
 	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers (cmdBuf, VERTEX_BUFFER_BIND_ID, 1, &buffer.buffer, offsets);
+	vkCmdBindVertexBuffers (cmdBuf, VERTEX_BUFFER_BIND_ID, 1, &buffer, offsets);
 }
 
 void VulkanBuffer::BindIndexBuffer (VkCommandBuffer cmdBuf)
 {
-	assert (details.type == BufferType::index);
-	vkCmdBindIndexBuffer (cmdBuf, buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+	assert (data.type == BufferType::index);
+	vkCmdBindIndexBuffer (cmdBuf, buffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
 void VulkanBuffer::BindInstanceBuffer (VkCommandBuffer cmdBuf)
 {
-	assert (details.type == BufferType::instance);
+	assert (data.type == BufferType::instance);
 	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers (cmdBuf, INSTANCE_BUFFER_BIND_ID, 1, &buffer.buffer, offsets);
+	vkCmdBindVertexBuffers (cmdBuf, INSTANCE_BUFFER_BIND_ID, 1, &buffer, offsets);
+}
+
+BufferManager::BufferManager (VulkanDevice& device) : device (device) {}
+
+BufferID BufferManager::CreateBuffer (BufCreateDetails details)
+{
+	auto buf = VulkanBuffer (device, details);
+	std::lock_guard guard (map_lock);
+	buffer_map.emplace (std::make_pair (buf_index, std::move (buf)));
+
+	// buffer_map[buf_index] = std::move (buf);
+	return buf_index++;
+}
+void BufferManager::FreeBuffer (BufferID id)
+{
+	std::lock_guard guard (map_lock);
+	buffer_map.erase (id);
+}
+
+VulkanBuffer& BufferManager::GetBuffer (BufferID id)
+{
+	std::lock_guard guard (map_lock);
+	return buffer_map.at (id);
 }

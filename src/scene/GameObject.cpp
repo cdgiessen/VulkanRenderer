@@ -38,7 +38,8 @@ void GameObject::SetupImage ()
 
 void GameObject::SetupModel ()
 {
-	gameObjectModel = std::make_unique<VulkanModel> (renderer, createCube ());
+	gameObjectModel = std::make_unique<VulkanModel> (
+	    renderer.device, renderer.async_task_manager, renderer.buffer_manager, createCube ());
 }
 
 void GameObject::SetupMaterial ()
@@ -164,7 +165,7 @@ void GameObject::UpdateUniformBuffer (float time)
 	// ubo.model = cml::rotate(ubo.model, time * 2.0f, cml::vec3f(0.5, 1, 0));
 	// ubo.normal = cml::transpose(cml::inverse(cml::mat3f(ubo.model)));
 	ubo.normal = cml::mat4f ();
-	uniformBuffer->CopyToBuffer (&ubo, sizeof (ModelBufferObject));
+	uniformBuffer->CopyToBuffer (ubo);
 	// if (usePBR_Tex)
 	//
 	//	if (usePBR)
@@ -177,30 +178,9 @@ void GameObject::UpdateUniformBuffer (float time)
 	// modelUniformBuffer.copyTo(&ubo, sizeof(ubo));
 	// modelUniformBuffer.Unmap();
 }
-void GameObject::DrawDepthPrePass (VkCommandBuffer commandBuffer)
-{
-	if (*gameObjectModel->readyToUse) // && *gameObjectVulkanTexture->readyToUse)
-		isReadyToRender = true;
-
-	if (!isReadyToRender)
-	{
-		return;
-	}
-	gameObjectModel->BindModel (commandBuffer);
-
-	vkCmdDrawIndexed (commandBuffer, static_cast<uint32_t> (gameObjectModel->indexCount), 1, 0, 0, 0);
-}
-
 
 void GameObject::Draw (VkCommandBuffer commandBuffer, bool wireframe, bool drawNormals)
 {
-	if (*gameObjectModel->readyToUse) // && *gameObjectVulkanTexture->readyToUse)
-		isReadyToRender = true;
-
-	if (!isReadyToRender)
-	{
-		return;
-	}
 
 	// VkDeviceSize offsets[] = { 0 };
 
@@ -209,15 +189,7 @@ void GameObject::Draw (VkCommandBuffer commandBuffer, bool wireframe, bool drawN
 	// vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(gameObjectModel.indexCount), 1, 0, 0, 0);
 
 	// vkCmdBindVertexBuffers(commandBuffer, 0, 1, &gameObjectModel.vmaBufferVertex, offsets);
-	// vkCmdBindIndexBuffer(commandBuffer, gameObjectModel.vmaIndicies.buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-	/*vkCmdPushConstants(
-	    commandBuffer,
-	    mvp->layout,
-	    VK_SHADER_STAGE_VERTEX_BIT,
-	    0,
-	    sizeof(ModelPushConstant),
-	    &modelPushConstant);*/
+	// vkCmdBindIndexBuffer(commandBuffer, gameObjectModel.vmaIndicies.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 
 	// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mvp->layout, 2, 1,

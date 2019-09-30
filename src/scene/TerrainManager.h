@@ -16,7 +16,7 @@
 
 #include "rendering/Renderer.h"
 
-#include "resources/ResourceManager.h"
+#include "resources/Resource.h"
 
 #include "gui/InternalGraph.h"
 

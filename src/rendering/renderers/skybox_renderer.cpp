@@ -1,34 +1,26 @@
 #include "Skybox.h"
 
-Skybox::Skybox (VulkanRenderer& renderer)
-: renderer (renderer){
+struct SkyboxUniformBuffer
+{
+	cml::mat4f proj;
+	cml::mat4f view;
+};
 
-  };
+SkyboxRenderer::SkyboxRenderer (VulkanRenderer& renderer, VulkanTextureID cube_map)
+: renderer (renderer), cube_map (cube_map){};
 
-Skybox::~Skybox (){};
-
-void Skybox::InitSkybox ()
+void SkyboxRenderer::InitSkybox ()
 {
 
-	SetupUniformBuffer ();
+	skyboxUniformBuffer =
+	    std::make_unique<VulkanBuffer> (renderer.device, uniform_details (sizeof (SkyboxUniformBuffer)));
+
 	SetupCubeMapImage ();
 	SetupDescriptor ();
 	SetupPipeline ();
 }
 
-void Skybox::SetupUniformBuffer ()
-{
-	skyboxUniformBuffer =
-	    std::make_unique<VulkanBuffer> (renderer.device, uniform_details (sizeof (SkyboxUniformBuffer)));
-}
-
-void Skybox::SetupCubeMapImage ()
-{
-	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 3);
-	vulkanCubeMap = renderer.texture_manager.CreateCubeMap (skyboxCubeMap, details);
-}
-
-void Skybox::SetupDescriptor ()
+void SkyboxRenderer::SetupDescriptor ()
 {
 	descriptor = std::make_unique<VulkanDescriptor> (renderer.device);
 
@@ -52,7 +44,7 @@ void Skybox::SetupDescriptor ()
 	descriptor->UpdateDescriptorSet (m_descriptorSet, writes);
 }
 
-void Skybox::SetupPipeline ()
+void SkyboxRenderer::SetupPipeline ()
 {
 	PipelineOutline out;
 
@@ -89,10 +81,10 @@ void Skybox::SetupPipeline ()
 
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
-	normal = renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
+	pipe = renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 }
 
-void Skybox::UpdateUniform (cml::mat4f proj, cml::mat4f view)
+void SkyboxRenderer::UpdateUniform (cml::mat4f proj, cml::mat4f view)
 {
 	SkyboxUniformBuffer sbo = {};
 	sbo.proj = proj;
@@ -103,11 +95,12 @@ void Skybox::UpdateUniform (cml::mat4f proj, cml::mat4f view)
 };
 
 
-void Skybox::WriteToCommandBuffer (VkCommandBuffer commandBuffer)
+void SkyboxRenderer::Draw (VkCommandBuffer commandBuffer)
 {
+
 	vkCmdBindDescriptorSets (commandBuffer,
 	    VK_PIPELINE_BIND_POINT_GRAPHICS,
-	    renderer.pipeline_manager.GetPipeLayout (normal),
+	    renderer.pipeline_manager.GetPipeLayout (pipe),
 	    2,
 	    1,
 	    &m_descriptorSet.set,
@@ -115,7 +108,7 @@ void Skybox::WriteToCommandBuffer (VkCommandBuffer commandBuffer)
 	    nullptr);
 
 
-	renderer.pipeline_manager.BindPipe (normal, commandBuffer);
+	renderer.pipeline_manager.BindPipe (pipe, commandBuffer);
 
 
 	model->BindModel (commandBuffer);

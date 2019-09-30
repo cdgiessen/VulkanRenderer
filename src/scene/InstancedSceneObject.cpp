@@ -11,7 +11,6 @@
 InstancedSceneObject::InstancedSceneObject (VulkanRenderer& renderer, int maxInstances)
 : renderer (renderer), maxInstanceCount (maxInstances), instanceCount (0), instancesData (maxInstances)
 {
-	isFinishedTransfer = std::make_shared<bool> (false);
 }
 
 
@@ -52,7 +51,7 @@ void InstancedSceneObject::SetupUniformBuffer ()
 	// ubo.model = cml::rotate(ubo.model, time / 2.0f, cml::vec3f(0.5, 1, 0));
 	ubo.normal = cml::to_mat4 (cml::to_mat3 (ubo.model).inverse ().transpose ());
 
-	uniformBuffer->CopyToBuffer (&ubo, sizeof (ModelBufferObject));
+	uniformBuffer->CopyToBuffer (ubo);
 
 	// VK_CHECK_RESULT(uniformBuffer.map(renderer.device.device));
 	// uniformBuffer.copyTo(&ubo, sizeof(ModelBufferObject));
@@ -73,7 +72,8 @@ void InstancedSceneObject::SetupImage ()
 
 void InstancedSceneObject::SetupModel ()
 {
-	vulkanModel = std::make_unique<VulkanModel> (renderer, createCube ());
+	vulkanModel = std::make_unique<VulkanModel> (
+	    renderer.device, renderer.async_task_manager, renderer.buffer_manager, createCube ());
 }
 
 void InstancedSceneObject::SetupDescriptor ()
@@ -300,8 +300,8 @@ void InstancedSceneObject::UploadInstances ()
 		    copyRegion.size = instanceBufferSize;
 		    vkCmdCopyBuffer(
 		        cmdBuf,
-		        stagingBuffer.buffer.buffer,
-		        instanceBuffer->buffer.buffer,
+		        stagingBuffer.buffer,
+		        instanceBuffer->buffer,
 		        1,
 		        &copyRegion);
 		});
@@ -315,15 +315,15 @@ void InstancedSceneObject::UploadInstances ()
 		// copyRegion.size = instanceBufferSize;
 		// vkCmdCopyBuffer(
 		//	copyCmd,
-		//	stagingBuffer.buffer.buffer,
-		//	instanceBuffer->buffer.buffer,
+		//	stagingBuffer.buffer,
+		//	instanceBuffer->buffer,
 		//	1,
 		//	&copyRegion);
 		//
 		// renderer.SubmitTransferCommandBufferAndWait(copyCmd);
 
 		// Not sure if needed since the amount of data should be baked in, not current instance count
-		// instanceBuffer->resource.FillResource(instanceBuffer->buffer.buffer, 0, instanceBufferSize);
+		// instanceBuffer->resource.FillResource(instanceBuffer->buffer, 0, instanceBufferSize);
 
 		// Destroy staging resources
 		// stagingBuffer.CleanBuffer();
@@ -336,7 +336,7 @@ void InstancedSceneObject::UploadInstances ()
 void InstancedSceneObject::AddInstance (InstanceData data)
 {
 
-	// Log::Debug << "Adding instance at " << data.pos.x << " " << data.pos.z << "\n";
+	// Log.Debug << "Adding instance at " << data.pos.x << " " << data.pos.z << "\n";
 
 	std::lock_guard<std::mutex> lk (instanceDataLock);
 	if (instanceCount < maxInstanceCount)
@@ -369,7 +369,7 @@ void InstancedSceneObject::AddInstances (std::vector<InstanceData>& newInstances
 	    instancesData.push_back(id);
 	}*/
 	// for (auto& val : newInstances)
-	//	Log::Debug << "Adding instance at " << val.pos.x << " " << val.pos.z << "\n";
+	//	Log.Debug << "Adding instance at " << val.pos.x << " " << val.pos.z << "\n";
 
 	std::lock_guard<std::mutex> lk (instanceDataLock);
 	int curFree = instanceCount;
@@ -388,7 +388,7 @@ void InstancedSceneObject::RemoveInstance (InstanceData instance)
 {
 
 
-	// Log::Debug << "Removing instance at " << instance.pos.x << " " << instance.pos.z << "\n";
+	// Log.Debug << "Removing instance at " << instance.pos.x << " " << instance.pos.z << "\n";
 
 	std::lock_guard<std::mutex> lk (instanceDataLock);
 	auto foundInstance = std::find (std::begin (instancesData), std::end (instancesData), instance);
@@ -404,7 +404,7 @@ void InstancedSceneObject::RemoveInstances (std::vector<InstanceData>& instances
 {
 
 	// for (auto& val : instances)
-	//	Log::Debug << "Removing instance at " << val.pos.x << " " << val.pos.z << "\n";
+	//	Log.Debug << "Removing instance at " << val.pos.x << " " << val.pos.z << "\n";
 
 	std::lock_guard<std::mutex> lk (instanceDataLock);
 	std::vector<std::vector<InstanceData>::iterator> indexesToDelete (instances.size ());
@@ -459,7 +459,7 @@ void InstancedSceneObject::UploadData ()
 	//}
 
 	// instanceBuffer->map(renderer.device.device);
-	instanceBuffer->CopyToBuffer (instancesData.data (), instancesData.size () * instanceMemberSize);
+	instanceBuffer->CopyToBuffer (instancesData);
 
 	// instanceBuffer->unmap();
 
@@ -468,13 +468,6 @@ void InstancedSceneObject::UploadData ()
 
 void InstancedSceneObject::WriteToCommandBuffer (VkCommandBuffer commandBuffer, bool wireframe)
 {
-
-	// if ((*vulkanModel->readyToUse) && (*vulkanTexture->readyToUse))
-	//	isReadyToRender = true;
-	//
-
-	// if (*vulkanModel->readyToUse == false || *vulkanTexture->readyToUse == false) //||
-	// *isFinishedTransfer != true) 	return;
 
 	VkDeviceSize offsets[] = { 0 };
 
@@ -500,10 +493,10 @@ void InstancedSceneObject::WriteToCommandBuffer (VkCommandBuffer commandBuffer, 
 	instanceBuffer->BindInstanceBuffer (commandBuffer);
 
 	// Binding point 0 : Mesh vertex buffer
-	// vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &vulkanModel->vmaVertices.buffer.buffer, offsets);
+	// vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &vulkanModel->vmaVertices.buffer, offsets);
 	// Binding point 1 : Instance data buffer
-	// vkCmdBindVertexBuffers(commandBuffer, INSTANCE_BUFFER_BIND_ID, 1, &instanceBuffer->buffer.buffer, offsets);
-	// vkCmdBindIndexBuffer(commandBuffer, vulkanModel->vmaIndicies.buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+	// vkCmdBindVertexBuffers(commandBuffer, INSTANCE_BUFFER_BIND_ID, 1, &instanceBuffer->buffer, offsets);
+	// vkCmdBindIndexBuffer(commandBuffer, vulkanModel->vmaIndicies.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdDrawIndexed (commandBuffer, static_cast<uint32_t> (vulkanModel->indexCount), instanceCount, 0, 0, 0);
 }

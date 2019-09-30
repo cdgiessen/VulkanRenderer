@@ -4,8 +4,6 @@
 #include <memory>
 #include <vector>
 
-#include "Asset.h"
-
 enum VertexType
 {
 	Vert1 = 1,
@@ -76,30 +74,15 @@ extern std::unique_ptr<MeshData> createCube (int dim = 1);
 extern std::unique_ptr<MeshData> createSphere (int dim = 10);
 
 extern std::unique_ptr<MeshData> create_water_plane_subdiv (int levels = 3, int subdivs = 3);
-namespace Resource
+
+namespace Resource::Mesh
 {
-
-struct MeshAssetID
-{
-	AssetID id;
-};
-
-struct Mesh
-{
-};
-
-
-class MeshManager
+class Manager
 {
 	public:
-	// MeshManager();
-	// ~MeshManager();
-
-	MeshAssetID CreateNewMeshAsset (MeshData& data);
-
-	MeshAssetID CreatePlane (int dim = 1);
-	MeshAssetID createCube ();
-	MeshAssetID createSphere ();
+	private:
 };
 
-} // namespace Resource
+
+
+} // namespace Resource::Mesh

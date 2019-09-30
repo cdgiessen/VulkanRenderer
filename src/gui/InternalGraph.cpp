@@ -826,8 +826,6 @@ GraphUser::GraphUser (
 		{
 
 			cml::vec4f val = std::get<cml::vec4f> (outputNode.GetSplatMapValue (z, x));
-			// val = cml::normalize (val);
-			// Resource::Texture::Pixel_RGBA pixel = Resource::Texture::Pixel_RGBA(
 
 			assert (!std::isnan (val.x));
 

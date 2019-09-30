@@ -1310,7 +1310,7 @@ void ImGui_ImplGlfwVulkan_Shutdown ()
 {
 	ImGui_ImplGlfwVulkan_InvalidateDeviceObjects ();
 	ImGui::DestroyContext ();
-	// Log::Debug << "Device of ImGui at shutdown " << g_Device << "\n";
+	// Log.Debug << "Device of ImGui at shutdown " << g_Device << "\n";
 	vkDestroyDescriptorPool (g_Device, g_DescriptorPool, VK_NULL_HANDLE);
 }
 
@@ -1423,5 +1423,5 @@ void PrepareImGui (Window* window, VulkanRenderer* vulkanRenderer)
 
 	pool.ReturnCommandBuffer (cmdBuf, fence);
 	fence.Wait ();
-	// Log::Debug << "Device of ImGui  at start" << g_Device << "\n";
+	// Log.Debug << "Device of ImGui  at start" << g_Device << "\n";
 }

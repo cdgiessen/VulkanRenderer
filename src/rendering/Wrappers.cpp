@@ -131,34 +131,45 @@ void CommandQueue::QueueWaitIdle ()
 /////// Command Pool ////////////
 
 CommandPool::CommandPool (VulkanDevice& device, CommandQueue& queue, VkCommandPoolCreateFlags flags)
-: device (device), queue (queue)
+: device (&device), queue (&queue)
 {
 	VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo ();
 	cmd_pool_info.queueFamilyIndex = queue.GetQueueFamily ();
 	cmd_pool_info.flags = flags;
 
-	auto res = vkCreateCommandPool (device.device, &cmd_pool_info, nullptr, &commandPool);
+	auto res = vkCreateCommandPool (device.device, &cmd_pool_info, nullptr, &command_pool);
 	assert (res == VK_SUCCESS);
+}
+
+CommandPool::CommandPool (CommandPool&& other)
+: device (other.device), queue (other.queue), command_pool (other.command_pool)
+{
+	other.command_pool = nullptr;
+}
+CommandPool& CommandPool::operator= (CommandPool&& other) noexcept
+{
+	device = other.device;
+	queue = other.queue;
+	command_pool = other.command_pool;
+
+	other.command_pool = nullptr;
+	return *this;
 }
 
 CommandPool::~CommandPool ()
 {
-	std::lock_guard lock (poolLock);
-	if (commandPool != nullptr) vkDestroyCommandPool (device.device, commandPool, nullptr);
+	if (command_pool != nullptr) vkDestroyCommandPool (device->device, command_pool, nullptr);
 }
 
 VkBool32 CommandPool::ResetPool ()
 {
-
-	std::lock_guard lock (poolLock);
-	auto res = vkResetCommandPool (device.device, commandPool, 0);
+	auto res = vkResetCommandPool (device->device, command_pool, 0);
 	assert (res == VK_SUCCESS);
 	return VK_TRUE;
 }
 
 VkBool32 CommandPool::ResetCommandBuffer (VkCommandBuffer cmdBuf)
 {
-	std::lock_guard lock (poolLock);
 	auto res = vkResetCommandBuffer (cmdBuf, {});
 	assert (res == VK_SUCCESS);
 	return VK_TRUE;
@@ -168,17 +179,15 @@ VkCommandBuffer CommandPool::AllocateCommandBuffer (VkCommandBufferLevel level)
 {
 	VkCommandBuffer buf;
 
-	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo (commandPool, level, 1);
+	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo (command_pool, level, 1);
 
-	std::lock_guard lock (poolLock);
-	auto res = vkAllocateCommandBuffers (device.device, &allocInfo, &buf);
+	auto res = vkAllocateCommandBuffers (device->device, &allocInfo, &buf);
 	assert (res == VK_SUCCESS);
 	return buf;
 }
 
 void CommandPool::BeginBufferRecording (VkCommandBuffer buf, VkCommandBufferUsageFlags flags)
 {
-	std::lock_guard lock (poolLock);
 	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo ();
 	beginInfo.flags = flags;
 
@@ -188,15 +197,13 @@ void CommandPool::BeginBufferRecording (VkCommandBuffer buf, VkCommandBufferUsag
 
 void CommandPool::EndBufferRecording (VkCommandBuffer buf)
 {
-	std::lock_guard lock (poolLock);
 	auto res = vkEndCommandBuffer (buf);
 	assert (res == VK_SUCCESS);
 }
 
 void CommandPool::FreeCommandBuffer (VkCommandBuffer buf)
 {
-	std::lock_guard lock (poolLock);
-	vkFreeCommandBuffers (device.device, commandPool, 1, &buf);
+	vkFreeCommandBuffers (device->device, command_pool, 1, &buf);
 }
 
 VkCommandBuffer CommandPool::GetCommandBuffer (VkCommandBufferLevel level, VkCommandBufferUsageFlags flags)
@@ -214,7 +221,7 @@ VkBool32 CommandPool::ReturnCommandBuffer (VkCommandBuffer cmdBuffer,
     std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores)
 {
 	EndBufferRecording (cmdBuffer);
-	queue.SubmitCommandBuffer (cmdBuffer, fence, waitSemaphores, signalSemaphores);
+	queue->SubmitCommandBuffer (cmdBuffer, fence, waitSemaphores, signalSemaphores);
 
 	return VK_TRUE;
 }
@@ -224,12 +231,11 @@ void CommandPool::SubmitCommandBuffer (VkCommandBuffer cmdBuffer,
     std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores,
     std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores)
 {
-	queue.SubmitCommandBuffer (cmdBuffer, fence, waitSemaphores, signalSemaphores);
+	queue->SubmitCommandBuffer (cmdBuffer, fence, waitSemaphores, signalSemaphores);
 }
 
 void CommandPool::WriteToBuffer (VkCommandBuffer buf, std::function<void(VkCommandBuffer)> cmds)
 {
-	std::lock_guard lock (poolLock);
 	cmds (buf);
 }
 
@@ -308,13 +314,4 @@ CommandBuffer& CommandBuffer::Free ()
 	pool->FreeCommandBuffer (cmdBuf);
 	state = State::empty;
 	return *this;
-}
-
-///////// CommandPoolGroup /////////
-
-CommandPoolGroup::CommandPoolGroup (VulkanDevice& device)
-: graphicsPool (device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
-  transferPool (device, device.TransferQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
-  computePool (device, device.ComputeQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
-{
 }

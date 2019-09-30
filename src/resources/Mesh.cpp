@@ -5,7 +5,6 @@
 
 #include <fx/gltf.h>
 
-#include "core/CoreTools.h"
 #include "core/Logger.h"
 
 int VertexDescription::ElementCount () const

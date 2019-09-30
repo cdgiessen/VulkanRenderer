@@ -16,15 +16,15 @@
 
 #include "scene/Scene.h"
 
-#include "resources/ResourceManager.h"
+#include "resources/Resource.h"
 
 #include <nlohmann/json.hpp>
 
-RenderSettings::RenderSettings (std::string fileName) : fileName (fileName) { Load (); }
+RenderSettings::RenderSettings (std::filesystem::path fileName) : fileName (fileName) { Load (); }
 
 void RenderSettings::Load ()
 {
-	if (fileExists (fileName))
+	if (std::filesystem::exists (fileName))
 	{
 		try
 		{
@@ -66,7 +66,7 @@ void RenderSettings::Save ()
 	outFile.close ();
 }
 
-VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::AssetManager& resourceMan)
+VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::AssetManager& resource_man)
 
 : settings ("render_settings.json"),
   device (window, validationLayer),
@@ -74,7 +74,9 @@ VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::
   async_task_manager (device),
   shader_manager (device),
   pipeline_manager (device),
-  texture_manager (device, resourceMan.texManager, async_task_manager),
+  buffer_manager (device),
+  model_manager (resource_man.mesh_manager, device, async_task_manager, buffer_manager),
+  texture_manager (resource_man.texture_manager, device, async_task_manager, buffer_manager),
   dynamic_data (device, settings)
 
 {
@@ -486,15 +488,11 @@ void GPU_DoubleBuffer::Update (GlobalData& globalData,
     std::vector<PointLight>& pointLights,
     std::vector<SpotLight>& spotLights)
 {
-	d_buffers.at (cur_index).globalVariableBuffer->CopyToBuffer (&globalData, sizeof (GlobalData));
-	d_buffers.at (cur_index).cameraDataBuffer->CopyToBuffer (
-	    cameraData.data (), cameraData.size () * sizeof (CameraData));
-	d_buffers.at (cur_index).sunBuffer->CopyToBuffer (
-	    directionalLights.data (), directionalLights.size () * sizeof (DirectionalLight));
-	d_buffers.at (cur_index).pointLightsBuffer->CopyToBuffer (
-	    pointLights.data (), pointLights.size () * sizeof (PointLight));
-	d_buffers.at (cur_index).spotLightsBuffer->CopyToBuffer (
-	    spotLights.data (), spotLights.size () * sizeof (SpotLight));
+	d_buffers.at (cur_index).globalVariableBuffer->CopyToBuffer (globalData);
+	d_buffers.at (cur_index).cameraDataBuffer->CopyToBuffer (cameraData);
+	d_buffers.at (cur_index).sunBuffer->CopyToBuffer (directionalLights);
+	d_buffers.at (cur_index).pointLightsBuffer->CopyToBuffer (pointLights);
+	d_buffers.at (cur_index).spotLightsBuffer->CopyToBuffer (spotLights);
 }
 
 

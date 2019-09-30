@@ -1,26 +1,14 @@
 #pragma once
 
+#include <mutex>
+#include <unordered_map>
+#include <vector>
+
 #include <vulkan/vulkan.h>
 
 #include "Descriptor.h"
 
 #include "vk_mem_alloc.h"
-
-/*
-Buffer types:
-
-
-
-Vertex, index, instance
-Staging: Vertex, index, instance
-
-Uniform, Dynamic
-Staging: Uniform
-
-Persistant: Uniform, Instance
-Data
-
-*/
 
 class VulkanDevice;
 
@@ -95,49 +83,87 @@ inline BufCreateDetails staging_details (BufferType type, VkDeviceSize size)
 		VMA_ALLOCATION_CREATE_MAPPED_BIT };
 }
 
+namespace details
+{
+struct BufData
+{
+	VulkanDevice* device;
+	VkDeviceSize m_size;
+
+	size_t alignment = -1;
+	BufferType type;
+	bool persistentlyMapped = false;
+
+	VmaAllocation allocation = VK_NULL_HANDLE;
+	VmaAllocationInfo allocationInfo;
+	VmaAllocator allocator = nullptr;
+
+	void* mapped;
+};
+} // namespace details
 
 class VulkanBuffer
 {
 	public:
-	explicit VulkanBuffer (VulkanDevice& device, BufCreateDetails details, void const* memToCopy = nullptr);
+	explicit VulkanBuffer (VulkanDevice& device, BufCreateDetails details);
+	~VulkanBuffer ();
 
 	VulkanBuffer (const VulkanBuffer& buf) = delete;
 	VulkanBuffer& operator= (const VulkanBuffer& buf) = delete;
 
-	~VulkanBuffer ();
+	VulkanBuffer (VulkanBuffer&& buf);
+	VulkanBuffer& operator= (VulkanBuffer&& buf) noexcept;
+
 
 	void Map (void** pData);
 	void Unmap ();
 
 	void Flush ();
 
-	void CopyToBuffer (void* pData, VkDeviceSize size);
+	template <typename T> void CopyToBuffer (std::vector<T> const& data)
+	{
+		CopyToBuffer (static_cast<void const*> (data.data ()), sizeof (T) * data.size ());
+	}
+
+	template <typename T> void CopyToBuffer (T const& data)
+	{
+		CopyToBuffer (static_cast<void const*> (&data), sizeof (T));
+	}
+
 
 	VkDeviceSize Size () const;
-
-	bool IsCreated () const;
 
 	void BindVertexBuffer (VkCommandBuffer cmdBuf);
 	void BindIndexBuffer (VkCommandBuffer cmdBuf);
 	void BindInstanceBuffer (VkCommandBuffer cmdBuf);
 
-	struct VmaBuffer
-	{
-		VkBuffer buffer = VK_NULL_HANDLE;
-		VmaAllocation allocation = VK_NULL_HANDLE;
-		VmaAllocationInfo allocationInfo;
-		VmaAllocator allocator = nullptr;
-	} buffer;
+
+	VkBuffer buffer = VK_NULL_HANDLE;
+
 	DescriptorResource resource;
 
-	protected:
-	VulkanDevice* device;
-	VkDeviceSize m_size;
-	void* mapped;
+	private:
+	details::BufData data;
 
-	bool persistentlyMapped = false;
+	void CopyToBuffer (void const* pData, size_t size);
+};
 
-	size_t alignment = -1;
+using BufferID = int;
 
-	BufCreateDetails details;
+class BufferManager
+{
+	public:
+	BufferManager (VulkanDevice& device);
+
+	BufferID CreateBuffer (BufCreateDetails details);
+	void FreeBuffer (BufferID id);
+
+	VulkanBuffer& GetBuffer (BufferID);
+
+	private:
+	VulkanDevice& device;
+
+	BufferID buf_index;
+	std::mutex map_lock;
+	std::unordered_map<BufferID, VulkanBuffer> buffer_map;
 };
