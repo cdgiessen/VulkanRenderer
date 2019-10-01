@@ -7,20 +7,19 @@ job::TaskManager taskManager;
 unsigned int HardwareThreadCount ()
 {
 	unsigned int concurentThreadsSupported = std::thread::hardware_concurrency ();
-	Log.Debug (fmt::format ("Hardware Threads Available = {}\n", concurentThreadsSupported));
 	return concurentThreadsSupported > 0 ? concurentThreadsSupported : 1;
 }
 
 namespace job
 {
 
-Task::Task (std::function<void()>&& m_job, std::weak_ptr<TaskSignal> signalBlock)
+Task::Task (WorkFuncSig&& m_job, std::weak_ptr<TaskSignal> signalBlock)
 : m_job (m_job), signalBlock (signalBlock)
 {
 	if (auto sbp = signalBlock.lock ()) sbp->Notify ();
 }
 
-void Task::operator() ()
+void Task::Run ()
 {
 	if (auto sbp = signalBlock.lock ())
 	{
@@ -88,151 +87,83 @@ bool TaskSignal::IsReadyToRun ()
 
 int TaskSignal::InQueue () { return active_waiters; }
 
-TaskPool::TaskPool () {}
 
-void TaskPool::AddTask (Task&& task)
-{
-	std::lock_guard<std::mutex> lg (queueLock);
-	tasks.push (std::move (task));
-}
 
-void TaskPool::AddTasks (std::vector<Task> in_tasks)
+TaskManager::TaskManager ()
 {
-	std::lock_guard<std::mutex> lg (queueLock);
-	for (auto& t : in_tasks)
+	int thread_count = static_cast<int> (HardwareThreadCount ());
+	for (int i = 0; i < thread_count; i++)
 	{
-		tasks.push (std::move (t));
+		worker_threads.emplace_back (std::thread ([this] {
+			while (continue_working)
+			{
+				{
+					std::unique_lock lock (workSubmittedLock);
+					workSubmittedCondVar.wait (lock);
+				}
+
+				auto task = GetTask ();
+				while (task.has_value ())
+				{
+					task.value ().Run ();
+					task = GetTask ();
+				}
+			}
+		}));
 	}
 }
 
-std::optional<Task> TaskPool::GetTask ()
+
+TaskManager::~TaskManager ()
 {
-	std::lock_guard<std::mutex> lg (queueLock);
-	while (!tasks.empty ())
+	continue_working = false;
+	for (auto& thread : worker_threads)
 	{
-		auto val = tasks.front ();
-		tasks.pop ();
-		if (val.IsReadyToRun ()) return val;
-		tasks.push (val); // possible infinite wait...
+		thread.join ();
 	}
-	return {};
-}
-
-bool TaskPool::HasTasks ()
-{
-	std::lock_guard<std::mutex> lg (queueLock);
-	return !tasks.empty ();
 }
 
 
-TaskManager::TaskManager () {}
-
-
-void TaskManager::Submit (Task&& task, TaskType type)
+void TaskManager::Submit (Task&& task)
 {
-	currentFrameTasks.AddTask (std::move (task));
+	std::lock_guard lg (queue_lock);
+	task_queue.push (std::move (task));
+
 	workSubmittedCondVar.notify_one ();
 	return;
-
-	switch (type)
-	{
-		default:
-		case (TaskType::currentFrame):
-			currentFrameTasks.AddTask (std::move (task));
-			break;
-		case (TaskType::async):
-			asyncTasks.AddTask (std::move (task));
-			break;
-		case (TaskType::nextFrame):
-			break;
-	}
-	workSubmittedCondVar.notify_one ();
 }
 
-void TaskManager::Submit (std::vector<Task> tasks, TaskType type)
+void TaskManager::Submit (std::vector<Task> in_tasks)
 {
-	switch (type)
+	std::lock_guard lg (queue_lock);
+	for (auto& t : in_tasks)
 	{
-		default:
-		case (TaskType::currentFrame):
-			currentFrameTasks.AddTasks (tasks);
-			break;
-		case (TaskType::async):
-			asyncTasks.AddTasks (tasks);
-			break;
-		case (TaskType::nextFrame):
-			break;
+		task_queue.push (std::move (t));
 	}
 	workSubmittedCondVar.notify_all ();
 }
 
-// void TaskManager::AddTask (Task&& task) { currentFrameTasks.AddTask (std::move (task)); }
-
 std::optional<Task> TaskManager::GetTask ()
 {
-	if (currentFrameTasks.HasTasks ())
-		return currentFrameTasks.GetTask ();
-	else
-		return asyncTasks.GetTask ();
+	std::lock_guard lg (queue_lock);
+	while (!task_queue.empty ())
+	{
+		auto val = task_queue.front ();
+		task_queue.pop ();
+		if (val.IsReadyToRun ()) return val;
+		task_queue.push (val); // possible infinite wait...
+	}
+	return {};
 }
 
-Worker::Worker (TaskManager& taskMan, int threadID) : taskMan (taskMan), threadID (threadID) {}
-
-void Worker::Start () { workerThread = std::thread (&Worker::Work, this); }
-
-Worker::~Worker ()
+std::vector<std::thread::id> TaskManager::GetThreadIDs ()
 {
-	Stop ();
-	if (workerThread.joinable ())
+	std::vector<std::thread::id> ids;
+	for (auto& thread : worker_threads)
 	{
-		workerThread.join ();
+		ids.push_back (thread.get_id ());
 	}
-}
-void Worker::Stop () { isWorking = false; }
-
-void Worker::Work ()
-{
-	while (isWorking)
-	{
-		{
-			std::unique_lock<std::mutex> lock (taskMan.workSubmittedLock);
-			taskMan.workSubmittedCondVar.wait (lock);
-		}
-
-		auto task = taskMan.GetTask ();
-		while (task.has_value ())
-		{
-			(*task) ();
-			task = taskMan.GetTask ();
-		}
-	}
-}
-
-WorkerPool::WorkerPool (TaskManager& taskMan, int workerCount)
-: taskMan (taskMan), workerCount (workerCount)
-{
-	for (int i = 0; i < workerCount; i++)
-	{
-		workers.push_back (std::make_unique<Worker> (taskMan, i));
-	}
-	for (auto& worker : workers)
-	{
-		worker->Start ();
-	}
-}
-
-WorkerPool::~WorkerPool ()
-{
-	StopWorkers ();
-	taskMan.workSubmittedCondVar.notify_all ();
-}
-
-void WorkerPool::StopWorkers ()
-{
-	for (auto& worker : workers)
-	{
-		worker->Stop ();
-	}
+	return ids;
 }
 
 class JobTesterClass
@@ -289,8 +220,6 @@ bool JobTester ()
 	//	Log.Debug << "Job system test: Start\n";
 	TaskManager tMan;
 
-	WorkerPool workerPool (tMan, 2);
-
 	JobTesterClass jtc;
 	jtc.Print ();
 
@@ -298,7 +227,7 @@ bool JobTester ()
 
 	auto signal1 = std::make_shared<TaskSignal> ();
 	Task t1 = Task (
-	    [&]() {
+	    [&] {
 		    for (int i = 0; i < jobCount; i++)
 			    jtc.AddNum (1);
 	    },
@@ -308,17 +237,15 @@ bool JobTester ()
 
 	signal2->WaitOn (signal1);
 	Task t2 = Task (
-	    [&]() {
+	    [&] {
 		    for (int i = 0; i < jobCount; i++)
 			    jtc.MulNumAddNum (2, 0);
 	    },
 	    signal2);
 
-	tMan.Submit (std::move (t1), TaskType::currentFrame);
-	tMan.Submit (std::move (t2), TaskType::currentFrame);
+	tMan.Submit (std::move (t1));
+	tMan.Submit (std::move (t2));
 
-
-	workerPool.StopWorkers ();
 	signal2->Wait ();
 	jtc.Print ();
 	Log.Debug (fmt::format ("Job system test: done\n"));

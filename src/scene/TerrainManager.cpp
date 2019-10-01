@@ -207,7 +207,7 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 				    },
 				    workContinueSignal);
 
-				taskManager.Submit (std::move (t), job::TaskType::currentFrame);
+				taskManager.Submit (std::move (t));
 			}
 		}
 	}

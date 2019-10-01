@@ -62,9 +62,6 @@ class VulkanApp
 	private:
 	VulkanAppSettings settings;
 
-	// job::TaskManager taskManager;
-	job::WorkerPool workerPool;
-
 	TimeManager timeManager;
 	Window window;
 	Resource::AssetManager resourceManager;

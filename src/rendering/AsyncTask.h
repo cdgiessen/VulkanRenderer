@@ -1,7 +1,9 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <mutex>
+#include <thread>
 #include <vector>
 
 #include "Device.h"
@@ -62,11 +64,7 @@ class AsyncTaskManager
 
 	VulkanDevice& device;
 
-	std::mutex lock_graphics;
-	std::mutex lock_transfer;
-	std::mutex lock_compute;
-
-	std::vector<CommandPoolGroup> pools;
+	std::unordered_map<std::thread::id, std::unique_ptr<CommandPoolGroup>> pools;
 
 	std::mutex lock_finish_queue;
 	std::vector<GraphicsCleanUpWork> finish_queue;

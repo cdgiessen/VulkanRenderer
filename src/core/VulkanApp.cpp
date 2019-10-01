@@ -75,7 +75,6 @@ void VulkanAppSettings::Save ()
 VulkanApp::VulkanApp ()
 : settings ("settings.json"),
   timeManager (),
-  workerPool (taskManager, HardwareThreadCount ()),
   window (settings.isFullscreen, cml::vec2i (settings.screenWidth, settings.screenHeight), cml ::vec2i (10, 10)),
   resourceManager (),
   vulkanRenderer (settings.useValidationLayers, window, resourceManager),
@@ -85,10 +84,12 @@ VulkanApp::VulkanApp ()
 	Input::SetupInputDirector (&window);
 
 	vulkanRenderer.scene = &scene;
+
+	Log.Debug (fmt::format ("Hardware Threads Available = {}\n", HardwareThreadCount ()));
 }
 
 
-VulkanApp::~VulkanApp () { workerPool.StopWorkers (); }
+VulkanApp::~VulkanApp () {}
 
 void VulkanApp::Run ()
 {

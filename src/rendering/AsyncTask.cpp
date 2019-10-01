@@ -10,10 +10,12 @@ CommandPoolGroup::CommandPoolGroup (VulkanDevice& device)
 
 AsyncTaskManager::AsyncTaskManager (VulkanDevice& device) : device (device)
 {
-	unsigned int thread_count = HardwareThreadCount ();
-	for (unsigned int i = 0; i < thread_count; i++)
+	auto thread_ids = taskManager.GetThreadIDs ();
+	thread_ids.push_back (std::this_thread::get_id ());
+	for (auto& id : thread_ids)
 	{
-		pools.emplace_back (device);
+		auto group = std::make_unique<CommandPoolGroup> (device);
+		pools.insert ({ id, std::move (group) });
 	}
 }
 
@@ -21,18 +23,19 @@ AsyncTaskManager::~AsyncTaskManager () {}
 
 void AsyncTaskManager::SubmitTask (TaskType type, AsyncTask&& task)
 {
+	std::thread::id id = std::this_thread::get_id ();
 	switch (type)
 	{
 		case (TaskType::transfer):
-			SubmitWork (std::move (task), pools.at (0).transfer_pool);
+			SubmitWork (std::move (task), pools.at (id)->transfer_pool);
 
 			break;
 		case (TaskType::compute):
-			SubmitWork (std::move (task), pools.at (0).compute_pool);
+			SubmitWork (std::move (task), pools.at (id)->compute_pool);
 
 			break;
 		default:
-			SubmitWork (std::move (task), pools.at (0).graphics_pool);
+			SubmitWork (std::move (task), pools.at (id)->graphics_pool);
 	}
 }
 

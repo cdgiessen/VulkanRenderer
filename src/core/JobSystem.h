@@ -14,9 +14,11 @@
 #include "util/ConcurrentQueue.h"
 
 unsigned int HardwareThreadCount ();
+using WorkFuncSig = std::function<void()>;
 
 namespace job
 {
+
 
 class TaskSignal
 {
@@ -54,101 +56,41 @@ class TaskSignal
 class Task
 {
 	public:
-	Task (std::function<void()>&& job, std::weak_ptr<TaskSignal> signalBlock);
+	Task (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signalBlock);
 
-	void operator() ();
+	void Run ();
 
 	void WaitOn ();
 
 	bool IsReadyToRun ();
 
 	private:
-	std::function<void()> m_job;
+	WorkFuncSig m_job;
 	std::weak_ptr<TaskSignal> signalBlock;
 };
-
-class TaskPool
-{
-	public:
-	TaskPool ();
-
-	void AddTask (Task&& task);
-	void AddTasks (std::vector<Task> tasks);
-
-	std::optional<Task> GetTask ();
-
-	bool HasTasks ();
-
-	private:
-	std::mutex queueLock;
-	std::queue<Task> tasks;
-};
-
-enum class TaskType
-{
-	currentFrame,
-	async,
-	nextFrame
-};
-
-class Worker;
-class WorkerPool;
 
 class TaskManager
 {
 	public:
 	TaskManager ();
+	~TaskManager ();
 
-	void Submit (Task&& task, TaskType type = TaskType::currentFrame);
-	void Submit (std::vector<Task> tasks, TaskType type = TaskType::currentFrame);
+	void Submit (Task&& task);
+	void Submit (std::vector<Task> tasks);
 
 	std::optional<Task> GetTask ();
 
+	std::vector<std::thread::id> GetThreadIDs ();
+
 	private:
-	TaskPool currentFrameTasks;
-	TaskPool asyncTasks;
+	std::mutex queue_lock;
+	std::queue<Task> task_queue;
 
+	std::atomic_bool continue_working = true;
+	std::vector<std::thread> worker_threads;
 
-
-	friend Worker;
-	friend WorkerPool;
 	std::mutex workSubmittedLock;
 	std::condition_variable workSubmittedCondVar;
-};
-
-class Worker
-{
-	public:
-	Worker (TaskManager& taskMan, int threadID);
-	~Worker ();
-
-	void Start (); // delayed thread starting
-	void Stop ();
-
-	int ThreadID () { return threadID; };
-
-	private:
-	void Work ();
-	TaskManager& taskMan;
-	int threadID;
-	std::thread workerThread;
-	std::atomic_bool isWorking = true;
-};
-
-class WorkerPool
-{
-	public:
-	WorkerPool (TaskManager& taskMan, int workerCount = 1);
-	~WorkerPool ();
-
-	void StopWorkers ();
-
-	int WorkerCount () { return workerCount; };
-
-	private:
-	TaskManager& taskMan;
-	std::vector<std::unique_ptr<Worker>> workers;
-	int workerCount = 1;
 };
 
 extern bool JobTester ();

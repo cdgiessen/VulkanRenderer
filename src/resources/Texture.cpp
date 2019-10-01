@@ -203,7 +203,7 @@ void Manager::LoadTextureList ()
 			}
 		}
 		id_counter = count;
-		taskManager.Submit (tasks, job::TaskType::currentFrame);
+		taskManager.Submit (tasks);
 		signal->Wait ();
 	}
 	catch (nlohmann::json::exception& e)
