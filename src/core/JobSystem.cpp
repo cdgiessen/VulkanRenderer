@@ -13,6 +13,8 @@ unsigned int HardwareThreadCount ()
 namespace job
 {
 
+Task::Task (WorkFuncSig&& m_job) : m_job (m_job) {}
+
 Task::Task (WorkFuncSig&& m_job, std::weak_ptr<TaskSignal> signalBlock)
 : m_job (m_job), signalBlock (signalBlock)
 {

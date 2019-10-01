@@ -247,7 +247,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 {
 	if (device.singleQueueDevice)
 	{
-		std::function<void(const VkCommandBuffer)> work = [&](const VkCommandBuffer cmdBuf) {
+		std::function<void(const VkCommandBuffer)> work = [=, &buf_man](const VkCommandBuffer cmdBuf) {
 			SetLayoutAndTransferRegions (
 			    cmdBuf, image, buf_man.GetBuffer (buffer).buffer, subresourceRange, bufferCopyRegions);
 

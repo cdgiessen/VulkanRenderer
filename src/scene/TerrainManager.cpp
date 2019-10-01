@@ -200,10 +200,9 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 					        terrainVulkanTextureArrayRoughness,
 					        terrainVulkanTextureArrayMetallic,
 					        terrainVulkanTextureArrayNormal);
-					    {
-						    std::lock_guard<std::mutex> lk (terrain_mutex);
-						    terrains.push_back (std::move (terrain));
-					    }
+
+					    std::lock_guard<std::mutex> lk (terrain_mutex);
+					    terrains.push_back (std::move (terrain));
 				    },
 				    workContinueSignal);
 

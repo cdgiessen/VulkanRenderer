@@ -257,8 +257,6 @@ void Manager::LoadTextureFromFile (TexID id)
 			path = texture_path / fs::path (texRes.name + std::string (".") +
 			                                formatTypeToString (texRes.fileFormatType));
 		}
-		Log.Debug (fmt::format ("{}\n", path.string ()));
-
 		paths.push_back (path);
 
 		int texWidth, texHeight, texChannels;

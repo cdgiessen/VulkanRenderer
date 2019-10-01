@@ -23,40 +23,34 @@ AsyncTaskManager::~AsyncTaskManager () {}
 
 void AsyncTaskManager::SubmitTask (TaskType type, AsyncTask&& task)
 {
-	std::thread::id id = std::this_thread::get_id ();
-	switch (type)
-	{
-		case (TaskType::transfer):
-			SubmitWork (std::move (task), pools.at (id)->transfer_pool);
+	taskManager.Submit (job::Task ([type, &task, this] {
+		std::thread::id id = std::this_thread::get_id ();
+		CommandPool* pool;
+		switch (type)
+		{
+			case (TaskType::transfer):
+				pool = &(pools.at (id)->transfer_pool);
+				break;
+			case (TaskType::compute):
+				pool = &(pools.at (id)->compute_pool);
+				break;
+			default:
+				pool = &(pools.at (id)->graphics_pool);
+		}
+		CommandBuffer cmdBuf = CommandBuffer (*pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-			break;
-		case (TaskType::compute):
-			SubmitWork (std::move (task), pools.at (id)->compute_pool);
+		std::shared_ptr<VulkanFence> fence = std::make_shared<VulkanFence> (device);
 
-			break;
-		default:
-			SubmitWork (std::move (task), pools.at (id)->graphics_pool);
-	}
-}
+		cmdBuf.Allocate ();
+		cmdBuf.Begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		cmdBuf.WriteTo (task.work);
+		cmdBuf.SetFence (fence);
+		cmdBuf.End ();
+		cmdBuf.Submit (task.wait_sems, task.signal_sems);
 
-
-
-void AsyncTaskManager::SubmitWork (AsyncTask&& task, CommandPool& pool)
-{
-	CommandBuffer cmdBuf = CommandBuffer (pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
-	std::shared_ptr<VulkanFence> fence = std::make_shared<VulkanFence> (device);
-
-	cmdBuf.Allocate ();
-	cmdBuf.Begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-	cmdBuf.WriteTo (task.work);
-	cmdBuf.SetFence (fence);
-	cmdBuf.End ();
-	cmdBuf.Submit (task.wait_sems, task.signal_sems);
-
-
-	std::lock_guard lk (lock_finish_queue);
-	finish_queue.emplace_back (cmdBuf, task.finish_work);
+		std::lock_guard lk (lock_finish_queue);
+		finish_queue.emplace_back (cmdBuf, task.finish_work);
+	}));
 }
 
 void AsyncTaskManager::CleanFinishQueue ()

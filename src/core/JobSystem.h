@@ -56,6 +56,7 @@ class TaskSignal
 class Task
 {
 	public:
+	Task (WorkFuncSig&& job);
 	Task (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signalBlock);
 
 	void Run ();

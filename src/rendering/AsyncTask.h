@@ -60,8 +60,6 @@ class AsyncTaskManager
 	void CleanFinishQueue ();
 
 	private:
-	void SubmitWork (AsyncTask&& task, CommandPool& pool);
-
 	VulkanDevice& device;
 
 	std::unordered_map<std::thread::id, std::unique_ptr<CommandPoolGroup>> pools;
