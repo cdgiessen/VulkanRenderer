@@ -154,6 +154,8 @@ class BufferManager
 {
 	public:
 	BufferManager (VulkanDevice& device);
+	BufferManager (BufferManager const& buf) = delete;
+	BufferManager& operator= (BufferManager const& buf) = delete;
 
 	BufferID CreateBuffer (BufCreateDetails details);
 	void FreeBuffer (BufferID id);

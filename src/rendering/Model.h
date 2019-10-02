@@ -60,6 +60,10 @@ class ModelManager
 	    AsyncTaskManager& async_task_man,
 	    BufferManager& buf_man);
 
+	ModelManager (ModelManager const& man) = delete;
+	ModelManager& operator= (ModelManager const& man) = delete;
+
+
 	ModelID CreateModel (std::unique_ptr<MeshData> meshData);
 	void FreeModel (ModelID id);
 

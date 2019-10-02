@@ -2,8 +2,6 @@
 
 #include "Logger.h"
 
-job::TaskManager taskManager;
-
 unsigned int HardwareThreadCount ()
 {
 	unsigned int concurentThreadsSupported = std::thread::hardware_concurrency ();
@@ -103,7 +101,6 @@ TaskManager::TaskManager ()
 					std::unique_lock lock (workSubmittedLock);
 					workSubmittedCondVar.wait (lock);
 				}
-
 				auto task = GetTask ();
 				while (task.has_value ())
 				{
@@ -119,6 +116,10 @@ TaskManager::TaskManager ()
 TaskManager::~TaskManager ()
 {
 	continue_working = false;
+	{
+		std::lock_guard lg (workSubmittedLock);
+		workSubmittedCondVar.notify_all ();
+	}
 	for (auto& thread : worker_threads)
 	{
 		thread.join ();
@@ -126,13 +127,12 @@ TaskManager::~TaskManager ()
 }
 
 
-void TaskManager::Submit (Task&& task)
+void TaskManager::Submit (Task task)
 {
 	std::lock_guard lg (queue_lock);
 	task_queue.push (std::move (task));
 
 	workSubmittedCondVar.notify_one ();
-	return;
 }
 
 void TaskManager::Submit (std::vector<Task> in_tasks)
@@ -148,11 +148,14 @@ void TaskManager::Submit (std::vector<Task> in_tasks)
 std::optional<Task> TaskManager::GetTask ()
 {
 	std::lock_guard lg (queue_lock);
+	// Log.Debug (fmt::format ("queue size {}\n", task_queue.size ()));
 	while (!task_queue.empty ())
 	{
 		auto val = task_queue.front ();
 		task_queue.pop ();
 		if (val.IsReadyToRun ()) return val;
+		Log.Debug ("task not ready to run {}\n");
+
 		task_queue.push (val); // possible infinite wait...
 	}
 	return {};

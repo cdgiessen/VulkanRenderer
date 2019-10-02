@@ -49,7 +49,7 @@ class Asset
 class AssetManager
 {
 	public:
-	AssetManager ();
+	AssetManager (job::TaskManager& task_manager);
 	~AssetManager ();
 
 
@@ -58,6 +58,7 @@ class AssetManager
 	MaterialManager matManager;
 
 	private:
+	job::TaskManager& task_manager;
 	std::atomic_int counter;
 };
 

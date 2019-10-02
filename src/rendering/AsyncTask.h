@@ -52,14 +52,18 @@ class CommandPoolGroup
 class AsyncTaskManager
 {
 	public:
-	AsyncTaskManager (VulkanDevice& device);
+	AsyncTaskManager (job::TaskManager& task_manager, VulkanDevice& device);
 	~AsyncTaskManager ();
 
-	void SubmitTask (TaskType type, AsyncTask&& task);
+	AsyncTaskManager (AsyncTaskManager const& man) = delete;
+	AsyncTaskManager& operator= (AsyncTaskManager const& man) = delete;
+
+	void SubmitTask (TaskType type, AsyncTask task);
 
 	void CleanFinishQueue ();
 
 	private:
+	job::TaskManager& task_manager;
 	VulkanDevice& device;
 
 	std::unordered_map<std::thread::id, std::unique_ptr<CommandPoolGroup>> pools;

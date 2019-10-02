@@ -52,7 +52,8 @@ struct TerrainCreationData
 class TerrainManager
 {
 	public:
-	TerrainManager (InternalGraph::GraphPrototype& protoGraph,
+	TerrainManager (job::TaskManager& task_manager,
+	    InternalGraph::GraphPrototype& protoGraph,
 	    Resource::AssetManager& resourceMan,
 	    VulkanRenderer& renderer);
 	~TerrainManager ();
@@ -67,6 +68,7 @@ class TerrainManager
 
 	float GetTerrainHeightAtLocation (float x, float z);
 
+	job::TaskManager& task_manager;
 	Resource::AssetManager& resourceMan;
 	VulkanRenderer& renderer;
 

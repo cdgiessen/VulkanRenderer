@@ -6,7 +6,11 @@ namespace Resource
 {
 
 
-AssetManager::AssetManager () { std::filesystem::path ("assets"); }
+AssetManager::AssetManager (job::TaskManager& task_manager)
+: task_manager (task_manager), texture_manager (task_manager)
+{
+	std::filesystem::path ("assets");
+}
 
 
 AssetManager::~AssetManager () {}

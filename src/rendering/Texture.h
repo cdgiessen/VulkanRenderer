@@ -118,14 +118,18 @@ class VulkanTexture
 
 using VulkanTextureID = int;
 
-class VulkanTextureManager
+class TextureManager
 {
 	public:
-	VulkanTextureManager (Resource::Texture::Manager& texture_manager,
+	TextureManager (Resource::Texture::Manager& texture_manager,
 	    VulkanDevice& device,
 	    AsyncTaskManager& async_task_manager,
 	    BufferManager& buf_man);
-	~VulkanTextureManager ();
+	~TextureManager ();
+
+	TextureManager (TextureManager const& buf) = delete;
+	TextureManager& operator= (TextureManager const& buf) = delete;
+
 
 	VulkanTextureID CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails);
 

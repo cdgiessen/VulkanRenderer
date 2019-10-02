@@ -150,7 +150,10 @@ std::optional<TexResource> from_json_TexResource (nlohmann::json j)
 	}
 }
 
-Manager::Manager () { LoadTextureList (); }
+Manager::Manager (job::TaskManager& task_manager) : task_manager (task_manager)
+{
+	LoadTextureList ();
+}
 
 Manager::~Manager () {}
 
@@ -203,7 +206,7 @@ void Manager::LoadTextureList ()
 			}
 		}
 		id_counter = count;
-		taskManager.Submit (tasks);
+		task_manager.Submit (tasks);
 		signal->Wait ();
 	}
 	catch (nlohmann::json::exception& e)

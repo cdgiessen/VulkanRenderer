@@ -1373,7 +1373,7 @@ void ImGui_ImplGlfwVulkan_Render (VkCommandBuffer command_buffer)
 }
 
 
-void PrepareImGui (Window* window, VulkanRenderer* vulkanRenderer)
+void PrepareImGui (Window* window, VulkanRenderer* vulkan_renderer)
 {
 	ImGui_ImplGlfwVulkan_Init_Data init_data = {};
 
@@ -1399,13 +1399,13 @@ void PrepareImGui (Window* window, VulkanRenderer* vulkanRenderer)
 	pool_info.maxSets = maxSets * 11;
 
 	VK_CHECK_RESULT (vkCreateDescriptorPool (
-	    vulkanRenderer->device.device, &pool_info, VK_NULL_HANDLE, &init_data.descriptor_pool));
+	    vulkan_renderer->device.device, &pool_info, VK_NULL_HANDLE, &init_data.descriptor_pool));
 
 	init_data.allocator = VK_NULL_HANDLE;
-	init_data.gpu = vulkanRenderer->device.physical_device.physical_device;
-	init_data.device = vulkanRenderer->device.device;
-	init_data.render_pass = vulkanRenderer->GetRelevantRenderpass (RenderableType::overlay);
-	// init_data.pipeline_cache = vulkanRenderer->pipelineManager.GetPipelineCache();
+	init_data.gpu = vulkan_renderer->device.physical_device.physical_device;
+	init_data.device = vulkan_renderer->device.device;
+	init_data.render_pass = vulkan_renderer->GetRelevantRenderpass (RenderableType::overlay);
+	// init_data.pipeline_cache = vulkan_renderer->pipelineManager.GetPipelineCache();
 	init_data.check_vk_result = [](VkResult err) {
 		if (err == 0) return;
 		printf ("VkResult %d\n", err);
@@ -1414,12 +1414,12 @@ void PrepareImGui (Window* window, VulkanRenderer* vulkanRenderer)
 
 	ImGui_ImplGlfwVulkan_Init (window->getWindowContext (), false, &init_data);
 
-	CommandPool pool (vulkanRenderer->device, vulkanRenderer->device.GraphicsQueue ());
+	CommandPool pool (vulkan_renderer->device, vulkan_renderer->device.GraphicsQueue ());
 
 	VkCommandBuffer cmdBuf = pool.GetCommandBuffer ();
 	ImGui_ImplGlfwVulkan_CreateFontsTexture (cmdBuf);
 
-	VulkanFence fence = VulkanFence (vulkanRenderer->device);
+	VulkanFence fence = VulkanFence (vulkan_renderer->device);
 
 	pool.ReturnCommandBuffer (cmdBuf, fence);
 	fence.Wait ();

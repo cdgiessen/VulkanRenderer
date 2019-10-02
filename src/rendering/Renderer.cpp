@@ -66,12 +66,14 @@ void RenderSettings::Save ()
 	outFile.close ();
 }
 
-VulkanRenderer::VulkanRenderer (bool validationLayer, Window& window, Resource::AssetManager& resource_man)
+VulkanRenderer::VulkanRenderer (
+    bool validationLayer, job::TaskManager& task_manager, Window& window, Resource::AssetManager& resource_man)
 
 : settings ("render_settings.json"),
+  task_manager (task_manager),
   device (window, validationLayer),
   vulkanSwapChain (device, window),
-  async_task_manager (device),
+  async_task_manager (task_manager, device),
   shader_manager (device),
   pipeline_manager (device),
   buffer_manager (device),

@@ -511,7 +511,7 @@ std::optional<std::vector<uint32_t>> const ShaderCompiler::compile_glsl_to_spriv
 // 	{
 // 		tasks.push_back (job::Task ([&]() { StartShaderCompilation (bucket); }, signal));
 // 	}
-// 	taskManager.Submit (tasks);
+// 	task_manager.Submit (tasks);
 
 // 	signal->Wait ();
 // }

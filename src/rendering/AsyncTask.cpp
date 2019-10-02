@@ -1,4 +1,5 @@
 #include "AsyncTask.h"
+#include "core/Logger.h"
 
 CommandPoolGroup::CommandPoolGroup (VulkanDevice& device)
 : graphics_pool (device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
@@ -8,9 +9,10 @@ CommandPoolGroup::CommandPoolGroup (VulkanDevice& device)
 }
 
 
-AsyncTaskManager::AsyncTaskManager (VulkanDevice& device) : device (device)
+AsyncTaskManager::AsyncTaskManager (job::TaskManager& task_manager, VulkanDevice& device)
+: task_manager (task_manager), device (device)
 {
-	auto thread_ids = taskManager.GetThreadIDs ();
+	auto thread_ids = task_manager.GetThreadIDs ();
 	thread_ids.push_back (std::this_thread::get_id ());
 	for (auto& id : thread_ids)
 	{
@@ -21,9 +23,10 @@ AsyncTaskManager::AsyncTaskManager (VulkanDevice& device) : device (device)
 
 AsyncTaskManager::~AsyncTaskManager () {}
 
-void AsyncTaskManager::SubmitTask (TaskType type, AsyncTask&& task)
+void AsyncTaskManager::SubmitTask (TaskType type, AsyncTask task)
 {
-	taskManager.Submit (job::Task ([type, &task, this] {
+	task_manager.Submit (job::Task ([type, &task, this] {
+		Log.Debug ("started render task\n");
 		std::thread::id id = std::this_thread::get_id ();
 		CommandPool* pool;
 		switch (type)
@@ -50,6 +53,7 @@ void AsyncTaskManager::SubmitTask (TaskType type, AsyncTask&& task)
 
 		std::lock_guard lk (lock_finish_queue);
 		finish_queue.emplace_back (cmdBuf, task.finish_work);
+		Log.Debug ("Finished render task\n");
 	}));
 }
 

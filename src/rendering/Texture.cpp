@@ -258,7 +258,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 		task.work = work;
 		task.finish_work = [=, &buf_man] { buf_man.FreeBuffer (buffer); };
 
-		async_task_man.SubmitTask (TaskType::graphics, std::move (task));
+		async_task_man.SubmitTask (TaskType::graphics, task);
 	}
 	else
 	{
@@ -282,8 +282,8 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 		task_gen_mips.work = mipMapGenWork;
 		task_gen_mips.wait_sems = { sem };
 
-		async_task_man.SubmitTask (TaskType::transfer, std::move (task_transfer));
-		async_task_man.SubmitTask (TaskType::graphics, std::move (task_gen_mips));
+		async_task_man.SubmitTask (TaskType::transfer, task_transfer);
+		async_task_man.SubmitTask (TaskType::graphics, task_gen_mips);
 	}
 }
 
@@ -636,7 +636,7 @@ void VulkanTexture::InitImage2D (VkImageCreateInfo imageInfo)
 	    image.allocator, &imageInfo, &imageAllocCreateInfo, &image.image, &image.allocation, &image.allocationInfo));
 }
 
-VulkanTextureManager::VulkanTextureManager (Resource::Texture::Manager& texture_manager,
+TextureManager::TextureManager (Resource::Texture::Manager& texture_manager,
     VulkanDevice& device,
     AsyncTaskManager& async_task_manager,
     BufferManager& buffer_manager)
@@ -647,12 +647,12 @@ VulkanTextureManager::VulkanTextureManager (Resource::Texture::Manager& texture_
 {
 }
 
-VulkanTextureManager::~VulkanTextureManager ()
+TextureManager::~TextureManager ()
 {
 	Log.Debug (fmt::format ("Textures left over {}\n", texture_map.size ()));
 }
 
-VulkanTextureID VulkanTextureManager::CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails)
+VulkanTextureID TextureManager::CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails)
 {
 	auto& resource = texture_manager.GetTexResourceByID (texture);
 	auto tex = std::make_unique<VulkanTexture> (
@@ -662,8 +662,7 @@ VulkanTextureID VulkanTextureManager::CreateTexture2D (Resource::Texture::TexID 
 	return id_counter++;
 }
 
-VulkanTextureID VulkanTextureManager::CreateTexture2DArray (
-    Resource::Texture::TexID textures, TexCreateDetails texCreateDetails)
+VulkanTextureID TextureManager::CreateTexture2DArray (Resource::Texture::TexID textures, TexCreateDetails texCreateDetails)
 {
 	auto& resource = texture_manager.GetTexResourceByID (textures);
 	auto tex = std::make_unique<VulkanTexture> (
@@ -673,7 +672,7 @@ VulkanTextureID VulkanTextureManager::CreateTexture2DArray (
 	return id_counter++;
 }
 
-VulkanTextureID VulkanTextureManager::CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails)
+VulkanTextureID TextureManager::CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails)
 {
 	auto& resource = texture_manager.GetTexResourceByID (cubeMap);
 	auto tex = std::make_unique<VulkanTexture> (
@@ -683,7 +682,7 @@ VulkanTextureID VulkanTextureManager::CreateCubeMap (Resource::Texture::TexID cu
 	return id_counter++;
 }
 
-VulkanTextureID VulkanTextureManager::CreateTextureFromBuffer (BufferID buffer, TexCreateDetails texCreateDetails)
+VulkanTextureID TextureManager::CreateTextureFromBuffer (BufferID buffer, TexCreateDetails texCreateDetails)
 {
 	auto tex = std::make_unique<VulkanTexture> (
 	    device, async_task_manager, buffer_manager, texCreateDetails, buffer);
@@ -692,7 +691,7 @@ VulkanTextureID VulkanTextureManager::CreateTextureFromBuffer (BufferID buffer, 
 	return id_counter++;
 }
 
-VulkanTextureID VulkanTextureManager::CreateDepthImage (VkFormat depthFormat, int width, int height)
+VulkanTextureID TextureManager::CreateDepthImage (VkFormat depthFormat, int width, int height)
 {
 	TexCreateDetails texCreateDetails;
 	texCreateDetails.format = depthFormat;
@@ -704,14 +703,14 @@ VulkanTextureID VulkanTextureManager::CreateDepthImage (VkFormat depthFormat, in
 	return id_counter++;
 }
 
-VulkanTexture const& VulkanTextureManager::get_texture (VulkanTextureID id)
+VulkanTexture const& TextureManager::get_texture (VulkanTextureID id)
 {
 	std::lock_guard guard (map_lock);
 	return *texture_map.at (id);
 }
 
 
-void VulkanTextureManager::delete_texture (VulkanTextureID id)
+void TextureManager::delete_texture (VulkanTextureID id)
 {
 	std::lock_guard guard (map_lock);
 	texture_map.erase (id);

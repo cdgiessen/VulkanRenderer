@@ -212,6 +212,11 @@ PipeID PipelineManager::MakePipe (PipelineOutline builder, VkRenderPass renderPa
 
 void PipelineManager::BindPipe (PipeID ID, VkCommandBuffer cmdBuf)
 {
+	std::lock_guard guard (pipe_lock);
 	vkCmdBindPipeline (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.at (ID).pipeline);
 }
-VkPipelineLayout PipelineManager::GetPipeLayout (PipeID ID) { return pipelines.at (ID).layout; }
+VkPipelineLayout PipelineManager::GetPipeLayout (PipeID ID)
+{
+	std::lock_guard guard (pipe_lock);
+	return pipelines.at (ID).layout;
+}

@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "core/JobSystem.h"
+
 namespace Resource::Texture
 {
 
@@ -80,7 +82,7 @@ class TexResource
 class Manager
 {
 	public:
-	Manager ();
+	Manager (job::TaskManager& task_manager);
 	~Manager ();
 
 	void LoadTextureList ();
@@ -95,6 +97,8 @@ class Manager
 
 
 	private:
+	job::TaskManager& task_manager;
+
 	std::atomic_int id_counter = 0;
 
 	std::mutex resource_lock;

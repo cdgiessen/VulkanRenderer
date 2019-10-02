@@ -74,16 +74,17 @@ void VulkanAppSettings::Save ()
 
 VulkanApp::VulkanApp ()
 : settings ("settings.json"),
-  timeManager (),
+  task_manager (),
+  time_manager (),
   window (settings.isFullscreen, cml::vec2i (settings.screenWidth, settings.screenHeight), cml ::vec2i (10, 10)),
-  resourceManager (),
-  vulkanRenderer (settings.useValidationLayers, window, resourceManager),
+  resource_manager (task_manager),
+  vulkan_renderer (settings.useValidationLayers, task_manager, window, resource_manager),
   imgui_nodeGraph_terrain (),
-  scene (resourceManager, vulkanRenderer, timeManager, imgui_nodeGraph_terrain.GetGraph ())
+  scene (task_manager, resource_manager, vulkan_renderer, time_manager, imgui_nodeGraph_terrain.GetGraph ())
 {
 	Input::SetupInputDirector (&window);
 
-	vulkanRenderer.scene = &scene;
+	vulkan_renderer.scene = &scene;
 
 	Log.Debug (fmt::format ("Hardware Threads Available = {}\n", HardwareThreadCount ()));
 }
@@ -105,34 +106,34 @@ void VulkanApp::Run ()
 			}
 		}
 
-		timeManager.StartFrameTimer ();
+		time_manager.StartFrameTimer ();
 		Input::inputDirector.UpdateInputs ();
 		HandleInputs ();
 		scene.UpdateScene ();
 		BuildImgui ();
-		vulkanRenderer.RenderFrame ();
+		vulkan_renderer.RenderFrame ();
 		Input::inputDirector.ResetReleasedInput ();
 
 		if (settings.isFrameCapped)
 		{
-			if (timeManager.ExactTimeSinceFrameStart () < 1.0 / settings.MaxFPS)
+			if (time_manager.ExactTimeSinceFrameStart () < 1.0 / settings.MaxFPS)
 			{
 				std::this_thread::sleep_for (std::chrono::duration<double> (
-				    1.0 / settings.MaxFPS - timeManager.ExactTimeSinceFrameStart () -
+				    1.0 / settings.MaxFPS - time_manager.ExactTimeSinceFrameStart () -
 				    (1.0 / settings.MaxFPS) / 10.0));
 			}
 		}
-		timeManager.EndFrameTimer ();
+		time_manager.EndFrameTimer ();
 	}
 
-	vulkanRenderer.DeviceWaitTillIdle ();
+	vulkan_renderer.DeviceWaitTillIdle ();
 }
 
 void VulkanApp::RecreateSwapChain ()
 {
-	vulkanRenderer.DeviceWaitTillIdle ();
+	vulkan_renderer.DeviceWaitTillIdle ();
 
-	vulkanRenderer.RecreateSwapChain ();
+	vulkan_renderer.RecreateSwapChain ();
 }
 
 void VulkanApp::DebugOverlay (bool* show_debug_overlay)
@@ -151,14 +152,14 @@ void VulkanApp::DebugOverlay (bool* show_debug_overlay)
 		return;
 	}
 	ImGui::Text ("FPS %.3f", ImGui::GetIO ().Framerate);
-	ImGui::Text ("DeltaT: %f(s)", timeManager.DeltaTime ());
+	ImGui::Text ("DeltaT: %f(s)", time_manager.DeltaTime ());
 	if (ImGui::Button ("Toggle Verbose"))
 	{
 		verbose = !verbose;
 	}
-	if (verbose) ImGui::Text ("Run Time: %f(s)", timeManager.RunningTime ());
-	if (verbose) ImGui::Text ("Last frame time%f(s)", timeManager.PreviousFrameTime ());
-	if (verbose) ImGui::Text ("Last frame time%f(s)", timeManager.PreviousFrameTime ());
+	if (verbose) ImGui::Text ("Run Time: %f(s)", time_manager.RunningTime ());
+	if (verbose) ImGui::Text ("Last frame time%f(s)", time_manager.PreviousFrameTime ());
+	if (verbose) ImGui::Text ("Last frame time%f(s)", time_manager.PreviousFrameTime ());
 	ImGui::Separator ();
 	ImGui::Text ("Mouse Position: (%.1f,%.1f)", ImGui::GetIO ().MousePos.x, ImGui::GetIO ().MousePos.y);
 	ImGui::End ();
@@ -267,7 +268,7 @@ void VulkanApp::BuildImgui ()
 
 void VulkanApp::HandleInputs ()
 {
-	double deltaTime = timeManager.DeltaTime ();
+	double deltaTime = time_manager.DeltaTime ();
 
 	if (!Input::GetTextInputMode ())
 	{
@@ -317,7 +318,7 @@ void VulkanApp::HandleInputs ()
 
 		if (Input::GetKeyDown (Input::KeyCode::X))
 		{
-			vulkanRenderer.ToggleWireframe ();
+			vulkan_renderer.ToggleWireframe ();
 			Log.Debug ("Wireframe toggle");
 		}
 

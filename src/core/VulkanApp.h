@@ -62,11 +62,13 @@ class VulkanApp
 	private:
 	VulkanAppSettings settings;
 
-	TimeManager timeManager;
-	Window window;
-	Resource::AssetManager resourceManager;
+	job::TaskManager task_manager;
 
-	VulkanRenderer vulkanRenderer;
+	TimeManager time_manager;
+	Window window;
+	Resource::AssetManager resource_manager;
+
+	VulkanRenderer vulkan_renderer;
 
 	ProcTerrainNodeGraph imgui_nodeGraph_terrain;
 	Scene scene;

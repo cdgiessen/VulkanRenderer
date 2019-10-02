@@ -12,6 +12,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "core/JobSystem.h"
+
 #include "util/ConcurrentQueue.h"
 #include "util/PackedArray.h"
 
@@ -125,7 +127,8 @@ class GPU_DoubleBuffer
 class VulkanRenderer
 {
 	public:
-	VulkanRenderer (bool enableValidationLayer, Window& window, Resource::AssetManager& resource_man);
+	VulkanRenderer (
+	    bool enableValidationLayer, job::TaskManager& task_manager, Window& window, Resource::AssetManager& resource_man);
 
 	VulkanRenderer (const VulkanRenderer& other) = delete; // copy
 	VulkanRenderer (VulkanRenderer&& other) = delete;      // move
@@ -164,6 +167,8 @@ class VulkanRenderer
 	void DeviceWaitTillIdle ();
 	VkRenderPass GetRelevantRenderpass (RenderableType type);
 
+	job::TaskManager& task_manager;
+
 	RenderSettings settings;
 
 	VulkanDevice device;
@@ -175,7 +180,7 @@ class VulkanRenderer
 	PipelineManager pipeline_manager;
 	BufferManager buffer_manager;
 	ModelManager model_manager;
-	VulkanTextureManager texture_manager;
+	TextureManager texture_manager;
 
 	Scene* scene;
 	std::unique_ptr<FrameGraph> frameGraph;

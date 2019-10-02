@@ -150,24 +150,35 @@ void VulkanInstance::SetupDebugCallback ()
 	}
 }
 
+std::string_view MessageSeverity (VkDebugUtilsMessageSeverityFlagBitsEXT s)
+{
+	if (s | VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+		return "ERROR";
+	else if (s | VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+		return "WARNING";
+	else if (s | VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+		return "INFO";
+	else
+		return "VERBOSE";
+}
+std::string_view MessageType (VkDebugUtilsMessageTypeFlagsEXT s)
+{
+	if (s | VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
+		return "Validation";
+	else if (s | VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
+		return "Performace";
+	else
+		return "General";
+}
+
 VkBool32 VulkanInstance::debugUtilsCallback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData)
 {
-	if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
-	{
-		Log.Debug (fmt::format ("{} Validation Layer:\n{}\n", messageSeverity, pCallbackData->pMessage));
-	}
-	else if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
-	{
-		Log.Debug (fmt::format ("{} Performance:\n{}\n", messageSeverity, pCallbackData->pMessage));
-	}
-	else
-	{
-		Log.Debug (fmt::format ("{}:\n{}\n", messageSeverity, pCallbackData->pMessage));
-	}
-
+	auto ms = MessageSeverity (messageSeverity);
+	auto mt = MessageType (messageType);
+	// Log.Debug (fmt::format ("{} {}:\n{}\n", ms, mt, pCallbackData->pMessage));
 	return VK_FALSE;
 }
 

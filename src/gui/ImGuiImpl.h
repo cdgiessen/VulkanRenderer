@@ -51,4 +51,4 @@ void ImGui_ImplGlfwVulkan_CharCallback (GLFWwindow* window, unsigned int c);
 
 
 class Window;
-void PrepareImGui (Window* window, VulkanRenderer* vulkanRenderer);
+void PrepareImGui (Window* window, VulkanRenderer* vulkan_renderer);

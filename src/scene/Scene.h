@@ -6,6 +6,7 @@
 
 #include "resources/Resource.h"
 
+#include "core/JobSystem.h"
 #include "core/TimeManager.h"
 
 #include "Camera.h"
@@ -35,9 +36,10 @@ struct SkySettings
 class Scene
 {
 	public:
-	Scene (Resource::AssetManager& resourceMan,
+	Scene (job::TaskManager& task_manager,
+	    Resource::AssetManager& resourceMan,
 	    VulkanRenderer& renderer,
-	    TimeManager& timeManager,
+	    TimeManager& time_manager,
 	    InternalGraph::GraphPrototype& graph);
 	~Scene ();
 
@@ -54,9 +56,10 @@ class Scene
 	bool walkOnGround = false;
 
 	private:
+	job::TaskManager& task_manager;
 	VulkanRenderer& renderer;
 	Resource::AssetManager& resourceMan;
-	TimeManager& timeManager;
+	TimeManager& time_manager;
 
 	std::vector<DirectionalLight> directionalLights;
 	std::vector<PointLight> pointLights;

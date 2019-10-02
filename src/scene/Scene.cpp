@@ -12,11 +12,12 @@
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
 
-Scene::Scene (Resource::AssetManager& resourceMan,
+Scene::Scene (job::TaskManager& task_manager,
+    Resource::AssetManager& resourceMan,
     VulkanRenderer& renderer,
-    TimeManager& timeManager,
+    TimeManager& time_manager,
     InternalGraph::GraphPrototype& graph)
-: renderer (renderer), resourceMan (resourceMan), timeManager (timeManager)
+: task_manager (task_manager), renderer (renderer), resourceMan (resourceMan), time_manager (time_manager)
 {
 
 	camera = std::make_unique<Camera> (cml::vec3f (0, 1, -5), cml::vec3f (0, 1, 0), 0, 90);
@@ -104,7 +105,7 @@ Scene::Scene (Resource::AssetManager& resourceMan,
 	// std::unique_ptr<GameObject> pbr_test = std::make_shared<GameObject>(renderer);
 	// pbr_test->usePBR = true;
 
-	terrainManager = std::make_unique<TerrainManager> (graph, resourceMan, renderer);
+	terrainManager = std::make_unique<TerrainManager> (task_manager, graph, resourceMan, renderer);
 
 	// terrainManager->SetupResources(resourceMan, renderer);
 	// terrainManager->GenerateTerrain(resourceMan, renderer, camera);
@@ -150,7 +151,7 @@ void Scene::UpdateScene ()
 {
 
 	GlobalData gd;
-	gd.time = (float)timeManager.RunningTime ();
+	gd.time = (float)time_manager.RunningTime ();
 
 	cml::mat4f proj = cml::perspective (cml::radians (55.0f),
 	    renderer.vulkanSwapChain.swapChainExtent.width /
@@ -196,7 +197,7 @@ void Scene::UpdateScene ()
 		{
 			verticalVelocity += 0.15f;
 		}
-		verticalVelocity += (float)timeManager.DeltaTime () * gravity;
+		verticalVelocity += (float)time_manager.DeltaTime () * gravity;
 		height += verticalVelocity;
 		camera->Position.y = height;
 		if (camera->Position.y < groundHeight)
@@ -218,7 +219,7 @@ void Scene::UpdateScene ()
 
 	for (auto& obj : gameObjects)
 	{
-		obj->UpdateUniformBuffer ((float)timeManager.RunningTime ());
+		obj->UpdateUniformBuffer ((float)time_manager.RunningTime ());
 	}
 
 	if (UpdateTerrain && terrainManager != nullptr)

@@ -27,9 +27,11 @@ TerrainCreationData::TerrainCreationData (
 }
 
 
-TerrainManager::TerrainManager (
-    InternalGraph::GraphPrototype& protoGraph, Resource::AssetManager& resourceMan, VulkanRenderer& renderer)
-: resourceMan (resourceMan), renderer (renderer), protoGraph (protoGraph)
+TerrainManager::TerrainManager (job::TaskManager& task_manager,
+    InternalGraph::GraphPrototype& protoGraph,
+    Resource::AssetManager& resourceMan,
+    VulkanRenderer& renderer)
+: task_manager (task_manager), resourceMan (resourceMan), renderer (renderer), protoGraph (protoGraph)
 {
 	if (gui_settings.maxLevels < 0)
 	{
@@ -206,7 +208,7 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 				    },
 				    workContinueSignal);
 
-				taskManager.Submit (std::move (t));
+				task_manager.Submit (std::move (t));
 			}
 		}
 	}

@@ -7,17 +7,15 @@
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <string>
 #include <thread>
 #include <vector>
 
-#include "util/ConcurrentQueue.h"
-
 unsigned int HardwareThreadCount ();
-using WorkFuncSig = std::function<void()>;
 
 namespace job
 {
+
+using WorkFuncSig = std::function<void()>;
 
 
 class TaskSignal
@@ -76,7 +74,7 @@ class TaskManager
 	TaskManager ();
 	~TaskManager ();
 
-	void Submit (Task&& task);
+	void Submit (Task task);
 	void Submit (std::vector<Task> tasks);
 
 	std::optional<Task> GetTask ();
@@ -93,8 +91,9 @@ class TaskManager
 	std::mutex workSubmittedLock;
 	std::condition_variable workSubmittedCondVar;
 };
-
-extern bool JobTester ();
 } // namespace job
 
-extern job::TaskManager taskManager;
+namespace
+{
+bool JobTester ();
+}
