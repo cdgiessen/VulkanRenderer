@@ -61,7 +61,7 @@ Scene::Scene (job::TaskManager& task_manager,
 	// ("ColorGradientCube"); cubeObject->gameObjectVulkanTexture =
 	//     renderer.texture_manager.CreateTexture2D (cubeObject->gameObjectTexture, details);
 	// cubeObject->InitGameObject ();
-	// gameObjects.push_back (std::move (cubeObject));
+	// gameObjects.push_back (cubeObject);
 	// for (int i = 0; i < 9; i++) {
 	//	for (int j = 0; j < 9; j++)
 	//	{

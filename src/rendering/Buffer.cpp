@@ -184,23 +184,7 @@ void VulkanBuffer::BindInstanceBuffer (VkCommandBuffer cmdBuf)
 
 BufferManager::BufferManager (VulkanDevice& device) : device (device) {}
 
-BufferID BufferManager::CreateBuffer (BufCreateDetails details)
+std::shared_ptr<VulkanBuffer> BufferManager::CreateBuffer (BufCreateDetails details)
 {
-	auto buf = VulkanBuffer (device, details);
-	std::lock_guard guard (map_lock);
-	buffer_map.emplace (std::make_pair (buf_index, std::move (buf)));
-
-	// buffer_map[buf_index] = std::move (buf);
-	return buf_index++;
-}
-void BufferManager::FreeBuffer (BufferID id)
-{
-	std::lock_guard guard (map_lock);
-	buffer_map.erase (id);
-}
-
-VulkanBuffer& BufferManager::GetBuffer (BufferID id)
-{
-	std::lock_guard guard (map_lock);
-	return buffer_map.at (id);
+	return std::make_shared<VulkanBuffer> (device, details);
 }

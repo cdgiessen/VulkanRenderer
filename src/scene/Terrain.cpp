@@ -156,7 +156,7 @@ void Terrain::SetupImage ()
 	int length = fastGraphUser.image_length ();
 	auto buffer_height = renderer.buffer_manager.CreateBuffer (
 	    staging_details (BufferType::staging, sizeof (float) * fastGraphUser.GetHeightMap ().size ()));
-	renderer.buffer_manager.GetBuffer (buffer_height).CopyToBuffer (fastGraphUser.GetHeightMap ());
+	buffer_height->CopyToBuffer (fastGraphUser.GetHeightMap ());
 
 	TexCreateDetails details (
 	    VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
@@ -166,7 +166,7 @@ void Terrain::SetupImage ()
 
 	auto buffer_splat = renderer.buffer_manager.CreateBuffer (staging_details (
 	    BufferType::staging, sizeof (cml::vec4<uint8_t>) * fastGraphUser.GetSplatMap ().size ()));
-	renderer.buffer_manager.GetBuffer (buffer_splat).CopyToBuffer (fastGraphUser.GetSplatMap ());
+	buffer_splat->CopyToBuffer (fastGraphUser.GetSplatMap ());
 
 	TexCreateDetails splat_details (
 	    VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
@@ -175,7 +175,7 @@ void Terrain::SetupImage ()
 
 	auto buffer_normal = renderer.buffer_manager.CreateBuffer (staging_details (
 	    BufferType::staging, sizeof (cml::vec4<int16_t>) * fastGraphUser.GetNormalMap ().size ()));
-	renderer.buffer_manager.GetBuffer (buffer_normal).CopyToBuffer (fastGraphUser.GetNormalMap ());
+	buffer_normal->CopyToBuffer (fastGraphUser.GetNormalMap ());
 
 	TexCreateDetails norm_details (
 	    VK_FORMAT_R16G16B16A16_SNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);

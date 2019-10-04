@@ -153,7 +153,7 @@ void VulkanRenderer::CreatePresentResources ()
 	CreateDepthResources ();
 	std::vector<VkImageView> depthImageViews;
 	for (auto& d : depthBuffers)
-		depthImageViews.push_back (d->textureImageView);
+		depthImageViews.push_back (d->imageView);
 
 	auto imageViewOrder = frameGraph->OrderAttachments ({ "img_depth", "img_color" });
 

@@ -30,7 +30,7 @@ if(UNIX)
 endif(UNIX)
 
 # main files to compile
-add_library(VulkanApp)
+add_library(VulkanApp STATIC)
 add_subdirectory(src)
 
 #include the different source directories in include path
@@ -38,13 +38,11 @@ target_include_directories(VulkanApp PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(VulkanApp PUBLIC ${CMAKE_SOURCE_DIR}/src/third-party)
 
 if(MSVC)
-	target_compile_options(VulkanApp PRIVATE "/std:c++17")
-	target_compile_options(VulkanApp PRIVATE "/permissive-")
+	target_compile_options(VulkanApp PRIVATE /std:c++17 /permissive-)
 endif(MSVC)
 
 OPTION(TSAN "Enable thread sanitizer on unix platforms" OFF)
 OPTION(ASAN "Enable address sanitizer on unix platforms" ON)
-OPTION(LSAN "Enable leak sanitizer on unix platforms" ON)
 OPTION(UBSAN "Enable undefined behavior sanitizer on unix platforms" OFF)
 
 if(UNIX)
@@ -63,11 +61,8 @@ if(UNIX)
 	endif(TSAN)
 	if(ASAN)
 		target_compile_options(VulkanApp PUBLIC -fsanitize=address)
-	endif(ASAN)
-	if(LSAN)
-		target_compile_options(VulkanApp PUBLIC -fsanitize=address)
 		target_link_options(VulkanApp PUBLIC -fsanitize=address)
-	endif(LSAN)
+	endif(ASAN)
 	if(UBSAN)
 		target_compile_options(VulkanApp PUBLIC -fsanitize=undefined)
 	endif(UBSAN)
@@ -135,5 +130,5 @@ add_custom_target(copy_assets ALL
 
 add_executable(run_VulkanApp ${PROJECT_SOURCE_DIR}/src/core/main.cpp)
 
-add_dependencies(copy_assets run_VulkanApp)
+add_dependencies(copy_assets VulkanApp)
 target_link_libraries(run_VulkanApp PRIVATE VulkanApp)

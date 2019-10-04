@@ -307,7 +307,7 @@ void InstancedSceneObject::UploadInstances ()
 		});
 		transfer.buffersToClean.push_back(stagingBuffer);
 		transfer.flags.push_back(isFinishedTransfer);
-		renderer.SubmitTransferWork(std::move(transfer));*/
+		renderer.SubmitTransferWork(transfer);*/
 
 		// auto copyCmd = renderer.GetTransferCommandBuffer();
 

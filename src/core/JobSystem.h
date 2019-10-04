@@ -21,9 +21,6 @@ using WorkFuncSig = std::function<void()>;
 class TaskSignal
 {
 	public:
-	TaskSignal ();
-	~TaskSignal ();
-
 	void Notify (); // for tasks that should be waited upon
 
 	void Signal (); // for task to call when done
@@ -54,7 +51,6 @@ class TaskSignal
 class Task
 {
 	public:
-	Task (WorkFuncSig&& job);
 	Task (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signalBlock);
 
 	void Run ();
@@ -74,7 +70,7 @@ class TaskManager
 	TaskManager ();
 	~TaskManager ();
 
-	void Submit (Task task);
+	void Submit (Task const& task);
 	void Submit (std::vector<Task> tasks);
 
 	std::optional<Task> GetTask ();

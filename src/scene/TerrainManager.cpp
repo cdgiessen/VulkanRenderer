@@ -208,7 +208,7 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 				    },
 				    workContinueSignal);
 
-				task_manager.Submit (std::move (t));
+				task_manager.Submit (t);
 			}
 		}
 	}
@@ -233,13 +233,13 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 
 void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe)
 {
+	return;
 	std::lock_guard<std::mutex> lock (terrain_mutex);
 	for (auto& ter : terrains)
 	{
 		ter->DrawTerrainGrid (commandBuffer, wireframe);
 		// ter->DrawTerrain (commandBuffer, wireframe);
 	}
-	//	}
 }
 
 // TODO : Re-implement getting height at terrain location

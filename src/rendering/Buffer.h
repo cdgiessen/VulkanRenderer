@@ -1,7 +1,6 @@
 #pragma once
 
-#include <mutex>
-#include <unordered_map>
+#include <memory>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -148,8 +147,6 @@ class VulkanBuffer
 	void CopyToBuffer (void const* pData, size_t size);
 };
 
-using BufferID = int;
-
 class BufferManager
 {
 	public:
@@ -157,15 +154,8 @@ class BufferManager
 	BufferManager (BufferManager const& buf) = delete;
 	BufferManager& operator= (BufferManager const& buf) = delete;
 
-	BufferID CreateBuffer (BufCreateDetails details);
-	void FreeBuffer (BufferID id);
-
-	VulkanBuffer& GetBuffer (BufferID);
+	std::shared_ptr<VulkanBuffer> CreateBuffer (BufCreateDetails details);
 
 	private:
 	VulkanDevice& device;
-
-	BufferID buf_index = 0;
-	std::mutex map_lock;
-	std::unordered_map<BufferID, VulkanBuffer> buffer_map;
 };

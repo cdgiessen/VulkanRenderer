@@ -102,7 +102,6 @@ class Terrain
 	TerrainCoordinateData coordinateData;
 	float heightScale = 100;
 
-
 	PipeID normal;
 	PipeID wireframe;
 

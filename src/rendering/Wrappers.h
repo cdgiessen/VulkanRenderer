@@ -26,13 +26,13 @@ class VulkanFence
 	VulkanFence (VulkanDevice& device, long timeout = DEFAULT_FENCE_TIMEOUT, VkFenceCreateFlags flags = 0);
 	~VulkanFence ();
 
-	bool Check ();
+	bool Check () const;
 
-	void Wait (bool condition = VK_TRUE);
+	void Wait (bool condition = VK_TRUE) const;
 
-	VkFence Get ();
+	VkFence Get () const;
 
-	void Reset ();
+	void Reset () const;
 
 	private:
 	VulkanDevice& device;
@@ -40,7 +40,7 @@ class VulkanFence
 	int timeout;
 };
 
-std::vector<VkFence> CreateFenceArray (std::vector<VulkanFence>& fences);
+std::vector<VkFence> CreateFenceArray (std::vector<VulkanFence> const& fences);
 
 class VulkanSemaphore
 {
@@ -58,27 +58,27 @@ class VulkanSemaphore
 	VkSemaphore semaphore;
 };
 
-std::vector<VkSemaphore> CreateSemaphoreArray (std::vector<VulkanSemaphore>& sems);
+std::vector<VkSemaphore> CreateSemaphoreArray (std::vector<VulkanSemaphore> const& sems);
 
 class CommandQueue
 {
 	public:
-	CommandQueue (const VulkanDevice& device, int queueFamily);
+	CommandQueue (VulkanDevice const& device, int queueFamily);
 
 	// not a copyable/movable type
-	CommandQueue (const CommandQueue& cmd) = delete;
-	CommandQueue& operator= (const CommandQueue& cmd) = delete;
+	CommandQueue (CommandQueue const& cmd) = delete;
+	CommandQueue& operator= (CommandQueue const& cmd) = delete;
 	CommandQueue (CommandQueue&& cmd) = delete;
 	CommandQueue& operator= (CommandQueue&& cmd) = delete;
 
-	void SubmitCommandBuffer (VkCommandBuffer buffer, VulkanFence& fence);
+	void SubmitCommandBuffer (VkCommandBuffer buffer, VulkanFence const& fence);
 
 	void SubmitCommandBuffer (VkCommandBuffer buffer,
-	    VulkanFence& fence,
-	    std::vector<std::shared_ptr<VulkanSemaphore>>& waitSemaphores,
-	    std::vector<std::shared_ptr<VulkanSemaphore>>& signalSemaphores);
+	    VulkanFence const& fence,
+	    std::vector<std::shared_ptr<VulkanSemaphore>> const& waitSemaphores,
+	    std::vector<std::shared_ptr<VulkanSemaphore>> const& signalSemaphores);
 
-	void Submit (VkSubmitInfo& submitInfo, VulkanFence& fence);
+	void Submit (VkSubmitInfo const& submitInfo, VulkanFence const& fence);
 
 	int GetQueueFamily ();
 
@@ -109,14 +109,14 @@ class CommandPool
 	    VkCommandBufferUsageFlags flags = 0);
 
 	VkBool32 ReturnCommandBuffer (VkCommandBuffer,
-	    VulkanFence& fence,
-	    std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores = {},
-	    std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores = {});
+	    VulkanFence const& fence,
+	    std::vector<std::shared_ptr<VulkanSemaphore>> const& waitSemaphores = {},
+	    std::vector<std::shared_ptr<VulkanSemaphore>> const& signalSemaphores = {});
 
 	void SubmitCommandBuffer (VkCommandBuffer,
-	    VulkanFence& fence,
-	    std::vector<std::shared_ptr<VulkanSemaphore>> waitSemaphores = {},
-	    std::vector<std::shared_ptr<VulkanSemaphore>> signalSemaphores = {});
+	    VulkanFence const& fence,
+	    std::vector<std::shared_ptr<VulkanSemaphore>> const& waitSemaphores = {},
+	    std::vector<std::shared_ptr<VulkanSemaphore>> const& signalSemaphores = {});
 
 	VkCommandBuffer AllocateCommandBuffer (VkCommandBufferLevel level);
 
@@ -124,7 +124,7 @@ class CommandPool
 	void EndBufferRecording (VkCommandBuffer buf);
 	void FreeCommandBuffer (VkCommandBuffer buf);
 
-	void WriteToBuffer (VkCommandBuffer buf, std::function<void(VkCommandBuffer)> cmd);
+	void WriteToBuffer (VkCommandBuffer buf, std::function<void(VkCommandBuffer)> const& cmd);
 
 	private:
 	VulkanDevice* device;
@@ -152,17 +152,17 @@ class CommandBuffer
 	CommandBuffer& Begin (VkCommandBufferUsageFlags flags = 0);
 	CommandBuffer& End ();
 
-	CommandBuffer& SetFence (std::shared_ptr<VulkanFence> fence);
+	CommandBuffer& SetFence (std::shared_ptr<VulkanFence> const& fence);
 
 	CommandBuffer& Submit ();
-	CommandBuffer& Submit (std::vector<std::shared_ptr<VulkanSemaphore>>& waits,
-	    std::vector<std::shared_ptr<VulkanSemaphore>>& signals);
+	CommandBuffer& Submit (std::vector<std::shared_ptr<VulkanSemaphore>> const& waits,
+	    std::vector<std::shared_ptr<VulkanSemaphore>> const& signals);
 
 	CommandBuffer& Wait ();
 
 	CommandBuffer& Free ();
 
-	CommandBuffer& WriteTo (std::function<void(const VkCommandBuffer)> work);
+	CommandBuffer& WriteTo (std::function<void(const VkCommandBuffer)> const& work);
 
 	VkCommandBuffer Get () { return cmdBuf; }
 	VkCommandBuffer* GetPtr () { return &cmdBuf; }

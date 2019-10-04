@@ -74,8 +74,6 @@ void VulkanAppSettings::Save ()
 
 VulkanApp::VulkanApp ()
 : settings ("settings.json"),
-  task_manager (),
-  time_manager (),
   window (settings.isFullscreen, cml::vec2i (settings.screenWidth, settings.screenHeight), cml ::vec2i (10, 10)),
   resource_manager (task_manager),
   vulkan_renderer (settings.useValidationLayers, task_manager, window, resource_manager),

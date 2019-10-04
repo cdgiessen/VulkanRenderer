@@ -15,19 +15,6 @@
 
 class VulkanDevice;
 
-void BeginTransferAndMipMapGenWork (VulkanDevice& device,
-    BufferID buffer,
-    const VkImageSubresourceRange subresourceRange,
-    const std::vector<VkBufferImageCopy> bufferCopyRegions,
-    VkImageLayout imageLayout,
-    VkImage image,
-    VkBuffer vk_buffer,
-    int width,
-    int height,
-    int depth,
-    int layers,
-    int mipLevels);
-
 struct TexCreateDetails
 {
 	VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -53,46 +40,54 @@ struct TexCreateDetails
 	  desiredHeight (desiredHeight){};
 };
 
+namespace details
+{
+struct TexData
+{
+	VulkanDevice* device;
+
+	VkImageLayout textureImageLayout;
+
+	VmaAllocation allocation = VK_NULL_HANDLE;
+	VmaAllocationInfo allocationInfo;
+	VmaAllocator allocator = nullptr;
+
+	int mipLevels;
+	int layers;
+};
+} // namespace details
 class VulkanTexture
 {
 	public:
 	VulkanTexture (VulkanDevice& device,
 	    AsyncTaskManager& async_task_man,
-	    BufferManager& buf_man,
+	    std::function<void()> const& finish_work,
 	    TexCreateDetails texCreateDetails,
 	    Resource::Texture::TexResource textureResource);
 
 	VulkanTexture (VulkanDevice& device,
 	    AsyncTaskManager& async_task_man,
-	    BufferManager& buf_man,
+	    std::function<void()> const& finish_work,
 	    TexCreateDetails texCreateDetails,
-	    BufferID buffer);
+	    std::shared_ptr<VulkanBuffer> buffer);
 
 	VulkanTexture (VulkanDevice& device, TexCreateDetails texCreateDetails);
 
 	~VulkanTexture ();
 
-	struct VmaImage
-	{
-		VkImage image = VK_NULL_HANDLE;
-		VmaAllocation allocation = VK_NULL_HANDLE;
-		VmaAllocationInfo allocationInfo;
-		VmaAllocator allocator = nullptr;
-	} image;
+	VulkanTexture (VulkanTexture const& tex) = delete;
+	VulkanTexture& operator= (VulkanTexture const& tex) = delete;
 
-	protected:
-	VulkanDevice& device;
+	VulkanTexture (VulkanTexture&& tex);
+	VulkanTexture& operator= (VulkanTexture&& tex);
 
-	public:
 	DescriptorResource resource;
+	VkImage image = VK_NULL_HANDLE;
+	VkImageView imageView = VK_NULL_HANDLE;
+	VkSampler sampler = VK_NULL_HANDLE;
 
-	VkImageView textureImageView = VK_NULL_HANDLE;
-	VkSampler textureSampler = VK_NULL_HANDLE;
-	VkImageLayout textureImageLayout;
-
-	protected:
-	int mipLevels;
-	int layers;
+	private:
+	details::TexData data;
 
 	void InitImage2D (VkImageCreateInfo imageInfo);
 
@@ -137,15 +132,19 @@ class TextureManager
 
 	VulkanTextureID CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails);
 
-	VulkanTextureID CreateTextureFromBuffer (BufferID buffer, TexCreateDetails texCreateDetails);
+	VulkanTextureID CreateTextureFromBuffer (std::shared_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails);
 
 	VulkanTextureID CreateDepthImage (VkFormat depthFormat, int width, int height);
 
 	void delete_texture (VulkanTextureID id);
 
+
 	VulkanTexture const& get_texture (VulkanTextureID id);
 
 	private:
+	std::function<void()> CreateFinishWork (VulkanTextureID id);
+	void FinishTextureCreation (VulkanTextureID id);
+
 	VulkanDevice& device;
 	Resource::Texture::Manager& texture_manager;
 	AsyncTaskManager& async_task_manager;
@@ -153,5 +152,6 @@ class TextureManager
 
 	VulkanTextureID id_counter = 0;
 	std::mutex map_lock;
+	std::unordered_map<VulkanTextureID, std::unique_ptr<VulkanTexture>> in_progress_map;
 	std::unordered_map<VulkanTextureID, std::unique_ptr<VulkanTexture>> texture_map;
 };

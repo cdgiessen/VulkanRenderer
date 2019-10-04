@@ -73,7 +73,6 @@ template <typename T> void ConcurrentQueue<T>::push_back (const T& item)
 
 template <typename T> void ConcurrentQueue<T>::push_back (T&& item)
 {
-
 	std::unique_lock<std::mutex> mlock (m_mutex);
 	m_queue.push_back (std::move (item));
 	m_cond.notify_one (); // notify one waiting thread

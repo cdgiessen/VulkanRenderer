@@ -1,6 +1,8 @@
 #include "AsyncTask.h"
 #include "core/Logger.h"
 
+#include <algorithm>
+
 CommandPoolGroup::CommandPoolGroup (VulkanDevice& device)
 : graphics_pool (device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
   transfer_pool (device, device.TransferQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
@@ -23,38 +25,53 @@ AsyncTaskManager::AsyncTaskManager (job::TaskManager& task_manager, VulkanDevice
 
 AsyncTaskManager::~AsyncTaskManager () {}
 
-void AsyncTaskManager::SubmitTask (TaskType type, AsyncTask task)
+void AsyncTaskManager::SubmitTask (AsyncTask const& task)
 {
-	task_manager.Submit (job::Task ([type, &task, this] {
-		Log.Debug ("started render task\n");
-		std::thread::id id = std::this_thread::get_id ();
-		CommandPool* pool;
-		switch (type)
-		{
-			case (TaskType::transfer):
-				pool = &(pools.at (id)->transfer_pool);
-				break;
-			case (TaskType::compute):
-				pool = &(pools.at (id)->compute_pool);
-				break;
-			default:
-				pool = &(pools.at (id)->graphics_pool);
-		}
-		CommandBuffer cmdBuf = CommandBuffer (*pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+	auto ts = std::make_shared<job::TaskSignal> ();
+	{
+		std::lock_guard lg (in_progress);
+		tasks_in_progress.push_back (ts);
+	}
 
-		std::shared_ptr<VulkanFence> fence = std::make_shared<VulkanFence> (device);
+	task_manager.Submit (job::Task (
+	    [=] {
+		    std::thread::id id = std::this_thread::get_id ();
+		    CommandPool* pool;
+		    switch (task.type)
+		    {
+			    case (TaskType::transfer):
+				    pool = &(pools.at (id)->transfer_pool);
+				    break;
+			    case (TaskType::compute):
+				    pool = &(pools.at (id)->compute_pool);
+				    break;
+			    default:
+				    pool = &(pools.at (id)->graphics_pool);
+		    }
+		    CommandBuffer cmdBuf = CommandBuffer (*pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-		cmdBuf.Allocate ();
-		cmdBuf.Begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-		cmdBuf.WriteTo (task.work);
-		cmdBuf.SetFence (fence);
-		cmdBuf.End ();
-		cmdBuf.Submit (task.wait_sems, task.signal_sems);
+		    std::shared_ptr<VulkanFence> fence = std::make_shared<VulkanFence> (device);
 
-		std::lock_guard lk (lock_finish_queue);
-		finish_queue.emplace_back (cmdBuf, task.finish_work);
-		Log.Debug ("Finished render task\n");
-	}));
+		    cmdBuf.Allocate ();
+		    cmdBuf.Begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		    cmdBuf.WriteTo (task.work);
+		    cmdBuf.SetFence (fence);
+		    cmdBuf.End ();
+		    cmdBuf.Submit (task.wait_sems, task.signal_sems);
+		    {
+			    std::lock_guard lk (lock_finish_queue);
+			    finish_queue.emplace_back (cmdBuf, task.finish_work, task.buffers);
+		    }
+		    {
+			    std::lock_guard lk (in_progress);
+			    auto f = std::find (std::begin (tasks_in_progress), std::end (tasks_in_progress), ts);
+			    if (f != std::end (tasks_in_progress))
+			    {
+				    tasks_in_progress.erase (f);
+			    }
+		    }
+	    },
+	    ts));
 }
 
 void AsyncTaskManager::CleanFinishQueue ()
@@ -65,8 +82,11 @@ void AsyncTaskManager::CleanFinishQueue ()
 	{
 		if (it->cmdBuf.GetFence ().Check ())
 		{
-			it->finish_work ();
 			it->cmdBuf.Free ();
+			if (it->finish_work)
+			{
+				it->finish_work ();
+			}
 			it = finish_queue.erase (it);
 		}
 		else

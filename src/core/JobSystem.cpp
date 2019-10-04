@@ -11,8 +11,6 @@ unsigned int HardwareThreadCount ()
 namespace job
 {
 
-Task::Task (WorkFuncSig&& m_job) : m_job (m_job) {}
-
 Task::Task (WorkFuncSig&& m_job, std::weak_ptr<TaskSignal> signalBlock)
 : m_job (m_job), signalBlock (signalBlock)
 {
@@ -45,10 +43,6 @@ bool Task::IsReadyToRun ()
 	return true; // Is this right? no signal block to wait on
 }
 
-TaskSignal::TaskSignal () {}
-
-TaskSignal::~TaskSignal () {}
-
 void TaskSignal::Notify () { active_waiters++; }
 
 void TaskSignal::Signal ()
@@ -60,20 +54,19 @@ void TaskSignal::Signal ()
 void TaskSignal::Wait ()
 {
 	if (active_waiters == 0) return;
-	std::unique_lock<std::mutex> mlock (condVar_lock);
+	std::unique_lock mlock (condVar_lock);
 	condVar.wait (mlock);
 }
 
 void TaskSignal::WaitOn (std::shared_ptr<TaskSignal> taskSig)
 {
-	std::lock_guard<std::mutex> lg (pred_lock);
+	std::lock_guard lg (pred_lock);
 	predicates.push_back (taskSig);
 }
 
 void TaskSignal::Cancel () { cancelled = true; }
 
 bool TaskSignal::IsCancelled () { return cancelled; }
-
 
 bool TaskSignal::IsReadyToRun ()
 {
@@ -127,20 +120,24 @@ TaskManager::~TaskManager ()
 }
 
 
-void TaskManager::Submit (Task task)
+void TaskManager::Submit (Task const& task)
 {
-	std::lock_guard lg (queue_lock);
-	task_queue.push (std::move (task));
+	{
+		std::lock_guard lg (queue_lock);
+		task_queue.push (task);
+	}
 
 	workSubmittedCondVar.notify_one ();
 }
 
 void TaskManager::Submit (std::vector<Task> in_tasks)
 {
-	std::lock_guard lg (queue_lock);
-	for (auto& t : in_tasks)
 	{
-		task_queue.push (std::move (t));
+		std::lock_guard lg (queue_lock);
+		for (auto& t : in_tasks)
+		{
+			task_queue.push (t);
+		}
 	}
 	workSubmittedCondVar.notify_all ();
 }
@@ -154,7 +151,6 @@ std::optional<Task> TaskManager::GetTask ()
 		auto val = task_queue.front ();
 		task_queue.pop ();
 		if (val.IsReadyToRun ()) return val;
-		Log.Debug ("task not ready to run {}\n");
 
 		task_queue.push (val); // possible infinite wait...
 	}
@@ -248,8 +244,8 @@ bool JobTester ()
 	    },
 	    signal2);
 
-	tMan.Submit (std::move (t1));
-	tMan.Submit (std::move (t2));
+	tMan.Submit (t1);
+	tMan.Submit (t2);
 
 	signal2->Wait ();
 	jtc.Print ();

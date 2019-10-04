@@ -20,21 +20,25 @@ enum class TaskType
 
 struct AsyncTask
 {
+	TaskType type = TaskType::graphics;
 	std::shared_ptr<job::TaskSignal> signal;
-	TaskType type;
 	std::function<void(const VkCommandBuffer)> work;
+	std::function<void()> finish_work;
 	std::vector<std::shared_ptr<VulkanSemaphore>> wait_sems;
 	std::vector<std::shared_ptr<VulkanSemaphore>> signal_sems;
-	std::function<void()> finish_work;
+	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
 };
 
 struct GraphicsCleanUpWork
 {
 	CommandBuffer cmdBuf;
+	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
 	std::function<void()> finish_work;
 
-	GraphicsCleanUpWork (CommandBuffer cmdBuf, std::function<void()> finish_work)
-	: cmdBuf (cmdBuf), finish_work (finish_work)
+	GraphicsCleanUpWork (CommandBuffer cmdBuf,
+	    std::function<void()> finish_work,
+	    std::vector<std::shared_ptr<VulkanBuffer>> buffers)
+	: cmdBuf (cmdBuf), finish_work (finish_work), buffers (buffers)
 	{
 	}
 };
@@ -58,7 +62,7 @@ class AsyncTaskManager
 	AsyncTaskManager (AsyncTaskManager const& man) = delete;
 	AsyncTaskManager& operator= (AsyncTaskManager const& man) = delete;
 
-	void SubmitTask (TaskType type, AsyncTask task);
+	void SubmitTask (AsyncTask const& task);
 
 	void CleanFinishQueue ();
 
@@ -67,6 +71,9 @@ class AsyncTaskManager
 	VulkanDevice& device;
 
 	std::unordered_map<std::thread::id, std::unique_ptr<CommandPoolGroup>> pools;
+
+	std::mutex in_progress;
+	std::vector<std::shared_ptr<job::TaskSignal>> tasks_in_progress;
 
 	std::mutex lock_finish_queue;
 	std::vector<GraphicsCleanUpWork> finish_queue;

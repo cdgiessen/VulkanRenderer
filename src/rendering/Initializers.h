@@ -150,8 +150,7 @@ inline VkImageCreateInfo imageCreateInfo (VkImageType imageType,
 inline VkImageSubresourceRange imageSubresourceRangeCreateInfo (
     VkImageAspectFlags aspectMask, int mipLevels = 1, int layerCount = 1)
 {
-
-	VkImageSubresourceRange subresourceRange = {};
+	VkImageSubresourceRange subresourceRange{};
 	subresourceRange.aspectMask = aspectMask;
 	subresourceRange.baseMipLevel = 0;
 	subresourceRange.levelCount = mipLevels;
@@ -164,12 +163,36 @@ inline VkImageSubresourceRange imageSubresourceRangeCreateInfo (
 inline VkImageSubresource imageSubresourceCreateInfo (
     VkImageAspectFlags aspectMask, int mipLevel = 0, int arrayLayer = 0)
 {
-	VkImageSubresource subresource = {};
+	VkImageSubresource subresource{};
 	subresource.aspectMask = aspectMask;
 	subresource.mipLevel = mipLevel;
 	subresource.arrayLayer = arrayLayer;
 
 	return subresource;
+}
+
+inline VkImageSubresourceLayers imageSubresourceLayers (
+    VkImageAspectFlags aspectMask, uint32_t mipLevel = 0, uint32_t layerCount = 0, uint32_t baseArrayLayer = 0)
+{
+	VkImageSubresourceLayers sub{};
+	sub.aspectMask = aspectMask;
+	sub.mipLevel = mipLevel;
+	sub.layerCount = layerCount;
+	sub.baseArrayLayer = baseArrayLayer;
+	return sub;
+}
+
+inline VkImageBlit imageBlit (VkImageSubresourceLayers srcSubresource,
+    VkOffset3D srcOffsets,
+    VkImageSubresourceLayers dstSubresource,
+    VkOffset3D dstOffsets)
+{
+	VkImageBlit blit{};
+	blit.srcSubresource = srcSubresource;
+	blit.srcOffsets[1] = srcOffsets;
+	blit.dstSubresource = dstSubresource;
+	blit.dstOffsets[1] = dstOffsets;
+	return blit;
 }
 
 inline VkSamplerCreateInfo samplerCreateInfo ()
@@ -243,9 +266,26 @@ inline VkRect2D rect2D (int32_t width, int32_t height, int32_t offsetX, int32_t 
 	return rect2D;
 }
 
+inline VkBufferImageCopy bufferImageCopyCreate (VkImageSubresourceLayers imageSubresource,
+    VkExtent3D imageExtent,
+    VkDeviceSize bufferOffset,
+    VkOffset3D imageOffset = { 0, 0, 0 },
+    uint32_t bufferRowLength = 0,
+    uint32_t bufferImageHeight = 0)
+{
+	VkBufferImageCopy region{};
+	region.imageSubresource = imageSubresource;
+	region.imageExtent = imageExtent;
+	region.imageOffset = imageOffset;
+	region.bufferRowLength = bufferRowLength;
+	region.bufferImageHeight = bufferImageHeight;
+	region.bufferOffset = bufferOffset;
+	return region;
+}
+
 inline VkBufferCopy bufferCopyCreate (VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset)
 {
-	VkBufferCopy bufferRegion;
+	VkBufferCopy bufferRegion{};
 	bufferRegion.size = size;
 	bufferRegion.srcOffset = srcOffset;
 	bufferRegion.dstOffset = dstOffset;
@@ -426,7 +466,7 @@ inline VkVertexInputAttributeDescription vertexInputAttributeDescription (
 inline VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo (
     VkShaderStageFlagBits shaderStage, VkShaderModule module)
 {
-	VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
+	VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
 	shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shaderStageCreateInfo.stage = shaderStage;
 	shaderStageCreateInfo.module = module;

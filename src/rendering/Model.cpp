@@ -69,28 +69,26 @@ VulkanModel::VulkanModel (
 	auto vertexStagingBuffer = buf_man.CreateBuffer (staging_details (BufferType::vertex, vBufferSize));
 	auto indexStagingBuffer = buf_man.CreateBuffer (staging_details (BufferType::index, iBufferSize));
 
-	buf_man.GetBuffer (vertexStagingBuffer).CopyToBuffer (mesh->vertexData);
-	buf_man.GetBuffer (indexStagingBuffer).CopyToBuffer (mesh->indexData);
+	vertexStagingBuffer->CopyToBuffer (mesh->vertexData);
+	indexStagingBuffer->CopyToBuffer (mesh->indexData);
 
 	VkBuffer vert = vmaVertices->buffer;
 	VkBuffer index = vmaIndicies->buffer;
-	VkBuffer v_stage = buf_man.GetBuffer (vertexStagingBuffer).buffer;
-	VkBuffer i_stage = buf_man.GetBuffer (indexStagingBuffer).buffer;
+	VkBuffer v_stage = vertexStagingBuffer->buffer;
+	VkBuffer i_stage = indexStagingBuffer->buffer;
 
 	std::function<void(const VkCommandBuffer)> work = [=](const VkCommandBuffer copyCmd) {
 		CopyMeshBuffers (copyCmd, v_stage, vert, vBufferSize, i_stage, index, iBufferSize);
 	};
 
-	std::function<void()> finish_work = [&]() {
-		buf_man.FreeBuffer (vertexStagingBuffer);
-		buf_man.FreeBuffer (indexStagingBuffer);
-	};
-
 	AsyncTask transfer;
+	transfer.type = TaskType::transfer;
 	transfer.work = work;
-	transfer.finish_work = finish_work;
+	transfer.buffers.push_back (vertexStagingBuffer);
+	transfer.buffers.push_back (indexStagingBuffer);
 
-	async_task_man.SubmitTask (TaskType::transfer, std::move (transfer));
+
+	async_task_man.SubmitTask (transfer);
 }
 
 void VulkanModel::BindModel (VkCommandBuffer cmdBuf)
