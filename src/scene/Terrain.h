@@ -140,6 +140,13 @@ class Terrain
 	    VulkanTextureID terrainVulkanTextureArrayMetallic,
 	    VulkanTextureID terrainVulkanTextureArrayNormal);
 
+	bool IsReady ()
+	{
+		return renderer.texture_manager.IsFinishedTransfer (terrainHeightMap) &&
+		       renderer.texture_manager.IsFinishedTransfer (terrainSplatMap) &&
+		       renderer.texture_manager.IsFinishedTransfer (terrainNormalMap);
+	}
+
 	void UpdateTerrain (cml::vec3f viewerPos);
 
 	void DrawTerrainRecursive (

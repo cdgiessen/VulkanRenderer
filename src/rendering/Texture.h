@@ -81,10 +81,15 @@ class VulkanTexture
 	VulkanTexture (VulkanTexture&& tex);
 	VulkanTexture& operator= (VulkanTexture&& tex);
 
-	DescriptorResource resource;
 	VkImage image = VK_NULL_HANDLE;
 	VkImageView imageView = VK_NULL_HANDLE;
 	VkSampler sampler = VK_NULL_HANDLE;
+
+	DescriptorResource GetResource ()
+	{
+		return DescriptorResource (
+		    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, sampler, imageView, data.textureImageLayout);
+	}
 
 	private:
 	details::TexData data;
@@ -136,10 +141,10 @@ class TextureManager
 
 	VulkanTextureID CreateDepthImage (VkFormat depthFormat, int width, int height);
 
-	void delete_texture (VulkanTextureID id);
+	void DeleteTexture (VulkanTextureID id);
 
-
-	VulkanTexture const& get_texture (VulkanTextureID id);
+	bool IsFinishedTransfer (VulkanTextureID id);
+	DescriptorResource GetResource (VulkanTextureID id);
 
 	private:
 	std::function<void()> CreateFinishWork (VulkanTextureID id);
@@ -154,4 +159,8 @@ class TextureManager
 	std::mutex map_lock;
 	std::unordered_map<VulkanTextureID, std::unique_ptr<VulkanTexture>> in_progress_map;
 	std::unordered_map<VulkanTextureID, std::unique_ptr<VulkanTexture>> texture_map;
+
+	std::vector<VulkanTextureID> expired_textures;
+
+	std::unordered_map<VulkanTextureID, DescriptorResource> resources;
 };

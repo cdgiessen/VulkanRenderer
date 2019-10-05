@@ -46,11 +46,12 @@ void GameObject::SetupMaterial ()
 {
 	mat = std::make_unique<VulkanMaterial> (renderer.device);
 
-	mat->AddMaterialDataSlot ({ ResourceType::uniform, ResourceStages::fragment_only, materialBuffer->resource });
+	mat->AddMaterialDataSlot (
+	    { ResourceType::uniform, ResourceStages::fragment_only, materialBuffer->GetResource () });
 
 	mat->AddMaterialDataSlot ({ ResourceType::texture2D,
 	    ResourceStages::fragment_only,
-	    renderer.texture_manager.get_texture (gameObjectVulkanTexture).resource });
+	    renderer.texture_manager.GetResource (gameObjectVulkanTexture) });
 
 	// mat->AddTexture(gameObjectVulkanTexture);
 	mat->Setup ();

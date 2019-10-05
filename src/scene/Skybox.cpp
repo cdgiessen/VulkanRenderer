@@ -47,8 +47,8 @@ void Skybox::SetupDescriptor ()
 	m_descriptorSet = descriptor->CreateDescriptorSet ();
 
 	std::vector<DescriptorUse> writes;
-	writes.push_back (DescriptorUse (0, 1, skyboxUniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, renderer.texture_manager.get_texture (vulkanCubeMap).resource));
+	writes.push_back (DescriptorUse (0, 1, skyboxUniformBuffer->GetResource ()));
+	writes.push_back (DescriptorUse (1, 1, renderer.texture_manager.GetResource (vulkanCubeMap)));
 	descriptor->UpdateDescriptorSet (m_descriptorSet, writes);
 }
 

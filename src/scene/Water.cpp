@@ -40,9 +40,8 @@ Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : r
 	m_descriptorSet = descriptor->CreateDescriptorSet ();
 
 	std::vector<DescriptorUse> writes;
-	writes.push_back (DescriptorUse (0, 1, uniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, renderer.texture_manager.get_texture (vulkanTexture).resource));
-	// writes.push_back (DescriptorUse (2, 1, renderer.Get_depth_tex ()->resource));
+	writes.push_back (DescriptorUse (0, 1, uniformBuffer->GetResource ()));
+	writes.push_back (DescriptorUse (1, 1, renderer.texture_manager.GetResource (vulkanTexture)));
 	descriptor->UpdateDescriptorSet (m_descriptorSet, writes);
 
 	PipelineOutline out;

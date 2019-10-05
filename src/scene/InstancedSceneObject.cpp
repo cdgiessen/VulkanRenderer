@@ -95,8 +95,8 @@ void InstancedSceneObject::SetupDescriptor ()
 	m_descriptorSet = descriptor->CreateDescriptorSet ();
 
 	std::vector<DescriptorUse> writes;
-	writes.push_back (DescriptorUse (0, 1, uniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, renderer.texture_manager.get_texture (vulkanTexture).resource));
+	writes.push_back (DescriptorUse (0, 1, uniformBuffer->GetResource ()));
+	writes.push_back (DescriptorUse (1, 1, renderer.texture_manager.GetResource (vulkanTexture)));
 	descriptor->UpdateDescriptorSet (m_descriptorSet, writes);
 }
 
@@ -323,7 +323,6 @@ void InstancedSceneObject::UploadInstances ()
 		// renderer.SubmitTransferCommandBufferAndWait(copyCmd);
 
 		// Not sure if needed since the amount of data should be baked in, not current instance count
-		// instanceBuffer->resource.FillResource(instanceBuffer->buffer, 0, instanceBufferSize);
 
 		// Destroy staging resources
 		// stagingBuffer.CleanBuffer();

@@ -23,12 +23,10 @@ class DescriptorResource
 {
 	public:
 	std::variant<VkDescriptorBufferInfo, VkDescriptorImageInfo> info;
-	VkDescriptorType type;
+	VkDescriptorType type = VkDescriptorType::VK_DESCRIPTOR_TYPE_MAX_ENUM;
 
-	DescriptorResource (VkDescriptorType type);
-
-	void FillResource (VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
-	void FillResource (VkSampler sampler, VkImageView imageView, VkImageLayout layout);
+	DescriptorResource (VkDescriptorType type, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
+	DescriptorResource (VkDescriptorType type, VkSampler sampler, VkImageView imageView, VkImageLayout layout);
 };
 
 class DescriptorUse

@@ -120,7 +120,6 @@ void SetImageLayout (VkCommandBuffer cmdbuffer,
 			// Other source layouts aren't handled (yet)
 			break;
 	}
-
 	// Put barrier inside setup command buffer
 	vkCmdPipelineBarrier (cmdbuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
 }
@@ -232,12 +231,10 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
     int layers,
     int mipLevels)
 {
-	VkBuffer buf = buffer->buffer;
-
 	if (device.singleQueueDevice)
 	{
 		std::function<void(const VkCommandBuffer)> work = [=](const VkCommandBuffer cmdBuf) {
-			SetLayoutAndTransferRegions (cmdBuf, image, buf, subresourceRange, bufferCopyRegions);
+			SetLayoutAndTransferRegions (cmdBuf, image, buffer->buffer, subresourceRange, bufferCopyRegions);
 
 			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
 		};
@@ -254,7 +251,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 		auto sem = std::make_shared<VulkanSemaphore> (device);
 
 		std::function<void(const VkCommandBuffer)> transferWork = [=](const VkCommandBuffer cmdBuf) {
-			SetLayoutAndTransferRegions (cmdBuf, image, buf, subresourceRange, bufferCopyRegions);
+			SetLayoutAndTransferRegions (cmdBuf, image, buffer->buffer, subresourceRange, bufferCopyRegions);
 		};
 
 		std::function<void(const VkCommandBuffer)> mipMapGenWork = [=](const VkCommandBuffer cmdBuf) {
@@ -282,7 +279,6 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
     std::function<void()> const& finish_work,
     TexCreateDetails texCreateDetails,
     Resource::Texture::TexResource textureResource)
-: resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
 	data.device = &device;
 	data.mipLevels = texCreateDetails.genMipMaps ? texCreateDetails.mipMapLevelsToGen : 1;
@@ -381,8 +377,6 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 	    VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
 	    data.mipLevels,
 	    data.layers);
-
-	resource.FillResource (sampler, imageView, data.textureImageLayout);
 }
 
 VulkanTexture::VulkanTexture (VulkanDevice& device,
@@ -390,7 +384,6 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
     std::function<void()> const& finish_work,
     TexCreateDetails texCreateDetails,
     std::shared_ptr<VulkanBuffer> buffer)
-: resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
 	data.device = &device;
 	data.mipLevels = texCreateDetails.genMipMaps ? texCreateDetails.mipMapLevelsToGen : 1;
@@ -476,12 +469,9 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 	    VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
 	    data.mipLevels,
 	    data.layers);
-
-	resource.FillResource (sampler, imageView, data.textureImageLayout);
 }
 
 VulkanTexture::VulkanTexture (VulkanDevice& device, TexCreateDetails texCreateDetails)
-: resource (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 {
 	data.device = &device;
 
@@ -540,7 +530,7 @@ VulkanTexture::~VulkanTexture ()
 }
 
 VulkanTexture::VulkanTexture (VulkanTexture&& tex)
-: image (tex.image), imageView (tex.imageView), sampler (tex.sampler), data (tex.data), resource (tex.resource)
+: image (tex.image), imageView (tex.imageView), sampler (tex.sampler), data (tex.data)
 {
 	tex.image = VK_NULL_HANDLE;
 	tex.imageView = VK_NULL_HANDLE;
@@ -552,7 +542,6 @@ VulkanTexture& VulkanTexture::operator= (VulkanTexture&& tex)
 	imageView = tex.imageView;
 	sampler = tex.sampler;
 	data = tex.data;
-	resource = tex.resource;
 
 	tex.image = VK_NULL_HANDLE;
 	tex.imageView = VK_NULL_HANDLE;
@@ -669,7 +658,7 @@ VulkanTextureID TextureManager::CreateTexture2D (Resource::Texture::TexID textur
 	auto tex = std::make_unique<VulkanTexture> (
 	    device, async_task_manager, finish_work, texCreateDetails, resource);
 	std::lock_guard guard (map_lock);
-	texture_map[id_counter] = std::move (tex);
+	in_progress_map[id_counter] = std::move (tex);
 	return id_counter++;
 }
 
@@ -680,7 +669,7 @@ VulkanTextureID TextureManager::CreateTexture2DArray (Resource::Texture::TexID t
 	auto tex = std::make_unique<VulkanTexture> (
 	    device, async_task_manager, finish_work, texCreateDetails, resource);
 	std::lock_guard guard (map_lock);
-	texture_map[id_counter] = std::move (tex);
+	in_progress_map[id_counter] = std::move (tex);
 	return id_counter++;
 }
 
@@ -691,7 +680,7 @@ VulkanTextureID TextureManager::CreateCubeMap (Resource::Texture::TexID cubeMap,
 	auto tex = std::make_unique<VulkanTexture> (
 	    device, async_task_manager, finish_work, texCreateDetails, resource);
 	std::lock_guard guard (map_lock);
-	texture_map[id_counter] = std::move (tex);
+	in_progress_map[id_counter] = std::move (tex);
 	return id_counter++;
 }
 
@@ -701,7 +690,7 @@ VulkanTextureID TextureManager::CreateTextureFromBuffer (
 	auto finish_work = CreateFinishWork (id_counter);
 	auto tex = std::make_unique<VulkanTexture> (device, async_task_manager, finish_work, texCreateDetails, buffer);
 	std::lock_guard guard (map_lock);
-	texture_map[id_counter] = std::move (tex);
+	in_progress_map[id_counter] = std::move (tex);
 	return id_counter++;
 }
 
@@ -720,22 +709,49 @@ VulkanTextureID TextureManager::CreateDepthImage (VkFormat depthFormat, int widt
 void TextureManager::FinishTextureCreation (VulkanTextureID id)
 {
 	std::lock_guard guard (map_lock);
-	auto node = in_progress_map.extract (id);
-	texture_map.insert (std::move (node));
+	auto it = std::find (expired_textures.begin (), expired_textures.end (), id);
+	if (it != expired_textures.end ())
+	{
+		expired_textures.erase (it);
+	}
+	else
+	{
+		auto node = in_progress_map.extract (id);
+		if (node)
+		{
+			texture_map.insert (std::move (node));
+		}
+	}
 }
 
-VulkanTexture const& TextureManager::get_texture (VulkanTextureID id)
-{
-	std::lock_guard guard (map_lock);
-	return *texture_map.at (id);
-}
-
-
-void TextureManager::delete_texture (VulkanTextureID id)
+DescriptorResource TextureManager::GetResource (VulkanTextureID id)
 {
 	std::lock_guard guard (map_lock);
 	if (texture_map.count (id) == 1)
-		texture_map.erase (id);
+		return texture_map.at (id)->GetResource ();
+	else if (in_progress_map.count (id) == 1)
+		return in_progress_map.at (id)->GetResource ();
+}
+
+void TextureManager::DeleteTexture (VulkanTextureID id)
+{
+	std::lock_guard guard (map_lock);
+	auto it = std::find (expired_textures.begin (), expired_textures.end (), id);
+	if (it != expired_textures.end ())
+	{
+		expired_textures.erase (it);
+	}
 	else
-		in_progress_map.erase (id);
+	{
+		if (texture_map.count (id) == 1)
+			texture_map.erase (id);
+		else if (in_progress_map.count (id) == 1)
+			expired_textures.push_back (id);
+	}
+}
+
+bool TextureManager::IsFinishedTransfer (VulkanTextureID id)
+{
+	std::lock_guard guard (map_lock);
+	return texture_map.count (id) == 1;
 }

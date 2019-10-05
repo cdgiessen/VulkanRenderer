@@ -136,10 +136,9 @@ class VulkanBuffer
 	void BindIndexBuffer (VkCommandBuffer cmdBuf);
 	void BindInstanceBuffer (VkCommandBuffer cmdBuf);
 
+	DescriptorResource GetResource ();
 
 	VkBuffer buffer = VK_NULL_HANDLE;
-
-	DescriptorResource resource;
 
 	private:
 	details::BufData data;

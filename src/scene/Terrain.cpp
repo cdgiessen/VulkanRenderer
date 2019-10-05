@@ -87,9 +87,9 @@ Terrain::Terrain (VulkanRenderer& renderer,
 
 Terrain::~Terrain ()
 {
-	renderer.texture_manager.delete_texture (terrainHeightMap);
-	renderer.texture_manager.delete_texture (terrainSplatMap);
-	renderer.texture_manager.delete_texture (terrainNormalMap);
+	renderer.texture_manager.DeleteTexture (terrainHeightMap);
+	renderer.texture_manager.DeleteTexture (terrainSplatMap);
+	renderer.texture_manager.DeleteTexture (terrainNormalMap);
 }
 
 int Terrain::FindEmptyIndex ()
@@ -216,14 +216,14 @@ void Terrain::SetupDescriptorSets (
 	descriptorSet = descriptor->CreateDescriptorSet ();
 
 	std::vector<DescriptorUse> writes;
-	writes.push_back (DescriptorUse (0, 1, uniformBuffer->resource));
-	writes.push_back (DescriptorUse (1, 1, renderer.texture_manager.get_texture (terrainHeightMap).resource));
-	writes.push_back (DescriptorUse (2, 1, renderer.texture_manager.get_texture (terrainNormalMap).resource));
-	writes.push_back (DescriptorUse (3, 1, renderer.texture_manager.get_texture (terrainSplatMap).resource));
-	writes.push_back (DescriptorUse (4, 1, renderer.texture_manager.get_texture (texArrAlbedo).resource));
-	writes.push_back (DescriptorUse (5, 1, renderer.texture_manager.get_texture (texArrRoughness).resource));
-	writes.push_back (DescriptorUse (6, 1, renderer.texture_manager.get_texture (texArrMetallic).resource));
-	writes.push_back (DescriptorUse (7, 1, renderer.texture_manager.get_texture (texArrNormal).resource));
+	writes.push_back (DescriptorUse (0, 1, uniformBuffer->GetResource ()));
+	writes.push_back (DescriptorUse (1, 1, renderer.texture_manager.GetResource (terrainHeightMap)));
+	writes.push_back (DescriptorUse (2, 1, renderer.texture_manager.GetResource (terrainNormalMap)));
+	writes.push_back (DescriptorUse (3, 1, renderer.texture_manager.GetResource (terrainSplatMap)));
+	writes.push_back (DescriptorUse (4, 1, renderer.texture_manager.GetResource (texArrAlbedo)));
+	writes.push_back (DescriptorUse (5, 1, renderer.texture_manager.GetResource (texArrRoughness)));
+	writes.push_back (DescriptorUse (6, 1, renderer.texture_manager.GetResource (texArrMetallic)));
+	writes.push_back (DescriptorUse (7, 1, renderer.texture_manager.GetResource (texArrNormal)));
 	descriptor->UpdateDescriptorSet (descriptorSet, writes);
 }
 

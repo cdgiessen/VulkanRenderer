@@ -204,7 +204,7 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 					        terrainVulkanTextureArrayNormal);
 
 					    std::lock_guard<std::mutex> lk (terrain_mutex);
-					    terrains.push_back (std::move (terrain));
+					    in_progress_terrains.push_back (std::move (terrain));
 				    },
 				    workContinueSignal);
 
@@ -213,6 +213,22 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 		}
 	}
 
+	terrain_mutex.lock ();
+
+	for (auto it = in_progress_terrains.begin (); it != in_progress_terrains.end ();)
+	{
+		if ((*it)->IsReady ())
+		{
+			terrains.push_back (std::unique_ptr<Terrain> ());
+			std::swap (*it, terrains.back ());
+			in_progress_terrains.erase (it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+	terrain_mutex.unlock ();
 
 
 	// update all terrains
@@ -233,8 +249,7 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 
 void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe)
 {
-	return;
-	std::lock_guard<std::mutex> lock (terrain_mutex);
+	std::lock_guard lock (terrain_mutex);
 	for (auto& ter : terrains)
 	{
 		ter->DrawTerrainGrid (commandBuffer, wireframe);
@@ -245,7 +260,7 @@ void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wirefram
 // TODO : Re-implement getting height at terrain location
 float TerrainManager::GetTerrainHeightAtLocation (float x, float z)
 {
-	std::lock_guard<std::mutex> lock (terrain_mutex);
+	std::lock_guard lock (terrain_mutex);
 	for (auto& terrain : terrains)
 	{
 		cml::vec2f pos = terrain->coordinateData.pos;

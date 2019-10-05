@@ -77,6 +77,7 @@ class TerrainManager
 	bool isCreatingTerrain = true; // while condition for worker threads
 
 	std::mutex terrain_mutex;
+	std::vector<std::unique_ptr<Terrain>> in_progress_terrains;
 	std::vector<std::unique_ptr<Terrain>> terrains;
 	std::vector<cml::vec2i> activeTerrains;
 	cml::vec3f curCameraPos;

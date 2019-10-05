@@ -11,8 +11,8 @@ VkDescriptorPoolSize DescriptorPoolSize::GetPoolSize ()
 	return initializers::descriptorPoolSize (type, count);
 };
 
-DescriptorResource::DescriptorResource (VkDescriptorType type) : type (type) {}
-void DescriptorResource::FillResource (VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
+DescriptorResource::DescriptorResource (VkDescriptorType type, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
+: type (type)
 {
 	VkDescriptorBufferInfo bufferInfo{};
 	bufferInfo.buffer = buffer;
@@ -20,8 +20,9 @@ void DescriptorResource::FillResource (VkBuffer buffer, VkDeviceSize offset, VkD
 	bufferInfo.range = range;
 	info = bufferInfo;
 }
-
-void DescriptorResource::FillResource (VkSampler sampler, VkImageView imageView, VkImageLayout layout)
+DescriptorResource::DescriptorResource (
+    VkDescriptorType type, VkSampler sampler, VkImageView imageView, VkImageLayout layout)
+: type (type)
 {
 	VkDescriptorImageInfo descriptorImageInfo{};
 	descriptorImageInfo.sampler = sampler;

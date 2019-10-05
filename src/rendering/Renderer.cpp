@@ -403,8 +403,8 @@ GPU_DoubleBuffer::GPU_DoubleBuffer (VulkanDevice& device, RenderSettings& settin
 			data.frameDataDescriptorSet = frameDataDescriptor->CreateDescriptorSet ();
 
 			std::vector<DescriptorUse> writes;
-			writes.push_back (DescriptorUse (0, 1, data.globalVariableBuffer->resource));
-			writes.push_back (DescriptorUse (1, 1, data.cameraDataBuffer->resource));
+			writes.push_back (DescriptorUse (0, 1, data.globalVariableBuffer->GetResource ()));
+			writes.push_back (DescriptorUse (1, 1, data.cameraDataBuffer->GetResource ()));
 			frameDataDescriptor->UpdateDescriptorSet (data.frameDataDescriptorSet, writes);
 		}
 		auto desLayout = frameDataDescriptor->GetLayout ();
@@ -438,9 +438,9 @@ GPU_DoubleBuffer::GPU_DoubleBuffer (VulkanDevice& device, RenderSettings& settin
 			data.lightingDescriptorSet = lightingDescriptor->CreateDescriptorSet ();
 
 			std::vector<DescriptorUse> writes;
-			writes.push_back (DescriptorUse (0, 1, data.sunBuffer->resource));
-			writes.push_back (DescriptorUse (1, 1, data.pointLightsBuffer->resource));
-			writes.push_back (DescriptorUse (2, 1, data.spotLightsBuffer->resource));
+			writes.push_back (DescriptorUse (0, 1, data.sunBuffer->GetResource ()));
+			writes.push_back (DescriptorUse (1, 1, data.pointLightsBuffer->GetResource ()));
+			writes.push_back (DescriptorUse (2, 1, data.spotLightsBuffer->GetResource ()));
 			lightingDescriptor->UpdateDescriptorSet (data.lightingDescriptorSet, writes);
 		}
 
@@ -472,7 +472,7 @@ GPU_DoubleBuffer::GPU_DoubleBuffer (VulkanDevice& device, RenderSettings& settin
 			data.dynamicTransformDescriptorSet = dynamicTransformDescriptor->CreateDescriptorSet ();
 
 			std::vector<DescriptorUse> writes;
-			writes.push_back (DescriptorUse (0, 1, data.dynamicTransformBuffer->resource));
+			writes.push_back (DescriptorUse (0, 1, data.dynamicTransformBuffer->GetResource ()));
 			dynamicTransformDescriptor->UpdateDescriptorSet (data.dynamicTransformDescriptorSet, writes);
 		}
 	}

@@ -13,35 +13,10 @@ const uint32_t VERTEX_BUFFER_BIND_ID = 0;
 const uint32_t INSTANCE_BUFFER_BIND_ID = 1;
 
 VulkanBuffer::VulkanBuffer (VulkanDevice& device, BufCreateDetails details)
-: resource (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 {
 	data.device = &device;
 	data.m_size = details.bufferSize;
 	data.type = details.type;
-
-	switch (details.type)
-	{
-		case (BufferType::uniform):
-			resource = DescriptorResource (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-			break;
-		case (BufferType::uniform_dynamic):
-			resource = DescriptorResource (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
-			break;
-		case (BufferType::storage):
-			resource = DescriptorResource (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-			break;
-		case (BufferType::storage_dynamic):
-			resource = DescriptorResource (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
-			break;
-		case (BufferType::vertex):
-		case (BufferType::index):
-		case (BufferType::instance):
-		case (BufferType::staging):
-		default:
-			resource = DescriptorResource ((VkDescriptorType) (0));
-			break;
-	}
-
 
 	if (details.dynamicAlignment == true)
 	{
@@ -75,8 +50,6 @@ VulkanBuffer::VulkanBuffer (VulkanDevice& device, BufCreateDetails details)
 		data.persistentlyMapped = true;
 		Map (&data.mapped);
 	}
-
-	resource.FillResource (buffer, 0, data.m_size);
 }
 
 VulkanBuffer::~VulkanBuffer ()
@@ -91,8 +64,7 @@ VulkanBuffer::~VulkanBuffer ()
 	}
 }
 
-VulkanBuffer::VulkanBuffer (VulkanBuffer&& other)
-: buffer (other.buffer), resource (other.resource), data (other.data)
+VulkanBuffer::VulkanBuffer (VulkanBuffer&& other) : buffer (other.buffer), data (other.data)
 {
 	other.buffer = VK_NULL_HANDLE;
 	other.data.allocation = VK_NULL_HANDLE;
@@ -103,7 +75,6 @@ VulkanBuffer& VulkanBuffer::operator= (VulkanBuffer&& other) noexcept
 	if (this != &other)
 	{
 		buffer = other.buffer;
-		resource = other.resource;
 		data = other.data;
 
 		other.buffer = VK_NULL_HANDLE;
@@ -180,6 +151,35 @@ void VulkanBuffer::BindInstanceBuffer (VkCommandBuffer cmdBuf)
 	assert (data.type == BufferType::instance);
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers (cmdBuf, INSTANCE_BUFFER_BIND_ID, 1, &buffer, offsets);
+}
+
+DescriptorResource VulkanBuffer::GetResource ()
+{
+	VkDescriptorType descriptor_type;
+	switch (data.type)
+	{
+		case (BufferType::uniform):
+			descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			break;
+		case (BufferType::uniform_dynamic):
+			descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+			break;
+		case (BufferType::storage):
+			descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			break;
+		case (BufferType::storage_dynamic):
+			descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+			break;
+		case (BufferType::vertex):
+		case (BufferType::index):
+		case (BufferType::instance):
+		case (BufferType::staging):
+		default:
+			descriptor_type = VkDescriptorType::VK_DESCRIPTOR_TYPE_MAX_ENUM;
+			break;
+	}
+
+	return DescriptorResource (descriptor_type, buffer, 0, data.m_size);
 }
 
 BufferManager::BufferManager (VulkanDevice& device) : device (device) {}
