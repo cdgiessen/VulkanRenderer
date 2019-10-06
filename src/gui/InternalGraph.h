@@ -31,47 +31,66 @@ typedef std::map<NodeID, Node> NodeMap;
 template <typename T> class NoiseImage2D
 {
 	public:
-	NoiseImage2D ();
+	NoiseImage2D (){};
 
-	NoiseImage2D (int width);
-	~NoiseImage2D ();
+	~NoiseImage2D ()
+	{
+		if (image != nullptr) FastNoiseSIMD::FreeNoiseSet (image);
+	}
 
-	// size, in pixels, of the image;
-	int GetSize () const;
+	NoiseImage2D (NoiseImage2D const& node) : width (node.width), image (node.image) {}
 
-	// dimension of the image
-	int GetImageWidth () const;
+	NoiseImage2D& operator= (NoiseImage2D const& node)
+	{
+		width = node.width;
+		image = node.image;
+		return *this;
+	}
 
-	void SetWidth (int width);
+	NoiseImage2D (NoiseImage2D&& node) : width (node.width), image (node.image)
+	{
+		node.image = nullptr;
+	}
 
-	size_t GetSizeBytes () const;
+	NoiseImage2D& operator= (NoiseImage2D&& node)
+	{
+		width = node.width;
+		image = node.image;
+		node.image = nullptr;
+		return *this;
+	}
+
+	void SetImage (int width, T* image)
+	{
+		this->width = width;
+		this->image = image;
+	}
 
 	// No error look
-	const T LookUp (int x, int z) const;
+	const T LookUp (int x, int z) const { return image[x * width + z]; }
 
 	// Error checked sample, returns -1 if fails
-	const T BoundedLookUp (int x, int z) const;
+	const T BoundedLookUp (int x, int z) const
+	{
+		if (x >= 0 && x < width && z >= 0 && z < width)
+		{
+			return image[x * width + z];
+		}
+		return -1;
+	}
 
-	void SetPixelValue (int x, int z, T value);
 
-	T* GetImageData ();
-	void SetImageData (int width, T* data, std::shared_ptr<FastNoiseSIMD> noiseHolder);
 
-	std::vector<T>* GetImageVectorData ();
-
-	std::byte* GetByteDataPtr ();
+	float BilinearImageSample2D (const float x, const float z);
 
 	private:
 	int width = 0;
-	std::shared_ptr<T> image;
-	bool isExternallyAllocated = false;
-	std::vector<T> data;
+	T* image = nullptr;
 };
 
-template <typename T>
-static float BilinearImageSample2D (const NoiseImage2D<T>& noiseImage, const float x, const float z)
+template <typename T> float NoiseImage2D<T>::BilinearImageSample2D (const float x, const float z)
 {
-	const int cellScale = noiseImage.GetImageWidth () - 1; // cellsWide - 1;
+	const int cellScale = width - 1;
 
 	const float xScaled = x * (float)cellScale;
 	const float zScaled = z * (float)cellScale;
@@ -83,10 +102,10 @@ static float BilinearImageSample2D (const NoiseImage2D<T>& noiseImage, const flo
 	    xScaled + 1, 0.0f, (float)cellScale); // make sure its not greater than the image size
 	const int realZPlus1 = (int)cml::clamp (zScaled + 1, 0.0f, (float)cellScale);
 
-	const float UL = noiseImage.BoundedLookUp (realX, realZ);
-	const float UR = noiseImage.BoundedLookUp (realX, realZPlus1);
-	const float DL = noiseImage.BoundedLookUp (realXPlus1, realZ);
-	const float DR = noiseImage.BoundedLookUp (realXPlus1, realZPlus1);
+	const float UL = BoundedLookUp (realX, realZ);
+	const float UR = BoundedLookUp (realX, realZPlus1);
+	const float DL = BoundedLookUp (realXPlus1, realZ);
+	const float DR = BoundedLookUp (realXPlus1, realZPlus1);
 
 	if (realX == realXPlus1 && realZ == realZPlus1)
 	{
@@ -112,89 +131,6 @@ static float BilinearImageSample2D (const NoiseImage2D<T>& noiseImage, const flo
 		       (((float)realXPlus1 - (float)realX) * ((float)realZPlus1 - (float)realZ));
 	}
 }
-
-// No allocation constructor, meant for images that are externally created (FastNoiseSIMD)
-template <typename T> NoiseImage2D<T>::NoiseImage2D () : width (0), isExternallyAllocated (true) {}
-
-// Preallocates based on width, mainly meant for output images
-template <typename T>
-NoiseImage2D<T>::NoiseImage2D (int width) : width (width), isExternallyAllocated (false)
-{
-
-	data = std::vector<T> (width * width);
-}
-
-template <typename T> NoiseImage2D<T>::~NoiseImage2D ()
-{
-	// if (!isExternallyAllocated && image != nullptr) free (image);
-	// Log.Error << "Was this image already freed?\n";
-}
-
-template <typename T> T* NoiseImage2D<T>::GetImageData ()
-{
-	if (isExternallyAllocated)
-		return image.get ();
-	else
-		return data.data ();
-}
-
-template <typename T>
-void NoiseImage2D<T>::SetImageData (int width, T* data, std::shared_ptr<FastNoiseSIMD> noiseHolder)
-{
-	this->width = width;
-	image = std::shared_ptr<T> (data, [=](T* ptr) { noiseHolder->FreeNoiseSet (ptr); });
-}
-
-template <typename T> int NoiseImage2D<T>::GetSize () const { return width * width; }
-
-template <typename T> size_t NoiseImage2D<T>::GetSizeBytes () const { return GetSize () * 4; }
-
-template <typename T> int NoiseImage2D<T>::GetImageWidth () const { return width; }
-
-// Changes the width then frees and allocates new image
-template <typename T> void NoiseImage2D<T>::SetWidth (int width) { this->width = width; }
-
-template <typename T> const T NoiseImage2D<T>::LookUp (int x, int z) const
-{
-	if (isExternallyAllocated)
-		return image.get ()[x * width + z];
-	else
-		return data[x * width + z];
-}
-
-template <typename T> const T NoiseImage2D<T>::BoundedLookUp (int x, int z) const
-{
-	if (x >= 0 && x < width && z >= 0 && z < width)
-	{
-		if (isExternallyAllocated)
-			return image.get ()[x * width + z];
-		else
-			return data[x * width + z];
-	}
-	else
-	{
-		// throw new std::runtime_error ("out of bounds");
-	}
-	return -1;
-}
-
-template <typename T> void NoiseImage2D<T>::SetPixelValue (int x, int z, T value)
-{
-	if (x >= 0 && x < width && z >= 0 && z < width) data[x * width + z] = value;
-	//	image[x * width + z] = value;
-	// else
-	//	throw new std::runtime_error ("out of bounds");
-}
-
-template <typename T> std::vector<T>* NoiseImage2D<T>::GetImageVectorData () { return &data; }
-
-template <typename T> std::byte* NoiseImage2D<T>::GetByteDataPtr ()
-{
-	return static_cast<std::byte*> (data.data ());
-}
-
-template <typename T>
-static float BilinearImageSample2D (const NoiseImage2D<T>& noiseImage, const float x, const float z);
 
 enum class LinkType
 {
@@ -289,7 +225,7 @@ class Node
 {
 	public:
 	Node (NodeType type = NodeType::None);
-	//~Node ();
+	~Node ();
 
 	NodeType GetNodeType () const;
 	LinkType GetOutputType () const;
@@ -327,7 +263,7 @@ class Node
 
 	bool isNoiseNode = false;
 	NoiseImage2D<float> noiseImage;
-	std::shared_ptr<FastNoiseSIMD> myNoise;
+	FastNoiseSIMD* myNoise = nullptr;
 	FastNoiseSIMD::FractalType fractalType;
 	FastNoiseSIMD::CellularDistanceFunction cellularDistanceFunction;
 	FastNoiseSIMD::CellularReturnType cellularReturnType;

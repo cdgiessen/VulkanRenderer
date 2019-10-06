@@ -32,8 +32,8 @@ struct AsyncTask
 struct GraphicsCleanUpWork
 {
 	CommandBuffer cmdBuf;
-	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
 	std::function<void()> finish_work;
+	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
 
 	GraphicsCleanUpWork (CommandBuffer cmdBuf,
 	    std::function<void()> finish_work,

@@ -21,17 +21,18 @@ struct TexCreateDetails
 	VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	bool genMipMaps = false;
-	int mipMapLevelsToGen = 1;
-	int desiredWidth = 0;
-	int desiredHeight = 0;
+	uint32_t mipMapLevelsToGen = 1;
+	uint32_t desiredWidth = 0;
+	uint32_t desiredHeight = 0;
+	VkImageUsageFlags usage = 0;
 
 	TexCreateDetails (){};
 	TexCreateDetails (VkFormat format,
 	    VkImageLayout imageLayout,
 	    bool genMipMaps,
-	    int mipMapLevelsToGen,
-	    int desiredWidth = 0,
-	    int desiredHeight = 0)
+	    uint32_t mipMapLevelsToGen,
+	    uint32_t desiredWidth = 0,
+	    uint32_t desiredHeight = 0)
 	: format (format),
 	  imageLayout (imageLayout),
 	  genMipMaps (genMipMaps),
@@ -52,8 +53,8 @@ struct TexData
 	VmaAllocationInfo allocationInfo;
 	VmaAllocator allocator = nullptr;
 
-	int mipLevels;
-	int layers;
+	int32_t mipLevels;
+	int32_t layers;
 };
 } // namespace details
 class VulkanTexture
@@ -112,11 +113,11 @@ class VulkanTexture
 	    VkFormat format,
 	    VkImageAspectFlags aspectFlags,
 	    VkComponentMapping components,
-	    int mipLevels,
-	    int layers);
+	    int32_t mipLevels,
+	    int32_t layers);
 };
 
-using VulkanTextureID = int;
+using VulkanTextureID = int32_t;
 
 class TextureManager
 {
@@ -139,7 +140,7 @@ class TextureManager
 
 	VulkanTextureID CreateTextureFromBuffer (std::shared_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails);
 
-	VulkanTextureID CreateDepthImage (VkFormat depthFormat, int width, int height);
+	VulkanTexture CreateAttachmentImage (TexCreateDetails texCreateDetails);
 
 	void DeleteTexture (VulkanTextureID id);
 

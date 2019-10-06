@@ -70,6 +70,8 @@ class TaskManager
 	TaskManager ();
 	~TaskManager ();
 
+	void Stop ();
+
 	void Submit (Task const& task);
 	void Submit (std::vector<Task> tasks);
 

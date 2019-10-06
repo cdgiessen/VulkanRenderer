@@ -195,14 +195,14 @@ void Manager::LoadTextureList ()
 			auto tex = from_json_TexResource (*it);
 			if (tex.has_value ())
 			{
-
-				textureResources[tex.value ().id] = tex.value ();
-				tasks.push_back (job::Task ([=] { LoadTextureFromFile (tex.value ().id); }, signal));
+				TexID id = tex.value ().id;
+				textureResources[id] = tex.value ();
+				tasks.push_back (job::Task ([id, this] { LoadTextureFromFile (id); }, signal));
 				count++;
 			}
 			else
 			{
-				Log.Error ("No Texture Resource\n");
+				Log.Error (fmt::format ("Tex resource is invalid\n"));
 			}
 		}
 		id_counter = count;
@@ -241,12 +241,11 @@ void Manager::SaveTextureList ()
 void Manager::LoadTextureFromFile (TexID id)
 {
 	auto& texRes = GetTexResourceByID (id);
-	auto texData = std::make_unique<std::vector<std::byte>> (
-	    texRes.description.pixelCount * texRes.description.channels);
+
+	auto texData = std::vector<std::byte> (texRes.description.pixelCount * 4);
 
 	// int desiredChannels = texRes.dataDescription.channels;
 
-	std::vector<fs::path> paths;
 	for (size_t i = 0; i < texRes.description.layers; i++)
 	{
 		fs::path path;
@@ -260,12 +259,10 @@ void Manager::LoadTextureFromFile (TexID id)
 			path = texture_path / fs::path (texRes.name + std::string (".") +
 			                                formatTypeToString (texRes.fileFormatType));
 		}
-		paths.push_back (path);
 
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels;
 		pixels = stbi_load (path.c_str (), &texWidth, &texHeight, &texChannels, 4);
-
 		if (pixels == nullptr)
 		{
 			Log.Error (fmt::format ("Image {} failed to load!\n", path.string ()));
@@ -276,26 +273,23 @@ void Manager::LoadTextureFromFile (TexID id)
 		//}
 		else
 		{
-			std::memcpy (texData.get ()->data () + i * texWidth * texHeight * texChannels,
+			std::memcpy (texData.data () + i * texWidth * texHeight * 4,
 			    pixels,
-			    sizeof (std::byte) * texWidth * texHeight * texChannels);
+			    sizeof (std::byte) * texWidth * texHeight * 4);
 
 
 			stbi_image_free (pixels);
 		}
 	}
-
-	std::lock_guard<std::mutex> lg (data_lock);
-	textureData.push_back (std::move (texData));
-
 	Log.Debug (fmt::format ("Tex {}\n", id));
-}
 
-TexID CreateNewTextureFromByteArray (int width, int height, std::byte* data) { return 0; }
+	std::lock_guard lg (resource_lock);
+	texRes.data = std::move (texData);
+}
 
 TexResource& Manager::GetTexResourceByID (TexID id)
 {
-	std::lock_guard<std::mutex> lk (resource_lock);
+	std::lock_guard lk (resource_lock);
 	return textureResources.at (id);
 }
 

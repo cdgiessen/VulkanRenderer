@@ -90,7 +90,7 @@ class Manager
 
 	TexID GetNextFreeTexID ();
 
-	void LoadTextureFromFile (TexID id);
+	void LoadTextureFromFile (TexID texRes);
 
 	TexID GetTexIDByName (std::string s);
 	TexResource& GetTexResourceByID (int id);
@@ -103,9 +103,6 @@ class Manager
 
 	std::mutex resource_lock;
 	std::unordered_map<TexID, TexResource> textureResources;
-
-	std::mutex data_lock;
-	std::vector<std::unique_ptr<std::vector<std::byte>>> textureData;
 };
 
 } // namespace Resource::Texture

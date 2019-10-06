@@ -178,7 +178,7 @@ VkBool32 VulkanInstance::debugUtilsCallback (VkDebugUtilsMessageSeverityFlagBits
 {
 	auto ms = MessageSeverity (messageSeverity);
 	auto mt = MessageType (messageType);
-	// Log.Error (fmt::format ("{} {}:\n{}\n", ms, mt, pCallbackData->pMessage));
+	Log.Error (fmt::format ("{} {}:\n{}\n", ms, mt, pCallbackData->pMessage));
 	return VK_FALSE;
 }
 

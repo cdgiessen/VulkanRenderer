@@ -11,37 +11,7 @@ unsigned int HardwareThreadCount ()
 namespace job
 {
 
-Task::Task (WorkFuncSig&& m_job, std::weak_ptr<TaskSignal> signalBlock)
-: m_job (m_job), signalBlock (signalBlock)
-{
-	if (auto sbp = signalBlock.lock ()) sbp->Notify ();
-}
-
-void Task::Run ()
-{
-	if (auto sbp = signalBlock.lock ())
-	{
-		if (!sbp->IsCancelled ())
-		{
-			m_job ();
-		}
-		sbp->Signal ();
-	}
-}
-
-void Task::WaitOn ()
-{
-	if (auto sbp = signalBlock.lock ()) sbp->Wait ();
-}
-
-bool Task::IsReadyToRun ()
-{
-	if (auto sbp = signalBlock.lock ())
-	{
-		return sbp->IsReadyToRun ();
-	}
-	return true; // Is this right? no signal block to wait on
-}
+// TaskSignal
 
 void TaskSignal::Notify () { active_waiters++; }
 
@@ -80,7 +50,41 @@ bool TaskSignal::IsReadyToRun ()
 
 int TaskSignal::InQueue () { return active_waiters; }
 
+// Task
 
+Task::Task (WorkFuncSig&& m_job, std::weak_ptr<TaskSignal> signalBlock)
+: m_job (m_job), signalBlock (signalBlock)
+{
+	if (auto sbp = signalBlock.lock ()) sbp->Notify ();
+}
+
+void Task::Run ()
+{
+	if (auto sbp = signalBlock.lock ())
+	{
+		if (!sbp->IsCancelled ())
+		{
+			m_job ();
+		}
+		sbp->Signal ();
+	}
+}
+
+void Task::WaitOn ()
+{
+	if (auto sbp = signalBlock.lock ()) sbp->Wait ();
+}
+
+bool Task::IsReadyToRun ()
+{
+	if (auto sbp = signalBlock.lock ())
+	{
+		return sbp->IsReadyToRun ();
+	}
+	return true; // Is this right? no signal block to wait on
+}
+
+// TaskManager
 
 TaskManager::TaskManager ()
 {
@@ -108,17 +112,22 @@ TaskManager::TaskManager ()
 
 TaskManager::~TaskManager ()
 {
-	continue_working = false;
-	{
-		std::lock_guard lg (workSubmittedLock);
-		workSubmittedCondVar.notify_all ();
-	}
+	Stop ();
 	for (auto& thread : worker_threads)
 	{
 		thread.join ();
 	}
 }
 
+
+void TaskManager::Stop ()
+{
+	continue_working = false;
+	{
+		std::lock_guard lg (workSubmittedLock);
+		workSubmittedCondVar.notify_all ();
+	}
+}
 
 void TaskManager::Submit (Task const& task)
 {

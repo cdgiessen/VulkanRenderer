@@ -190,7 +190,7 @@ class VulkanRenderer
 
 	GPU_DoubleBuffer dynamic_data;
 
-	std::vector<std::unique_ptr<VulkanTexture>> depthBuffers;
+	std::vector<VulkanTexture> depthBuffers;
 
 	uint32_t frameIndex = 0; // which of the swapchain images the app is rendering to
 	bool wireframe = false;  // whether or not to use the wireframe pipeline for the scene.

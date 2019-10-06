@@ -141,8 +141,14 @@ void SetImageLayout (VkCommandBuffer cmdbuffer,
 	SetImageLayout (cmdbuffer, image, oldImageLayout, newImageLayout, subresourceRange, srcStageMask, dstStageMask);
 }
 
-void GenerateMipMaps (
-    VkCommandBuffer cmdBuf, VkImage image, VkImageLayout finalImageLayout, int width, int height, int depth, int layers, int mipLevels)
+void GenerateMipMaps (VkCommandBuffer cmdBuf,
+    VkImage image,
+    VkImageLayout finalImageLayout,
+    int32_t width,
+    int32_t height,
+    int32_t depth,
+    int32_t layers,
+    int32_t mipLevels)
 {
 	// We copy down the whole mip chain doing a blit from mip-1 to mip
 	// An alternative way would be to always blit from the first mip level and
@@ -154,10 +160,10 @@ void GenerateMipMaps (
 		VkImageBlit imageBlit = initializers::imageBlit (
 		    // src
 		    initializers::imageSubresourceLayers (VK_IMAGE_ASPECT_COLOR_BIT, i - 1, layers, 0),
-		    { int32_t (width >> (i - 1)), int32_t (height >> (i - 1)), 1 },
+		    { width >> (i - 1), height >> (i - 1), 1 },
 		    // dst
 		    initializers::imageSubresourceLayers (VK_IMAGE_ASPECT_COLOR_BIT, i, layers, 0),
-		    { int32_t (width >> (i)), int32_t (height >> (i)), 1 });
+		    { width >> (i), height >> (i), 1 });
 
 		VkImageSubresourceRange mipSubRange =
 		    initializers::imageSubresourceRangeCreateInfo (VK_IMAGE_ASPECT_COLOR_BIT, 1, layers);
@@ -225,11 +231,11 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
     const std::vector<VkBufferImageCopy> bufferCopyRegions,
     VkImageLayout imageLayout,
     VkImage image,
-    int width,
-    int height,
-    int depth,
-    int layers,
-    int mipLevels)
+    int32_t width,
+    int32_t height,
+    int32_t depth,
+    int32_t layers,
+    int32_t mipLevels)
 {
 	if (device.singleQueueDevice)
 	{
@@ -304,7 +310,7 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 
 
 	auto buffer = std::make_shared<VulkanBuffer> (
-	    device, staging_details (BufferType::staging, textureResource.description.pixelCount * 4));
+	    device, staging_details (BufferType::staging, textureResource.data.size ()));
 
 	buffer->CopyToBuffer (textureResource.data);
 
@@ -327,7 +333,7 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 		bufferCopyRegions.push_back (bufferCopyRegion);
 		// Increase offset into staging buffer for next level / face
 		offset += textureResource.description.width * textureResource.description.height *
-		          textureResource.description.depth * 4;
+		          textureResource.description.depth * textureResource.description.channels;
 	}
 
 	BeginTransferAndMipMapGenWork (*data.device,
@@ -420,7 +426,7 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 		    offset);
 		bufferCopyRegions.push_back (bufferCopyRegion);
 		// Increase offset into staging buffer for next level / face
-		offset += texCreateDetails.desiredWidth * texCreateDetails.desiredHeight * 4;
+		offset += texCreateDetails.desiredWidth * texCreateDetails.desiredHeight * 4.;
 	}
 
 	BeginTransferAndMipMapGenWork (*data.device,
@@ -483,10 +489,8 @@ VulkanTexture::VulkanTexture (VulkanDevice& device, TexCreateDetails texCreateDe
 	    VK_IMAGE_TILING_OPTIMAL,
 	    VK_SHARING_MODE_EXCLUSIVE,
 	    VK_IMAGE_LAYOUT_UNDEFINED,
-	    VkExtent3D{ (uint32_t)texCreateDetails.desiredWidth, (uint32_t)texCreateDetails.desiredHeight, (uint32_t)1 },
-	    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-
-	imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	    VkExtent3D{ texCreateDetails.desiredWidth, texCreateDetails.desiredHeight, 1 },
+	    texCreateDetails.usage | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 
 	VmaAllocationCreateInfo imageAllocCreateInfo = {};
 	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -496,24 +500,32 @@ VulkanTexture::VulkanTexture (VulkanDevice& device, TexCreateDetails texCreateDe
 	    data.allocator, &imageInfo, &imageAllocCreateInfo, &image, &data.allocation, &data.allocationInfo));
 
 
+	VkImageAspectFlags flags;
+	if (texCreateDetails.format == VK_FORMAT_D32_SFLOAT || texCreateDetails.format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
+	    texCreateDetails.format == VK_FORMAT_D24_UNORM_S8_UINT)
+	{
+		flags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+	}
+	else
+	{
+		flags = VK_IMAGE_ASPECT_COLOR_BIT;
+	}
+
 	imageView = VulkanTexture::CreateImageView (image,
 	    VK_IMAGE_VIEW_TYPE_2D,
 	    texCreateDetails.format,
-	    VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+	    flags,
 	    VkComponentMapping{ VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
 	    1,
 	    1);
 
+	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo (flags);
 
-	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo (
-	    VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-
-	CommandPool pool (device, data.device->GraphicsQueue ());
+	CommandPool pool (device, device.GraphicsQueue ());
 
 	VkCommandBuffer cmdBuf = pool.GetCommandBuffer ();
 
-	SetImageLayout (
-	    cmdBuf, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, subresourceRange);
+	SetImageLayout (cmdBuf, image, VK_IMAGE_LAYOUT_UNDEFINED, texCreateDetails.imageLayout, subresourceRange);
 
 	VulkanFence fence = VulkanFence (device);
 
@@ -694,16 +706,9 @@ VulkanTextureID TextureManager::CreateTextureFromBuffer (
 	return id_counter++;
 }
 
-VulkanTextureID TextureManager::CreateDepthImage (VkFormat depthFormat, int width, int height)
+VulkanTexture TextureManager::CreateAttachmentImage (TexCreateDetails texCreateDetails)
 {
-	TexCreateDetails texCreateDetails;
-	texCreateDetails.format = depthFormat;
-	texCreateDetails.desiredWidth = width;
-	texCreateDetails.desiredHeight = height;
-	auto tex = std::make_unique<VulkanTexture> (device, texCreateDetails);
-	std::lock_guard guard (map_lock);
-	in_progress_map[id_counter] = std::move (tex);
-	return id_counter++;
+	return VulkanTexture (device, texCreateDetails);
 }
 
 void TextureManager::FinishTextureCreation (VulkanTextureID id)
@@ -729,7 +734,7 @@ DescriptorResource TextureManager::GetResource (VulkanTextureID id)
 	std::lock_guard guard (map_lock);
 	if (texture_map.count (id) == 1)
 		return texture_map.at (id)->GetResource ();
-	else if (in_progress_map.count (id) == 1)
+	else // if(in_progress_map.count (id) == 1)
 		return in_progress_map.at (id)->GetResource ();
 }
 

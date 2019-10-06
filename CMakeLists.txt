@@ -33,9 +33,9 @@ endif(UNIX)
 add_library(VulkanApp STATIC)
 add_subdirectory(src)
 
-#include the different source directories in include path
-target_include_directories(VulkanApp PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_include_directories(VulkanApp PUBLIC ${CMAKE_SOURCE_DIR}/src/third-party)
+target_include_directories(VulkanApp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(VulkanApp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/third-party)
+
 
 if(MSVC)
 	target_compile_options(VulkanApp PRIVATE /std:c++17 /permissive-)
@@ -131,4 +131,4 @@ add_custom_target(copy_assets ALL
 add_executable(run_VulkanApp ${PROJECT_SOURCE_DIR}/src/core/main.cpp)
 
 add_dependencies(copy_assets VulkanApp)
-target_link_libraries(run_VulkanApp PRIVATE VulkanApp)
+target_link_libraries(run_VulkanApp PUBLIC VulkanApp)

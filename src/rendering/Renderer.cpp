@@ -153,7 +153,7 @@ void VulkanRenderer::CreatePresentResources ()
 	CreateDepthResources ();
 	std::vector<VkImageView> depthImageViews;
 	for (auto& d : depthBuffers)
-		depthImageViews.push_back (d->imageView);
+		depthImageViews.push_back (d.imageView);
 
 	auto imageViewOrder = frameGraph->OrderAttachments ({ "img_depth", "img_color" });
 
@@ -189,10 +189,11 @@ void VulkanRenderer::CreateDepthResources ()
 	texCreateDetails.format = depthFormat;
 	texCreateDetails.desiredWidth = vulkanSwapChain.swapChainExtent.width;
 	texCreateDetails.desiredHeight = vulkanSwapChain.swapChainExtent.height;
+	texCreateDetails.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
 	for (int i = 0; i < 3; i++)
 	{
-		depthBuffers.push_back (std::make_unique<VulkanTexture> (device, texCreateDetails));
+		depthBuffers.push_back (texture_manager.CreateAttachmentImage (texCreateDetails));
 	}
 }
 

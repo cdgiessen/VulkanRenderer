@@ -125,6 +125,7 @@ void VulkanApp::Run ()
 	}
 
 	vulkan_renderer.DeviceWaitTillIdle ();
+	task_manager.Stop ();
 }
 
 void VulkanApp::RecreateSwapChain ()
