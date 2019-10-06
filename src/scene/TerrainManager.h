@@ -8,7 +8,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "core/CoreTools.h"
+#include "util/SimpleTimer.h"
+
 #include "core/JobSystem.h"
 #include "core/TimeManager.h"
 
@@ -21,7 +22,6 @@
 #include "gui/InternalGraph.h"
 
 #include "Camera.h"
-#include "InstancedSceneObject.h"
 #include "Terrain.h"
 
 

@@ -1,15 +1,11 @@
 #pragma once
 
-#include <string>
-
 #include <vulkan/vulkan.h>
 
 #include "core/Logger.h"
 
-VkSampleCountFlagBits getMaxUsableSampleCount (VkPhysicalDeviceProperties properties);
-
 /** @brief Returns an error code as a string */
-std::string errorString (const VkResult errorCode);
+const char* errorString (const VkResult errorCode);
 
 #define VK_CHECK_RESULT(f)                                                                            \
 	{                                                                                                 \

@@ -54,7 +54,7 @@ VkWriteDescriptorSet DescriptorUse::GetWriteDescriptorSet (VkDescriptorSet set)
 	return writeDescriptorSet;
 }
 
-void DescriptorSet::BindDescriptorSet (VkCommandBuffer cmdBuf, VkPipelineLayout layout)
+void DescriptorSet::Bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout)
 {
 	vkCmdBindDescriptorSets (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &set, 0, nullptr);
 }

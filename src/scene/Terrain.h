@@ -16,7 +16,8 @@
 #include "rendering/Renderer.h"
 #include "rendering/Texture.h"
 
-#include "core/CoreTools.h"
+#include "util/SimpleTimer.h"
+
 #include "resources/Texture.h"
 
 #include "gui/InternalGraph.h"

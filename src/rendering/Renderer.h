@@ -14,9 +14,6 @@
 
 #include "core/JobSystem.h"
 
-#include "util/ConcurrentQueue.h"
-#include "util/PackedArray.h"
-
 #include "AsyncTask.h"
 #include "Buffer.h"
 #include "Descriptor.h"
@@ -68,6 +65,8 @@ class RenderSettings
 	private:
 	std::filesystem::path fileName;
 };
+
+constexpr int MaxTransformCount = 16384;
 
 class GPU_DoubleBuffer
 {

@@ -374,7 +374,7 @@ int run_engine ()
 	}
 	catch (const std::runtime_error& e)
 	{
-		Log.Debug (fmt::format ("ENGINE FAILED TO INITIALIZE\n{}\n", e.what ()));
+		Log.Debug (fmt::format ("Engine failed to initialize\n{}\n", e.what ()));
 		return EXIT_FAILURE;
 	}
 
@@ -387,6 +387,7 @@ int run_engine ()
 		Log.Error (fmt::format ("Engine quite in main loop\n{}\n", e.what ()));
 		return EXIT_FAILURE;
 	}
+	vkApp.reset ();
 
 	return EXIT_SUCCESS;
 }

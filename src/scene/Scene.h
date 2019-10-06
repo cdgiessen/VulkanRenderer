@@ -10,16 +10,10 @@
 #include "core/TimeManager.h"
 
 #include "Camera.h"
-#include "GameObject.h"
-#include "InstancedSceneObject.h"
 #include "Skybox.h"
 #include "Terrain.h"
 #include "TerrainManager.h"
 #include "Water.h"
-
-#include "Transform.h"
-
-//#include <gltf2\glTF2.hpp>
 
 struct SkySettings
 {
@@ -41,7 +35,6 @@ class Scene
 	    VulkanRenderer& renderer,
 	    TimeManager& time_manager,
 	    InternalGraph::GraphPrototype& graph);
-	~Scene ();
 
 	void UpdateScene ();
 	void RenderDepthPrePass (VkCommandBuffer commandBuffer);
@@ -65,11 +58,8 @@ class Scene
 	std::vector<PointLight> pointLights;
 	std::vector<SpotLight> spotLights;
 
-	std::vector<std::unique_ptr<GameObject>> gameObjects;
 	std::unique_ptr<TerrainManager> terrainManager;
 	std::unique_ptr<Water> water_plane;
-	std::unique_ptr<InstancedSceneObject> treesInstanced;
-	std::unique_ptr<InstancedSceneObject> rocksInstanced;
 
 	std::unique_ptr<Skybox> skybox;
 
@@ -87,7 +77,4 @@ class Scene
 	bool releasedControllerJumpButton = false;
 
 	bool UpdateTerrain = true;
-
-	PBR_Material testMat;
-	InstancedSceneObject::InstanceData testInstanceData;
 };

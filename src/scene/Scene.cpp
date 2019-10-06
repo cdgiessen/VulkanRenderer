@@ -30,121 +30,16 @@ Scene::Scene (job::TaskManager& task_manager,
 
 	directionalLights.at (0) = skySettings.sun;
 
-	// pointLights.resize(1);
-	// PointLight pl;
-	// pl.position = cml::vec3f(0, 3, 3);
-	// pl.color = cml::vec3f(0, 1, 0);
-	// pl.attenuation = 5;
-	// pointLights[0] = pl;
-
-	// pointLights[0] = PointLight(cml::vec4f(0, 4, 3, 1), cml::vec4f(0, 0, 0, 0), cml::vec4f(1.0,
-	// 0.045f, 0.0075f, 1.0f)); pointLights[1] = PointLight(cml::vec4f(10, 10, 50, 1), cml::vec4f(0,
-	// 0, 0, 0), cml::vec4f(1.0, 0.045f, 0.0075f, 1.0f)); pointLights[2] = PointLight(cml::vec4f(50,
-	// 10, 10, 1), cml::vec4f(0, 0, 0, 0), cml::vec4f(1.0, 0.045f, 0.0075f, 1.0f)); pointLights[3] =
-	// PointLight(cml::vec4f(50, 10, 50, 1), cml::vec4f(0, 0, 0, 0), cml::vec4f(1.0, 0.045f,
-	// 0.0075f, 1.0f)); pointLights[4] = PointLight(cml::vec4f(75, 10, 75, 1), cml::vec4f(0, 0, 0,
-	// 0), cml::vec4f(1.0, 0.045f, 0.0075f, 1.0f));
-
 	skybox = std::make_unique<Skybox> (renderer);
 	skybox->skyboxCubeMap = resourceMan.texture_manager.GetTexIDByName ("Skybox");
 	skybox->model = std::make_unique<VulkanModel> (
 	    renderer.device, renderer.async_task_manager, renderer.buffer_manager, createCube ());
 	skybox->InitSkybox ();
 
-	// auto cubeObject 	= std::make_unique<GameObject> (renderer);
-	// cubeObject->LoadModel (createCube ());
-	// cubeObject->gameObjectModel = std::make_shared<VulkanModel> (renderer, cubeObject->gameObjectMesh);
-
-	// TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 4);
-
-	// cubeObject->gameObjectTexture = resourceMan.texture_manager.GetTexIDByName
-	// ("ColorGradientCube"); cubeObject->gameObjectVulkanTexture =
-	//     renderer.texture_manager.CreateTexture2D (cubeObject->gameObjectTexture, details);
-	// cubeObject->InitGameObject ();
-	// gameObjects.push_back (cubeObject);
-	// for (int i = 0; i < 9; i++) {
-	//	for (int j = 0; j < 9; j++)
-	//	{
-
-	//		std::unique_ptr<GameObject> sphereObject = std::make_shared<GameObject>(renderer);
-	//		sphereObject->usePBR = true;
-	//		sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer.device);
-	//		sphereObject->LoadModel(createSphere(10));
-	//		sphereObject->position = cml::vec3f(0, i * 2.2, j * 2.2 );
-	//		//sphereObject->pbr_mat.albedo = cml::vec3f(0.8, 0.2, 0.2);
-	//		sphereObject->pbr_mat.metallic = 0.1f + (float)i / 10.0f;
-	//		sphereObject->pbr_mat.roughness = 0.1f + (float)j / 10.0f;
-
-	//		//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture>(renderer.device);
-	//		//sphereObject->gameObjectTexture = resourceMan.texture_manager.loadTextureFromFileRGBA("assets/textures/Red.png");
-	//		sphereObject->InitGameObject();
-	//		gameObjects.push_back(sphereObject);
-	//	}
-	//}
-
-	// for (int i = 0; i < 9; i++) {
-	//	for (int j = 0; j < 9; j++)
-	//	{
-
-	//		std::unique_ptr<GameObject> sphereObject = std::make_shared<GameObject>(renderer);
-	//		sphereObject->usePBR = false;
-	//		sphereObject->gameObjectModel = std::make_shared<VulkanModel>(renderer.device);
-	//		sphereObject->LoadModel(createSphere(10));
-	//		sphereObject->position = cml::vec3f(0, i * 2.2, (float) 8 * 2.2 - j * 2.2 - 30);
-	//		sphereObject->phong_mat.diffuse = (float)(i ) / 10.0;
-	//		sphereObject->phong_mat.specular = (float)j / 6;
-	//																																																																																																																																																	sphereObject->phong_mat.reflectivity
-	//= 128; 		sphereObject->phong_mat.color = cml::vec4f(1.0, 0.3, 0.3, 1.0);
-	//		//sphereObject->gameObjectVulkanTexture = std::make_shared<VulkanTexture>(renderer.device);
-	//		//sphereObject->gameObjectTexture = resourceMan.texture_manager.loadTextureFromFileRGBA("assets/textures/Red.png");
-	//		sphereObject->InitGameObject();
-	//		gameObjects.push_back(sphereObject);
-	//	}
-	//}
-
-	// std::unique_ptr<GameObject> pbr_test = std::make_shared<GameObject>(renderer);
-	// pbr_test->usePBR = true;
 
 	terrainManager = std::make_unique<TerrainManager> (task_manager, graph, resourceMan, renderer);
 
-	// terrainManager->SetupResources(resourceMan, renderer);
-	// terrainManager->GenerateTerrain(resourceMan, renderer, camera);
-
-	// treesInstanced = std::make_unique<InstancedSceneObject>(renderer);
-	// treesInstanced->SetFragmentShaderToUse("assets/shaders/instancedSceneObject.frag.spv");
-	// treesInstanced->SetBlendMode(VK_FALSE);
-	// treesInstanced->SetCullMode(VK_CULL_MODE_BACK_BIT);
-	// treesInstanced->LoadModel(createCube());
-	// treesInstanced->LoadTexture(resourceMan.texture_manager.loadTextureFromFileRGBA("assets/textures/grass.jpg"));
-	// treesInstanced->InitInstancedSceneObject(renderer);
-
-	// treesInstanced->AddInstances({ cml::vec3f(10,0,10),cml::vec3f(10,0,20), cml::vec3f(20,0,10),
-	// cml::vec3f(10,0,40), cml::vec3f(10,0,-40), cml::vec3f(100,0,40) });
-	// treesInstanced->UploadInstances();
-
-	std::vector<InstancedSceneObject::InstanceData> data;
-	int size = 2;
-	for (int i = 0; i < size; i++)
-		for (int j = 0; j < size; j++)
-			for (int k = 0; k < size; k++)
-			{
-				data.push_back (InstancedSceneObject::InstanceData (
-				    cml::vec3f (i * 2, k * 2, j * 2), cml::vec3f (0, 0, 0), 1, 0));
-			}
-	// treesInstanced->AddInstances(data);
-	// rocksInstanced = std::make_shared<InstancedSceneObject>(renderer);
-
-	// gltf2 integration
-	// std::unique_ptr< gltf2::Asset> tree_test = std::make_shared<gltf2::Asset>();
-	//*tree_test = gltf2::load("Resources/Assets/tree_test.gltf");
-
 	water_plane = std::make_unique<Water> (resourceMan, renderer);
-}
-
-Scene::~Scene ()
-{
-
-	// Log.Debug << "scene deleted\n";
 }
 
 void Scene::UpdateScene ()
@@ -214,13 +109,7 @@ void Scene::UpdateScene ()
 
 	if (Input::GetKeyDown (Input::KeyCode::V)) UpdateTerrain = !UpdateTerrain;
 
-
 	skybox->UpdateUniform (proj, cd.at (0).view);
-
-	for (auto& obj : gameObjects)
-	{
-		obj->UpdateUniformBuffer ((float)time_manager.RunningTime ());
-	}
 
 	if (UpdateTerrain && terrainManager != nullptr)
 		terrainManager->UpdateTerrains (camera->Position);
@@ -230,12 +119,6 @@ void Scene::UpdateScene ()
 
 void Scene::RenderOpaque (VkCommandBuffer commandBuffer, bool wireframe)
 {
-	for (auto& obj : gameObjects)
-	{
-		obj->Draw (commandBuffer, wireframe, drawNormals);
-	}
-
-	// treesInstanced->WriteToCommandBuffer(commandBuffer, wireframe);
 
 	if (terrainManager != nullptr) terrainManager->RenderTerrain (commandBuffer, wireframe);
 }
@@ -330,48 +213,6 @@ void Scene::UpdateSceneGUI ()
 		}
 	}
 	ImGui::End ();
-
-	if (ImGui::Begin ("instance tester", &value))
-	{
-		ImGui::DragFloat3 ("Position", (&(testInstanceData.pos.x)));
-		ImGui::DragFloat3 ("Rotation", (&(testInstanceData.rot.x)));
-		ImGui::DragFloat ("Scale", &testInstanceData.scale);
-		if (ImGui::Button ("Add instance"))
-		{
-			treesInstanced->AddInstance (testInstanceData);
-		}
-		if (ImGui::Button ("Remove Instance"))
-		{
-			treesInstanced->RemoveInstance (testInstanceData);
-		}
-	}
-	ImGui::End ();
-
-	treesInstanced->ImGuiShowInstances ();
-	static int x = 0;
-	if (ImGui::Begin ("create game object", &value))
-	{
-		if (ImGui::Button ("Add game object"))
-		{
-			std::unique_ptr<GameObject> sphereObject = std::make_unique<GameObject> (renderer);
-			sphereObject->usePBR = true;
-			sphereObject->position = cml::vec3f (x++, 3, 2.2);
-			// sphereObject->pbr_mat.albedo = cml::vec3f(0.8, 0.2, 0.2);
-			sphereObject->pbr_mat.metallic = 0.1f + (float)5 / 10.0f;
-			sphereObject->pbr_mat.roughness = 0.1f + (float)5 / 10.0f;
-
-			sphereObject->gameObjectTexture =
-			    resourceMan.texture_manager.GetTexIDByName ("Red.png");
-			sphereObject->InitGameObject ();
-			gameObjects.push_back (std::move (sphereObject));
-		}
-	}
-	ImGui::End ();
-	for (auto& go : gameObjects)
-	{
-		go->pbr_mat.albedo = testMat.albedo;
-		go->phong_mat.color = cml::to_vec4 (testMat.albedo, 1.0f);
-	}
 }
 
 Camera* Scene::GetCamera () { return camera.get (); }

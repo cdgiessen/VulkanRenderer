@@ -2,12 +2,12 @@
 
 #include <filesystem>
 
-#include "CoreTools.h"
 #include "Input.h"
 #include "JobSystem.h"
 #include "Logger.h"
 #include "TimeManager.h"
 #include "Window.h"
+#include "util/SimpleTimer.h"
 
 #include "resources/Resource.h"
 

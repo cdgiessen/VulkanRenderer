@@ -48,7 +48,7 @@ class DescriptorSet
 	public:
 	VkDescriptorSet set;
 
-	void BindDescriptorSet (VkCommandBuffer cmdBuf, VkPipelineLayout layout);
+	void Bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout);
 };
 
 class VulkanDescriptor
