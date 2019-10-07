@@ -6,10 +6,11 @@
 #include <thread>
 #include <vector>
 
+#include "core/JobSystem.h"
+
+#include "Buffer.h"
 #include "Device.h"
 #include "Wrappers.h"
-
-#include "core/JobSystem.h"
 
 enum class TaskType
 {
@@ -24,21 +25,20 @@ struct AsyncTask
 	std::shared_ptr<job::TaskSignal> signal;
 	std::function<void(const VkCommandBuffer)> work;
 	std::function<void()> finish_work;
-	std::vector<std::shared_ptr<VulkanSemaphore>> wait_sems;
-	std::vector<std::shared_ptr<VulkanSemaphore>> signal_sems;
 	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
 };
 
-struct GraphicsCleanUpWork
+struct
+
 {
 	CommandBuffer cmdBuf;
 	std::function<void()> finish_work;
 	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
 
-	GraphicsCleanUpWork (CommandBuffer cmdBuf,
+	GraphicsCleanUpWork (CommandBuffer&& cmdBuf,
 	    std::function<void()> finish_work,
 	    std::vector<std::shared_ptr<VulkanBuffer>> buffers)
-	: cmdBuf (cmdBuf), finish_work (finish_work), buffers (buffers)
+	: cmdBuf (std::move (cmdBuf)), finish_work (finish_work), buffers (buffers)
 	{
 	}
 };

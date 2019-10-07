@@ -1,30 +1,23 @@
 #pragma once
 
-#include <atomic>
-#include <condition_variable>
 #include <functional>
-#include <memory>
 #include <mutex>
-#include <thread>
 #include <utility>
 #include <vector>
 
 #include <vulkan/vulkan.h>
-
-#include "Buffer.h"
-
-#include "util/ConcurrentQueue.h"
-
-// Default fence timeout in nanoseconds
-constexpr long DEFAULT_FENCE_TIMEOUT = 1000000000;
-
-class VulkanDevice;
-
 class VulkanFence
 {
 	public:
-	VulkanFence (VulkanDevice& device, long timeout = DEFAULT_FENCE_TIMEOUT, VkFenceCreateFlags flags = 0);
+	VulkanFence (VkDevice device, VkFenceCreateFlags flags = 0);
 	~VulkanFence ();
+
+	VulkanFence (VulkanFence const& fence) = delete;
+	VulkanFence& operator= (VulkanFence const& fence) = delete;
+
+	VulkanFence (VulkanFence&& other);
+	VulkanFence& operator= (VulkanFence&& other);
+
 
 	bool Check () const;
 
@@ -35,35 +28,34 @@ class VulkanFence
 	void Reset () const;
 
 	private:
-	VulkanDevice& device;
+	VkDevice device;
 	VkFence fence;
-	int timeout;
 };
-
-std::vector<VkFence> CreateFenceArray (std::vector<VulkanFence> const& fences);
 
 class VulkanSemaphore
 {
 	public:
-	VulkanSemaphore (VulkanDevice& device);
+	VulkanSemaphore (VkDevice device);
 	~VulkanSemaphore ();
+
+	VulkanSemaphore (VulkanSemaphore const& fence) = delete;
+	VulkanSemaphore& operator= (VulkanSemaphore const& fence) = delete;
+
+	VulkanSemaphore (VulkanSemaphore&& other);
+	VulkanSemaphore& operator= (VulkanSemaphore&& other);
 
 	VkSemaphore Get ();
 	VkSemaphore* GetPtr ();
 
-	std::mutex sem_lock;
-
 	private:
-	VulkanDevice& device;
+	VkDevice device;
 	VkSemaphore semaphore;
 };
-
-std::vector<VkSemaphore> CreateSemaphoreArray (std::vector<VulkanSemaphore> const& sems);
 
 class CommandQueue
 {
 	public:
-	CommandQueue (VulkanDevice const& device, int queueFamily);
+	CommandQueue (VkDevice const device, int queueFamily);
 
 	// not a copyable/movable type
 	CommandQueue (CommandQueue const& cmd) = delete;
@@ -73,10 +65,11 @@ class CommandQueue
 
 	void SubmitCommandBuffer (VkCommandBuffer buffer, VulkanFence const& fence);
 
-	void SubmitCommandBuffer (VkCommandBuffer buffer,
+	void SubmitCommandBuffers (std::vector<VkCommandBuffer> buffer,
 	    VulkanFence const& fence,
-	    std::vector<std::shared_ptr<VulkanSemaphore>> const& waitSemaphores,
-	    std::vector<std::shared_ptr<VulkanSemaphore>> const& signalSemaphores);
+	    std::vector<VkSemaphore> const& waitSemaphores,
+	    std::vector<VkSemaphore> const& signalSemaphores,
+	    VkPipelineStageFlags const stageMask);
 
 	void Submit (VkSubmitInfo const& submitInfo, VulkanFence const& fence);
 
@@ -86,7 +79,7 @@ class CommandQueue
 	void QueueWaitIdle ();
 
 	private:
-	VulkanDevice const& device;
+	VkDevice const device;
 	std::mutex submissionMutex;
 	VkQueue queue;
 	int queueFamily;
@@ -95,7 +88,7 @@ class CommandQueue
 class CommandPool
 {
 	public:
-	CommandPool (VulkanDevice& device, CommandQueue& queue, VkCommandPoolCreateFlags flags = 0);
+	CommandPool (VkDevice device, CommandQueue& queue, VkCommandPoolCreateFlags flags = 0);
 	CommandPool (CommandPool& cmd) = delete;
 	CommandPool& operator= (const CommandPool& cmd) = delete;
 	CommandPool (CommandPool&& cmd);
@@ -110,13 +103,8 @@ class CommandPool
 
 	VkBool32 ReturnCommandBuffer (VkCommandBuffer,
 	    VulkanFence const& fence,
-	    std::vector<std::shared_ptr<VulkanSemaphore>> const& waitSemaphores = {},
-	    std::vector<std::shared_ptr<VulkanSemaphore>> const& signalSemaphores = {});
-
-	void SubmitCommandBuffer (VkCommandBuffer,
-	    VulkanFence const& fence,
-	    std::vector<std::shared_ptr<VulkanSemaphore>> const& waitSemaphores = {},
-	    std::vector<std::shared_ptr<VulkanSemaphore>> const& signalSemaphores = {});
+	    std::vector<VkSemaphore> const& waitSemaphores,
+	    std::vector<VkSemaphore> const& signalSemaphores);
 
 	VkCommandBuffer AllocateCommandBuffer (VkCommandBufferLevel level);
 
@@ -127,7 +115,9 @@ class CommandPool
 	void WriteToBuffer (VkCommandBuffer buf, std::function<void(VkCommandBuffer)> const& cmd);
 
 	private:
-	VulkanDevice* device;
+	friend class CommandBuffer;
+
+	VkDevice device;
 	CommandQueue* queue;
 	VkCommandPool command_pool;
 };
@@ -146,17 +136,21 @@ class CommandBuffer
 	};
 
 	explicit CommandBuffer (CommandPool& pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+	~CommandBuffer ();
+	CommandBuffer (CommandBuffer& cmd) = delete;
+	CommandBuffer& operator= (const CommandBuffer& cmd) = delete;
+	CommandBuffer (CommandBuffer&& cmd);
+	CommandBuffer& operator= (CommandBuffer&& cmd) noexcept;
 
 	CommandBuffer& Allocate ();
 
 	CommandBuffer& Begin (VkCommandBufferUsageFlags flags = 0);
 	CommandBuffer& End ();
 
-	CommandBuffer& SetFence (std::shared_ptr<VulkanFence> const& fence);
-
 	CommandBuffer& Submit ();
-	CommandBuffer& Submit (std::vector<std::shared_ptr<VulkanSemaphore>> const& waits,
-	    std::vector<std::shared_ptr<VulkanSemaphore>> const& signals);
+	CommandBuffer& Submit (std::vector<VkSemaphore> const& waits,
+	    std::vector<VkSemaphore> const& signals,
+	    VkPipelineStageFlags const stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
 	CommandBuffer& Wait ();
 
@@ -164,16 +158,15 @@ class CommandBuffer
 
 	CommandBuffer& WriteTo (std::function<void(const VkCommandBuffer)> const& work);
 
-	VkCommandBuffer Get () { return cmdBuf; }
-	VkCommandBuffer* GetPtr () { return &cmdBuf; }
+	VkCommandBuffer Get () const { return cmdBuf; }
 
-	VulkanFence& GetFence () { return *fence.get (); }
+	VulkanFence const& GetFence () const { return fence; }
 
 	private:
-	CommandPool* pool; // can't be copied if its a reference...
+	CommandPool* pool;
 	VkCommandBufferLevel level;
 	State state = State::empty;
 	VkCommandBuffer cmdBuf = nullptr;
 
-	std::shared_ptr<VulkanFence> fence;
+	VulkanFence fence;
 };

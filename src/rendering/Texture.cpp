@@ -254,29 +254,33 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 	}
 	else
 	{
-		auto sem = std::make_shared<VulkanSemaphore> (device);
-
 		std::function<void(const VkCommandBuffer)> transferWork = [=](const VkCommandBuffer cmdBuf) {
 			SetLayoutAndTransferRegions (cmdBuf, image, buffer->buffer, subresourceRange, bufferCopyRegions);
 		};
 
-		std::function<void(const VkCommandBuffer)> mipMapGenWork = [=](const VkCommandBuffer cmdBuf) {
-			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
+		auto gen_mips = [&, image, imageLayout, width, height, depth, layers, mipLevels] {
+			auto mipMapGenWork = [&, image, imageLayout, width, height, depth, layers, mipLevels](
+			                         const VkCommandBuffer cmdBuf) {
+				GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
+			};
+
+			AsyncTask task_gen_mips;
+			task_gen_mips.work = mipMapGenWork;
+			task_gen_mips.finish_work = finish_work;
+
+			async_task_man.SubmitTask (task_gen_mips);
 		};
+
 
 		AsyncTask task_transfer;
 		task_transfer.type = TaskType::transfer;
 		task_transfer.work = transferWork;
 		task_transfer.buffers.push_back (buffer);
-		task_transfer.signal_sems = { sem };
 
-		AsyncTask task_gen_mips;
-		task_gen_mips.work = mipMapGenWork;
-		task_gen_mips.finish_work = finish_work;
-		task_gen_mips.wait_sems = { sem };
+		task_transfer.finish_work = gen_mips; // recursively submit an async task.
+		// did it because deal with semaphores is a pain.
 
 		async_task_man.SubmitTask (task_transfer);
-		async_task_man.SubmitTask (task_gen_mips);
 	}
 }
 
@@ -521,16 +525,11 @@ VulkanTexture::VulkanTexture (VulkanDevice& device, TexCreateDetails texCreateDe
 
 	VkImageSubresourceRange subresourceRange = initializers::imageSubresourceRangeCreateInfo (flags);
 
-	CommandPool pool (device, device.GraphicsQueue ());
-
-	VkCommandBuffer cmdBuf = pool.GetCommandBuffer ();
-
-	SetImageLayout (cmdBuf, image, VK_IMAGE_LAYOUT_UNDEFINED, texCreateDetails.imageLayout, subresourceRange);
-
-	VulkanFence fence = VulkanFence (device);
-
-	pool.ReturnCommandBuffer (cmdBuf, fence);
-	fence.Wait ();
+	CommandPool pool (device.device, device.GraphicsQueue ());
+	CommandBuffer cmdBuf (pool);
+	cmdBuf.Allocate ().Begin ();
+	SetImageLayout (cmdBuf.Get (), image, VK_IMAGE_LAYOUT_UNDEFINED, texCreateDetails.imageLayout, subresourceRange);
+	cmdBuf.End ().Submit ().Wait ();
 }
 
 

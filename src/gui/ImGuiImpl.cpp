@@ -1414,14 +1414,12 @@ void PrepareImGui (Window* window, VulkanRenderer* vulkan_renderer)
 
 	ImGui_ImplGlfwVulkan_Init (window->getWindowContext (), false, &init_data);
 
-	CommandPool pool (vulkan_renderer->device, vulkan_renderer->device.GraphicsQueue ());
+	CommandPool pool (vulkan_renderer->device.device, vulkan_renderer->device.GraphicsQueue ());
 
-	VkCommandBuffer cmdBuf = pool.GetCommandBuffer ();
-	ImGui_ImplGlfwVulkan_CreateFontsTexture (cmdBuf);
+	CommandBuffer cmdBuf (pool);
+	cmdBuf.Allocate ().Begin ();
+	ImGui_ImplGlfwVulkan_CreateFontsTexture (cmdBuf.Get ());
+	cmdBuf.End ().Submit ().Wait ();
 
-	VulkanFence fence = VulkanFence (vulkan_renderer->device);
-
-	pool.ReturnCommandBuffer (cmdBuf, fence);
-	fence.Wait ();
 	// Log.Debug << "Device of ImGui  at start" << g_Device << "\n";
 }

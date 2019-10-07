@@ -5,8 +5,6 @@
 
 #include "Initializers.h"
 
-#include "vk_mem_alloc.h"
-
 #include "stb/stb_image_write.h"
 
 #include "gui/ImGuiImpl.h"
@@ -241,13 +239,6 @@ void VulkanRenderer::ContrustFrameGraph ()
 	color_subpass.AddClearColor ("img_depth", { 0.0f, 0 });
 	main_work.AddSubpass (color_subpass);
 
-	// SubpassDescription transparent_subpass ("sub_trans");
-	// transparent_subpass.AddSubpassDependency ("sub_color");
-	// transparent_subpass.SetDepthStencil ("img_depth",
-	// SubpassDescription::DepthStencilAccess::read_only); transparent_subpass.AddColorOutput
-	// ("img_color"); main_work.AddSubpass (transparent_subpass);
-
-
 	frame_graph_builder.AddRenderPass (main_work);
 	frame_graph_builder.lastPass = main_work.name;
 
@@ -273,23 +264,8 @@ void VulkanRenderer::ContrustFrameGraph ()
 		ImGui_ImplGlfwVulkan_Render (cmdBuf);
 	};
 
-	/*auto transparent_draw = [&](VkCommandBuffer cmdBuf) {
-	    dynamic_data.BindFrameDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
-	    dynamic_data.BindLightingDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
-
-	    VkViewport viewport = initializers::viewport (
-	        (float)vulkanSwapChain.swapChainExtent.width, (float)vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f);
-	    vkCmdSetViewport (cmdBuf, 0, 1, &viewport);
-
-	    VkRect2D scissor = initializers::rect2D (
-	        vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, 0, 0);
-	    vkCmdSetScissor (cmdBuf, 0, 1, &scissor);
-
-	    scene->RenderTransparent (cmdBuf, wireframe);
-	};*/
 
 	frameGraph->SetDrawFuncs (0, { main_draw });
-	// frameGraph->SetDrawFuncs (0, { transparent_draw });
 }
 
 void VulkanRenderer::PrepareFrame (int curFrameIndex)

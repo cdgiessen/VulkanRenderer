@@ -4,9 +4,9 @@
 #include <algorithm>
 
 CommandPoolGroup::CommandPoolGroup (VulkanDevice& device)
-: graphics_pool (device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
-  transfer_pool (device, device.TransferQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
-  compute_pool (device, device.ComputeQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
+: graphics_pool (device.device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+  transfer_pool (device.device, device.TransferQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+  compute_pool (device.device, device.ComputeQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
 {
 }
 
@@ -50,17 +50,12 @@ void AsyncTaskManager::SubmitTask (AsyncTask const& task)
 		    }
 		    CommandBuffer cmdBuf = CommandBuffer (*pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-		    std::shared_ptr<VulkanFence> fence = std::make_shared<VulkanFence> (device);
-
-		    cmdBuf.Allocate ();
-		    cmdBuf.Begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		    cmdBuf.Allocate ().Begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		    cmdBuf.WriteTo (task.work);
-		    cmdBuf.SetFence (fence);
-		    cmdBuf.End ();
-		    cmdBuf.Submit (task.wait_sems, task.signal_sems);
+		    cmdBuf.End ().Submit ();
 		    {
 			    std::lock_guard lk (lock_finish_queue);
-			    finish_queue.emplace_back (cmdBuf, task.finish_work, task.buffers);
+			    finish_queue.emplace_back (std::move (cmdBuf), task.finish_work, task.buffers);
 		    }
 		    {
 			    std::lock_guard lk (in_progress);

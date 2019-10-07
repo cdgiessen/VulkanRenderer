@@ -32,7 +32,7 @@ class FrameObject
 	VulkanSemaphore imageAvailSem;
 	VulkanSemaphore renderFinishSem;
 
-	std::shared_ptr<VulkanFence> commandFence;
+	VulkanFence commandFence;
 	CommandPool commandPool;
 	CommandBuffer primary_command_buffer;
 

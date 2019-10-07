@@ -1,7 +1,8 @@
 #include "Device.h"
 
-#include <GLFW/glfw3.h>
 #include <set>
+
+#include <GLFW/glfw3.h>
 
 #include "core/Logger.h"
 #include "core/Window.h"
@@ -9,6 +10,7 @@
 #include "Initializers.h"
 #include "RenderTools.h"
 #include "SwapChain.h"
+
 
 std::vector<const char*> VALIDATION_LAYERS = { "VK_LAYER_KHRONOS_validation"
 
@@ -471,25 +473,25 @@ void VulkanDevice::CreateLogicalDevice ()
 
 void VulkanDevice::CreateQueues ()
 {
-	graphics_queue = std::make_unique<CommandQueue> (*this, physical_device.familyIndices.graphicsFamily);
+	graphics_queue = std::make_unique<CommandQueue> (device, physical_device.familyIndices.graphicsFamily);
 	singleQueueDevice = true;
 
 	// Make sure it is a unique queue, else don't make anything (empty pointer means it isn't unique)
 	if (physical_device.familyIndices.graphicsFamily != physical_device.familyIndices.computeFamily)
 	{
-		compute_queue = std::make_unique<CommandQueue> (*this, physical_device.familyIndices.computeFamily);
+		compute_queue = std::make_unique<CommandQueue> (device, physical_device.familyIndices.computeFamily);
 		singleQueueDevice = false;
 	}
 
 	if (physical_device.familyIndices.graphicsFamily != physical_device.familyIndices.transferFamily)
 	{
-		transfer_queue = std::make_unique<CommandQueue> (*this, physical_device.familyIndices.transferFamily);
+		transfer_queue = std::make_unique<CommandQueue> (device, physical_device.familyIndices.transferFamily);
 		singleQueueDevice = false;
 	}
 
 	if (physical_device.familyIndices.graphicsFamily != physical_device.familyIndices.presentFamily)
 	{
-		present_queue = std::make_unique<CommandQueue> (*this, physical_device.familyIndices.presentFamily);
+		present_queue = std::make_unique<CommandQueue> (device, physical_device.familyIndices.presentFamily);
 		singleQueueDevice = false;
 	}
 }

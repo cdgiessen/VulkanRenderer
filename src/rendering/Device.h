@@ -6,11 +6,13 @@
 
 #include <cstring>
 
+#include "vk_mem_alloc.h"
 #include <vulkan/vulkan.h>
 
 #include "Wrappers.h"
 
 class Window;
+
 
 struct QueueFamilyIndices
 {

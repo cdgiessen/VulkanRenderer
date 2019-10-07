@@ -5,14 +5,13 @@
 FrameObject::FrameObject (VulkanDevice& device, int frameIndex)
 : device (device),
   frameIndex (frameIndex),
-  imageAvailSem (device),
-  renderFinishSem (device),
-  commandFence (std::make_shared<VulkanFence> (device, DEFAULT_FENCE_TIMEOUT, VK_FENCE_CREATE_SIGNALED_BIT)),
-  commandPool (device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+  imageAvailSem (device.device),
+  renderFinishSem (device.device),
+  commandFence (device.device, VK_FENCE_CREATE_SIGNALED_BIT),
+  commandPool (device.device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
   primary_command_buffer (commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY)
 {
 	primary_command_buffer.Allocate ();
-	primary_command_buffer.SetFence (commandFence);
 }
 
 FrameObject::~FrameObject () { primary_command_buffer.Free (); }
@@ -34,16 +33,12 @@ void FrameObject::Submit (CommandQueue& queue)
 {
 	primary_command_buffer.End ();
 
-	VkSubmitInfo submitInfo = initializers::submitInfo ();
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = renderFinishSem.GetPtr ();
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = imageAvailSem.GetPtr ();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = primary_command_buffer.GetPtr ();
-	submitInfo.pWaitDstStageMask = &stageMasks;
+	std::vector<VkSemaphore> image_avail_sem;
+	image_avail_sem.push_back (imageAvailSem.Get ());
+	std::vector<VkSemaphore> render_finish_sem;
+	render_finish_sem.push_back (renderFinishSem.Get ());
 
-	queue.Submit (submitInfo, *commandFence.get ());
+	primary_command_buffer.Submit (image_avail_sem, render_finish_sem, stageMasks);
 }
 
 VkResult FrameObject::Present (VulkanSwapChain& swapChain, CommandQueue& presentQueue)
