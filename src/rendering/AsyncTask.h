@@ -28,8 +28,7 @@ struct AsyncTask
 	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
 };
 
-struct
-
+struct GraphicsCleanUpWork
 {
 	CommandBuffer cmdBuf;
 	std::function<void()> finish_work;
@@ -46,7 +45,7 @@ struct
 class CommandPoolGroup
 {
 	public:
-	CommandPoolGroup (VulkanDevice& device);
+	CommandPoolGroup (VulkanDevice const& device);
 
 	CommandPool graphics_pool;
 	CommandPool transfer_pool;
@@ -62,7 +61,7 @@ class AsyncTaskManager
 	AsyncTaskManager (AsyncTaskManager const& man) = delete;
 	AsyncTaskManager& operator= (AsyncTaskManager const& man) = delete;
 
-	void SubmitTask (AsyncTask const& task);
+	void SubmitTask (AsyncTask&& task);
 
 	void CleanFinishQueue ();
 

@@ -150,6 +150,11 @@ CommandPool::CommandPool (VkDevice device, CommandQueue& queue, VkCommandPoolCre
 	assert (res == VK_SUCCESS);
 }
 
+CommandPool::~CommandPool ()
+{
+	if (command_pool != nullptr) vkDestroyCommandPool (device, command_pool, nullptr);
+}
+
 CommandPool::CommandPool (CommandPool&& other)
 : device (other.device), queue (other.queue), command_pool (other.command_pool)
 {
@@ -163,11 +168,6 @@ CommandPool& CommandPool::operator= (CommandPool&& other) noexcept
 
 	other.command_pool = nullptr;
 	return *this;
-}
-
-CommandPool::~CommandPool ()
-{
-	if (command_pool != nullptr) vkDestroyCommandPool (device, command_pool, nullptr);
 }
 
 VkBool32 CommandPool::ResetPool ()

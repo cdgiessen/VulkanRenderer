@@ -72,7 +72,7 @@ class TaskManager
 
 	void Stop ();
 
-	void Submit (Task const& task);
+	void Submit (Task&& task);
 	void Submit (std::vector<Task> tasks);
 
 	std::optional<Task> GetTask ();

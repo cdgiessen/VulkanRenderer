@@ -250,7 +250,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 		task.finish_work = finish_work;
 		task.buffers.push_back (buffer);
 
-		async_task_man.SubmitTask (task);
+		async_task_man.SubmitTask (std::move (task));
 	}
 	else
 	{
@@ -268,7 +268,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 			task_gen_mips.work = mipMapGenWork;
 			task_gen_mips.finish_work = finish_work;
 
-			async_task_man.SubmitTask (task_gen_mips);
+			async_task_man.SubmitTask (std::move (task_gen_mips));
 		};
 
 
@@ -280,7 +280,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 		task_transfer.finish_work = gen_mips; // recursively submit an async task.
 		// did it because deal with semaphores is a pain.
 
-		async_task_man.SubmitTask (task_transfer);
+		async_task_man.SubmitTask (std::move (task_transfer));
 	}
 }
 

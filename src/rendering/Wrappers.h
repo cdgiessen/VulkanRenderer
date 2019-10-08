@@ -89,11 +89,11 @@ class CommandPool
 {
 	public:
 	CommandPool (VkDevice device, CommandQueue& queue, VkCommandPoolCreateFlags flags = 0);
+	~CommandPool ();
 	CommandPool (CommandPool& cmd) = delete;
 	CommandPool& operator= (const CommandPool& cmd) = delete;
 	CommandPool (CommandPool&& cmd);
 	CommandPool& operator= (CommandPool&& cmd) noexcept;
-	~CommandPool ();
 
 	VkBool32 ResetPool ();
 	VkBool32 ResetCommandBuffer (VkCommandBuffer cmdBuf);

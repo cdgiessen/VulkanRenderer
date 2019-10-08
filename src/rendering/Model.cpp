@@ -88,7 +88,7 @@ VulkanModel::VulkanModel (
 	transfer.buffers.push_back (indexStagingBuffer);
 
 
-	async_task_man.SubmitTask (transfer);
+	async_task_man.SubmitTask (std::move (transfer));
 }
 
 void VulkanModel::BindModel (VkCommandBuffer cmdBuf)

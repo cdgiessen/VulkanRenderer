@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-CommandPoolGroup::CommandPoolGroup (VulkanDevice& device)
+CommandPoolGroup::CommandPoolGroup (VulkanDevice const& device)
 : graphics_pool (device.device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
   transfer_pool (device.device, device.TransferQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
   compute_pool (device.device, device.ComputeQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
@@ -18,14 +18,14 @@ AsyncTaskManager::AsyncTaskManager (job::TaskManager& task_manager, VulkanDevice
 	thread_ids.push_back (std::this_thread::get_id ());
 	for (auto& id : thread_ids)
 	{
-		auto group = std::make_unique<CommandPoolGroup> (device);
-		pools.insert ({ id, std::move (group) });
+		pools[id] = std::make_unique<CommandPoolGroup> (device);
+		//		pools.emplace (std::piecewise_construct, std::forward_as_tuple (id), std::forward_as_tuple (device));
 	}
 }
 
 AsyncTaskManager::~AsyncTaskManager () {}
 
-void AsyncTaskManager::SubmitTask (AsyncTask const& task)
+void AsyncTaskManager::SubmitTask (AsyncTask&& task)
 {
 	auto ts = std::make_shared<job::TaskSignal> ();
 	{

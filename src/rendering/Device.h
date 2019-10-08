@@ -120,10 +120,10 @@ class VulkanDevice
 
 	const QueueFamilyIndices GetFamilyIndices () const;
 
-	CommandQueue& GraphicsQueue ();
-	CommandQueue& ComputeQueue ();
-	CommandQueue& TransferQueue ();
-	CommandQueue& PresentQueue ();
+	CommandQueue& GraphicsQueue () const;
+	CommandQueue& ComputeQueue () const;
+	CommandQueue& TransferQueue () const;
+	CommandQueue& PresentQueue () const;
 
 	VmaAllocator GetGeneralAllocator ();
 	VmaAllocator GetImageLinearAllocator ();

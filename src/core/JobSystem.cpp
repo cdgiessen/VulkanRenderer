@@ -129,7 +129,7 @@ void TaskManager::Stop ()
 	}
 }
 
-void TaskManager::Submit (Task const& task)
+void TaskManager::Submit (Task&& task)
 {
 	{
 		std::lock_guard lg (queue_lock);
@@ -253,8 +253,8 @@ bool JobTester ()
 	    },
 	    signal2);
 
-	tMan.Submit (t1);
-	tMan.Submit (t2);
+	tMan.Submit (std::move (t1));
+	tMan.Submit (std::move (t2));
 
 	signal2->Wait ();
 	jtc.Print ();

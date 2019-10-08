@@ -496,18 +496,18 @@ void VulkanDevice::CreateQueues ()
 	}
 }
 
-CommandQueue& VulkanDevice::GraphicsQueue () { return *graphics_queue; }
-CommandQueue& VulkanDevice::ComputeQueue ()
+CommandQueue& VulkanDevice::GraphicsQueue () const { return *graphics_queue; }
+CommandQueue& VulkanDevice::ComputeQueue () const
 {
 	if (compute_queue) return *compute_queue;
 	return GraphicsQueue ();
 }
-CommandQueue& VulkanDevice::TransferQueue ()
+CommandQueue& VulkanDevice::TransferQueue () const
 {
 	if (transfer_queue) return *transfer_queue;
 	return GraphicsQueue ();
 }
-CommandQueue& VulkanDevice::PresentQueue ()
+CommandQueue& VulkanDevice::PresentQueue () const
 {
 	if (present_queue)
 	{
