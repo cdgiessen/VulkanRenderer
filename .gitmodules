@@ -37,3 +37,6 @@
 [submodule "ext/glfw"]
 	path = ext/glfw
 	url = https://github.com/glfw/glfw
+[submodule "external/gli"]
+	path = external/gli
+	url = https://github.com/g-truc/gli
