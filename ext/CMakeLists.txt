@@ -1,4 +1,3 @@
-
 find_path(JSON_PATH_FOUND "json" "")
 find_path(FMT_PATH_FOUND "fmt" "")
 find_path(SG14_PATH_FOUND "SG14" "")
@@ -11,6 +10,8 @@ find_path(FASTNOISESIMD_PATH_FOUND "FastNoiseSIMD" "")
 find_path(STB_PATH_FOUND "stb/stb" "")
 find_path(VMA_PATH_FOUND "vma" "")
 find_path(GLFW_PATH_FOUND "glfw" "")
+find_path(GLI_PATH_FOUND "gli" "")
+
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_MultipleHeaders ON CACHE INTERNAL "")
@@ -58,6 +59,7 @@ add_subdirectory(glslang)
 set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
 set(SPIRV_CROSS_ENABLE_MSL OFF CACHE BOOL "" FORCE)
 set(SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE)
+set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
 
 
 if(NOT SPIRV_CROSS_PATH_FOUND)
@@ -164,6 +166,13 @@ if(NOT GLFW_PATH_FOUND)
 	message("Updating glfw")
 	execute_process(COMMAND git submodule update --init --recursive glfw
                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT glfw_PATH_FOUND)
+endif(NOT GLFW_PATH_FOUND)
 
 add_subdirectory(glfw)
+
+if(NOT GLI_PATH_FOUND)
+	message("Updating gli")
+	execute_process(COMMAND git submodule update --init --recursive gli
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT GLI_PATH_FOUND)
+

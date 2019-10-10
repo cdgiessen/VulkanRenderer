@@ -11,6 +11,9 @@
 
 #include <nlohmann/json.hpp>
 
+#include <gli/gli.hpp>
+
+
 namespace fs = std::filesystem;
 
 const fs::path texture_path = "assets/textures";

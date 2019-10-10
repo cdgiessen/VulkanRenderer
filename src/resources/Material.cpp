@@ -1,13 +1,11 @@
 #include "Material.h"
 
 
+namespace Resource::Material
+{
 
+Manager::Manager () {}
 
-MaterialManager::MaterialManager() {
+Manager::~Manager () {}
 
-}
-
-MaterialManager::~MaterialManager() {
-
-
-}
+} // namespace Resource::Material

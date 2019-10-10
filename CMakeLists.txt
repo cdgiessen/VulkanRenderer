@@ -115,6 +115,9 @@ target_link_libraries(VulkanApp PUBLIC stb)
 #vma
 target_link_libraries(VulkanApp PUBLIC VulkanMemoryAllocator)
 
+#gli
+target_include_directories(VulkanApp PUBLIC ext/gli)
+
 #gtk
 if(UNIX)
 	target_link_libraries(VulkanApp PRIVATE ${GTK3_LIBRARIES})

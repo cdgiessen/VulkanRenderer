@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <functional>
 #include <memory>
 #include <stdint.h>
 #include <string>
@@ -13,7 +14,7 @@
 namespace Resource
 {
 
-enum class AssetType : uint8_t
+enum class AssetType : uint16_t
 {
 	unspecified = 0,
 	texture,
@@ -28,18 +29,18 @@ enum class AssetType : uint8_t
 
 struct AssetID
 {
-	AssetID (uint32_t const& id) : id (id) {}
+	AssetID (uint16_t const& id, AssetType const type) : id (id), type (type) {}
 
-	bool operator== (AssetID const& right) { return id == right.id; }
+	bool operator== (AssetID const& right) { return id == right.id && type == right.type; }
 	bool operator!= (AssetID const& right) { return !(*this == right); }
 
-	uint32_t const id;
+	uint16_t const id;
+	AssetType const type;
 };
-
-class Asset
+class AssetDescription
 {
 	public:
-	Asset (AssetID id, std::string const& name) : id (id), name (name) {}
+	AssetDescription (AssetID id, std::string const& name) : id (id), name (name) {}
 
 	private:
 	AssetID id;
@@ -53,9 +54,10 @@ class AssetManager
 	~AssetManager ();
 
 
+
 	Mesh::Manager mesh_manager;
 	Texture::Manager texture_manager;
-	MaterialManager matManager;
+	Material::Manager material_manager;
 
 	private:
 	job::TaskManager& task_manager;
@@ -64,3 +66,18 @@ class AssetManager
 
 
 } // namespace Resource
+
+namespace std
+{
+
+template <> struct hash<Resource::AssetID>
+{
+	std::size_t operator() (Resource::AssetID const& k) const
+	{
+		using std::size_t;
+		return ((std::hash<uint16_t> () (k.id) ^ (std::hash<uint16_t> () (k.id) << 1)) >>
+		        (std::hash<Resource::AssetType> () (k.type) ^ (std::hash<Resource::AssetType> () (k.type) << 1)));
+	}
+};
+
+} // namespace std
