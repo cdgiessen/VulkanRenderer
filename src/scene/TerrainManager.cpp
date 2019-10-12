@@ -180,35 +180,33 @@ void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 				    t_settings.sourceImageResolution + 1,
 				    terGrid);
 
-				auto t = job::Task (
-				    [this, coord] {
-					    auto terCreateData = TerrainCreationData (t_settings.numCells,
-					        t_settings.maxLevels,
-					        t_settings.sourceImageResolution,
-					        t_settings.heightScale,
-					        coord);
+				auto t = [this, coord] {
+					auto terCreateData = TerrainCreationData (t_settings.numCells,
+					    t_settings.maxLevels,
+					    t_settings.sourceImageResolution,
+					    t_settings.heightScale,
+					    coord);
 
-					    auto terrain = std::make_unique<Terrain> (renderer,
+					auto terrain = std::make_unique<Terrain> (renderer,
 
-					        protoGraph,
-					        terCreateData.numCells,
-					        terCreateData.maxLevels,
-					        terCreateData.heightScale,
-					        terCreateData.coord,
-					        terrainGridModel.get ());
+					    protoGraph,
+					    terCreateData.numCells,
+					    terCreateData.maxLevels,
+					    terCreateData.heightScale,
+					    terCreateData.coord,
+					    terrainGridModel.get ());
 
-					    terrain->InitTerrain (curCameraPos,
-					        terrainVulkanTextureArrayAlbedo,
-					        terrainVulkanTextureArrayRoughness,
-					        terrainVulkanTextureArrayMetallic,
-					        terrainVulkanTextureArrayNormal);
+					terrain->InitTerrain (curCameraPos,
+					    terrainVulkanTextureArrayAlbedo,
+					    terrainVulkanTextureArrayRoughness,
+					    terrainVulkanTextureArrayMetallic,
+					    terrainVulkanTextureArrayNormal);
 
-					    std::lock_guard<std::mutex> lk (terrain_mutex);
-					    in_progress_terrains.push_back (std::move (terrain));
-				    },
-				    workContinueSignal);
+					std::lock_guard<std::mutex> lk (terrain_mutex);
+					in_progress_terrains.push_back (std::move (terrain));
+				};
 
-				task_manager.Submit (std::move (t));
+				task_manager.Submit (std::move (t), workContinueSignal);
 			}
 		}
 	}

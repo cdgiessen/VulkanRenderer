@@ -33,8 +33,8 @@ void AsyncTaskManager::SubmitTask (AsyncTask&& task)
 		tasks_in_progress.push_back (ts);
 	}
 
-	task_manager.Submit (job::Task (
-	    [=] {
+	task_manager.Submit (
+	    [&, task = std::move (task)] {
 		    std::thread::id id = std::this_thread::get_id ();
 		    CommandPool* pool;
 		    switch (task.type)
@@ -55,7 +55,7 @@ void AsyncTaskManager::SubmitTask (AsyncTask&& task)
 		    cmdBuf.End ().Submit ();
 		    {
 			    std::lock_guard lk (lock_finish_queue);
-			    finish_queue.emplace_back (std::move (cmdBuf), task.finish_work, task.buffers);
+			    finish_queue.emplace_back (std::move (cmdBuf), task.finish_work);
 		    }
 		    {
 			    std::lock_guard lk (in_progress);
@@ -66,7 +66,7 @@ void AsyncTaskManager::SubmitTask (AsyncTask&& task)
 			    }
 		    }
 	    },
-	    ts));
+	    ts);
 }
 
 void AsyncTaskManager::CleanFinishQueue ()

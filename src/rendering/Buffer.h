@@ -153,7 +153,7 @@ class BufferManager
 	BufferManager (BufferManager const& buf) = delete;
 	BufferManager& operator= (BufferManager const& buf) = delete;
 
-	std::shared_ptr<VulkanBuffer> CreateBuffer (BufCreateDetails details);
+	std::unique_ptr<VulkanBuffer> CreateBuffer (BufCreateDetails details);
 
 	private:
 	VulkanDevice& device;

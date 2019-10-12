@@ -66,8 +66,8 @@ VulkanModel::VulkanModel (
 	vmaVertices = std::make_unique<VulkanBuffer> (device, vertex_details (vertexCount, vertexElementCount));
 	vmaIndicies = std::make_unique<VulkanBuffer> (device, index_details (indexCount));
 
-	auto vertexStagingBuffer = buf_man.CreateBuffer (staging_details (BufferType::vertex, vBufferSize));
-	auto indexStagingBuffer = buf_man.CreateBuffer (staging_details (BufferType::index, iBufferSize));
+	vertexStagingBuffer = buf_man.CreateBuffer (staging_details (BufferType::vertex, vBufferSize));
+	indexStagingBuffer = buf_man.CreateBuffer (staging_details (BufferType::index, iBufferSize));
 
 	vertexStagingBuffer->CopyToBuffer (mesh->vertexData);
 	indexStagingBuffer->CopyToBuffer (mesh->indexData);
@@ -81,12 +81,15 @@ VulkanModel::VulkanModel (
 		CopyMeshBuffers (copyCmd, v_stage, vert, vBufferSize, i_stage, index, iBufferSize);
 	};
 
+	auto finish_work = [&] {
+		vertexStagingBuffer.reset ();
+		indexStagingBuffer.reset ();
+	};
+
 	AsyncTask transfer;
 	transfer.type = TaskType::transfer;
 	transfer.work = work;
-	transfer.buffers.push_back (vertexStagingBuffer);
-	transfer.buffers.push_back (indexStagingBuffer);
-
+	transfer.finish_work = std::move (finish_work);
 
 	async_task_man.SubmitTask (std::move (transfer));
 }

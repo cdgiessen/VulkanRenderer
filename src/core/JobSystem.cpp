@@ -129,11 +129,11 @@ void TaskManager::Stop ()
 	}
 }
 
-void TaskManager::Submit (Task&& task)
+void TaskManager::Submit (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signal_block)
 {
 	{
 		std::lock_guard lg (queue_lock);
-		task_queue.push (task);
+		task_queue.push (Task{ std::move (job), signal_block });
 	}
 
 	workSubmittedCondVar.notify_one ();
@@ -236,25 +236,21 @@ bool JobTester ()
 	int jobCount = 1000;
 
 	auto signal1 = std::make_shared<TaskSignal> ();
-	Task t1 = Task (
-	    [&] {
-		    for (int i = 0; i < jobCount; i++)
-			    jtc.AddNum (1);
-	    },
-	    signal1);
+	auto t1 = [&] {
+		for (int i = 0; i < jobCount; i++)
+			jtc.AddNum (1);
+	};
 
 	auto signal2 = std::make_shared<TaskSignal> ();
 
 	signal2->WaitOn (signal1);
-	Task t2 = Task (
-	    [&] {
-		    for (int i = 0; i < jobCount; i++)
-			    jtc.MulNumAddNum (2, 0);
-	    },
-	    signal2);
+	auto t2 = [&] {
+		for (int i = 0; i < jobCount; i++)
+			jtc.MulNumAddNum (2, 0);
+	};
 
-	tMan.Submit (std::move (t1));
-	tMan.Submit (std::move (t2));
+	tMan.Submit (std::move (t1), signal1);
+	tMan.Submit (std::move (t2), signal2);
 
 	signal2->Wait ();
 	jtc.Print ();

@@ -226,7 +226,7 @@ void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
 void BeginTransferAndMipMapGenWork (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
     std::function<void()> const& finish_work,
-    std::shared_ptr<VulkanBuffer> buffer,
+    VulkanBuffer* buffer,
     const VkImageSubresourceRange subresourceRange,
     const std::vector<VkBufferImageCopy> bufferCopyRegions,
     VkImageLayout imageLayout,
@@ -248,7 +248,6 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 		AsyncTask task;
 		task.work = work;
 		task.finish_work = finish_work;
-		task.buffers.push_back (buffer);
 
 		async_task_man.SubmitTask (std::move (task));
 	}
@@ -275,7 +274,6 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 		AsyncTask task_transfer;
 		task_transfer.type = TaskType::transfer;
 		task_transfer.work = transferWork;
-		task_transfer.buffers.push_back (buffer);
 
 		task_transfer.finish_work = gen_mips; // recursively submit an async task.
 		// did it because deal with semaphores is a pain.
@@ -313,10 +311,10 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 		imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
 
-	auto buffer = std::make_shared<VulkanBuffer> (
+	staging_buffer = std::make_unique<VulkanBuffer> (
 	    device, staging_details (BufferType::staging, textureResource.data.size ()));
 
-	buffer->CopyToBuffer (textureResource.data);
+	staging_buffer->CopyToBuffer (textureResource.data);
 
 	InitImage2D (imageCreateInfo);
 
@@ -343,7 +341,7 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 	BeginTransferAndMipMapGenWork (*data.device,
 	    async_task_man,
 	    finish_work,
-	    buffer,
+	    staging_buffer.get (),
 	    subresourceRange,
 	    bufferCopyRegions,
 	    texCreateDetails.imageLayout,
@@ -393,7 +391,8 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
     std::function<void()> const& finish_work,
     TexCreateDetails texCreateDetails,
-    std::shared_ptr<VulkanBuffer> buffer)
+    std::unique_ptr<VulkanBuffer> buffer)
+: staging_buffer (std::move (buffer))
 {
 	data.device = &device;
 	data.mipLevels = texCreateDetails.genMipMaps ? texCreateDetails.mipMapLevelsToGen : 1;
@@ -436,7 +435,7 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 	BeginTransferAndMipMapGenWork (*data.device,
 	    async_task_man,
 	    finish_work,
-	    buffer,
+	    staging_buffer.get (),
 	    subresourceRange,
 	    bufferCopyRegions,
 	    texCreateDetails.imageLayout,
@@ -696,10 +695,11 @@ VulkanTextureID TextureManager::CreateCubeMap (Resource::Texture::TexID cubeMap,
 }
 
 VulkanTextureID TextureManager::CreateTextureFromBuffer (
-    std::shared_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails)
+    std::unique_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails)
 {
 	auto finish_work = CreateFinishWork (id_counter);
-	auto tex = std::make_unique<VulkanTexture> (device, async_task_manager, finish_work, texCreateDetails, buffer);
+	auto tex = std::make_unique<VulkanTexture> (
+	    device, async_task_manager, finish_work, texCreateDetails, std::move (buffer));
 	std::lock_guard guard (map_lock);
 	in_progress_map[id_counter] = std::move (tex);
 	return id_counter++;

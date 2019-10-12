@@ -162,7 +162,7 @@ void Terrain::SetupImage ()
 	    VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 	details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
-	terrainHeightMap = renderer.texture_manager.CreateTextureFromBuffer (buffer_height, details);
+	terrainHeightMap = renderer.texture_manager.CreateTextureFromBuffer (std::move (buffer_height), details);
 
 	auto buffer_splat = renderer.buffer_manager.CreateBuffer (staging_details (
 	    BufferType::staging, sizeof (cml::vec4<uint8_t>) * fastGraphUser.GetSplatMap ().size ()));
@@ -171,7 +171,7 @@ void Terrain::SetupImage ()
 	TexCreateDetails splat_details (
 	    VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 	splat_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	terrainSplatMap = renderer.texture_manager.CreateTextureFromBuffer (buffer_splat, splat_details);
+	terrainSplatMap = renderer.texture_manager.CreateTextureFromBuffer (std::move (buffer_splat), splat_details);
 
 	auto buffer_normal = renderer.buffer_manager.CreateBuffer (staging_details (
 	    BufferType::staging, sizeof (cml::vec4<int16_t>) * fastGraphUser.GetNormalMap ().size ()));
@@ -180,7 +180,8 @@ void Terrain::SetupImage ()
 	TexCreateDetails norm_details (
 	    VK_FORMAT_R16G16B16A16_SNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 	norm_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	terrainNormalMap = renderer.texture_manager.CreateTextureFromBuffer (buffer_normal, norm_details);
+	terrainNormalMap =
+	    renderer.texture_manager.CreateTextureFromBuffer (std::move (buffer_normal), norm_details);
 }
 
 void Terrain::SetupDescriptorSets (

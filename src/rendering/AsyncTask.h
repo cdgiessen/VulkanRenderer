@@ -22,22 +22,17 @@ enum class TaskType
 struct AsyncTask
 {
 	TaskType type = TaskType::graphics;
-	std::shared_ptr<job::TaskSignal> signal;
 	std::function<void(const VkCommandBuffer)> work;
 	std::function<void()> finish_work;
-	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
 };
 
 struct GraphicsCleanUpWork
 {
 	CommandBuffer cmdBuf;
 	std::function<void()> finish_work;
-	std::vector<std::shared_ptr<VulkanBuffer>> buffers;
 
-	GraphicsCleanUpWork (CommandBuffer&& cmdBuf,
-	    std::function<void()> finish_work,
-	    std::vector<std::shared_ptr<VulkanBuffer>> buffers)
-	: cmdBuf (std::move (cmdBuf)), finish_work (finish_work), buffers (buffers)
+	GraphicsCleanUpWork (CommandBuffer&& cmdBuf, std::function<void()> finish_work)
+	: cmdBuf (std::move (cmdBuf)), finish_work (finish_work)
 	{
 	}
 };

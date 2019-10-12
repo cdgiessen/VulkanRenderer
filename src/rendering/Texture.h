@@ -70,7 +70,7 @@ class VulkanTexture
 	    AsyncTaskManager& async_task_man,
 	    std::function<void()> const& finish_work,
 	    TexCreateDetails texCreateDetails,
-	    std::shared_ptr<VulkanBuffer> buffer);
+	    std::unique_ptr<VulkanBuffer> buffer);
 
 	VulkanTexture (VulkanDevice& device, TexCreateDetails texCreateDetails);
 
@@ -94,6 +94,7 @@ class VulkanTexture
 
 	private:
 	details::TexData data;
+	std::unique_ptr<VulkanBuffer> staging_buffer;
 
 	void InitImage2D (VkImageCreateInfo imageInfo);
 
@@ -138,7 +139,7 @@ class TextureManager
 
 	VulkanTextureID CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails);
 
-	VulkanTextureID CreateTextureFromBuffer (std::shared_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails);
+	VulkanTextureID CreateTextureFromBuffer (std::unique_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails);
 
 	VulkanTexture CreateAttachmentImage (TexCreateDetails texCreateDetails);
 

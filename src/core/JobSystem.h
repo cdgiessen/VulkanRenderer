@@ -72,7 +72,7 @@ class TaskManager
 
 	void Stop ();
 
-	void Submit (Task&& task);
+	void Submit (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signalBlock);
 	void Submit (std::vector<Task> tasks);
 
 	std::optional<Task> GetTask ();

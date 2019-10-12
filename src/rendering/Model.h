@@ -42,6 +42,9 @@ class VulkanModel
 	std::unique_ptr<VulkanBuffer> vmaVertices;
 	std::unique_ptr<VulkanBuffer> vmaIndicies;
 
+	std::unique_ptr<VulkanBuffer> vertexStagingBuffer;
+	std::unique_ptr<VulkanBuffer> indexStagingBuffer;
+
 	void BindModel (VkCommandBuffer cmdBuf);
 
 	VertexLayout GetVertexLayout ();

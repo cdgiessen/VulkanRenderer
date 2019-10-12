@@ -184,7 +184,7 @@ DescriptorResource VulkanBuffer::GetResource ()
 
 BufferManager::BufferManager (VulkanDevice& device) : device (device) {}
 
-std::shared_ptr<VulkanBuffer> BufferManager::CreateBuffer (BufCreateDetails details)
+std::unique_ptr<VulkanBuffer> BufferManager::CreateBuffer (BufCreateDetails details)
 {
-	return std::make_shared<VulkanBuffer> (device, details);
+	return std::make_unique<VulkanBuffer> (device, details);
 }
