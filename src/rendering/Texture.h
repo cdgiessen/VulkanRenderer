@@ -6,14 +6,13 @@
 #include <vulkan/vulkan.h>
 
 #include "AsyncTask.h"
-#include "Buffer.h"
 #include "Descriptor.h"
-#include "Wrappers.h"
 
 #include "resources/Texture.h"
 #include "vk_mem_alloc.h"
 
 class VulkanDevice;
+class VulkanBuffer;
 
 struct TexCreateDetails
 {
@@ -53,8 +52,10 @@ struct TexData
 	VmaAllocationInfo allocationInfo;
 	VmaAllocator allocator = nullptr;
 
-	int32_t mipLevels;
-	int32_t layers;
+	uint32_t mipLevels;
+	uint32_t layers;
+	uint32_t width = 0;
+	uint32_t height = 0;
 };
 } // namespace details
 class VulkanTexture
@@ -92,6 +93,10 @@ class VulkanTexture
 		    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, sampler, imageView, data.textureImageLayout);
 	}
 
+	uint32_t GetWidth () { return data.width; }
+	uint32_t GetHeight () { return data.height; }
+	uint32_t GetLayers () { return data.layers; }
+
 	private:
 	details::TexData data;
 	std::unique_ptr<VulkanBuffer> staging_buffer;
@@ -114,8 +119,8 @@ class VulkanTexture
 	    VkFormat format,
 	    VkImageAspectFlags aspectFlags,
 	    VkComponentMapping components,
-	    int32_t mipLevels,
-	    int32_t layers);
+	    uint32_t mipLevels,
+	    uint32_t layers);
 };
 
 using VulkanTextureID = int32_t;
@@ -123,10 +128,7 @@ using VulkanTextureID = int32_t;
 class TextureManager
 {
 	public:
-	TextureManager (Resource::Texture::Manager& texture_manager,
-	    VulkanDevice& device,
-	    AsyncTaskManager& async_task_manager,
-	    BufferManager& buf_man);
+	TextureManager (Resource::Texture::Manager& texture_manager, VulkanDevice& device, AsyncTaskManager& async_task_manager);
 	~TextureManager ();
 
 	TextureManager (TextureManager const& buf) = delete;
@@ -155,7 +157,6 @@ class TextureManager
 	VulkanDevice& device;
 	Resource::Texture::Manager& texture_manager;
 	AsyncTaskManager& async_task_manager;
-	BufferManager& buffer_manager;
 
 	VulkanTextureID id_counter = 0;
 	std::mutex map_lock;

@@ -6,11 +6,6 @@
 
 #include "cml/cml.h"
 
-struct GPU_ProjView
-{
-	cml::mat4f projView;
-};
-
 class Camera
 {
 	enum CamType
@@ -21,23 +16,16 @@ class Camera
 
 	public:
 	// perspective
-	Camera (cml::vec3f position, cml::quatf rotation, float fov, float aspect)
-	: type (CamType::perspective), fov (fov), size (aspect), position (position), rotation (rotation)
-	{
-	}
+	Camera (cml::vec3f position, cml::quatf rotation, float fov, float aspect);
 
 	// orthographic
-	Camera (cml::vec3f position, cml::quatf rotation, float size)
-	: type (CamType::orthographic), size (size), position (position), rotation (rotation)
-	{
-	}
+	Camera (cml::vec3f position, cml::quatf rotation, float size);
 
+	cml::mat4f ViewMat ();
+	cml::mat4f ProjMat ();
+	cml::mat4f ViewProjMat ();
 
-	cml::mat4f ViewMatrix ();
-	cml::mat4f ProjMatrix ();
-	cml::mat4f ViewProjMatrix ();
-
-	void FieldOfView (float fov);
+	void FOV (float fov);
 	void AspectRatio (float aspect);
 	void ViewSize (float size);
 
@@ -67,7 +55,6 @@ class Camera
 	bool isProjMatDirty = false;
 };
 
-
 using CameraID = int;
 
 class CameraManager
@@ -75,9 +62,9 @@ class CameraManager
 	public:
 	CameraManager ();
 
-	CameraID create_camera ();
-	Camera& get_camera (CameraID id);
-	void delete_camera (Camera id);
+	CameraID Create ();
+	Camera& Get (CameraID id);
+	void Delete (CameraID id);
 
 	private:
 	CameraID i = 0;

@@ -8,9 +8,9 @@
 
 #include "core/JobSystem.h"
 
-#include "Buffer.h"
-#include "Device.h"
 #include "Wrappers.h"
+
+class VulkanDevice;
 
 enum class TaskType
 {

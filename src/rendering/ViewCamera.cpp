@@ -2,7 +2,19 @@
 
 const cml::vec3f WorldUp{ 0, 1, 0 };
 
-cml::mat4f Camera::ViewMatrix ()
+// perspective
+Camera::Camera (cml::vec3f position, cml::quatf rotation, float fov, float aspect)
+: type (CamType::perspective), fov (fov), size (aspect), position (position), rotation (rotation)
+{
+}
+
+// orthographic
+Camera::Camera (cml::vec3f position, cml::quatf rotation, float size)
+: type (CamType::orthographic), size (size), position (position), rotation (rotation)
+{
+}
+
+cml::mat4f Camera::ViewMat ()
 {
 	if (isViewMatDirty)
 	{
@@ -17,7 +29,7 @@ cml::mat4f Camera::ViewMatrix ()
 	}
 	return mat_view;
 }
-cml::mat4f Camera::ProjMatrix ()
+cml::mat4f Camera::ProjMat ()
 {
 	if (isProjMatDirty)
 	{
@@ -34,9 +46,9 @@ cml::mat4f Camera::ProjMatrix ()
 	return mat_proj;
 }
 
-cml::mat4f Camera::ViewProjMatrix () { return ProjMatrix () * ViewMatrix (); }
+cml::mat4f Camera::ViewProjMat () { return ProjMat () * ViewMat (); }
 
-void Camera::FieldOfView (float fov)
+void Camera::FOV (float fov)
 {
 	isProjMatDirty = true;
 	this->fov = fov;

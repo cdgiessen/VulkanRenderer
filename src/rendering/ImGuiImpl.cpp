@@ -7,9 +7,10 @@
 // ImGui_ImplXXXX_Shutdown(). If you are new to ImGui, see examples/README.txt and documentation at
 // the top of imgui.cpp. https://github.com/ocornut/imgui
 
-#include "imgui.hpp"
 
-#include "core/Window.h"
+#include "ImGuiImpl.h"
+
+#include <imgui.hpp>
 
 // GLFW
 #define GLFW_INCLUDE_NONE
@@ -22,10 +23,12 @@
 #include <GLFW/glfw3native.h>
 #endif
 
-#include "ImGuiImpl.h"
+#include "core/Window.h"
+
+#include "RenderTools.h"
 
 #include "core/Window.h"
-#include "rendering/Renderer.h"
+#include "rendering/Device.h"
 
 // GLFW Data
 static GLFWwindow* g_Window = NULL;
@@ -1373,7 +1376,7 @@ void ImGui_ImplGlfwVulkan_Render (VkCommandBuffer command_buffer)
 }
 
 
-void PrepareImGui (Window* window, VulkanRenderer* vulkan_renderer)
+void PrepareImGui (Window* window, VulkanDevice* device, VkRenderPass renderpass)
 {
 	ImGui_ImplGlfwVulkan_Init_Data init_data = {};
 
@@ -1398,14 +1401,12 @@ void PrepareImGui (Window* window, VulkanRenderer* vulkan_renderer)
 	pool_info.pPoolSizes = pool_size.data ();
 	pool_info.maxSets = maxSets * 11;
 
-	VK_CHECK_RESULT (vkCreateDescriptorPool (
-	    vulkan_renderer->device.device, &pool_info, VK_NULL_HANDLE, &init_data.descriptor_pool));
+	VK_CHECK_RESULT (vkCreateDescriptorPool (device->device, &pool_info, VK_NULL_HANDLE, &init_data.descriptor_pool));
 
 	init_data.allocator = VK_NULL_HANDLE;
-	init_data.gpu = vulkan_renderer->device.physical_device.physical_device;
-	init_data.device = vulkan_renderer->device.device;
-	init_data.render_pass = vulkan_renderer->GetRelevantRenderpass (RenderableType::overlay);
-	// init_data.pipeline_cache = vulkan_renderer->pipelineManager.GetPipelineCache();
+	init_data.gpu = device->physical_device.physical_device;
+	init_data.device = device->device;
+	init_data.render_pass = renderpass;
 	init_data.check_vk_result = [](VkResult err) {
 		if (err == 0) return;
 		printf ("VkResult %d\n", err);
@@ -1414,7 +1415,7 @@ void PrepareImGui (Window* window, VulkanRenderer* vulkan_renderer)
 
 	ImGui_ImplGlfwVulkan_Init (window->getWindowContext (), false, &init_data);
 
-	CommandPool pool (vulkan_renderer->device.device, vulkan_renderer->device.GraphicsQueue ());
+	CommandPool pool (device->device, device->GraphicsQueue ());
 
 	CommandBuffer cmdBuf (pool);
 	cmdBuf.Allocate ().Begin ();

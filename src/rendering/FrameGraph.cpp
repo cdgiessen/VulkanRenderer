@@ -4,7 +4,11 @@
 
 #include "Device.h"
 #include "Initializers.h"
-#include "Renderer.h"
+#include "RenderTools.h"
+#include "SwapChain.h"
+#include "Texture.h"
+
+//// SUBPASS DESCRIPTION ////
 
 void SubpassDescription::AddSubpassDependency (std::string subpass)
 {
@@ -54,6 +58,9 @@ void SubpassDescription::AddClearColor (std::string attachment_name, VkClearValu
 	clear_values[attachment_name] = color;
 }
 
+void SubpassDescription::SetFunction (RenderFunc&& func) { this->func = std::move (func); }
+
+//// ATTACHMENT USE ////
 
 AttachmentUse::AttachmentUse (RenderPassAttachment rpAttach, uint32_t index)
 : format (rpAttach.format), rpAttach (rpAttach), index (index)
@@ -75,6 +82,7 @@ VkAttachmentDescription AttachmentUse::Get ()
 	return desc;
 }
 
+//// RENDERPASS DESCRIPTION ////
 
 void RenderPassDescription::AddSubpass (SubpassDescription subpass)
 {
@@ -94,13 +102,13 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 		}
 	}
 
-	// std::vector<AttachmentUse> attachmentUses;
+	// std::vector<AttachmentUse> attachment_uses;
 	int index = 0;
 	for (auto& attach_name : used_attachment_names)
 	{
 		if (attachment_map.count (attach_name) == 1)
 		{
-			attachmentUses.emplace_back (attachment_map.at (attach_name), index++);
+			attachment_uses.emplace_back (attachment_map.at (attach_name), index++);
 		}
 	}
 
@@ -161,7 +169,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 
 
 	// get attachment reference details
-	for (auto& attach : attachmentUses)
+	for (auto& attach : attachment_uses)
 	{
 		bool is_input = false;
 		bool is_output = false;
@@ -316,7 +324,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 			finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 		}
 
-		if (presentColorAttachment && is_output && !is_depth_output)
+		if (present_attachment && is_output && !is_depth_output)
 		{
 			initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -326,7 +334,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 		attach.finalLayout = finalLayout;
 	}
 
-	for (auto& a : attachmentUses)
+	for (auto& a : attachment_uses)
 	{
 		rp_attachments.push_back (a.Get ());
 	}
@@ -357,26 +365,86 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	return renderPassInfo;
 }
 
+std::vector<RenderFunc> RenderPassDescription::GetSubpassFunctions ()
+{
+	std::vector<RenderFunc> funcs;
+
+	for (auto& subpass : subpasses)
+	{
+		funcs.push_back (std::move (subpass.func));
+	}
+	return funcs;
+}
+
+std::vector<std::string> RenderPassDescription::GetUsedAttachmentNames ()
+{
+	std::vector<std::string> attachments;
+	for (auto& attachment : attachment_uses)
+	{
+		attachments.push_back (attachment.rpAttach.name);
+	}
+	return attachments;
+}
+
+
+//// FRAME BUFFER ////
+
+FrameBuffer::FrameBuffer (VulkanDevice& device,
+    std::vector<VkImageView> image_views,
+    VkRenderPass renderPass,
+    uint32_t width,
+    uint32_t height,
+    uint32_t layers)
+: device (device.device)
+{
+	VkFramebufferCreateInfo framebufferInfo = initializers::framebufferCreateInfo ();
+	framebufferInfo.renderPass = renderPass;
+	framebufferInfo.attachmentCount = static_cast<uint32_t> (image_views.size ());
+	framebufferInfo.pAttachments = image_views.data ();
+	framebufferInfo.width = width;
+	framebufferInfo.height = height;
+	framebufferInfo.layers = layers;
+
+	VK_CHECK_RESULT (vkCreateFramebuffer (device.device, &framebufferInfo, nullptr, &framebuffer));
+}
+
+FrameBuffer::~FrameBuffer ()
+{
+	if (framebuffer != nullptr) vkDestroyFramebuffer (device, framebuffer, nullptr);
+}
+
+FrameBuffer::FrameBuffer (FrameBuffer&& fb) : device (fb.device), framebuffer (fb.framebuffer)
+{
+	fb.framebuffer = nullptr;
+}
+FrameBuffer& FrameBuffer::operator= (FrameBuffer&& fb)
+{
+	device = fb.device;
+	framebuffer = fb.framebuffer;
+	fb.framebuffer = nullptr;
+}
+//// RENDER PASS ////
+
 RenderPass::RenderPass (VkDevice device, RenderPassDescription desc, AttachmentMap& attachments)
-: desc (desc)
+: device (device), desc (desc)
 {
 
-	auto renderPassInfo = this->desc.GetRenderPassCreate (attachments);
+	auto renderPassInfo = desc.GetRenderPassCreate (attachments);
 
 	if (vkCreateRenderPass (device, &renderPassInfo, nullptr, &rp) != VK_SUCCESS)
 	{
 		throw std::runtime_error ("failed to create render pass!");
 	}
+
+	subpassFuncs = std::move (desc.GetSubpassFunctions ());
 }
 
-// RenderPass::~RenderPass () { vkDestroyRenderPass (device.device, rp, nullptr); }
+RenderPass::~RenderPass () { vkDestroyRenderPass (device, rp, nullptr); }
 
-void RenderPass::SetSubpassDrawFuncs (std::vector<RenderFunc> funcs) { subpassFuncs = funcs; }
-
-void RenderPass::BuildCmdBuf (VkCommandBuffer cmdBuf, VkFramebuffer framebuffer, VkOffset2D offset, VkExtent2D extent)
+void RenderPass::BuildCmdBuf (VkCommandBuffer cmdBuf, FrameBufferView fb_view)
 {
-	VkRenderPassBeginInfo renderPassInfo =
-	    initializers::renderPassBeginInfo (rp, framebuffer, offset, extent, desc.clear_values);
+	VkRenderPassBeginInfo renderPassInfo = initializers::renderPassBeginInfo (
+	    rp, fb_view.fb, fb_view.view.offset, fb_view.view.extent, desc.clear_values);
 
 
 	vkCmdBeginRenderPass (cmdBuf, &renderPassInfo, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
@@ -390,7 +458,6 @@ void RenderPass::BuildCmdBuf (VkCommandBuffer cmdBuf, VkFramebuffer framebuffer,
 	}
 	else
 	{
-
 		for (auto& func : subpassFuncs)
 		{
 			func (cmdBuf);
@@ -400,6 +467,9 @@ void RenderPass::BuildCmdBuf (VkCommandBuffer cmdBuf, VkFramebuffer framebuffer,
 	vkCmdEndRenderPass (cmdBuf);
 }
 
+//// FRAME GRAPH BUILDER ////
+
+
 void FrameGraphBuilder::AddAttachment (RenderPassAttachment attachment)
 {
 
@@ -408,55 +478,29 @@ void FrameGraphBuilder::AddAttachment (RenderPassAttachment attachment)
 
 void FrameGraphBuilder::AddRenderPass (RenderPassDescription renderPass)
 {
-	renderPasses[renderPass.name] = renderPass;
+	render_passes[renderPass.name] = renderPass;
 }
 
-FrameBuffer::FrameBuffer (
-    VulkanDevice& device, std::vector<VkImage> images, RenderPass renderPass, uint32_t width, uint32_t height, uint32_t layers)
-: device (device)
+void FrameGraphBuilder::SetFinalRenderPassName (std::string name) { final_renderpass = name; }
+
+void FrameGraphBuilder::SetFinalOutputAttachmentName (std::string name)
 {
-	views.resize (images.size ());
-	int i = 0;
-	for (auto& image : images)
-	{
-		VkImageViewCreateInfo viewInfo = initializers::imageViewCreateInfo ();
-		viewInfo.image = image;
-		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		viewInfo.format = VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
-		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		viewInfo.subresourceRange.baseMipLevel = 0;
-		viewInfo.subresourceRange.levelCount = 1;
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = 1;
-
-		VK_CHECK_RESULT (vkCreateImageView (device.device, &viewInfo, nullptr, &views.at (i)));
-	}
-
-	VkFramebufferCreateInfo framebufferInfo = initializers::framebufferCreateInfo ();
-	framebufferInfo.renderPass = renderPass.rp;
-	framebufferInfo.attachmentCount = static_cast<uint32_t> (views.size ());
-	framebufferInfo.pAttachments = views.data ();
-	framebufferInfo.width = width;
-	framebufferInfo.height = height;
-	framebufferInfo.layers = layers;
-
-	VK_CHECK_RESULT (vkCreateFramebuffer (device.device, &framebufferInfo, nullptr, &framebuffer));
+	final_output_attachment = name;
 }
 
-FrameBuffer::~FrameBuffer ()
-{
-	vkDestroyFramebuffer (device.device, framebuffer, nullptr);
-	for (auto& view : views)
-		vkDestroyImageView (device.device, view, nullptr);
-}
 
-FrameGraph::FrameGraph (FrameGraphBuilder builder, VulkanDevice& device)
-: device (device), builder (builder)
+//// FRAME GRAPH ////
+
+FrameGraph::FrameGraph (VulkanDevice& device, VulkanSwapChain& swapchain, FrameGraphBuilder builder)
+: device (device), swapchain (swapchain), builder (builder)
 {
-	auto& lastPassDesc = this->builder.renderPasses.at (builder.lastPass);
-	lastPassDesc.presentColorAttachment = true;
+	int swapchain_count = swapchain.GetChainCount ();
+
+	auto& final_attachment = builder.attachments.at (builder.final_output_attachment);
+	auto& final_renderpass_desc = builder.render_passes.at (builder.final_renderpass);
+	final_renderpass_desc.present_attachment = true;
 	// for (auto&[name, a] : builder.attachments) {
-	//	for(auto& sub : lastPassDesc.subpasses){
+	//	for(auto& sub : final_renderpass.subpasses){
 	//		for (auto& a : sub.color_attachments) {
 	//			if (name == a) {
 	//				builder.attachments.at(name).format = VK_FORMAT_R8G8B8A8_SINT;
@@ -465,54 +509,82 @@ FrameGraph::FrameGraph (FrameGraphBuilder builder, VulkanDevice& device)
 	//	}
 	//}
 
-	for (auto [name, pass] : this->builder.renderPasses)
+	for (auto& [name, attachment] : builder.attachments)
 	{
-
-		renderPasses.emplace_back (device.device, pass, this->builder.attachments);
-	}
-}
-
-FrameGraph::~FrameGraph ()
-{
-	for (auto& rp : renderPasses)
-		vkDestroyRenderPass (device.device, rp.rp, nullptr);
-}
-
-void FrameGraph::SetDrawFuncs (int index, std::vector<RenderFunc> funcs)
-{
-	renderPasses.at (index).SetSubpassDrawFuncs (funcs);
-	// renderPasses.insert (std::end (renderPasses), std::begin (funcs), std::end (funcs));
-}
-
-
-VkRenderPass FrameGraph::Get (int index) const { return renderPasses.at (index).rp; }
-
-
-void FrameGraph::FillCommandBuffer (VkCommandBuffer cmdBuf, VkFramebuffer fb, VkOffset2D offset, VkExtent2D extent)
-{
-	for (auto& rp : renderPasses)
-	{
-		rp.BuildCmdBuf (cmdBuf, fb, offset, extent);
-	}
-}
-
-std::vector<int> FrameGraph::OrderAttachments (std::vector<std::string> names)
-{
-	for (auto& rp : renderPasses)
-	{
-		if (rp.desc.name == builder.lastPass)
+		if (name != builder.final_output_attachment) // swapchain owns presentation resources
 		{
-			std::vector<int> out;
-			for (size_t i = 0; i < names.size (); i++)
-			{
-				for (size_t j = 0; j < rp.desc.attachmentUses.size (); j++)
-					if (rp.desc.attachmentUses.at (j).rpAttach.name == names.at (i))
-						out.push_back (rp.desc.attachmentUses.at (j).index);
-			}
+			uint32_t width = attachment.width != 0 ? attachment.width : swapchain.GetImageExtent ().width;
+			uint32_t height =
+			    attachment.height != 0 ? attachment.height : swapchain.GetImageExtent ().height;
 
-			return out;
+			TexCreateDetails tex_details (
+			    attachment.format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0, width, height);
+			render_targets[name] = std::make_unique<VulkanTexture> (device, tex_details);
 		}
-		break;
 	}
-	return {};
+
+	for (auto& [name, pass] : builder.render_passes)
+	{
+		if (name == builder.final_renderpass)
+		{
+			final_renderpass = std::make_unique<RenderPass> (device.device, pass, builder.attachments);
+		}
+		else
+		{
+			RenderPass render_pass = RenderPass (device.device, pass, builder.attachments);
+			auto attachments = render_pass.GetUsedAttachmentNames ();
+			std::vector<VkImageView> views;
+			uint32_t width = 0;
+			uint32_t height = 0;
+			uint32_t layers = 1;
+			for (auto& attachment : attachments)
+			{
+				auto tex = render_targets.at (attachment).get ();
+				views.push_back (tex->imageView);
+				uint32_t width = tex->GetWidth ();
+				uint32_t height = tex->GetHeight ();
+				uint32_t layers = tex->GetLayers ();
+			}
+			framebuffers[name] =
+			    std::move (FrameBuffer (device, views, render_pass.Get (), width, height, layers));
+			render_passes.push_back (std::move (render_pass));
+		}
+	}
+	CreatePresentResources ();
+}
+
+FrameGraph::~FrameGraph () {}
+
+VkRenderPass FrameGraph::Get (int index) const { return render_passes.at (index).Get (); }
+
+
+void FrameGraph::FillCommandBuffer (VkCommandBuffer cmdBuf, FrameBufferView frame_buffer_view)
+{
+	// render_passes.at (render_pass_index).BuildCmdBuf (cmdBuf, frame_buffer_view);
+}
+
+void FrameGraph::RecreatePresentResources ()
+{
+	swapchain_framebuffers.clear ();
+	CreatePresentResources ();
+}
+
+void FrameGraph::CreatePresentResources ()
+{
+	int swapchain_count = swapchain.GetChainCount ();
+
+	for (int i = 0; i < swapchain_count; i++)
+	{
+		auto attachments = final_renderpass->GetUsedAttachmentNames ();
+		std::vector<VkImageView> views;
+		for (auto& attachment : attachments)
+		{
+			views.push_back (render_targets.at (attachment)->imageView);
+		}
+
+		views.push_back (swapchain.GetSwapChainImageView (i));
+		auto extent = swapchain.GetImageExtent ();
+		swapchain_framebuffers.push_back (std::move (
+		    FrameBuffer (device, views, final_renderpass->Get (), extent.width, extent.height, 1)));
+	}
 }

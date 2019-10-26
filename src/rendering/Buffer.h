@@ -155,6 +155,12 @@ class BufferManager
 
 	std::unique_ptr<VulkanBuffer> CreateBuffer (BufCreateDetails details);
 
+	std::unique_ptr<VulkanBuffer> CreateStaticBuffer (BufCreateDetails details);
+
+	// return handles that will us the correct buffer behind the scenes
+	// TODO
+	void CreateDynamicBuffer (BufCreateDetails details);
+
 	private:
 	VulkanDevice& device;
 };

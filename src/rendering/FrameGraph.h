@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -9,19 +10,19 @@
 #include "vulkan/vulkan.h"
 
 class VulkanDevice;
+class VulkanSwapChain;
+class VulkanTexture;
 
 using RenderFunc = std::function<void(VkCommandBuffer cmdBuf)>;
 
 struct RenderPassAttachment
 {
-	RenderPassAttachment (std::string name = "default", VkFormat format = VK_FORMAT_R8G8B8A8_UNORM)
-	: name (name), format (format)
-	{
-	}
-
 	std::string name;
 	VkFormat format;
 	VkAttachmentDescription description = {};
+	uint32_t width = 0;
+	uint32_t height = 0;
+	uint32_t layers = 1;
 };
 using AttachmentMap = std::unordered_map<std::string, RenderPassAttachment>;
 
@@ -76,6 +77,8 @@ struct SubpassDescription
 	void AddResolveAttachments (std::string name);
 	void AddPreserveAttachments (std::string name);
 
+	void SetFunction (RenderFunc&& func);
+
 	std::vector<std::string> AttachmentsUsed (AttachmentMap const& attachment_map) const;
 
 	std::string name;
@@ -90,6 +93,8 @@ struct SubpassDescription
 	std::vector<std::string> preserve_attachments;
 
 	std::unordered_map<std::string, VkClearValue> clear_values;
+
+	RenderFunc func;
 };
 
 struct VulkanSubpassDescription
@@ -152,8 +157,10 @@ struct RenderPassDescription
 	void AddSubpass (SubpassDescription subpass);
 
 	VkRenderPassCreateInfo GetRenderPassCreate (AttachmentMap& attachment_map);
+	std::vector<RenderFunc> GetSubpassFunctions ();
+	std::vector<std::string> GetUsedAttachmentNames ();
 
-	bool presentColorAttachment = false;
+	bool present_attachment = false;
 	std::string name;
 	std::vector<SubpassDescription> subpasses;
 
@@ -163,72 +170,111 @@ struct RenderPassDescription
 	std::vector<VkSubpassDescription> sb_descriptions;
 	std::vector<VkSubpassDependency> sb_dependencies;
 
-	std::vector<AttachmentUse> attachmentUses;
+	std::vector<AttachmentUse> attachment_uses;
 	std::vector<VkClearValue> clear_values;
+
+	std::vector<RenderFunc> functions;
 };
 using RenderPassMap = std::unordered_map<std::string, RenderPassDescription>;
-class VulkanRenderer;
+class FrameGraph;
 
-struct RenderPass
+struct FrameGraphBuilder
 {
+	void AddAttachment (RenderPassAttachment attachment);
+	void AddRenderPass (RenderPassDescription renderPass);
+	void SetFinalRenderPassName (std::string name);
+	void SetFinalOutputAttachmentName (std::string name);
+
+	friend FrameGraph;
+
+	private:
+	std::unordered_map<std::string, RenderPassAttachment> attachments;
+	std::unordered_map<std::string, RenderPassDescription> render_passes;
+	std::string final_renderpass;
+	std::string final_output_attachment;
+};
+
+class FrameBuffer
+{
+	public:
+	FrameBuffer (VulkanDevice& device,
+	    std::vector<VkImageView> image_views,
+	    VkRenderPass renderPass,
+	    uint32_t width,
+	    uint32_t height,
+	    uint32_t layers);
+	~FrameBuffer ();
+	FrameBuffer (FrameBuffer const& fb) = delete;
+	FrameBuffer& operator= (FrameBuffer const& fb) = delete;
+	FrameBuffer (FrameBuffer&& fb);
+	FrameBuffer& operator= (FrameBuffer&& fb);
+
+
+	VkFramebuffer Get () { return framebuffer; }
+
+	private:
+	VkDevice device;
+
+	VkFramebuffer framebuffer;
+};
+
+struct FrameBufferView
+{
+	FrameBufferView (VkFramebuffer frame_buffer, VkRect2D view) : fb (frame_buffer), view (view) {}
+
+	VkFramebuffer fb;
+	VkRect2D view;
+};
+
+class RenderPass
+{
+	public:
 	RenderPass (VkDevice device, RenderPassDescription desc, AttachmentMap& attachments);
+	~RenderPass ();
+	RenderPass (RenderPass const& rp) = delete;
+	RenderPass& operator= (RenderPass const& rp) = delete;
+	RenderPass (RenderPass&& rp);
+	RenderPass& operator= (RenderPass&& rp);
 
-	void SetSubpassDrawFuncs (std::vector<RenderFunc> funcs);
+	void BuildCmdBuf (VkCommandBuffer cmdBuf, FrameBufferView fb_view);
+	std::vector<std::string> GetUsedAttachmentNames () { return desc.GetUsedAttachmentNames (); }
 
-	void BuildCmdBuf (VkCommandBuffer cmdBuf, VkFramebuffer framebuffer, VkOffset2D offset, VkExtent2D extent);
+	VkRenderPass Get () const { return rp; }
 
+	private:
+	VkDevice device;
 	std::vector<RenderFunc> subpassFuncs;
 	VkRenderPass rp;
 
 	RenderPassDescription desc;
 };
 
-struct FrameGraphBuilder
-{
-
-	void AddAttachment (RenderPassAttachment attachment);
-	std::unordered_map<std::string, RenderPassAttachment> attachments;
-
-	void AddRenderPass (RenderPassDescription renderPass);
-	std::unordered_map<std::string, RenderPassDescription> renderPasses;
-
-	std::string lastPass;
-};
-
-class FrameBuffer
-{
-	public:
-	FrameBuffer (
-	    VulkanDevice& device, std::vector<VkImage> images, RenderPass renderPass, uint32_t width, uint32_t height, uint32_t layers);
-	~FrameBuffer ();
-
-	VkFramebuffer Get () { return framebuffer; }
-
-	private:
-	VulkanDevice& device;
-
-	VkFramebuffer framebuffer;
-	std::vector<VkImageView> views;
-	std::vector<VkImage> image;
-};
-
 class FrameGraph
 {
 	public:
-	FrameGraph (FrameGraphBuilder builder, VulkanDevice& device);
+	FrameGraph (VulkanDevice& device, VulkanSwapChain& swapchain, FrameGraphBuilder builder);
 	~FrameGraph ();
 
 	VkRenderPass Get (int index) const;
-	void SetDrawFuncs (int index, std::vector<RenderFunc> funcs);
+	VkRenderPass GetPresentRenderPass () const { return final_renderpass->Get (); };
 
-	void FillCommandBuffer (VkCommandBuffer cmdBuf, VkFramebuffer fb, VkOffset2D offset, VkExtent2D extent);
+	void RecreatePresentResources ();
 
-	std::vector<int> OrderAttachments (std::vector<std::string> names);
+	void FillCommandBuffer (VkCommandBuffer cmdBuf, FrameBufferView frame_buffer_view);
 
 	private:
-	VulkanDevice& device;
+	void CreatePresentResources ();
 
-	std::vector<RenderPass> renderPasses;
+	VulkanDevice& device;
+	VulkanSwapChain& swapchain;
+
+	std::vector<RenderPass> render_passes;
+	std::unique_ptr<RenderPass> final_renderpass;
 
 	FrameGraphBuilder builder; // for later use
+
+	std::unordered_map<std::string, std::unique_ptr<VulkanTexture>> render_targets;
+
+	std::unordered_map<std::string, FrameBuffer> framebuffers;
+	std::vector<FrameBuffer> swapchain_framebuffers;
 };

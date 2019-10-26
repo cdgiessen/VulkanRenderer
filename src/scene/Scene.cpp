@@ -31,10 +31,10 @@ Scene::Scene (job::TaskManager& task_manager,
 	directionalLights.at (0) = skySettings.sun;
 
 	skybox = std::make_unique<Skybox> (renderer);
-	skybox->skyboxCubeMap = resourceMan.texture_manager.GetTexIDByName ("Skybox");
-	skybox->model = std::make_unique<VulkanModel> (
-	    renderer.device, renderer.async_task_manager, renderer.buffer_manager, createCube ());
-	skybox->InitSkybox ();
+	// skybox->skyboxCubeMap = resourceMan.texture_manager.GetTexIDByName ("Skybox");
+	// skybox->model = std::make_unique<VulkanModel> (
+	//     renderer.device, renderer.async_task_manager, renderer.buffer_manager, createCube ());
+	// skybox->InitSkybox ();
 
 
 	terrainManager = std::make_unique<TerrainManager> (task_manager, graph, resourceMan, renderer);
@@ -48,21 +48,21 @@ void Scene::UpdateScene ()
 	GlobalData gd;
 	gd.time = (float)time_manager.RunningTime ();
 
-	cml::mat4f proj = cml::perspective (cml::radians (55.0f),
-	    renderer.vulkanSwapChain.swapChainExtent.width /
-	        (float)renderer.vulkanSwapChain.swapChainExtent.height,
-	    0.05f,
-	    100000.f);
+	// cml::mat4f proj = cml::perspective (cml::radians (55.0f),
+	//     renderer.vulkanSwapChain.swapChainExtent.width /
+	//         (float)renderer.vulkanSwapChain.swapChainExtent.height,
+	//     0.05f,
+	//     100000.f);
 
 	std::vector<CameraData> cd (1);
-	cd.at (0).view = camera->GetViewMatrix ();
-	cd.at (0).projView = proj * cd.at (0).view;
-	cd.at (0).cameraDir = camera->Front;
-	cd.at (0).cameraPos = camera->Position;
+	// cd.at (0).view = camera->GetViewMatrix ();
+	// cd.at (0).projView = proj * cd.at (0).view;
+	// cd.at (0).cameraDir = camera->Front;
+	// cd.at (0).cameraPos = camera->Position;
 
 	UpdateSunData ();
 
-	renderer.UpdateRenderResources (gd, { cd }, directionalLights, pointLights, spotLights);
+	// renderer.dynamic_data.Update (gd, { cd }, directionalLights, pointLights, spotLights);
 
 	if (walkOnGround)
 	{

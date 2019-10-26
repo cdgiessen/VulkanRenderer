@@ -1,7 +1,10 @@
 #include "AsyncTask.h"
-#include "core/Logger.h"
 
 #include <algorithm>
+
+#include "core/Logger.h"
+
+#include "Device.h"
 
 CommandPoolGroup::CommandPoolGroup (VulkanDevice const& device)
 : graphics_pool (device.device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),

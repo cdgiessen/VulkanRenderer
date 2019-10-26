@@ -10,7 +10,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "core/JobSystem.h"
+namespace job
+{
+class TaskManager;
+}
 
 namespace Resource::Texture
 {

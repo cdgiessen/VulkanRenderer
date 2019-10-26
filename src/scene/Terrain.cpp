@@ -280,7 +280,7 @@ void Terrain::SetupPipeline ()
 	    VK_BLEND_FACTOR_ONE,
 	    VK_BLEND_FACTOR_ZERO);
 
-	out.AddDescriptorLayouts (renderer.GetGlobalLayouts ());
+	out.AddDescriptorLayouts (renderer.dynamic_data.GetGlobalLayouts ());
 	out.AddDescriptorLayout (descriptor->GetLayout ());
 
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });

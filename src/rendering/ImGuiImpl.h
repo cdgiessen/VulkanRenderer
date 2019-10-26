@@ -13,7 +13,7 @@
 
 // forward declarations
 class Window;
-class VulkanRenderer;
+class VulkanDevice;
 struct GLFWwindow;
 
 #define IMGUI_VK_QUEUED_FRAMES 2
@@ -51,4 +51,4 @@ void ImGui_ImplGlfwVulkan_CharCallback (GLFWwindow* window, unsigned int c);
 
 
 class Window;
-void PrepareImGui (Window* window, VulkanRenderer* vulkan_renderer);
+void PrepareImGui (Window* window, VulkanDevice* vulkan_renderer, VkRenderPass renderpass);

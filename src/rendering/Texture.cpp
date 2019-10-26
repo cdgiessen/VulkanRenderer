@@ -4,9 +4,11 @@
 
 #include "stb/stb_image.h"
 
+#include "Buffer.h"
 #include "Device.h"
 #include "Initializers.h"
 #include "RenderTools.h"
+#include "Wrappers.h"
 
 #include "core/Logger.h"
 
@@ -144,18 +146,18 @@ void SetImageLayout (VkCommandBuffer cmdbuffer,
 void GenerateMipMaps (VkCommandBuffer cmdBuf,
     VkImage image,
     VkImageLayout finalImageLayout,
-    int32_t width,
-    int32_t height,
-    int32_t depth,
-    int32_t layers,
-    int32_t mipLevels)
+    uint32_t width,
+    uint32_t height,
+    uint32_t depth,
+    uint32_t layers,
+    uint32_t mipLevels)
 {
 	// We copy down the whole mip chain doing a blit from mip-1 to mip
 	// An alternative way would be to always blit from the first mip level and
 	// sample that one down
 
 	// Copy down mips from n-1 to n
-	for (int32_t i = 1; i < mipLevels; i++)
+	for (uint32_t i = 1; i < mipLevels; i++)
 	{
 		VkImageBlit imageBlit = initializers::imageBlit (
 		    // src
@@ -231,11 +233,11 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
     const std::vector<VkBufferImageCopy> bufferCopyRegions,
     VkImageLayout imageLayout,
     VkImage image,
-    int32_t width,
-    int32_t height,
-    int32_t depth,
-    int32_t layers,
-    int32_t mipLevels)
+    uint32_t width,
+    uint32_t height,
+    uint32_t depth,
+    uint32_t layers,
+    uint32_t mipLevels)
 {
 	if (device.singleQueueDevice)
 	{
@@ -292,6 +294,8 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 	data.mipLevels = texCreateDetails.genMipMaps ? texCreateDetails.mipMapLevelsToGen : 1;
 	data.textureImageLayout = texCreateDetails.imageLayout;
 	data.layers = textureResource.description.layers;
+	data.width = texCreateDetails.desiredWidth;
+	data.height = texCreateDetails.desiredHeight;
 
 	VkExtent3D imageExtent = { textureResource.description.width,
 		textureResource.description.height,
@@ -299,8 +303,8 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo (VK_IMAGE_TYPE_2D,
 	    texCreateDetails.format,
-	    (uint32_t)data.mipLevels,
-	    (uint32_t)data.layers,
+	    data.mipLevels,
+	    data.layers,
 	    VK_SAMPLE_COUNT_1_BIT,
 	    VK_IMAGE_TILING_OPTIMAL,
 	    VK_SHARING_MODE_EXCLUSIVE,
@@ -398,13 +402,15 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 	data.mipLevels = texCreateDetails.genMipMaps ? texCreateDetails.mipMapLevelsToGen : 1;
 	data.textureImageLayout = texCreateDetails.imageLayout;
 	data.layers = 1;
+	data.width = texCreateDetails.desiredWidth;
+	data.height = texCreateDetails.desiredHeight;
 
-	VkExtent3D imageExtent = { (uint32_t)texCreateDetails.desiredWidth, (uint32_t)texCreateDetails.desiredHeight, 1 };
+	VkExtent3D imageExtent = { texCreateDetails.desiredWidth, texCreateDetails.desiredHeight, 1 };
 
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo (VK_IMAGE_TYPE_2D,
 	    texCreateDetails.format,
-	    (uint32_t)data.mipLevels,
-	    (uint32_t)data.layers,
+	    data.mipLevels,
+	    data.layers,
 	    VK_SAMPLE_COUNT_1_BIT,
 	    VK_IMAGE_TILING_OPTIMAL,
 	    VK_SHARING_MODE_EXCLUSIVE,
@@ -420,7 +426,7 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 	std::vector<VkBufferImageCopy> bufferCopyRegions;
 	size_t offset = 0;
 
-	for (int32_t layer = 0; layer < data.layers; layer++)
+	for (uint32_t layer = 0; layer < data.layers; layer++)
 	{
 		VkBufferImageCopy bufferCopyRegion = initializers::bufferImageCopyCreate (
 		    initializers::imageSubresourceLayers (VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, layer),
@@ -483,6 +489,9 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 VulkanTexture::VulkanTexture (VulkanDevice& device, TexCreateDetails texCreateDetails)
 {
 	data.device = &device;
+	data.layers = 1;
+	data.width = texCreateDetails.desiredWidth;
+	data.height = texCreateDetails.desiredHeight;
 
 	VkImageCreateInfo imageInfo = initializers::imageCreateInfo (VK_IMAGE_TYPE_2D,
 	    texCreateDetails.format,
@@ -600,8 +609,8 @@ VkImageView VulkanTexture::CreateImageView (VkImage image,
     VkFormat format,
     VkImageAspectFlags aspectFlags,
     VkComponentMapping components,
-    int mipLevels,
-    int layers)
+    uint32_t mipLevels,
+    uint32_t layers)
 {
 	VkImageViewCreateInfo viewInfo = initializers::imageViewCreateInfo ();
 	viewInfo.image = image;
@@ -640,14 +649,9 @@ void VulkanTexture::InitImage2D (VkImageCreateInfo imageInfo)
 	    data.allocator, &imageInfo, &imageAllocCreateInfo, &image, &data.allocation, &data.allocationInfo));
 }
 
-TextureManager::TextureManager (Resource::Texture::Manager& texture_manager,
-    VulkanDevice& device,
-    AsyncTaskManager& async_task_manager,
-    BufferManager& buffer_manager)
-: texture_manager (texture_manager),
-  device (device),
-  async_task_manager (async_task_manager),
-  buffer_manager (buffer_manager)
+TextureManager::TextureManager (
+    Resource::Texture::Manager& texture_manager, VulkanDevice& device, AsyncTaskManager& async_task_manager)
+: texture_manager (texture_manager), device (device), async_task_manager (async_task_manager)
 {
 }
 

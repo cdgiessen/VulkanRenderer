@@ -1,4 +1,6 @@
-#include "Skybox.h"
+#include "SkyboxRenderer.h"
+
+#include "rendering/Renderer.h"
 
 struct SkyboxUniformBuffer
 {
@@ -11,11 +13,12 @@ SkyboxRenderer::SkyboxRenderer (VulkanRenderer& renderer, VulkanTextureID cube_m
 
 void SkyboxRenderer::InitSkybox ()
 {
-
 	skyboxUniformBuffer =
 	    std::make_unique<VulkanBuffer> (renderer.device, uniform_details (sizeof (SkyboxUniformBuffer)));
 
-	SetupCubeMapImage ();
+	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 3);
+	vulkanCubeMap = renderer.texture_manager.CreateCubeMap (skyboxCubeMap, details);
+
 	SetupDescriptor ();
 	SetupPipeline ();
 }
@@ -76,7 +79,7 @@ void SkyboxRenderer::SetupPipeline ()
 	    VK_BLEND_FACTOR_ONE,
 	    VK_BLEND_FACTOR_ZERO);
 
-	out.AddDescriptorLayouts (renderer.GetGlobalLayouts ());
+	out.AddDescriptorLayouts (renderer.dynamic_data.GetGlobalLayouts ());
 	out.AddDescriptorLayout (descriptor->GetLayout ());
 
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
@@ -84,11 +87,11 @@ void SkyboxRenderer::SetupPipeline ()
 	pipe = renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 }
 
-void SkyboxRenderer::UpdateUniform (cml::mat4f proj, cml::mat4f view)
+void SkyboxRenderer::Update (Camera& cam)
 {
 	SkyboxUniformBuffer sbo = {};
-	sbo.proj = proj;
-	sbo.view = view;
+	sbo.proj = cam.ProjMat ();
+	sbo.view = cam.ViewMat ();
 	sbo.view.set_col (3, cml::vec4f::w_positive);
 
 	skyboxUniformBuffer->CopyToBuffer (sbo);

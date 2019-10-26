@@ -7,15 +7,20 @@
 #include "cml/cml.h"
 
 #include "rendering/Model.h"
-#include "rendering/Renderer.h"
 #include "rendering/Texture.h"
+#include "rendering/ViewCamera.h"
+
+class VulkanRenderer;
 
 class SkyboxRenderer
 {
 	public:
 	SkyboxRenderer (VulkanRenderer& renderer, VulkanTextureID cube_map);
 
+	void Update (Camera& cam);
+	void Draw (VkCommandBuffer commandBuffer);
 
+	private:
 	VulkanRenderer& renderer;
 
 	PipeID pipe;
@@ -32,9 +37,4 @@ class SkyboxRenderer
 	void InitSkybox ();
 	void SetupDescriptor ();
 	void SetupPipeline ();
-
-
-	void UpdateUniform (cml::mat4f proj, cml::mat4f view);
-
-	void Draw (VkCommandBuffer commandBuffer);
 };

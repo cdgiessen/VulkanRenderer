@@ -1,0 +1,72 @@
+[
+	{
+		"id" : 0,
+		"name" : "water_normal",
+		"type" : "single2D",
+		"cached_timestamp" : 0,
+		"path" : "water_normal.png"
+		
+	},
+	{
+		"id" : 1,
+		"name" : "Skybox",
+		"type" : "cubemap2D",
+		"cached_timestamp" : 0,
+		"paths" : [
+			"Skybox_0.png",
+			"Skybox_1.png",
+			"Skybox_2.png",
+			"Skybox_3.png",
+			"Skybox_4.png",
+			"Skybox_5.png"
+		]
+	},
+	{
+		"id" : 2,
+		"name" : "terrain_albedo",
+		"type" : "array2D",
+		"cached_timestamp" : 0,
+		"paths" : [
+			"terrain_albedo_0.png",
+			"terrain_albedo_1.png",
+			"terrain_albedo_2.png",
+			"terrain_albedo_3.png"
+		]
+	},
+	{
+		"id" : 3,
+		"name" : "terrain_metalness",
+		"type" : "array2D",
+		"cached_timestamp" : 0,
+		"paths" : [
+			"terrain_metalness_0.png",
+			"terrain_metalness_1.png",
+			"terrain_metalness_2.png",
+			"terrain_metalness_3.png"
+		]
+	},
+	{
+		"id" : 4,
+		"name" : "terrain_roughness",
+		"type" : "array2D",
+		"cached_timestamp" : 0,
+		"paths" : [
+			"terrain_roughness_0.png",
+			"terrain_roughness_1.png",
+			"terrain_roughness_2.png",
+			"terrain_roughness_3.png"
+		]
+	},
+	{
+		"id" : 5,
+		"name" : "terrain_normal",
+		"type" : "array2D",
+		"cached_timestamp" : 0,
+		"paths" : [
+			"terrain_normal_0.png",
+			"terrain_normal_1.png",
+			"terrain_normal_2.png",
+			"terrain_normal_3.png"
+		]
+	}
+]

@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "core/JobSystem.h"
+
 #include "Material.h"
 #include "Mesh.h"
 #include "Texture.h"

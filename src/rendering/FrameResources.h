@@ -4,27 +4,29 @@
 
 #include <vulkan/vulkan.h>
 
-#include "Device.h"
-#include "SwapChain.h"
 #include "Wrappers.h"
+
+class VulkanDevice;
+class VulkanSwapChain;
 
 class FrameObject
 {
 	public:
-	FrameObject (VulkanDevice& device, int frameD);
+	FrameObject (VulkanDevice& device, VulkanSwapChain& swapChain, int frameD);
 	~FrameObject ();
 
-	VkResult AcquireNextSwapchainImage (VkSwapchainKHR swapchain);
+	VkResult AcquireNextSwapchainImage ();
 
 	void PrepareFrame ();
-	void Submit (CommandQueue& queue);
+	void Submit ();
 
-	VkResult Present (VulkanSwapChain& swapChain, CommandQueue& presentQueue);
+	VkResult Present ();
 
 	VkCommandBuffer GetPrimaryCmdBuf ();
 
 	private:
 	VulkanDevice& device;
+	VulkanSwapChain& swapchain;
 	uint32_t frameIndex; // which frame in the queue it is
 
 	uint32_t swapChainIndex; // which frame to render to

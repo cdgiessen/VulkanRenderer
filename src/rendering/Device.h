@@ -131,6 +131,9 @@ class VulkanDevice
 
 	VkSurfaceKHR GetSurface ();
 
+	VkFormat FindSupportedFormat (
+	    const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+
 	private:
 	std::unique_ptr<CommandQueue> graphics_queue;
 	std::unique_ptr<CommandQueue> compute_queue;

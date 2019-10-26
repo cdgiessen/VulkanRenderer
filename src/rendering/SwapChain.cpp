@@ -6,7 +6,6 @@
 #include "core/Window.h"
 
 #include "Device.h"
-#include "FrameGraph.h"
 #include "Initializers.h"
 #include "RenderTools.h"
 
@@ -14,8 +13,7 @@
 VulkanSwapChain::VulkanSwapChain (VulkanDevice& device, Window& window)
 : device (device), window (window)
 {
-	createSwapChain ();
-	createImageViews ();
+	CreateSwapChain ();
 }
 
 VulkanSwapChain::~VulkanSwapChain () { DestroySwapchainResources (); }
@@ -24,11 +22,10 @@ void VulkanSwapChain::RecreateSwapChain ()
 {
 	DestroySwapchainResources ();
 
-	createSwapChain ();
-	createImageViews ();
+	CreateSwapChain ();
 }
 
-void VulkanSwapChain::createSwapChain ()
+void VulkanSwapChain::CreateSwapChain ()
 {
 	details = querySwapChainSupport (device.physical_device.physical_device, device.GetSurface ());
 
@@ -36,10 +33,10 @@ void VulkanSwapChain::createSwapChain ()
 	VkPresentModeKHR presentMode = chooseSwapPresentMode ();
 	VkExtent2D extent = chooseSwapExtent ();
 
-	uint32_t imageCount = details.capabilities.minImageCount + 1;
-	if (details.capabilities.maxImageCount > 0 && imageCount > details.capabilities.maxImageCount)
+	image_count = details.capabilities.minImageCount + 1;
+	if (details.capabilities.maxImageCount > 0 && image_count > details.capabilities.maxImageCount)
 	{
-		imageCount = details.capabilities.maxImageCount;
+		image_count = details.capabilities.maxImageCount;
 	}
 
 	swapChainImageFormat = surfaceFormat.format;
@@ -49,7 +46,7 @@ void VulkanSwapChain::createSwapChain ()
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	createInfo.surface = device.GetSurface ();
 
-	createInfo.minImageCount = imageCount;
+	createInfo.minImageCount = image_count;
 	createInfo.imageFormat = surfaceFormat.format;
 	createInfo.imageColorSpace = surfaceFormat.colorSpace;
 	createInfo.imageExtent = extent;
@@ -87,20 +84,17 @@ void VulkanSwapChain::createSwapChain ()
 		throw std::runtime_error ("failed to create swap chain!");
 	}
 
-	if (vkGetSwapchainImagesKHR (device.device, swapChain, &imageCount, nullptr) != VK_SUCCESS)
+	if (vkGetSwapchainImagesKHR (device.device, swapChain, &image_count, nullptr) != VK_SUCCESS)
 	{
 		throw std::runtime_error ("failed to get number of swapchain images!");
 	}
-	swapChainImages.resize (imageCount);
+	swapChainImages.resize (image_count);
 
-	if (vkGetSwapchainImagesKHR (device.device, swapChain, &imageCount, swapChainImages.data ()) != VK_SUCCESS)
+	if (vkGetSwapchainImagesKHR (device.device, swapChain, &image_count, swapChainImages.data ()) != VK_SUCCESS)
 	{
 		throw std::runtime_error ("failed to get swapchain images!");
 	}
-}
 
-void VulkanSwapChain::createImageViews ()
-{
 	swapChainImageViews.resize (swapChainImages.size ());
 
 	for (uint32_t i = 0; i < swapChainImages.size (); i++)
@@ -119,40 +113,8 @@ void VulkanSwapChain::createImageViews ()
 	}
 }
 
-void VulkanSwapChain::CreateFramebuffers (
-    std::vector<int> order, std::vector<VkImageView> depthImageViews, VkRenderPass renderPass)
-{
-	swapChainFramebuffers.resize (swapChainImageViews.size ());
-
-	for (size_t i = 0; i < swapChainImageViews.size (); i++)
-	{
-		std::array<VkImageView, 2> attachments;
-		attachments.at (order.at (0)) = depthImageViews[i];
-		attachments.at (order.at (1)) = swapChainImageViews[i];
-
-		VkFramebufferCreateInfo framebufferInfo = initializers::framebufferCreateInfo ();
-		framebufferInfo.renderPass = renderPass;
-		framebufferInfo.attachmentCount = static_cast<uint32_t> (attachments.size ());
-		framebufferInfo.pAttachments = attachments.data ();
-		framebufferInfo.width = swapChainExtent.width;
-		framebufferInfo.height = swapChainExtent.height;
-		framebufferInfo.layers = 1;
-
-		if (vkCreateFramebuffer (device.device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS)
-		{
-			throw std::runtime_error ("failed to create framebuffer!");
-		}
-	}
-}
-
 void VulkanSwapChain::DestroySwapchainResources ()
 {
-
-
-	for (size_t i = 0; i < swapChainFramebuffers.size (); i++)
-	{
-		vkDestroyFramebuffer (device.device, swapChainFramebuffers[i], nullptr);
-	}
 
 	for (size_t i = 0; i < swapChainImageViews.size (); i++)
 	{

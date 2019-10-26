@@ -4,19 +4,23 @@
 #include <fstream>
 #include <iomanip>
 
+#include <nlohmann/json.hpp>
+
+#include <gli/gli.hpp>
+
 #include "stb/stb_image.h"
 
 #include "core/JobSystem.h"
 #include "core/Logger.h"
 
-#include <nlohmann/json.hpp>
 
-#include <gli/gli.hpp>
 
 
 namespace fs = std::filesystem;
 
 const fs::path texture_path = "assets/textures";
+const fs::path texture_cache_path = "assets/textures/cache";
+
 
 namespace Resource::Texture
 {
@@ -166,29 +170,29 @@ void Manager::LoadTextureList ()
 {
 	nlohmann::json j;
 
-	if (fs::exists ("assets/TextureList.json"))
+	if (fs::exists ("assets/texture_db.json"))
 	{
-		std::ifstream inFile ("assets/TextureList.json");
+		std::ifstream inFile ("assets/texture_db.json");
 		try
 		{
 			inFile >> j;
 		}
 		catch (nlohmann::json::exception& e)
 		{
-			Log.Debug ("Texture list was invalid json, creating a new one\n");
+			Log.Debug ("Texture db was invalid json, creating a new one\n");
 			Log.Debug (fmt::format ("Json error: {}\n", e.what ()));
 			SaveTextureList ();
 		}
 	}
 	else
 	{
-		Log.Debug ("Texture list didn't exist, creating one");
+		Log.Debug ("Texture db didn't exist, creating one");
 		SaveTextureList ();
 	}
 
 	try
 	{
-		Log.Debug (fmt::format ("Loaded {} textures\n", textureResources.size ()));
+		Log.Debug (fmt::format ("Loading {} textures\n", textureResources.size ()));
 		int count = 0;
 
 		auto signal = std::make_shared<job::TaskSignal> ();

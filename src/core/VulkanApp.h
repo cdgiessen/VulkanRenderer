@@ -15,7 +15,6 @@
 
 #include "scene/Scene.h"
 
-#include "gui/ImGuiImpl.h"
 #include "gui/ProcTerrainNodeGraph.h"
 
 struct ImGUI_PanelSettings
@@ -53,11 +52,14 @@ class VulkanApp
 	public:
 	VulkanApp ();
 	~VulkanApp ();
+	VulkanApp (VulkanApp const& app) = delete;
+	VulkanApp& operator= (VulkanApp const& app) = delete;
+	VulkanApp (VulkanApp&& app) = delete;
+	VulkanApp& operator= (VulkanApp&& app) = delete;
+
 
 	void Run ();
 	void HandleInputs ();
-
-	void RecreateSwapChain ();
 
 	private:
 	VulkanAppSettings settings;
@@ -87,8 +89,6 @@ class VulkanApp
 	void ControllerWindow (bool* show_controller_window);
 	// ImGui resources
 	SimpleTimer imGuiTimer;
-
-	float tempCameraSpeed = 0.0f;
 };
 
 extern int run_engine ();

@@ -4,10 +4,10 @@
 #include <mutex>
 
 #include <GLFW/glfw3.h>
+#include <imgui.hpp>
 
 #include "cml/cml.h"
-#include "gui/ImGuiImpl.h"
-#include "imgui.hpp"
+#include "rendering/ImGuiImpl.h"
 
 #include "Input.h"
 #include "Logger.h"

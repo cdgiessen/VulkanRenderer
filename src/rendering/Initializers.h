@@ -360,7 +360,7 @@ inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo (
 }
 
 inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo (
-    const std::vector<VkDescriptorSetLayoutBinding>& bindings)
+    std::vector<VkDescriptorSetLayoutBinding> const& bindings)
 {
 	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
 	descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

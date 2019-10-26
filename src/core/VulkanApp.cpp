@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "imgui.hpp"
+#include "rendering/ImGuiImpl.h"
 
 #include "cml/cml.h"
 
@@ -82,8 +83,6 @@ VulkanApp::VulkanApp ()
 {
 	Input::SetupInputDirector (&window);
 
-	vulkan_renderer.scene = &scene;
-
 	Log.Debug (fmt::format ("Hardware Threads Available = {}\n", HardwareThreadCount ()));
 }
 
@@ -99,7 +98,7 @@ void VulkanApp::Run ()
 		{
 			if (!window.CheckForWindowIconified ())
 			{
-				RecreateSwapChain ();
+				vulkan_renderer.RecreateSwapChain ();
 				window.SetWindowResizeDone ();
 			}
 		}
@@ -126,13 +125,6 @@ void VulkanApp::Run ()
 
 	vulkan_renderer.DeviceWaitTillIdle ();
 	task_manager.Stop ();
-}
-
-void VulkanApp::RecreateSwapChain ()
-{
-	vulkan_renderer.DeviceWaitTillIdle ();
-
-	vulkan_renderer.RecreateSwapChain ();
 }
 
 void VulkanApp::DebugOverlay (bool* show_debug_overlay)
@@ -338,20 +330,10 @@ void VulkanApp::HandleInputs ()
 		if (Input::GetKeyDown (Input::KeyCode::ESCAPE)) Input::ResetTextInputMode ();
 	}
 
-	if (Input::GetKey (Input::KeyCode::C))
-	{
-		tempCameraSpeed *= 1.02f;
-	}
-	if (Input::GetKey (Input::KeyCode::V))
-	{
-		tempCameraSpeed *= 0.98f;
-	}
-
 	if (Input::GetMouseControlStatus ())
 	{
 		scene.GetCamera ()->ProcessMouseMovement (
-		    tempCameraSpeed + Input::GetMouseChangeInPosition ().x,
-		    Input::GetMouseChangeInPosition ().y);
+		    Input::GetMouseChangeInPosition ().x, Input::GetMouseChangeInPosition ().y);
 		scene.GetCamera ()->ProcessMouseScroll (Input::GetMouseScrollY (), deltaTime);
 	}
 
