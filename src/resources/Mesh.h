@@ -27,9 +27,8 @@ static VertexDescription Vert_PosNorm = VertexDescription ({ Vert3, Vert3 });
 static VertexDescription Vert_PosNormUv = VertexDescription ({ Vert3, Vert3, Vert2 });
 static VertexDescription Vert_PosNormUvCol = VertexDescription ({ Vert3, Vert3, Vert2, Vert4 });
 
-class MeshData
+struct MeshData
 {
-	public:
 	MeshData (VertexDescription desc, std::vector<float> vertexData, std::vector<uint32_t> indexData)
 	: desc (desc), vertexData (vertexData), indexData (indexData)
 	{
@@ -38,11 +37,9 @@ class MeshData
 	const VertexDescription desc;
 	std::vector<float> vertexData;
 	std::vector<uint32_t> indexData;
-
-	private:
 };
 
-struct NonInterleavedMeshData
+struct DeInterleavedMeshData
 {
 	struct FloatBufferData
 	{
@@ -51,7 +48,7 @@ struct NonInterleavedMeshData
 		std::vector<float> data;
 	};
 
-	NonInterleavedMeshData (std::vector<VertexType> bufferTypes)
+	DeInterleavedMeshData (std::vector<VertexType> bufferTypes)
 	{
 		for (auto& t : bufferTypes)
 		{
@@ -59,28 +56,27 @@ struct NonInterleavedMeshData
 		}
 	}
 
-
 	std::vector<FloatBufferData> buffers;
 };
 
-extern std::unique_ptr<MeshData> createSinglePlane ();
+MeshData createFlatPlane (int dim, cml::vec3f size);
 
-extern std::unique_ptr<MeshData> createDoublePlane ();
+MeshData createCube (int dim = 1);
 
-extern std::unique_ptr<MeshData> createFlatPlane (int dim, cml::vec3f size);
+MeshData createSphere (int dim = 10);
 
-extern std::unique_ptr<MeshData> createCube (int dim = 1);
+MeshData create_water_plane_subdiv (int levels = 3, int subdivs = 3);
 
-extern std::unique_ptr<MeshData> createSphere (int dim = 10);
-
-extern std::unique_ptr<MeshData> create_water_plane_subdiv (int levels = 3, int subdivs = 3);
-
+using MeshID = uint32_t;
 namespace Resource::Mesh
 {
 class Manager
 {
 	public:
+	MeshID LoadMesh ();
+
 	private:
+	std::unordered_map<MeshID, MeshData> meshes;
 };
 
 

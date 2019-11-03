@@ -5,13 +5,12 @@
 #include "Model.h"
 
 void PipelineOutline::SetShaderModuleSet (ShaderModuleSet set) { this->set = set; }
-void PipelineOutline::UseModelVertexLayout (VulkanModel& model)
+void PipelineOutline::UseModelVertexLayout (VertexLayout const& layout)
 {
-	auto vl = model.GetVertexLayout ();
 	vertexInputBindingDescription.insert (
-	    std::end (vertexInputBindingDescription), std::begin (vl.bindingDesc), std::end (vl.bindingDesc));
+	    std::end (vertexInputBindingDescription), std::begin (layout.bindingDesc), std::end (vl.bindingDesc));
 	vertexInputAttributeDescriptions.insert (
-	    std::end (vertexInputAttributeDescriptions), std::begin (vl.attribDesc), std::end (vl.attribDesc));
+	    std::end (vertexInputAttributeDescriptions), std::begin (layout.attribDesc), std::end (vl.attribDesc));
 }
 
 

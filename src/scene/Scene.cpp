@@ -33,7 +33,7 @@ Scene::Scene (job::TaskManager& task_manager,
 	skybox = std::make_unique<Skybox> (renderer);
 	// skybox->skyboxCubeMap = resourceMan.texture_manager.GetTexIDByName ("Skybox");
 	// skybox->model = std::make_unique<VulkanModel> (
-	//     renderer.device, renderer.async_task_manager, renderer.buffer_manager, createCube ());
+	//     renderer.device, renderer.async_task_manager, createCube ());
 	// skybox->InitSkybox ();
 
 

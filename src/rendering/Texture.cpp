@@ -227,7 +227,7 @@ void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
 
 void BeginTransferAndMipMapGenWork (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
-    std::function<void()> const& finish_work,
+    std::function<void ()> const& finish_work,
     VulkanBuffer* buffer,
     const VkImageSubresourceRange subresourceRange,
     const std::vector<VkBufferImageCopy> bufferCopyRegions,
@@ -241,7 +241,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 {
 	if (device.singleQueueDevice)
 	{
-		std::function<void(const VkCommandBuffer)> work = [=](const VkCommandBuffer cmdBuf) {
+		std::function<void (const VkCommandBuffer)> work = [=] (const VkCommandBuffer cmdBuf) {
 			SetLayoutAndTransferRegions (cmdBuf, image, buffer->buffer, subresourceRange, bufferCopyRegions);
 
 			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
@@ -255,12 +255,12 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 	}
 	else
 	{
-		std::function<void(const VkCommandBuffer)> transferWork = [=](const VkCommandBuffer cmdBuf) {
+		std::function<void (const VkCommandBuffer)> transferWork = [=] (const VkCommandBuffer cmdBuf) {
 			SetLayoutAndTransferRegions (cmdBuf, image, buffer->buffer, subresourceRange, bufferCopyRegions);
 		};
 
 		auto gen_mips = [&, image, imageLayout, width, height, depth, layers, mipLevels] {
-			auto mipMapGenWork = [&, image, imageLayout, width, height, depth, layers, mipLevels](
+			auto mipMapGenWork = [&, image, imageLayout, width, height, depth, layers, mipLevels] (
 			                         const VkCommandBuffer cmdBuf) {
 				GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
 			};
@@ -286,7 +286,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 
 VulkanTexture::VulkanTexture (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
-    std::function<void()> const& finish_work,
+    std::function<void ()> const& finish_work,
     TexCreateDetails texCreateDetails,
     Resource::Texture::TexResource textureResource)
 {
@@ -393,7 +393,7 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 
 VulkanTexture::VulkanTexture (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
-    std::function<void()> const& finish_work,
+    std::function<void ()> const& finish_work,
     TexCreateDetails texCreateDetails,
     std::unique_ptr<VulkanBuffer> buffer)
 : staging_buffer (std::move (buffer))
@@ -660,9 +660,24 @@ TextureManager::~TextureManager ()
 	Log.Debug (fmt::format ("Textures left over {}\n", texture_map.size ()));
 }
 
-std::function<void()> TextureManager::CreateFinishWork (VulkanTextureID id)
+std::function<void ()> TextureManager::CreateFinishWork (VulkanTextureID id)
 {
-	return std::move ([this, id] { FinishTextureCreation (id); });
+	return std::move ([this, id] {
+		std::lock_guard guard (map_lock);
+		auto it = std::find (expired_textures.begin (), expired_textures.end (), id);
+		if (it != expired_textures.end ())
+		{
+			expired_textures.erase (it);
+		}
+		else
+		{
+			auto node = in_progress_map.extract (id);
+			if (node)
+			{
+				texture_map.insert (std::move (node));
+			}
+		}
+	});
 }
 
 VulkanTextureID TextureManager::CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails)
@@ -712,24 +727,6 @@ VulkanTextureID TextureManager::CreateTextureFromBuffer (
 VulkanTexture TextureManager::CreateAttachmentImage (TexCreateDetails texCreateDetails)
 {
 	return VulkanTexture (device, texCreateDetails);
-}
-
-void TextureManager::FinishTextureCreation (VulkanTextureID id)
-{
-	std::lock_guard guard (map_lock);
-	auto it = std::find (expired_textures.begin (), expired_textures.end (), id);
-	if (it != expired_textures.end ())
-	{
-		expired_textures.erase (it);
-	}
-	else
-	{
-		auto node = in_progress_map.extract (id);
-		if (node)
-		{
-			texture_map.insert (std::move (node));
-		}
-	}
 }
 
 DescriptorResource TextureManager::GetResource (VulkanTextureID id)

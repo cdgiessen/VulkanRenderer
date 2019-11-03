@@ -181,10 +181,3 @@ DescriptorResource VulkanBuffer::GetResource ()
 
 	return DescriptorResource (descriptor_type, buffer, 0, data.m_size);
 }
-
-BufferManager::BufferManager (VulkanDevice& device) : device (device) {}
-
-std::unique_ptr<VulkanBuffer> BufferManager::CreateBuffer (BufCreateDetails details)
-{
-	return std::make_unique<VulkanBuffer> (device, details);
-}

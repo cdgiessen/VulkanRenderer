@@ -422,6 +422,7 @@ FrameBuffer& FrameBuffer::operator= (FrameBuffer&& fb)
 	device = fb.device;
 	framebuffer = fb.framebuffer;
 	fb.framebuffer = nullptr;
+	return *this;
 }
 //// RENDER PASS ////
 

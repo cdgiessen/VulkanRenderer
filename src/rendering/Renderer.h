@@ -93,11 +93,9 @@ class VulkanRenderer
 	VulkanSwapChain vulkanSwapChain;
 
 	AsyncTaskManager async_task_manager;
-
 	DescriptorManager descriptor_manager;
 	ShaderManager shader_manager;
 	PipelineManager pipeline_manager;
-	BufferManager buffer_manager;
 	ModelManager model_manager;
 	TextureManager texture_manager;
 

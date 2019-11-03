@@ -2,82 +2,67 @@
 
 #include <mutex>
 #include <unordered_map>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 
-#include "resources/Mesh.h"
-
-#include "AsyncTask.h"
 #include "Buffer.h"
 
-
-class VertexLayout
+namespace Resource::Mesh
 {
-	public:
-	VertexLayout (VertexDescription desc)
-	: bindingDesc (getBindingDescription (desc)), attribDesc (getAttributeDescriptions (desc))
-	{
-	}
+class Manager;
+}
+class VulkanDevice;
+class AsyncTaskManager;
 
-	std::vector<VkVertexInputBindingDescription> bindingDesc;
-	std::vector<VkVertexInputAttributeDescription> attribDesc;
+struct VertexLayout
+{
+	VertexLayout (VertexDescription desc);
 
-	private:
-	std::vector<VkVertexInputBindingDescription> getBindingDescription (VertexDescription vertDesc);
-	std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions (VertexDescription vertDesc);
+	const std::vector<VkVertexInputBindingDescription> bindingDesc;
+	const std::vector<VkVertexInputAttributeDescription> attribDesc;
 };
-
-class VulkanModel
+struct VulkanModel
 {
-	public:
-	VulkanModel (VulkanDevice& device,
-	    AsyncTaskManager& async_task_man,
-	    BufferManager& buf_man,
-	    std::unique_ptr<MeshData> meshData);
-
-	uint32_t vertexCount = 0;
-	uint32_t vertexElementCount = 0;
-	uint32_t indexCount = 0;
-
-	std::unique_ptr<VulkanBuffer> vmaVertices;
-	std::unique_ptr<VulkanBuffer> vmaIndicies;
-
-	std::unique_ptr<VulkanBuffer> vertexStagingBuffer;
-	std::unique_ptr<VulkanBuffer> indexStagingBuffer;
+	VulkanModel (VertexLayout vertLayout, VulkanBuffer&& vertices, VulkanBuffer&& indices);
 
 	void BindModel (VkCommandBuffer cmdBuf);
 
-	VertexLayout GetVertexLayout ();
-
-	private:
 	VertexLayout vertLayout;
+	VulkanBuffer vertices;
+	VulkanBuffer indices;
 };
+
 
 using ModelID = int;
 
 class ModelManager
 {
 	public:
-	ModelManager (Resource::Mesh::Manager& mesh_manager,
-	    VulkanDevice& device,
-	    AsyncTaskManager& async_task_man,
-	    BufferManager& buf_man);
+	ModelManager (Resource::Mesh::Manager& mesh_manager, VulkanDevice& device, AsyncTaskManager& async_task_man);
 
 	ModelManager (ModelManager const& man) = delete;
 	ModelManager& operator= (ModelManager const& man) = delete;
+	ModelManager (ModelManager&& man) = delete;
+	ModelManager& operator= (ModelManager&& man) = delete;
 
+	ModelID CreateModel (Resource::Mesh::Manager mesh_id);
 
-	ModelID CreateModel (std::unique_ptr<MeshData> meshData);
+	ModelID CreateModel (MeshData const& meshData);
 	void FreeModel (ModelID id);
+	bool IsUploaded (ModelID id);
 
-	VulkanModel& GetModel (ModelID id);
+	void Bind (ModelID id, VkCommandBuffer cmdBuf);
 
 	private:
+	void FinishModelUpload (ModelID id);
+
 	VulkanDevice& device;
 	Resource::Mesh::Manager& mesh_manager;
 	AsyncTaskManager& async_task_man;
-	BufferManager& buf_man;
 
 	std::mutex map_lock;
+	ModelID counter = 0;
+	std::unordered_map<ModelID, VulkanModel> staging_models;
 	std::unordered_map<ModelID, VulkanModel> models;
 };

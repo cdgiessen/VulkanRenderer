@@ -59,7 +59,6 @@ TerrainManager::TerrainManager (job::TaskManager& task_manager,
 
 	terrainGridModel = std::make_unique<VulkanModel> (renderer.device,
 	    renderer.async_task_manager,
-	    renderer.buffer_manager,
 	    createFlatPlane (gui_settings.numCells, cml::vec3f (1.0f)));
 
 	// StartWorkerThreads ();

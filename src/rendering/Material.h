@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SG14/flat_map.h"
+
 #include "resources/Material.h"
 
 #include "Descriptor.h"
@@ -16,7 +18,6 @@ class MatOutline
 
 	private:
 	DescriptorSet descriptorSet;
-	VulkanDescriptor descriptor;
 };
 
 class MatInstance
@@ -28,9 +29,13 @@ class MatInstance
 	DescriptorLayout layout;
 };
 
+using MatOutlineID = uint32_t;
+using MatInstanceID = uint32_t;
+
 class MaterialManager
 {
-	MaterialManager (Resource::Material::Manager& mat_man, VulkanDevice& device);
+	MaterialManager (Resource::Material::Manager& mat_man, VulkanDevice& device, DescriptorManager& descriptor_man);
 
-	std::unordered_map < MatID,
+	stdext::flat_map<MatOutlineID, MatOutline> outlines;
+	stdext::flat_map<MatInstanceID, MatOutline> outlines;
 };

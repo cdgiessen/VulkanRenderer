@@ -3,25 +3,20 @@
 #include <iterator>
 #include <numeric>
 
+#include "resources/Mesh.h"
+
 #include "AsyncTask.h"
 #include "Device.h"
 #include "Initializers.h"
 
-std::vector<VkVertexInputBindingDescription> VertexLayout::getBindingDescription (VertexDescription vertDesc)
+VertexLayout::VertexLayout (VertexDescription vertDesc)
 {
-	std::vector<VkVertexInputBindingDescription> bindingDescription;
-
+	// VkVertexInputBindingDescription
 	int size = std::accumulate (std::begin (vertDesc.layout), std::end (vertDesc.layout), 0) * 4;
 
-	bindingDescription.push_back (
-	    initializers::vertexInputBindingDescription (0, size, VK_VERTEX_INPUT_RATE_VERTEX));
-	return bindingDescription;
-}
+	bindingDesc.push_back (initializers::vertexInputBindingDescription (0, size, VK_VERTEX_INPUT_RATE_VERTEX));
 
-std::vector<VkVertexInputAttributeDescription> VertexLayout::getAttributeDescriptions (VertexDescription vertDesc)
-{
-	std::vector<VkVertexInputAttributeDescription> attrib = {};
-
+	// VkVertexInputAttributeDescription's
 	int offset = 0;
 	for (size_t i = 0; i < vertDesc.layout.size (); i++)
 	{
@@ -30,81 +25,113 @@ std::vector<VkVertexInputAttributeDescription> VertexLayout::getAttributeDescrip
 		if (vertDesc.layout[i] == 3) vertSize = VK_FORMAT_R32G32B32_SFLOAT;
 		if (vertDesc.layout[i] == 4) vertSize = VK_FORMAT_R32G32B32A32_SFLOAT;
 
-		attrib.push_back (initializers::vertexInputAttributeDescription (0, 0, vertSize, offset));
-		offset += vertDesc.layout[i] * 4;
+		attribDesc.push_back (initializers::vertexInputAttributeDescription (0, 0, vertSize, offset));
+		offset += vertDesc.layout[i] * sizeof (float);
 	}
-	return attrib;
-};
-
-void CopyMeshBuffers (const VkCommandBuffer copyCmd,
-    const VkBuffer vertexStagingBuffer,
-    const VkBuffer vertexBuffer,
-    const uint32_t vBufferSize,
-    const VkBuffer indexStagingBuffer,
-    const VkBuffer indexBuffer,
-    const uint32_t iBufferSize)
-{
-	VkBufferCopy copyRegion{};
-	copyRegion.size = vBufferSize;
-	vkCmdCopyBuffer (copyCmd, vertexStagingBuffer, vertexBuffer, 1, &copyRegion);
-
-	copyRegion.size = iBufferSize;
-	vkCmdCopyBuffer (copyCmd, indexStagingBuffer, indexBuffer, 1, &copyRegion);
 }
 
-VulkanModel::VulkanModel (
-    VulkanDevice& device, AsyncTaskManager& async_task_man, BufferManager& buf_man, std::unique_ptr<MeshData> mesh)
-: vertLayout (mesh->desc)
+VulkanModel::VulkanModel (VertexLayout vertLayout, VulkanBuffer&& vertices, VulkanBuffer&& indices)
+: vertLayout (vertLayout), vertices (std::move (vertices)), indices (std::move (indices))
 {
-	vertexCount = (uint32_t)mesh->vertexData.size ();
-	vertexElementCount = (uint32_t)mesh->desc.ElementCount ();
-	indexCount = (uint32_t)mesh->indexData.size ();
-
-	uint32_t vBufferSize = static_cast<uint32_t> (vertexCount) * sizeof (float);
-	uint32_t iBufferSize = static_cast<uint32_t> (indexCount) * sizeof (uint32_t);
-
-	vmaVertices = std::make_unique<VulkanBuffer> (device, vertex_details (vertexCount, vertexElementCount));
-	vmaIndicies = std::make_unique<VulkanBuffer> (device, index_details (indexCount));
-
-	vertexStagingBuffer = buf_man.CreateBuffer (staging_details (BufferType::vertex, vBufferSize));
-	indexStagingBuffer = buf_man.CreateBuffer (staging_details (BufferType::index, iBufferSize));
-
-	vertexStagingBuffer->CopyToBuffer (mesh->vertexData);
-	indexStagingBuffer->CopyToBuffer (mesh->indexData);
-
-	VkBuffer vert = vmaVertices->buffer;
-	VkBuffer index = vmaIndicies->buffer;
-	VkBuffer v_stage = vertexStagingBuffer->buffer;
-	VkBuffer i_stage = indexStagingBuffer->buffer;
-
-	std::function<void(const VkCommandBuffer)> work = [=](const VkCommandBuffer copyCmd) {
-		CopyMeshBuffers (copyCmd, v_stage, vert, vBufferSize, i_stage, index, iBufferSize);
-	};
-
-	auto finish_work = [&] {
-		vertexStagingBuffer.reset ();
-		indexStagingBuffer.reset ();
-	};
-
-	AsyncTask transfer;
-	transfer.type = TaskType::transfer;
-	transfer.work = work;
-	transfer.finish_work = std::move (finish_work);
-
-	async_task_man.SubmitTask (std::move (transfer));
 }
 
 void VulkanModel::BindModel (VkCommandBuffer cmdBuf)
 {
-	vmaVertices->BindVertexBuffer (cmdBuf);
-	vmaIndicies->BindIndexBuffer (cmdBuf);
+	vmaVertices.BindVertexBuffer (cmdBuf);
+	vmaIndicies.BindIndexBuffer (cmdBuf);
 }
-
 
 VertexLayout VulkanModel::GetVertexLayout () { return vertLayout; }
 
-ModelManager::ModelManager (
-    Resource::Mesh::Manager& mesh_manager, VulkanDevice& device, AsyncTaskManager& async_task_man, BufferManager& buf_man)
+ModelManager::ModelManager (Resource::Mesh::Manager& mesh_manager, VulkanDevice& device, AsyncTaskManager& async_task_man)
 : mesh_manager (mesh_manager), device (device), async_task_man (async_task_man), buf_man (buf_man)
 {
+}
+
+ModelID ModelManager::CreateModel (MeshData const& meshData)
+{
+	std::lock_guard lg (map_lock);
+
+	uint32_t vertexCount = static_cast<uint32_t> (mesh->vertexData.size ());
+	uint32_t vertexElementCount = static_cast<uint32_t> (mesh->desc.ElementCount ());
+	uint32_t indexCount = static_cast<uint32_t> (mesh->indexData.size ());
+
+	uint32_t vBufferSize = (vertexCount) * sizeof (float);
+	uint32_t iBufferSize = (indexCount) * sizeof (uint32_t);
+
+	ModelID new_id = counter++;
+
+	auto model = VulkanModel (VertexLayout (meshData.desc),
+	    VulkanBuffer (device, vertex_details (vertexCount, vertexElementCount)),
+	    VulkanBuffer (device, vertex_details (vertexCount, vertexElementCount)));
+	auto loading_model = VulkanModel (VertexLayout (meshData.desc),
+	    VulkanBuffer (device, staging_details (BufferType::vertex, vBufferSize)),
+	    VulkanBuffer (device, staging_details (BufferType::index, iBufferSize)));
+
+	loading_model.vertices.CopyToBuffer (meshData.vertexData);
+	loading_model.indices.CopyToBuffer (meshData.indexData);
+
+	VkBuffer vStage = loading_model.vertices.buffer;
+	VkBuffer iStage = loading_model.indices.buffer;
+
+	VkBuffer vBuff = model.vertices.buffer;
+	VkBuffer iBuff = model.indices.buffer;
+
+	loading_models[new_id] = std::move (loading_model);
+	models[new_id] = std::move (model);
+
+
+	std::function<void (const VkCommandBuffer)> work =
+	    [vStage, iStage, vBuff, iBuff, vBufferSize, iBufferSize] (const VkCommandBuffer copyCmd) {
+		    VkBufferCopy copyRegion{};
+		    copyRegion.size = vBufferSize;
+		    vkCmdCopyBuffer (copyCmd, vStage, vBuff, 1, &copyRegion);
+
+		    copyRegion.size = iBufferSize;
+		    vkCmdCopyBuffer (copyCmd, iStage, iBuf, 1, &copyRegion);
+	    };
+
+	AsyncTask transfer;
+	transfer.type = TaskType::transfer;
+	transfer.work = work;
+	transfer.finish_work = [&] { this->FinishModelUpload (id); };
+
+	async_task_man.SubmitTask (std::move (transfer));
+}
+void ModelManager::FreeModel (ModelID id)
+{
+	std::lock_guard lg (map_lock);
+	models.erase (id);
+}
+
+void ModelManager::FinishModelUpload (ModelID id)
+{
+	std::lock_guard lg (map_lock);
+
+	staging_models.erase (id);
+}
+
+bool ModelManager::IsUploaded (ModelID id)
+{
+	std::lock_guard lg (map_lock);
+	return loading_models.count (id) == 0;
+}
+
+VertexLayout ModelManager::GetLayout (ModelID id)
+{
+	std::lock_guard lg (map_lock);
+
+	return models.at (id).vertLayout;
+}
+
+void ModelManager::Bind (ModelID id, VkCommandBuffer cmdBuf)
+{
+	std::lock_guard lg (map_lock);
+
+	// finished uploading
+	if (loading_models.count (id) == 0)
+	{
+		loading_models.at (id).vertices.BindVertexBuffer (cmdBuf);
+		loading_models.at (id).indices.BindIndexBuffer (cmdBuf);
+	}
 }

@@ -8,21 +8,17 @@
 DescriptorResource::DescriptorResource (VkDescriptorType type, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
 : type (type)
 {
-	VkDescriptorBufferInfo bufferInfo{};
-	bufferInfo.buffer = buffer;
-	bufferInfo.offset = offset;
-	bufferInfo.range = range;
-	info = bufferInfo;
+	buffer_info.buffer = buffer;
+	buffer_info.offset = offset;
+	buffer_info.range = range;
 }
 DescriptorResource::DescriptorResource (
     VkDescriptorType type, VkSampler sampler, VkImageView imageView, VkImageLayout layout)
 : type (type)
 {
-	VkDescriptorImageInfo descriptorImageInfo{};
-	descriptorImageInfo.sampler = sampler;
-	descriptorImageInfo.imageView = imageView;
-	descriptorImageInfo.imageLayout = layout;
-	info = descriptorImageInfo;
+	image_info.sampler = sampler;
+	image_info.imageView = imageView;
+	image_info.imageLayout = layout;
 }
 
 //// DESCRIPTOR USE ////
@@ -41,31 +37,36 @@ VkWriteDescriptorSet DescriptorUse::GetWriteDescriptorSet (VkDescriptorSet set)
 	writeDescriptorSet.dstBinding = bindPoint;
 	writeDescriptorSet.descriptorCount = count;
 
-	if (resource.info.index () == 0)
-		writeDescriptorSet.pBufferInfo = std::get_if<VkDescriptorBufferInfo> (&resource.info);
+	if (resource.buffer_info.buffer != VK_NULL_HANDLE)
+		writeDescriptorSet.pBufferInfo = &resource.buffer_info;
 	else
-		writeDescriptorSet.pImageInfo = std::get_if<VkDescriptorImageInfo> (&resource.info);
+		writeDescriptorSet.pImageInfo = &resource.image_info;
 
 	return writeDescriptorSet;
 }
 
 //// DESCRIPTOR LAYOUT ////
 
-VkDescriptorSetLayoutBinding GetVkDescriptorSetLayoutBinding (DescriptorSetLayoutBinding b)
-{
-	return initializers::descriptorSetLayoutBinding (
-	    static_cast<VkDescriptorType> (b.type), b.stage, b.bind_point, b.count);
-}
-
-
-std::vector<VkDescriptorSetLayoutBinding> GetVkDescriptorLayoutBindings (DescriptorLayout layout)
+VkDescriptorSetLayout CreateVkDescriptorSetLayout (VkDevice device, DescriptorLayout layout_desc)
 {
 	std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
-	for (auto& binding : layout.bindings)
+	for (auto& b : layout_desc.bindings)
 	{
-		vk_bindings.push_back (GetVkDescriptorSetLayoutBinding (binding));
+		vk_bindings.push_back (initializers::descriptorSetLayoutBinding (
+		    static_cast<VkDescriptorType> (b.type), b.stage, b.bind_point, b.count));
 	}
-	return vk_bindings;
+	VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo (vk_bindings);
+	VkDescriptorSetLayout layout;
+	if (vkCreateDescriptorSetLayout (device, &layoutInfo, nullptr, &layout) != VK_SUCCESS)
+	{
+		throw std::runtime_error ("failed to create descriptor set layout!");
+	}
+	return layout;
+}
+
+void FreeVkDescriptorSetLayout (VkDevice device, VkDescriptorSetLayout layout)
+{
+	vkDestroyDescriptorSetLayout (device, layout, nullptr);
 }
 
 //// DESCRIPTOR SET ////
@@ -88,9 +89,9 @@ void DescriptorSet::Update (VkDevice device, std::vector<DescriptorUse> descript
 }
 
 
-void DescriptorSet::Bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout) const
+void DescriptorSet::Bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout, uint32_t location) const
 {
-	vkCmdBindDescriptorSets (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &set, 0, nullptr);
+	vkCmdBindDescriptorSets (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, location, 1, &set, 0, nullptr);
 }
 
 
@@ -139,6 +140,7 @@ DescriptorPool& DescriptorPool::operator= (DescriptorPool&& other)
 	pool_members = other.pool_members;
 	pools = other.pools;
 	other.pools.clear ();
+	return *this;
 }
 
 DescriptorSet DescriptorPool::Allocate ()
@@ -149,18 +151,18 @@ DescriptorSet DescriptorPool::Allocate ()
 		if (pools.at (i).allocated < pools.at (i).max)
 		{
 			auto set = TryAllocate (pools.at (i));
-			if (set.has_value ()) return set.value ();
+			if (set.is_valid) return set.set;
 		}
 	}
 	// assume all pools are full
 	auto new_pool_id = AddNewPool ();
 	auto set = TryAllocate (pools.at (new_pool_id));
-	while (!set.has_value ())
+	while (!set.is_valid)
 	{
 		new_pool_id = AddNewPool ();
 		set = TryAllocate (pools.at (new_pool_id));
 	}
-	return set.value ();
+	return set.set;
 }
 
 void DescriptorPool::Free (DescriptorSet const& set)
@@ -190,7 +192,7 @@ uint32_t DescriptorPool::AddNewPool ()
 	return pools.size () - 1; // newest index
 }
 
-std::optional<DescriptorSet> DescriptorPool::TryAllocate (Pool& pool)
+DescriptorPool::OptDescSet DescriptorPool::TryAllocate (Pool& pool)
 {
 	VkDescriptorSet set;
 	VkDescriptorSetLayout layouts[] = { vk_layout };
@@ -200,11 +202,11 @@ std::optional<DescriptorSet> DescriptorPool::TryAllocate (Pool& pool)
 	if (res == VK_SUCCESS)
 	{
 		pool.allocated++;
-		return DescriptorSet (set, layout_id, pool.id);
+		return { true, DescriptorSet (set, layout_id, pool.id) };
 	}
 	else if (res == VK_ERROR_FRAGMENTED_POOL || res == VK_ERROR_OUT_OF_POOL_MEMORY)
 	{
-		return {}; // need make a new pool
+		return { false, DescriptorSet (nullptr, 0, 0) }; // need make a new pool
 	}
 
 	else if (res == VK_ERROR_OUT_OF_HOST_MEMORY)
@@ -225,24 +227,20 @@ LayoutID DescriptorManager::CreateDescriptorSetLayout (DescriptorLayout layout_d
 	if (layout_descriptions.count (layout_desc) == 0)
 	{
 		LayoutID new_id = cur_id++;
-		auto vk_bindings = layout_desc.bindings;
-		VkDescriptorSetLayoutCreateInfo layoutInfo =
-		    initializers::descriptorSetLayoutCreateInfo (GetVkDescriptorLayoutBindings (layout_desc));
-		VkDescriptorSetLayout layout;
-		if (vkCreateDescriptorSetLayout (device.device, &layoutInfo, nullptr, &layout) != VK_SUCCESS)
-		{
-			throw std::runtime_error ("failed to create descriptor set layout!");
-		}
+		VkDescriptorSetLayout layout = CreateVkDescriptorSetLayout (device.device, layout_desc);
+		layout_descriptions[layout_desc] = new_id;
 		layouts[new_id] = layout;
 		pools[new_id] = DescriptorPool (device.device, layout_desc, layout, new_id, 10);
+		return new_id;
 	}
+	else
+		return layout_descriptions.at (layout_desc);
 }
 
 void DescriptorManager::DestroyDescriptorSetLayout (LayoutID id)
 {
 	std::lock_guard lg (lock);
-	VkDescriptorSetLayout layout = layouts.at (id);
-	vkDestroyDescriptorSetLayout (device.device, layout, nullptr);
+	FreeVkDescriptorSetLayout (device.device, layouts.at (id));
 	layouts.erase (id);
 	pools.erase (id);
 }

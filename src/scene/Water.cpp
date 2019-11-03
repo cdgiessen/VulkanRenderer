@@ -5,7 +5,7 @@
 Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : renderer (renderer)
 {
 	model = std::make_unique<VulkanModel> (
-	    renderer.device, renderer.async_task_manager, renderer.buffer_manager, create_water_plane_subdiv (13, 40));
+	    renderer.device, renderer.async_task_manager, create_water_plane_subdiv (13, 40));
 
 	texture = resourceMan.texture_manager.GetTexIDByName ("water_normal");
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8);

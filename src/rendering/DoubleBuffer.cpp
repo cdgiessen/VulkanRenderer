@@ -143,23 +143,9 @@ std::vector<VkDescriptorSetLayout> VulkanRenderer::GetGlobalLayouts ()
 
 void GPU_DoubleBuffer::BindFrameDataDescriptorSet (int index, VkCommandBuffer cmdBuf)
 {
-	vkCmdBindDescriptorSets (cmdBuf,
-	    VK_PIPELINE_BIND_POINT_GRAPHICS,
-	    frameDataDescriptorLayout,
-	    0,
-	    1,
-	    &d_buffers.at (index).frameDataDescriptorSet.set,
-	    0,
-	    nullptr);
+	d_buffers.at (index).frameDataDescriptorSet.Bind (cmdBuf, frameDataDescriptorLayout, 0);
 }
 void GPU_DoubleBuffer::BindLightingDataDescriptorSet (int index, VkCommandBuffer cmdBuf)
 {
-	vkCmdBindDescriptorSets (cmdBuf,
-	    VK_PIPELINE_BIND_POINT_GRAPHICS,
-	    lightingDescriptorLayout,
-	    1,
-	    1,
-	    &d_buffers.at (index).lightingDescriptorSet.set,
-	    0,
-	    nullptr);
+	d_buffers.at (index).lightingDescriptorSet.Bind (cmdBuf, lightingDescriptorLayout, 1);
 }

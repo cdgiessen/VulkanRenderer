@@ -34,3 +34,5 @@ ${CMAKE_CURRENT_SOURCE_DIR}/Texture.h
 ${CMAKE_CURRENT_SOURCE_DIR}/ViewCamera.h
 ${CMAKE_CURRENT_SOURCE_DIR}/Wrappers.h
 )
+
+add_subdirectory(renderers)

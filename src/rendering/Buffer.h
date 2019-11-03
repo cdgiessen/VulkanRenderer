@@ -145,22 +145,3 @@ class VulkanBuffer
 
 	void CopyToBuffer (void const* pData, size_t size);
 };
-
-class BufferManager
-{
-	public:
-	BufferManager (VulkanDevice& device);
-	BufferManager (BufferManager const& buf) = delete;
-	BufferManager& operator= (BufferManager const& buf) = delete;
-
-	std::unique_ptr<VulkanBuffer> CreateBuffer (BufCreateDetails details);
-
-	std::unique_ptr<VulkanBuffer> CreateStaticBuffer (BufCreateDetails details);
-
-	// return handles that will us the correct buffer behind the scenes
-	// TODO
-	void CreateDynamicBuffer (BufCreateDetails details);
-
-	private:
-	VulkanDevice& device;
-};

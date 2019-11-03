@@ -4,16 +4,17 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
+#include "SG14/flat_map.h"
+
 #include "Shader.h"
 
 class VulkanDevice;
-class VulkanModel;
-
+class VulkanLayout;
 class PipelineOutline
 {
 	public:
 	void SetShaderModuleSet (ShaderModuleSet set);
-	void UseModelVertexLayout (VulkanModel& model);
+	void UseModelVertexLayout (VertexLayout const& layout);
 	void AddVertexLayout (VkVertexInputBindingDescription bind, VkVertexInputAttributeDescription attrib);
 	void AddVertexLayouts (std::vector<VkVertexInputBindingDescription> binds,
 	    std::vector<VkVertexInputAttributeDescription> attribs);
@@ -87,18 +88,43 @@ class PipelineOutline
 };
 
 
-struct Pipeline
+class Pipeline
 {
 	public:
 	Pipeline (VulkanDevice& device, VkPipelineCache cache, PipelineOutline builder, VkRenderPass renderPass, int subPass = 0);
+	~Pipeline ();
+	Pipeline (Pipeline const& pipe) = delete;
+	Pipeline& operator= (Pipeline const& pipe) = delete;
+	Pipeline (Pipeline& pipe);
+	Pipeline& operator= (Pipeline&& pipe);
+
 
 	VkPipeline pipeline;
-	VkPipelineLayout layout;
 };
 
 using PipeID = int;
 
-class VulkanDevice;
+
+
+struct Specific
+{
+	VkRenderPass render_pass;
+	uint32_t subpass;
+}
+
+struct PipelineGroup
+{
+	PipelineGroup (VulkanDevice& device, VkPipelineCache cache, PipelineOutline builder);
+
+	void AddPipeline (VkRenderPass render_pass, uint32_t subpass);
+
+	void Bind (VkRenderPass render_pass, )
+
+	    PipelineOutline builder;
+	VkPipelineCache cache;
+	VkPipelineLayout layout;
+	stdext::flat_map<VkRenderPass, Pipeline> pipelines;
+};
 
 class PipelineManager
 {

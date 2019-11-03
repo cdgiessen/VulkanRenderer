@@ -1,10 +1,7 @@
 #pragma once
 
 #include <mutex>
-#include <optional>
 #include <unordered_map>
-#include <unordered_set>
-#include <variant>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -54,7 +51,8 @@ struct DescriptorLayout
 	const std::vector<DescriptorSetLayoutBinding> bindings;
 };
 
-std::vector<VkDescriptorSetLayoutBinding> GetVkDescriptorLayout (DescriptorLayout layout);
+VkDescriptorSetLayout CreateVkDescriptorSetLayout (VkDevice device, DescriptorLayout layout_desc);
+void FreeVkDescriptorSetLayout (VkDevice device, VkDescriptorSetLayout layout);
 
 namespace std
 {
@@ -76,7 +74,8 @@ template <> struct hash<DescriptorLayout>
 class DescriptorResource
 {
 	public:
-	std::variant<VkDescriptorBufferInfo, VkDescriptorImageInfo> info;
+	VkDescriptorBufferInfo buffer_info;
+	VkDescriptorImageInfo image_info;
 	VkDescriptorType type = VkDescriptorType::VK_DESCRIPTOR_TYPE_MAX_ENUM;
 
 	DescriptorResource (VkDescriptorType type, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
@@ -105,14 +104,14 @@ class DescriptorSet
 
 	void Update (VkDevice device, std::vector<DescriptorUse> descriptors) const;
 
-	void Bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout) const;
+	void Bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout, uint32_t location) const;
 
 	VkDescriptorSet const& GetSet () const { return set; }
 	LayoutID GetLayoutID () const { return layout_id; }
 	PoolID GetPoolID () const { return pool_id; }
 
 	private:
-	VkDescriptorSet set;
+	VkDescriptorSet set; // non owning
 	LayoutID layout_id;
 	PoolID pool_id;
 };
@@ -140,9 +139,14 @@ class DescriptorPool
 		uint16_t max = 10;
 		PoolID id;
 	};
+	struct OptDescSet
+	{
+		bool is_valid = false;
+		DescriptorSet set = { VK_NULL_HANDLE, 0, 0 };
+	};
 
+	OptDescSet TryAllocate (Pool& pool);
 	uint32_t AddNewPool ();
-	std::optional<DescriptorSet> TryAllocate (Pool& pool);
 
 	std::mutex lock;
 	VkDevice device;
@@ -172,7 +176,7 @@ class DescriptorManager
 	std::mutex lock;
 	VulkanDevice& device;
 	LayoutID cur_id = 0;
-	std::unordered_set<DescriptorLayout> layout_descriptions;
+	std::unordered_map<DescriptorLayout, LayoutID> layout_descriptions;
 	std::unordered_map<LayoutID, VkDescriptorSetLayout> layouts;
 	std::unordered_map<LayoutID, DescriptorPool> pools;
 };

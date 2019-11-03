@@ -63,13 +63,13 @@ class VulkanTexture
 	public:
 	VulkanTexture (VulkanDevice& device,
 	    AsyncTaskManager& async_task_man,
-	    std::function<void()> const& finish_work,
+	    std::function<void ()> const& finish_work,
 	    TexCreateDetails texCreateDetails,
 	    Resource::Texture::TexResource textureResource);
 
 	VulkanTexture (VulkanDevice& device,
 	    AsyncTaskManager& async_task_man,
-	    std::function<void()> const& finish_work,
+	    std::function<void ()> const& finish_work,
 	    TexCreateDetails texCreateDetails,
 	    std::unique_ptr<VulkanBuffer> buffer);
 
@@ -151,8 +151,7 @@ class TextureManager
 	DescriptorResource GetResource (VulkanTextureID id);
 
 	private:
-	std::function<void()> CreateFinishWork (VulkanTextureID id);
-	void FinishTextureCreation (VulkanTextureID id);
+	std::function<void ()> CreateFinishWork (VulkanTextureID id);
 
 	VulkanDevice& device;
 	Resource::Texture::Manager& texture_manager;
