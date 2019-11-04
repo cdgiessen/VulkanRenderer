@@ -3,6 +3,12 @@
 #include "Device.h"
 #include "rendering/Initializers.h"
 
+bool operator== (DescriptorSetLayoutBinding const& a, DescriptorSetLayoutBinding const& b)
+{
+	return a.type == b.type && a.stage == b.stage && a.bind_point == b.bind_point && a.count == b.count;
+}
+
+
 //// DESCRIPTOR RESOURCE ////
 
 DescriptorResource::DescriptorResource (VkDescriptorType type, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
@@ -45,6 +51,7 @@ VkWriteDescriptorSet DescriptorUse::GetWriteDescriptorSet (VkDescriptorSet set)
 	return writeDescriptorSet;
 }
 
+
 //// DESCRIPTOR LAYOUT ////
 
 VkDescriptorSetLayout CreateVkDescriptorSetLayout (VkDevice device, DescriptorLayout layout_desc)
@@ -68,6 +75,12 @@ void FreeVkDescriptorSetLayout (VkDevice device, VkDescriptorSetLayout layout)
 {
 	vkDestroyDescriptorSetLayout (device, layout, nullptr);
 }
+
+bool operator== (DescriptorLayout const& a, DescriptorLayout const& b)
+{
+	return a.bindings == b.bindings;
+}
+
 
 //// DESCRIPTOR SET ////
 
@@ -230,7 +243,7 @@ LayoutID DescriptorManager::CreateDescriptorSetLayout (DescriptorLayout layout_d
 		VkDescriptorSetLayout layout = CreateVkDescriptorSetLayout (device.device, layout_desc);
 		layout_descriptions[layout_desc] = new_id;
 		layouts[new_id] = layout;
-		pools[new_id] = DescriptorPool (device.device, layout_desc, layout, new_id, 10);
+		pools.emplace (new_id, std::move (DescriptorPool (device.device, layout_desc, layout, new_id, 10)));
 		return new_id;
 	}
 	else

@@ -9,7 +9,7 @@
 #include "Device.h"
 #include "Initializers.h"
 
-VertexLayout::VertexLayout (VertexDescription vertDesc)
+VertexLayout::VertexLayout (Resource::Mesh::VertexDescription const& vertDesc)
 {
 	// VkVertexInputBindingDescription
 	int size = std::accumulate (std::begin (vertDesc.layout), std::end (vertDesc.layout), 0) * 4;
@@ -30,43 +30,38 @@ VertexLayout::VertexLayout (VertexDescription vertDesc)
 	}
 }
 
-VulkanModel::VulkanModel (VertexLayout vertLayout, VulkanBuffer&& vertices, VulkanBuffer&& indices)
-: vertLayout (vertLayout), vertices (std::move (vertices)), indices (std::move (indices))
+VulkanMesh::VulkanMesh (
+    VertexLayout const& vertLayout, VulkanBuffer&& vertices, VulkanBuffer&& indices, uint32_t index_count)
+: vertLayout (vertLayout), vertices (std::move (vertices)), indices (std::move (indices)), index_count (index_count)
 {
 }
-
-void VulkanModel::BindModel (VkCommandBuffer cmdBuf)
-{
-	vmaVertices.BindVertexBuffer (cmdBuf);
-	vmaIndicies.BindIndexBuffer (cmdBuf);
-}
-
-VertexLayout VulkanModel::GetVertexLayout () { return vertLayout; }
 
 ModelManager::ModelManager (Resource::Mesh::Manager& mesh_manager, VulkanDevice& device, AsyncTaskManager& async_task_man)
-: mesh_manager (mesh_manager), device (device), async_task_man (async_task_man), buf_man (buf_man)
+: mesh_manager (mesh_manager), device (device), async_task_man (async_task_man)
 {
 }
 
-ModelID ModelManager::CreateModel (MeshData const& meshData)
+ModelID ModelManager::CreateModel (Resource::Mesh::MeshData const& meshData)
 {
 	std::lock_guard lg (map_lock);
 
-	uint32_t vertexCount = static_cast<uint32_t> (mesh->vertexData.size ());
-	uint32_t vertexElementCount = static_cast<uint32_t> (mesh->desc.ElementCount ());
-	uint32_t indexCount = static_cast<uint32_t> (mesh->indexData.size ());
+	uint32_t vertexCount = static_cast<uint32_t> (meshData.vertexData.size ());
+	uint32_t vertexElementCount = static_cast<uint32_t> (meshData.desc.ElementCount ());
+	uint32_t indexCount = static_cast<uint32_t> (meshData.indexData.size ());
 
 	uint32_t vBufferSize = (vertexCount) * sizeof (float);
 	uint32_t iBufferSize = (indexCount) * sizeof (uint32_t);
 
 	ModelID new_id = counter++;
 
-	auto model = VulkanModel (VertexLayout (meshData.desc),
+	auto model = VulkanMesh (VertexLayout (meshData.desc),
 	    VulkanBuffer (device, vertex_details (vertexCount, vertexElementCount)),
-	    VulkanBuffer (device, vertex_details (vertexCount, vertexElementCount)));
-	auto loading_model = VulkanModel (VertexLayout (meshData.desc),
+	    VulkanBuffer (device, vertex_details (vertexCount, vertexElementCount)),
+	    indexCount);
+	auto loading_model = VulkanMesh (VertexLayout (meshData.desc),
 	    VulkanBuffer (device, staging_details (BufferType::vertex, vBufferSize)),
-	    VulkanBuffer (device, staging_details (BufferType::index, iBufferSize)));
+	    VulkanBuffer (device, staging_details (BufferType::index, iBufferSize)),
+	    indexCount);
 
 	loading_model.vertices.CopyToBuffer (meshData.vertexData);
 	loading_model.indices.CopyToBuffer (meshData.indexData);
@@ -77,26 +72,27 @@ ModelID ModelManager::CreateModel (MeshData const& meshData)
 	VkBuffer vBuff = model.vertices.buffer;
 	VkBuffer iBuff = model.indices.buffer;
 
-	loading_models[new_id] = std::move (loading_model);
-	models[new_id] = std::move (model);
+	staging_models.emplace (new_id, std::move (loading_model));
+	models.emplace (new_id, std::move (model));
 
 
-	std::function<void (const VkCommandBuffer)> work =
-	    [vStage, iStage, vBuff, iBuff, vBufferSize, iBufferSize] (const VkCommandBuffer copyCmd) {
+	std::function<void(const VkCommandBuffer)> work =
+	    [vStage, iStage, vBuff, iBuff, vBufferSize, iBufferSize](const VkCommandBuffer copyCmd) {
 		    VkBufferCopy copyRegion{};
 		    copyRegion.size = vBufferSize;
 		    vkCmdCopyBuffer (copyCmd, vStage, vBuff, 1, &copyRegion);
 
 		    copyRegion.size = iBufferSize;
-		    vkCmdCopyBuffer (copyCmd, iStage, iBuf, 1, &copyRegion);
+		    vkCmdCopyBuffer (copyCmd, iStage, iBuff, 1, &copyRegion);
 	    };
 
 	AsyncTask transfer;
 	transfer.type = TaskType::transfer;
 	transfer.work = work;
-	transfer.finish_work = [&] { this->FinishModelUpload (id); };
+	transfer.finish_work = [&] { this->FinishModelUpload (new_id); };
 
 	async_task_man.SubmitTask (std::move (transfer));
+	return new_id;
 }
 void ModelManager::FreeModel (ModelID id)
 {
@@ -114,24 +110,24 @@ void ModelManager::FinishModelUpload (ModelID id)
 bool ModelManager::IsUploaded (ModelID id)
 {
 	std::lock_guard lg (map_lock);
-	return loading_models.count (id) == 0;
+	return staging_models.count (id) == 0;
 }
 
-VertexLayout ModelManager::GetLayout (ModelID id)
-{
-	std::lock_guard lg (map_lock);
+VertexLayout ModelManager::GetLayout (ModelID id) { return models.at (id).vertLayout; }
 
-	return models.at (id).vertLayout;
-}
-
-void ModelManager::Bind (ModelID id, VkCommandBuffer cmdBuf)
+void ModelManager::Bind (VkCommandBuffer cmdBuf, ModelID id)
 {
 	std::lock_guard lg (map_lock);
 
 	// finished uploading
-	if (loading_models.count (id) == 0)
+	if (staging_models.count (id) == 0)
 	{
-		loading_models.at (id).vertices.BindVertexBuffer (cmdBuf);
-		loading_models.at (id).indices.BindIndexBuffer (cmdBuf);
+		models.at (id).vertices.BindVertexBuffer (cmdBuf);
+		models.at (id).indices.BindIndexBuffer (cmdBuf);
 	}
+}
+void ModelManager::DrawIndexed (VkCommandBuffer cmdBuf, ModelID id)
+{
+	Bind (cmdBuf, id);
+	vkCmdDrawIndexed (cmdBuf, static_cast<uint32_t> (models.at (id).index_count), 1, 0, 0, 0);
 }

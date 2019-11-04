@@ -269,7 +269,8 @@ void Manager::LoadTextureFromFile (TexID id)
 
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels;
-		pixels = stbi_load (path.c_str (), &texWidth, &texHeight, &texChannels, 4);
+		std::string path_string = path.string ();
+		pixels = stbi_load (path_string.c_str (), &texWidth, &texHeight, &texChannels, 4);
 		if (pixels == nullptr)
 		{
 			Log.Error (fmt::format ("Image {} failed to load!\n", path.string ()));

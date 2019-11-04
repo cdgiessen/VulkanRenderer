@@ -117,6 +117,8 @@ target_link_libraries(VulkanApp PUBLIC VulkanMemoryAllocator)
 
 #gli
 target_include_directories(VulkanApp PUBLIC ext/gli)
+target_include_directories(VulkanApp PUBLIC ext/gli/external)
+
 
 #gtk
 if(UNIX)

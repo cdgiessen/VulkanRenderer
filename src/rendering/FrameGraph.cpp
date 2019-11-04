@@ -424,6 +424,7 @@ FrameBuffer& FrameBuffer::operator= (FrameBuffer&& fb)
 	fb.framebuffer = nullptr;
 	return *this;
 }
+
 //// RENDER PASS ////
 
 RenderPass::RenderPass (VkDevice device, RenderPassDescription desc, AttachmentMap& attachments)
@@ -546,8 +547,8 @@ FrameGraph::FrameGraph (VulkanDevice& device, VulkanSwapChain& swapchain, FrameG
 				uint32_t height = tex->GetHeight ();
 				uint32_t layers = tex->GetLayers ();
 			}
-			framebuffers[name] =
-			    std::move (FrameBuffer (device, views, render_pass.Get (), width, height, layers));
+			framebuffers.emplace (name,
+			    std::move (FrameBuffer (device, views, render_pass.Get (), width, height, layers)));
 			render_passes.push_back (std::move (render_pass));
 		}
 	}

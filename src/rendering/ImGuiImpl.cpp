@@ -7,21 +7,10 @@
 // ImGui_ImplXXXX_Shutdown(). If you are new to ImGui, see examples/README.txt and documentation at
 // the top of imgui.cpp. https://github.com/ocornut/imgui
 
-
 #include "ImGuiImpl.h"
 
-#include <imgui.hpp>
 
-// GLFW
-#define GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#ifdef _WIN32
-#undef APIENTRY
-#define GLFW_EXPOSE_NATIVE_WIN32
-#define GLFW_EXPOSE_NATIVE_WGL
-#include <GLFW/glfw3native.h>
-#endif
+#include <imgui.hpp>
 
 #include "core/Window.h"
 
@@ -29,6 +18,20 @@
 
 #include "core/Window.h"
 #include "rendering/Device.h"
+
+// GLFW
+#define GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_VULKAN
+#undef min
+#undef max
+#include <GLFW/glfw3.h>
+#ifdef _WIN32
+#undef APIENTRY
+#define GLFW_EXPOSE_NATIVE_WIN32
+#define GLFW_EXPOSE_NATIVE_WGL
+#define WIN32_LEAN_AND_MEAN
+#include <GLFW/glfw3native.h>
+#endif
 
 // GLFW Data
 static GLFWwindow* g_Window = NULL;

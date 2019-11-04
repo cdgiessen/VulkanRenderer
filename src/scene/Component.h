@@ -5,7 +5,6 @@
 
 #include "resources/Resource.h"
 
-#include "Entity.h"
 #include "Transform.h"
 
 using CompID = int;

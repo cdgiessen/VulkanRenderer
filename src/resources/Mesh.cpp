@@ -7,6 +7,9 @@
 
 #include "core/Logger.h"
 
+namespace Resource::Mesh
+{
+
 int VertexDescription::ElementCount () const
 {
 	return std::accumulate (std::begin (layout), std::end (layout), 0);
@@ -63,7 +66,7 @@ void AddPlane (std::vector<float>& verts,
 	}
 }
 
-MeshData createFlatPlane (int dim, cml::vec3f size)
+MeshData CreateFlatPlane (int dim, cml::vec3f size)
 {
 	std::vector<float> verts;
 	std::vector<uint32_t> indices;
@@ -105,7 +108,7 @@ MeshData createFlatPlane (int dim, cml::vec3f size)
 
 
 
-MeshData createCube (int dim)
+MeshData CreateCube (int dim)
 {
 	std::vector<float> verts;
 	std::vector<uint32_t> indices;
@@ -132,21 +135,21 @@ MeshData createCube (int dim)
 	return MeshData (Vert_PosNormUv, verts, indices);
 }
 
-MeshData createSphere (int dim)
+MeshData CreateSphere (int dim)
 {
-	auto cube = createCube (dim);
+	auto cube = CreateCube (dim);
 
 	// normalize it so all vertexes are equidistant from the center
-	for (int i = 0; i < cube->vertexData.size (); i += 8)
+	for (int i = 0; i < cube.vertexData.size (); i += 8)
 	{
 		cml::vec3f pos = cml::normalize (cml::vec3f (
-		    cube->vertexData.at (i + 0), cube->vertexData.at (i + 1), cube->vertexData.at (i + 2)));
-		cube->vertexData.at (i + 0) = pos.x;
-		cube->vertexData.at (i + 1) = pos.y;
-		cube->vertexData.at (i + 2) = pos.z;
-		cube->vertexData.at (i + 3) = pos.x;
-		cube->vertexData.at (i + 4) = pos.y;
-		cube->vertexData.at (i + 5) = pos.z;
+		    cube.vertexData.at (i + 0), cube.vertexData.at (i + 1), cube.vertexData.at (i + 2)));
+		cube.vertexData.at (i + 1) = pos.y;
+		cube.vertexData.at (i + 0) = pos.x;
+		cube.vertexData.at (i + 2) = pos.z;
+		cube.vertexData.at (i + 3) = pos.x;
+		cube.vertexData.at (i + 4) = pos.y;
+		cube.vertexData.at (i + 5) = pos.z;
 	}
 
 	return cube;
@@ -300,7 +303,7 @@ void subdiv_triangle (std::vector<float>& verts,
 	}
 }
 
-MeshData create_water_plane_subdiv (int levels, int subdivs)
+MeshData CreateWaterPlaneSubdiv (int levels, int subdivs)
 {
 
 	std::vector<float> verts;
@@ -318,4 +321,6 @@ MeshData create_water_plane_subdiv (int levels, int subdivs)
 	subdiv_triangle (verts, indices, top, bottom_left, bottom_right, levels, subdivs);
 
 	return MeshData (Vert_Pos, verts, indices);
+}
+
 }

@@ -3,10 +3,10 @@
 #include <climits>
 #include <mutex>
 
+#include "cml/cml.h"
 #include <GLFW/glfw3.h>
 #include <imgui.hpp>
 
-#include "cml/cml.h"
 #include "rendering/ImGuiImpl.h"
 
 #include "Input.h"

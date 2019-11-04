@@ -1,7 +1,6 @@
 #include "Input.h"
 
 #include <algorithm>
-
 #include <GLFW/glfw3.h>
 
 #include "Logger.h"

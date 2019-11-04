@@ -1,8 +1,12 @@
 #pragma once
 
-#include "cml/cml.h"
-#include <memory>
+#include <unordered_map>
 #include <vector>
+
+#include "cml/cml.h"
+
+namespace Resource::Mesh
+{
 
 enum VertexType
 {
@@ -59,17 +63,16 @@ struct DeInterleavedMeshData
 	std::vector<FloatBufferData> buffers;
 };
 
-MeshData createFlatPlane (int dim, cml::vec3f size);
+MeshData CreateFlatPlane (int dim, cml::vec3f size);
 
-MeshData createCube (int dim = 1);
+MeshData CreateCube (int dim = 1);
 
-MeshData createSphere (int dim = 10);
+MeshData CreateSphere (int dim = 10);
 
-MeshData create_water_plane_subdiv (int levels = 3, int subdivs = 3);
+MeshData CreateWaterPlaneSubdiv (int levels = 3, int subdivs = 3);
+
 
 using MeshID = uint32_t;
-namespace Resource::Mesh
-{
 class Manager
 {
 	public:

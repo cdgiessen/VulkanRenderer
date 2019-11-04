@@ -78,8 +78,8 @@ VulkanApp::VulkanApp ()
   window (settings.isFullscreen, cml::vec2i (settings.screenWidth, settings.screenHeight), cml ::vec2i (10, 10)),
   resource_manager (task_manager),
   vulkan_renderer (settings.useValidationLayers, task_manager, window, resource_manager),
-  imgui_nodeGraph_terrain (),
-  scene (task_manager, resource_manager, vulkan_renderer, time_manager, imgui_nodeGraph_terrain.GetGraph ())
+  imgui_nodeGraph_terrain ()
+  //scene (task_manager, resource_manager, vulkan_renderer, time_manager, imgui_nodeGraph_terrain.GetGraph ())
 {
 	Input::SetupInputDirector (&window);
 
@@ -106,7 +106,7 @@ void VulkanApp::Run ()
 		time_manager.StartFrameTimer ();
 		Input::inputDirector.UpdateInputs ();
 		HandleInputs ();
-		scene.UpdateScene ();
+		//scene.UpdateScene ();
 		BuildImgui ();
 		vulkan_renderer.RenderFrame ();
 		Input::inputDirector.ResetReleasedInput ();
@@ -173,11 +173,11 @@ void VulkanApp::CameraWindow (bool* show_camera_window)
 	// ImGui::Text ("%s", sDir.c_str ());
 	// ImGui::Text ("%s", sSpeed.c_str ());
 
-	ImGui::DragFloat3 ("Pos", &scene.GetCamera ()->Position.x, 2);
-	ImGui::DragFloat3 ("Rot", &scene.GetCamera ()->Front.x, 2);
-	ImGui::Text ("Camera Movement Speed");
-	ImGui::Text ("%f", scene.GetCamera ()->MovementSpeed);
-	ImGui::SliderFloat ("##camMovSpeed", &(scene.GetCamera ()->MovementSpeed), 0.1f, 100.0f);
+	//ImGui::DragFloat3 ("Pos", &scene.GetCamera ()->Position.x, 2);
+	//ImGui::DragFloat3 ("Rot", &scene.GetCamera ()->Front.x, 2);
+	//ImGui::Text ("Camera Movement Speed");
+	//ImGui::Text ("%f", scene.GetCamera ()->MovementSpeed);
+	//ImGui::SliderFloat ("##camMovSpeed", &(scene.GetCamera ()->MovementSpeed), 0.1f, 100.0f);
 	ImGui::End ();
 }
 
@@ -247,7 +247,7 @@ void VulkanApp::BuildImgui ()
 		if (panels.controls_list) ControlsWindow (&panels.controls_list);
 
 
-		scene.UpdateSceneGUI ();
+		//scene.UpdateSceneGUI ();
 
 		imgui_nodeGraph_terrain.Draw ();
 
@@ -264,48 +264,48 @@ void VulkanApp::HandleInputs ()
 	if (!Input::GetTextInputMode ())
 	{
 
-		if (Input::IsJoystickConnected (0))
-		{
-			scene.GetCamera ()->ProcessJoystickMove (Input::GetControllerAxis (0, 1),
-			    Input::GetControllerAxis (0, 0),
-			    (Input::GetControllerAxis (0, 4) + 1) / 2.0,
-			    (Input::GetControllerAxis (0, 5) + 1) / 2.0,
-			    deltaTime);
-			scene.GetCamera ()->ProcessJoystickLook (
-			    Input::GetControllerAxis (0, 3), Input::GetControllerAxis (0, 4), deltaTime);
+		// if (Input::IsJoystickConnected (0))
+		// {
+		// 	scene.GetCamera ()->ProcessJoystickMove (Input::GetControllerAxis (0, 1),
+		// 	    Input::GetControllerAxis (0, 0),
+		// 	    (Input::GetControllerAxis (0, 4) + 1) / 2.0,
+		// 	    (Input::GetControllerAxis (0, 5) + 1) / 2.0,
+		// 	    deltaTime);
+		// 	scene.GetCamera ()->ProcessJoystickLook (
+		// 	    Input::GetControllerAxis (0, 3), Input::GetControllerAxis (0, 4), deltaTime);
 
-			if (Input::GetControllerButton (0, 2))
-				scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::UP, deltaTime);
-			if (Input::GetControllerButton (0, 5))
-				scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::DOWN, deltaTime);
-		}
+		// 	if (Input::GetControllerButton (0, 2))
+		// 		scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::UP, deltaTime);
+		// 	if (Input::GetControllerButton (0, 5))
+		// 		scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::DOWN, deltaTime);
+		// }
 
-		if (Input::GetKey (Input::KeyCode::W))
-			scene.GetCamera ()->ProcessKeyboard (Camera_Movement::FORWARD, deltaTime);
-		if (Input::GetKey (Input::KeyCode::S))
-			scene.GetCamera ()->ProcessKeyboard (Camera_Movement::BACKWARD, deltaTime);
-		if (Input::GetKey (Input::KeyCode::A))
-			scene.GetCamera ()->ProcessKeyboard (Camera_Movement::LEFT, deltaTime);
-		if (Input::GetKey (Input::KeyCode::D))
-			scene.GetCamera ()->ProcessKeyboard (Camera_Movement::RIGHT, deltaTime);
-		if (!scene.walkOnGround)
-		{
-			if (Input::GetKey (Input::KeyCode::SPACE))
-				scene.GetCamera ()->ProcessKeyboard (Camera_Movement::UP, deltaTime);
-			if (Input::GetKey (Input::KeyCode::LEFT_SHIFT))
-				scene.GetCamera ()->ProcessKeyboard (Camera_Movement::DOWN, deltaTime);
-		}
+		// if (Input::GetKey (Input::KeyCode::W))
+		// 	scene.GetCamera ()->ProcessKeyboard (Camera_Movement::FORWARD, deltaTime);
+		// if (Input::GetKey (Input::KeyCode::S))
+		// 	scene.GetCamera ()->ProcessKeyboard (Camera_Movement::BACKWARD, deltaTime);
+		// if (Input::GetKey (Input::KeyCode::A))
+		// 	scene.GetCamera ()->ProcessKeyboard (Camera_Movement::LEFT, deltaTime);
+		// if (Input::GetKey (Input::KeyCode::D))
+		// 	scene.GetCamera ()->ProcessKeyboard (Camera_Movement::RIGHT, deltaTime);
+		// if (!scene.walkOnGround)
+		// {
+		// 	if (Input::GetKey (Input::KeyCode::SPACE))
+		// 		scene.GetCamera ()->ProcessKeyboard (Camera_Movement::UP, deltaTime);
+		// 	if (Input::GetKey (Input::KeyCode::LEFT_SHIFT))
+		// 		scene.GetCamera ()->ProcessKeyboard (Camera_Movement::DOWN, deltaTime);
+		// }
 
 		if (Input::GetKeyDown (Input::KeyCode::ESCAPE)) window.SetWindowToClose ();
 		if (Input::GetKeyDown (Input::KeyCode::ENTER))
 			Input::SetMouseControlStatus (!Input::GetMouseControlStatus ());
 
-		if (Input::GetKey (Input::KeyCode::E))
-			scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::UP, deltaTime);
-		if (Input::GetKey (Input::KeyCode::Q))
-			scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::DOWN, deltaTime);
+		// if (Input::GetKey (Input::KeyCode::E))
+		// 	scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::UP, deltaTime);
+		// if (Input::GetKey (Input::KeyCode::Q))
+		// 	scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::DOWN, deltaTime);
 
-		if (Input::GetKeyDown (Input::KeyCode::N)) scene.drawNormals = !scene.drawNormals;
+		// if (Input::GetKeyDown (Input::KeyCode::N)) scene.drawNormals = !scene.drawNormals;
 
 		if (Input::GetKeyDown (Input::KeyCode::X))
 		{
@@ -315,7 +315,7 @@ void VulkanApp::HandleInputs ()
 
 		if (Input::GetKeyDown (Input::KeyCode::F))
 		{
-			scene.walkOnGround = !scene.walkOnGround;
+			//scene.walkOnGround = !scene.walkOnGround;
 			Log.Debug ("flight mode toggled\n");
 		}
 
@@ -330,12 +330,12 @@ void VulkanApp::HandleInputs ()
 		if (Input::GetKeyDown (Input::KeyCode::ESCAPE)) Input::ResetTextInputMode ();
 	}
 
-	if (Input::GetMouseControlStatus ())
-	{
-		scene.GetCamera ()->ProcessMouseMovement (
-		    Input::GetMouseChangeInPosition ().x, Input::GetMouseChangeInPosition ().y);
-		scene.GetCamera ()->ProcessMouseScroll (Input::GetMouseScrollY (), deltaTime);
-	}
+	// if (Input::GetMouseControlStatus ())
+	// {
+	// 	scene.GetCamera ()->ProcessMouseMovement (
+	// 	    Input::GetMouseChangeInPosition ().x, Input::GetMouseChangeInPosition ().y);
+	// 	scene.GetCamera ()->ProcessMouseScroll (Input::GetMouseScrollY (), deltaTime);
+	// }
 
 	if (Input::GetMouseButtonPressed (Input::GetMouseButtonPressed (0)))
 	{

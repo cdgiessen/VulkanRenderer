@@ -9,7 +9,7 @@
 #include "Shader.h"
 
 class VulkanDevice;
-class VulkanLayout;
+struct VertexLayout;
 class PipelineOutline
 {
 	public:
@@ -87,43 +87,51 @@ class PipelineOutline
 	std::vector<VkDynamicState> dynamicStates;
 };
 
-
-class Pipeline
-{
-	public:
-	Pipeline (VulkanDevice& device, VkPipelineCache cache, PipelineOutline builder, VkRenderPass renderPass, int subPass = 0);
-	~Pipeline ();
-	Pipeline (Pipeline const& pipe) = delete;
-	Pipeline& operator= (Pipeline const& pipe) = delete;
-	Pipeline (Pipeline& pipe);
-	Pipeline& operator= (Pipeline&& pipe);
-
-
-	VkPipeline pipeline;
-};
-
 using PipeID = int;
 
-
-
-struct Specific
+struct SpecificPass
 {
 	VkRenderPass render_pass;
 	uint32_t subpass;
-}
+};
 
-struct PipelineGroup
+bool operator== (SpecificPass const& a, SpecificPass const& b);
+
+namespace std
 {
-	PipelineGroup (VulkanDevice& device, VkPipelineCache cache, PipelineOutline builder);
+template <> struct hash<SpecificPass>
+{
+	std::size_t operator() (SpecificPass const& s) const noexcept
+	{
+		std::size_t h1 = std::hash<VkRenderPass>{}(s.render_pass);
+		std::size_t h2 = std::hash<uint32_t>{}(static_cast<uint32_t> (s.subpass));
+		return h1 ^ (h2 << 16);
+	}
+};
+} // namespace std
 
-	void AddPipeline (VkRenderPass render_pass, uint32_t subpass);
+class PipelineGroup
+{
+	public:
+	PipelineGroup (VkDevice device, VkPipelineCache cache, PipelineOutline builder);
+	~PipelineGroup ();
+	PipelineGroup (const PipelineGroup& group) = delete;
+	PipelineGroup& operator= (const PipelineGroup& group) = delete;
+	PipelineGroup (PipelineGroup&& group);
+	PipelineGroup& operator= (PipelineGroup&& group) noexcept;
 
-	void Bind (VkRenderPass render_pass, )
+	void CreatePipeline (SpecificPass pass);
 
-	    PipelineOutline builder;
+	void Bind (VkCommandBuffer cmdBuf, SpecificPass pass);
+
+	VkPipelineLayout GetLayout () { return layout; }
+
+	private:
+	VkDevice device;
+	PipelineOutline builder;
 	VkPipelineCache cache;
 	VkPipelineLayout layout;
-	stdext::flat_map<VkRenderPass, Pipeline> pipelines;
+	std::unordered_map<SpecificPass, VkPipeline> pipelines;
 };
 
 class PipelineManager
@@ -132,9 +140,10 @@ class PipelineManager
 	PipelineManager (VulkanDevice& device);
 	~PipelineManager ();
 
-	PipeID MakePipe (PipelineOutline builder, VkRenderPass renderPass, int subPass = 0);
+	PipeID MakePipeGroup (PipelineOutline builder);
+	void MakePipe (PipeID ID, SpecificPass pass);
 
-	void BindPipe (PipeID ID, VkCommandBuffer cmdBuf);
+	void BindPipe (VkCommandBuffer cmdBuf, SpecificPass pass, PipeID ID);
 	VkPipelineLayout GetPipeLayout (PipeID ID);
 
 	private:
@@ -142,6 +151,6 @@ class PipelineManager
 	VkPipelineCache cache;
 
 	std::mutex pipe_lock;
-	std::unordered_map<int, Pipeline> pipelines;
+	std::unordered_map<int, PipelineGroup> pipelines;
 	PipeID cur_id = 0;
 };

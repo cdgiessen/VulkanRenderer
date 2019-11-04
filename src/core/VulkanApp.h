@@ -73,7 +73,7 @@ class VulkanApp
 	VulkanRenderer vulkan_renderer;
 
 	ProcTerrainNodeGraph imgui_nodeGraph_terrain;
-	Scene scene;
+	//Scene scene;
 
 	bool debug_mode = true;
 

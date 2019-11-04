@@ -6,31 +6,30 @@
 
 #include <vulkan/vulkan.h>
 
+#include "SG14/flat_map.h"
+
+#include "resources/Mesh.h"
+
 #include "Buffer.h"
 
-namespace Resource::Mesh
-{
-class Manager;
-}
 class VulkanDevice;
 class AsyncTaskManager;
 
 struct VertexLayout
 {
-	VertexLayout (VertexDescription desc);
+	VertexLayout (Resource::Mesh::VertexDescription const& desc);
 
-	const std::vector<VkVertexInputBindingDescription> bindingDesc;
-	const std::vector<VkVertexInputAttributeDescription> attribDesc;
+	std::vector<VkVertexInputBindingDescription> bindingDesc;
+	std::vector<VkVertexInputAttributeDescription> attribDesc;
 };
-struct VulkanModel
+struct VulkanMesh
 {
-	VulkanModel (VertexLayout vertLayout, VulkanBuffer&& vertices, VulkanBuffer&& indices);
-
-	void BindModel (VkCommandBuffer cmdBuf);
+	VulkanMesh (VertexLayout const& vertLayout, VulkanBuffer&& vertices, VulkanBuffer&& indices, uint32_t index_count);
 
 	VertexLayout vertLayout;
 	VulkanBuffer vertices;
 	VulkanBuffer indices;
+	uint32_t index_count;
 };
 
 
@@ -46,13 +45,17 @@ class ModelManager
 	ModelManager (ModelManager&& man) = delete;
 	ModelManager& operator= (ModelManager&& man) = delete;
 
-	ModelID CreateModel (Resource::Mesh::Manager mesh_id);
+	ModelID CreateModel (Resource::Mesh::MeshID mesh_id);
 
-	ModelID CreateModel (MeshData const& meshData);
+	ModelID CreateModel (Resource::Mesh::MeshData const& meshData);
 	void FreeModel (ModelID id);
 	bool IsUploaded (ModelID id);
 
-	void Bind (ModelID id, VkCommandBuffer cmdBuf);
+	VertexLayout GetLayout (ModelID id);
+
+	void Bind (VkCommandBuffer cmdBuf, ModelID id);
+
+	void DrawIndexed (VkCommandBuffer cmdBuf, ModelID id);
 
 	private:
 	void FinishModelUpload (ModelID id);
@@ -63,6 +66,6 @@ class ModelManager
 
 	std::mutex map_lock;
 	ModelID counter = 0;
-	std::unordered_map<ModelID, VulkanModel> staging_models;
-	std::unordered_map<ModelID, VulkanModel> models;
+	stdext::flat_map<ModelID, VulkanMesh> staging_models;
+	stdext::flat_map<ModelID, VulkanMesh> models;
 };

@@ -31,6 +31,8 @@ struct DescriptorSetLayoutBinding
 	uint32_t count;
 };
 
+bool operator== (DescriptorSetLayoutBinding const& a, DescriptorSetLayoutBinding const& b);
+
 namespace std
 {
 template <> struct hash<DescriptorSetLayoutBinding>
@@ -50,6 +52,8 @@ struct DescriptorLayout
 	DescriptorLayout (std::vector<DescriptorSetLayoutBinding> bindings) : bindings (bindings) {}
 	const std::vector<DescriptorSetLayoutBinding> bindings;
 };
+
+bool operator== (DescriptorLayout const& a, DescriptorLayout const& b);
 
 VkDescriptorSetLayout CreateVkDescriptorSetLayout (VkDevice device, DescriptorLayout layout_desc);
 void FreeVkDescriptorSetLayout (VkDevice device, VkDescriptorSetLayout layout);

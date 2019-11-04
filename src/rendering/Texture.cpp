@@ -159,13 +159,15 @@ void GenerateMipMaps (VkCommandBuffer cmdBuf,
 	// Copy down mips from n-1 to n
 	for (uint32_t i = 1; i < mipLevels; i++)
 	{
+		VkOffset3D srcOffset = { static_cast<int32_t> (width >> (i)), static_cast<int32_t> (height >> (i - 1)), 1 };
+		VkOffset3D dstOffset = {
+			static_cast<int32_t> (width >> (i - 1)), static_cast<int32_t> (height >> (i)), 1
+		};
 		VkImageBlit imageBlit = initializers::imageBlit (
-		    // src
 		    initializers::imageSubresourceLayers (VK_IMAGE_ASPECT_COLOR_BIT, i - 1, layers, 0),
-		    { width >> (i - 1), height >> (i - 1), 1 },
-		    // dst
+		    srcOffset,
 		    initializers::imageSubresourceLayers (VK_IMAGE_ASPECT_COLOR_BIT, i, layers, 0),
-		    { width >> (i), height >> (i), 1 });
+		    dstOffset);
 
 		VkImageSubresourceRange mipSubRange =
 		    initializers::imageSubresourceRangeCreateInfo (VK_IMAGE_ASPECT_COLOR_BIT, 1, layers);
@@ -219,7 +221,7 @@ void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
 	    image,
 	    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 	    bufferCopyRegions.size (),
-	    bufferCopyRegions.data ());
+	    static_cast<VkBufferImageCopy*> (bufferCopyRegions.data ()));
 
 	SetImageLayout (
 	    transferCmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresourceRange);
@@ -227,7 +229,7 @@ void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
 
 void BeginTransferAndMipMapGenWork (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
-    std::function<void ()> const& finish_work,
+    std::function<void()> const& finish_work,
     VulkanBuffer* buffer,
     const VkImageSubresourceRange subresourceRange,
     const std::vector<VkBufferImageCopy> bufferCopyRegions,
@@ -241,7 +243,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 {
 	if (device.singleQueueDevice)
 	{
-		std::function<void (const VkCommandBuffer)> work = [=] (const VkCommandBuffer cmdBuf) {
+		std::function<void(const VkCommandBuffer)> work = [=](const VkCommandBuffer cmdBuf) {
 			SetLayoutAndTransferRegions (cmdBuf, image, buffer->buffer, subresourceRange, bufferCopyRegions);
 
 			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
@@ -255,12 +257,12 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 	}
 	else
 	{
-		std::function<void (const VkCommandBuffer)> transferWork = [=] (const VkCommandBuffer cmdBuf) {
+		std::function<void(const VkCommandBuffer)> transferWork = [=](const VkCommandBuffer cmdBuf) {
 			SetLayoutAndTransferRegions (cmdBuf, image, buffer->buffer, subresourceRange, bufferCopyRegions);
 		};
 
 		auto gen_mips = [&, image, imageLayout, width, height, depth, layers, mipLevels] {
-			auto mipMapGenWork = [&, image, imageLayout, width, height, depth, layers, mipLevels] (
+			auto mipMapGenWork = [&, image, imageLayout, width, height, depth, layers, mipLevels](
 			                         const VkCommandBuffer cmdBuf) {
 				GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
 			};
@@ -286,7 +288,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 
 VulkanTexture::VulkanTexture (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
-    std::function<void ()> const& finish_work,
+    std::function<void()> const& finish_work,
     TexCreateDetails texCreateDetails,
     Resource::Texture::TexResource textureResource)
 {
@@ -393,7 +395,7 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 
 VulkanTexture::VulkanTexture (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
-    std::function<void ()> const& finish_work,
+    std::function<void()> const& finish_work,
     TexCreateDetails texCreateDetails,
     std::unique_ptr<VulkanBuffer> buffer)
 : staging_buffer (std::move (buffer))
@@ -424,8 +426,8 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 	    VK_IMAGE_ASPECT_COLOR_BIT, data.mipLevels, data.layers);
 
 	std::vector<VkBufferImageCopy> bufferCopyRegions;
-	size_t offset = 0;
 
+	double offset = 0;
 	for (uint32_t layer = 0; layer < data.layers; layer++)
 	{
 		VkBufferImageCopy bufferCopyRegion = initializers::bufferImageCopyCreate (
@@ -660,7 +662,7 @@ TextureManager::~TextureManager ()
 	Log.Debug (fmt::format ("Textures left over {}\n", texture_map.size ()));
 }
 
-std::function<void ()> TextureManager::CreateFinishWork (VulkanTextureID id)
+std::function<void()> TextureManager::CreateFinishWork (VulkanTextureID id)
 {
 	return std::move ([this, id] {
 		std::lock_guard guard (map_lock);

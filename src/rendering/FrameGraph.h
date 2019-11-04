@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "SG14/flat_map.h"
+
 #include "vulkan/vulkan.h"
 
 class VulkanDevice;
@@ -275,6 +277,6 @@ class FrameGraph
 
 	std::unordered_map<std::string, std::unique_ptr<VulkanTexture>> render_targets;
 
-	std::unordered_map<std::string, FrameBuffer> framebuffers;
+	stdext::flat_map<std::string, FrameBuffer> framebuffers;
 	std::vector<FrameBuffer> swapchain_framebuffers;
 };

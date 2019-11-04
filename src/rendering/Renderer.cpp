@@ -72,8 +72,7 @@ VulkanRenderer::VulkanRenderer (
   descriptor_manager (device),
   shader_manager (device),
   pipeline_manager (device),
-  buffer_manager (device),
-  model_manager (resource_man.mesh_manager, device, async_task_manager, buffer_manager),
+  model_manager (resource_man.mesh_manager, device, async_task_manager),
   texture_manager (resource_man.texture_manager, device, async_task_manager),
   dynamic_data (device, descriptor_manager, settings)
 
@@ -159,7 +158,7 @@ void VulkanRenderer::ContrustFrameGraph ()
 	color_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
 	color_subpass.AddClearColor ("img_depth", { 0.0f, 0 });
 
-	color_subpass.SetFunction (std::move ([&] (VkCommandBuffer cmdBuf) {
+	color_subpass.SetFunction (std::move ([&](VkCommandBuffer cmdBuf) {
 		dynamic_data.BindFrameDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
 		dynamic_data.BindLightingDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
 		/*

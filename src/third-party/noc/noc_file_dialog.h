@@ -149,7 +149,6 @@ extern "C"
 #endif
 
 #ifdef _WIN32
-
 #include <windows.h>
 #include <commdlg.h>
 

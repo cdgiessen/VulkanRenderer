@@ -4,15 +4,21 @@
 #include "Initializers.h"
 #include "Model.h"
 
+#include "resources/Mesh.h"
+
+bool operator== (SpecificPass const& a, SpecificPass const& b)
+{
+	return a.render_pass == b.render_pass && a.subpass == b.subpass;
+}
+
 void PipelineOutline::SetShaderModuleSet (ShaderModuleSet set) { this->set = set; }
 void PipelineOutline::UseModelVertexLayout (VertexLayout const& layout)
 {
-	vertexInputBindingDescription.insert (
-	    std::end (vertexInputBindingDescription), std::begin (layout.bindingDesc), std::end (vl.bindingDesc));
-	vertexInputAttributeDescriptions.insert (
-	    std::end (vertexInputAttributeDescriptions), std::begin (layout.attribDesc), std::end (vl.attribDesc));
+	for (auto& desc : layout.bindingDesc)
+		vertexInputBindingDescription.push_back (desc);
+	for (auto& desc : layout.attribDesc)
+		vertexInputAttributeDescriptions.push_back (desc);
 }
-
 
 void PipelineOutline::AddVertexLayout (VkVertexInputBindingDescription bind, VkVertexInputAttributeDescription attrib)
 {
@@ -125,19 +131,51 @@ void PipelineOutline::AddPushConstantRange (VkPushConstantRange pushConstantRang
 	pushConstantRanges.push_back (pushConstantRange);
 }
 
-Pipeline::Pipeline (
-    VulkanDevice& device, VkPipelineCache cache, PipelineOutline builder, VkRenderPass renderPass, int subPass)
+PipelineGroup::PipelineGroup (VkDevice device, VkPipelineCache cache, PipelineOutline builder)
+: device (device), cache (cache), builder (builder)
 {
 	auto layoutInfo = initializers::pipelineLayoutCreateInfo (builder.layouts, builder.pushConstantRanges);
 
-	if (vkCreatePipelineLayout (device.device, &layoutInfo, nullptr, &this->layout) != VK_SUCCESS)
+	if (vkCreatePipelineLayout (device, &layoutInfo, nullptr, &this->layout) != VK_SUCCESS)
 	{
 		throw std::runtime_error ("failed to create pipeline layout!");
 	}
+}
 
-	auto info = initializers::pipelineCreateInfo (layout, renderPass, 0);
-	info.layout = layout;
-	info.subpass = subPass; // which subpass in the renderpass this pipeline gets used
+PipelineGroup::~PipelineGroup ()
+{
+	for (auto const& [pass, pipe] : pipelines)
+	{
+		vkDestroyPipeline (device, pipe, nullptr);
+	}
+	if (layout != nullptr) vkDestroyPipelineLayout (device, layout, nullptr);
+}
+
+PipelineGroup::PipelineGroup (PipelineGroup&& group)
+: device (group.device),
+  cache (group.cache),
+  builder (group.builder),
+  layout (group.layout),
+  pipelines (group.pipelines)
+{
+}
+
+PipelineGroup& PipelineGroup::operator= (PipelineGroup&& group) noexcept
+{
+	device = group.device;
+	cache = group.cache;
+	builder = group.builder;
+	layout = group.layout;
+	group.layout = nullptr;
+	pipelines = std::move (group.pipelines);
+	return *this;
+}
+
+void PipelineGroup::CreatePipeline (SpecificPass pass)
+{
+	VkPipeline pipe;
+
+	auto info = initializers::pipelineCreateInfo (layout, pass.render_pass, pass.subpass, 0);
 	info.basePipelineHandle = VK_NULL_HANDLE;
 
 	auto shaderStages = builder.set.ShaderStageCreateInfos ();
@@ -173,12 +211,22 @@ Pipeline::Pipeline (
 	    initializers::pipelineDynamicStateCreateInfo (builder.dynamicStates, 0);
 	info.pDynamicState = &dynamicInfo;
 
-	if (vkCreateGraphicsPipelines (device.device, cache, 1, &info, nullptr, &pipeline) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines (device, cache, 1, &info, nullptr, &pipe) != VK_SUCCESS)
 	{
 		throw std::runtime_error ("failed to create graphics pipeline!");
 	}
+
+	pipelines.at (pass) = pipe;
 }
 
+void PipelineGroup::Bind (VkCommandBuffer cmdBuf, SpecificPass pass)
+{
+	if (pipelines.count (pass) == 0)
+	{
+		CreatePipeline (pass);
+	}
+	vkCmdBindPipeline (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.at (pass));
+}
 
 PipelineManager::PipelineManager (VulkanDevice& device) : device (device)
 {
@@ -191,31 +239,28 @@ PipelineManager::PipelineManager (VulkanDevice& device) : device (device)
 	vkCreatePipelineCache (device.device, &info, nullptr, &cache);
 }
 
-PipelineManager::~PipelineManager ()
-{
-	for (auto& [key, pipe] : pipelines)
-	{
-		vkDestroyPipeline (device.device, pipe.pipeline, nullptr);
-		vkDestroyPipelineLayout (device.device, pipe.layout, nullptr);
-	}
-	vkDestroyPipelineCache (device.device, cache, nullptr);
-}
+PipelineManager::~PipelineManager () { vkDestroyPipelineCache (device.device, cache, nullptr); }
 
-PipeID PipelineManager::MakePipe (PipelineOutline builder, VkRenderPass renderPass, int subPass)
+PipeID PipelineManager::MakePipeGroup (PipelineOutline builder)
 {
-	auto pipe = Pipeline (device, cache, builder, renderPass, subPass);
+	auto pipe = PipelineGroup (device.device, cache, builder);
 	std::lock_guard guard (pipe_lock);
-	pipelines.emplace (cur_id, pipe);
+	pipelines.emplace (cur_id, std::move (pipe));
 	return cur_id++;
 }
-
-void PipelineManager::BindPipe (PipeID ID, VkCommandBuffer cmdBuf)
+void PipelineManager::MakePipe (PipeID ID, SpecificPass pass)
 {
 	std::lock_guard guard (pipe_lock);
-	vkCmdBindPipeline (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.at (ID).pipeline);
+	pipelines.at (ID).CreatePipeline (pass);
+}
+
+void PipelineManager::BindPipe (VkCommandBuffer cmdBuf, SpecificPass pass, PipeID ID)
+{
+	std::lock_guard guard (pipe_lock);
+	pipelines.at (ID).Bind (cmdBuf, pass);
 }
 VkPipelineLayout PipelineManager::GetPipeLayout (PipeID ID)
 {
 	std::lock_guard guard (pipe_lock);
-	return pipelines.at (ID).layout;
+	return pipelines.at (ID).GetLayout ();
 }

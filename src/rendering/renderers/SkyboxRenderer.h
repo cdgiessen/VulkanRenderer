@@ -44,7 +44,7 @@ class SkyboxManager
 	SkyboxID CreateSkybox (Resource::Texture::TexID tex_resource);
 
 	void Update (SkyboxID id, CameraID cam_id);
-	void Draw (SkyboxID id, VkCommandBuffer cmdBuf);
+	void Draw (VkCommandBuffer cmdBuf, SpecificPass pass, SkyboxID id);
 
 	private:
 	PipeID CreatePipeline ();
