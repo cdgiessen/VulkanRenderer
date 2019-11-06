@@ -45,7 +45,7 @@ inline BufCreateDetails uniform_details (VkDeviceSize size)
 		(VkBufferUsageFlags) (VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
 		(VmaMemoryUsage) (VMA_MEMORY_USAGE_CPU_TO_GPU) };
 }
-inline BufCreateDetails uniform_array_details (int elem_count, VkDeviceSize size_of_element)
+inline BufCreateDetails uniform_array_details (uint32_t elem_count, VkDeviceSize size_of_element)
 {
 	return BufCreateDetails{ BufferType::uniform,
 		elem_count * size_of_element,
@@ -99,7 +99,7 @@ struct BufData
 {
 	VulkanDevice* device;
 	VkDeviceSize m_size;
-	uint32_t element_count;
+	uint32_t element_count = 1;
 
 	size_t alignment = -1;
 	BufferType type;

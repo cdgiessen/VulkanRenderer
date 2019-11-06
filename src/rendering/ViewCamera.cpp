@@ -2,12 +2,19 @@
 
 #include "Device.h"
 
-
 const cml::vec3f WorldUp{ 0, 1, 0 };
 
-cml::mat4f ViewCameraManager::GetViewMat (ViewCameraID id)
+void ViewCameraData::Setup (CameraType type, cml::vec3f position, cml::quatf rotation)
 {
-	ViewCameraData& cam = camera_data.at (id);
+	type = type;
+	position = position;
+	rotation = rotation;
+	isProjMatDirty = true;
+	isViewMatDirty = true;
+}
+
+cml::mat4f ViewCameraData::GetViewMat ()
+{
 	if (isViewMatDirty)
 	{
 		isViewMatDirty = false;
@@ -21,12 +28,12 @@ cml::mat4f ViewCameraManager::GetViewMat (ViewCameraID id)
 	}
 	return mat_view;
 }
-cml::mat4f ViewCameraManager::GetProjMat ()
+cml::mat4f ViewCameraData::GetProjMat ()
 {
 	if (isProjMatDirty)
 	{
 		isProjMatDirty = false;
-		if (type == CamType::perspective)
+		if (type == CameraType::perspective)
 		{
 			mat_proj = cml::perspective (fov, aspect, clip_near, clip_far);
 		}
@@ -38,7 +45,7 @@ cml::mat4f ViewCameraManager::GetProjMat ()
 	return mat_proj;
 }
 
-cml::mat4f ViewCameraData::GetProjViewMat (ViewCameraID id)
+cml::mat4f ViewCameraData::GetProjViewMat ()
 {
 	if (isProjMatDirty || isViewMatDirty)
 	{
@@ -49,6 +56,11 @@ cml::mat4f ViewCameraData::GetProjViewMat (ViewCameraID id)
 
 cml::vec3f ViewCameraData::GetPosition () { return position; }
 cml::quatf ViewCameraData::GetRotation () { return rotation; }
+float ViewCameraData::GetFov () { return fov; }
+float ViewCameraData::GetAspectRatio () { return aspect; }
+float ViewCameraData::GetViewSize () { return size; }
+float ViewCameraData::GetClipNear () { return clip_near; }
+float ViewCameraData::GetClipFar () { return clip_far; }
 
 void ViewCameraData::SetPosition (cml::vec3f position)
 {
@@ -103,7 +115,7 @@ ViewCameraID ViewCameraManager::Create (CameraType type, cml::vec3f position, cm
 		if (camera_data.at (i).is_active == false)
 		{
 			camera_data.at (i).is_active = true;
-			SetupViewCamera (id, type, position, rotation);
+			camera_data.at (i).Setup (type, position, rotation);
 			return i;
 		}
 	}
@@ -117,32 +129,6 @@ void ViewCameraManager::Delete (ViewCameraID id)
 }
 
 
-void ViewCameraData::SetPosition (ViewCameraID id, cml::vec3f position)
-{
-	camera_data.at (i).SetPosition (position);
-}
-void ViewCameraData::SetRotation (ViewCameraID id, cml::quatf rotation)
-{
-	camera_data.at (i).SetRotation (position);
-}
-void ViewCameraData::SetFOV (ViewCameraID id, float fov) { camera_data.at (i).SetFOV (fov); }
-void ViewCameraData::SetAspectRatio (ViewCameraID id, float aspect)
-{
-	camera_data.at (i).SetAspectRatio (aspect);
-}
-void ViewCameraData::SetViewSize (ViewCameraID id, float size)
-{
-	camera_data.at (i).SetViewSize (size);
-}
-void ViewCameraData::SetClipNear (ViewCameraID id, float near)
-{
-	camera_data.at (i).SetClipNear (near);
-}
-void ViewCameraData::SetClipFar (ViewCameraID id, float far)
-{
-	camera_data.at (i).SetClipFar (far);
-}
-
 
 void ViewCameraManager::UpdateGPUBuffer (int index)
 {
@@ -151,10 +137,11 @@ void ViewCameraManager::UpdateGPUBuffer (int index)
 	for (auto& cam : camera_data)
 	{
 		CameraGPUData gpu_cam;
-		gpu_cam.projView = cam.GetViewProjMat ();
+		gpu_cam.projView = cam.GetProjViewMat ();
 		gpu_cam.view = cam.GetViewMat ();
 		gpu_cam.cameraPos = cam.GetPosition ();
-		gpu_cam.cameraDir = cam.GetRotation ();
+		// TODO
+		gpu_cam.cameraDir = cml::vec3f (); // cam.GetRotation (); ???
 
 		data.push_back (gpu_cam);
 	}

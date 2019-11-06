@@ -38,12 +38,11 @@ class SkyboxManager
 	    TextureManager& tex_man,
 	    ModelManager& model_man,
 	    PipelineManager& pipe_man,
-	    GPU_DoubleBuffer& double_buffer_man,
-	    CameraManager& cam_man);
+	    ViewCameraManager& cam_man);
 
 	SkyboxID CreateSkybox (Resource::Texture::TexID tex_resource);
 
-	void Update (SkyboxID id, CameraID cam_id);
+	void Update (SkyboxID id, ViewCameraID cam_id);
 	void Draw (VkCommandBuffer cmdBuf, SpecificPass pass, SkyboxID id);
 
 	private:
@@ -55,8 +54,7 @@ class SkyboxManager
 	TextureManager& tex_man;
 	ModelManager& model_man;
 	PipelineManager& pipe_man;
-	GPU_DoubleBuffer& double_buffer_man;
-	CameraManager& cam_man;
+	ViewCameraManager& cam_man;
 
 	SkyboxID cur_id = 0;
 	std::unordered_map<SkyboxID, Skybox> skyboxes;

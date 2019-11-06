@@ -20,21 +20,19 @@ SkyboxManager::SkyboxManager (VulkanDevice& device,
     TextureManager& tex_man,
     ModelManager& model_man,
     PipelineManager& pipe_man,
-    GPU_DoubleBuffer& double_buffer_man,
-    CameraManager& cam_man)
+    ViewCameraManager& cam_man)
 : device (device),
   desc_man (desc_man),
   shader_man (shader_man),
   tex_man (tex_man),
   model_man (model_man),
   pipe_man (pipe_man),
-  double_buffer_man (double_buffer_man),
   cam_man (cam_man),
   descriptor_layout ()
 {
 	std::vector<DescriptorSetLayoutBinding> m_bindings = {
-		{ DescriptorType::uniform_buffer, VK_SHADER_STAGE_VERTEX_BIT, 0, 1 },
-		{ DescriptorType::combined_image_sampler, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1 }
+		{ DescriptorType::uniform_buffer, ShaderStage::vertex, 0, 1 },
+		{ DescriptorType::combined_image_sampler, ShaderStage::fragment, 1, 1 }
 	};
 	descriptor_layout = desc_man.CreateDescriptorSetLayout (m_bindings);
 	skybox_cube_model = model_man.CreateModel (Resource::Mesh::CreateCube ());
@@ -62,13 +60,13 @@ SkyboxID SkyboxManager::CreateSkybox (Resource::Texture::TexID skyboxCubeMap)
 	return new_id;
 }
 
-void SkyboxManager::Update (SkyboxID id, CameraID cam_id)
+void SkyboxManager::Update (SkyboxID id, ViewCameraID cam_id)
 {
-	Camera& cam = cam_man.Get (cam_id);
+	ViewCameraData& cam = cam_man.GetCameraData (cam_id);
 
 	SkyboxUniformBuffer sbo = {};
-	sbo.proj = cam.ProjMat ();
-	sbo.view = cam.ViewMat ();
+	sbo.proj = cam.GetProjMat ();
+	sbo.view = cam.GetViewMat ();
 	sbo.view.set_col (3, cml::vec4f::w_positive);
 
 	skyboxes.at (id).uniform_buffer.CopyToBuffer (sbo);
@@ -116,7 +114,7 @@ PipeID SkyboxManager::CreatePipeline ()
 	    VK_BLEND_FACTOR_ONE,
 	    VK_BLEND_FACTOR_ZERO);
 
-	out.AddDescriptorLayouts (double_buffer_man.GetGlobalLayouts ());
+	// out.AddDescriptorLayouts (double_buffer_man.GetGlobalLayouts ());
 	out.AddDescriptorLayout (desc_man.GetLayout (descriptor_layout));
 
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });

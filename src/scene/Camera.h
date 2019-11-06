@@ -9,37 +9,6 @@ enum CameraType
 	orthographic,
 	perspective
 };
-class Camera
-{
-
-	public:
-	Camera ()
-
-	    // perspective
-	    Camera (cml::vec3f position, cml::quatf rotation, float fov, float aspect);
-
-	// orthographic
-	Camera (cml::vec3f position, cml::quatf rotation, float size);
-
-	void FOV (float fov);
-	void AspectRatio (float aspect);
-	void ViewSize (float size);
-
-	void ClipNear (float near);
-	void ClipFar (float far);
-
-	void Position (cml::vec3f position);
-	void Rotation (cml::quatf rotation);
-
-	private:
-	CamType const type;
-	float fov = 1.0f; // radians
-	float aspect = 1.0f;
-	float size = 1.0f;
-
-	float clip_near = 0.01f;
-	float clip_far = 10000.0f;
-};
 
 enum class Camera_Movement
 {

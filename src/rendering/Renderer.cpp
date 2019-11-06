@@ -74,7 +74,9 @@ VulkanRenderer::VulkanRenderer (
   pipeline_manager (device),
   model_manager (resource_man.mesh_manager, device, async_task_manager),
   texture_manager (resource_man.texture_manager, device, async_task_manager),
-  dynamic_data (device, descriptor_manager, settings)
+  lighting_manager (device),
+  camera_manager (device)
+// dynamic_data (device, descriptor_manager, settings)
 
 {
 	for (size_t i = 0; i < vulkanSwapChain.GetChainCount (); i++)
@@ -115,7 +117,7 @@ void VulkanRenderer::RenderFrame ()
 	SubmitFrame (frameIndex);
 
 	frameIndex = (frameIndex + 1) % frameObjects.size ();
-	dynamic_data.AdvanceFrameCounter ();
+	// dynamic_data.AdvanceFrameCounter ();
 
 	async_task_manager.CleanFinishQueue ();
 }
@@ -158,10 +160,10 @@ void VulkanRenderer::ContrustFrameGraph ()
 	color_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
 	color_subpass.AddClearColor ("img_depth", { 0.0f, 0 });
 
-	color_subpass.SetFunction (std::move ([&] (VkCommandBuffer cmdBuf) {
+	color_subpass.SetFunction (std::move ([&](VkCommandBuffer cmdBuf) {
+		/*
 		dynamic_data.BindFrameDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
 		dynamic_data.BindLightingDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
-		/*
 
 		    VkViewport viewport = initializers::viewport (
 		        (float)vulkanSwapChain.swapChainExtent.width, (float)vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f);

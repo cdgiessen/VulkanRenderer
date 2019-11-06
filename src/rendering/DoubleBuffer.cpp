@@ -5,10 +5,8 @@
 #include "Renderer.h"
 
 DoubleBuffer::DoubleBuffer (VulkanDevice& device, BufCreateDetails const& create_details)
-//: buffers ({ { device, create_details }, { device, create_details } })
+: buffers ({ VulkanBuffer{ device, create_details }, VulkanBuffer{ device, create_details } })
 {
-	buffers[0] = VulkanBuffer (device, create_details);
-	buffers[1] = VulkanBuffer (device, create_details);
 }
 
 VulkanBuffer const& DoubleBuffer::Read () { return buffers[cur_read]; }

@@ -2,12 +2,9 @@
 
 #include <array>
 
-#include "RenderStructs.h"
+#include "Buffer.h"
 
 class VulkanDevice;
-class VulkanBuffer;
-class BufCreateDetails;
-
 
 class DoubleBuffer
 {

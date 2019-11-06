@@ -18,11 +18,20 @@ enum CameraType
 class ViewCameraData
 {
 	public:
+	ViewCameraData () = default;
+
+	void Setup (CameraType type, cml::vec3f position, cml::quatf rotation);
+
 	cml::mat4f GetProjMat ();
 	cml::mat4f GetViewMat ();
 	cml::mat4f GetProjViewMat ();
 	cml::vec3f GetPosition ();
 	cml::quatf GetRotation ();
+	float GetFov ();
+	float GetAspectRatio ();
+	float GetViewSize ();
+	float GetClipNear ();
+	float GetClipFar ();
 
 	void SetPosition (cml::vec3f position);
 	void SetRotation (cml::quatf rotation);
@@ -48,9 +57,10 @@ class ViewCameraData
 	cml::mat4f mat_view;
 	cml::mat4f mat_proj;
 
-	bool isViewMatDirty = false;
-	bool isProjMatDirty = false;
+	bool isViewMatDirty = true;
+	bool isProjMatDirty = true;
 
+	friend class ViewCameraManager;
 	bool is_active = false;
 };
 
@@ -63,7 +73,7 @@ struct CameraGPUData
 };
 
 using ViewCameraID = int;
-const uint32_t MaxCameraCount = 64;
+const uint32_t MaxCameraCount = 32;
 class ViewCameraManager
 {
 	public:
@@ -74,13 +84,7 @@ class ViewCameraManager
 	ViewCameraID Create (CameraType type, cml::vec3f position, cml::quatf rotation);
 	void Delete (ViewCameraID id);
 
-	void SetPosition (ViewCameraID id, cml::vec3f position);
-	void SetRotation (ViewCameraID id, cml::quatf rotation);
-	void SetFOV (ViewCameraID id, float fov);
-	void SetAspectRatio (ViewCameraID id, float aspect);
-	void SetViewSize (ViewCameraID id, float size);
-	void SetClipNear (ViewCameraID id, float near);
-	void SetClipFar (ViewCameraID id, float far);
+	ViewCameraData& GetCameraData (ViewCameraID id);
 
 	void UpdateGPUBuffer (int index);
 

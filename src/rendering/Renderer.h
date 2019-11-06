@@ -28,6 +28,7 @@
 #include "Shader.h"
 #include "SwapChain.h"
 #include "Texture.h"
+#include "ViewCamera.h"
 #include "Wrappers.h"
 
 class Window;
@@ -101,7 +102,7 @@ class VulkanRenderer
 	TextureManager texture_manager;
 
 	LightingManager lighting_manager;
-
+	ViewCameraManager camera_manager;
 	// GPU_DoubleBuffer dynamic_data;
 
 	std::unique_ptr<FrameGraph> frameGraph;

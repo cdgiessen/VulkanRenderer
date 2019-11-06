@@ -193,5 +193,5 @@ DescriptorResource VulkanBuffer::GetResource (int element_index)
 {
 	VkDescriptorType descriptor_type = GetDescriptorType (data.type);
 
-	return DescriptorResource (descriptor_type, buffer, element_index * data.element_size, data.element_size);
+	return DescriptorResource (descriptor_type, buffer, element_index * data.m_size, data.m_size);
 }
