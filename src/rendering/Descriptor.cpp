@@ -11,26 +11,37 @@ bool operator== (DescriptorSetLayoutBinding const& a, DescriptorSetLayoutBinding
 
 //// DESCRIPTOR RESOURCE ////
 
-DescriptorResource::DescriptorResource (VkDescriptorType type, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
-: type (type)
+DescriptorResource::DescriptorResource (DescriptorType type, VkDescriptorBufferInfo buffer_info)
+: type (static_cast<VkDescriptorType> (type)), which_info (0)
 {
-	buffer_info.buffer = buffer;
-	buffer_info.offset = offset;
-	buffer_info.range = range;
+	info.buffer_info = buffer_info;
 }
-DescriptorResource::DescriptorResource (
-    VkDescriptorType type, VkSampler sampler, VkImageView imageView, VkImageLayout layout)
-: type (type)
+DescriptorResource::DescriptorResource (DescriptorType type, VkDescriptorImageInfo image_info)
+: type (static_cast<VkDescriptorType> (type)), which_info (1)
 {
-	image_info.sampler = sampler;
-	image_info.imageView = imageView;
-	image_info.imageLayout = layout;
+	info.image_info = image_info;
 }
+DescriptorResource::DescriptorResource (DescriptorType type, VkBufferView texel_buffer_view)
+: type (static_cast<VkDescriptorType> (type)), which_info (2)
+{
+	info.buffer_view = texel_buffer_view;
+}
+
 
 //// DESCRIPTOR USE ////
 
-DescriptorUse::DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorResource resource)
-: bindPoint (bindPoint), count (count), resource (resource)
+DescriptorUse::DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorType type, VkDescriptorBufferInfo buffer_info)
+: bindPoint (bindPoint), count (count), resource (DescriptorResource (type, buffer_info))
+{
+}
+
+DescriptorUse::DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorType type, VkDescriptorImageInfo image_info)
+: bindPoint (bindPoint), count (count), resource (DescriptorResource (type, image_info))
+{
+}
+
+DescriptorUse::DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorType type, VkBufferView texel_buffer_view)
+: bindPoint (bindPoint), count (count), resource (DescriptorResource (type, texel_buffer_view))
 {
 }
 
@@ -42,12 +53,12 @@ VkWriteDescriptorSet DescriptorUse::GetWriteDescriptorSet (VkDescriptorSet set)
 	writeDescriptorSet.descriptorType = resource.type;
 	writeDescriptorSet.dstBinding = bindPoint;
 	writeDescriptorSet.descriptorCount = count;
-
-	if (resource.buffer_info.buffer != VK_NULL_HANDLE)
-		writeDescriptorSet.pBufferInfo = &resource.buffer_info;
-	else
-		writeDescriptorSet.pImageInfo = &resource.image_info;
-
+	if (resource.which_info == 0)
+		writeDescriptorSet.pBufferInfo = &resource.info.buffer_info;
+	else if (resource.which_info == 1)
+		writeDescriptorSet.pImageInfo = &resource.info.image_info;
+	else if (resource.which_info == 2)
+		writeDescriptorSet.pTexelBufferView = &resource.info.buffer_view;
 	return writeDescriptorSet;
 }
 

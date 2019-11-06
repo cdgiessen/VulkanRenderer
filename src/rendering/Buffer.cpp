@@ -154,10 +154,10 @@ void VulkanBuffer::BindInstanceBuffer (VkCommandBuffer cmdBuf)
 	vkCmdBindVertexBuffers (cmdBuf, INSTANCE_BUFFER_BIND_ID, 1, &buffer, offsets);
 }
 
-VkDescriptorType GetDescriptorType (BufferType type)
+VkDescriptorType VulkanBuffer::GetDescriptorType ()
 {
 	VkDescriptorType descriptor_type;
-	switch (type)
+	switch (data.type)
 	{
 		case (BufferType::uniform):
 			descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -182,16 +182,20 @@ VkDescriptorType GetDescriptorType (BufferType type)
 	return descriptor_type;
 }
 
-DescriptorResource VulkanBuffer::GetResource ()
+VkDescriptorBufferInfo VulkanBuffer::GetDescriptorInfo ()
 {
-	VkDescriptorType descriptor_type = GetDescriptorType (data.type);
-
-	return DescriptorResource (descriptor_type, buffer, 0, data.m_size);
+	VkDescriptorBufferInfo info{};
+	info.buffer = buffer;
+	info.offset = 0;
+	info.range = data.m_size;
+	return info;
 }
 
-DescriptorResource VulkanBuffer::GetResource (int element_index)
+VkDescriptorBufferInfo VulkanBuffer::GetDescriptorInfo (int element_index)
 {
-	VkDescriptorType descriptor_type = GetDescriptorType (data.type);
-
-	return DescriptorResource (descriptor_type, buffer, element_index * data.m_size, data.m_size);
+	VkDescriptorBufferInfo info{};
+	info.buffer = buffer;
+	info.offset = element_index * data.m_size;
+	info.range = data.m_size;
+	return info;
 }

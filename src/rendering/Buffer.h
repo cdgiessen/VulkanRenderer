@@ -4,8 +4,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include "Descriptor.h"
-
 #include "vk_mem_alloc.h"
 
 class VulkanDevice;
@@ -148,9 +146,9 @@ class VulkanBuffer
 	void BindIndexBuffer (VkCommandBuffer cmdBuf);
 	void BindInstanceBuffer (VkCommandBuffer cmdBuf);
 
-	DescriptorResource GetResource ();
-
-	DescriptorResource GetResource (int element_index);
+	VkDescriptorType GetDescriptorType ();
+	VkDescriptorBufferInfo GetDescriptorInfo ();
+	VkDescriptorBufferInfo GetDescriptorInfo (int element_index);
 
 	VkBuffer buffer = VK_NULL_HANDLE;
 

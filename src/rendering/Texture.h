@@ -2,17 +2,17 @@
 
 #include <cstddef>
 #include <memory>
-#include <thread>
 #include <vulkan/vulkan.h>
 
-#include "AsyncTask.h"
-#include "Descriptor.h"
+#include "vk_mem_alloc.h"
 
 #include "resources/Texture.h"
-#include "vk_mem_alloc.h"
+
+#include "AsyncTask.h"
 
 class VulkanDevice;
 class VulkanBuffer;
+class AsyncTaskManager;
 
 struct TexCreateDetails
 {
@@ -40,24 +40,6 @@ struct TexCreateDetails
 	  desiredHeight (desiredHeight){};
 };
 
-namespace details
-{
-struct TexData
-{
-	VulkanDevice* device;
-
-	VkImageLayout textureImageLayout;
-
-	VmaAllocation allocation = VK_NULL_HANDLE;
-	VmaAllocationInfo allocationInfo;
-	VmaAllocator allocator = nullptr;
-
-	uint32_t mipLevels;
-	uint32_t layers;
-	uint32_t width = 0;
-	uint32_t height = 0;
-};
-} // namespace details
 class VulkanTexture
 {
 	public:
@@ -87,10 +69,14 @@ class VulkanTexture
 	VkImageView imageView = VK_NULL_HANDLE;
 	VkSampler sampler = VK_NULL_HANDLE;
 
-	DescriptorResource GetResource ()
+	VkDescriptorType GetDescriptorType () { return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; }
+	VkDescriptorImageInfo GetResource ()
 	{
-		return DescriptorResource (
-		    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, sampler, imageView, data.textureImageLayout);
+		VkDescriptorImageInfo info{};
+		info.imageLayout = data.textureImageLayout;
+		info.imageView = imageView;
+		info.sampler = sampler;
+		return info;
 	}
 
 	uint32_t GetWidth () { return data.width; }
@@ -98,7 +84,22 @@ class VulkanTexture
 	uint32_t GetLayers () { return data.layers; }
 
 	private:
-	details::TexData data;
+	struct TexData
+	{
+		VulkanDevice* device;
+
+		VkImageLayout textureImageLayout;
+
+		VmaAllocation allocation = VK_NULL_HANDLE;
+		VmaAllocationInfo allocationInfo;
+		VmaAllocator allocator = nullptr;
+
+		uint32_t mipLevels;
+		uint32_t layers;
+		uint32_t width = 0;
+		uint32_t height = 0;
+	};
+	TexData data;
 	std::unique_ptr<VulkanBuffer> staging_buffer;
 
 	void InitImage2D (VkImageCreateInfo imageInfo);
@@ -148,7 +149,8 @@ class TextureManager
 	void DeleteTexture (VulkanTextureID id);
 
 	bool IsFinishedTransfer (VulkanTextureID id);
-	DescriptorResource GetResource (VulkanTextureID id);
+	VkDescriptorImageInfo GetResource (VulkanTextureID id);
+	VkDescriptorType GetDescriptorType (VulkanTextureID id);
 
 	private:
 	std::function<void ()> CreateFinishWork (VulkanTextureID id);
@@ -163,6 +165,4 @@ class TextureManager
 	std::unordered_map<VulkanTextureID, std::unique_ptr<VulkanTexture>> texture_map;
 
 	std::vector<VulkanTextureID> expired_textures;
-
-	std::unordered_map<VulkanTextureID, DescriptorResource> resources;
 };

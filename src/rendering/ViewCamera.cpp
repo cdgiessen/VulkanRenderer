@@ -148,9 +148,6 @@ void ViewCameraManager::UpdateGPUBuffer (int index)
 	data_buffers.Write ().CopyToBuffer (data);
 }
 
-DescriptorResource GetDescriptorSet (int index, ViewCameraID id) {}
-
-
 void ViewCameraManager::SetupViewCamera (ViewCameraID id, CameraType type, cml::vec3f position, cml::quatf rotation)
 {
 	camera_data.at (id).type = type;

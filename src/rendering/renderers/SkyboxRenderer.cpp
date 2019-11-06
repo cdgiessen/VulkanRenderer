@@ -49,9 +49,10 @@ SkyboxID SkyboxManager::CreateSkybox (Resource::Texture::TexID skyboxCubeMap)
 
 	auto descriptorSet = desc_man.CreateDescriptorSet (descriptor_layout);
 
-	std::vector<DescriptorUse> writes;
-	writes.push_back (DescriptorUse (0, 1, uniform_buffer.GetResource ()));
-	writes.push_back (DescriptorUse (1, 1, tex_man.GetResource (vulkanCubeMap)));
+	std::vector<DescriptorUse> writes = {
+		{ 0, 1, uniform_buffer.GetDescriptorType (), uniform_buffer.GetDescriptorInfo () },
+		{ 1, 1, tex_man.GetDescriptorType (vulkanCubeMap), tex_man.GetResource (vulkanCubeMap) }
+	};
 	descriptorSet.Update (device.device, writes);
 
 	SkyboxID new_id = cur_id++;

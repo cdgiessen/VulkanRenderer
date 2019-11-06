@@ -84,18 +84,25 @@ template <> struct hash<DescriptorLayout>
 class DescriptorResource
 {
 	public:
-	VkDescriptorBufferInfo buffer_info;
-	VkDescriptorImageInfo image_info;
+	const int which_info;
+	union {
+		VkDescriptorBufferInfo buffer_info;
+		VkDescriptorImageInfo image_info;
+		VkBufferView buffer_view;
+	} info;
 	VkDescriptorType type = VkDescriptorType::VK_DESCRIPTOR_TYPE_MAX_ENUM;
 
-	DescriptorResource (VkDescriptorType type, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
-	DescriptorResource (VkDescriptorType type, VkSampler sampler, VkImageView imageView, VkImageLayout layout);
+	DescriptorResource (DescriptorType type, VkDescriptorBufferInfo buffer_info);
+	DescriptorResource (DescriptorType type, VkDescriptorImageInfo image_info);
+	DescriptorResource (DescriptorType type, VkBufferView view);
 };
 
 class DescriptorUse
 {
 	public:
-	DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorResource resource);
+	DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorType type, VkDescriptorBufferInfo buffer_info);
+	DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorType type, VkDescriptorImageInfo image_info);
+	DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorType type, VkBufferView texel_buffer_view);
 
 	VkWriteDescriptorSet GetWriteDescriptorSet (VkDescriptorSet set);
 

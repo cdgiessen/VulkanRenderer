@@ -4,6 +4,7 @@
 
 #include "stb/stb_image.h"
 
+#include "AsyncTask.h"
 #include "Buffer.h"
 #include "Device.h"
 #include "Initializers.h"
@@ -229,7 +230,7 @@ void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
 
 void BeginTransferAndMipMapGenWork (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
-    std::function<void()> const& finish_work,
+    std::function<void ()> const& finish_work,
     VulkanBuffer* buffer,
     const VkImageSubresourceRange subresourceRange,
     const std::vector<VkBufferImageCopy> bufferCopyRegions,
@@ -243,7 +244,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 {
 	if (device.singleQueueDevice)
 	{
-		std::function<void(const VkCommandBuffer)> work = [=](const VkCommandBuffer cmdBuf) {
+		std::function<void (const VkCommandBuffer)> work = [=] (const VkCommandBuffer cmdBuf) {
 			SetLayoutAndTransferRegions (cmdBuf, image, buffer->buffer, subresourceRange, bufferCopyRegions);
 
 			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
@@ -257,12 +258,12 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 	}
 	else
 	{
-		std::function<void(const VkCommandBuffer)> transferWork = [=](const VkCommandBuffer cmdBuf) {
+		std::function<void (const VkCommandBuffer)> transferWork = [=] (const VkCommandBuffer cmdBuf) {
 			SetLayoutAndTransferRegions (cmdBuf, image, buffer->buffer, subresourceRange, bufferCopyRegions);
 		};
 
 		auto gen_mips = [&, image, imageLayout, width, height, depth, layers, mipLevels] {
-			auto mipMapGenWork = [&, image, imageLayout, width, height, depth, layers, mipLevels](
+			auto mipMapGenWork = [&, image, imageLayout, width, height, depth, layers, mipLevels] (
 			                         const VkCommandBuffer cmdBuf) {
 				GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
 			};
@@ -288,7 +289,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 
 VulkanTexture::VulkanTexture (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
-    std::function<void()> const& finish_work,
+    std::function<void ()> const& finish_work,
     TexCreateDetails texCreateDetails,
     Resource::Texture::TexResource textureResource)
 {
@@ -395,7 +396,7 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 
 VulkanTexture::VulkanTexture (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
-    std::function<void()> const& finish_work,
+    std::function<void ()> const& finish_work,
     TexCreateDetails texCreateDetails,
     std::unique_ptr<VulkanBuffer> buffer)
 : staging_buffer (std::move (buffer))
@@ -662,7 +663,7 @@ TextureManager::~TextureManager ()
 	Log.Debug (fmt::format ("Textures left over {}\n", texture_map.size ()));
 }
 
-std::function<void()> TextureManager::CreateFinishWork (VulkanTextureID id)
+std::function<void ()> TextureManager::CreateFinishWork (VulkanTextureID id)
 {
 	return std::move ([this, id] {
 		std::lock_guard guard (map_lock);
@@ -731,13 +732,19 @@ VulkanTexture TextureManager::CreateAttachmentImage (TexCreateDetails texCreateD
 	return VulkanTexture (device, texCreateDetails);
 }
 
-DescriptorResource TextureManager::GetResource (VulkanTextureID id)
+VkDescriptorImageInfo TextureManager::GetResource (VulkanTextureID id)
 {
 	std::lock_guard guard (map_lock);
 	if (texture_map.count (id) == 1)
 		return texture_map.at (id)->GetResource ();
 	else // if(in_progress_map.count (id) == 1)
 		return in_progress_map.at (id)->GetResource ();
+}
+
+VkDescriptorType TextureManager::GetDescriptorType (VulkanTextureID id)
+{
+	std::lock_guard guard (map_lock);
+	return texture_map.at (id)->GetDescriptorType ();
 }
 
 void TextureManager::DeleteTexture (VulkanTextureID id)
