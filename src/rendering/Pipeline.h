@@ -55,8 +55,8 @@ class PipelineOutline
 	    VkBlendOp alphaBlendOp,
 	    VkBlendFactor srcAlphaBlendFactor,
 	    VkBlendFactor dstAlphaBlendFactor);
+	void AddColorBlendingAttachment (VkPipelineColorBlendAttachmentState attachment);
 
-	void SetColorBlending (uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState* attachments);
 
 	void SetDescriptorSetLayout (std::vector<VkDescriptorSetLayout>& descriptorSetlayouts);
 
@@ -113,7 +113,8 @@ template <> struct hash<SpecificPass>
 class PipelineGroup
 {
 	public:
-	PipelineGroup (VkDevice device, VkPipelineCache cache, PipelineOutline builder);
+	PipelineGroup (
+	    VkDevice device, VkPipelineCache cache, PipelineOutline builder, std::vector<SpecificPass> const& initial_passes);
 	~PipelineGroup ();
 	PipelineGroup (const PipelineGroup& group) = delete;
 	PipelineGroup& operator= (const PipelineGroup& group) = delete;

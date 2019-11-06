@@ -158,7 +158,7 @@ void VulkanRenderer::ContrustFrameGraph ()
 	color_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
 	color_subpass.AddClearColor ("img_depth", { 0.0f, 0 });
 
-	color_subpass.SetFunction (std::move ([&](VkCommandBuffer cmdBuf) {
+	color_subpass.SetFunction (std::move ([&] (VkCommandBuffer cmdBuf) {
 		dynamic_data.BindFrameDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
 		dynamic_data.BindLightingDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
 		/*

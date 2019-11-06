@@ -22,6 +22,10 @@ enum class BufferType
 	staging
 };
 
+// Correct usage for single element allocation
+// bufferSize = whole_size, elem_count = 1
+// for multi element allocations
+// bufferSize = element_size, elem_count = number of elements in allocation
 struct BufCreateDetails
 {
 	BufferType type = BufferType::uniform;
@@ -29,7 +33,7 @@ struct BufCreateDetails
 	VkBufferUsageFlags bufferUsage = 0;
 	VmaMemoryUsage allocUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
 	VmaAllocationCreateFlags allocFlags = (VmaAllocationCreateFlagBits) (0);
-	int elem_count = 1; // cause 1 element is still an array
+	uint32_t elem_count = 1; // cause 1 element is still an array
 	bool persistentlyMapped = false;
 	bool dynamicAlignment = false;
 };
@@ -40,6 +44,14 @@ inline BufCreateDetails uniform_details (VkDeviceSize size)
 		size,
 		(VkBufferUsageFlags) (VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
 		(VmaMemoryUsage) (VMA_MEMORY_USAGE_CPU_TO_GPU) };
+}
+inline BufCreateDetails uniform_array_details (int elem_count, VkDeviceSize size_of_element)
+{
+	return BufCreateDetails{ BufferType::uniform,
+		elem_count * size_of_element,
+		(VkBufferUsageFlags) (VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+		(VmaMemoryUsage) (VMA_MEMORY_USAGE_CPU_TO_GPU),
+		elem_count };
 }
 inline BufCreateDetails uniform_dynamic_details (VkDeviceSize size)
 {
@@ -87,6 +99,7 @@ struct BufData
 {
 	VulkanDevice* device;
 	VkDeviceSize m_size;
+	uint32_t element_count;
 
 	size_t alignment = -1;
 	BufferType type;
@@ -136,6 +149,8 @@ class VulkanBuffer
 	void BindInstanceBuffer (VkCommandBuffer cmdBuf);
 
 	DescriptorResource GetResource ();
+
+	DescriptorResource GetResource (int element_index);
 
 	VkBuffer buffer = VK_NULL_HANDLE;
 

@@ -15,8 +15,9 @@ const uint32_t INSTANCE_BUFFER_BIND_ID = 1;
 VulkanBuffer::VulkanBuffer (VulkanDevice& device, BufCreateDetails details)
 {
 	data.device = &device;
-	data.m_size = details.bufferSize;
+	data.m_size = details.bufferSize * details.elem_count;
 	data.type = details.type;
+	data.element_count = details.elem_count;
 
 	if (details.dynamicAlignment == true)
 	{
@@ -153,10 +154,10 @@ void VulkanBuffer::BindInstanceBuffer (VkCommandBuffer cmdBuf)
 	vkCmdBindVertexBuffers (cmdBuf, INSTANCE_BUFFER_BIND_ID, 1, &buffer, offsets);
 }
 
-DescriptorResource VulkanBuffer::GetResource ()
+VkDescriptorType GetDescriptorType (BufferType type)
 {
 	VkDescriptorType descriptor_type;
-	switch (data.type)
+	switch (type)
 	{
 		case (BufferType::uniform):
 			descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -178,6 +179,19 @@ DescriptorResource VulkanBuffer::GetResource ()
 			descriptor_type = VkDescriptorType::VK_DESCRIPTOR_TYPE_MAX_ENUM;
 			break;
 	}
+	return descriptor_type;
+}
+
+DescriptorResource VulkanBuffer::GetResource ()
+{
+	VkDescriptorType descriptor_type = GetDescriptorType (data.type);
 
 	return DescriptorResource (descriptor_type, buffer, 0, data.m_size);
+}
+
+DescriptorResource VulkanBuffer::GetResource (int element_index)
+{
+	VkDescriptorType descriptor_type = GetDescriptorType (data.type);
+
+	return DescriptorResource (descriptor_type, buffer, element_index * data.element_size, data.element_size);
 }

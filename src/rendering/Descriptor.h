@@ -23,10 +23,22 @@ enum class DescriptorType
 	input_attachment
 };
 
+enum ShaderStage
+{
+	vertex = 0x00000001,
+	tess_control = 0x00000002,
+	tess_eval = 0x00000004,
+	geometry = 0x00000008,
+	fragment = 0x00000010,
+	compute = 0x00000020,
+	all_graphics = 0x0000001F,
+	all = 0x7FFFFFFF,
+};
+
 struct DescriptorSetLayoutBinding
 {
 	DescriptorType type;
-	VkShaderStageFlagBits stage;
+	ShaderStage stages;
 	uint32_t bind_point;
 	uint32_t count;
 };
@@ -40,23 +52,17 @@ template <> struct hash<DescriptorSetLayoutBinding>
 	std::size_t operator() (DescriptorSetLayoutBinding const& s) const noexcept
 	{
 		std::size_t h1 = std::hash<uint32_t>{}(static_cast<uint32_t> (s.type));
-		std::size_t h2 = std::hash<uint32_t>{}(static_cast<uint32_t> (s.stage));
+		std::size_t h2 = std::hash<uint32_t>{}(static_cast<uint32_t> (s.stages));
 		std::size_t h3 = std::hash<uint32_t>{}(static_cast<uint32_t> (s.bind_point));
 		std::size_t h4 = std::hash<uint32_t>{}(static_cast<uint32_t> (s.count));
 		return h1 ^ (h2 << 8) ^ (h3 << 16) ^ (h4 << 24);
 	}
 };
 } // namespace std
-struct DescriptorLayout
-{
-	DescriptorLayout (std::vector<DescriptorSetLayoutBinding> bindings) : bindings (bindings) {}
-	const std::vector<DescriptorSetLayoutBinding> bindings;
-};
 
-bool operator== (DescriptorLayout const& a, DescriptorLayout const& b);
+using DescriptorLayout = std::vector<DescriptorSetLayoutBinding>;
 
 VkDescriptorSetLayout CreateVkDescriptorSetLayout (VkDevice device, DescriptorLayout layout_desc);
-void FreeVkDescriptorSetLayout (VkDevice device, VkDescriptorSetLayout layout);
 
 namespace std
 {
@@ -66,7 +72,7 @@ template <> struct hash<DescriptorLayout>
 	{
 		int i = 0;
 		std::size_t out;
-		for (auto& binding : s.bindings)
+		for (auto& binding : s)
 		{
 			out ^= (std::hash<DescriptorSetLayoutBinding>{}(binding) << i++);
 		}

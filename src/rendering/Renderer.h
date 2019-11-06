@@ -21,6 +21,7 @@
 #include "DoubleBuffer.h"
 #include "FrameGraph.h"
 #include "FrameResources.h"
+#include "Lighting.h"
 #include "Model.h"
 #include "Pipeline.h"
 #include "RenderStructs.h"
@@ -99,7 +100,9 @@ class VulkanRenderer
 	ModelManager model_manager;
 	TextureManager texture_manager;
 
-	GPU_DoubleBuffer dynamic_data;
+	LightingManager lighting_manager;
+
+	// GPU_DoubleBuffer dynamic_data;
 
 	std::unique_ptr<FrameGraph> frameGraph;
 

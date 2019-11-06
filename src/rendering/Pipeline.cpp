@@ -119,6 +119,11 @@ void PipelineOutline::AddColorBlendingAttachment (VkBool32 blendEnable,
 	colorBlendAttachments.push_back (colorBlendAttachment);
 }
 
+void PipelineOutline::AddColorBlendingAttachment (VkPipelineColorBlendAttachmentState attachment)
+{
+	colorBlendAttachments.push_back (attachment);
+}
+
 void PipelineOutline::AddDynamicStates (std::vector<VkDynamicState> states)
 {
 	dynamicStates.insert (std::end (dynamicStates), std::begin (states), std::end (states));
@@ -131,7 +136,8 @@ void PipelineOutline::AddPushConstantRange (VkPushConstantRange pushConstantRang
 	pushConstantRanges.push_back (pushConstantRange);
 }
 
-PipelineGroup::PipelineGroup (VkDevice device, VkPipelineCache cache, PipelineOutline builder)
+PipelineGroup::PipelineGroup (
+    VkDevice device, VkPipelineCache cache, PipelineOutline builder, std::vector<SpecificPass> const& initial_passes)
 : device (device), cache (cache), builder (builder)
 {
 	auto layoutInfo = initializers::pipelineLayoutCreateInfo (builder.layouts, builder.pushConstantRanges);
@@ -139,6 +145,11 @@ PipelineGroup::PipelineGroup (VkDevice device, VkPipelineCache cache, PipelineOu
 	if (vkCreatePipelineLayout (device, &layoutInfo, nullptr, &this->layout) != VK_SUCCESS)
 	{
 		throw std::runtime_error ("failed to create pipeline layout!");
+	}
+
+	for (auto& pass : initial_passes)
+	{
+		CreatePipeline (pass);
 	}
 }
 
@@ -215,8 +226,7 @@ void PipelineGroup::CreatePipeline (SpecificPass pass)
 	{
 		throw std::runtime_error ("failed to create graphics pipeline!");
 	}
-
-	pipelines.at (pass) = pipe;
+	pipelines.emplace (pass, pipe);
 }
 
 void PipelineGroup::Bind (VkCommandBuffer cmdBuf, SpecificPass pass)
@@ -243,7 +253,7 @@ PipelineManager::~PipelineManager () { vkDestroyPipelineCache (device.device, ca
 
 PipeID PipelineManager::MakePipeGroup (PipelineOutline builder)
 {
-	auto pipe = PipelineGroup (device.device, cache, builder);
+	auto pipe = PipelineGroup (device.device, cache, builder, {});
 	std::lock_guard guard (pipe_lock);
 	pipelines.emplace (cur_id, std::move (pipe));
 	return cur_id++;
