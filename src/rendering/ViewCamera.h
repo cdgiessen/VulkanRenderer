@@ -88,7 +88,8 @@ class ViewCameraManager
 
 	void UpdateGPUBuffer (int index);
 
-	DescriptorResource GetDescriptorSet (int index, ViewCameraID id);
+	VkDescriptorBufferInfo GetDescriptorInfo (int index, ViewCameraID id);
+	VkDescriptorType GetDescriptorType () { return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; }
 
 	private:
 	void SetupViewCamera (ViewCameraID id, CameraType type, cml::vec3f position, cml::quatf rotation);

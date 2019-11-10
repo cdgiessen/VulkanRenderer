@@ -30,18 +30,21 @@ DescriptorResource::DescriptorResource (DescriptorType type, VkBufferView texel_
 
 //// DESCRIPTOR USE ////
 
-DescriptorUse::DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorType type, VkDescriptorBufferInfo buffer_info)
-: bindPoint (bindPoint), count (count), resource (DescriptorResource (type, buffer_info))
+DescriptorUse::DescriptorUse (
+    uint32_t bindPoint, uint32_t count, VkDescriptorType type, std::vector<VkDescriptorBufferInfo> buffer_infos)
+: bindPoint (bindPoint), count (count), type (type), buffer_infos (buffer_infos)
 {
 }
 
-DescriptorUse::DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorType type, VkDescriptorImageInfo image_info)
-: bindPoint (bindPoint), count (count), resource (DescriptorResource (type, image_info))
+DescriptorUse::DescriptorUse (
+    uint32_t bindPoint, uint32_t count, VkDescriptorType type, std::vector<VkDescriptorImageInfo> image_infos)
+: bindPoint (bindPoint), count (count), type (type), image_infos (image_infos)
 {
 }
 
-DescriptorUse::DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorType type, VkBufferView texel_buffer_view)
-: bindPoint (bindPoint), count (count), resource (DescriptorResource (type, texel_buffer_view))
+DescriptorUse::DescriptorUse (
+    uint32_t bindPoint, uint32_t count, VkDescriptorType type, std::vector<VkBufferView> texel_buffer_views)
+: bindPoint (bindPoint), count (count), type (type), texel_buffer_views (texel_buffer_views)
 {
 }
 
@@ -50,15 +53,15 @@ VkWriteDescriptorSet DescriptorUse::GetWriteDescriptorSet (VkDescriptorSet set)
 	VkWriteDescriptorSet writeDescriptorSet{};
 	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	writeDescriptorSet.dstSet = set;
-	writeDescriptorSet.descriptorType = resource.type;
+	writeDescriptorSet.descriptorType = type;
 	writeDescriptorSet.dstBinding = bindPoint;
 	writeDescriptorSet.descriptorCount = count;
-	if (resource.which_info == 0)
-		writeDescriptorSet.pBufferInfo = &resource.info.buffer_info;
-	else if (resource.which_info == 1)
-		writeDescriptorSet.pImageInfo = &resource.info.image_info;
-	else if (resource.which_info == 2)
-		writeDescriptorSet.pTexelBufferView = &resource.info.buffer_view;
+	if (info_type == InfoType::buffer)
+		writeDescriptorSet.pBufferInfo = buffer_infos.data ();
+	else if (info_type == InfoType::image)
+		writeDescriptorSet.pImageInfo = image_infos.data ();
+	else if (info_type == InfoType::texel_view)
+		writeDescriptorSet.pTexelBufferView = texel_buffer_views.data ();
 	return writeDescriptorSet;
 }
 

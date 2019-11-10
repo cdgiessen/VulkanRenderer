@@ -100,9 +100,9 @@ class DescriptorResource
 class DescriptorUse
 {
 	public:
-	DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorType type, VkDescriptorBufferInfo buffer_info);
-	DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorType type, VkDescriptorImageInfo image_info);
-	DescriptorUse (uint32_t bindPoint, uint32_t count, DescriptorType type, VkBufferView texel_buffer_view);
+	DescriptorUse (uint32_t bindPoint, uint32_t count, VkDescriptorType type, std::vector<VkDescriptorBufferInfo> buffer_infos);
+	DescriptorUse (uint32_t bindPoint, uint32_t count, VkDescriptorType type, std::vector<VkDescriptorImageInfo> image_infos);
+	DescriptorUse (uint32_t bindPoint, uint32_t count, VkDescriptorType type, std::vector<VkBufferView> texel_buffer_views);
 
 	VkWriteDescriptorSet GetWriteDescriptorSet (VkDescriptorSet set);
 
@@ -110,7 +110,16 @@ class DescriptorUse
 	uint32_t bindPoint;
 	uint32_t count;
 
-	DescriptorResource resource;
+	VkDescriptorType type = VkDescriptorType::VK_DESCRIPTOR_TYPE_MAX_ENUM;
+	enum class InfoType
+	{
+		buffer,
+		image,
+		texel_view
+	} info_type;
+	std::vector<VkDescriptorBufferInfo> buffer_infos;
+	std::vector<VkDescriptorImageInfo> image_infos;
+	std::vector<VkBufferView> texel_buffer_views;
 };
 using LayoutID = uint16_t; // also indexes for the pool
 using PoolID = uint16_t;   // which vkPool to index in the pool
