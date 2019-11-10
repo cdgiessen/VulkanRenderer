@@ -129,6 +129,8 @@ void ViewCameraManager::Delete (ViewCameraID id)
 }
 
 
+ViewCameraData& ViewCameraManager::GetCameraData (ViewCameraID id) { return camera_data.at (id); }
+
 
 void ViewCameraManager::UpdateGPUBuffer (int index)
 {

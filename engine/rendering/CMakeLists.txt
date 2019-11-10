@@ -1,4 +1,4 @@
-target_sources(VulkanApp PUBLIC
+target_sources(VulkanEngine PUBLIC
 
 ${CMAKE_CURRENT_SOURCE_DIR}/AsyncTask.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/Buffer.cpp
@@ -8,6 +8,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/DoubleBuffer.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/ImGuiImpl.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/FrameGraph.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/FrameResources.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/Lighting.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/Model.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/Pipeline.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/Renderer.cpp

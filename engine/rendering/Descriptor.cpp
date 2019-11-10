@@ -215,7 +215,13 @@ DescriptorPool::OptDescSet DescriptorPool::TryAllocate (Pool& pool)
 //// DESCRIPTOR MANAGER ////
 
 DescriptorManager::DescriptorManager (VulkanDevice& device) : device (device) {}
-
+DescriptorManager::~DescriptorManager ()
+{
+	for (auto& [id, layout] : layouts)
+	{
+		vkDestroyDescriptorSetLayout (device.device, layout, nullptr);
+	}
+}
 LayoutID DescriptorManager::CreateDescriptorSetLayout (DescriptorLayout layout_desc)
 {
 	std::lock_guard lg (lock);

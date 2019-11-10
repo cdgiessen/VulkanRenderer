@@ -1,4 +1,4 @@
-target_sources(VulkanApp PUBLIC
+target_sources(VulkanEngine PUBLIC
 
 ${CMAKE_CURRENT_SOURCE_DIR}/Water.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/Camera.cpp

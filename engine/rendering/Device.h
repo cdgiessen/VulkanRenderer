@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include <cstring>
@@ -34,6 +35,18 @@ struct VMA_MemoryResource
 	void LogVMA (bool detailedOutput = false);
 
 	VmaAllocator allocator;
+};
+
+struct RendererCreateDetails
+{
+	std::string app_name;
+	std::string engine_name;
+	bool enable_validation;
+	uint32_t major_version = 1;
+	uint32_t minor_version = 0;
+	uint32_t patch_version = 0;
+	std::vector<const char*> layers;
+	std::vector<const char*> extensions;
 };
 
 class VulkanInstance
@@ -96,6 +109,8 @@ struct VulkanPhysicalDevice
 
 	QueueFamilyIndices familyIndices;
 };
+
+
 
 class VulkanDevice
 {

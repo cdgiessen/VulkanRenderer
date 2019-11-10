@@ -31,14 +31,9 @@ struct SpotLight
 	float outerCutOff = 0.0f;
 };
 
-struct LightingData
-{
-	VulkanBuffer dir_lights;
-	VulkanBuffer point_lights;
-	VulkanBuffer spot_lights;
-
-	DescriptorSet lightingDescriptorSet;
-};
+const uint32_t MaxDirectionalLightCount = 8;
+const uint32_t MaxPointLightCount = 256;
+const uint32_t MaxSpotLightCount = 256;
 
 class LightingManager
 {
@@ -48,6 +43,10 @@ class LightingManager
 
 
 	VulkanDevice& device;
-	std::vector<LightingData> data;
-	DoubleBuffer gpu_data;
+	std::vector<DirectionalLight> directional_lights;
+	std::vector<PointLight> point_lights;
+	std::vector<SpotLight> spot_lights;
+	DoubleBuffer directional_gpu_data;
+	DoubleBuffer point_gpu_data;
+	DoubleBuffer spot_gpu_data;
 };

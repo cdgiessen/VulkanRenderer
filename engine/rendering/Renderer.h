@@ -38,14 +38,6 @@ namespace Resource
 class AssetManager;
 }
 
-enum class RenderableType
-{
-	opaque,
-	transparent,
-	post_process,
-	overlay
-};
-
 
 class RenderSettings
 {
@@ -84,7 +76,6 @@ class VulkanRenderer
 	void ToggleWireframe ();
 
 	void DeviceWaitTillIdle ();
-	// VkRenderPass GetRelevantRenderpass (RenderableType type);
 
 	private:
 	job::TaskManager& task_manager;
@@ -101,8 +92,8 @@ class VulkanRenderer
 	ModelManager model_manager;
 	TextureManager texture_manager;
 
-	LightingManager lighting_manager;
 	ViewCameraManager camera_manager;
+	LightingManager lighting_manager;
 	// GPU_DoubleBuffer dynamic_data;
 
 	std::unique_ptr<FrameGraph> frameGraph;

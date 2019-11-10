@@ -441,7 +441,25 @@ RenderPass::RenderPass (VkDevice device, RenderPassDescription desc, AttachmentM
 	subpassFuncs = std::move (desc.GetSubpassFunctions ());
 }
 
-RenderPass::~RenderPass () { vkDestroyRenderPass (device, rp, nullptr); }
+RenderPass::~RenderPass ()
+{
+	if (rp != nullptr) vkDestroyRenderPass (device, rp, nullptr);
+}
+
+RenderPass::RenderPass (RenderPass&& rp)
+: device (rp.device), subpassFuncs (std::move (rp.subpassFuncs)), desc (rp.desc), rp (rp.rp)
+{
+	rp.rp = nullptr;
+}
+RenderPass& RenderPass::operator= (RenderPass&& rp)
+{
+	device = rp.device;
+	subpassFuncs = std::move (rp.subpassFuncs);
+	this->rp = rp.rp;
+	desc = rp.desc;
+	rp.rp = nullptr;
+	return *this;
+}
 
 void RenderPass::BuildCmdBuf (VkCommandBuffer cmdBuf, FrameBufferView fb_view)
 {

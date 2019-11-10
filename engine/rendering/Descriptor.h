@@ -189,6 +189,11 @@ class DescriptorManager
 	public:
 	DescriptorManager (VulkanDevice& device);
 	~DescriptorManager ();
+	DescriptorManager (DescriptorManager const& dm) = delete;
+	DescriptorManager operator= (DescriptorManager const& dm) = delete;
+	DescriptorManager (DescriptorManager&& dm) = delete;
+	DescriptorManager operator= (DescriptorManager&& dm) = delete;
+
 
 	LayoutID CreateDescriptorSetLayout (DescriptorLayout layout);
 	void DestroyDescriptorSetLayout (LayoutID id);

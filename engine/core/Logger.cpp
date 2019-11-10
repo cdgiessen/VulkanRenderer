@@ -6,6 +6,18 @@
 Logger Log;
 std::mutex log_lock;
 
+
+Logger::OutputFileHandle::OutputFileHandle (std::string file_name)
+{
+	fp = std::fopen (file_name.c_str (), "w");
+	if (!fp)
+	{
+		fmt::print ("File opening failed");
+	}
+}
+
+Logger::OutputFileHandle::~OutputFileHandle () { std::fclose (fp); }
+
 Logger::Logger () : fp_debug ("output.txt"), fp_error ("error.txt") {}
 
 void Logger::Debug (std::string_view str_v)
