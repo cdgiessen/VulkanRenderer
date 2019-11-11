@@ -2,17 +2,34 @@
 
 #include <filesystem>
 
+#include "core/JobSystem.h"
+#include "core/Logger.h"
 namespace Resource
 {
 
-
-AssetManager::AssetManager (job::TaskManager& task_manager)
-: task_manager (task_manager), texture_manager (task_manager)
+ResourceManager::ResourceManager (job::TaskManager& task_manager)
+: task_manager (task_manager), mesh_manager (task_manager), texture_manager (task_manager), shader_manager (task_manager)
 {
-	std::filesystem::path ("assets");
+	Log.Debug ("Creating asset directories\n");
+
+	std::vector<std::string> dirs_to_create = {
+		"assets", "assets/meshes", "assets/materials", "assets/textures", "assets/mesh", "assets/sounds", "assets/gltf", "assets/materials", ".cache"
+
+	};
+	for (auto& dir_name : dirs_to_create)
+	{
+		if (!std::filesystem::exists (dir_name))
+		{
+			std::filesystem::path asset_path (dir_name);
+			if (std::filesystem::create_directory (asset_path))
+			{
+				Log.Error (fmt::format ("Failed to create directory {}\n", dir_name));
+			}
+		}
+	}
 }
 
 
-AssetManager::~AssetManager () {}
+ResourceManager::~ResourceManager () {}
 
 } // namespace Resource

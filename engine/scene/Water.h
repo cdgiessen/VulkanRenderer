@@ -31,7 +31,7 @@
 //	std::unique_ptr<VulkanBuffer> uniformBuffer;
 //
 //	public:
-//	Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer);
+//	Water (Resource::ResourceManager& resourceMan, VulkanRenderer& renderer);
 //
 //	void UpdateUniform (cml::vec3f camera_pos);
 //

@@ -54,7 +54,7 @@
 //	public:
 //	TerrainManager (job::TaskManager& task_manager,
 //	    InternalGraph::GraphPrototype& protoGraph,
-//	    Resource::AssetManager& resourceMan,
+//	    Resource::ResourceManager& resourceMan,
 //	    VulkanRenderer& renderer);
 //	~TerrainManager ();
 //
@@ -69,7 +69,7 @@
 //	float GetTerrainHeightAtLocation (float x, float z);
 //
 //	job::TaskManager& task_manager;
-//	Resource::AssetManager& resourceMan;
+//	Resource::ResourceManager& resourceMan;
 //	VulkanRenderer& renderer;
 //
 //	std::shared_ptr<job::TaskSignal> workContinueSignal;

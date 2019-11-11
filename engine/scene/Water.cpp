@@ -2,7 +2,7 @@
 //
 //#include "cml/cml.h"
 //
-//Water::Water (Resource::AssetManager& resourceMan, VulkanRenderer& renderer) : renderer (renderer)
+// Water::Water (Resource::ResourceManager& resourceMan, VulkanRenderer& renderer) : renderer (renderer)
 //{
 //	model = std::make_unique<VulkanModel> (
 //	    renderer.device, renderer.async_task_manager, create_water_plane_subdiv (13, 40));
@@ -88,7 +88,7 @@
 //	    renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 //}
 //
-//void Water::UpdateUniform (cml::vec3f camera_pos)
+// void Water::UpdateUniform (cml::vec3f camera_pos)
 //{
 //	auto pos = camera_pos;
 //	pos.y = 0;
@@ -96,7 +96,7 @@
 //	uniformBuffer->CopyToBuffer (ubo);
 //}
 //
-//void Water::Draw (VkCommandBuffer cmdBuf, bool wireframe)
+// void Water::Draw (VkCommandBuffer cmdBuf, bool wireframe)
 //{
 //	model->BindModel (cmdBuf);
 //	if (wireframe)

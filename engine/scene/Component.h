@@ -47,11 +47,11 @@ struct Comp_Renderer : Component
 class ComponentManager
 {
 	public:
-	ComponentManager (Resource::AssetManager& resourceMan);
+	ComponentManager (Resource::ResourceManager& resourceMan);
 
 
 
 	private:
 	TransformManager transformMan;
-	Resource::AssetManager& resourceMan;
+	Resource::ResourceManager& resourceMan;
 };

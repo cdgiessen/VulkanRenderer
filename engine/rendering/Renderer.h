@@ -35,7 +35,7 @@ class Window;
 
 namespace Resource
 {
-class AssetManager;
+class ResourceManager;
 }
 
 
@@ -61,7 +61,7 @@ class VulkanRenderer
 {
 	public:
 	VulkanRenderer (
-	    bool enableValidationLayer, job::TaskManager& task_manager, Window& window, Resource::AssetManager& resource_man);
+	    bool enableValidationLayer, job::TaskManager& task_manager, Window& window, Resource::ResourceManager& resource_man);
 
 	VulkanRenderer (const VulkanRenderer& other) = delete; // copy
 	VulkanRenderer (VulkanRenderer&& other) = delete;      // move

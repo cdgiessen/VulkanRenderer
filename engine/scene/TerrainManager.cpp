@@ -14,9 +14,9 @@
 //#include "rendering/Initializers.h"
 //
 //
-//const auto TerrainSettingsFileName = "terrain_settings.json";
+// const auto TerrainSettingsFileName = "terrain_settings.json";
 //
-//TerrainCreationData::TerrainCreationData (
+// TerrainCreationData::TerrainCreationData (
 //    int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord)
 //: numCells (numCells),
 //  maxLevels (maxLevels),
@@ -27,9 +27,9 @@
 //}
 //
 //
-//TerrainManager::TerrainManager (job::TaskManager& task_manager,
+// TerrainManager::TerrainManager (job::TaskManager& task_manager,
 //    InternalGraph::GraphPrototype& protoGraph,
-//    Resource::AssetManager& resourceMan,
+//    Resource::ResourceManager& resourceMan,
 //    VulkanRenderer& renderer)
 //: task_manager (task_manager), resourceMan (resourceMan), renderer (renderer), protoGraph (protoGraph)
 //{
@@ -65,17 +65,17 @@
 //	workContinueSignal = std::make_shared<job::TaskSignal> ();
 //}
 //
-//TerrainManager::~TerrainManager () { CleanUpTerrain (); }
+// TerrainManager::~TerrainManager () { CleanUpTerrain (); }
 //
 //
-//void TerrainManager::StopActiveJobs ()
+// void TerrainManager::StopActiveJobs ()
 //{
 //	workContinueSignal->Cancel ();
 //	workContinueSignal->Wait ();
 //}
 //
 //
-//void TerrainManager::CleanUpTerrain ()
+// void TerrainManager::CleanUpTerrain ()
 //{
 //	StopActiveJobs ();
 //	terrains.clear ();
@@ -83,7 +83,7 @@
 //}
 //
 //
-//void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
+// void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
 //{
 //	curCameraPos = cameraPos;
 //	t_settings = gui_settings;
@@ -244,7 +244,7 @@
 //	// chunkBuffer.UpdateChunks ();
 //}
 //
-//void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe)
+// void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe)
 //{
 //	std::lock_guard lock (terrain_mutex);
 //	for (auto& ter : terrains)
@@ -255,7 +255,7 @@
 //}
 //
 //// TODO : Re-implement getting height at terrain location
-//float TerrainManager::GetTerrainHeightAtLocation (float x, float z)
+// float TerrainManager::GetTerrainHeightAtLocation (float x, float z)
 //{
 //	std::lock_guard lock (terrain_mutex);
 //	for (auto& terrain : terrains)
@@ -271,7 +271,7 @@
 //	return 0;
 //}
 //
-//void TerrainManager::SaveSettingsToFile ()
+// void TerrainManager::SaveSettingsToFile ()
 //{
 //	nlohmann::json j;
 //
@@ -288,7 +288,7 @@
 //	outFile.close ();
 //}
 //
-//void TerrainManager::LoadSettingsFromFile ()
+// void TerrainManager::LoadSettingsFromFile ()
 //{
 //	if (std::filesystem::exists (std::filesystem::path (TerrainSettingsFileName)))
 //	{
@@ -314,7 +314,7 @@
 //}
 //
 //
-//void TerrainManager::UpdateTerrainGUI ()
+// void TerrainManager::UpdateTerrainGUI ()
 //{
 //
 //	ImGui::SetNextWindowSize (ImVec2 (200, 220), ImGuiCond_FirstUseEver);

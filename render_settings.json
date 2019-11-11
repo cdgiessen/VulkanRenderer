@@ -1,6 +1,6 @@
 {
-    "directional_light_count": 5,
-    "memory_dump_on_exit": false,
-    "point_light_count": 16,
-    "spot_light_count": 8
+    "max_directional_lights": 5,
+    "max_point_lights": 16,
+    "max_spot_lights": 8,
+    "memory_dump_on_exit": false
 }

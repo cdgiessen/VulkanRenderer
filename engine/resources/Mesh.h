@@ -5,6 +5,11 @@
 
 #include "cml/cml.h"
 
+
+namespace job
+{
+class TaskManager;
+}
 namespace Resource::Mesh
 {
 
@@ -71,14 +76,16 @@ MeshData CreateSphere (int dim = 10);
 
 MeshData CreateWaterPlaneSubdiv (int levels = 3, int subdivs = 3);
 
-
 using MeshID = uint32_t;
 class Manager
 {
 	public:
+	Manager (job::TaskManager& task_manager);
+
 	MeshID LoadMesh ();
 
 	private:
+	job::TaskManager& task_manager;
 	std::unordered_map<MeshID, MeshData> meshes;
 };
 

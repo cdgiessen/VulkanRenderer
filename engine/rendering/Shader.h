@@ -10,6 +10,11 @@
 
 #include "util/FileWatcher.h"
 
+namespace Resource::Shader
+{
+class Manager;
+}
+
 class VulkanDevice;
 
 VkShaderModule loadShaderModule (VkDevice device, const std::string& codePath);
@@ -93,51 +98,10 @@ template <> struct hash<ShaderKey>
 
 } // namespace std
 
-class ShaderDatabase
-{
-	public:
-	ShaderDatabase ();
-
-	void Load ();
-	void Save ();
-	void Refresh ();
-	void Discover ();
-	std::vector<std::filesystem::path> StaleHandles ();
-
-	// void AddEntry (ShaderDatabaseHandle handle);
-
-	struct DBHandle
-	{
-		std::string filename;
-		ShaderType type;
-		std::filesystem::file_time_type glsl_last_write_time;
-		std::filesystem::file_time_type spirv_last_write_time;
-	};
-
-	private:
-	FileWatcher fileWatch;
-	std::string shader_path = "assets/shaders/";
-	std::string database_path = "assets/shader_db.json";
-
-	std::vector<DBHandle> entries;
-};
-
-class ShaderCompiler
-{
-	public:
-	ShaderCompiler ();
-	std::optional<std::vector<uint32_t>> const compile_glsl_to_spriv (std::string const& shader_name,
-	    std::string const& shader_data,
-	    ShaderType const shader_type,
-	    std::filesystem::path include_path = std::filesystem::path{});
-
-	std::optional<std::string> load_file_data (std::string const& filename);
-};
-
 class ShaderManager
 {
 	public:
-	ShaderManager (VulkanDevice& device);
+	ShaderManager (Resource::Shader::Manager& resource_shader_manager, VulkanDevice& device);
 	~ShaderManager ();
 
 	std::optional<ShaderKey> load_and_compile_module (std::filesystem::path file);
@@ -151,10 +115,8 @@ class ShaderManager
 	std::optional<ShaderModule> get_module (std::string const& name, ShaderType const type);
 
 	private:
-	const VulkanDevice& device;
-
-	ShaderCompiler compiler;
-	ShaderDatabase database;
+	Resource::Shader::Manager& resource_shader_manager;
+	VulkanDevice const& device;
 
 	std::unordered_map<ShaderKey, ShaderModule> module_map;
 

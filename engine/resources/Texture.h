@@ -15,10 +15,11 @@ namespace job
 class TaskManager;
 }
 
+
 namespace Resource::Texture
 {
 
-using TexID = int;
+using TexID = uint32_t;
 
 struct DataDescription
 {
@@ -96,7 +97,7 @@ class Manager
 	void LoadTextureFromFile (TexID texRes);
 
 	TexID GetTexIDByName (std::string s);
-	TexResource& GetTexResourceByID (int id);
+	TexResource& GetTexResourceByID (TexID id);
 
 
 	private:

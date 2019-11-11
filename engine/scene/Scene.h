@@ -15,7 +15,7 @@
 //#include "TerrainManager.h"
 //#include "Water.h"
 //
-//struct SkySettings
+// struct SkySettings
 //{
 //	bool show_skyEditor = true;
 //	bool autoMove = false;
@@ -27,11 +27,11 @@
 //	DirectionalLight moon;
 //};
 //
-//class Scene
+// class Scene
 //{
 //	public:
 //	Scene (job::TaskManager& task_manager,
-//	    Resource::AssetManager& resourceMan,
+//	    Resource::ResourceManager& resourceMan,
 //	    VulkanRenderer& renderer,
 //	    TimeManager& time_manager,
 //	    InternalGraph::GraphPrototype& graph);
@@ -51,7 +51,7 @@
 //	private:
 //	job::TaskManager& task_manager;
 //	VulkanRenderer& renderer;
-//	Resource::AssetManager& resourceMan;
+//	Resource::ResourceManager& resourceMan;
 //	TimeManager& time_manager;
 //
 //	std::vector<DirectionalLight> directionalLights;

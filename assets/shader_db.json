@@ -1,0 +1,77 @@
+[
+    {
+        "name": "gameObject_shader.frag",
+        "type": "fragment",
+        "id": 0
+    },
+    {
+        "name": "gameObject_shader.vert",
+        "type": "vertex",
+        "id": 1
+    },
+    {
+        "name": "instancedSceneObject.frag",
+        "type": "fragment",
+        "id": 2
+    },
+    {
+        "name": "instancedSceneObject.vert",
+        "type": "vertex",
+        "id": 3
+    },
+    {
+        "name": "normalVecDebug.frag",
+        "type": "fragment",
+        "id": 4
+    },
+    {
+        "name": "normalVecDebug.geom",
+        "type": "geometry",
+        "id": 5
+    },
+    {
+        "name": "normalVecDebug.vert",
+        "type": "vertex",
+        "id": 6
+    },
+    {
+        "name": "pbr.frag",
+        "type": "fragment",
+        "id": 7
+    },
+    {
+        "name": "pbr.vert",
+        "type": "vertex",
+        "id": 8
+    },
+    {
+        "name": "skybox.frag",
+        "type": "fragment",
+        "id": 9
+    },
+    {
+        "name": "skybox.vert",
+        "type": "vertex",
+        "id": 10
+    },
+    {
+        "name": "terrain.frag",
+        "type": "fragment",
+        "id": 11
+    },
+    {
+        "name": "terrain.vert",
+        "type": "vertex",
+        "id": 12
+    },
+    {
+        "name": "water.frag",
+        "type": "fragment",
+        "id": 13
+    },
+    {
+        "name": "water.vert",
+        "type": "vertex",
+        "id": 14
+    }
+]

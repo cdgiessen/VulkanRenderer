@@ -12,8 +12,8 @@
 //#define VERTEX_BUFFER_BIND_ID 0
 //#define INSTANCE_BUFFER_BIND_ID 1
 //
-//Scene::Scene (job::TaskManager& task_manager,
-//    Resource::AssetManager& resourceMan,
+// Scene::Scene (job::TaskManager& task_manager,
+//    Resource::ResourceManager& resourceMan,
 //    VulkanRenderer& renderer,
 //    TimeManager& time_manager,
 //    InternalGraph::GraphPrototype& graph)
@@ -42,7 +42,7 @@
 //	water_plane = std::make_unique<Water> (resourceMan, renderer);
 //}
 //
-//void Scene::UpdateScene ()
+// void Scene::UpdateScene ()
 //{
 //
 //	GlobalData gd;
@@ -117,23 +117,23 @@
 //	water_plane->UpdateUniform (camera->Position);
 //}
 //
-//void Scene::RenderOpaque (VkCommandBuffer commandBuffer, bool wireframe)
+// void Scene::RenderOpaque (VkCommandBuffer commandBuffer, bool wireframe)
 //{
 //
 //	if (terrainManager != nullptr) terrainManager->RenderTerrain (commandBuffer, wireframe);
 //}
 //
-//void Scene::RenderTransparent (VkCommandBuffer cmdBuf, bool wireframe)
+// void Scene::RenderTransparent (VkCommandBuffer cmdBuf, bool wireframe)
 //{
 //	water_plane->Draw (cmdBuf, wireframe);
 //}
 //
-//void Scene::RenderSkybox (VkCommandBuffer commandBuffer)
+// void Scene::RenderSkybox (VkCommandBuffer commandBuffer)
 //{
 //	skybox->WriteToCommandBuffer (commandBuffer);
 //}
 //
-//void Scene::UpdateSunData ()
+// void Scene::UpdateSunData ()
 //{
 //	if (skySettings.autoMove)
 //	{
@@ -150,7 +150,7 @@
 //	directionalLights.at (1) = skySettings.moon;
 //}
 //
-//void Scene::DrawSkySettingsGui ()
+// void Scene::DrawSkySettingsGui ()
 //{
 //	ImGui::SetNextWindowPos (ImVec2 (0, 675), ImGuiCond_FirstUseEver);
 //	ImGui::SetNextWindowSize (ImVec2 (356, 180), ImGuiCond_FirstUseEver);
@@ -167,7 +167,7 @@
 //	ImGui::End ();
 //}
 //
-//void Scene::UpdateSceneGUI ()
+// void Scene::UpdateSceneGUI ()
 //{
 //	if (terrainManager != nullptr)
 //	{
@@ -215,4 +215,4 @@
 //	ImGui::End ();
 //}
 //
-//Camera* Scene::GetCamera () { return camera.get (); }
+// Camera* Scene::GetCamera () { return camera.get (); }

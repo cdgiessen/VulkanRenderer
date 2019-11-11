@@ -45,10 +45,7 @@ class Engine
 	Engine (Engine&& app) = delete;
 	Engine& operator= (Engine&& app) = delete;
 
-	void SetImguiUpdateCallBack (std::function<void()> cb)
-	{
-		imgui_update_callback = cb;
-	}
+	void SetImguiUpdateCallBack (std::function<void()> cb) { imgui_update_callback = cb; }
 	void SetImguiDrawCallBack (std::function<void()> cb) { imgui_draw_callback = cb; }
 
 	void Run ();
@@ -60,7 +57,7 @@ class Engine
 
 	TimeManager time_manager;
 	Window window;
-	Resource::AssetManager resource_manager;
+	Resource::ResourceManager resource_manager;
 
 	VulkanRenderer vulkan_renderer;
 	// Scene scene;

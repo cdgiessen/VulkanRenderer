@@ -62,7 +62,7 @@ void RenderSettings::Save ()
 }
 
 VulkanRenderer::VulkanRenderer (
-    bool validationLayer, job::TaskManager& task_manager, Window& window, Resource::AssetManager& resource_man)
+    bool validationLayer, job::TaskManager& task_manager, Window& window, Resource::ResourceManager& resource_man)
 
 : settings ("render_settings.json"),
   task_manager (task_manager),
@@ -70,7 +70,7 @@ VulkanRenderer::VulkanRenderer (
   vulkanSwapChain (device, window),
   async_task_manager (task_manager, device),
   descriptor_manager (device),
-  shader_manager (device),
+  shader_manager (resource_man.shader_manager, device),
   pipeline_manager (device),
   model_manager (resource_man.mesh_manager, device, async_task_manager),
   texture_manager (resource_man.texture_manager, device, async_task_manager),
