@@ -147,7 +147,7 @@ class DescriptorPool
 {
 	public:
 	DescriptorPool (
-	    VkDevice device, DescriptorLayout const& layout, VkDescriptorSetLayout vk_layout, LayoutID layout_id, uint32_t max_sets);
+	    VkDevice device, DescriptorLayout const& layout, VkDescriptorSetLayout vk_layout, LayoutID layout_id, uint16_t max_sets);
 	~DescriptorPool ();
 	DescriptorPool (DescriptorPool const& other) = delete;
 	DescriptorPool& operator= (DescriptorPool const& other) = delete;
@@ -178,7 +178,7 @@ class DescriptorPool
 	VkDevice device;
 	VkDescriptorSetLayout vk_layout;
 	LayoutID layout_id;
-	uint32_t max_sets;
+	uint16_t max_sets;
 	std::vector<VkDescriptorPoolSize> pool_members;
 	std::vector<Pool> pools;
 };

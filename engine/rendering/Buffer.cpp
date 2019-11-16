@@ -3,11 +3,9 @@
 #include <cassert>
 #include <cstring>
 
-
 #include "Device.h"
 #include "RenderTools.h"
 
-#include "vk_mem_alloc.h"
 
 const uint32_t VERTEX_BUFFER_BIND_ID = 0;
 const uint32_t INSTANCE_BUFFER_BIND_ID = 1;

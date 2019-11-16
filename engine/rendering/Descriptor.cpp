@@ -94,7 +94,7 @@ void DescriptorSet::Bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout, uint3
 //// DESCRIPTOR POOL ////
 
 DescriptorPool::DescriptorPool (
-    VkDevice device, DescriptorLayout const& layout, VkDescriptorSetLayout vk_layout, LayoutID layout_id, uint32_t max_sets)
+    VkDevice device, DescriptorLayout const& layout, VkDescriptorSetLayout vk_layout, LayoutID layout_id, uint16_t max_sets)
 : device (device), vk_layout (vk_layout), layout_id (layout_id), max_sets (max_sets)
 {
 	std::unordered_map<DescriptorType, uint32_t> layout_type_count;
@@ -118,12 +118,12 @@ DescriptorPool::~DescriptorPool ()
 }
 
 DescriptorPool::DescriptorPool (DescriptorPool&& other)
-: device (device),
-  vk_layout (vk_layout),
-  layout_id (layout_id),
-  max_sets (max_sets),
-  pool_members (pool_members),
-  pools (pools)
+: device (other.device),
+  vk_layout (other.vk_layout),
+  layout_id (other.layout_id),
+  max_sets (other.max_sets),
+  pool_members (other.pool_members),
+  pools (other.pools)
 {
 	other.pools.clear ();
 }
