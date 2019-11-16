@@ -52,9 +52,9 @@ class ShaderDatabase
 
 	struct DBHandle
 	{
-		ShaderID id;
-		std::string filename;
+		std::string name;
 		ShaderType type;
+		ShaderID id;
 	};
 
 	private:

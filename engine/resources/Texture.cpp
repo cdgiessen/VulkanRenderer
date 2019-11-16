@@ -43,65 +43,39 @@ nlohmann::json to_json (TexResource const& r)
 {
 	nlohmann::json j;
 	j["id"] = r.id;
-	switch (r.layout)
+	switch (r.tex_type)
 	{
-		case (LayoutType::single1D):
-			j["layout"] = "single1D";
+		case (TextureType::single1D):
+			j["type"] = "single1D";
 			break;
-		case (LayoutType::single2D):
-			j["layout"] = "single2D";
+		case (TextureType::single2D):
+			j["type"] = "single2D";
 			break;
-		case (LayoutType::single3D):
-			j["layout"] = "single3D";
+		case (TextureType::single3D):
+			j["type"] = "single3D";
 			break;
-		case (LayoutType::array1D):
-			j["layout"] = "array1D";
+		case (TextureType::array1D):
+			j["type"] = "array1D";
 			break;
-		case (LayoutType::array2D):
-			j["layout"] = "array2D";
+		case (TextureType::array2D):
+			j["type"] = "array2D";
 			break;
-		case (LayoutType::array3D):
-			j["layout"] = "array3D";
+		case (TextureType::array3D):
+			j["type"] = "array3D";
 			break;
-		case (LayoutType::cubemap2D):
-			j["layout"] = "cubemap2D";
+		case (TextureType::cubemap2D):
+			j["type"] = "cubemap2D";
 			break;
 		default:
 			break;
 	}
-	switch (r.fileFormatType)
+	int i = 0;
+	for (auto& p : r.paths)
 	{
-		case (FormatType::png):
-			j["format"] = "png";
-			break;
-		case (FormatType::jpg):
-			j["format"] = "jpg";
-			break;
-		default:
-			break;
+		j["paths"][i++] = p;
 	}
-	switch (r.channels)
-	{
-		case (ChannelType::grey):
-			j["channels"] = "grey";
-			break;
-		case (ChannelType::grey_alpha):
-			j["channels"] = "grey_alpha";
-			break;
-		case (ChannelType::rgb):
-			j["channels"] = "rgb";
-			break;
-		case (ChannelType::rgba):
-			j["channels"] = "rgba";
-			break;
-	}
+
 	j["name"] = r.name;
-	j["description"]["channels"] = r.description.channels;
-	j["description"]["width"] = r.description.width;
-	j["description"]["height"] = r.description.height;
-	j["description"]["depth"] = r.description.depth;
-	j["description"]["layers"] = r.description.layers;
-	j["description"]["pixelCount"] = r.description.pixelCount;
 	return j;
 }
 
@@ -109,46 +83,32 @@ std::optional<TexResource> from_json_TexResource (nlohmann::json j)
 {
 	try
 	{
-		int id = j["id"];
-
-		LayoutType layout;
-		if (j["layout"] == "single1D")
-			layout = LayoutType::single1D;
-		else if (j["layout"] == "single2D")
-			layout = LayoutType::single2D;
-		else if (j["layout"] == "single3D")
-			layout = LayoutType::single3D;
-		else if (j["layout"] == "array1D")
-			layout = LayoutType::array1D;
-		else if (j["layout"] == "array2D")
-			layout = LayoutType::array2D;
-		else if (j["layout"] == "array3D")
-			layout = LayoutType::array3D;
-		else if (j["layout"] == "cubemap2D")
-			layout = LayoutType::cubemap2D;
-		FormatType format;
-		if (j["format"] == "png")
-			format = FormatType::png;
-		else if (j["format"] == "jpg")
-			format = FormatType::jpg;
-		ChannelType channelType;
-		if (j["channels"] == "grey")
-			channelType = ChannelType::grey;
-		else if (j["channels"] == "grey_alpha")
-			channelType = ChannelType::grey_alpha;
-		else if (j["channels"] == "rgb")
-			channelType = ChannelType::rgb;
-		else
-			channelType = ChannelType::rgba;
+		TexID id = j["id"];
 		std::string name = j["name"];
 
-		uint32_t channels = j["description"]["channels"];
-		uint32_t width = j["description"]["width"];
-		uint32_t height = j["description"]["height"];
-		uint32_t depth = j["description"]["depth"];
-		uint32_t layers = j["description"]["layers"];
-		DataDescription dataDesc (channels, width, height, depth, layers);
-		return TexResource (id, name, layout, channelType, format, dataDesc);
+		TextureType tex_type;
+		if (j["type"] == "single1D")
+			tex_type = TextureType::single1D;
+		else if (j["type"] == "single2D")
+			tex_type = TextureType::single2D;
+		else if (j["type"] == "single3D")
+			tex_type = TextureType::single3D;
+		else if (j["type"] == "array1D")
+			tex_type = TextureType::array1D;
+		else if (j["type"] == "array2D")
+			tex_type = TextureType::array2D;
+		else if (j["type"] == "array3D")
+			tex_type = TextureType::array3D;
+		else if (j["type"] == "cubemap2D")
+			tex_type = TextureType::cubemap2D;
+
+		std::vector<std::string> paths;
+		for (auto& t : j["paths"])
+		{
+			paths.push_back (t);
+		}
+
+		return { { id, name, tex_type, paths } };
 	}
 	catch (nlohmann::json::exception& e)
 	{
@@ -249,46 +209,43 @@ void Manager::LoadTextureFromFile (TexID id)
 {
 	auto& texRes = GetTexResourceByID (id);
 
-	auto texData = std::vector<std::byte> (texRes.description.pixelCount * 4);
+	std::vector<std::byte> texData; // = std::vector<std::byte> (texRes.description.pixelCount * 4);
 
 	// int desiredChannels = texRes.dataDescription.channels;
+	std::vector<stbi_uc*> pixels_array (texRes.paths.size ());
+	texRes.dims.resize (texRes.paths.size ());
 
-	for (size_t i = 0; i < texRes.description.layers; i++)
+	for (size_t i = 0; i < texRes.paths.size (); i++)
 	{
-		fs::path path;
-		if (texRes.description.layers != 1)
-		{
-			path = texture_path / fs::path (texRes.name + "_" + std::to_string (i) + "." +
-			                                formatTypeToString (texRes.fileFormatType));
-		}
-		else
-		{
-			path = texture_path / fs::path (texRes.name + std::string (".") +
-			                                formatTypeToString (texRes.fileFormatType));
-		}
-
-		int texWidth, texHeight, texChannels;
-		stbi_uc* pixels;
-		std::string path_string = path.string ();
-		pixels = stbi_load (path_string.c_str (), &texWidth, &texHeight, &texChannels, 4);
-		if (pixels == nullptr)
+		fs::path path = texRes.paths.at (i);
+		std::string path_string = "assets/textures/" + path.string ();
+		pixels_array.at (i) = stbi_load (path_string.c_str (),
+		    &texRes.dims.at (i).width,
+		    &texRes.dims.at (i).height,
+		    &texRes.dims.at (i).channels,
+		    4);
+		if (pixels_array.at (i) == nullptr)
 		{
 			Log.Error (fmt::format ("Image {} failed to load!\n", path.string ()));
 		}
-		// else if (desiredChannels != texChannels) {
-		//	Log.Error << "Image couldn't load desired channel of " << desiredChannels
-		//		<< " but only " << texChannels << " channels\n";
-		//}
-		else
-		{
-			std::memcpy (texData.data () + i * texWidth * texHeight * 4,
-			    pixels,
-			    sizeof (std::byte) * texWidth * texHeight * 4);
-
-
-			stbi_image_free (pixels);
-		}
 	}
+
+	int size = 0;
+	for (size_t i = 0; i < texRes.paths.size (); i++)
+	{
+		size += texRes.dims.at (i).width * texRes.dims.at (i).height * 4;
+	}
+	texData.resize (size);
+
+	for (size_t i = 0; i < texRes.paths.size (); i++)
+	{
+		std::memcpy (texData.data () + i * texRes.dims.at (i).width * texRes.dims.at (i).height * 4,
+		    pixels_array.at (i),
+		    sizeof (std::byte) * texRes.dims.at (i).width * texRes.dims.at (i).height * 4);
+
+		stbi_image_free (pixels_array.at (i));
+	}
+
 	Log.Debug (fmt::format ("Tex {}\n", id));
 
 	std::lock_guard lg (resource_lock);

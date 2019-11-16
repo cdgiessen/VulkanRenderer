@@ -34,7 +34,7 @@ struct DataMemberOutline
 
 struct TextureMemberOutline
 {
-	Texture::LayoutType type;
+	Texture::TextureType type;
 	std::string name;
 };
 

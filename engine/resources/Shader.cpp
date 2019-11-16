@@ -158,7 +158,6 @@ ShaderType GetShaderStage (const std::filesystem::path& stage)
 	return GetShaderStage (stage.extension ().string ());
 }
 
-
 std::optional<std::vector<char>> readShaderFile (const std::string& filename)
 {
 	std::ifstream file (filename, std::ios::ate | std::ios::binary);
@@ -187,13 +186,17 @@ std::optional<std::vector<char>> readShaderFile (const std::string& filename)
 
 void to_json (nlohmann::json& j, const ShaderDatabase::DBHandle& handle)
 {
-	j = nlohmann::json ({ { "filename", handle.filename }, { "type", static_cast<int> (handle.type) } });
+	j = nlohmann::json (
+	    { { "name", handle.name }, { "type", static_cast<int> (handle.type) }, { "id", handle.id } });
 }
 
 void from_json (const nlohmann::json& j, ShaderDatabase::DBHandle& handle)
 {
-	j.at ("filename").get_to (handle.filename);
-	j.at ("type").get_to (handle.type);
+	j.at ("name").get_to (handle.name);
+	std::string type;
+	j.at ("type").get_to (type);
+	handle.type = GetShaderStage (type);
+	j.at ("id").get_to (handle.id);
 }
 
 ShaderDatabase::ShaderDatabase ()
@@ -211,13 +214,10 @@ void ShaderDatabase::Load ()
 			nlohmann::json j;
 
 			input >> j;
-			entries.reserve (j["shader_count"]);
-			if (j["shader_count"] > 0)
+
+			for (auto& entry : j)
 			{
-				for (auto& entry : j)
-				{
-					entries.push_back (entry);
-				}
+				entries.push_back (entry);
 			}
 		}
 		catch (nlohmann::detail::parse_error& e)
@@ -244,10 +244,8 @@ void ShaderDatabase::Save ()
 
 	for (auto& entry : entries)
 	{
-		j[entry.filename] = entry;
+		j[entry.name] = entry;
 	}
-
-	j["shader_count"] = entries.size ();
 
 	std::ofstream outFile (database_path);
 	outFile << std::setw (4) << j;

@@ -37,7 +37,7 @@ struct DataDescription
 	uint32_t pixelCount = 0;
 };
 
-enum class LayoutType
+enum class TextureType
 {
 	single1D,
 	single2D,
@@ -63,23 +63,19 @@ enum class ChannelType
 	rgba,       // STBI_rgb_alpha = 4
 };
 
+struct Dimentions
+{
+	int width = 0, height = 0, channels = 4;
+};
+
 class TexResource
 {
 	public:
-	TexResource (){};
-	TexResource (TexID id, std::string name, LayoutType layout, ChannelType channels, FormatType format, DataDescription dataDesc)
-	: id (id), name (name), layout (layout), channels (channels), fileFormatType (format), description (dataDesc)
-	{
-		data.resize (description.channels * description.pixelCount);
-	}
-
 	TexID id;
 	std::string name;
-	LayoutType layout;
-	ChannelType channels;
-	FormatType fileFormatType;
-	DataDescription description;
-
+	TextureType tex_type;
+	std::vector<std::string> paths;
+	std::vector<Dimentions> dims;
 	std::vector<std::byte> data;
 };
 
