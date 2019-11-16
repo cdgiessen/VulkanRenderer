@@ -36,89 +36,63 @@ ShaderType GetShaderStage (const std::string& stage);
 // Manages Shaderlife times
 struct ShaderModule
 {
-	ShaderModule ();
-	ShaderModule (ShaderType type, VkShaderModule module);
+	ShaderModule (VkDevice device, ShaderType type, std::vector<uint32_t> const& code);
+	~ShaderModule ();
 
-	VkPipelineShaderStageCreateInfo GetCreateInfo ();
+	ShaderModule (ShaderModule const& mod) = delete;
+	ShaderModule& operator= (ShaderModule const& mod) = delete;
+	ShaderModule (ShaderModule&& mod);
+	ShaderModule& operator= (ShaderModule&& mod);
 
+	VkDevice device;
 	ShaderType type;
-	VkShaderModule module;
+	VkShaderModule module = nullptr;
 };
 
 class ShaderModuleSet
 {
 	public:
-	// default, no data set.
 	ShaderModuleSet ();
+	ShaderModuleSet (VkShaderModule vert, VkShaderModule frag);
 
-	ShaderModuleSet& Vertex (ShaderModule vert);
-	ShaderModuleSet& Fragment (ShaderModule frag);
-	ShaderModuleSet& Geometry (ShaderModule geom);
-	ShaderModuleSet& TessControl (ShaderModule tesc);
-	ShaderModuleSet& TessEval (ShaderModule tese);
-
-	ShaderModuleSet (const ShaderModuleSet& set) = default;
-	ShaderModuleSet& operator= (const ShaderModuleSet& set) = default;
+	ShaderModuleSet& Vertex (VkShaderModule vert);
+	ShaderModuleSet& Fragment (VkShaderModule frag);
+	ShaderModuleSet& Geometry (VkShaderModule geom);
+	ShaderModuleSet& TessControl (VkShaderModule tess_control);
+	ShaderModuleSet& TessEval (VkShaderModule tess_eval);
 
 	std::vector<VkPipelineShaderStageCreateInfo> ShaderStageCreateInfos ();
 
 	private:
-	std::optional<ShaderModule> vert;
-	std::optional<ShaderModule> frag;
-	std::optional<ShaderModule> geom;
-	std::optional<ShaderModule> tesc;
-	std::optional<ShaderModule> tese;
+	VkShaderModule vert = VK_NULL_HANDLE;
+	VkShaderModule frag = VK_NULL_HANDLE;
+	VkShaderModule geom = VK_NULL_HANDLE;
+	VkShaderModule tess_control = VK_NULL_HANDLE;
+	VkShaderModule tess_eval = VK_NULL_HANDLE;
 };
 
-struct ShaderKey
-{
-	std::string name;
-	ShaderType type;
 
-	bool operator== (const ShaderKey& other) const
-	{
-		return (name == other.name && type == other.type);
-	}
-};
-
-namespace std
-{
-
-template <> struct hash<ShaderKey>
-{
-	std::size_t operator() (const ShaderKey& k) const
-	{
-		using std::hash;
-		using std::size_t;
-		using std::string;
-
-		return ((hash<string> () (k.name) ^ (hash<ShaderType> () (k.type) << 1)) >> 1);
-	}
-};
-
-} // namespace std
-
+using ShaderID = uint32_t;
 class ShaderManager
 {
 	public:
 	ShaderManager (Resource::Shader::Manager& resource_shader_manager, VulkanDevice& device);
 	~ShaderManager ();
 
-	std::optional<ShaderKey> load_and_compile_module (std::filesystem::path file);
-	std::optional<ShaderKey> load_module (std::string const& name, std::string const& codePath, ShaderType type);
-	std::optional<ShaderKey> create_module (
-	    std::string const& name, ShaderType type, std::vector<uint32_t> const& code);
+	ShaderID CreateModule (std::string const& name, ShaderType type, std::vector<uint32_t> const& code);
 
-	void delete_module (ShaderKey const& key);
+	void DeleteModule (ShaderID const& id);
 
-	std::optional<ShaderModule> get_module (ShaderKey const& key);
-	std::optional<ShaderModule> get_module (std::string const& name, ShaderType const type);
+	VkShaderModule GetModule (ShaderID const& id);
+
+	VkShaderModule GetModule (std::string name, ShaderType type);
 
 	private:
 	Resource::Shader::Manager& resource_shader_manager;
 	VulkanDevice const& device;
 
-	std::unordered_map<ShaderKey, ShaderModule> module_map;
+	ShaderID cur_id = 0;
+	std::unordered_map<ShaderID, ShaderModule> module_map;
 
 	std::optional<std::vector<char>> readShaderFile (const std::string& filename);
 };

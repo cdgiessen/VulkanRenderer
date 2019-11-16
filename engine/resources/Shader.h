@@ -32,6 +32,7 @@ struct ShaderInfo
 {
 	std::string name;
 	ShaderType type;
+	std::vector<uint32_t> spirv_data;
 };
 
 using ShaderID = uint32_t;
@@ -54,15 +55,9 @@ class ShaderDatabase
 		ShaderID id;
 		std::string filename;
 		ShaderType type;
-		std::filesystem::file_time_type glsl_last_write_time;
-		std::filesystem::file_time_type spirv_last_write_time;
 	};
 
 	private:
-	FileWatcher fileWatch;
-	std::string shader_path = "assets/shaders/";
-	std::string database_path = "assets/shader_db.json";
-
 	std::vector<DBHandle> entries;
 };
 
@@ -75,25 +70,33 @@ class ShaderCompiler
 	    ShaderType const shader_type,
 	    std::filesystem::path include_path = std::filesystem::path{});
 
-	std::optional<std::string> load_file_data (std::string const& filename);
+	std::optional<std::string> LoadFileData (std::string const& filename);
 };
-
-
 
 
 class Manager
 {
 	public:
 	Manager (job::TaskManager& task_manager);
-	job::TaskManager& task_manager;
 
-	std::string GetShaderString (ShaderID id);
-	std::string GetShaderString (std::string name);
+	ShaderID AddShader (std::string name);
+
+	std::vector<uint32_t> GetSpirVData (ShaderID id);
+	std::vector<uint32_t> GetSpirVData (std::string const& name, ShaderType type);
+
+
+	ShaderID GetShaderIDByName (std::string s);
+
 
 	ShaderCompiler compiler;
 	ShaderDatabase database;
 
 	private:
+	std::vector<uint32_t> AlignData (std::vector<char> const& code);
+
+	job::TaskManager& task_manager;
+	std::mutex lock;
+	ShaderID cur_id = 0;
 	std::unordered_map<ShaderID, ShaderInfo> shaders;
 };
 } // namespace Resource::Shader

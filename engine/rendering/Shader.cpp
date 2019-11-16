@@ -56,12 +56,37 @@ void test_func ()
 	std::string source = glsl.compile ();
 }
 
-ShaderModule::ShaderModule () {}
-ShaderModule::ShaderModule (ShaderType type, VkShaderModule module) : type (type), module (module)
+ShaderModule::ShaderModule (VkDevice device, ShaderType type, std::vector<uint32_t> const& code)
+: device (device), type (type), module (module)
 {
+	VkShaderModuleCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.pCode = code.data ();
+	createInfo.codeSize = code.size () * 4;
+
+	if (vkCreateShaderModule (device, &createInfo, nullptr, &module) != VK_SUCCESS)
+	{
+		Log.Error (fmt::format ("Failed to create VkShaderModule for\n"));
+	}
 }
 
-VkPipelineShaderStageCreateInfo ShaderModule::GetCreateInfo ()
+ShaderModule::~ShaderModule () {}
+
+ShaderModule::ShaderModule (ShaderModule&& mod)
+: device (mod.device), type (mod.type), module (mod.module)
+{
+	mod.module = nullptr;
+}
+ShaderModule& ShaderModule::operator= (ShaderModule&& mod)
+{
+	device = mod.device;
+	type = mod.type;
+	module = mod.module;
+	mod.module = nullptr;
+	return *this;
+}
+
+VkPipelineShaderStageCreateInfo GetCreateInfo (ShaderType type, VkShaderModule module)
 {
 	switch (type)
 	{
@@ -79,48 +104,54 @@ VkPipelineShaderStageCreateInfo ShaderModule::GetCreateInfo ()
 		case (ShaderType::compute):
 			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_COMPUTE_BIT, module);
 		case (ShaderType::error):
-			break;
+		default:
+			Log.Error ("Shader module type not correct");
+			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_VERTEX_BIT, module);
 	}
-	Log.Error ("Shader module type not correct");
-	return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_VERTEX_BIT, module);
 };
 
 ShaderModuleSet::ShaderModuleSet (){};
+ShaderModuleSet::ShaderModuleSet (VkShaderModule vert, VkShaderModule frag)
+: vert (vert), frag (frag)
+{
+}
 
-ShaderModuleSet& ShaderModuleSet::Vertex (ShaderModule vert)
+ShaderModuleSet& ShaderModuleSet::Vertex (VkShaderModule vert)
 {
 	this->vert = vert;
 	return *this;
 }
-ShaderModuleSet& ShaderModuleSet::Fragment (ShaderModule frag)
+ShaderModuleSet& ShaderModuleSet::Fragment (VkShaderModule frag)
 {
 	this->frag = frag;
 	return *this;
 }
-ShaderModuleSet& ShaderModuleSet::Geometry (ShaderModule geom)
+ShaderModuleSet& ShaderModuleSet::Geometry (VkShaderModule geom)
 {
 	this->geom = geom;
 	return *this;
 }
-ShaderModuleSet& ShaderModuleSet::TessControl (ShaderModule tesc)
+ShaderModuleSet& ShaderModuleSet::TessControl (VkShaderModule tess_control)
 {
-	this->tesc = tesc;
+	this->tess_control = tess_control;
 	return *this;
 }
-ShaderModuleSet& ShaderModuleSet::TessEval (ShaderModule tese)
+ShaderModuleSet& ShaderModuleSet::TessEval (VkShaderModule tess_eval)
 {
-	this->tese = tese;
+	this->tess_eval = tess_eval;
 	return *this;
 }
 
 std::vector<VkPipelineShaderStageCreateInfo> ShaderModuleSet::ShaderStageCreateInfos ()
 {
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-	if (vert.has_value ()) shaderStages.push_back (vert->GetCreateInfo ());
-	if (frag.has_value ()) shaderStages.push_back (frag->GetCreateInfo ());
-	if (geom.has_value ()) shaderStages.push_back (geom->GetCreateInfo ());
-	if (tesc.has_value ()) shaderStages.push_back (tesc->GetCreateInfo ());
-	if (tese.has_value ()) shaderStages.push_back (tese->GetCreateInfo ());
+	if (vert != VK_NULL_HANDLE) shaderStages.push_back (GetCreateInfo (ShaderType::vertex, vert));
+	if (frag != VK_NULL_HANDLE) shaderStages.push_back (GetCreateInfo (ShaderType::fragment, frag));
+	if (geom != VK_NULL_HANDLE) shaderStages.push_back (GetCreateInfo (ShaderType::geometry, geom));
+	if (tess_control != VK_NULL_HANDLE)
+		shaderStages.push_back (GetCreateInfo (ShaderType::tessControl, tess_control));
+	if (tess_eval != VK_NULL_HANDLE)
+		shaderStages.push_back (GetCreateInfo (ShaderType::tessEval, tess_eval));
 
 	return shaderStages;
 }
@@ -141,108 +172,41 @@ ShaderManager::~ShaderManager ()
 	}
 }
 
-std::optional<ShaderKey> ShaderManager::load_and_compile_module (std::filesystem::path file)
+ShaderID ShaderManager::CreateModule (std::string const& name, ShaderType type, std::vector<uint32_t> const& code)
 {
-	auto file_data = compiler.load_file_data (file.string ()).value ();
-	auto shader_type = GetShaderStage (file.extension ().string ());
-	auto spirv = compiler.compile_glsl_to_spriv (
-	    file.stem ().string (), file_data, shader_type, file.parent_path () / "common");
+	ShaderModule module (device.device, type, code);
 
-	if (!spirv.has_value ())
-	{
-		return {};
-	}
-	return create_module (file.stem ().string (), shader_type, spirv.value ());
+	ShaderID new_id = cur_id++;
+	module_map.emplace (new_id, std::move (module));
+
+	return new_id;
 }
 
-std::optional<ShaderKey> ShaderManager::load_module (
-    std::string const& name, std::string const& codePath, ShaderType type)
+void ShaderManager::DeleteModule (ShaderID const& id)
 {
-	std::vector<char> shaderCode;
-	std::vector<uint32_t> codeAligned;
-
-	auto pos_shaderCode = readShaderFile (codePath);
-	if (!pos_shaderCode.has_value ())
-	{
-		Log.Error (fmt::format ("Shader at {} wont load, using defaults\n", codePath));
-		return {};
-	}
-
-	shaderCode = pos_shaderCode.value ();
-
-	codeAligned = std::vector<uint32_t> (shaderCode.size () / 4 + 1);
-	memcpy (codeAligned.data (), shaderCode.data (), shaderCode.size ());
-
-
-	return create_module (name, type, codeAligned);
-}
-
-std::optional<ShaderKey> ShaderManager::create_module (
-    std::string const& name, ShaderType type, std::vector<uint32_t> const& code)
-{
-	VkShaderModuleCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.pCode = code.data ();
-	createInfo.codeSize = code.size () * 4;
-
-	VkShaderModule vk_shaderModule;
-
-	if (vkCreateShaderModule (device.device, &createInfo, nullptr, &vk_shaderModule) != VK_SUCCESS)
-	{
-		Log.Error (fmt::format ("Failed to create VkShaderModule for {}\n", name));
-		return {};
-	}
-
-	ShaderKey key{ name, type };
-	ShaderModule module{ type, vk_shaderModule };
-
-	module_map[key] = module;
-
-	return key;
-}
-
-void ShaderManager::delete_module (ShaderKey const& key)
-{
-	auto search = module_map.find (key);
+	auto search = module_map.find (id);
 	if (search != std::end (module_map))
 	{
 		module_map.erase (search);
 	}
 }
 
-std::optional<ShaderModule> ShaderManager::get_module (ShaderKey const& key)
+VkShaderModule ShaderManager::GetModule (ShaderID const& id)
 {
-	auto mod = module_map.find (key);
+	auto mod = module_map.find (id);
 	if (mod != module_map.end ())
 	{
-		return mod->second;
+		return mod->second.module;
 	}
 	else
 	{
-		return {};
+		return VK_NULL_HANDLE;
 	}
 }
-std::optional<ShaderModule> ShaderManager::get_module (std::string const& name, ShaderType const type)
+VkShaderModule ShaderManager::GetModule (std::string name, ShaderType type)
 {
-	return get_module ({ name, type });
-}
-
-std::optional<std::vector<char>> ShaderManager::readShaderFile (const std::string& filename)
-{
-	std::ifstream file (filename, std::ios::ate | std::ios::binary);
-
-	if (!file.is_open ())
-	{
-		return {}; // don't throw, just return an optional
-	}
-
-	size_t fileSize = (size_t)file.tellg ();
-	std::vector<char> buffer (fileSize);
-
-	file.seekg (0);
-	file.read (buffer.data (), fileSize);
-
-	file.close ();
-
-	return buffer;
+	auto spirv_data =
+	    resource_shader_manager.GetSpirVData (name, static_cast<Resource::Shader::ShaderType> (type));
+	ShaderID id = CreateModule (name, type, spirv_data);
+	return GetModule (id);
 }

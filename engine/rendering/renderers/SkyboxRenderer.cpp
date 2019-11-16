@@ -87,11 +87,10 @@ PipeID SkyboxManager::CreatePipeline ()
 {
 	PipelineOutline out;
 
-	auto vert = shader_man.get_module ("skybox", ShaderType::vertex);
-	auto frag = shader_man.get_module ("skybox", ShaderType::fragment);
+	auto vert = shader_man.GetModule ("skybox", ShaderType::vertex);
+	auto frag = shader_man.GetModule ("skybox", ShaderType::fragment);
 
-	ShaderModuleSet shader_set;
-	shader_set.Vertex (vert.value ()).Fragment (frag.value ());
+	ShaderModuleSet shader_set (vert, frag);
 	out.SetShaderModuleSet (shader_set);
 
 	out.UseModelVertexLayout (model_man.GetLayout (skybox_cube_model));

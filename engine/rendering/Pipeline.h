@@ -9,6 +9,7 @@
 #include "Shader.h"
 
 class VulkanDevice;
+class AsyncTaskManager;
 struct VertexLayout;
 class PipelineOutline
 {
@@ -138,7 +139,7 @@ class PipelineGroup
 class PipelineManager
 {
 	public:
-	PipelineManager (VulkanDevice& device);
+	PipelineManager (VulkanDevice& device, AsyncTaskManager& async_man);
 	~PipelineManager ();
 
 	PipeID MakePipeGroup (PipelineOutline builder);
@@ -149,6 +150,7 @@ class PipelineManager
 
 	private:
 	VulkanDevice& device;
+	AsyncTaskManager& async_man;
 	VkPipelineCache cache;
 
 	std::mutex pipe_lock;

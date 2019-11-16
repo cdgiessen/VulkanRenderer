@@ -1,10 +1,14 @@
 #include "Pipeline.h"
 
+#include <filesystem>
+#include <fstream>
+
+#include "resources/Mesh.h"
+
+#include "AsyncTask.h"
 #include "Device.h"
 #include "Initializers.h"
 #include "Model.h"
-
-#include "resources/Mesh.h"
 
 bool operator== (SpecificPass const& a, SpecificPass const& b)
 {
@@ -238,18 +242,39 @@ void PipelineGroup::Bind (VkCommandBuffer cmdBuf, SpecificPass pass)
 	vkCmdBindPipeline (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.at (pass));
 }
 
-PipelineManager::PipelineManager (VulkanDevice& device) : device (device)
+PipelineManager::PipelineManager (VulkanDevice& device, AsyncTaskManager& async_man)
+: device (device), async_man (async_man)
 {
+	std::vector<std::byte> cache_data;
+
+	if (std::filesystem::exists (".cache/pipeline_cache"))
+	{
+		std::ifstream in (".cache/pipeline_cache", std::ios::binary | std::ios::ate);
+		auto size = in.tellg ();
+		std::vector<std::byte> cache_data (size); // construct string to stream size
+		in.seekg (0);
+		in.read (reinterpret_cast<char*> (cache_data.data ()), size);
+	}
 
 	VkPipelineCacheCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-	info.initialDataSize = 0;
-	info.pInitialData = nullptr;
+	info.initialDataSize = cache_data.size ();
+	info.pInitialData = cache_data.data ();
 
 	vkCreatePipelineCache (device.device, &info, nullptr, &cache);
 }
 
-PipelineManager::~PipelineManager () { vkDestroyPipelineCache (device.device, cache, nullptr); }
+PipelineManager::~PipelineManager ()
+{
+	std::ofstream out (".cache/pipeline_cache");
+	size_t cache_size = 0;
+	std::vector<std::byte> cache_data;
+	vkGetPipelineCacheData (device.device, cache, &cache_size, nullptr);
+	cache_data.resize (cache_size);
+	vkGetPipelineCacheData (device.device, cache, &cache_size, cache_data.data ());
+
+	vkDestroyPipelineCache (device.device, cache, nullptr);
+}
 
 PipeID PipelineManager::MakePipeGroup (PipelineOutline builder)
 {

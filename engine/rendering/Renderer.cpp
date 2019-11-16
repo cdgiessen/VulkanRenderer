@@ -71,7 +71,7 @@ VulkanRenderer::VulkanRenderer (
   async_task_manager (task_manager, device),
   descriptor_manager (device),
   shader_manager (resource_man.shader_manager, device),
-  pipeline_manager (device),
+  pipeline_manager (device, async_task_manager),
   model_manager (resource_man.mesh_manager, device, async_task_manager),
   texture_manager (resource_man.texture_manager, device, async_task_manager),
   lighting_manager (device),

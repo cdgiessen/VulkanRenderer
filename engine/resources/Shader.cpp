@@ -13,6 +13,9 @@
 namespace Resource::Shader
 {
 
+const std::string shader_path = "assets/shaders/";
+const std::string database_path = "assets/shader_db.json";
+
 const TLimits DefaultTBuiltInLimits = {
 	/* .nonInductiveForLoops = */ 1,
 	/* .whileLoops = */ 1,
@@ -150,6 +153,32 @@ ShaderType GetShaderStage (const std::string& stage)
 }
 
 
+ShaderType GetShaderStage (const std::filesystem::path& stage)
+{
+	return GetShaderStage (stage.extension ().string ());
+}
+
+
+std::optional<std::vector<char>> readShaderFile (const std::string& filename)
+{
+	std::ifstream file (filename, std::ios::ate | std::ios::binary);
+
+	if (!file.is_open ())
+	{
+		return {}; // don't throw, just return an optional
+	}
+
+	size_t fileSize = (size_t)file.tellg ();
+	std::vector<char> buffer (fileSize);
+
+	file.seekg (0);
+	file.read (buffer.data (), fileSize);
+
+	file.close ();
+
+	return buffer;
+}
+
 // time_t LastTimeWritten (std::filesystem::path entry)
 //{
 //	auto timeEntry = std::filesystem::last_write_time (entry);
@@ -158,29 +187,16 @@ ShaderType GetShaderStage (const std::string& stage)
 
 void to_json (nlohmann::json& j, const ShaderDatabase::DBHandle& handle)
 {
-	j = nlohmann::json ({ { "filename", handle.filename },
-	    { "type", static_cast<int> (handle.type) },
-	    { "glsl_last_write_time", handle.glsl_last_write_time.time_since_epoch ().count () },
-	    { "spirv_last_write_time", handle.spirv_last_write_time.time_since_epoch ().count () } });
+	j = nlohmann::json ({ { "filename", handle.filename }, { "type", static_cast<int> (handle.type) } });
 }
 
 void from_json (const nlohmann::json& j, ShaderDatabase::DBHandle& handle)
 {
 	j.at ("filename").get_to (handle.filename);
 	j.at ("type").get_to (handle.type);
-
-	auto glsl_time = std::chrono::time_point_cast<std::chrono::milliseconds> (handle.glsl_last_write_time)
-	                     .time_since_epoch ()
-	                     .count ();
-	j.at ("glsl_last_write_time").get_to (glsl_time);
-
-	auto spirv_time = std::chrono::time_point_cast<std::chrono::milliseconds> (handle.spirv_last_write_time)
-	                      .time_since_epoch ()
-	                      .count ();
-	j.at ("spirv_last_write_time").get_to (spirv_time);
 }
 
-ShaderDatabase::ShaderDatabase () : fileWatch ("assets/shaders")
+ShaderDatabase::ShaderDatabase ()
 {
 	Load ();
 	Refresh ();
@@ -238,18 +254,7 @@ void ShaderDatabase::Save ()
 	outFile.close ();
 }
 
-void ShaderDatabase::Refresh ()
-{
-	namespace fs = std::filesystem;
-	for (auto& e : entries)
-	{
-		fs::path glsl_path = shader_path + e.filename;
-		e.glsl_last_write_time = fs::last_write_time (glsl_path);
-
-		fs::path spirv_path = shader_path + e.filename + ".spv";
-		e.spirv_last_write_time = fs::last_write_time (spirv_path);
-	}
-}
+void ShaderDatabase::Refresh () {}
 
 
 void ShaderDatabase::Discover ()
@@ -278,7 +283,7 @@ static std::atomic_bool is_setup = false;
 
 ShaderCompiler::ShaderCompiler ()
 {
-	if (!is_setup)
+	if (!is_setup) // TODO: do proper atomic guard here
 	{
 		is_setup = true;
 		glslang::InitializeProcess ();
@@ -286,7 +291,7 @@ ShaderCompiler::ShaderCompiler ()
 }
 
 // Load GLSL into a string
-std::optional<std::string> ShaderCompiler::load_file_data (const std::string& filename)
+std::optional<std::string> ShaderCompiler::LoadFileData (const std::string& filename)
 {
 	std::ifstream file (filename);
 
@@ -375,30 +380,6 @@ std::optional<std::vector<uint32_t>> const ShaderCompiler::compile_glsl_to_spirv
 	return SpirV;
 }
 
-// void CompileShaders (std::vector<std::string> filenames)
-// {
-// 	unsigned int cts = std::thread::hardware_concurrency ();
-
-// 	std::vector<std::vector<std::string>> buckets (cts);
-// 	for (size_t i = 0; i < filenames.size (); i++)
-// 	{
-// 		int index = i % cts;
-// 		buckets.at (index).push_back (filenames.at (i));
-// 	}
-
-// 	auto signal = std::make_shared<job::TaskSignal> ();
-
-// 	std::vector<job::Task> tasks;
-// 	for (auto& bucket : buckets)
-// 	{
-// 		tasks.push_back (job::Task ([&]() { StartShaderCompilation (bucket); }, signal));
-// 	}
-// 	task_manager.Submit (tasks);
-
-// 	signal->Wait ();
-// }
-
-
 Manager::Manager (job::TaskManager& task_manager) : task_manager (task_manager)
 {
 
@@ -424,11 +405,75 @@ Manager::Manager (job::TaskManager& task_manager) : task_manager (task_manager)
 				fs::path out_path = entry.path ();
 				out_path += ".spv";
 
-				load_and_compile_module (in_path);
+				AddShader (in_path.string ());
 				Log.Debug (fmt::format (
 				    "Compiled shader {}{}\n", in_path.stem ().string (), in_path.extension ().string ()));
 			}
 		}
 	}
 }
+
+std::vector<uint32_t> AlignData (std::vector<char> const& code)
+{
+	std::vector<uint32_t> codeAligned;
+
+	codeAligned = std::vector<uint32_t> (code.size () / 4 + 1);
+	memcpy (codeAligned.data (), code.data (), code.size ());
+
+	return codeAligned;
+}
+
+ShaderID Manager::AddShader (std::string name)
+{
+
+	auto shader_chars = compiler.LoadFileData (name);
+	if (!shader_chars.has_value ())
+	{
+		Log.Error (fmt::format ("Couldn't find shader {}", name));
+	}
+	ShaderType type = GetShaderStage (name);
+	auto spirv_data =
+	    compiler.compile_glsl_to_spirv (name, shader_chars.value (), type, "assets/shaders/common");
+
+	if (spirv_data.has_value ())
+	{
+		std::lock_guard lg (lock);
+		while (shaders.count (cur_id) == 1)
+			cur_id++;
+		ShaderID new_id = cur_id;
+		ShaderInfo info = ShaderInfo{ name, type, std::move (spirv_data.value ()) };
+		shaders.emplace (new_id, std::move (info));
+		return new_id;
+	}
+	return -1;
+}
+
+
+ShaderID Manager::GetShaderIDByName (std::string s)
+{
+	for (auto& [key, info] : shaders)
+	{
+		if (info.name == s)
+			;
+		return key;
+	}
+
+	return AddShader (s);
+}
+std::vector<uint32_t> Manager::GetSpirVData (ShaderID id)
+{
+	std::lock_guard lg (lock);
+	return shaders.at (id).spirv_data;
+}
+std::vector<uint32_t> Manager::GetSpirVData (std::string const& name, ShaderType type)
+{
+	std::lock_guard lg (lock);
+	for (auto& [key, info] : shaders)
+	{
+		if (info.name == name && info.type == type) return info.spirv_data;
+	}
+}
+
+
+
 } // namespace Resource::Shader
