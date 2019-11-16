@@ -4,6 +4,8 @@
 
 #include "stb/stb_image.h"
 
+#include "core/Logger.h"
+
 #include "AsyncTask.h"
 #include "Buffer.h"
 #include "Device.h"
@@ -11,7 +13,6 @@
 #include "RenderTools.h"
 #include "Wrappers.h"
 
-#include "core/Logger.h"
 
 void SetImageLayout (VkCommandBuffer cmdbuffer,
     VkImage image,
