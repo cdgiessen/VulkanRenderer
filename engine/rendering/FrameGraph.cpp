@@ -543,29 +543,8 @@ FrameGraph::FrameGraph (VulkanDevice& device, VulkanSwapChain& swapchain, FrameG
 	auto& final_attachment = builder.attachments.at (builder.final_output_attachment);
 	auto& final_renderpass_desc = builder.render_passes.at (builder.final_renderpass);
 	final_renderpass_desc.present_attachment = true;
-	// for (auto&[name, a] : builder.attachments) {
-	//	for(auto& sub : final_renderpass.subpasses){
-	//		for (auto& a : sub.color_attachments) {
-	//			if (name == a) {
-	//				builder.attachments.at(name).format = VK_FORMAT_R8G8B8A8_SINT;
-	//			}
-	//		}
-	//	}
-	//}
 
-	for (auto& [name, attachment] : builder.attachments)
-	{
-		if (name != builder.final_output_attachment) // swapchain owns presentation resources
-		{
-			uint32_t width = attachment.width != 0 ? attachment.width : swapchain.GetImageExtent ().width;
-			uint32_t height =
-			    attachment.height != 0 ? attachment.height : swapchain.GetImageExtent ().height;
-
-			TexCreateDetails tex_details (
-			    attachment.format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0, width, height);
-			render_targets[name] = std::make_unique<VulkanTexture> (device, tex_details);
-		}
-	}
+	CreateAttachments ();
 
 	for (auto& [name, pass] : builder.render_passes)
 	{
@@ -604,20 +583,41 @@ VkRenderPass FrameGraph::Get (int index) const { return render_passes.at (index)
 
 void FrameGraph::FillCommandBuffer (VkCommandBuffer cmdBuf, FrameBufferView frame_buffer_view)
 {
-	// render_passes.at (render_pass_index).BuildCmdBuf (cmdBuf, frame_buffer_view);
+	final_renderpass->BuildCmdBuf (cmdBuf, frame_buffer_view);
 }
 
 void FrameGraph::FillCommandBuffer (VkCommandBuffer cmdBuf, std::string frame_buffer)
 {
 	auto& fb = GetFrameBuffer (frame_buffer);
 	FrameBufferView view (fb.Get (), fb.GetFullSize ());
+	FillCommandBuffer (cmdBuf, view);
+}
 
-	final_renderpass->BuildCmdBuf (cmdBuf, view);
+void FrameGraph::CreateAttachments ()
+{
+	for (auto& [name, attachment] : builder.attachments)
+	{
+		if (name != builder.final_output_attachment) // swapchain owns presentation resources
+		{
+			uint32_t width = attachment.width != 0 ? attachment.width : swapchain.GetImageExtent ().width;
+			uint32_t height =
+			    attachment.height != 0 ? attachment.height : swapchain.GetImageExtent ().height;
+
+			TexCreateDetails tex_details (
+			    attachment.format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false, 0, width, height);
+			render_targets[name] = std::make_unique<VulkanTexture> (device, tex_details);
+		}
+	}
 }
 
 
 void FrameGraph::RecreatePresentResources ()
 {
+	for (auto& [name, attachment] : render_targets)
+	{
+		attachment.release ();
+	}
+	CreateAttachments ();
 	swapchain_framebuffers.clear ();
 	CreatePresentResources ();
 }

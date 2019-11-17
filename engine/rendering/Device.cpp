@@ -42,9 +42,11 @@ void VMA_MemoryResource::LogVMA (bool detailedOutput)
 {
 	char* str;
 	vmaBuildStatsString (allocator, &str, detailedOutput);
-	Log.Debug (fmt::format ("Allocator Data Dump:\n {}\n", str));
-
+	std::string out_str (str);
 	vmaFreeStatsString (allocator, str);
+
+	Log.Debug (fmt::format ("Allocator Data Dump:\n\n"));
+	Log.Debug (fmt::format ("Allocator Data Dump:\n {}\n", out_str));
 }
 
 //////// VulkanInstance ////////

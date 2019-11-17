@@ -93,19 +93,13 @@ VulkanRenderer::VulkanRenderer (
 VulkanRenderer::~VulkanRenderer ()
 {
 	async_task_manager.CleanFinishQueue ();
+	if (settings.memory_dump) device.LogMemory ();
 
 	DeviceWaitTillIdle ();
 	ImGui_ImplGlfwVulkan_Shutdown ();
-
-	if (settings.memory_dump) device.LogMemory ();
 }
 
 void VulkanRenderer::DeviceWaitTillIdle () { vkDeviceWaitIdle (device.device); }
-
-// VkRenderPass VulkanRenderer::GetRelevantRenderpass (RenderableType type)
-// {
-// 	return frameGraph->Get (0);
-// }
 
 void VulkanRenderer::RenderFrame ()
 {
@@ -221,5 +215,5 @@ void VulkanRenderer::SubmitFrame (int curFrameIndex)
 		throw std::runtime_error ("failed to present swap chain image!");
 	}
 
-	// device.PresentQueue ().QueueWaitIdle ();
+	device.PresentQueue ().QueueWaitIdle ();
 }

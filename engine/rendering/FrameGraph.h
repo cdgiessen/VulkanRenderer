@@ -276,6 +276,7 @@ class FrameGraph
 	void SetCurrentFrameIndex (uint32_t index) { current_frame = index; }
 
 	private:
+	void CreateAttachments();
 	void CreatePresentResources ();
 
 	FrameBuffer const& GetFrameBuffer (std::string const& name);
