@@ -110,6 +110,8 @@ void VulkanRenderer::DeviceWaitTillIdle () { vkDeviceWaitIdle (device.device); }
 void VulkanRenderer::RenderFrame ()
 {
 	PrepareFrame (frameIndex);
+	frameGraph->SetCurrentFrameIndex (frameIndex);
+	frameGraph->FillCommandBuffer (frameObjects.at (frameIndex)->GetPrimaryCmdBuf (), "main_work");
 	// frameGraph->FillCommandBuffer (frameObjects.at (frameIndex)->GetPrimaryCmdBuf (),
 	//    vulkanSwapChain.swapChainFramebuffers[frameIndex],
 	//    { 0, 0 },
@@ -182,6 +184,7 @@ void VulkanRenderer::ContrustFrameGraph ()
 	main_work.AddSubpass (color_subpass);
 
 	frame_graph_builder.AddRenderPass (main_work);
+	frame_graph_builder.SetFinalRenderPassName (main_work.name);
 
 	frameGraph = std::make_unique<FrameGraph> (device, vulkanSwapChain, frame_graph_builder);
 }

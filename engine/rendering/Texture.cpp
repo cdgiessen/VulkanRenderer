@@ -497,6 +497,10 @@ VulkanTexture::VulkanTexture (VulkanDevice& device, TexCreateDetails texCreateDe
 	data.width = texCreateDetails.desiredWidth;
 	data.height = texCreateDetails.desiredHeight;
 
+	bool is_depth_stencil = texCreateDetails.format == VK_FORMAT_D32_SFLOAT ||
+	                        texCreateDetails.format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
+	                        texCreateDetails.format == VK_FORMAT_D24_UNORM_S8_UINT;
+
 	VkImageCreateInfo imageInfo = initializers::imageCreateInfo (VK_IMAGE_TYPE_2D,
 	    texCreateDetails.format,
 	    1,
@@ -506,7 +510,9 @@ VulkanTexture::VulkanTexture (VulkanDevice& device, TexCreateDetails texCreateDe
 	    VK_SHARING_MODE_EXCLUSIVE,
 	    VK_IMAGE_LAYOUT_UNDEFINED,
 	    VkExtent3D{ texCreateDetails.desiredWidth, texCreateDetails.desiredHeight, 1 },
-	    texCreateDetails.usage | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+	    texCreateDetails.usage | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+	if (is_depth_stencil) imageInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
 	VmaAllocationCreateInfo imageAllocCreateInfo = {};
 	imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -516,16 +522,8 @@ VulkanTexture::VulkanTexture (VulkanDevice& device, TexCreateDetails texCreateDe
 	    data.allocator, &imageInfo, &imageAllocCreateInfo, &image, &data.allocation, &data.allocationInfo));
 
 
-	VkImageAspectFlags flags;
-	if (texCreateDetails.format == VK_FORMAT_D32_SFLOAT || texCreateDetails.format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
-	    texCreateDetails.format == VK_FORMAT_D24_UNORM_S8_UINT)
-	{
-		flags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-	}
-	else
-	{
-		flags = VK_IMAGE_ASPECT_COLOR_BIT;
-	}
+	VkImageAspectFlags flags = is_depth_stencil ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT :
+	                                              VK_IMAGE_ASPECT_COLOR_BIT;
 
 	imageView = VulkanTexture::CreateImageView (image,
 	    VK_IMAGE_VIEW_TYPE_2D,

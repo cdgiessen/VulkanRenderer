@@ -125,37 +125,32 @@ const TBuiltInResource DefaultTBuiltInResource = { /* .MaxLights = */ 32,
 
 ShaderType GetShaderStage (const std::string& stage)
 {
-	if (stage == "vert" || stage == ".vert")
+	if (stage == "vert" || stage == "vertex" || stage == ".vert")
 	{
 		return ShaderType::vertex;
 	}
-	else if (stage == "tesc" || stage == ".tesc")
-	{
-		return ShaderType::tess_control;
-	}
-	else if (stage == "tese" || stage == ".tese")
-	{
-		return ShaderType::tess_eval;
-	}
-	else if (stage == "geom" || stage == ".geom")
-	{
-		return ShaderType::geometry;
-	}
-	else if (stage == "frag" || stage == ".frag")
+	else if (stage == "frag" || stage == "fragment" || stage == ".frag")
 	{
 		return ShaderType::fragment;
 	}
-	else if (stage == "comp" || stage == ".comp")
+	else if (stage == "tesc" || stage == "tess_control" || stage == ".tesc")
+	{
+		return ShaderType::tess_control;
+	}
+	else if (stage == "tese" || stage == "tess_eval" || stage == ".tese")
+	{
+		return ShaderType::tess_eval;
+	}
+	else if (stage == "geom" || stage == "geometry" || stage == ".geom")
+	{
+		return ShaderType::geometry;
+	}
+	else if (stage == "comp" || stage == "compute" || stage == ".comp")
 	{
 		return ShaderType::compute;
 	}
+	Log.Error (fmt::format ("Found error shader type of {}\n", stage));
 	return ShaderType::error;
-}
-
-
-ShaderType GetShaderStage (const std::filesystem::path& stage)
-{
-	return GetShaderStage (stage.extension ().string ());
 }
 
 std::optional<std::vector<char>> readShaderFile (const std::string& filename)
@@ -295,7 +290,7 @@ std::optional<std::string> ShaderCompiler::LoadFileData (const std::string& file
 
 	if (!file.is_open ())
 	{
-		Log.Error (fmt::format ("Failed to load shader: {}", filename));
+		Log.Error (fmt::format ("Failed to load shader: {}\n", filename));
 		return {};
 	}
 
@@ -427,9 +422,15 @@ ShaderID Manager::AddShader (std::string name)
 	auto shader_chars = compiler.LoadFileData (name);
 	if (!shader_chars.has_value ())
 	{
-		Log.Error (fmt::format ("Couldn't find shader {}", name));
+		Log.Error (fmt::format ("Couldn't find shader {}\n", name));
 	}
-	ShaderType type = GetShaderStage (name);
+	std::filesystem::path p = name;
+	ShaderType type;
+	if (p.has_extension ())
+		type = GetShaderStage (p.extension ().string ());
+	else
+		type = GetShaderStage (name);
+
 	auto spirv_data =
 	    compiler.compile_glsl_to_spirv (name, shader_chars.value (), type, "assets/shaders/common");
 

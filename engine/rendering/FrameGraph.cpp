@@ -102,7 +102,6 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 		}
 	}
 
-	// std::vector<AttachmentUse> attachment_uses;
 	int index = 0;
 	for (auto& attach_name : used_attachment_names)
 	{
@@ -386,7 +385,6 @@ std::vector<std::string> RenderPassDescription::GetUsedAttachmentNames ()
 	return attachments;
 }
 
-
 //// FRAME BUFFER ////
 
 FrameBuffer::FrameBuffer (VulkanDevice& device,
@@ -395,7 +393,7 @@ FrameBuffer::FrameBuffer (VulkanDevice& device,
     uint32_t width,
     uint32_t height,
     uint32_t layers)
-: device (device.device)
+: device (device.device), width (width), height (height)
 {
 	VkFramebufferCreateInfo framebufferInfo = initializers::framebufferCreateInfo ();
 	framebufferInfo.renderPass = renderPass;
@@ -413,7 +411,8 @@ FrameBuffer::~FrameBuffer ()
 	if (framebuffer != nullptr) vkDestroyFramebuffer (device, framebuffer, nullptr);
 }
 
-FrameBuffer::FrameBuffer (FrameBuffer&& fb) : device (fb.device), framebuffer (fb.framebuffer)
+FrameBuffer::FrameBuffer (FrameBuffer&& fb)
+: device (fb.device), framebuffer (fb.framebuffer), width (fb.width), height (fb.height)
 {
 	fb.framebuffer = nullptr;
 }
@@ -421,14 +420,16 @@ FrameBuffer& FrameBuffer::operator= (FrameBuffer&& fb)
 {
 	device = fb.device;
 	framebuffer = fb.framebuffer;
+	width = fb.width;
+	height = fb.height;
 	fb.framebuffer = nullptr;
 	return *this;
 }
 
 //// RENDER PASS ////
 
-RenderPass::RenderPass (VkDevice device, RenderPassDescription desc, AttachmentMap& attachments)
-: device (device), desc (desc)
+RenderPass::RenderPass (VkDevice device, RenderPassDescription desc_in, AttachmentMap& attachments)
+: device (device), desc (desc_in)
 {
 
 	auto renderPassInfo = desc.GetRenderPassCreate (attachments);
@@ -486,6 +487,29 @@ void RenderPass::BuildCmdBuf (VkCommandBuffer cmdBuf, FrameBufferView fb_view)
 	}
 	vkCmdEndRenderPass (cmdBuf);
 }
+
+std::vector<VkImageView> RenderPass::OrderAttachments (
+    std::vector<std::pair<std::string, VkImageView>> const& named_views)
+{
+	if (named_views.size () != desc.attachment_uses.size ())
+	{
+		Log.Error ("Mismatching attachment and views counts!\n");
+	}
+	std::vector<VkImageView> out_views (named_views.size ());
+
+	for (auto& [name, view] : named_views)
+	{
+		for (int i = 0; i < desc.attachment_uses.size (); i++)
+		{
+			if (name == desc.attachment_uses.at (i).rpAttach.name)
+			{
+				out_views.at (i) = view;
+			}
+		}
+	}
+	return out_views;
+}
+
 
 //// FRAME GRAPH BUILDER ////
 
@@ -583,6 +607,15 @@ void FrameGraph::FillCommandBuffer (VkCommandBuffer cmdBuf, FrameBufferView fram
 	// render_passes.at (render_pass_index).BuildCmdBuf (cmdBuf, frame_buffer_view);
 }
 
+void FrameGraph::FillCommandBuffer (VkCommandBuffer cmdBuf, std::string frame_buffer)
+{
+	auto& fb = GetFrameBuffer (frame_buffer);
+	FrameBufferView view (fb.Get (), fb.GetFullSize ());
+
+	final_renderpass->BuildCmdBuf (cmdBuf, view);
+}
+
+
 void FrameGraph::RecreatePresentResources ()
 {
 	swapchain_framebuffers.clear ();
@@ -596,15 +629,29 @@ void FrameGraph::CreatePresentResources ()
 	for (int i = 0; i < swapchain_count; i++)
 	{
 		auto attachments = final_renderpass->GetUsedAttachmentNames ();
-		std::vector<VkImageView> views;
+		std::vector<std::pair<std::string, VkImageView>> named_views;
+		named_views.push_back ({ builder.final_output_attachment, swapchain.GetSwapChainImageView (i) });
 		for (auto& attachment : attachments)
 		{
-			views.push_back (render_targets.at (attachment)->imageView);
+			if (attachment != builder.final_output_attachment)
+			{
+				named_views.push_back ({ attachment, render_targets.at (attachment)->imageView });
+			}
 		}
 
-		views.push_back (swapchain.GetSwapChainImageView (i));
 		auto extent = swapchain.GetImageExtent ();
+		auto views_out = final_renderpass->OrderAttachments (named_views);
 		swapchain_framebuffers.push_back (std::move (
-		    FrameBuffer (device, views, final_renderpass->Get (), extent.width, extent.height, 1)));
+		    FrameBuffer (device, views_out, final_renderpass->Get (), extent.width, extent.height, 1)));
 	}
+}
+
+FrameBuffer const& FrameGraph::GetFrameBuffer (std::string const& name)
+{
+	if (name == builder.final_renderpass)
+	{
+		return swapchain_framebuffers.at (current_frame);
+	}
+	else
+		return framebuffers.at (name);
 }

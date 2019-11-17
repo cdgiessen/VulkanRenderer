@@ -9,6 +9,7 @@
 
 #include "ImGuiImpl.h"
 
+#include <memory>
 
 #include <imgui.hpp>
 

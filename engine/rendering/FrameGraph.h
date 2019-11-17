@@ -212,12 +212,16 @@ class FrameBuffer
 	FrameBuffer& operator= (FrameBuffer&& fb);
 
 
-	VkFramebuffer Get () { return framebuffer; }
+	VkFramebuffer Get () const { return framebuffer; }
+
+	VkRect2D GetFullSize () const { return { { 0, 0 }, { width, height } }; }
 
 	private:
 	VkDevice device;
 
 	VkFramebuffer framebuffer;
+	uint32_t width;
+	uint32_t height;
 };
 
 struct FrameBufferView
@@ -243,6 +247,8 @@ class RenderPass
 
 	VkRenderPass Get () const { return rp; }
 
+	std::vector<VkImageView> OrderAttachments (std::vector<std::pair<std::string, VkImageView>> const& named_views);
+
 	private:
 	VkDevice device;
 	std::vector<RenderFunc> subpassFuncs;
@@ -260,12 +266,19 @@ class FrameGraph
 	VkRenderPass Get (int index) const;
 	VkRenderPass GetPresentRenderPass () const { return final_renderpass->Get (); };
 
+	VkFramebuffer GetFrameBuffer (std::string name) const { return framebuffers.at (name).Get (); }
+
 	void RecreatePresentResources ();
 
 	void FillCommandBuffer (VkCommandBuffer cmdBuf, FrameBufferView frame_buffer_view);
+	void FillCommandBuffer (VkCommandBuffer cmdBuf, std::string frame_buffer);
+
+	void SetCurrentFrameIndex (uint32_t index) { current_frame = index; }
 
 	private:
 	void CreatePresentResources ();
+
+	FrameBuffer const& GetFrameBuffer (std::string const& name);
 
 	VulkanDevice& device;
 	VulkanSwapChain& swapchain;
@@ -277,6 +290,7 @@ class FrameGraph
 
 	std::unordered_map<std::string, std::unique_ptr<VulkanTexture>> render_targets;
 
+	int current_frame = 0;
 	stdext::flat_map<std::string, FrameBuffer> framebuffers;
 	std::vector<FrameBuffer> swapchain_framebuffers;
 };
