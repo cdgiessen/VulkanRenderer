@@ -60,8 +60,10 @@ class RenderSettings
 class VulkanRenderer
 {
 	public:
-	VulkanRenderer (
-	    bool enableValidationLayer, job::TaskManager& task_manager, Window& window, Resource::ResourceManager& resource_man);
+	VulkanRenderer (bool enableValidationLayer,
+	    job::TaskManager& task_manager,
+	    Window& window,
+	    Resource::ResourceManager& resource_man);
 
 	VulkanRenderer (const VulkanRenderer& other) = delete; // copy
 	VulkanRenderer (VulkanRenderer&& other) = delete;      // move
@@ -76,6 +78,10 @@ class VulkanRenderer
 	void ToggleWireframe ();
 
 	void DeviceWaitTillIdle ();
+
+	void ImGuiSetup ();
+	void ImGuiShutdown ();
+	void ImGuiNewFrame ();
 
 	private:
 	job::TaskManager& task_manager;
@@ -108,4 +114,6 @@ class VulkanRenderer
 
 	void PrepareFrame (int curFrameIndex);
 	void SubmitFrame (int curFrameIndex);
+
+	VkDescriptorPool imgui_pool;
 };

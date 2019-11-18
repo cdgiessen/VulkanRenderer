@@ -79,6 +79,7 @@ Engine::Engine ()
 // scene (task_manager, resource_manager, vulkan_renderer, time_manager, imgui_nodeGraph_terrain.GetGraph ())
 {
 	Input::SetupInputDirector (&window);
+	Input::SetMouseControlStatus (false);
 
 	Log.Debug (fmt::format ("Hardware Threads Available = {}\n", HardwareThreadCount ()));
 }
@@ -104,6 +105,7 @@ void Engine::Run ()
 		Input::inputDirector.UpdateInputs ();
 		HandleInputs ();
 		// scene.UpdateScene ();
+
 		BuildImgui ();
 		vulkan_renderer.RenderFrame ();
 		Input::inputDirector.ResetReleasedInput ();
@@ -130,7 +132,7 @@ void Engine::BuildImgui ()
 
 	imGuiTimer.StartTimer ();
 
-	ImGui_ImplGlfwVulkan_NewFrame ();
+	vulkan_renderer.ImGuiNewFrame ();
 	imgui_draw_callback ();
 
 	imGuiTimer.EndTimer ();

@@ -74,7 +74,8 @@ class CommandQueue
 
 	void Submit (VkSubmitInfo const& submitInfo, VulkanFence const& fence);
 
-	int GetQueueFamily ();
+	VkQueue GetQueue () const;
+	int GetQueueFamily () const;
 
 	VkResult PresentQueueSubmit (VkPresentInfoKHR presentInfo);
 	void QueueWaitIdle ();

@@ -299,3 +299,5 @@ VkPipelineLayout PipelineManager::GetPipeLayout (PipeID ID)
 	std::lock_guard guard (pipe_lock);
 	return pipelines.at (ID).GetLayout ();
 }
+
+VkPipelineCache PipelineManager::GetCache () const { return cache; }

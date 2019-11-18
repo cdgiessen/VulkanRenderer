@@ -31,7 +31,7 @@ struct VMA_MemoryResource
 
 	void Free ();
 
-	void LogVMA (bool detailedOutput = false);
+	void LogVMA (bool detailedOutput = false) const;
 
 	VmaAllocator allocator;
 };
@@ -130,7 +130,7 @@ class VulkanDevice
 
 	~VulkanDevice ();
 
-	void LogMemory ();
+	void LogMemory () const;
 
 	const QueueFamilyIndices GetFamilyIndices () const;
 
@@ -139,16 +139,19 @@ class VulkanDevice
 	CommandQueue& TransferQueue () const;
 	CommandQueue& PresentQueue () const;
 
-	VmaAllocator GetGeneralAllocator ();
-	VmaAllocator GetImageLinearAllocator ();
-	VmaAllocator GetImageOptimalAllocator ();
+	VmaAllocator GetGeneralAllocator () const;
+	VmaAllocator GetImageLinearAllocator () const;
+	VmaAllocator GetImageOptimalAllocator () const;
 
-	VkSurfaceKHR GetSurface ();
+	VkSurfaceKHR GetSurface () const;
+	Window& GetWindow () const;
 
 	VkFormat FindSupportedFormat (
-	    const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+	    const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 
 	private:
+	Window* window;
+
 	std::unique_ptr<CommandQueue> graphics_queue;
 	std::unique_ptr<CommandQueue> compute_queue;
 	std::unique_ptr<CommandQueue> transfer_queue;

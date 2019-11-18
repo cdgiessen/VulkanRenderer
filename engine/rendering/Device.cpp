@@ -38,14 +38,13 @@ void VMA_MemoryResource::Free ()
 	}
 }
 
-void VMA_MemoryResource::LogVMA (bool detailedOutput)
+void VMA_MemoryResource::LogVMA (bool detailedOutput) const
 {
 	char* str;
 	vmaBuildStatsString (allocator, &str, detailedOutput);
 	std::string out_str (str);
 	vmaFreeStatsString (allocator, str);
 
-	Log.Debug (fmt::format ("Allocator Data Dump:\n\n"));
 	Log.Debug (fmt::format ("Allocator Data Dump:\n {}\n", out_str));
 }
 
@@ -269,6 +268,7 @@ VulkanPhysicalDevice::~VulkanPhysicalDevice () {}
 
 VulkanDevice::VulkanDevice (Window& window, bool validationLayers)
 : enableValidationLayers (validationLayers),
+  window (&window),
   instance ("My Vulkan App", enableValidationLayers),
   surface (instance, window),
   physical_device (instance, surface)
@@ -290,7 +290,7 @@ VulkanDevice::~VulkanDevice ()
 	vkDestroyDevice (device, nullptr);
 }
 
-void VulkanDevice::LogMemory ()
+void VulkanDevice::LogMemory () const
 {
 	allocator_general.LogVMA ();
 	allocator_linear_tiling.LogVMA ();
@@ -526,19 +526,24 @@ void VulkanDevice::CreateVulkanAllocator ()
 }
 
 
-VmaAllocator VulkanDevice::GetGeneralAllocator () { return allocator_general.allocator; }
+VmaAllocator VulkanDevice::GetGeneralAllocator () const { return allocator_general.allocator; }
 
-VmaAllocator VulkanDevice::GetImageLinearAllocator () { return allocator_linear_tiling.allocator; }
+VmaAllocator VulkanDevice::GetImageLinearAllocator () const
+{
+	return allocator_linear_tiling.allocator;
+}
 
-VmaAllocator VulkanDevice::GetImageOptimalAllocator ()
+VmaAllocator VulkanDevice::GetImageOptimalAllocator () const
 {
 	return allocator_optimal_tiling.allocator;
 }
 
-VkSurfaceKHR VulkanDevice::GetSurface () { return surface.surface; }
+VkSurfaceKHR VulkanDevice::GetSurface () const { return surface.surface; }
+
+Window& VulkanDevice::GetWindow () const { return *window; }
 
 VkFormat VulkanDevice::FindSupportedFormat (
-    const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+    const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const
 {
 	for (VkFormat format : candidates)
 	{

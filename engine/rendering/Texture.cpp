@@ -231,7 +231,7 @@ void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
 
 void BeginTransferAndMipMapGenWork (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
-    std::function<void()> const& finish_work,
+    std::function<void ()> const& finish_work,
     VulkanBuffer* buffer,
     const VkImageSubresourceRange subresourceRange,
     const std::vector<VkBufferImageCopy> bufferCopyRegions,
@@ -245,7 +245,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 {
 	if (device.singleQueueDevice)
 	{
-		std::function<void(const VkCommandBuffer)> work = [=](const VkCommandBuffer cmdBuf) {
+		std::function<void (const VkCommandBuffer)> work = [=] (const VkCommandBuffer cmdBuf) {
 			SetLayoutAndTransferRegions (cmdBuf, image, buffer->buffer, subresourceRange, bufferCopyRegions);
 
 			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
@@ -259,12 +259,12 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 	}
 	else
 	{
-		std::function<void(const VkCommandBuffer)> transferWork = [=](const VkCommandBuffer cmdBuf) {
+		std::function<void (const VkCommandBuffer)> transferWork = [=] (const VkCommandBuffer cmdBuf) {
 			SetLayoutAndTransferRegions (cmdBuf, image, buffer->buffer, subresourceRange, bufferCopyRegions);
 		};
 
 		auto gen_mips = [&, image, imageLayout, width, height, depth, layers, mipLevels] {
-			auto mipMapGenWork = [&, image, imageLayout, width, height, depth, layers, mipLevels](
+			auto mipMapGenWork = [&, image, imageLayout, width, height, depth, layers, mipLevels] (
 			                         const VkCommandBuffer cmdBuf) {
 				GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
 			};
@@ -290,7 +290,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 
 VulkanTexture::VulkanTexture (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
-    std::function<void()> const& finish_work,
+    std::function<void ()> const& finish_work,
     TexCreateDetails texCreateDetails,
     Resource::Texture::TexResource textureResource)
 {
@@ -301,9 +301,9 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 	data.width = texCreateDetails.desiredWidth;
 	data.height = texCreateDetails.desiredHeight;
 
-	VkExtent3D imageExtent = { textureResource.dims.at (0).width,
-		textureResource.dims.at (0).height,
-		textureResource.dims.size () };
+	VkExtent3D imageExtent = { static_cast<uint32_t> (textureResource.dims.at (0).width),
+		static_cast<uint32_t> (textureResource.dims.at (0).height),
+		static_cast<uint32_t> (textureResource.dims.size ()) };
 
 	VkImageCreateInfo imageCreateInfo = initializers::imageCreateInfo (VK_IMAGE_TYPE_2D,
 	    texCreateDetails.format,
@@ -397,7 +397,7 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 
 VulkanTexture::VulkanTexture (VulkanDevice& device,
     AsyncTaskManager& async_task_man,
-    std::function<void()> const& finish_work,
+    std::function<void ()> const& finish_work,
     TexCreateDetails texCreateDetails,
     std::unique_ptr<VulkanBuffer> buffer)
 : staging_buffer (std::move (buffer))
@@ -662,7 +662,7 @@ TextureManager::~TextureManager ()
 	Log.Debug (fmt::format ("Textures left over {}\n", texture_map.size ()));
 }
 
-std::function<void()> TextureManager::CreateFinishWork (VulkanTextureID id)
+std::function<void ()> TextureManager::CreateFinishWork (VulkanTextureID id)
 {
 	return std::move ([this, id] {
 		std::lock_guard guard (map_lock);

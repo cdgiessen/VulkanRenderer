@@ -3,18 +3,19 @@
 #include <fstream>
 #include <iomanip>
 
-#include "Initializers.h"
-
+#include "imgui/imgui.h"
 #include "stb/stb_image_write.h"
-
-#include "ImGuiImpl.h"
+#include <nlohmann/json.hpp>
 
 #include "core/Logger.h"
 #include "core/Window.h"
-
 #include "resources/Resource.h"
 
-#include <nlohmann/json.hpp>
+#include "ImGuiImpl.h"
+#include "ImGuiImplGLFW.h"
+#include "Initializers.h"
+#include "RenderTools.h"
+
 
 RenderSettings::RenderSettings (std::filesystem::path fileName) : fileName (fileName) { Load (); }
 
@@ -86,8 +87,7 @@ VulkanRenderer::VulkanRenderer (
 
 	ContrustFrameGraph ();
 
-
-	PrepareImGui (&window, &device, frameGraph->GetPresentRenderPass ());
+	ImGuiSetup ();
 }
 
 VulkanRenderer::~VulkanRenderer ()
@@ -96,13 +96,15 @@ VulkanRenderer::~VulkanRenderer ()
 	if (settings.memory_dump) device.LogMemory ();
 
 	DeviceWaitTillIdle ();
-	ImGui_ImplGlfwVulkan_Shutdown ();
+	ImGuiShutdown ();
 }
 
 void VulkanRenderer::DeviceWaitTillIdle () { vkDeviceWaitIdle (device.device); }
 
 void VulkanRenderer::RenderFrame ()
 {
+	ImGui::Render ();
+
 	PrepareFrame (frameIndex);
 	frameGraph->SetCurrentFrameIndex (frameIndex);
 	frameGraph->FillCommandBuffer (frameObjects.at (frameIndex)->GetPrimaryCmdBuf (), "main_work");
@@ -122,12 +124,13 @@ void VulkanRenderer::RecreateSwapChain ()
 {
 	Log.Debug (fmt::format ("Recreating Swapchain\n"));
 	DeviceWaitTillIdle ();
+	frameObjects.clear ();
 
 	frameIndex = 0;
 	vulkanSwapChain.RecreateSwapChain ();
 	frameGraph->RecreatePresentResources ();
+	ImGui_ImplVulkan_SetMinImageCount (vulkanSwapChain.GetChainCount ());
 
-	frameObjects.clear ();
 	for (size_t i = 0; i < vulkanSwapChain.GetChainCount (); i++)
 	{
 		frameObjects.push_back (std::make_unique<FrameObject> (device, vulkanSwapChain, i));
@@ -156,7 +159,7 @@ void VulkanRenderer::ContrustFrameGraph ()
 	color_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
 	color_subpass.AddClearColor ("img_depth", { 0.0f, 0 });
 
-	color_subpass.SetFunction (std::move ([&](VkCommandBuffer cmdBuf) {
+	color_subpass.SetFunction (std::move ([&] (VkCommandBuffer cmdBuf) {
 		/*
 		dynamic_data.BindFrameDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
 		dynamic_data.BindLightingDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
@@ -173,7 +176,11 @@ void VulkanRenderer::ContrustFrameGraph ()
 		    // scene->RenderTransparent (cmdBuf, wireframe);
 		    // scene->RenderSkybox (cmdBuf);
 		*/
-		ImGui_ImplGlfwVulkan_Render (cmdBuf);
+		auto draw_data = ImGui::GetDrawData ();
+		if (draw_data)
+		{
+			ImGui_ImplVulkan_RenderDrawData (draw_data, cmdBuf);
+		}
 	}));
 	main_work.AddSubpass (color_subpass);
 
@@ -215,5 +222,62 @@ void VulkanRenderer::SubmitFrame (int curFrameIndex)
 		throw std::runtime_error ("failed to present swap chain image!");
 	}
 
-	device.PresentQueue ().QueueWaitIdle ();
+	// device.PresentQueue ().QueueWaitIdle ();
+}
+
+void VulkanRenderer::ImGuiSetup ()
+{
+	ImGui::CreateContext ();
+
+	ImGui_ImplGlfw_InitForVulkan (device.GetWindow ().getWindowContext (), false);
+
+	std::vector<VkDescriptorPoolSize> pool_sizes = { { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 } };
+	VkDescriptorPoolCreateInfo pool_info = initializers::descriptorPoolCreateInfo (pool_sizes, 1000);
+	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	VK_CHECK_RESULT (vkCreateDescriptorPool (device.device, &pool_info, nullptr, &imgui_pool));
+
+	ImGui_ImplVulkan_InitInfo info{};
+	info.Instance = device.instance.instance;
+	info.PhysicalDevice = device.physical_device.physical_device;
+	info.Device = device.device;
+	info.QueueFamily = device.GraphicsQueue ().GetQueueFamily ();
+	info.Queue = device.GraphicsQueue ().GetQueue ();
+	info.PipelineCache = pipeline_manager.GetCache ();
+	info.MinImageCount = 2;
+	info.ImageCount = vulkanSwapChain.GetChainCount ();
+	info.DescriptorPool = imgui_pool;
+
+	ImGui_ImplVulkan_Init (&info, frameGraph->GetPresentRenderPass ());
+
+	CommandPool font_pool (device.device, device.GraphicsQueue ());
+	CommandBuffer cmd_buf (font_pool);
+	cmd_buf.Allocate ().Begin ();
+	ImGui_ImplVulkan_CreateFontsTexture (cmd_buf.Get ());
+	cmd_buf.End ().Submit ().Wait ();
+	ImGui_ImplVulkan_DestroyFontUploadObjects ();
+}
+
+void VulkanRenderer ::ImGuiShutdown ()
+{
+	vkDestroyDescriptorPool (device.device, imgui_pool, nullptr);
+
+	ImGui_ImplGlfw_Shutdown ();
+	ImGui_ImplVulkan_Shutdown ();
+}
+
+void VulkanRenderer ::ImGuiNewFrame ()
+{
+	ImGui_ImplGlfw_NewFrame ();
+	ImGui_ImplVulkan_NewFrame ();
+	ImGui::NewFrame ();
 }

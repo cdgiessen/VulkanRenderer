@@ -7,7 +7,7 @@
 #include <GLFW/glfw3.h>
 #include <imgui.hpp>
 
-#include "rendering/ImGuiImpl.h"
+#include "rendering/ImGuiImplGLFW.h"
 
 #include "Input.h"
 #include "Logger.h"
@@ -122,19 +122,19 @@ void Window::ErrorHandler (int error, const char* description)
 void Window::KeyboardHandler (GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	Input::inputDirector.keyEvent (key, scancode, action, mods);
-	ImGui_ImplGlfwVulkan_KeyCallback (window, key, scancode, action, mods);
+	ImGui_ImplGlfw_KeyCallback (window, key, scancode, action, mods);
 }
 
 void Window::CharInputHandler (GLFWwindow* window, uint32_t codePoint)
 {
 
-	ImGui_ImplGlfwVulkan_CharCallback (window, codePoint);
+	ImGui_ImplGlfw_CharCallback (window, codePoint);
 }
 
 void Window::MouseButtonHandler (GLFWwindow* window, int button, int action, int mods)
 {
 	Input::inputDirector.mouseButtonEvent (button, action, mods);
-	ImGui_ImplGlfwVulkan_MouseButtonCallback (window, button, action, mods);
+	ImGui_ImplGlfw_MouseButtonCallback (window, button, action, mods);
 }
 
 void Window::MouseMoveHandler (GLFWwindow* window, double posx, double posy)
@@ -145,7 +145,7 @@ void Window::MouseMoveHandler (GLFWwindow* window, double posx, double posy)
 void Window::MouseScrollHandler (GLFWwindow* window, double xoffset, double yoffset)
 {
 	Input::inputDirector.mouseScrollEvent (xoffset, yoffset);
-	ImGui_ImplGlfwVulkan_ScrollCallback (window, xoffset, yoffset);
+	ImGui_ImplGlfw_ScrollCallback (window, xoffset, yoffset);
 }
 
 void Window::JoystickConfigurationChangeHandler (int joy, int event)

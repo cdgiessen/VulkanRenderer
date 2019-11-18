@@ -148,6 +148,8 @@ class PipelineManager
 	void BindPipe (VkCommandBuffer cmdBuf, SpecificPass pass, PipeID ID);
 	VkPipelineLayout GetPipeLayout (PipeID ID);
 
+	VkPipelineCache GetCache () const;
+
 	private:
 	VulkanDevice& device;
 	AsyncTaskManager& async_man;

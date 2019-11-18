@@ -124,7 +124,8 @@ void CommandQueue::Submit (VkSubmitInfo const& submitInfo, VulkanFence const& fe
 	VK_CHECK_RESULT (vkQueueSubmit (queue, 1, &submitInfo, fence.Get ()));
 }
 
-int CommandQueue::GetQueueFamily () { return queueFamily; }
+int CommandQueue::GetQueueFamily () const { return queueFamily; }
+VkQueue CommandQueue::GetQueue () const { return queue; }
 
 VkResult CommandQueue::PresentQueueSubmit (VkPresentInfoKHR presentInfo)
 {
@@ -236,7 +237,7 @@ VkBool32 CommandPool::ReturnCommandBuffer (VkCommandBuffer cmdBuffer,
 	return VK_TRUE;
 }
 
-void CommandPool::WriteToBuffer (VkCommandBuffer buf, std::function<void(VkCommandBuffer)> const& cmds)
+void CommandPool::WriteToBuffer (VkCommandBuffer buf, std::function<void (VkCommandBuffer)> const& cmds)
 {
 	cmds (buf);
 }
@@ -286,7 +287,7 @@ CommandBuffer& CommandBuffer::Begin (VkCommandBufferUsageFlags flags)
 	return *this;
 }
 
-CommandBuffer& CommandBuffer::WriteTo (std::function<void(const VkCommandBuffer)> const& work)
+CommandBuffer& CommandBuffer::WriteTo (std::function<void (const VkCommandBuffer)> const& work)
 {
 	assert (state == State::recording);
 	pool->WriteToBuffer (cmdBuf, work);
