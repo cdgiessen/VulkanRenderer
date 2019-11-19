@@ -581,7 +581,7 @@ void FrameGraph::DestroyPresentResources ()
 {
 	for (auto& [name, attachment] : render_targets)
 	{
-		attachment.release ();
+		attachment.reset ();
 	}
 	swapchain_framebuffers.clear ();
 	framebuffers.clear ();

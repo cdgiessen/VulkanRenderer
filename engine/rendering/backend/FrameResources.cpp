@@ -22,7 +22,7 @@ FrameObject::FrameObject (FrameObject&& fb)
   swapchain (fb.swapchain),
   swapChainIndex (fb.swapChainIndex),
   imageAvailSem (std::move (fb.imageAvailSem)),
-  renderFinishSem (std::move (renderFinishSem)),
+  renderFinishSem (std::move (fb.renderFinishSem)),
   commandPool (std::move (fb.commandPool)),
   primary_command_buffer (std::move (fb.primary_command_buffer))
 {

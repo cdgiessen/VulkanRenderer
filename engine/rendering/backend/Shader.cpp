@@ -57,7 +57,7 @@ void test_func ()
 }
 
 ShaderModule::ShaderModule (VkDevice device, ShaderType type, std::vector<uint32_t> const& code)
-: device (device), type (type), module (module)
+: device (device), type (type)
 {
 	VkShaderModuleCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
