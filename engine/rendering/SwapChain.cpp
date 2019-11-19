@@ -120,8 +120,10 @@ void VulkanSwapChain::DestroySwapchainResources ()
 	{
 		vkDestroyImageView (device.device, swapChainImageViews[i], nullptr);
 	}
+	swapChainImageViews.clear ();
 
-	vkDestroySwapchainKHR (device.device, swapChain, nullptr);
+	if (swapChain != nullptr) vkDestroySwapchainKHR (device.device, swapChain, nullptr);
+	swapChain = nullptr;
 }
 
 VkSurfaceFormatKHR VulkanSwapChain::chooseSwapSurfaceFormat ()

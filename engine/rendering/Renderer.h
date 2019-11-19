@@ -100,7 +100,6 @@ class VulkanRenderer
 
 	ViewCameraManager camera_manager;
 	LightingManager lighting_manager;
-	// GPU_DoubleBuffer dynamic_data;
 
 	std::unique_ptr<FrameGraph> frameGraph;
 
@@ -112,8 +111,8 @@ class VulkanRenderer
 
 	void ContrustFrameGraph ();
 
-	void PrepareFrame (int curFrameIndex);
-	void SubmitFrame (int curFrameIndex);
+	void PrepareFrame ();
+	void SubmitFrame ();
 
 	VkDescriptorPool imgui_pool;
 };

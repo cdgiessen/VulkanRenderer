@@ -77,7 +77,6 @@ VulkanRenderer::VulkanRenderer (
   texture_manager (resource_man.texture_manager, device, async_task_manager),
   lighting_manager (device),
   camera_manager (device)
-// dynamic_data (device, descriptor_manager, settings)
 
 {
 	for (size_t i = 0; i < vulkanSwapChain.GetChainCount (); i++)
@@ -105,17 +104,12 @@ void VulkanRenderer::RenderFrame ()
 {
 	ImGui::Render ();
 
-	PrepareFrame (frameIndex);
+	PrepareFrame ();
 	frameGraph->SetCurrentFrameIndex (frameIndex);
 	frameGraph->FillCommandBuffer (frameObjects.at (frameIndex)->GetPrimaryCmdBuf (), "main_work");
-	// frameGraph->FillCommandBuffer (frameObjects.at (frameIndex)->GetPrimaryCmdBuf (),
-	//    vulkanSwapChain.swapChainFramebuffers[frameIndex],
-	//    { 0, 0 },
-	//    vulkanSwapChain.swapChainExtent);
-	SubmitFrame (frameIndex);
+	SubmitFrame ();
 
 	frameIndex = (frameIndex + 1) % frameObjects.size ();
-	// dynamic_data.AdvanceFrameCounter ();
 
 	async_task_manager.CleanFinishQueue ();
 }
@@ -124,17 +118,11 @@ void VulkanRenderer::RecreateSwapChain ()
 {
 	Log.Debug (fmt::format ("Recreating Swapchain\n"));
 	DeviceWaitTillIdle ();
-	frameObjects.clear ();
 
-	frameIndex = 0;
+	frameGraph->DestroyPresentResources ();
 	vulkanSwapChain.RecreateSwapChain ();
-	frameGraph->RecreatePresentResources ();
+	frameGraph->CreatePresentResources ();
 	ImGui_ImplVulkan_SetMinImageCount (vulkanSwapChain.GetChainCount ());
-
-	for (size_t i = 0; i < vulkanSwapChain.GetChainCount (); i++)
-	{
-		frameObjects.push_back (std::make_unique<FrameObject> (device, vulkanSwapChain, i));
-	}
 }
 
 
@@ -190,32 +178,30 @@ void VulkanRenderer::ContrustFrameGraph ()
 	frameGraph = std::make_unique<FrameGraph> (device, vulkanSwapChain, frame_graph_builder);
 }
 
-void VulkanRenderer::PrepareFrame (int curFrameIndex)
+void VulkanRenderer::PrepareFrame ()
 {
-	VkResult result = frameObjects.at (curFrameIndex)->AcquireNextSwapchainImage ();
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || (result == VK_SUBOPTIMAL_KHR))
+	VkResult result = frameObjects.at (frameIndex)->AcquireNextSwapchainImage ();
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
 		RecreateSwapChain ();
-		return;
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 	{
 		throw std::runtime_error ("failed to acquire swap chain image!");
 	}
 
-	frameObjects.at (curFrameIndex)->PrepareFrame ();
+	frameObjects.at (frameIndex)->PrepareFrame ();
 }
 
-void VulkanRenderer::SubmitFrame (int curFrameIndex)
+void VulkanRenderer::SubmitFrame ()
 {
-	frameObjects.at (curFrameIndex)->Submit ();
+	frameObjects.at (frameIndex)->Submit ();
 
-	VkResult result = frameObjects.at (curFrameIndex)->Present ();
+	VkResult result = frameObjects.at (frameIndex)->Present ();
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
-		RecreateSwapChain ();
+		// RecreateSwapChain ();
 	}
 	else if (result != VK_SUCCESS)
 	{

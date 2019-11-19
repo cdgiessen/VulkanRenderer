@@ -554,26 +554,10 @@ FrameGraph::FrameGraph (VulkanDevice& device, VulkanSwapChain& swapchain, FrameG
 		}
 		else
 		{
-			RenderPass render_pass = RenderPass (device.device, pass, builder.attachments);
-			auto attachments = render_pass.GetUsedAttachmentNames ();
-			std::vector<VkImageView> views;
-			uint32_t width = 0;
-			uint32_t height = 0;
-			uint32_t layers = 1;
-			for (auto& attachment : attachments)
-			{
-				auto tex = render_targets.at (attachment).get ();
-				views.push_back (tex->imageView);
-				uint32_t width = tex->GetWidth ();
-				uint32_t height = tex->GetHeight ();
-				uint32_t layers = tex->GetLayers ();
-			}
-			framebuffers.emplace (name,
-			    std::move (FrameBuffer (device, views, render_pass.Get (), width, height, layers)));
-			render_passes.push_back (std::move (render_pass));
+			render_passes.emplace_back (device.device, pass, builder.attachments);
 		}
 	}
-	CreatePresentResources ();
+	CreateFrameBuffers ();
 }
 
 FrameGraph::~FrameGraph () {}
@@ -588,9 +572,25 @@ void FrameGraph::FillCommandBuffer (VkCommandBuffer cmdBuf, FrameBufferView fram
 
 void FrameGraph::FillCommandBuffer (VkCommandBuffer cmdBuf, std::string frame_buffer)
 {
-	auto& fb = GetFrameBuffer (frame_buffer);
+	auto fb_id = GetFrameBufferID (frame_buffer);
+	auto& fb = GetFrameBuffer (fb_id);
 	FrameBufferView view (fb.Get (), fb.GetFullSize ());
 	FillCommandBuffer (cmdBuf, view);
+}
+void FrameGraph::DestroyPresentResources ()
+{
+	for (auto& [name, attachment] : render_targets)
+	{
+		attachment.release ();
+	}
+	swapchain_framebuffers.clear ();
+	framebuffers.clear ();
+}
+
+void FrameGraph::CreatePresentResources ()
+{
+	CreateAttachments ();
+	CreateFrameBuffers ();
 }
 
 void FrameGraph::CreateAttachments ()
@@ -610,20 +610,26 @@ void FrameGraph::CreateAttachments ()
 	}
 }
 
-
-void FrameGraph::RecreatePresentResources ()
+void FrameGraph::CreateFrameBuffers ()
 {
-	for (auto& [name, attachment] : render_targets)
+	for (auto& pass : render_passes)
 	{
-		attachment.release ();
+		auto attachments = pass.GetUsedAttachmentNames ();
+		std::vector<VkImageView> views;
+		uint32_t width = 0;
+		uint32_t height = 0;
+		uint32_t layers = 1;
+		for (auto& attachment : attachments)
+		{
+			auto tex = render_targets.at (attachment).get ();
+			views.push_back (tex->imageView);
+			uint32_t width = tex->GetWidth ();
+			uint32_t height = tex->GetHeight ();
+			uint32_t layers = tex->GetLayers ();
+		}
+		framebuffers.emplace_back (device, views, pass.Get (), width, height, layers);
 	}
-	CreateAttachments ();
-	swapchain_framebuffers.clear ();
-	CreatePresentResources ();
-}
 
-void FrameGraph::CreatePresentResources ()
-{
 	int swapchain_count = swapchain.GetChainCount ();
 
 	for (int i = 0; i < swapchain_count; i++)
@@ -646,12 +652,25 @@ void FrameGraph::CreatePresentResources ()
 	}
 }
 
-FrameBuffer const& FrameGraph::GetFrameBuffer (std::string const& name)
+
+FrameBuffer const& FrameGraph::GetFrameBuffer (int index)
 {
-	if (name == builder.final_renderpass)
+	if (index == 0) // 0 for swapchain framebuffers?
 	{
 		return swapchain_framebuffers.at (current_frame);
 	}
 	else
-		return framebuffers.at (name);
+		return framebuffers.at (index - 1); // 1 indexed?
+}
+
+int FrameGraph::GetFrameBufferID (std::string fb_name) const
+{
+	if (fb_name == builder.final_renderpass) return 0;
+	int i = 1;
+	for (auto& [name, pass] : builder.render_passes)
+	{
+		if (fb_name == name) break;
+		i++;
+	}
+	return i;
 }

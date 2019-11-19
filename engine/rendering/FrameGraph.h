@@ -15,7 +15,7 @@ class VulkanDevice;
 class VulkanSwapChain;
 class VulkanTexture;
 
-using RenderFunc = std::function<void(VkCommandBuffer cmdBuf)>;
+using RenderFunc = std::function<void (VkCommandBuffer cmdBuf)>;
 
 struct RenderPassAttachment
 {
@@ -266,20 +266,21 @@ class FrameGraph
 	VkRenderPass Get (int index) const;
 	VkRenderPass GetPresentRenderPass () const { return final_renderpass->Get (); };
 
-	VkFramebuffer GetFrameBuffer (std::string name) const { return framebuffers.at (name).Get (); }
-
-	void RecreatePresentResources ();
+	void CreatePresentResources ();
+	void DestroyPresentResources ();
 
 	void FillCommandBuffer (VkCommandBuffer cmdBuf, FrameBufferView frame_buffer_view);
 	void FillCommandBuffer (VkCommandBuffer cmdBuf, std::string frame_buffer);
 
 	void SetCurrentFrameIndex (uint32_t index) { current_frame = index; }
 
-	private:
-	void CreateAttachments();
-	void CreatePresentResources ();
+	int GetFrameBufferID (std::string name) const;
 
-	FrameBuffer const& GetFrameBuffer (std::string const& name);
+	private:
+	void CreateAttachments ();
+	void CreateFrameBuffers ();
+
+	FrameBuffer const& GetFrameBuffer (int index);
 
 	VulkanDevice& device;
 	VulkanSwapChain& swapchain;
@@ -292,6 +293,6 @@ class FrameGraph
 	std::unordered_map<std::string, std::unique_ptr<VulkanTexture>> render_targets;
 
 	int current_frame = 0;
-	stdext::flat_map<std::string, FrameBuffer> framebuffers;
+	std::vector<FrameBuffer> framebuffers;
 	std::vector<FrameBuffer> swapchain_framebuffers;
 };
