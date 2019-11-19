@@ -1,7 +1,8 @@
 #include "DoubleBuffer.h"
 
-#include "Buffer.h"
-#include "Device.h"
+#include "rendering/backend/Buffer.h"
+#include "rendering/backend/Device.h"
+
 #include "Renderer.h"
 
 DoubleBuffer::DoubleBuffer (VulkanDevice& device, BufCreateDetails const& create_details)

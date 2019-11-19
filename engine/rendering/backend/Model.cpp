@@ -7,7 +7,7 @@
 
 #include "AsyncTask.h"
 #include "Device.h"
-#include "Initializers.h"
+#include "rendering/Initializers.h"
 
 VertexLayout::VertexLayout (Resource::Mesh::VertexDescription const& vertDesc)
 {

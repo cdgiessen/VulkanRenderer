@@ -12,8 +12,13 @@ class VulkanSwapChain;
 class FrameObject
 {
 	public:
-	FrameObject (VulkanDevice& device, VulkanSwapChain& swapChain, int frameD);
+	FrameObject (VulkanDevice& device, VulkanSwapChain& swapChain);
 	~FrameObject ();
+	FrameObject (FrameObject const& fb) = delete;
+	FrameObject& operator= (FrameObject const& fb) = delete;
+	FrameObject (FrameObject&& fb);
+	FrameObject& operator= (FrameObject&& fb);
+
 
 	VkResult AcquireNextSwapchainImage ();
 
@@ -25,16 +30,13 @@ class FrameObject
 	VkCommandBuffer GetPrimaryCmdBuf ();
 
 	private:
-	VulkanDevice& device;
-	VulkanSwapChain& swapchain;
-	uint32_t frameIndex; // which frame in the queue it is
-
+	VulkanDevice* device;
+	VulkanSwapChain* swapchain;
 	uint32_t swapChainIndex; // which frame to render to
 
 	VulkanSemaphore imageAvailSem;
 	VulkanSemaphore renderFinishSem;
 
-	VulkanFence commandFence;
 	CommandPool commandPool;
 	CommandBuffer primary_command_buffer;
 

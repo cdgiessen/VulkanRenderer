@@ -7,7 +7,7 @@
 #include <GLFW/glfw3.h>
 #include <imgui.hpp>
 
-#include "rendering/ImGuiImplGLFW.h"
+#include "rendering/backend/ImGuiImplGLFW.h"
 
 #include "Input.h"
 #include "Logger.h"

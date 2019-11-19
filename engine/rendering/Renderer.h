@@ -14,22 +14,18 @@
 
 #include "core/JobSystem.h"
 
-#include "AsyncTask.h"
-#include "Buffer.h"
-#include "Descriptor.h"
-#include "Device.h"
-#include "DoubleBuffer.h"
+#include "backend/BackEnd.h"
+
 #include "FrameGraph.h"
-#include "FrameResources.h"
+
 #include "Lighting.h"
-#include "Model.h"
-#include "Pipeline.h"
-#include "RenderStructs.h"
-#include "Shader.h"
-#include "SwapChain.h"
-#include "Texture.h"
 #include "ViewCamera.h"
-#include "Wrappers.h"
+
+#include "rendering/renderers/MeshRenderer.h"
+#include "rendering/renderers/SkinnedMeshRenderer.h"
+#include "rendering/renderers/SkyboxRenderer.h"
+#include "rendering/renderers/TerrainRenderer.h"
+
 
 class Window;
 
@@ -38,6 +34,7 @@ namespace Resource
 class ResourceManager;
 }
 
+class FrameGraph;
 
 class RenderSettings
 {
@@ -88,22 +85,15 @@ class VulkanRenderer
 
 	RenderSettings settings;
 
-	VulkanDevice device;
-	VulkanSwapChain vulkanSwapChain;
-
-	AsyncTaskManager async_task_manager;
-	DescriptorManager descriptor_manager;
-	ShaderManager shader_manager;
-	PipelineManager pipeline_manager;
-	ModelManager model_manager;
-	TextureManager texture_manager;
+	BackEnd back_end;
 
 	ViewCameraManager camera_manager;
 	LightingManager lighting_manager;
 
+	private:
 	std::unique_ptr<FrameGraph> frameGraph;
 
-	std::vector<std::unique_ptr<FrameObject>> frameObjects;
+	std::vector<FrameObject> frameObjects;
 
 
 	uint32_t frameIndex = 0; // which of the swapchain images the app is rendering to

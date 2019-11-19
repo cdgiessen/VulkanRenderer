@@ -1,6 +1,6 @@
 #include "ViewCamera.h"
 
-#include "Device.h"
+#include "rendering/backend/Device.h"
 
 const cml::vec3f WorldUp{ 0, 1, 0 };
 

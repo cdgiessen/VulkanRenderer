@@ -6,8 +6,8 @@
 #include "core/Window.h"
 
 #include "Device.h"
-#include "Initializers.h"
 #include "RenderTools.h"
+#include "rendering/Initializers.h"
 
 
 VulkanSwapChain::VulkanSwapChain (VulkanDevice& device, Window& window)

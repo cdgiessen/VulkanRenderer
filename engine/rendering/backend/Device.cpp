@@ -7,9 +7,9 @@
 #include "core/Logger.h"
 #include "core/Window.h"
 
-#include "Initializers.h"
 #include "RenderTools.h"
 #include "SwapChain.h"
+#include "rendering/Initializers.h"
 
 
 std::vector<const char*> VALIDATION_LAYERS = { "VK_LAYER_KHRONOS_validation"

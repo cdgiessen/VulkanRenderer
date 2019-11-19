@@ -2,11 +2,11 @@
 
 #include <map>
 
-#include "Device.h"
 #include "Initializers.h"
-#include "RenderTools.h"
-#include "SwapChain.h"
-#include "Texture.h"
+#include "backend/Device.h"
+#include "backend/RenderTools.h"
+#include "backend/SwapChain.h"
+#include "backend/Texture.h"
 
 //// SUBPASS DESCRIPTION ////
 

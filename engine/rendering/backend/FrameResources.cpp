@@ -1,29 +1,53 @@
 #include "FrameResources.h"
 
 #include "Device.h"
-#include "Initializers.h"
 #include "SwapChain.h"
+#include "rendering/Initializers.h"
 
-FrameObject::FrameObject (VulkanDevice& device, VulkanSwapChain& swapChain, int frameIndex)
-: device (device),
-  swapchain (swapChain),
-  frameIndex (frameIndex),
+FrameObject::FrameObject (VulkanDevice& device, VulkanSwapChain& swapChain)
+: device (&device),
+  swapchain (&swapChain),
   imageAvailSem (device.device),
   renderFinishSem (device.device),
-  commandFence (device.device, VK_FENCE_CREATE_SIGNALED_BIT),
   commandPool (device.device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
-  primary_command_buffer (commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+  primary_command_buffer (commandPool)
 {
 	primary_command_buffer.Allocate ();
 }
 
 FrameObject::~FrameObject () { primary_command_buffer.Free (); }
 
+FrameObject::FrameObject (FrameObject&& fb)
+: device (fb.device),
+  swapchain (fb.swapchain),
+  swapChainIndex (fb.swapChainIndex),
+  imageAvailSem (std::move (fb.imageAvailSem)),
+  renderFinishSem (std::move (renderFinishSem)),
+  commandPool (std::move (fb.commandPool)),
+  primary_command_buffer (std::move (fb.primary_command_buffer))
+{
+}
+FrameObject& FrameObject::operator= (FrameObject&& fb)
+{
+	device = fb.device;
+	swapchain = fb.swapchain;
+	swapChainIndex = fb.swapChainIndex;
+	imageAvailSem = std::move (fb.imageAvailSem);
+	renderFinishSem = std::move (fb.renderFinishSem);
+	commandPool = std::move (fb.commandPool);
+	primary_command_buffer = std::move (fb.primary_command_buffer);
+	return *this;
+}
+
 
 VkResult FrameObject::AcquireNextSwapchainImage ()
 {
-	return vkAcquireNextImageKHR (
-	    device.device, swapchain.Get (), std::numeric_limits<uint64_t>::max (), imageAvailSem.Get (), VK_NULL_HANDLE, &swapChainIndex);
+	return vkAcquireNextImageKHR (device->device,
+	    swapchain->Get (),
+	    std::numeric_limits<uint64_t>::max (),
+	    imageAvailSem.Get (),
+	    VK_NULL_HANDLE,
+	    &swapChainIndex);
 }
 
 void FrameObject::PrepareFrame ()
@@ -52,11 +76,11 @@ VkResult FrameObject::Present ()
 	presentInfo.pWaitSemaphores = renderFinishSem.GetPtr ();
 	presentInfo.pImageIndices = &swapChainIndex;
 
-	VkSwapchainKHR swapChains[] = { swapchain.Get () };
+	VkSwapchainKHR swapChains[] = { swapchain->Get () };
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 
-	return device.PresentQueue ().PresentQueueSubmit (presentInfo);
+	return device->PresentQueue ().PresentQueueSubmit (presentInfo);
 }
 
 VkCommandBuffer FrameObject::GetPrimaryCmdBuf () { return primary_command_buffer.Get (); }

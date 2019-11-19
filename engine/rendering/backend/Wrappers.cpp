@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "Initializers.h"
+#include "rendering/Initializers.h"
 
 #include "RenderTools.h"
 
@@ -237,7 +237,7 @@ VkBool32 CommandPool::ReturnCommandBuffer (VkCommandBuffer cmdBuffer,
 	return VK_TRUE;
 }
 
-void CommandPool::WriteToBuffer (VkCommandBuffer buf, std::function<void (VkCommandBuffer)> const& cmds)
+void CommandPool::WriteToBuffer (VkCommandBuffer buf, std::function<void(VkCommandBuffer)> const& cmds)
 {
 	cmds (buf);
 }
@@ -287,7 +287,7 @@ CommandBuffer& CommandBuffer::Begin (VkCommandBufferUsageFlags flags)
 	return *this;
 }
 
-CommandBuffer& CommandBuffer::WriteTo (std::function<void (const VkCommandBuffer)> const& work)
+CommandBuffer& CommandBuffer::WriteTo (std::function<void(const VkCommandBuffer)> const& work)
 {
 	assert (state == State::recording);
 	pool->WriteToBuffer (cmdBuf, work);

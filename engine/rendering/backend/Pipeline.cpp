@@ -7,8 +7,8 @@
 
 #include "AsyncTask.h"
 #include "Device.h"
-#include "Initializers.h"
 #include "Model.h"
+#include "rendering/Initializers.h"
 
 bool operator== (SpecificPass const& a, SpecificPass const& b)
 {

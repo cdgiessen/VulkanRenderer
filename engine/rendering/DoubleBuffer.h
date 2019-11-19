@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "Buffer.h"
+#include "rendering/backend/Buffer.h"
 
 class VulkanDevice;
 

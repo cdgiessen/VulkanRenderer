@@ -11,10 +11,12 @@
 #include "core/Window.h"
 #include "resources/Resource.h"
 
-#include "ImGuiImpl.h"
-#include "ImGuiImplGLFW.h"
+#include "FrameGraph.h"
+
 #include "Initializers.h"
-#include "RenderTools.h"
+#include "backend/ImGuiImpl.h"
+#include "backend/ImGuiImplGLFW.h"
+#include "backend/RenderTools.h"
 
 
 RenderSettings::RenderSettings (std::filesystem::path fileName) : fileName (fileName) { Load (); }
@@ -67,21 +69,15 @@ VulkanRenderer::VulkanRenderer (
 
 : settings ("render_settings.json"),
   task_manager (task_manager),
-  device (window, validationLayer),
-  vulkanSwapChain (device, window),
-  async_task_manager (task_manager, device),
-  descriptor_manager (device),
-  shader_manager (resource_man.shader_manager, device),
-  pipeline_manager (device, async_task_manager),
-  model_manager (resource_man.mesh_manager, device, async_task_manager),
-  texture_manager (resource_man.texture_manager, device, async_task_manager),
-  lighting_manager (device),
-  camera_manager (device)
+  back_end (validationLayer, task_manager, window, resource_man),
+  lighting_manager (back_end.device),
+  camera_manager (back_end.device)
 
 {
-	for (size_t i = 0; i < vulkanSwapChain.GetChainCount (); i++)
+	frameObjects.reserve (back_end.vulkanSwapChain.GetChainCount ());
+	for (size_t i = 0; i < back_end.vulkanSwapChain.GetChainCount (); i++)
 	{
-		frameObjects.push_back (std::make_unique<FrameObject> (device, vulkanSwapChain, i));
+		frameObjects.emplace_back (back_end.device, back_end.vulkanSwapChain);
 	}
 
 	ContrustFrameGraph ();
@@ -91,14 +87,14 @@ VulkanRenderer::VulkanRenderer (
 
 VulkanRenderer::~VulkanRenderer ()
 {
-	async_task_manager.CleanFinishQueue ();
-	if (settings.memory_dump) device.LogMemory ();
+	back_end.async_task_manager.CleanFinishQueue ();
+	if (settings.memory_dump) back_end.device.LogMemory ();
 
 	DeviceWaitTillIdle ();
 	ImGuiShutdown ();
 }
 
-void VulkanRenderer::DeviceWaitTillIdle () { vkDeviceWaitIdle (device.device); }
+void VulkanRenderer::DeviceWaitTillIdle () { vkDeviceWaitIdle (back_end.device.device); }
 
 void VulkanRenderer::RenderFrame ()
 {
@@ -106,12 +102,12 @@ void VulkanRenderer::RenderFrame ()
 
 	PrepareFrame ();
 	frameGraph->SetCurrentFrameIndex (frameIndex);
-	frameGraph->FillCommandBuffer (frameObjects.at (frameIndex)->GetPrimaryCmdBuf (), "main_work");
+	frameGraph->FillCommandBuffer (frameObjects.at (frameIndex).GetPrimaryCmdBuf (), "main_work");
 	SubmitFrame ();
 
 	frameIndex = (frameIndex + 1) % frameObjects.size ();
 
-	async_task_manager.CleanFinishQueue ();
+	back_end.async_task_manager.CleanFinishQueue ();
 }
 
 void VulkanRenderer::RecreateSwapChain ()
@@ -120,9 +116,9 @@ void VulkanRenderer::RecreateSwapChain ()
 	DeviceWaitTillIdle ();
 
 	frameGraph->DestroyPresentResources ();
-	vulkanSwapChain.RecreateSwapChain ();
+	back_end.vulkanSwapChain.RecreateSwapChain ();
 	frameGraph->CreatePresentResources ();
-	ImGui_ImplVulkan_SetMinImageCount (vulkanSwapChain.GetChainCount ());
+	ImGui_ImplVulkan_SetMinImageCount (back_end.vulkanSwapChain.GetChainCount ());
 }
 
 
@@ -134,10 +130,10 @@ void VulkanRenderer::ContrustFrameGraph ()
 
 	RenderPassDescription main_work ("main_work");
 
-	frame_graph_builder.AddAttachment ({ "img_color", vulkanSwapChain.GetFormat () });
+	frame_graph_builder.AddAttachment ({ "img_color", back_end.vulkanSwapChain.GetFormat () });
 	frame_graph_builder.SetFinalOutputAttachmentName ("img_color");
 	frame_graph_builder.AddAttachment ({ "img_depth",
-	    device.FindSupportedFormat ({ VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+	    back_end.device.FindSupportedFormat ({ VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
 	        VK_IMAGE_TILING_OPTIMAL,
 	        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) });
 
@@ -147,7 +143,7 @@ void VulkanRenderer::ContrustFrameGraph ()
 	color_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
 	color_subpass.AddClearColor ("img_depth", { 0.0f, 0 });
 
-	color_subpass.SetFunction (std::move ([&] (VkCommandBuffer cmdBuf) {
+	color_subpass.SetFunction (std::move ([&](VkCommandBuffer cmdBuf) {
 		/*
 		dynamic_data.BindFrameDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
 		dynamic_data.BindLightingDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
@@ -175,12 +171,12 @@ void VulkanRenderer::ContrustFrameGraph ()
 	frame_graph_builder.AddRenderPass (main_work);
 	frame_graph_builder.SetFinalRenderPassName (main_work.name);
 
-	frameGraph = std::make_unique<FrameGraph> (device, vulkanSwapChain, frame_graph_builder);
+	frameGraph = std::make_unique<FrameGraph> (back_end.device, back_end.vulkanSwapChain, frame_graph_builder);
 }
 
 void VulkanRenderer::PrepareFrame ()
 {
-	VkResult result = frameObjects.at (frameIndex)->AcquireNextSwapchainImage ();
+	VkResult result = frameObjects.at (frameIndex).AcquireNextSwapchainImage ();
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
 		RecreateSwapChain ();
@@ -190,14 +186,14 @@ void VulkanRenderer::PrepareFrame ()
 		throw std::runtime_error ("failed to acquire swap chain image!");
 	}
 
-	frameObjects.at (frameIndex)->PrepareFrame ();
+	frameObjects.at (frameIndex).PrepareFrame ();
 }
 
 void VulkanRenderer::SubmitFrame ()
 {
-	frameObjects.at (frameIndex)->Submit ();
+	frameObjects.at (frameIndex).Submit ();
 
-	VkResult result = frameObjects.at (frameIndex)->Present ();
+	VkResult result = frameObjects.at (frameIndex).Present ();
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
@@ -215,7 +211,7 @@ void VulkanRenderer::ImGuiSetup ()
 {
 	ImGui::CreateContext ();
 
-	ImGui_ImplGlfw_InitForVulkan (device.GetWindow ().getWindowContext (), false);
+	ImGui_ImplGlfw_InitForVulkan (back_end.device.GetWindow ().getWindowContext (), false);
 
 	std::vector<VkDescriptorPoolSize> pool_sizes = { { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
@@ -230,22 +226,22 @@ void VulkanRenderer::ImGuiSetup ()
 		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 } };
 	VkDescriptorPoolCreateInfo pool_info = initializers::descriptorPoolCreateInfo (pool_sizes, 1000);
 	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-	VK_CHECK_RESULT (vkCreateDescriptorPool (device.device, &pool_info, nullptr, &imgui_pool));
+	VK_CHECK_RESULT (vkCreateDescriptorPool (back_end.device.device, &pool_info, nullptr, &imgui_pool));
 
 	ImGui_ImplVulkan_InitInfo info{};
-	info.Instance = device.instance.instance;
-	info.PhysicalDevice = device.physical_device.physical_device;
-	info.Device = device.device;
-	info.QueueFamily = device.GraphicsQueue ().GetQueueFamily ();
-	info.Queue = device.GraphicsQueue ().GetQueue ();
-	info.PipelineCache = pipeline_manager.GetCache ();
+	info.Instance = back_end.device.instance.instance;
+	info.PhysicalDevice = back_end.device.physical_device.physical_device;
+	info.Device = back_end.device.device;
+	info.QueueFamily = back_end.device.GraphicsQueue ().GetQueueFamily ();
+	info.Queue = back_end.device.GraphicsQueue ().GetQueue ();
+	info.PipelineCache = back_end.pipeline_manager.GetCache ();
 	info.MinImageCount = 2;
-	info.ImageCount = vulkanSwapChain.GetChainCount ();
+	info.ImageCount = back_end.vulkanSwapChain.GetChainCount ();
 	info.DescriptorPool = imgui_pool;
 
 	ImGui_ImplVulkan_Init (&info, frameGraph->GetPresentRenderPass ());
 
-	CommandPool font_pool (device.device, device.GraphicsQueue ());
+	CommandPool font_pool (back_end.device.device, back_end.device.GraphicsQueue ());
 	CommandBuffer cmd_buf (font_pool);
 	cmd_buf.Allocate ().Begin ();
 	ImGui_ImplVulkan_CreateFontsTexture (cmd_buf.Get ());
@@ -255,7 +251,7 @@ void VulkanRenderer::ImGuiSetup ()
 
 void VulkanRenderer ::ImGuiShutdown ()
 {
-	vkDestroyDescriptorPool (device.device, imgui_pool, nullptr);
+	vkDestroyDescriptorPool (back_end.device.device, imgui_pool, nullptr);
 
 	ImGui_ImplGlfw_Shutdown ();
 	ImGui_ImplVulkan_Shutdown ();

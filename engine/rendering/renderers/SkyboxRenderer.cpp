@@ -2,11 +2,7 @@
 
 #include <utility>
 
-#include "rendering/DoubleBuffer.h"
-#include "rendering/Model.h"
-#include "rendering/Pipeline.h"
-#include "rendering/Texture.h"
-#include "rendering/ViewCamera.h"
+#include "rendering/backend/BackEnd.h"
 
 struct SkyboxUniformBuffer
 {
@@ -14,46 +10,36 @@ struct SkyboxUniformBuffer
 	cml::mat4f view;
 };
 
-SkyboxManager::SkyboxManager (VulkanDevice& device,
-    DescriptorManager& desc_man,
-    ShaderManager& shader_man,
-    TextureManager& tex_man,
-    ModelManager& model_man,
-    PipelineManager& pipe_man,
-    ViewCameraManager& cam_man)
-: device (device),
-  desc_man (desc_man),
-  shader_man (shader_man),
-  tex_man (tex_man),
-  model_man (model_man),
-  pipe_man (pipe_man),
-  cam_man (cam_man),
-  descriptor_layout ()
+SkyboxManager::SkyboxManager (BackEnd& back_end, ViewCameraManager& camera_manager)
+: back_end (back_end), camera_manager (camera_manager)
 {
 	std::vector<DescriptorSetLayoutBinding> m_bindings = {
 		{ DescriptorType::uniform_buffer, ShaderStage::vertex, 0, 1 },
 		{ DescriptorType::combined_image_sampler, ShaderStage::fragment, 1, 1 }
 	};
-	descriptor_layout = desc_man.CreateDescriptorSetLayout (m_bindings);
-	skybox_cube_model = model_man.CreateModel (Resource::Mesh::CreateCube ());
+	descriptor_layout = back_end.descriptor_manager.CreateDescriptorSetLayout (m_bindings);
+	skybox_cube_model = back_end.model_manager.CreateModel (Resource::Mesh::CreateCube ());
 
 	CreatePipeline ();
 }
 
 SkyboxID SkyboxManager::CreateSkybox (Resource::Texture::TexID skyboxCubeMap)
 {
-	auto uniform_buffer = VulkanBuffer (device, uniform_details (sizeof (SkyboxUniformBuffer)));
+	auto uniform_buffer = VulkanBuffer (back_end.device, uniform_details (sizeof (SkyboxUniformBuffer)));
 
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 3);
-	auto vulkanCubeMap = tex_man.CreateCubeMap (skyboxCubeMap, details);
+	auto vulkanCubeMap = back_end.texture_manager.CreateCubeMap (skyboxCubeMap, details);
 
-	auto descriptorSet = desc_man.CreateDescriptorSet (descriptor_layout);
+	auto descriptorSet = back_end.descriptor_manager.CreateDescriptorSet (descriptor_layout);
 
 	std::vector<DescriptorUse> writes = {
 		{ 0, 1, uniform_buffer.GetDescriptorType (), { uniform_buffer.GetDescriptorInfo () } },
-		{ 1, 1, tex_man.GetDescriptorType (vulkanCubeMap), { tex_man.GetResource (vulkanCubeMap) } }
+		{ 1,
+		    1,
+		    back_end.texture_manager.GetDescriptorType (vulkanCubeMap),
+		    { back_end.texture_manager.GetResource (vulkanCubeMap) } }
 	};
-	descriptorSet.Update (device.device, writes);
+	descriptorSet.Update (back_end.device.device, writes);
 
 	SkyboxID new_id = cur_id++;
 	Skybox sky = { descriptorSet, vulkanCubeMap, std::move (uniform_buffer) };
@@ -63,7 +49,7 @@ SkyboxID SkyboxManager::CreateSkybox (Resource::Texture::TexID skyboxCubeMap)
 
 void SkyboxManager::Update (SkyboxID id, ViewCameraID cam_id)
 {
-	ViewCameraData& cam = cam_man.GetCameraData (cam_id);
+	ViewCameraData& cam = camera_manager.GetCameraData (cam_id);
 
 	SkyboxUniformBuffer sbo = {};
 	sbo.proj = cam.GetProjMat ();
@@ -76,24 +62,24 @@ void SkyboxManager::Update (SkyboxID id, ViewCameraID cam_id)
 
 void SkyboxManager::Draw (VkCommandBuffer commandBuffer, SpecificPass pass, SkyboxID id)
 {
-	skyboxes.at (id).descriptor_set.Bind (commandBuffer, pipe_man.GetPipeLayout (pipe), 2);
+	skyboxes.at (id).descriptor_set.Bind (commandBuffer, back_end.pipeline_manager.GetPipeLayout (pipe), 2);
 
-	pipe_man.BindPipe (commandBuffer, pass, pipe);
+	back_end.pipeline_manager.BindPipe (commandBuffer, pass, pipe);
 
-	model_man.DrawIndexed (commandBuffer, skybox_cube_model);
+	back_end.model_manager.DrawIndexed (commandBuffer, skybox_cube_model);
 }
 
 PipeID SkyboxManager::CreatePipeline ()
 {
 	PipelineOutline out;
 
-	auto vert = shader_man.GetModule ("skybox", ShaderType::vertex);
-	auto frag = shader_man.GetModule ("skybox", ShaderType::fragment);
+	auto vert = back_end.shader_manager.GetModule ("skybox", ShaderType::vertex);
+	auto frag = back_end.shader_manager.GetModule ("skybox", ShaderType::fragment);
 
 	ShaderModuleSet shader_set (vert, frag);
 	out.SetShaderModuleSet (shader_set);
 
-	out.UseModelVertexLayout (model_man.GetLayout (skybox_cube_model));
+	out.UseModelVertexLayout (back_end.model_manager.GetLayout (skybox_cube_model));
 
 	out.AddViewport (1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f);
 	out.AddScissor (1, 1, 0, 0);
@@ -115,10 +101,10 @@ PipeID SkyboxManager::CreatePipeline ()
 	    VK_BLEND_FACTOR_ZERO);
 
 	// out.AddDescriptorLayouts (double_buffer_man.GetGlobalLayouts ());
-	out.AddDescriptorLayout (desc_man.GetLayout (descriptor_layout));
+	out.AddDescriptorLayout (back_end.descriptor_manager.GetLayout (descriptor_layout));
 
 	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
-	pipe = pipe_man.MakePipeGroup (out);
+	pipe = back_end.pipeline_manager.MakePipeGroup (out);
 	return pipe;
 }

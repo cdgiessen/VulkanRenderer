@@ -7,19 +7,19 @@
 
 #include "cml/cml.h"
 
-#include "resources/Texture.h"
+#include "rendering/backend/Descriptor.h"
+#include "rendering/backend/Model.h"
+#include "rendering/backend/Pipeline.h"
+#include "rendering/backend/Texture.h"
 
-#include "rendering/Descriptor.h"
-#include "rendering/Model.h"
-
-#include "rendering/Device.h"
 #include "rendering/DoubleBuffer.h"
-#include "rendering/Pipeline.h"
-#include "rendering/Shader.h"
-#include "rendering/Texture.h"
 #include "rendering/ViewCamera.h"
 
-class VulkanRenderer;
+#include "resources/Texture.h"
+
+
+struct BackEnd;
+class ViewCameraManager;
 
 struct Skybox
 {
@@ -32,13 +32,7 @@ using SkyboxID = uint32_t;
 class SkyboxManager
 {
 	public:
-	SkyboxManager (VulkanDevice& device,
-	    DescriptorManager& desc_man,
-	    ShaderManager& shader_man,
-	    TextureManager& tex_man,
-	    ModelManager& model_man,
-	    PipelineManager& pipe_man,
-	    ViewCameraManager& cam_man);
+	SkyboxManager (BackEnd& back_end, ViewCameraManager& camera_manager);
 
 	SkyboxID CreateSkybox (Resource::Texture::TexID tex_resource);
 
@@ -46,15 +40,11 @@ class SkyboxManager
 	void Draw (VkCommandBuffer cmdBuf, SpecificPass pass, SkyboxID id);
 
 	private:
+	BackEnd& back_end;
+	ViewCameraManager& camera_manager;
+
 	PipeID CreatePipeline ();
 
-	VulkanDevice& device;
-	DescriptorManager& desc_man;
-	ShaderManager& shader_man;
-	TextureManager& tex_man;
-	ModelManager& model_man;
-	PipelineManager& pipe_man;
-	ViewCameraManager& cam_man;
 
 	SkyboxID cur_id = 0;
 	std::unordered_map<SkyboxID, Skybox> skyboxes;
