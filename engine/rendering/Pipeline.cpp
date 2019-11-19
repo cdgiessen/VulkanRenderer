@@ -266,12 +266,14 @@ PipelineManager::PipelineManager (VulkanDevice& device, AsyncTaskManager& async_
 
 PipelineManager::~PipelineManager ()
 {
-	std::ofstream out (".cache/pipeline_cache");
+	std::ofstream out (".cache/pipeline_cache", std::ios::binary | std::ios::out);
 	size_t cache_size = 0;
 	std::vector<std::byte> cache_data;
 	vkGetPipelineCacheData (device.device, cache, &cache_size, nullptr);
 	cache_data.resize (cache_size);
 	vkGetPipelineCacheData (device.device, cache, &cache_size, cache_data.data ());
+
+	out.write (reinterpret_cast<char*> (cache_data.data ()), cache_data.size ());
 
 	vkDestroyPipelineCache (device.device, cache, nullptr);
 }
