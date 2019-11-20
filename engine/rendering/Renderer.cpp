@@ -71,7 +71,9 @@ VulkanRenderer::VulkanRenderer (
   task_manager (task_manager),
   back_end (validationLayer, task_manager, window, resource_man),
   lighting_manager (back_end.device),
-  camera_manager (back_end.device)
+  camera_manager (back_end.device),
+  skybox_manager (back_end, camera_manager),
+  mesh_manager (back_end)
 
 {
 	frameObjects.reserve (back_end.vulkanSwapChain.GetChainCount ());
@@ -98,13 +100,35 @@ void VulkanRenderer::DeviceWaitTillIdle () { vkDeviceWaitIdle (back_end.device.d
 
 void VulkanRenderer::RenderFrame ()
 {
+	VkResult result = frameObjects.at (frameIndex).AcquireNextSwapchainImage ();
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	{
+		RecreateSwapChain ();
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		throw std::runtime_error ("failed to acquire swap chain image!");
+	}
+
+	frameObjects.at (frameIndex).PrepareFrame ();
+
+
 	ImGui::Render ();
 
-	PrepareFrame ();
 	frameGraph->SetCurrentFrameIndex (frameIndex);
 	frameGraph->FillCommandBuffer (frameObjects.at (frameIndex).GetPrimaryCmdBuf (), "main_work");
-	SubmitFrame ();
+	frameObjects.at (frameIndex).Submit ();
 
+	result = frameObjects.at (frameIndex).Present ();
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	{
+		// RecreateSwapChain ();
+	}
+	else if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error ("failed to present swap chain image!");
+	}
 	frameIndex = (frameIndex + 1) % frameObjects.size ();
 
 	back_end.async_task_manager.CleanFinishQueue ();
@@ -174,38 +198,6 @@ void VulkanRenderer::ContrustFrameGraph ()
 	frameGraph = std::make_unique<FrameGraph> (back_end.device, back_end.vulkanSwapChain, frame_graph_builder);
 }
 
-void VulkanRenderer::PrepareFrame ()
-{
-	VkResult result = frameObjects.at (frameIndex).AcquireNextSwapchainImage ();
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-	{
-		RecreateSwapChain ();
-	}
-	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-	{
-		throw std::runtime_error ("failed to acquire swap chain image!");
-	}
-
-	frameObjects.at (frameIndex).PrepareFrame ();
-}
-
-void VulkanRenderer::SubmitFrame ()
-{
-	frameObjects.at (frameIndex).Submit ();
-
-	VkResult result = frameObjects.at (frameIndex).Present ();
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-	{
-		// RecreateSwapChain ();
-	}
-	else if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error ("failed to present swap chain image!");
-	}
-
-	// device.PresentQueue ().QueueWaitIdle ();
-}
 
 void VulkanRenderer::ImGuiSetup ()
 {

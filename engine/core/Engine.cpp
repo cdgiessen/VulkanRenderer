@@ -74,9 +74,9 @@ Engine::Engine ()
 : settings ("settings.json"),
   window (settings.isFullscreen, cml::vec2i (settings.screenWidth, settings.screenHeight), cml ::vec2i (10, 10)),
   resource_manager (task_manager),
-  vulkan_renderer (settings.useValidationLayers, task_manager, window, resource_manager)
+  vulkan_renderer (settings.useValidationLayers, task_manager, window, resource_manager),
+  scene (task_manager, time_manager, resource_manager, vulkan_renderer)
 // imgui_nodeGraph_terrain ()
-// scene (task_manager, resource_manager, vulkan_renderer, time_manager, imgui_nodeGraph_terrain.GetGraph ())
 {
 	Input::SetupInputDirector (&window);
 	Input::SetMouseControlStatus (false);
@@ -104,7 +104,7 @@ void Engine::Run ()
 		time_manager.StartFrameTimer ();
 		Input::inputDirector.UpdateInputs ();
 		HandleInputs ();
-		// scene.UpdateScene ();
+		scene.Update ();
 
 		BuildImgui ();
 		vulkan_renderer.RenderFrame ();

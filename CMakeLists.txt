@@ -95,7 +95,8 @@ target_include_directories(VulkanEngine PUBLIC ${SPIRV_CROSS_INCLUDE_DIR})
 target_link_libraries(VulkanEngine PUBLIC spirv-cross-core spirv-cross-cpp spirv-cross-reflect) 
 
 #entt
-target_include_directories(VulkanEngine PUBLIC ${ENTT_INCLUDE_DIR}/engine/)
+target_link_libraries(VulkanEngine PUBLIC EnTT)
+target_include_directories(VulkanEngine PUBLIC ${ENTT_INCLUDE_DIR}/src)
 
 #fx-gltf
 target_link_libraries(VulkanEngine PUBLIC fx-gltf)

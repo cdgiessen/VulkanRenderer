@@ -60,7 +60,7 @@ class Engine
 	Resource::ResourceManager resource_manager;
 
 	VulkanRenderer vulkan_renderer;
-	// Scene scene;
+	Scene scene;
 
 	private:
 	std::function<void()> imgui_update_callback;

@@ -5,7 +5,6 @@
 #include <utility>
 #include <vector>
 
-#include "vk_mem_alloc.h"
 #include <vulkan/vulkan.h>
 class VulkanFence
 {
@@ -114,7 +113,7 @@ class CommandPool
 	void EndBufferRecording (VkCommandBuffer buf);
 	void FreeCommandBuffer (VkCommandBuffer buf);
 
-	void WriteToBuffer (VkCommandBuffer buf, std::function<void (VkCommandBuffer)> const& cmd);
+	void WriteToBuffer (VkCommandBuffer buf, std::function<void(VkCommandBuffer)> const& cmd);
 
 	private:
 	friend class CommandBuffer;
@@ -158,7 +157,7 @@ class CommandBuffer
 
 	CommandBuffer& Free ();
 
-	CommandBuffer& WriteTo (std::function<void (const VkCommandBuffer)> const& work);
+	CommandBuffer& WriteTo (std::function<void(const VkCommandBuffer)> const& work);
 
 	VkCommandBuffer Get () const { return cmdBuf; }
 

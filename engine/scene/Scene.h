@@ -1,14 +1,40 @@
-//#pragma once
-//
-//#include "cml/cml.h"
-//
-//#include "rendering/Renderer.h"
-//
-//#include "resources/Resource.h"
-//
-//#include "core/JobSystem.h"
-//#include "core/TimeManager.h"
-//
+#pragma once
+
+#include "rendering/Renderer.h"
+
+#include <entt/fwd.hpp>
+
+namespace job
+{
+class TaskManager;
+}
+class TimeManager;
+namespace Resource
+{
+class ResourceManager;
+}
+class VulkanRenderer;
+
+class Scene
+{
+	public:
+	Scene (job::TaskManager& task_manager,
+	    TimeManager& time_manager,
+	    Resource::ResourceManager& resourceMan,
+	    VulkanRenderer& renderer);
+
+	void Update ();
+
+	private:
+	job::TaskManager& task_manager;
+	TimeManager& time_manager;
+	Resource::ResourceManager& resource_manager;
+	VulkanRenderer& renderer;
+
+	entt::registry main_registry;
+};
+
+
 //#include "Camera.h"
 //#include "Skybox.h"
 //#include "Terrain.h"

@@ -1,3 +1,6 @@
 #include "MeshRenderer.h"
 
-#include "rendering/Renderer.h"
+#include "rendering/backend/BackEnd.h"
+
+
+MeshManager::MeshManager (BackEnd& back_end) : back_end (back_end) {}

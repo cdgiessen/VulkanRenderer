@@ -34,6 +34,7 @@ namespace Resource
 class ResourceManager;
 }
 
+
 class FrameGraph;
 
 class RenderSettings
@@ -87,8 +88,12 @@ class VulkanRenderer
 
 	BackEnd back_end;
 
+	public:
 	ViewCameraManager camera_manager;
 	LightingManager lighting_manager;
+
+	SkyboxManager skybox_manager;
+	MeshManager mesh_manager;
 
 	private:
 	std::unique_ptr<FrameGraph> frameGraph;
@@ -100,9 +105,6 @@ class VulkanRenderer
 	bool wireframe = false;  // whether or not to use the wireframe pipeline for the scene.
 
 	void ContrustFrameGraph ();
-
-	void PrepareFrame ();
-	void SubmitFrame ();
 
 	VkDescriptorPool imgui_pool;
 };

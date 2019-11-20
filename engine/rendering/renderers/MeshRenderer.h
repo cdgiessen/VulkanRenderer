@@ -1,8 +1,12 @@
 #pragma once
 
-class VulkanRenderer;
+#include "rendering/backend/BackEnd.h"
 
-class MeshRendererManager
+class MeshManager
 {
+	public:
+	MeshManager (BackEnd& back_end);
 
+	private:
+	BackEnd& back_end;
 };

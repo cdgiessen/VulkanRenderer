@@ -1,17 +1,30 @@
-//#include "Scene.h"
-//
-//#include "cml/cml.h"
-//
-//#include "core/Input.h"
-//#include "core/Logger.h"
-//
-//#include "imgui.hpp"
-//
-//#include "entt/entt.hpp"
-//
-//#define VERTEX_BUFFER_BIND_ID 0
-//#define INSTANCE_BUFFER_BIND_ID 1
-//
+#include "Scene.h"
+
+#include "core/JobSystem.h"
+#include "core/TimeManager.h"
+
+#include "resources/Resource.h"
+
+#include "rendering/Renderer.h"
+
+#include "cml/cml.h"
+
+#include "core/Input.h"
+#include "core/Logger.h"
+
+#include <entt/entt.hpp>
+
+Scene::Scene (job::TaskManager& task_manager,
+    TimeManager& time_manager,
+    Resource::ResourceManager& resource_manager,
+    VulkanRenderer& renderer)
+: task_manager (task_manager), time_manager (time_manager), resource_manager (resource_manager), renderer (renderer)
+{
+	main_registry = entt::registry{};
+}
+
+void Scene::Update () {}
+
 // Scene::Scene (job::TaskManager& task_manager,
 //    Resource::ResourceManager& resourceMan,
 //    VulkanRenderer& renderer,
