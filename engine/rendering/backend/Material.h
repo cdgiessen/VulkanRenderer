@@ -6,36 +6,29 @@
 
 #include "Descriptor.h"
 
+#include "rendering/backend/Buffer.h"
+
 class VulkanDevice;
-
-using MatID = uint32_t;
-
-
-class MatOutline
-{
-	public:
-	MatOutline (VulkanDevice& device, Resource::Material::MaterialOutline const& outline);
-
-	private:
-	DescriptorSet descriptorSet;
-};
-
-class MatInstance
-{
-	public:
-	MatInstance (VulkanDevice& device, MatOutline const& outline);
-
-	private:
-	DescriptorLayout layout;
-};
 
 using MatOutlineID = uint32_t;
 using MatInstanceID = uint32_t;
 
 class MaterialManager
 {
+	public:
 	MaterialManager (Resource::Material::Manager& mat_man, VulkanDevice& device, DescriptorManager& descriptor_man);
 
-	stdext::flat_map<MatOutlineID, MatOutline> outlines;
-	stdext::flat_map<MatInstanceID, MatOutline> outlines;
+	MatOutlineID CreateMatOutline (Resource::Material::MaterialOutline const& outline);
+	MatInstanceID CreateMatInstance (MatOutlineID id, Resource::Material::MaterialInstance const& instance);
+
+	void CreateMatOutline (MatOutlineID id);
+	void CreateMatInstance (MatInstanceID id);
+
+	private:
+	MatOutlineID cur_outline = 0;
+	MatOutlineID cur_outline = 0;
+	stdext::flat_map<MatOutlineID, LayoutID> outlines;
+	stdext::flat_map<MatInstanceID, DescriptorSet> instance_sets;
+
+	std::vector<DoubleBuffer> instance_data;
 };

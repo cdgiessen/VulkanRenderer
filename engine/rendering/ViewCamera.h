@@ -5,7 +5,7 @@
 
 #include "cml/cml.h"
 
-#include "DoubleBuffer.h"
+#include "rendering/backend/Buffer.h"
 
 class VulkanDevice;
 

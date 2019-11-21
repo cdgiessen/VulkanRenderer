@@ -9,9 +9,9 @@
 #include "AsyncTask.h"
 #include "Buffer.h"
 #include "Device.h"
-#include "rendering/Initializers.h"
 #include "RenderTools.h"
 #include "Wrappers.h"
+#include "rendering/Initializers.h"
 
 
 void SetImageLayout (VkCommandBuffer cmdbuffer,
@@ -246,7 +246,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 	if (device.singleQueueDevice)
 	{
 		std::function<void (const VkCommandBuffer)> work = [=] (const VkCommandBuffer cmdBuf) {
-			SetLayoutAndTransferRegions (cmdBuf, image, buffer->buffer, subresourceRange, bufferCopyRegions);
+			SetLayoutAndTransferRegions (cmdBuf, image, buffer->Get (), subresourceRange, bufferCopyRegions);
 
 			GenerateMipMaps (cmdBuf, image, imageLayout, width, height, depth, layers, mipLevels);
 		};
@@ -260,7 +260,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 	else
 	{
 		std::function<void (const VkCommandBuffer)> transferWork = [=] (const VkCommandBuffer cmdBuf) {
-			SetLayoutAndTransferRegions (cmdBuf, image, buffer->buffer, subresourceRange, bufferCopyRegions);
+			SetLayoutAndTransferRegions (cmdBuf, image, buffer->Get (), subresourceRange, bufferCopyRegions);
 		};
 
 		auto gen_mips = [&, image, imageLayout, width, height, depth, layers, mipLevels] {

@@ -308,6 +308,15 @@ inline VkBufferCreateInfo bufferCreateInfo (VkBufferUsageFlags usage, VkDeviceSi
 	return bufCreateInfo;
 }
 
+inline VkDescriptorBufferInfo descriptorBufferCreateInfo (VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
+{
+	VkDescriptorBufferInfo info{};
+	info.buffer = buffer;
+	info.offset = offset;
+	info.range = range;
+	return info;
+}
+
 inline VkDescriptorPoolCreateInfo descriptorPoolCreateInfo (
     std::vector<VkDescriptorPoolSize> const& poolSizes, uint32_t maxSets)
 {

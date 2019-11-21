@@ -5,7 +5,7 @@
 
 #include "Device.h"
 #include "RenderTools.h"
-
+#include "rendering/Initializers.h"
 
 const uint32_t VERTEX_BUFFER_BIND_ID = 0;
 const uint32_t INSTANCE_BUFFER_BIND_ID = 1;
@@ -182,18 +182,33 @@ VkDescriptorType VulkanBuffer::GetDescriptorType ()
 
 VkDescriptorBufferInfo VulkanBuffer::GetDescriptorInfo ()
 {
-	VkDescriptorBufferInfo info{};
-	info.buffer = buffer;
-	info.offset = 0;
-	info.range = data.m_size;
-	return info;
+	return initializers::descriptorBufferCreateInfo (buffer, 0, data.m_size);
 }
 
 VkDescriptorBufferInfo VulkanBuffer::GetDescriptorInfo (int element_index)
 {
-	VkDescriptorBufferInfo info{};
-	info.buffer = buffer;
-	info.offset = element_index * data.m_size;
-	info.range = data.m_size;
-	return info;
+	return initializers::descriptorBufferCreateInfo (buffer, element_index * data.m_size, data.m_size);
+}
+
+VkDescriptorBufferInfo VulkanBuffer::GetDescriptorInfo (VkDeviceSize offset, VkDeviceSize range)
+{
+	return initializers::descriptorBufferCreateInfo (buffer, offset, range);
+}
+
+VkBuffer VulkanBuffer::Get () const { return buffer; }
+
+//// DOUBLE BUFFER ////
+
+DoubleBuffer::DoubleBuffer (VulkanDevice& device, BufCreateDetails const& create_details)
+: buffers ({ VulkanBuffer{ device, create_details }, VulkanBuffer{ device, create_details } })
+{
+}
+
+VulkanBuffer const& DoubleBuffer::Read () { return buffers[cur_read]; }
+VulkanBuffer& DoubleBuffer::Write () { return buffers[cur_write]; }
+
+void DoubleBuffer::Advance ()
+{
+	cur_read = cur_write;
+	cur_write = (cur_write + 1) % 2;
 }

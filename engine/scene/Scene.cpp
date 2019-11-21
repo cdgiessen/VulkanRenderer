@@ -12,15 +12,16 @@
 #include "core/Input.h"
 #include "core/Logger.h"
 
-#include <entt/entt.hpp>
-
 Scene::Scene (job::TaskManager& task_manager,
     TimeManager& time_manager,
     Resource::ResourceManager& resource_manager,
     VulkanRenderer& renderer)
-: task_manager (task_manager), time_manager (time_manager), resource_manager (resource_manager), renderer (renderer)
+: task_manager (task_manager),
+  time_manager (time_manager),
+  resource_manager (resource_manager),
+  renderer (renderer),
+  main_registry (entt::registry{})
 {
-	main_registry = entt::registry{};
 }
 
 void Scene::Update () {}

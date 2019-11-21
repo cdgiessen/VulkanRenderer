@@ -12,8 +12,8 @@
 #include "rendering/backend/Pipeline.h"
 #include "rendering/backend/Texture.h"
 
-#include "rendering/DoubleBuffer.h"
 #include "rendering/ViewCamera.h"
+#include "rendering/backend/Buffer.h"
 
 #include "resources/Texture.h"
 

@@ -471,6 +471,8 @@ std::vector<uint32_t> Manager::GetSpirVData (std::string const& name, ShaderType
 	{
 		if (info.name == name && info.type == type) return info.spirv_data;
 	}
+	auto id = AddShader (name);
+	return shaders.at (id).spirv_data;
 }
 
 

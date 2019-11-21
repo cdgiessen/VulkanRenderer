@@ -2,7 +2,7 @@
 
 #include "rendering/Renderer.h"
 
-#include <entt/fwd.hpp>
+#include <entt/entt.hpp>
 
 namespace job
 {

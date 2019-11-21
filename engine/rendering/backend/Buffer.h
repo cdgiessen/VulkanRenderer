@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -148,12 +149,31 @@ class VulkanBuffer
 
 	VkDescriptorType GetDescriptorType ();
 	VkDescriptorBufferInfo GetDescriptorInfo ();
+	VkDescriptorBufferInfo GetDescriptorInfo (VkDeviceSize offset, VkDeviceSize range);
 	VkDescriptorBufferInfo GetDescriptorInfo (int element_index);
 
-	VkBuffer buffer = VK_NULL_HANDLE;
+	VkBuffer Get () const;
 
 	private:
+	VkBuffer buffer = VK_NULL_HANDLE;
+
 	details::BufData data;
 
 	void CopyToBuffer (void const* pData, size_t size);
+};
+
+class DoubleBuffer
+{
+	public:
+	DoubleBuffer (VulkanDevice& device, BufCreateDetails const& create_details);
+
+	VulkanBuffer const& Read ();
+	VulkanBuffer& Write ();
+
+	void Advance ();
+
+	private:
+	int cur_write = 0;
+	int cur_read = 1;
+	std::array<VulkanBuffer, 2> buffers;
 };

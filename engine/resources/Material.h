@@ -32,6 +32,8 @@ struct DataMemberOutline
 	std::string name;
 };
 
+int GetDataMemeberSize (DataMemberType type);
+
 struct TextureMemberOutline
 {
 	Texture::TextureType type;

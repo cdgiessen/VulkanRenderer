@@ -66,18 +66,18 @@ ModelID ModelManager::CreateModel (Resource::Mesh::MeshData const& meshData)
 	loading_model.vertices.CopyToBuffer (meshData.vertexData);
 	loading_model.indices.CopyToBuffer (meshData.indexData);
 
-	VkBuffer vStage = loading_model.vertices.buffer;
-	VkBuffer iStage = loading_model.indices.buffer;
+	VkBuffer vStage = loading_model.vertices.Get ();
+	VkBuffer iStage = loading_model.indices.Get ();
 
-	VkBuffer vBuff = model.vertices.buffer;
-	VkBuffer iBuff = model.indices.buffer;
+	VkBuffer vBuff = model.vertices.Get ();
+	VkBuffer iBuff = model.indices.Get ();
 
 	staging_models.emplace (new_id, std::move (loading_model));
 	models.emplace (new_id, std::move (model));
 
 
-	std::function<void(const VkCommandBuffer)> work =
-	    [vStage, iStage, vBuff, iBuff, vBufferSize, iBufferSize](const VkCommandBuffer copyCmd) {
+	std::function<void (const VkCommandBuffer)> work =
+	    [vStage, iStage, vBuff, iBuff, vBufferSize, iBufferSize] (const VkCommandBuffer copyCmd) {
 		    VkBufferCopy copyRegion{};
 		    copyRegion.size = vBufferSize;
 		    vkCmdCopyBuffer (copyCmd, vStage, vBuff, 1, &copyRegion);
