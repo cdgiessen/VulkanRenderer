@@ -25,7 +25,9 @@ int GetDataMemeberSize (DataMemberType type)
 		case DataMemberType::Vec3i:
 			return 3;
 		case DataMemberType::Vec4i:
-			return 4 case DataMemberType::Mat3 : return 9;
+			return 4;
+		case DataMemberType::Mat3:
+			return 9;
 		case DataMemberType::Mat4:
 			return 16;
 	}

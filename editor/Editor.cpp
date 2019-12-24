@@ -9,7 +9,7 @@ int main (int argc, char* argv[])
 	}
 	catch (const std::runtime_error& e)
 	{
-		Log.Debug (fmt::format ("Engine failed to initialize\n{}\n", e.what ()));
+		Log.Debug (fmt::format ("Engine failed to initialize{}", e.what ()));
 		return EXIT_FAILURE;
 	}
 	Editor editor (*vkApp.get ());
@@ -22,7 +22,7 @@ int main (int argc, char* argv[])
 	}
 	catch (const std::runtime_error& e)
 	{
-		Log.Error (fmt::format ("Engine quite in main loop\n{}\n", e.what ()));
+		Log.Error (fmt::format ("Engine quite in main loop{}", e.what ()));
 		return EXIT_FAILURE;
 	}
 	vkApp.reset ();
@@ -37,7 +37,7 @@ void Editor::UpdateInputs ()
 
 	if (Input::GetKeyDown (Input::KeyCode::H))
 	{
-		Log.Debug ("gui visibility toggled\n");
+		Log.Debug ("gui visibility toggled");
 		panels.showGui = !panels.showGui;
 	}
 }

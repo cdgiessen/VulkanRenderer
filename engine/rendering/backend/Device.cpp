@@ -45,7 +45,7 @@ void VMA_MemoryResource::LogVMA (bool detailedOutput) const
 	std::string out_str (str);
 	vmaFreeStatsString (allocator, str);
 
-	Log.Debug (fmt::format ("Allocator Data Dump:\n {}\n", out_str));
+	Log.Debug (fmt::format ("Allocator Data Dump:\n {}", out_str));
 }
 
 //////// VulkanInstance ////////
@@ -55,7 +55,7 @@ VulkanInstance::VulkanInstance (std::string appName, bool validationLayersEnable
 {
 	if (validationLayersEnabled && !CheckValidationLayerSupport ())
 	{
-		Log.Error (fmt::format ("Validation layers requested, but not found!\n"));
+		Log.Error (fmt::format ("Validation layers requested, but not found!"));
 		validationLayersEnabled = false;
 	}
 
@@ -181,7 +181,7 @@ VkBool32 VulkanInstance::debugUtilsCallback (VkDebugUtilsMessageSeverityFlagBits
 {
 	auto ms = MessageSeverity (messageSeverity);
 	auto mt = MessageType (messageType);
-	Log.Error (fmt::format ("{} {}:\n{}\n", ms, mt, pCallbackData->pMessage));
+	Log.Error (fmt::format ("{} {}:\n{}", ms, mt, pCallbackData->pMessage));
 	return VK_FALSE;
 }
 
@@ -219,7 +219,7 @@ VulkanSurface::VulkanSurface (VulkanInstance const& instance, Window& window)
 	VK_CHECK_RESULT (glfwCreateWindowSurface (instance.instance, window.getWindowContext (), nullptr, &surface));
 	// if (res != VK_SUCCESS)
 	// {
-	// 	Log.Error (fmt::format ("{}\n", errorString (res)));
+	// 	Log.Error (fmt::format ("{}", errorString (res)));
 	// 	throw std::runtime_error ("failed to create window surface!");
 	// }
 }

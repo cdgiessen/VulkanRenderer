@@ -205,7 +205,7 @@ void GenerateMipMaps (VkCommandBuffer cmdBuf,
 	// all to SHADER_READ
 
 	if (finalImageLayout == VK_IMAGE_LAYOUT_UNDEFINED)
-		Log.Error (fmt::format ("Final image layout Undefined!\n"));
+		Log.Error (fmt::format ("Final image layout Undefined!"));
 	SetImageLayout (cmdBuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, finalImageLayout, subresourceRange);
 }
 
@@ -659,7 +659,7 @@ TextureManager::TextureManager (
 
 TextureManager::~TextureManager ()
 {
-	Log.Debug (fmt::format ("Textures left over {}\n", texture_map.size ()));
+	Log.Debug (fmt::format ("Textures left over {}", texture_map.size ()));
 }
 
 std::function<void ()> TextureManager::CreateFinishWork (VulkanTextureID id)

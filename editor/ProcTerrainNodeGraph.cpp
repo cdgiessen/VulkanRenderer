@@ -62,7 +62,7 @@ void ProcTerrainNodeGraph::DeleteNode (NodeId nodeId)
 	}
 	else
 	{
-		Log.Debug ("Couldn't find node to delete! Does it exist?\n");
+		Log.Debug ("Couldn't find node to delete! Does it exist?");
 	}
 }
 
@@ -95,7 +95,7 @@ void ProcTerrainNodeGraph::DeleteConnection (ConId con)
 	}
 	else
 	{
-		Log.Error ("Couldn't find connection! Does it exist?\n");
+		Log.Error ("Couldn't find connection! Does it exist?");
 	}
 }
 
@@ -676,7 +676,7 @@ ConnectionType PossibleConnection::GetActiveSlotType (HoveredSlotInfo info, std:
 
 void ProcTerrainNodeGraph::SaveGraphFromFile ()
 {
-	Log.Debug (fmt::format ("PWD = {}\n", std::filesystem::current_path ().string ()));
+	Log.Debug (fmt::format ("PWD = {}", std::filesystem::current_path ().string ()));
 	const char* filename = noc_file_dialog_open (
 	    NOC_FILE_DIALOG_SAVE, NULL, std::filesystem::current_path ().string ().c_str (), NULL);
 	if (filename != NULL)
@@ -690,7 +690,7 @@ void ProcTerrainNodeGraph::SaveGraphFromFile (std::string fileName)
 	std::ofstream outFile (fileName);
 	if (!outFile)
 	{
-		Log.Debug ("Bad file name for terrain graph\n");
+		Log.Debug ("Bad file name for terrain graph");
 		return;
 	}
 	nlohmann::json j;
@@ -766,7 +766,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile ()
 	}
 	else
 	{
-		Log.Debug ("No file specified, stopping load\n");
+		Log.Debug ("No file specified, stopping load");
 	}
 }
 
@@ -776,7 +776,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 	std::ifstream inFile (fileName);
 	if (!inFile)
 	{
-		Log.Debug ("Bad file name\n");
+		Log.Debug ("Bad file name");
 		return;
 	}
 
@@ -784,7 +784,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 
 	if (inFile.peek () == std::ifstream::traits_type::eof ())
 	{
-		Log.Error ("Opened file is empty! \n");
+		Log.Error ("Opened file is empty!");
 		return;
 	}
 
@@ -794,7 +794,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 	}
 	catch (nlohmann::json::parse_error& e)
 	{
-		Log.Error (fmt::format ("{}\n", e.what ()));
+		Log.Error (fmt::format ("{}", e.what ()));
 	}
 	inFile.close ();
 
@@ -827,7 +827,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 					auto outGoingNode = conIndex;
 					if (outGoingNode == -1)
 					{
-						Log.Error ("Couldn't find node by id in loaded graph\n");
+						Log.Error ("Couldn't find node by id in loaded graph");
 					}
 
 					int slotType = j[curIndex][curSlotIndex]["slotType"];
@@ -891,7 +891,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 	}
 	catch (nlohmann::json::parse_error& e)
 	{
-		Log.Error (fmt::format ("{}\n", e.what ()));
+		Log.Error (fmt::format ("{}", e.what ()));
 	}
 }
 

@@ -154,7 +154,7 @@ void TaskManager::Submit (std::vector<Task> in_tasks)
 std::optional<Task> TaskManager::GetTask ()
 {
 	std::lock_guard lg (queue_lock);
-	// Log.Debug (fmt::format ("queue size {}\n", task_queue.size ()));
+	// Log.Debug (fmt::format ("queue size {}", task_queue.size ()));
 	while (!task_queue.empty ())
 	{
 		auto val = task_queue.front ();
@@ -189,10 +189,7 @@ class JobTesterClass
 		for (auto& n : nums)
 		{
 			Log.Debug (fmt::format ("{} ", n));
-			//				Log.Debug << n << " ";
 		}
-		Log.Debug (fmt::format ("\n"));
-		//			Log.Debug << "\n";
 	}
 
 	private:
@@ -225,9 +222,8 @@ void JobTesterClass::MulNumAddNum (int num1, int num2)
 
 bool JobTester ()
 {
-	Log.Debug (fmt::format ("Job system test: start\n"));
+	Log.Debug (fmt::format ("Job system test: start"));
 
-	//	Log.Debug << "Job system test: Start\n";
 	TaskManager tMan;
 
 	JobTesterClass jtc;
@@ -254,9 +250,7 @@ bool JobTester ()
 
 	signal2->Wait ();
 	jtc.Print ();
-	Log.Debug (fmt::format ("Job system test: done\n"));
-
-	//	Log.Debug << "Job system test: done\n";
+	Log.Debug (fmt::format ("Job system test: done"));
 	return true;
 }
 } // namespace job

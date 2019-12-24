@@ -993,8 +993,6 @@ VkPresentModeKHR ImGui_ImplVulkanH_SelectPresentMode (
 	ImVector<VkPresentModeKHR> avail_modes;
 	avail_modes.resize ((int)avail_count);
 	vkGetPhysicalDeviceSurfacePresentModesKHR (physical_device, surface, &avail_count, avail_modes.Data);
-	// for (uint32_t avail_i = 0; avail_i < avail_count; avail_i++)
-	//    printf("[vulkan] avail_modes[%d] = %d\n", avail_i, avail_modes[avail_i]);
 
 	for (int request_i = 0; request_i < request_modes_count; request_i++)
 		for (uint32_t avail_i = 0; avail_i < avail_count; avail_i++)

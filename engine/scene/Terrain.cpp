@@ -8,7 +8,7 @@
 //#include "rendering/Initializers.h"
 //
 //
-//TerrainQuad::TerrainQuad (cml::vec2f pos,
+// TerrainQuad::TerrainQuad (cml::vec2f pos,
 //    cml::vec2f size,
 //    cml::vec2i logicalPos,
 //    cml::vec2f logicalSize,
@@ -47,13 +47,13 @@
 //	}
 //}
 //
-//float TerrainQuad::GetUVvalueFromLocalIndex (float i, int numCells, int level, int subDivPos)
+// float TerrainQuad::GetUVvalueFromLocalIndex (float i, int numCells, int level, int subDivPos)
 //{
 //	return cml::clamp (
 //	    (float)(i) / ((1 << level) * (float)(numCells)) + (float)(subDivPos) / (float)(1 << level), 0.0f, 1.0f);
 //}
 //
-//Terrain::Terrain (VulkanRenderer& renderer,
+// Terrain::Terrain (VulkanRenderer& renderer,
 //    InternalGraph::GraphPrototype& protoGraph,
 //    int numCells,
 //    int maxLevels,
@@ -85,19 +85,19 @@
 //	}
 //}
 //
-//Terrain::~Terrain ()
+// Terrain::~Terrain ()
 //{
 //	renderer.texture_manager.DeleteTexture (terrainHeightMap);
 //	renderer.texture_manager.DeleteTexture (terrainSplatMap);
 //	renderer.texture_manager.DeleteTexture (terrainNormalMap);
 //}
 //
-//int Terrain::FindEmptyIndex ()
+// int Terrain::FindEmptyIndex ()
 //{
 //	return curEmptyIndex++; // always gets an index one higher
 //}
 //
-//void Terrain::InitTerrain (cml::vec3f cameraPos,
+// void Terrain::InitTerrain (cml::vec3f cameraPos,
 //    VulkanTextureID texArrAlbedo,
 //    VulkanTextureID texArrRoughness,
 //    VulkanTextureID texArrMetallic,
@@ -121,7 +121,7 @@
 //	InitTerrainQuad (rootQuad, cameraPos);
 //}
 //
-//void Terrain::UpdateTerrain (cml::vec3f viewerPos)
+// void Terrain::UpdateTerrain (cml::vec3f viewerPos)
 //{
 //	SimpleTimer updateTime;
 //	updateTime.StartTimer ();
@@ -131,10 +131,10 @@
 //	updateTime.EndTimer ();
 //
 //	// if (updateTime.GetElapsedTimeMicroSeconds() > 1500)
-//	//	Log.Debug << " Update time " << updateTime.GetElapsedTimeMicroSeconds() << "\n";
+//	//	Log.Debug << " Update time " << updateTime.GetElapsedTimeMicroSeconds();
 //}
 //
-//void Terrain::SetupUniformBuffer ()
+// void Terrain::SetupUniformBuffer ()
 //{
 //	uniformBuffer =
 //	    std::make_unique<VulkanBuffer> (renderer.device, uniform_details (sizeof (ModelBufferObject)));
@@ -150,7 +150,7 @@
 //	instanceBuffer = std::make_unique<VulkanBuffer> (renderer.device, inst_details);
 //}
 //
-//void Terrain::SetupImage ()
+// void Terrain::SetupImage ()
 //{
 //
 //	int length = fastGraphUser.image_length ();
@@ -184,7 +184,7 @@
 //	    renderer.texture_manager.CreateTextureFromBuffer (std::move (buffer_normal), norm_details);
 //}
 //
-//void Terrain::SetupDescriptorSets (
+// void Terrain::SetupDescriptorSets (
 //    VulkanTextureID texArrAlbedo, VulkanTextureID texArrRoughness, VulkanTextureID texArrMetallic, VulkanTextureID texArrNormal)
 //{
 //	descriptor = std::make_unique<VulkanDescriptor> (renderer.device);
@@ -228,7 +228,7 @@
 //	descriptor->UpdateDescriptorSet (descriptorSet, writes);
 //}
 //
-//void Terrain::SetupPipeline ()
+// void Terrain::SetupPipeline ()
 //{
 //	PipelineOutline out;
 //
@@ -294,14 +294,14 @@
 //	    renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 //}
 //
-//void Terrain::InitTerrainQuad (int quad, cml::vec3f viewerPos)
+// void Terrain::InitTerrainQuad (int quad, cml::vec3f viewerPos)
 //{
 //
 //	UpdateTerrainQuad (quad, viewerPos);
 //}
 //
 //
-//void Terrain::UpdateTerrainQuad (int quad, cml::vec3f viewerPos)
+// void Terrain::UpdateTerrainQuad (int quad, cml::vec3f viewerPos)
 //{
 //
 //	float SubdivideDistanceBias = 2.0f;
@@ -332,7 +332,7 @@
 //	}
 //}
 //
-//void Terrain::SubdivideTerrain (int quad, cml::vec3f viewerPos)
+// void Terrain::SubdivideTerrain (int quad, cml::vec3f viewerPos)
 //{
 //	auto& q = quadMap.at (quad);
 //	q.isSubdivided = true;
@@ -404,7 +404,7 @@
 //	InitTerrainQuad (q.subQuads.DownLeft, viewerPos);
 //}
 //
-//void Terrain::UnSubdivide (int quad)
+// void Terrain::UnSubdivide (int quad)
 //{
 //	if (quadMap.at (quad).isSubdivided)
 //	{
@@ -423,7 +423,7 @@
 //	}
 //}
 //
-//void Terrain::DrawTerrainRecursive (
+// void Terrain::DrawTerrainRecursive (
 //    int quad, VkCommandBuffer cmdBuf, bool ifWireframe, std::vector<HeightMapBound>& instances)
 //{
 //	if (quadMap.at (quad).isSubdivided)
@@ -439,7 +439,7 @@
 //	}
 //}
 //
-//void Terrain::DrawTerrainGrid (VkCommandBuffer cmdBuf, bool wireframe)
+// void Terrain::DrawTerrainGrid (VkCommandBuffer cmdBuf, bool wireframe)
 //{
 //	if (wireframe)
 //		renderer.pipeline_manager.BindPipe (wireframe, cmdBuf);
@@ -469,7 +469,7 @@
 //	vkCmdDrawIndexed (cmdBuf, static_cast<uint32_t> (indCount), instances.size (), 0, 0, 0);
 //}
 //
-//float Terrain::GetHeightAtLocation (float x, float z)
+// float Terrain::GetHeightAtLocation (float x, float z)
 //{
 //	return fastGraphUser.SampleHeightMap (x, z) * heightScale;
 //}

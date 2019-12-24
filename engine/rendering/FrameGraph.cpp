@@ -493,7 +493,7 @@ std::vector<VkImageView> RenderPass::OrderAttachments (
 {
 	if (named_views.size () != desc.attachment_uses.size ())
 	{
-		Log.Error ("Mismatching attachment and views counts!\n");
+		Log.Error ("Mismatching attachment and views counts!");
 	}
 	std::vector<VkImageView> out_views (named_views.size ());
 

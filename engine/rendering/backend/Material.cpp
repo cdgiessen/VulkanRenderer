@@ -2,23 +2,25 @@
 
 #include "Device.h"
 
-MaterialManager::CreateMatOutline (Resource::Material::MaterialOutline const& outline)
+MatOutlineID MaterialManager::CreateMatOutline (Resource::Material::MaterialOutline const& outline)
 {
-	DescriptorLayout layout;
-	layout.push_back ({ DescriptorType::uniform_buffer, ShaderStage::vertex | ShaderStage::fragment, 0, 1 });
-	layout.push_back ({ DescriptorType::combined_image_sampler,
-	    ShaderStage::vertex | ShaderStage::fragment,
-	    1,
-	    outline.texture_members.size () });
-	layout = descriptor_man.CreateDescriptorSetLayout (layout);
+	// DescriptorLayout layout;
+	// layout.push_back ({ DescriptorType::uniform_buffer, ShaderStage::vertex |
+	// ShaderStage::fragment, 0, 1 }); layout.push_back ({ DescriptorType::combined_image_sampler,
+	//    ShaderStage::vertex | ShaderStage::fragment,
+	//    1,
+	//    outline.texture_members.size () });
+	// layout = descriptor_man.CreateDescriptorSetLayout (layout);
+	return 0;
 }
 
 MatInstanceID MaterialManager::CreateMatInstance (
-    MatOutlineID id, Resource::Material::MaterialInstance const& instance);
+    MatOutlineID id, Resource::Material::MaterialInstance const& instance)
 
 {
+	// set = descriptor_man.CreateDescriptorSet (outline.layout);
 
-	set = descriptor_man.CreateDescriptorSet (outline.layout);
+	return 0;
 }
 
 //// MAT MANAGER ////

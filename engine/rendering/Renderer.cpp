@@ -39,13 +39,13 @@ void RenderSettings::Load ()
 		}
 		catch (std::runtime_error& e)
 		{
-			Log.Debug (fmt::format ("Render Settings was incorrect, recreating\n"));
+			Log.Debug (fmt::format ("Render Settings was incorrect, recreating"));
 			Save ();
 		}
 	}
 	else
 	{
-		Log.Debug (fmt::format ("Render Settings not found, creating one\n"));
+		Log.Debug (fmt::format ("Render Settings not found, creating one"));
 		Save ();
 	}
 }
@@ -136,7 +136,7 @@ void VulkanRenderer::RenderFrame ()
 
 void VulkanRenderer::RecreateSwapChain ()
 {
-	Log.Debug (fmt::format ("Recreating Swapchain\n"));
+	Log.Debug (fmt::format ("Recreating Swapchain"));
 	DeviceWaitTillIdle ();
 
 	frameGraph->DestroyPresentResources ();
@@ -167,7 +167,7 @@ void VulkanRenderer::ContrustFrameGraph ()
 	color_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
 	color_subpass.AddClearColor ("img_depth", { 0.0f, 0 });
 
-	color_subpass.SetFunction (std::move ([&](VkCommandBuffer cmdBuf) {
+	color_subpass.SetFunction (std::move ([&] (VkCommandBuffer cmdBuf) {
 		/*
 		dynamic_data.BindFrameDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
 		dynamic_data.BindLightingDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);

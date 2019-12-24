@@ -149,7 +149,7 @@ ShaderType GetShaderStage (const std::string& stage)
 	{
 		return ShaderType::compute;
 	}
-	Log.Error (fmt::format ("Found error shader type of {}\n", stage));
+	Log.Error (fmt::format ("Found error shader type of {}", stage));
 	return ShaderType::error;
 }
 
@@ -217,18 +217,18 @@ void ShaderDatabase::Load ()
 		}
 		catch (nlohmann::detail::parse_error& e)
 		{
-			Log.Debug ("Shader Database file was bas, creating a new one\n");
+			Log.Debug ("Shader Database file was bas, creating a new one");
 			Save ();
 		}
 		catch (std::runtime_error& e)
 		{
-			Log.Debug ("Shader Database file was incorrect, creating a new one\n");
+			Log.Debug ("Shader Database file was incorrect, creating a new one");
 			Save ();
 		}
 	}
 	else
 	{
-		Log.Debug ("Shader Database doesn't exist, creating one\n");
+		Log.Debug ("Shader Database doesn't exist, creating one");
 		Save ();
 	}
 }
@@ -290,7 +290,7 @@ std::optional<std::string> ShaderCompiler::LoadFileData (const std::string& file
 
 	if (!file.is_open ())
 	{
-		Log.Error (fmt::format ("Failed to load shader: {}\n", filename));
+		Log.Error (fmt::format ("Failed to load shader: {}", filename));
 		return {};
 	}
 
@@ -336,7 +336,7 @@ std::optional<std::vector<uint32_t>> const ShaderCompiler::compile_glsl_to_spirv
 
 	if (!Shader.preprocess (&Resources, DefaultVersion, ENoProfile, false, false, messages, &PreprocessedGLSL, Includer))
 	{
-		Log.Error (fmt::format ("GLSL Preprocessing Failed for: {}\n", shader_name));
+		Log.Error (fmt::format ("GLSL Preprocessing Failed for: {}", shader_name));
 		Log.Error (Shader.getInfoLog ());
 		Log.Error (Shader.getInfoDebugLog ());
 		return {};
@@ -347,7 +347,7 @@ std::optional<std::vector<uint32_t>> const ShaderCompiler::compile_glsl_to_spirv
 
 	if (!Shader.parse (&Resources, 100, false, messages))
 	{
-		Log.Error (fmt::format ("GLSL Parsing Failed for: {}\n", shader_name));
+		Log.Error (fmt::format ("GLSL Parsing Failed for: {}", shader_name));
 		Log.Error (Shader.getInfoLog ());
 		Log.Error (Shader.getInfoDebugLog ());
 		return {};
@@ -358,7 +358,7 @@ std::optional<std::vector<uint32_t>> const ShaderCompiler::compile_glsl_to_spirv
 
 	if (!Program.link (messages))
 	{
-		Log.Error (fmt::format ("GLSL Linking Failed for: {}\n", shader_name));
+		Log.Error (fmt::format ("GLSL Linking Failed for: {}", shader_name));
 		Log.Error (Shader.getInfoLog ());
 		Log.Error (Shader.getInfoDebugLog ());
 		return {};
@@ -400,7 +400,7 @@ Manager::Manager (job::TaskManager& task_manager) : task_manager (task_manager)
 
 				AddShader (in_path.string ());
 				Log.Debug (fmt::format (
-				    "Compiled shader {}{}\n", in_path.stem ().string (), in_path.extension ().string ()));
+				    "Compiled shader {}{}", in_path.stem ().string (), in_path.extension ().string ()));
 			}
 		}
 	}
@@ -422,7 +422,7 @@ ShaderID Manager::AddShader (std::string name)
 	auto shader_chars = compiler.LoadFileData (name);
 	if (!shader_chars.has_value ())
 	{
-		Log.Error (fmt::format ("Couldn't find shader {}\n", name));
+		Log.Error (fmt::format ("Couldn't find shader {}", name));
 	}
 	std::filesystem::path p = name;
 	ShaderType type;

@@ -1,7 +1,7 @@
 #include "Input.h"
 
-#include <algorithm>
 #include <GLFW/glfw3.h>
+#include <algorithm>
 
 #include "Logger.h"
 
@@ -158,8 +158,7 @@ bool InputDirector::GetMouseControlStatus () { return mouseControlStatus; }
 void InputDirector::SetMouseControlStatus (bool value)
 {
 	mouseControlStatus = value;
-	Log.Debug (fmt::format ("Mouse control status {}\n", value));
-	// Log.Debug << "Mouse control status " << value << "\n";
+	Log.Debug (fmt::format ("Mouse control status {}", value));
 	if (mouseControlStatus)
 	{
 		glfwSetInputMode (window->getWindowContext (), GLFW_CURSOR, GLFW_CURSOR_DISABLED);

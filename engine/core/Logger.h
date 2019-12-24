@@ -4,7 +4,6 @@
 #include <fmt/format.h>
 #include <string_view>
 
-
 class Logger
 {
 	public:
@@ -13,9 +12,8 @@ class Logger
 	void Error (std::string_view str_v);
 
 	private:
-	class OutputFileHandle
+	struct OutputFileHandle
 	{
-		public:
 		OutputFileHandle (std::string file_name);
 		~OutputFileHandle ();
 		FILE* fp = nullptr;

@@ -37,7 +37,7 @@ void test_func ()
 	{
 		unsigned set = glsl.get_decoration (resource.id, spv::DecorationDescriptorSet);
 		unsigned binding = glsl.get_decoration (resource.id, spv::DecorationBinding);
-		printf ("Image %s at set = %u, binding = %u\n", resource.name.c_str (), set, binding);
+		// printf ("Image %s at set = %u, binding = %u", resource.name.c_str (), set, binding);
 
 		// Modify the decoration to prepare it for GLSL.
 		glsl.unset_decoration (resource.id, spv::DecorationDescriptorSet);
@@ -66,7 +66,7 @@ ShaderModule::ShaderModule (VkDevice device, ShaderType type, std::vector<uint32
 
 	if (vkCreateShaderModule (device, &createInfo, nullptr, &module) != VK_SUCCESS)
 	{
-		Log.Error (fmt::format ("Failed to create VkShaderModule for\n"));
+		Log.Error (fmt::format ("Failed to create VkShaderModule for"));
 	}
 }
 

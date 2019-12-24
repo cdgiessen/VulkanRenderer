@@ -41,6 +41,8 @@ struct TextureMemberOutline
 };
 
 using MatOutlineID = int;
+using MatInstanceID = int;
+
 struct MaterialOutline
 {
 	MatOutlineID const id;
@@ -48,8 +50,6 @@ struct MaterialOutline
 	std::vector<DataMemberOutline> texture_members;
 	std::vector<TextureMemberOutline> data_members;
 };
-
-using MatInstanceID = int;
 
 struct DataMember
 {
@@ -67,15 +67,17 @@ struct MaterialInstance
 	std::vector<DataMember> data_members;
 	std::vector<Texture::TexID> tex_members;
 };
-
 class Manager
 {
 	public:
 	Manager ();
 	~Manager ();
 
+	MatOutlineID CreateMaterialOutline ();
+
 
 	private:
 	MatOutlineID outline_counter = 0;
+	std::unordered_map<MatOutlineID, MaterialOutline> outlines;
 };
 } // namespace Resource::Material

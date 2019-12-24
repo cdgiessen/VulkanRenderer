@@ -112,7 +112,7 @@ std::optional<TexResource> from_json_TexResource (nlohmann::json j)
 	}
 	catch (nlohmann::json::exception& e)
 	{
-		Log.Error (fmt::format ("failed to parse texture\n"));
+		Log.Error (fmt::format ("failed to parse texture"));
 		return {};
 	}
 }
@@ -139,8 +139,8 @@ void Manager::LoadTextureList ()
 		}
 		catch (nlohmann::json::exception& e)
 		{
-			Log.Debug ("Texture db was invalid json, creating a new one\n");
-			Log.Debug (fmt::format ("Json error: {}\n", e.what ()));
+			Log.Debug ("Texture db was invalid json, creating a new one");
+			Log.Debug (fmt::format ("Json error: {}", e.what ()));
 			SaveTextureList ();
 		}
 	}
@@ -152,7 +152,7 @@ void Manager::LoadTextureList ()
 
 	try
 	{
-		Log.Debug (fmt::format ("Loading {} textures\n", textureResources.size ()));
+		Log.Debug (fmt::format ("Loading {} textures", textureResources.size ()));
 		int count = 0;
 
 		auto signal = std::make_shared<job::TaskSignal> ();
@@ -169,7 +169,7 @@ void Manager::LoadTextureList ()
 			}
 			else
 			{
-				Log.Error (fmt::format ("Tex resource is invalid\n"));
+				Log.Error (fmt::format ("Tex resource is invalid"));
 			}
 		}
 		id_counter = count;
@@ -178,7 +178,7 @@ void Manager::LoadTextureList ()
 	}
 	catch (nlohmann::json::exception& e)
 	{
-		Log.Debug (fmt::format ("Error loading texture list {}\n", e.what ()));
+		Log.Debug (fmt::format ("Error loading texture list {}", e.what ()));
 	}
 }
 
@@ -200,7 +200,7 @@ void Manager::SaveTextureList ()
 	}
 	catch (nlohmann::json::exception& e)
 	{
-		Log.Debug (fmt::format ("{}\n", e.what ()));
+		Log.Debug (fmt::format ("{}", e.what ()));
 	}
 	outFile.close ();
 }
@@ -226,7 +226,7 @@ void Manager::LoadTextureFromFile (TexID id)
 		    4);
 		if (pixels_array.at (i) == nullptr)
 		{
-			Log.Error (fmt::format ("Image {} failed to load!\n", path.string ()));
+			Log.Error (fmt::format ("Image {} failed to load!", path.string ()));
 		}
 	}
 
@@ -246,7 +246,7 @@ void Manager::LoadTextureFromFile (TexID id)
 		stbi_image_free (pixels_array.at (i));
 	}
 
-	Log.Debug (fmt::format ("Tex {}\n", id));
+	Log.Debug (fmt::format ("Tex {}", id));
 
 	std::lock_guard lg (resource_lock);
 	texRes.data = std::move (texData);

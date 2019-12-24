@@ -46,7 +46,7 @@ void EngineSettings::Load ()
 	}
 	else
 	{
-		Log.Debug ("Settings file didn't exist, creating one\n");
+		Log.Debug ("Settings file didn't exist, creating one");
 		Save ();
 	}
 }
@@ -81,7 +81,7 @@ Engine::Engine ()
 	Input::SetupInputDirector (&window);
 	Input::SetMouseControlStatus (false);
 
-	Log.Debug (fmt::format ("Hardware Threads Available = {}\n", HardwareThreadCount ()));
+	Log.Debug (fmt::format ("Hardware Threads Available = {}", HardwareThreadCount ()));
 }
 
 
@@ -136,7 +136,7 @@ void Engine::BuildImgui ()
 	imgui_draw_callback ();
 
 	imGuiTimer.EndTimer ();
-	// Log.Debug << imGuiTimer.GetElapsedTimeNanoSeconds() << "\n";
+	// Log.Debug << imGuiTimer.GetElapsedTimeNanoSeconds();
 }
 
 void Engine::HandleInputs ()
@@ -200,7 +200,7 @@ void Engine::HandleInputs ()
 		if (Input::GetKeyDown (Input::KeyCode::F))
 		{
 			// scene.walkOnGround = !scene.walkOnGround;
-			Log.Debug ("flight mode toggled\n");
+			Log.Debug ("flight mode toggled");
 		}
 	}
 	else
