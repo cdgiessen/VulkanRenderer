@@ -10,9 +10,6 @@
 [submodule "ext/glslang"]
 	path = ext/glslang
 	url = https://github.com/KhronosGroup/glslang.git
-[submodule "ext/entt"]
-	path = ext/entt
-	url = https://github.com/skypjack/entt
 [submodule "ext/spirv-cross"]
 	path = ext/spirv-cross
 	url = https://github.com/KhronosGroup/SPIRV-Cross
@@ -25,9 +22,6 @@
 [submodule "ext/FastNoiseSIMD"]
 	path = ext/FastNoiseSIMD
 	url = https://github.com/Auburns/FastNoiseSIMD
-[submodule "ext/fx-gltf"]
-	path = ext/fx-gltf
-	url = https://github.com/jessey-git/fx-gltf
 [submodule "ext/vma"]
 	path = ext/vma
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
@@ -37,6 +31,4 @@
 [submodule "ext/glfw"]
 	path = ext/glfw
 	url = https://github.com/glfw/glfw
-[submodule "external/gli"]
-	path = ext/gli
-	url = https://github.com/g-truc/gli
+

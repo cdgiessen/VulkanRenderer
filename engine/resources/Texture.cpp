@@ -6,8 +6,6 @@
 
 #include <nlohmann/json.hpp>
 
-#include <gli/gli.hpp>
-
 #include "stb/stb_image.h"
 
 #include "core/JobSystem.h"

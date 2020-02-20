@@ -2,8 +2,6 @@
 
 #include "rendering/Renderer.h"
 
-#include <entt/entt.hpp>
-
 namespace job
 {
 class TaskManager;
@@ -30,8 +28,6 @@ class Scene
 	TimeManager& time_manager;
 	Resource::ResourceManager& resource_manager;
 	VulkanRenderer& renderer;
-
-	entt::registry main_registry;
 };
 
 

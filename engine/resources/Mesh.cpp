@@ -3,8 +3,6 @@
 #include "cml/cml.h"
 #include <numeric>
 
-#include <fx/gltf.h>
-
 #include "core/Logger.h"
 
 namespace Resource::Mesh

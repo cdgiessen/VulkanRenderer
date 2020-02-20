@@ -16,11 +16,7 @@ Scene::Scene (job::TaskManager& task_manager,
     TimeManager& time_manager,
     Resource::ResourceManager& resource_manager,
     VulkanRenderer& renderer)
-: task_manager (task_manager),
-  time_manager (time_manager),
-  resource_manager (resource_manager),
-  renderer (renderer),
-  main_registry (entt::registry{})
+: task_manager (task_manager), time_manager (time_manager), resource_manager (resource_manager), renderer (renderer)
 {
 }
 

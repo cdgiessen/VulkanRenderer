@@ -17,7 +17,6 @@ add_subdirectory(ext)
 
 set(GLSLANG_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang)
 set(SPIRV_CROSS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-cross)
-set(ENTT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/entt)
 
 #gtk include for linux file window
 if(UNIX)
@@ -94,13 +93,6 @@ target_link_libraries(VulkanEngine PUBLIC glslang SPIRV)
 target_include_directories(VulkanEngine PUBLIC ${SPIRV_CROSS_INCLUDE_DIR})
 target_link_libraries(VulkanEngine PUBLIC spirv-cross-core spirv-cross-cpp spirv-cross-reflect) 
 
-#entt
-target_link_libraries(VulkanEngine PUBLIC EnTT)
-target_include_directories(VulkanEngine PUBLIC ${ENTT_INCLUDE_DIR}/src)
-
-#fx-gltf
-target_link_libraries(VulkanEngine PUBLIC fx-gltf)
-
 #imgui
 target_link_libraries(VulkanEngine PUBLIC ocornut::imgui)
 target_include_directories(VulkanEngine PUBLIC ext/imgui)
@@ -114,11 +106,6 @@ target_link_libraries(VulkanEngine PUBLIC stb)
 
 #vma
 target_link_libraries(VulkanEngine PUBLIC VulkanMemoryAllocator)
-
-#gli
-target_include_directories(VulkanEngine PUBLIC ext/gli)
-target_include_directories(VulkanEngine PUBLIC ext/gli/external)
-
 
 #gtk
 if(UNIX)

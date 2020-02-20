@@ -4,15 +4,11 @@ find_path(SG14_PATH_FOUND "SG14" "")
 find_path(GLSLANG_PATH_FOUND "glslang" "")
 find_path(SPIRV_CROSS_PATH_FOUND "spirv-cross" "")
 find_path(CML_PATH_FOUND "cml" "")
-find_path(FX_GLTF_PATH_FOUND "fx-gltf" "")
 find_path(IMGUI_PATH_FOUND "imgui/imgui" "")
 find_path(FASTNOISESIMD_PATH_FOUND "FastNoiseSIMD" "")
 find_path(STB_PATH_FOUND "stb/stb" "")
 find_path(VMA_PATH_FOUND "vma" "")
 find_path(GLFW_PATH_FOUND "glfw" "")
-find_path(GLI_PATH_FOUND "gli" "")
-find_path(ENTT_PATH_FOUND "entt" "")
-
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_MultipleHeaders ON CACHE INTERNAL "")
@@ -79,18 +75,6 @@ endif(NOT CML_PATH_FOUND)
 
 set(CML_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 add_subdirectory(cml)
-
-set (FX_GLTF_INSTALL OFF CACHE BOOL "" FORCE)
-set (BUILD_TESTING OFF CACHE BOOL "" FORCE)
-
-
-if(NOT FX_GLTF_PATH_FOUND)
-	message("Updating fx-gltf")
-	execute_process(COMMAND git submodule update --init --recursive fx-gltf 
-				WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT FX_GLTF_PATH_FOUND)
-
-add_subdirectory(fx-gltf)
 
 if(NOT IMGUI_PATH_FOUND)
 	message("Updating imgui")
@@ -171,17 +155,4 @@ endif(NOT GLFW_PATH_FOUND)
 
 add_subdirectory(glfw)
 
-if(NOT GLI_PATH_FOUND)
-	message("Updating gli")
-	execute_process(COMMAND git submodule update --init --recursive gli
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT GLI_PATH_FOUND)
-
-if(NOT ENTT_PATH_FOUND)
-	message("Updating entt")
-	execute_process(COMMAND git submodule update --init --recursive entt
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT ENTT_PATH_FOUND)
-
-add_subdirectory(entt)
 
