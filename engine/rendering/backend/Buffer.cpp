@@ -63,7 +63,8 @@ VulkanBuffer::~VulkanBuffer ()
 	}
 }
 
-VulkanBuffer::VulkanBuffer (VulkanBuffer&& other) : buffer (other.buffer), data (other.data)
+VulkanBuffer::VulkanBuffer (VulkanBuffer&& other) noexcept
+: buffer (other.buffer), data (other.data)
 {
 	other.buffer = VK_NULL_HANDLE;
 	other.data.allocation = VK_NULL_HANDLE;

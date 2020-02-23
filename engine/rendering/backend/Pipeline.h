@@ -1,15 +1,10 @@
 #pragma once
 
-#include <mutex>
 #include <vector>
 #include <vulkan/vulkan.h>
 
-#include "SG14/flat_map.h"
-
 #include "Shader.h"
 
-class VulkanDevice;
-class AsyncTaskManager;
 struct VertexLayout;
 class PipelineOutline
 {
@@ -88,74 +83,57 @@ class PipelineOutline
 	std::vector<VkDynamicState> dynamicStates;
 };
 
-using PipeID = int;
-
-struct SpecificPass
-{
-	VkRenderPass render_pass;
-	uint32_t subpass;
-};
-
-bool operator== (SpecificPass const& a, SpecificPass const& b);
-
-namespace std
-{
-template <> struct hash<SpecificPass>
-{
-	std::size_t operator() (SpecificPass const& s) const noexcept
-	{
-		std::size_t h1 = std::hash<VkRenderPass>{}(s.render_pass);
-		std::size_t h2 = std::hash<uint32_t>{}(static_cast<uint32_t> (s.subpass));
-		return h1 ^ (h2 << 16);
-	}
-};
-} // namespace std
-
-class PipelineGroup
+class PipelineLayout
 {
 	public:
-	PipelineGroup (
-	    VkDevice device, VkPipelineCache cache, PipelineOutline builder, std::vector<SpecificPass> const& initial_passes);
-	~PipelineGroup ();
-	PipelineGroup (const PipelineGroup& group) = delete;
-	PipelineGroup& operator= (const PipelineGroup& group) = delete;
-	PipelineGroup (PipelineGroup&& group);
-	PipelineGroup& operator= (PipelineGroup&& group) noexcept;
+	PipelineLayout (VkDevice device, VkPipelineLayout layout);
+	~PipelineLayout ();
+	PipelineLayout (const PipelineLayout& other) = delete;
+	PipelineLayout& operator= (const PipelineLayout& other) = delete;
+	PipelineLayout (PipelineLayout&& other);
+	PipelineLayout& operator= (PipelineLayout&& other) noexcept;
 
-	void CreatePipeline (SpecificPass pass);
-
-	void Bind (VkCommandBuffer cmdBuf, SpecificPass pass);
-
-	VkPipelineLayout GetLayout () { return layout; }
+	VkPipelineLayout get () const { return layout; }
 
 	private:
 	VkDevice device;
-	PipelineOutline builder;
-	VkPipelineCache cache;
 	VkPipelineLayout layout;
-	std::unordered_map<SpecificPass, VkPipeline> pipelines;
 };
+class GraphicsPipeline
+{
+	public:
+	GraphicsPipeline (VkDevice device, VkPipeline pipeline);
+	~GraphicsPipeline ();
+	GraphicsPipeline (const GraphicsPipeline& other) = delete;
+	GraphicsPipeline& operator= (const GraphicsPipeline& other) = delete;
+	GraphicsPipeline (GraphicsPipeline&& other) noexcept;
+	GraphicsPipeline& operator= (GraphicsPipeline&& other) noexcept;
+
+	void Bind (VkCommandBuffer buffer);
+
+	private:
+	VkDevice device = VK_NULL_HANDLE;
+	VkPipeline pipeline = VK_NULL_HANDLE;
+};
+
+class AsyncTaskManager;
 
 class PipelineManager
 {
 	public:
-	PipelineManager (VulkanDevice& device, AsyncTaskManager& async_man);
+	PipelineManager (VkDevice device, AsyncTaskManager& async_man);
 	~PipelineManager ();
 
-	PipeID MakePipeGroup (PipelineOutline builder);
-	void MakePipe (PipeID ID, SpecificPass pass);
+	std::optional<PipelineLayout> CreatePipelineLayout (std::vector<VkDescriptorSetLayout> desc_set_layouts,
+	    std::vector<VkPushConstantRange> push_constant_ranges) const;
 
-	void BindPipe (VkCommandBuffer cmdBuf, SpecificPass pass, PipeID ID);
-	VkPipelineLayout GetPipeLayout (PipeID ID);
+	std::optional<GraphicsPipeline> CreateGraphicsPipeline (
+	    PipelineLayout const& layout, PipelineOutline builder, VkRenderPass render_pass, uint32_t subpass) const;
 
 	VkPipelineCache GetCache () const;
 
 	private:
-	VulkanDevice& device;
+	VkDevice device;
 	AsyncTaskManager& async_man;
 	VkPipelineCache cache;
-
-	std::mutex pipe_lock;
-	std::unordered_map<int, PipelineGroup> pipelines;
-	PipeID cur_id = 0;
 };

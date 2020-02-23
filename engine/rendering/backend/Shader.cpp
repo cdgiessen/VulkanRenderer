@@ -70,7 +70,10 @@ ShaderModule::ShaderModule (VkDevice device, ShaderType type, std::vector<uint32
 	}
 }
 
-ShaderModule::~ShaderModule () {}
+ShaderModule::~ShaderModule ()
+{
+	if (module != VK_NULL_HANDLE) vkDestroyShaderModule (device, module, nullptr);
+}
 
 ShaderModule::ShaderModule (ShaderModule&& mod)
 : device (mod.device), type (mod.type), module (mod.module)
@@ -111,34 +114,34 @@ VkPipelineShaderStageCreateInfo GetCreateInfo (ShaderType type, VkShaderModule m
 };
 
 ShaderModuleSet::ShaderModuleSet (){};
-ShaderModuleSet::ShaderModuleSet (VkShaderModule vert, VkShaderModule frag)
-: vert (vert), frag (frag)
+ShaderModuleSet::ShaderModuleSet (ShaderModule const& vert, ShaderModule const& frag)
+: vert (vert.get ()), frag (frag.get ())
 {
 }
 
-ShaderModuleSet& ShaderModuleSet::Vertex (VkShaderModule vert)
+ShaderModuleSet& ShaderModuleSet::Vertex (ShaderModule const& vert)
 {
-	this->vert = vert;
+	this->vert = vert.get ();
 	return *this;
 }
-ShaderModuleSet& ShaderModuleSet::Fragment (VkShaderModule frag)
+ShaderModuleSet& ShaderModuleSet::Fragment (ShaderModule const& frag)
 {
-	this->frag = frag;
+	this->frag = frag.get ();
 	return *this;
 }
-ShaderModuleSet& ShaderModuleSet::Geometry (VkShaderModule geom)
+ShaderModuleSet& ShaderModuleSet::Geometry (ShaderModule const& geom)
 {
-	this->geom = geom;
+	this->geom = geom.get ();
 	return *this;
 }
-ShaderModuleSet& ShaderModuleSet::TessControl (VkShaderModule tess_control)
+ShaderModuleSet& ShaderModuleSet::TessControl (ShaderModule const& tess_control)
 {
-	this->tess_control = tess_control;
+	this->tess_control = tess_control.get ();
 	return *this;
 }
-ShaderModuleSet& ShaderModuleSet::TessEval (VkShaderModule tess_eval)
+ShaderModuleSet& ShaderModuleSet::TessEval (ShaderModule const& tess_eval)
 {
-	this->tess_eval = tess_eval;
+	this->tess_eval = tess_eval.get ();
 	return *this;
 }
 
@@ -156,57 +159,15 @@ std::vector<VkPipelineShaderStageCreateInfo> ShaderModuleSet::ShaderStageCreateI
 	return shaderStages;
 }
 
-
-ShaderManager::ShaderManager (Resource::Shader::Manager& resource_shader_manager, VulkanDevice& device)
+ShaderManager::ShaderManager (Resource::Shader::Manager& resource_shader_manager, VkDevice device)
 : resource_shader_manager (resource_shader_manager), device (device)
 {
 }
 
-
-
-ShaderManager::~ShaderManager ()
-{
-	for (auto& [key, module] : module_map)
-	{
-		vkDestroyShaderModule (device.device, module.module, nullptr);
-	}
-}
-
-ShaderID ShaderManager::CreateModule (std::string const& name, ShaderType type, std::vector<uint32_t> const& code)
-{
-	ShaderModule module (device.device, type, code);
-
-	ShaderID new_id = cur_id++;
-	module_map.emplace (new_id, std::move (module));
-
-	return new_id;
-}
-
-void ShaderManager::DeleteModule (ShaderID const& id)
-{
-	auto search = module_map.find (id);
-	if (search != std::end (module_map))
-	{
-		module_map.erase (search);
-	}
-}
-
-VkShaderModule ShaderManager::GetModule (ShaderID const& id)
-{
-	auto mod = module_map.find (id);
-	if (mod != module_map.end ())
-	{
-		return mod->second.module;
-	}
-	else
-	{
-		return VK_NULL_HANDLE;
-	}
-}
-VkShaderModule ShaderManager::GetModule (std::string name, ShaderType type)
+std::optional<ShaderModule> ShaderManager::GetModule (std::string name, ShaderType type)
 {
 	auto spirv_data =
 	    resource_shader_manager.GetSpirVData (name, static_cast<Resource::Shader::ShaderType> (type));
-	ShaderID id = CreateModule (name, type, spirv_data);
-	return GetModule (id);
+	if (spirv_data.size () == 0) return std::nullopt;
+	return ShaderModule{ device, type, spirv_data };
 }

@@ -92,7 +92,6 @@ class VulkanRenderer
 	ViewCameraManager camera_manager;
 	LightingManager lighting_manager;
 
-	SkyboxManager skybox_manager;
 	MeshManager mesh_manager;
 
 	private:

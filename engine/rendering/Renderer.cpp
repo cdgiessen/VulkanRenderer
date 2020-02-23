@@ -72,7 +72,6 @@ VulkanRenderer::VulkanRenderer (
   back_end (validationLayer, task_manager, window, resource_man),
   lighting_manager (back_end.device),
   camera_manager (back_end.device),
-  skybox_manager (back_end, camera_manager),
   mesh_manager (back_end)
 
 {

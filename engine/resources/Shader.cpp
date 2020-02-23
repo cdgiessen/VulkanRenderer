@@ -395,12 +395,9 @@ Manager::Manager (job::TaskManager& task_manager) : task_manager (task_manager)
 			    p.extension () == ".tesc" || p.extension () == ".tese" || p.extension () == ".comp")
 			{
 				fs::path in_path = entry.path ();
-				fs::path out_path = entry.path ();
-				out_path += ".spv";
-
-				AddShader (in_path.string ());
+				AddShader (in_path.filename ().string (), in_path.string ());
 				Log.Debug (fmt::format (
-				    "Compiled shader {}{}", in_path.stem ().string (), in_path.extension ().string ()));
+				    "Compiled shader {}.{}", in_path.stem ().string (), in_path.extension ().string ()));
 			}
 		}
 	}
@@ -416,15 +413,15 @@ std::vector<uint32_t> AlignData (std::vector<char> const& code)
 	return codeAligned;
 }
 
-ShaderID Manager::AddShader (std::string name)
+ShaderID Manager::AddShader (std::string name, std::string path)
 {
 
-	auto shader_chars = compiler.LoadFileData (name);
+	auto shader_chars = compiler.LoadFileData (path);
 	if (!shader_chars.has_value ())
 	{
 		Log.Error (fmt::format ("Couldn't find shader {}", name));
 	}
-	std::filesystem::path p = name;
+	std::filesystem::path p = path;
 	ShaderType type;
 	if (p.has_extension ())
 		type = GetShaderStage (p.extension ().string ());
@@ -432,7 +429,7 @@ ShaderID Manager::AddShader (std::string name)
 		type = GetShaderStage (name);
 
 	auto spirv_data =
-	    compiler.compile_glsl_to_spirv (name, shader_chars.value (), type, "assets/shaders/common");
+	    compiler.compile_glsl_to_spirv (path, shader_chars.value (), type, "assets/shaders/common");
 
 	if (spirv_data.has_value ())
 	{
@@ -447,18 +444,6 @@ ShaderID Manager::AddShader (std::string name)
 	return -1;
 }
 
-
-ShaderID Manager::GetShaderIDByName (std::string s)
-{
-	for (auto& [key, info] : shaders)
-	{
-		if (info.name == s)
-			;
-		return key;
-	}
-
-	return AddShader (s);
-}
 std::vector<uint32_t> Manager::GetSpirVData (ShaderID id)
 {
 	std::lock_guard lg (lock);
@@ -471,8 +456,7 @@ std::vector<uint32_t> Manager::GetSpirVData (std::string const& name, ShaderType
 	{
 		if (info.name == name && info.type == type) return info.spirv_data;
 	}
-	auto id = AddShader (name);
-	return shaders.at (id).spirv_data;
+	return {};
 }
 
 

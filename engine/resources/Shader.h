@@ -79,13 +79,10 @@ class Manager
 	public:
 	Manager (job::TaskManager& task_manager);
 
-	ShaderID AddShader (std::string name);
+	ShaderID AddShader (std::string name, std::string path);
 
 	std::vector<uint32_t> GetSpirVData (ShaderID id);
 	std::vector<uint32_t> GetSpirVData (std::string const& name, ShaderType type);
-
-
-	ShaderID GetShaderIDByName (std::string s);
 
 
 	ShaderCompiler compiler;

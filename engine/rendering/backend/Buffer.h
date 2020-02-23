@@ -121,7 +121,7 @@ class VulkanBuffer
 	VulkanBuffer (const VulkanBuffer& buf) = delete;
 	VulkanBuffer& operator= (const VulkanBuffer& buf) = delete;
 
-	VulkanBuffer (VulkanBuffer&& buf);
+	VulkanBuffer (VulkanBuffer&& buf) noexcept;
 	VulkanBuffer& operator= (VulkanBuffer&& buf) noexcept;
 
 

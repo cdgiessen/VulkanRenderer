@@ -21,35 +21,29 @@
 struct BackEnd;
 class ViewCameraManager;
 
-struct Skybox
-{
-	DescriptorSet descriptor_set;
-	VulkanTextureID cube_map;
-	VulkanBuffer uniform_buffer;
-};
-
-using SkyboxID = uint32_t;
-class SkyboxManager
+class Skybox
 {
 	public:
-	SkyboxManager (BackEnd& back_end, ViewCameraManager& camera_manager);
+	Skybox (ViewCameraManager& camera_manager,
+	    DescriptorSet descriptor_set,
+	    VulkanBuffer& uniform_buffer,
+	    ModelID skybox_cube_model,
+	    PipelineLayout& pipe_layout,
+	    GraphicsPipeline& pipe);
 
-	SkyboxID CreateSkybox (Resource::Texture::TexID tex_resource);
-
-	void Update (SkyboxID id, ViewCameraID cam_id);
-	void Draw (VkCommandBuffer cmdBuf, SpecificPass pass, SkyboxID id);
+	void Update (ViewCameraID cam_id);
+	void Draw (VkCommandBuffer cmdBuf);
 
 	private:
-	BackEnd& back_end;
 	ViewCameraManager& camera_manager;
 
-	PipeID CreatePipeline ();
-
-
-	SkyboxID cur_id = 0;
-	std::unordered_map<SkyboxID, Skybox> skyboxes;
+	DescriptorSet descriptor_set;
+	VulkanBuffer uniform_buffer;
 
 	ModelID skybox_cube_model;
-	LayoutID descriptor_layout;
-	PipeID pipe;
+	PipelineLayout pipe_layout;
+	GraphicsPipeline pipe;
 };
+
+std::optional<Skybox> CreateSkybox (
+    BackEnd& back_end, ViewCameraManager& camera_manager, Resource::Texture::TexID tex_resource);

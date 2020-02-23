@@ -10,44 +10,22 @@ struct SkyboxUniformBuffer
 	cml::mat4f view;
 };
 
-SkyboxManager::SkyboxManager (BackEnd& back_end, ViewCameraManager& camera_manager)
-: back_end (back_end), camera_manager (camera_manager)
+Skybox::Skybox (ViewCameraManager& camera_manager,
+    DescriptorSet descriptor_set,
+    VulkanBuffer& uniform_buffer,
+    ModelID skybox_cube_model,
+    PipelineLayout& pipe_layout,
+    GraphicsPipeline& pipe)
+: camera_manager (camera_manager),
+  descriptor_set (descriptor_set),
+  uniform_buffer (std::move (uniform_buffer)),
+  skybox_cube_model (skybox_cube_model),
+  pipe_layout (std::move (pipe_layout)),
+  pipe (std::move (pipe))
 {
-	std::vector<DescriptorSetLayoutBinding> m_bindings = {
-		{ DescriptorType::uniform_buffer, ShaderStage::vertex, 0, 1 },
-		{ DescriptorType::combined_image_sampler, ShaderStage::fragment, 1, 1 }
-	};
-	descriptor_layout = back_end.descriptor_manager.CreateDescriptorSetLayout (m_bindings);
-	skybox_cube_model = back_end.model_manager.CreateModel (Resource::Mesh::CreateCube ());
-
-	CreatePipeline ();
 }
 
-SkyboxID SkyboxManager::CreateSkybox (Resource::Texture::TexID skyboxCubeMap)
-{
-	auto uniform_buffer = VulkanBuffer (back_end.device, uniform_details (sizeof (SkyboxUniformBuffer)));
-
-	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 3);
-	auto vulkanCubeMap = back_end.texture_manager.CreateCubeMap (skyboxCubeMap, details);
-
-	auto descriptorSet = back_end.descriptor_manager.CreateDescriptorSet (descriptor_layout);
-
-	std::vector<DescriptorUse> writes = {
-		{ 0, 1, uniform_buffer.GetDescriptorType (), { uniform_buffer.GetDescriptorInfo () } },
-		{ 1,
-		    1,
-		    back_end.texture_manager.GetDescriptorType (vulkanCubeMap),
-		    { back_end.texture_manager.GetResource (vulkanCubeMap) } }
-	};
-	descriptorSet.Update (back_end.device.device, writes);
-
-	SkyboxID new_id = cur_id++;
-	Skybox sky = { descriptorSet, vulkanCubeMap, std::move (uniform_buffer) };
-	skyboxes.emplace (new_id, std::move (sky));
-	return new_id;
-}
-
-void SkyboxManager::Update (SkyboxID id, ViewCameraID cam_id)
+void Skybox::Update (ViewCameraID cam_id)
 {
 	ViewCameraData& cam = camera_manager.GetCameraData (cam_id);
 
@@ -56,42 +34,70 @@ void SkyboxManager::Update (SkyboxID id, ViewCameraID cam_id)
 	sbo.view = cam.GetViewMat ();
 	sbo.view.set_col (3, cml::vec4f::w_positive);
 
-	skyboxes.at (id).uniform_buffer.CopyToBuffer (sbo);
+	uniform_buffer.CopyToBuffer (sbo);
 };
 
 
-void SkyboxManager::Draw (VkCommandBuffer commandBuffer, SpecificPass pass, SkyboxID id)
+void Skybox::Draw (VkCommandBuffer commandBuffer)
 {
-	skyboxes.at (id).descriptor_set.Bind (commandBuffer, back_end.pipeline_manager.GetPipeLayout (pipe), 2);
+	descriptor_set.Bind (commandBuffer, pipe_layout.get (), 2);
 
-	back_end.pipeline_manager.BindPipe (commandBuffer, pass, pipe);
-
-	back_end.model_manager.DrawIndexed (commandBuffer, skybox_cube_model);
+	pipe.Bind (commandBuffer);
+	// TODO back_end.model_manager.DrawIndexed (commandBuffer, skybox_cube_model);
 }
 
-PipeID SkyboxManager::CreatePipeline ()
+std::optional<Skybox> CreateSkybox (BackEnd& back_end,
+    ViewCameraManager& camera_manager,
+    Resource::Texture::TexID cube_map,
+    VkRenderPass render_pass,
+    uint32_t subpass)
 {
-	PipelineOutline out;
 
-	auto vert = back_end.shader_manager.GetModule ("skybox", ShaderType::vertex);
-	auto frag = back_end.shader_manager.GetModule ("skybox", ShaderType::fragment);
+	std::vector<DescriptorSetLayoutBinding> m_bindings = {
+		{ DescriptorType::uniform_buffer, ShaderStage::vertex, 0, 1 },
+		{ DescriptorType::combined_image_sampler, ShaderStage::fragment, 1, 1 }
+	};
+	auto descriptor_layout = back_end.descriptor_manager.CreateDescriptorSetLayout (m_bindings);
+	auto skybox_cube_model = back_end.model_manager.CreateModel (Resource::Mesh::CreateCube ());
 
-	ShaderModuleSet shader_set (vert, frag);
-	out.SetShaderModuleSet (shader_set);
+	auto uniform_buffer = VulkanBuffer (back_end.device, uniform_details (sizeof (SkyboxUniformBuffer)));
 
-	out.UseModelVertexLayout (back_end.model_manager.GetLayout (skybox_cube_model));
+	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 3);
+	auto vulkan_cube_map = back_end.texture_manager.CreateCubeMap (cube_map, details);
 
-	out.AddViewport (1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f);
-	out.AddScissor (1, 1, 0, 0);
+	auto descriptor_set = back_end.descriptor_manager.CreateDescriptorSet (descriptor_layout);
 
-	out.SetInputAssembly (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
+	std::vector<DescriptorUse> writes = {
+		{ 0, 1, uniform_buffer.GetDescriptorType (), { uniform_buffer.GetDescriptorInfo () } },
+		{ 1,
+		    1,
+		    back_end.texture_manager.GetDescriptorType (vulkan_cube_map),
+		    { back_end.texture_manager.GetResource (vulkan_cube_map) } }
+	};
+	descriptor_set.Update (back_end.device.device, writes);
 
-	out.SetRasterizer (
+	// Pipeline
+	PipelineOutline outline;
+
+	auto vert = back_end.shader_manager.GetModule ("skybox.vert", ShaderType::vertex);
+	auto frag = back_end.shader_manager.GetModule ("skybox.frag", ShaderType::fragment);
+
+	ShaderModuleSet shader_set (vert.value (), frag.value ());
+	outline.SetShaderModuleSet (shader_set);
+
+	outline.UseModelVertexLayout (back_end.model_manager.GetLayout (skybox_cube_model));
+
+	outline.AddViewport (1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f);
+	outline.AddScissor (1, 1, 0, 0);
+
+	outline.SetInputAssembly (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
+
+	outline.SetRasterizer (
 	    VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 
-	out.SetMultisampling (VK_SAMPLE_COUNT_1_BIT);
-	out.SetDepthStencil (VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER_OR_EQUAL, VK_FALSE, VK_FALSE);
-	out.AddColorBlendingAttachment (VK_FALSE,
+	outline.SetMultisampling (VK_SAMPLE_COUNT_1_BIT);
+	outline.SetDepthStencil (VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER_OR_EQUAL, VK_FALSE, VK_FALSE);
+	outline.AddColorBlendingAttachment (VK_FALSE,
 	    VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
 	    VK_BLEND_OP_ADD,
 	    VK_BLEND_FACTOR_SRC_COLOR,
@@ -100,11 +106,19 @@ PipeID SkyboxManager::CreatePipeline ()
 	    VK_BLEND_FACTOR_ONE,
 	    VK_BLEND_FACTOR_ZERO);
 
-	// out.AddDescriptorLayouts (double_buffer_man.GetGlobalLayouts ());
-	out.AddDescriptorLayout (back_end.descriptor_manager.GetLayout (descriptor_layout));
+	// outline.AddDescriptorLayouts (double_buffer_man.GetGlobalLayouts ());
+	outline.AddDescriptorLayout (back_end.descriptor_manager.GetLayout (descriptor_layout));
 
-	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
+	outline.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
-	pipe = back_end.pipeline_manager.MakePipeGroup (out);
-	return pipe;
+	auto pipe_layout =
+	    back_end.pipeline_manager.CreatePipelineLayout (outline.layouts, outline.pushConstantRanges);
+	if (!pipe_layout) return {};
+	auto pipe = back_end.pipeline_manager.CreateGraphicsPipeline (
+	    pipe_layout.value (), outline, render_pass, subpass);
+	if (!pipe) return {};
+
+	return Skybox{
+		camera_manager, descriptor_set, uniform_buffer, skybox_cube_model, pipe_layout.value (), pipe.value ()
+	};
 }

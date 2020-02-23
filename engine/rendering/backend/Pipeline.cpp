@@ -6,14 +6,8 @@
 #include "resources/Mesh.h"
 
 #include "AsyncTask.h"
-#include "Device.h"
 #include "Model.h"
 #include "rendering/Initializers.h"
-
-bool operator== (SpecificPass const& a, SpecificPass const& b)
-{
-	return a.render_pass == b.render_pass && a.subpass == b.subpass;
-}
 
 void PipelineOutline::SetShaderModuleSet (ShaderModuleSet set) { this->set = set; }
 void PipelineOutline::UseModelVertexLayout (VertexLayout const& layout)
@@ -140,57 +134,110 @@ void PipelineOutline::AddPushConstantRange (VkPushConstantRange pushConstantRang
 	pushConstantRanges.push_back (pushConstantRange);
 }
 
-PipelineGroup::PipelineGroup (
-    VkDevice device, VkPipelineCache cache, PipelineOutline builder, std::vector<SpecificPass> const& initial_passes)
-: device (device), cache (cache), builder (builder)
+PipelineLayout::PipelineLayout (VkDevice device, VkPipelineLayout builder)
+: device (device), layout (layout)
 {
-	auto layoutInfo = initializers::pipelineLayoutCreateInfo (builder.layouts, builder.pushConstantRanges);
-
-	if (vkCreatePipelineLayout (device, &layoutInfo, nullptr, &this->layout) != VK_SUCCESS)
-	{
-		throw std::runtime_error ("failed to create pipeline layout!");
-	}
-
-	for (auto& pass : initial_passes)
-	{
-		CreatePipeline (pass);
-	}
 }
 
-PipelineGroup::~PipelineGroup ()
+PipelineLayout::~PipelineLayout ()
 {
-	for (auto const& [pass, pipe] : pipelines)
-	{
-		vkDestroyPipeline (device, pipe, nullptr);
-	}
 	if (layout != nullptr) vkDestroyPipelineLayout (device, layout, nullptr);
 }
 
-PipelineGroup::PipelineGroup (PipelineGroup&& group)
-: device (group.device),
-  cache (group.cache),
-  builder (group.builder),
-  layout (group.layout),
-  pipelines (group.pipelines)
+PipelineLayout::PipelineLayout (PipelineLayout&& other)
+: device (other.device), layout (other.layout)
 {
+	other.layout = VK_NULL_HANDLE;
 }
 
-PipelineGroup& PipelineGroup::operator= (PipelineGroup&& group) noexcept
+PipelineLayout& PipelineLayout::operator= (PipelineLayout&& other) noexcept
 {
-	device = group.device;
-	cache = group.cache;
-	builder = group.builder;
-	layout = group.layout;
-	group.layout = nullptr;
-	pipelines = std::move (group.pipelines);
+	device = other.device;
+	layout = other.layout;
+	other.layout = nullptr;
 	return *this;
 }
 
-void PipelineGroup::CreatePipeline (SpecificPass pass)
+GraphicsPipeline::GraphicsPipeline (VkDevice device, VkPipeline pipeline)
+: device (device), pipeline (pipeline)
+{
+}
+GraphicsPipeline::~GraphicsPipeline ()
+{
+	if (pipeline != VK_NULL_HANDLE) vkDestroyPipeline (device, pipeline, nullptr);
+}
+GraphicsPipeline::GraphicsPipeline (GraphicsPipeline&& other) noexcept
+: device (other.device), pipeline (other.pipeline)
+{
+	other.pipeline = VK_NULL_HANDLE;
+}
+GraphicsPipeline& GraphicsPipeline::operator= (GraphicsPipeline&& other) noexcept
+{
+	device = other.device;
+	pipeline = other.pipeline;
+	other.pipeline = VK_NULL_HANDLE;
+	return *this;
+}
+void GraphicsPipeline::Bind (VkCommandBuffer cmdBuf)
+{
+	vkCmdBindPipeline (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+}
+
+
+PipelineManager::PipelineManager (VkDevice device, AsyncTaskManager& async_man)
+: device (device), async_man (async_man)
+{
+	std::vector<std::byte> cache_data;
+
+	if (std::filesystem::exists (".cache/pipeline_cache"))
+	{
+		std::ifstream in (".cache/pipeline_cache", std::ios::binary | std::ios::ate);
+		auto size = in.tellg ();
+		std::vector<std::byte> cache_data (size); // construct string to stream size
+		in.seekg (0);
+		in.read (reinterpret_cast<char*> (cache_data.data ()), size);
+	}
+
+	VkPipelineCacheCreateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+	info.initialDataSize = cache_data.size ();
+	info.pInitialData = cache_data.data ();
+
+	vkCreatePipelineCache (device, &info, nullptr, &cache);
+}
+
+PipelineManager::~PipelineManager ()
+{
+	std::ofstream out (".cache/pipeline_cache", std::ios::binary | std::ios::out);
+	size_t cache_size = 0;
+	std::vector<std::byte> cache_data;
+	vkGetPipelineCacheData (device, cache, &cache_size, nullptr);
+	cache_data.resize (cache_size);
+	vkGetPipelineCacheData (device, cache, &cache_size, cache_data.data ());
+
+	out.write (reinterpret_cast<char*> (cache_data.data ()), cache_data.size ());
+
+	vkDestroyPipelineCache (device, cache, nullptr);
+}
+
+VkPipelineCache PipelineManager::GetCache () const { return cache; }
+
+std::optional<PipelineLayout> PipelineManager::CreatePipelineLayout (
+    std::vector<VkDescriptorSetLayout> desc_set_layouts, std::vector<VkPushConstantRange> push_constant_ranges) const
+{
+	auto layoutInfo = initializers::pipelineLayoutCreateInfo (desc_set_layouts, push_constant_ranges);
+	VkPipelineLayout layout;
+	VkResult res = vkCreatePipelineLayout (device, &layoutInfo, nullptr, &layout);
+	if (res != VK_SUCCESS) return {};
+	return PipelineLayout{ device, layout };
+}
+
+std::optional<GraphicsPipeline> PipelineManager::CreateGraphicsPipeline (
+    PipelineLayout const& layout, PipelineOutline builder, VkRenderPass render_pass, uint32_t subpass) const
 {
 	VkPipeline pipe;
 
-	auto info = initializers::pipelineCreateInfo (layout, pass.render_pass, pass.subpass, 0);
+	auto info = initializers::pipelineCreateInfo (layout.get (), render_pass, subpass, 0);
 	info.basePipelineHandle = VK_NULL_HANDLE;
 
 	auto shaderStages = builder.set.ShaderStageCreateInfos ();
@@ -226,80 +273,10 @@ void PipelineGroup::CreatePipeline (SpecificPass pass)
 	    initializers::pipelineDynamicStateCreateInfo (builder.dynamicStates, 0);
 	info.pDynamicState = &dynamicInfo;
 
-	if (vkCreateGraphicsPipelines (device, cache, 1, &info, nullptr, &pipe) != VK_SUCCESS)
+	VkResult res = vkCreateGraphicsPipelines (device, cache, 1, &info, nullptr, &pipe);
+	if (res != VK_SUCCESS)
 	{
-		throw std::runtime_error ("failed to create graphics pipeline!");
+		return {};
 	}
-	pipelines.emplace (pass, pipe);
+	return GraphicsPipeline{ device, pipe };
 }
-
-void PipelineGroup::Bind (VkCommandBuffer cmdBuf, SpecificPass pass)
-{
-	if (pipelines.count (pass) == 0)
-	{
-		CreatePipeline (pass);
-	}
-	vkCmdBindPipeline (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.at (pass));
-}
-
-PipelineManager::PipelineManager (VulkanDevice& device, AsyncTaskManager& async_man)
-: device (device), async_man (async_man)
-{
-	std::vector<std::byte> cache_data;
-
-	if (std::filesystem::exists (".cache/pipeline_cache"))
-	{
-		std::ifstream in (".cache/pipeline_cache", std::ios::binary | std::ios::ate);
-		auto size = in.tellg ();
-		std::vector<std::byte> cache_data (size); // construct string to stream size
-		in.seekg (0);
-		in.read (reinterpret_cast<char*> (cache_data.data ()), size);
-	}
-
-	VkPipelineCacheCreateInfo info{};
-	info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-	info.initialDataSize = cache_data.size ();
-	info.pInitialData = cache_data.data ();
-
-	vkCreatePipelineCache (device.device, &info, nullptr, &cache);
-}
-
-PipelineManager::~PipelineManager ()
-{
-	std::ofstream out (".cache/pipeline_cache", std::ios::binary | std::ios::out);
-	size_t cache_size = 0;
-	std::vector<std::byte> cache_data;
-	vkGetPipelineCacheData (device.device, cache, &cache_size, nullptr);
-	cache_data.resize (cache_size);
-	vkGetPipelineCacheData (device.device, cache, &cache_size, cache_data.data ());
-
-	out.write (reinterpret_cast<char*> (cache_data.data ()), cache_data.size ());
-
-	vkDestroyPipelineCache (device.device, cache, nullptr);
-}
-
-PipeID PipelineManager::MakePipeGroup (PipelineOutline builder)
-{
-	auto pipe = PipelineGroup (device.device, cache, builder, {});
-	std::lock_guard guard (pipe_lock);
-	pipelines.emplace (cur_id, std::move (pipe));
-	return cur_id++;
-}
-void PipelineManager::MakePipe (PipeID ID, SpecificPass pass)
-{
-	std::lock_guard guard (pipe_lock);
-	pipelines.at (ID).CreatePipeline (pass);
-}
-
-void PipelineManager::BindPipe (VkCommandBuffer cmdBuf, SpecificPass pass, PipeID ID)
-{
-	std::lock_guard guard (pipe_lock);
-	pipelines.at (ID).Bind (cmdBuf, pass);
-}
-VkPipelineLayout PipelineManager::GetPipeLayout (PipeID ID)
-{
-	std::lock_guard guard (pipe_lock);
-	return pipelines.at (ID).GetLayout ();
-}
-
-VkPipelineCache PipelineManager::GetCache () const { return cache; }
