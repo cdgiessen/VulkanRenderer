@@ -134,7 +134,7 @@ void PipelineOutline::AddPushConstantRange (VkPushConstantRange pushConstantRang
 	pushConstantRanges.push_back (pushConstantRange);
 }
 
-PipelineLayout::PipelineLayout (VkDevice device, VkPipelineLayout builder)
+PipelineLayout::PipelineLayout (VkDevice device, VkPipelineLayout layout)
 : device (device), layout (layout)
 {
 }

@@ -1,6 +1,7 @@
 #include "Shader.h"
 
 #include <filesystem>
+#include <iomanip>
 
 #include "StandAlone/DirStackFileIncluder.h"
 #include <SPIRV/GlslangToSpv.h>
