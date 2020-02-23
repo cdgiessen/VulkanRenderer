@@ -35,6 +35,12 @@ class EngineSettings
 	std::filesystem::path fileName;
 };
 
+struct StaticInitializer
+{
+	StaticInitializer ();
+	~StaticInitializer ();
+};
+
 class Engine
 {
 	public:
@@ -45,26 +51,29 @@ class Engine
 	Engine (Engine&& app) = delete;
 	Engine& operator= (Engine&& app) = delete;
 
-	void SetImguiUpdateCallBack (std::function<void()> cb) { imgui_update_callback = cb; }
-	void SetImguiDrawCallBack (std::function<void()> cb) { imgui_draw_callback = cb; }
+	void SetImguiUpdateCallBack (std::function<void ()> cb) { imgui_update_callback = cb; }
+	void SetImguiDrawCallBack (std::function<void ()> cb) { imgui_draw_callback = cb; }
 
 	void Run ();
 	void HandleInputs ();
 
 	EngineSettings settings;
 
+	StaticInitializer static_initializer;
+
 	job::TaskManager task_manager;
 
 	TimeManager time_manager;
 	Window window;
+	Input::InputDirector input;
 	Resource::ResourceManager resource_manager;
 
 	VulkanRenderer vulkan_renderer;
 	Scene scene;
 
 	private:
-	std::function<void()> imgui_update_callback;
-	std::function<void()> imgui_draw_callback;
+	std::function<void ()> imgui_update_callback;
+	std::function<void ()> imgui_draw_callback;
 
 	void BuildImgui ();
 

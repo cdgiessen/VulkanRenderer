@@ -18,6 +18,23 @@ std::vector<const char*> VALIDATION_LAYERS = { "VK_LAYER_KHRONOS_validation"
 
 const std::vector<const char*> DEVICE_EXTENSIONS = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
+std::vector<const char*> GetWindowExtensions ()
+{
+
+	std::vector<const char*> extensions;
+
+	unsigned int glfwExtensionCount = 0;
+	const char** glfwExtensions;
+	glfwExtensions = glfwGetRequiredInstanceExtensions (&glfwExtensionCount);
+
+	for (unsigned int i = 0; i < glfwExtensionCount; i++)
+	{
+		extensions.push_back (glfwExtensions[i]);
+	}
+
+	return extensions;
+}
+
 //////// VMA Memory Resource ////////
 
 void VMA_MemoryResource::Create (
@@ -216,7 +233,7 @@ void VulkanInstance::DestroyDebugUtilsMessengerEXT (
 VulkanSurface::VulkanSurface (VulkanInstance const& instance, Window& window)
 : instance (instance), window (window)
 {
-	VK_CHECK_RESULT (glfwCreateWindowSurface (instance.instance, window.getWindowContext (), nullptr, &surface));
+	VK_CHECK_RESULT (glfwCreateWindowSurface (instance.instance, window.GetWindowContext (), nullptr, &surface));
 	// if (res != VK_SUCCESS)
 	// {
 	// 	Log.Error (fmt::format ("{}", errorString (res)));

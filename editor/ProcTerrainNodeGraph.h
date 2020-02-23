@@ -213,10 +213,14 @@ class PossibleConnection
 	HoveredSlotInfo slot;
 };
 
+namespace Input
+{
+class InputDirector;
+}
 class ProcTerrainNodeGraph
 {
 	public:
-	ProcTerrainNodeGraph ();
+	ProcTerrainNodeGraph (Input::InputDirector& input);
 	~ProcTerrainNodeGraph ();
 
 	void Draw ();
@@ -224,6 +228,7 @@ class ProcTerrainNodeGraph
 	InternalGraph::GraphPrototype& GetGraph ();
 
 	private:
+	Input::InputDirector& input;
 	friend class Node;
 	friend class ConnectionSlot;
 	friend class InputConnectionSlot;

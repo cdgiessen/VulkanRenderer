@@ -30,12 +30,12 @@ int main (int argc, char* argv[])
 	return EXIT_SUCCESS;
 }
 
-Editor::Editor (Engine& engine) : engine (engine) {}
+Editor::Editor (Engine& engine) : engine (engine), imgui_nodeGraph_terrain (engine.input) {}
 
 void Editor::UpdateInputs ()
 {
 
-	if (Input::GetKeyDown (Input::KeyCode::H))
+	if (engine.input.GetKeyDown (Input::KeyCode::H))
 	{
 		Log.Debug ("gui visibility toggled");
 		panels.showGui = !panels.showGui;
@@ -139,20 +139,20 @@ void Editor::ControllerWindow (bool* show_controller_window)
 	{
 		for (int i = 0; i < 16; i++)
 		{
-			if (Input::IsJoystickConnected (i))
+			if (engine.input.IsJoystickConnected (i))
 			{
 
 				ImGui::BeginGroup ();
 				for (int j = 0; j < 6; j++)
 				{
-					ImGui::Text ("%f", Input::GetControllerAxis (i, j));
+					ImGui::Text ("%f", engine.input.GetControllerAxis (i, j));
 				}
 				ImGui::EndGroup ();
 				ImGui::SameLine ();
 				ImGui::BeginGroup ();
 				for (int j = 0; j < 14; j++)
 				{
-					Input::GetControllerButton (i, j) ? ImGui::Text ("true") : ImGui::Text ("false");
+					engine.input.GetControllerButton (i, j) ? ImGui::Text ("true") : ImGui::Text ("false");
 				}
 				ImGui::EndGroup ();
 			}

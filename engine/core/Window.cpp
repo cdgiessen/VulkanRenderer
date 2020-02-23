@@ -12,23 +12,30 @@
 #include "Input.h"
 #include "Logger.h"
 
+void InitializeGLFW () { glfwInit (); }
+void TerminateGLFW () { glfwTerminate (); }
 
-Window::Window (bool isFullscreen, const cml::vec2i& size, const cml::vec2i& position = { 0, 0 })
+Window::Window (Input::InputDirector& input,
+    bool isFullscreen,
+    const char* window_title,
+    const cml::vec2i& size,
+    const cml::vec2i& position = { 0, 0 })
+: input (input)
 {
-	glfwInit ();
+	if (window_title == nullptr) window_title = "";
 	glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
 	if (isFullscreen)
 	{
 		GLFWmonitor* primary = glfwGetPrimaryMonitor ();
 		const GLFWvidmode* mode = glfwGetVideoMode (primary);
 
-		window = glfwCreateWindow (mode->width, mode->height, "Vulkan Renderer", primary, NULL);
+		window = glfwCreateWindow (mode->width, mode->height, window_title, primary, NULL);
 		Log.Debug (fmt::format ("Monitor Width {}", mode->width));
 		Log.Debug (fmt::format ("Monitor Height {}", mode->height));
 	}
 	else
 	{
-		window = glfwCreateWindow (size.x, size.y, "Vulkan Renderer", NULL, NULL);
+		window = glfwCreateWindow (size.x, size.y, window_title, NULL, NULL);
 		if (position != cml::vec2i{ INT_MIN, INT_MIN })
 		{
 			glfwSetWindowPos (window, position.x, position.y);
@@ -61,11 +68,10 @@ Window::Window (bool isFullscreen, const cml::vec2i& size, const cml::vec2i& pos
 Window::~Window ()
 {
 	glfwDestroyWindow (window);
-	glfwTerminate ();
 	window = nullptr;
 }
 
-void Window::setSizeLimits (const cml::vec2i& minSize, const cml::vec2i& maxSize = {})
+void Window::SetSizeLimits (const cml::vec2i& minSize, const cml::vec2i& maxSize = {})
 {
 	glfwSetWindowSizeLimits (window,
 	    minSize.x,
@@ -74,7 +80,7 @@ void Window::setSizeLimits (const cml::vec2i& minSize, const cml::vec2i& maxSize
 	    maxSize.y ? maxSize.y : minSize.y);
 }
 
-void Window::showWindow (bool show)
+void Window::ShowWindow (bool show)
 {
 	if (show)
 	{
@@ -86,7 +92,7 @@ void Window::showWindow (bool show)
 	}
 }
 
-GLFWwindow* Window::getWindowContext () const { return window; }
+GLFWwindow* Window::GetWindowContext () const { return window; }
 
 bool Window::CheckForWindowResizing () { return updateWindowSize; }
 
@@ -119,7 +125,8 @@ void Window::ErrorHandler (int error, const char* description)
 
 void Window::KeyboardHandler (GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	Input::inputDirector.keyEvent (key, scancode, action, mods);
+	Window* w = reinterpret_cast<Window*> (glfwGetWindowUserPointer (window));
+	w->input.keyEvent (key, scancode, action, mods);
 	ImGui_ImplGlfw_KeyCallback (window, key, scancode, action, mods);
 }
 
@@ -131,18 +138,21 @@ void Window::CharInputHandler (GLFWwindow* window, uint32_t codePoint)
 
 void Window::MouseButtonHandler (GLFWwindow* window, int button, int action, int mods)
 {
-	Input::inputDirector.mouseButtonEvent (button, action, mods);
+	Window* w = reinterpret_cast<Window*> (glfwGetWindowUserPointer (window));
+	w->input.mouseButtonEvent (button, action, mods);
 	ImGui_ImplGlfw_MouseButtonCallback (window, button, action, mods);
 }
 
 void Window::MouseMoveHandler (GLFWwindow* window, double posx, double posy)
 {
-	Input::inputDirector.mouseMoveEvent (posx, posy);
+	Window* w = reinterpret_cast<Window*> (glfwGetWindowUserPointer (window));
+	w->input.mouseMoveEvent (posx, posy);
 }
 
 void Window::MouseScrollHandler (GLFWwindow* window, double xoffset, double yoffset)
 {
-	Input::inputDirector.mouseScrollEvent (xoffset, yoffset);
+	Window* w = reinterpret_cast<Window*> (glfwGetWindowUserPointer (window));
+	w->input.mouseScrollEvent (xoffset, yoffset);
 	ImGui_ImplGlfw_ScrollCallback (window, xoffset, yoffset);
 }
 
@@ -151,24 +161,24 @@ void Window::JoystickConfigurationChangeHandler (int joy, int event)
 	if (event == GLFW_CONNECTED)
 	{
 		Log.Debug (fmt::format ("Controller {} Connected", joy));
-		Input::ConnectJoystick (joy);
+		Input::InputDirector::ConnectJoystick (joy);
 	}
 	else if (event == GLFW_DISCONNECTED)
 	{
 		Log.Debug (fmt::format ("Controller {} Disconnected", joy));
-		Input::DisconnectJoystick (joy);
+		Input::InputDirector::DisconnectJoystick (joy);
 	}
 }
 
 void Window::WindowCloseHandler (GLFWwindow* window)
 {
-	Window* w = (Window*)glfwGetWindowUserPointer (window);
+	Window* w = reinterpret_cast<Window*> (glfwGetWindowUserPointer (window));
 	w->SetWindowToClose ();
 }
 
 void Window::FramebufferSizeHandler (GLFWwindow* window, int width, int height)
 {
-	Window* w = (Window*)glfwGetWindowUserPointer (window);
+	Window* w = reinterpret_cast<Window*> (glfwGetWindowUserPointer (window));
 
 	w->updateWindowSize = true;
 }
@@ -177,15 +187,14 @@ void Window::WindowResizeHandler (GLFWwindow* window, int width, int height)
 {
 	if (width == 0 || height == 0) return;
 
-	Window* w = (Window*)glfwGetWindowUserPointer (window);
+	Window* w = reinterpret_cast<Window*> (glfwGetWindowUserPointer (window));
 	// glfwSetWindowSize(window, width, height);
 	w->updateWindowSize = true;
 }
 
 void Window::WindowIconifyHandler (GLFWwindow* window, int iconified)
 {
-
-	Window* w = (Window*)glfwGetWindowUserPointer (window);
+	Window* w = reinterpret_cast<Window*> (glfwGetWindowUserPointer (window));
 	if (iconified)
 	{
 		w->isWindowIconofied = true;
@@ -198,7 +207,7 @@ void Window::WindowIconifyHandler (GLFWwindow* window, int iconified)
 
 void Window::WindowFocusHandler (GLFWwindow* window, int focused)
 {
-	Window* w = (Window*)glfwGetWindowUserPointer (window);
+	Window* w = reinterpret_cast<Window*> (glfwGetWindowUserPointer (window));
 	if (focused)
 	{
 		w->isWindowFocused = true;
@@ -207,21 +216,4 @@ void Window::WindowFocusHandler (GLFWwindow* window, int focused)
 	{
 		w->isWindowFocused = false;
 	}
-}
-
-std::vector<const char*> GetWindowExtensions ()
-{
-
-	std::vector<const char*> extensions;
-
-	unsigned int glfwExtensionCount = 0;
-	const char** glfwExtensions;
-	glfwExtensions = glfwGetRequiredInstanceExtensions (&glfwExtensionCount);
-
-	for (unsigned int i = 0; i < glfwExtensionCount; i++)
-	{
-		extensions.push_back (glfwExtensions[i]);
-	}
-
-	return extensions;
 }

@@ -18,7 +18,7 @@ auto as_integer (Enumeration const value) -> typename std::underlying_type<Enume
 	return static_cast<typename std::underlying_type<Enumeration>::type> (value);
 }
 
-ProcTerrainNodeGraph::ProcTerrainNodeGraph ()
+ProcTerrainNodeGraph::ProcTerrainNodeGraph (Input::InputDirector& input) : input (input)
 {
 	LoadGraphFromFile ("assets/graphs/default_terrain.json");
 }
@@ -418,7 +418,7 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 			node.name.copy (name, 31);
 			if (node.hasTextInput == false)
 			{
-				Input::SetTextInputMode ();
+				input.SetTextInputMode ();
 				node.hasTextInput = true;
 			}
 			if (ImGui::InputText ("##edit", name, sizeof (char) * 32))
@@ -435,7 +435,7 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 		{
 			if (node.hasTextInput)
 			{
-				Input::ResetTextInputMode ();
+				input.ResetTextInputMode ();
 				node.hasTextInput = false;
 			}
 		}
@@ -459,7 +459,7 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 	{
 		if (nodes.at (nodeId).hasTextInput)
 		{
-			Input::ResetTextInputMode ();
+			input.ResetTextInputMode ();
 		}
 		DeleteNode (nodeId);
 		nodes.erase (nodeId);

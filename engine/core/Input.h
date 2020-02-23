@@ -4,8 +4,7 @@
 
 #include "cml/cml.h"
 
-#include "Window.h"
-
+class Window;
 namespace Input
 {
 const int KeyboardButtonCount = 1024;
@@ -140,59 +139,28 @@ enum class KeyCode
 
 };
 
-void SetupInputDirector (Window* window);
-
-bool GetKey (KeyCode code);
-bool GetKeyDown (KeyCode code);
-bool GetKeyUp (KeyCode code);
-
-bool GetMouseButton (int button);
-bool GetMouseButtonPressed (int button);
-bool GetMouseButtonReleased (int button);
-cml::vec2d GetMousePosition ();
-cml::vec2d GetMouseChangeInPosition ();
-double GetMouseScrollX ();
-double GetMouseScrollY ();
-
-void SetTextInputMode ();
-void ResetTextInputMode ();
-bool GetTextInputMode ();
-
-bool GetMouseControlStatus ();
-void SetMouseControlStatus (bool value);
-
-void ConnectJoystick (int index);
-void DisconnectJoystick (int index);
-
-bool IsJoystickConnected (int index);
-
-float GetControllerAxis (int controllerID, int axis);
-bool GetControllerButton (int controllerID, int button);
-
 class InputDirector
 {
 	public:
-	InputDirector ();
-	void SetupInputDirector (Window* window);
-	void SetupJoysticks (); // find controllers already plugged in
+	InputDirector (Window& window);
 
-	bool GetKey (KeyCode code);
-	bool GetKeyDown (KeyCode code);
-	bool GetKeyUp (KeyCode code);
+	bool GetKey (KeyCode code) const;
+	bool GetKeyDown (KeyCode code) const;
+	bool GetKeyUp (KeyCode code) const;
 
-	bool GetMouseButton (int button);
-	bool GetMouseButtonPressed (int button);
-	bool GetMouseButtonReleased (int button);
-	cml::vec2d GetMousePosition ();
-	cml::vec2d GetMouseChangeInPosition ();
-	double GetMouseScrollX ();
-	double GetMouseScrollY ();
+	bool GetMouseButton (int button) const;
+	bool GetMouseButtonPressed (int button) const;
+	bool GetMouseButtonReleased (int button) const;
+	cml::vec2d GetMousePosition () const;
+	cml::vec2d GetMouseChangeInPosition () const;
+	double GetMouseScrollX () const;
+	double GetMouseScrollY () const;
 
 	void SetTextInputMode ();
 	void ResetTextInputMode ();
-	bool GetTextInputMode ();
+	bool GetTextInputMode () const;
 
-	bool GetMouseControlStatus ();
+	bool GetMouseControlStatus () const;
 	void SetMouseControlStatus (bool value);
 
 	void keyEvent (int key, int scancode, int action, int mods);
@@ -200,21 +168,21 @@ class InputDirector
 	void mouseMoveEvent (double xoffset, double yoffset);
 	void mouseScrollEvent (double xoffset, double yoffset);
 
-	void ConnectJoystick (int index);
-	void DisconnectJoystick (int index);
+	static void ConnectJoystick (int index);
+	static void DisconnectJoystick (int index);
 
-	bool IsJoystickConnected (int index);
+	static bool IsJoystickConnected (int index);
 
-	std::array<int, JoystickCount> GetConnectedJoysticks ();
+	static std::array<int, JoystickCount> GetConnectedJoysticks ();
 
-	float GetControllerAxis (int id, int axis);
-	bool GetControllerButton (int id, int button);
+	static float GetControllerAxis (int id, int axis);
+	static bool GetControllerButton (int id, int button);
 
 	void ResetReleasedInput ();
 	void UpdateInputs ();
 
 	private:
-	Window* window;
+	Window& window;
 
 	// contains joystick info, such as if it's connected, how many axes and buttons there are, and pointers to the data of the axes and buttons
 	struct JoystickData
@@ -222,10 +190,10 @@ class InputDirector
 
 		void Connect ();
 		void Disconnect ();
-		bool IsConnected ();
+		bool IsConnected () const;
 
-		float GetAxis (int index);
-		bool GetButton (int index);
+		float GetAxis (int index) const;
+		bool GetButton (int index) const;
 
 		int joystickIndex = -1; // which joystick it is;
 
@@ -253,9 +221,7 @@ class InputDirector
 
 	bool mouseControlStatus = false;
 
-	std::array<JoystickData, JoystickCount> joystickData;
+	static std::array<JoystickData, JoystickCount> joystickData;
 };
-
-extern InputDirector inputDirector;
 
 } // namespace Input

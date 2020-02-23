@@ -1,22 +1,30 @@
 #pragma once
 
-#include <vector>
-
 #include "cml/cml.h"
 
 struct GLFWwindow;
 
+void InitializeGLFW ();
+void TerminateGLFW ();
+
+namespace Input
+{
+class InputDirector;
+}
 class Window
 {
 	public:
-	Window (bool isFullscreen, const cml::vec2i& size, const cml::vec2i& position);
+	Window (Input::InputDirector& input,
+	    bool isFullscreen,
+	    const char* window_title,
+	    const cml::vec2i& size,
+	    const cml::vec2i& position);
 	~Window ();
 
-	// void createWindow(bool isFullscreen, const cml::vec2i& size, const cml::vec2i& position = { 0, 0 });
-	void showWindow (bool show = true);
-	void setSizeLimits (const cml::vec2i& minSize, const cml::vec2i& maxSize);
+	void ShowWindow (bool show = true);
+	void SetSizeLimits (const cml::vec2i& minSize, const cml::vec2i& maxSize);
 
-	GLFWwindow* getWindowContext () const;
+	GLFWwindow* GetWindowContext () const;
 	bool CheckForWindowResizing ();
 	void SetWindowResizeDone ();
 	bool CheckForWindowClose ();
@@ -27,7 +35,8 @@ class Window
 
 	cml::vec2i GetWindowSize ();
 
-	protected:
+	private:
+	Input::InputDirector& input;
 	//
 	// Event handlers are called by the GLFW callback mechanism and should not be called directly
 	//
@@ -53,5 +62,3 @@ class Window
 	bool isWindowIconofied = false;
 	bool isWindowFocused = false;
 };
-
-std::vector<const char*> GetWindowExtensions ();

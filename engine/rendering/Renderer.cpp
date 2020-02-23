@@ -202,7 +202,7 @@ void VulkanRenderer::ImGuiSetup ()
 {
 	ImGui::CreateContext ();
 
-	ImGui_ImplGlfw_InitForVulkan (back_end.device.GetWindow ().getWindowContext (), false);
+	ImGui_ImplGlfw_InitForVulkan (back_end.device.GetWindow ().GetWindowContext (), false);
 
 	std::vector<VkDescriptorPoolSize> pool_sizes = { { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },

@@ -70,16 +70,24 @@ void EngineSettings::Save ()
 	outFile.close ();
 }
 
+StaticInitializer::StaticInitializer () { InitializeGLFW (); }
+StaticInitializer::~StaticInitializer () { TerminateGLFW (); }
+
 Engine::Engine ()
-: settings ("settings.json"),
-  window (settings.isFullscreen, cml::vec2i (settings.screenWidth, settings.screenHeight), cml ::vec2i (10, 10)),
+: static_initializer (),
+  settings ("settings.json"),
+  window (input,
+      settings.isFullscreen,
+      "Vulkan Renderer",
+      cml::vec2i (settings.screenWidth, settings.screenHeight),
+      cml ::vec2i (10, 10)),
+  input (window),
   resource_manager (task_manager),
   vulkan_renderer (settings.useValidationLayers, task_manager, window, resource_manager),
   scene (task_manager, time_manager, resource_manager, vulkan_renderer)
 // imgui_nodeGraph_terrain ()
 {
-	Input::SetupInputDirector (&window);
-	Input::SetMouseControlStatus (false);
+	input.SetMouseControlStatus (false);
 
 	Log.Debug (fmt::format ("Hardware Threads Available = {}", HardwareThreadCount ()));
 }
@@ -102,13 +110,13 @@ void Engine::Run ()
 		}
 
 		time_manager.StartFrameTimer ();
-		Input::inputDirector.UpdateInputs ();
+		input.UpdateInputs ();
 		HandleInputs ();
 		scene.Update ();
 
 		BuildImgui ();
 		vulkan_renderer.RenderFrame ();
-		Input::inputDirector.ResetReleasedInput ();
+		input.ResetReleasedInput ();
 
 		if (settings.isFrameCapped)
 		{
@@ -145,59 +153,59 @@ void Engine::HandleInputs ()
 
 	imgui_update_callback ();
 
-	if (!Input::GetTextInputMode ())
+	if (!input.GetTextInputMode ())
 	{
 
-		// if (Input::IsJoystickConnected (0))
+		// if (input.IsJoystickConnected (0))
 		// {
-		// 	scene.GetCamera ()->ProcessJoystickMove (Input::GetControllerAxis (0, 1),
-		// 	    Input::GetControllerAxis (0, 0),
-		// 	    (Input::GetControllerAxis (0, 4) + 1) / 2.0,
-		// 	    (Input::GetControllerAxis (0, 5) + 1) / 2.0,
+		// 	scene.GetCamera ()->ProcessJoystickMove (input.GetControllerAxis (0, 1),
+		// 	    input.GetControllerAxis (0, 0),
+		// 	    (input.GetControllerAxis (0, 4) + 1) / 2.0,
+		// 	    (input.GetControllerAxis (0, 5) + 1) / 2.0,
 		// 	    deltaTime);
 		// 	scene.GetCamera ()->ProcessJoystickLook (
-		// 	    Input::GetControllerAxis (0, 3), Input::GetControllerAxis (0, 4), deltaTime);
+		// 	    input.GetControllerAxis (0, 3), input.GetControllerAxis (0, 4), deltaTime);
 
-		// 	if (Input::GetControllerButton (0, 2))
+		// 	if (input.GetControllerButton (0, 2))
 		// 		scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::UP, deltaTime);
-		// 	if (Input::GetControllerButton (0, 5))
+		// 	if (input.GetControllerButton (0, 5))
 		// 		scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::DOWN, deltaTime);
 		// }
 
-		// if (Input::GetKey (Input::KeyCode::W))
+		// if (input.GetKey (Input::KeyCode::W))
 		// 	scene.GetCamera ()->ProcessKeyboard (Camera_Movement::FORWARD, deltaTime);
-		// if (Input::GetKey (Input::KeyCode::S))
+		// if (input.GetKey (Input::KeyCode::S))
 		// 	scene.GetCamera ()->ProcessKeyboard (Camera_Movement::BACKWARD, deltaTime);
-		// if (Input::GetKey (Input::KeyCode::A))
+		// if (input.GetKey (Input::KeyCode::A))
 		// 	scene.GetCamera ()->ProcessKeyboard (Camera_Movement::LEFT, deltaTime);
-		// if (Input::GetKey (Input::KeyCode::D))
+		// if (input.GetKey (Input::KeyCode::D))
 		// 	scene.GetCamera ()->ProcessKeyboard (Camera_Movement::RIGHT, deltaTime);
 		// if (!scene.walkOnGround)
 		// {
-		// 	if (Input::GetKey (Input::KeyCode::SPACE))
+		// 	if (input.GetKey (Input::KeyCode::SPACE))
 		// 		scene.GetCamera ()->ProcessKeyboard (Camera_Movement::UP, deltaTime);
-		// 	if (Input::GetKey (Input::KeyCode::LEFT_SHIFT))
+		// 	if (input.GetKey (Input::KeyCode::LEFT_SHIFT))
 		// 		scene.GetCamera ()->ProcessKeyboard (Camera_Movement::DOWN, deltaTime);
 		// }
 
-		if (Input::GetKeyDown (Input::KeyCode::ESCAPE)) window.SetWindowToClose ();
-		if (Input::GetKeyDown (Input::KeyCode::ENTER))
-			Input::SetMouseControlStatus (!Input::GetMouseControlStatus ());
+		if (input.GetKeyDown (Input::KeyCode::ESCAPE)) window.SetWindowToClose ();
+		if (input.GetKeyDown (Input::KeyCode::ENTER))
+			input.SetMouseControlStatus (!input.GetMouseControlStatus ());
 
-		// if (Input::GetKey (Input::KeyCode::E))
+		// if (input.GetKey (Input::KeyCode::E))
 		// 	scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::UP, deltaTime);
-		// if (Input::GetKey (Input::KeyCode::Q))
+		// if (input.GetKey (Input::KeyCode::Q))
 		// 	scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::DOWN, deltaTime);
 
-		// if (Input::GetKeyDown (Input::KeyCode::N)) scene.drawNormals = !scene.drawNormals;
+		// if (input.GetKeyDown (Input::KeyCode::N)) scene.drawNormals = !scene.drawNormals;
 
-		if (Input::GetKeyDown (Input::KeyCode::X))
+		if (input.GetKeyDown (Input::KeyCode::X))
 		{
 			vulkan_renderer.ToggleWireframe ();
 			Log.Debug ("Wireframe toggle");
 		}
 
-		if (Input::GetKeyDown (Input::KeyCode::F))
+		if (input.GetKeyDown (Input::KeyCode::F))
 		{
 			// scene.walkOnGround = !scene.walkOnGround;
 			Log.Debug ("flight mode toggled");
@@ -205,21 +213,21 @@ void Engine::HandleInputs ()
 	}
 	else
 	{
-		if (Input::GetKeyDown (Input::KeyCode::ESCAPE)) Input::ResetTextInputMode ();
+		if (input.GetKeyDown (Input::KeyCode::ESCAPE)) input.ResetTextInputMode ();
 	}
 
-	// if (Input::GetMouseControlStatus ())
+	// if (input.GetMouseControlStatus ())
 	// {
 	// 	scene.GetCamera ()->ProcessMouseMovement (
-	// 	    Input::GetMouseChangeInPosition ().x, Input::GetMouseChangeInPosition ().y);
-	// 	scene.GetCamera ()->ProcessMouseScroll (Input::GetMouseScrollY (), deltaTime);
+	// 	    input.GetMouseChangeInPosition ().x, input.GetMouseChangeInPosition ().y);
+	// 	scene.GetCamera ()->ProcessMouseScroll (input.GetMouseScrollY (), deltaTime);
 	// }
 
-	if (Input::GetMouseButtonPressed (Input::GetMouseButtonPressed (0)))
+	if (input.GetMouseButtonPressed (input.GetMouseButtonPressed (0)))
 	{
 		if (!ImGui::IsWindowHovered (ImGuiHoveredFlags_AnyWindow))
 		{
-			Input::SetMouseControlStatus (true);
+			input.SetMouseControlStatus (true);
 		}
 	}
 }
