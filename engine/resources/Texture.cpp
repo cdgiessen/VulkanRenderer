@@ -110,7 +110,7 @@ std::optional<TexResource> from_json_TexResource (nlohmann::json j)
 	}
 	catch (nlohmann::json::exception& e)
 	{
-		Log.Error (fmt::format ("failed to parse texture"));
+		Log.Error (fmt::format ("failed to parse texture: {}", e.what ()));
 		return {};
 	}
 }

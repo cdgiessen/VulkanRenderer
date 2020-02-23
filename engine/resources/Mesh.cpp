@@ -13,9 +13,9 @@ int VertexDescription::ElementCount () const
 	return std::accumulate (std::begin (layout), std::end (layout), 0);
 }
 
-void AddPlane (std::vector<float>& verts,
+void AddPlane (std::vector<float>& vertices,
     std::vector<uint32_t>& indices,
-    int dim,
+    uint32_t dim,
     cml::vec3f topLeft,
     cml::vec3f topRight,
     cml::vec3f bottomLeft,
@@ -31,7 +31,7 @@ void AddPlane (std::vector<float>& verts,
 
 	cml::vec3f normal = cml::cross (t1, t2);
 
-	size_t offset = verts.size () / 8;
+	uint32_t offset = static_cast<uint32_t> (vertices.size ()) / 8;
 	for (float i = 0; i <= dim; i++)
 	{
 		for (float j = 0; j <= dim; j++)
@@ -39,20 +39,20 @@ void AddPlane (std::vector<float>& verts,
 			cml::vec3f pos = cml::lerp (
 			    cml::lerp (topLeft, topRight, j / dim), cml::lerp (bottomLeft, bottomRight, j / dim), i / dim);
 
-			verts.push_back (pos.x);
-			verts.push_back (pos.y);
-			verts.push_back (pos.z);
-			verts.push_back (normal.x);
-			verts.push_back (normal.y);
-			verts.push_back (normal.z);
-			verts.push_back (i);
-			verts.push_back (j);
+			vertices.push_back (pos.x);
+			vertices.push_back (pos.y);
+			vertices.push_back (pos.z);
+			vertices.push_back (normal.x);
+			vertices.push_back (normal.y);
+			vertices.push_back (normal.z);
+			vertices.push_back (i);
+			vertices.push_back (j);
 		}
 	}
 
-	for (int i = 0; i < dim; i++)
+	for (uint32_t i = 0; i < dim; i++)
 	{
-		for (int j = 0; j < dim; j++)
+		for (uint32_t j = 0; j < dim; j++)
 		{
 			indices.push_back (offset + i * (dim + 1) + j);
 			indices.push_back (offset + i * (dim + 1) + j + 1);
@@ -66,24 +66,24 @@ void AddPlane (std::vector<float>& verts,
 
 MeshData CreateFlatPlane (int dim, cml::vec3f size)
 {
-	std::vector<float> verts;
+	std::vector<float> vertices;
 	std::vector<uint32_t> indices;
 
-	verts.resize ((dim + 1) * (dim + 1) * 8);
+	vertices.resize ((dim + 1) * (dim + 1) * 8);
 	indices.resize ((dim) * (dim)*6);
 
 	for (int i = 0; i <= dim; i++)
 	{
 		for (int j = 0; j <= dim; j++)
 		{
-			verts[8 * ((i) * (dim + 1) + j) + 0] = (double)i * (size.x) / (float)dim;
-			verts[8 * ((i) * (dim + 1) + j) + 1] = 0;
-			verts[8 * ((i) * (dim + 1) + j) + 2] = (double)j * (size.z) / (float)dim;
-			verts[8 * ((i) * (dim + 1) + j) + 3] = 0;
-			verts[8 * ((i) * (dim + 1) + j) + 4] = 1;
-			verts[8 * ((i) * (dim + 1) + j) + 5] = 0;
-			verts[8 * ((i) * (dim + 1) + j) + 6] = i;
-			verts[8 * ((i) * (dim + 1) + j) + 7] = j;
+			vertices[8 * ((i) * (dim + 1) + j) + 0] = i * (size.x) / static_cast<float> (dim);
+			vertices[8 * ((i) * (dim + 1) + j) + 1] = 0;
+			vertices[8 * ((i) * (dim + 1) + j) + 2] = j * (size.z) / static_cast<float> (dim);
+			vertices[8 * ((i) * (dim + 1) + j) + 3] = 0;
+			vertices[8 * ((i) * (dim + 1) + j) + 4] = 1;
+			vertices[8 * ((i) * (dim + 1) + j) + 5] = 0;
+			vertices[8 * ((i) * (dim + 1) + j) + 6] = static_cast<float> (i);
+			vertices[8 * ((i) * (dim + 1) + j) + 7] = static_cast<float> (j);
 		}
 	}
 
@@ -101,16 +101,16 @@ MeshData CreateFlatPlane (int dim, cml::vec3f size)
 		}
 	}
 
-	return MeshData (Vert_PosNormUv, verts, indices);
+	return MeshData (Vert_PosNormUv, vertices, indices);
 }
 
 
 
 MeshData CreateCube (int dim)
 {
-	std::vector<float> verts;
+	std::vector<float> vertices;
 	std::vector<uint32_t> indices;
-	verts.reserve ((dim + 1) * (dim + 1) * 6);
+	vertices.reserve ((dim + 1) * (dim + 1) * 6);
 	indices.reserve ((dim) * (dim)*6 * 6);
 
 	cml::vec3f dlb{ -1, -1, -1 };
@@ -123,14 +123,14 @@ MeshData CreateCube (int dim)
 	cml::vec3f urf{ 1, 1, 1 };
 
 
-	AddPlane (verts, indices, dim, urf, urb, ulf, ulb);
-	AddPlane (verts, indices, dim, dlf, dlb, drf, drb);
-	AddPlane (verts, indices, dim, drf, drb, urf, urb);
-	AddPlane (verts, indices, dim, ulf, ulb, dlf, dlb);
-	AddPlane (verts, indices, dim, ulf, dlf, urf, drf);
-	AddPlane (verts, indices, dim, urb, drb, ulb, dlb);
+	AddPlane (vertices, indices, dim, urf, urb, ulf, ulb);
+	AddPlane (vertices, indices, dim, dlf, dlb, drf, drb);
+	AddPlane (vertices, indices, dim, drf, drb, urf, urb);
+	AddPlane (vertices, indices, dim, ulf, ulb, dlf, dlb);
+	AddPlane (vertices, indices, dim, ulf, dlf, urf, drf);
+	AddPlane (vertices, indices, dim, urb, drb, ulb, dlb);
 
-	return MeshData (Vert_PosNormUv, verts, indices);
+	return MeshData (Vert_PosNormUv, vertices, indices);
 }
 
 MeshData CreateSphere (int dim)
@@ -154,27 +154,27 @@ MeshData CreateSphere (int dim)
 };
 
 void Add_subdiv_triangle_no_seam_fix (
-    std::vector<float>& verts, std::vector<uint32_t>& indices, cml::vec3f top, cml::vec3f left, cml::vec3f down, int dim)
+    std::vector<float>& vertices, std::vector<uint32_t>& indices, cml::vec3f top, cml::vec3f left, cml::vec3f down, int dim)
 {
-	uint32_t offset = verts.size () / 3;
+	uint32_t offset = static_cast<uint32_t> (vertices.size ()) / 3;
 	for (float i = 0; i < dim; i++)
 	{
 		for (float j = 0; j < dim + 1 - i; j++)
 		{
 			cml::vec3f pos = cml::lerp (cml::lerp (top, left, j / (dim - i)), down, i / (dim));
 
-			verts.push_back (pos.x);
-			verts.push_back (pos.y);
-			verts.push_back (pos.z);
+			vertices.push_back (pos.x);
+			vertices.push_back (pos.y);
+			vertices.push_back (pos.z);
 		}
 	}
 
 	// i/dim is a NaN, better to just duplicate it once below for the last vertex
 	cml::vec3f pos = down;
 
-	verts.push_back (pos.x);
-	verts.push_back (pos.y);
-	verts.push_back (pos.z);
+	vertices.push_back (pos.x);
+	vertices.push_back (pos.y);
+	vertices.push_back (pos.z);
 
 
 	int base = 0;
@@ -204,35 +204,35 @@ void Add_subdiv_triangle_no_seam_fix (
 
 
 void Add_subdiv_triangle (
-    std::vector<float>& verts, std::vector<uint32_t>& indices, cml::vec3f top, cml::vec3f left, cml::vec3f down, int dim)
+    std::vector<float>& vertices, std::vector<uint32_t>& indices, cml::vec3f top, cml::vec3f left, cml::vec3f down, int dim)
 {
-	uint32_t offset = verts.size () / 3;
+	uint32_t offset = static_cast<uint32_t> (vertices.size ()) / 3;
 	for (float i = 0; i < dim; i++)
 	{
 		for (float j = 0; j < dim + 1 - i; j++)
 		{
 			cml::vec3f pos = cml::lerp (cml::lerp (top, left, j / (dim - i)), down, i / (dim));
 
-			verts.push_back (pos.x);
-			verts.push_back (pos.y);
-			verts.push_back (pos.z);
+			vertices.push_back (pos.x);
+			vertices.push_back (pos.y);
+			vertices.push_back (pos.z);
 		}
 
 		// seam fix vertex
 		cml::vec3f pos =
 		    cml::lerp (cml::lerp (top, left, (dim - i) / (dim - i)), down, (float)(i + 0.5f) / (dim));
 
-		verts.push_back (pos.x);
-		verts.push_back (pos.y);
-		verts.push_back (pos.z);
+		vertices.push_back (pos.x);
+		vertices.push_back (pos.y);
+		vertices.push_back (pos.z);
 	}
 
 	// i/dim is a NaN, better to just duplicate it once below for the last vertex
 	cml::vec3f pos = down;
 
-	verts.push_back (pos.x);
-	verts.push_back (pos.y);
-	verts.push_back (pos.z);
+	vertices.push_back (pos.x);
+	vertices.push_back (pos.y);
+	vertices.push_back (pos.z);
 
 	int base = 0;
 	int next_base = dim + 2;
@@ -265,7 +265,7 @@ void Add_subdiv_triangle (
 
 
 // subdivide triangle into 4 segments, and recursively subdivide the center one
-void subdiv_triangle (std::vector<float>& verts,
+void subdiv_triangle (std::vector<float>& vertices,
     std::vector<uint32_t>& indices,
     cml::vec3f top,
     cml::vec3f bottom_left,
@@ -274,15 +274,23 @@ void subdiv_triangle (std::vector<float>& verts,
     int subdivs)
 {
 	Add_subdiv_triangle (
-	    verts, indices, top, cml::lerp (top, bottom_left, 0.5f), cml::lerp (top, bottom_right, 0.5f), subdivs);
-	Add_subdiv_triangle (
-	    verts, indices, bottom_left, cml::lerp (bottom_left, bottom_right, 0.5f), cml::lerp (top, bottom_left, 0.5f), subdivs);
-	Add_subdiv_triangle (
-	    verts, indices, bottom_right, cml::lerp (top, bottom_right, 0.5f), cml::lerp (bottom_left, bottom_right, 0.5f), subdivs);
+	    vertices, indices, top, cml::lerp (top, bottom_left, 0.5f), cml::lerp (top, bottom_right, 0.5f), subdivs);
+	Add_subdiv_triangle (vertices,
+	    indices,
+	    bottom_left,
+	    cml::lerp (bottom_left, bottom_right, 0.5f),
+	    cml::lerp (top, bottom_left, 0.5f),
+	    subdivs);
+	Add_subdiv_triangle (vertices,
+	    indices,
+	    bottom_right,
+	    cml::lerp (top, bottom_right, 0.5f),
+	    cml::lerp (bottom_left, bottom_right, 0.5f),
+	    subdivs);
 
 	if (levels == 0)
 	{
-		Add_subdiv_triangle_no_seam_fix (verts,
+		Add_subdiv_triangle_no_seam_fix (vertices,
 		    indices,
 		    cml::lerp (top, bottom_left, 0.5f),
 		    cml::lerp (bottom_left, bottom_right, 0.5f),
@@ -291,7 +299,7 @@ void subdiv_triangle (std::vector<float>& verts,
 	}
 	else
 	{
-		subdiv_triangle (verts,
+		subdiv_triangle (vertices,
 		    indices,
 		    cml::lerp (top, bottom_left, 0.5f),
 		    cml::lerp (bottom_left, bottom_right, 0.5f),
@@ -304,7 +312,7 @@ void subdiv_triangle (std::vector<float>& verts,
 MeshData CreateWaterPlaneSubdiv (int levels, int subdivs)
 {
 
-	std::vector<float> verts;
+	std::vector<float> vertices;
 	std::vector<uint32_t> indices;
 
 	float max_float = 5000000.0f;
@@ -316,9 +324,9 @@ MeshData CreateWaterPlaneSubdiv (int levels, int subdivs)
 	cml::vec3f bottom_left{ -(max_float / 2.0f), 0, neg_vert_offset };
 	cml::vec3f bottom_right{ (max_float / 2.0f), 0, neg_vert_offset };
 
-	subdiv_triangle (verts, indices, top, bottom_left, bottom_right, levels, subdivs);
+	subdiv_triangle (vertices, indices, top, bottom_left, bottom_right, levels, subdivs);
 
-	return MeshData (Vert_Pos, verts, indices);
+	return MeshData (Vert_Pos, vertices, indices);
 }
 
 Manager::Manager (job::TaskManager& task_manager) : task_manager (task_manager) {}

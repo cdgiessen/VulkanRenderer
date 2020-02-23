@@ -107,7 +107,7 @@ void CommandQueue::SubmitCommandBuffers (std::vector<VkCommandBuffer> cmdBuffer,
 {
 
 	auto submitInfo = initializers::submitInfo ();
-	submitInfo.commandBufferCount = cmdBuffer.size ();
+	submitInfo.commandBufferCount = static_cast<uint32_t> (cmdBuffer.size ());
 	submitInfo.pCommandBuffers = cmdBuffer.data ();
 	submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size ();
 	submitInfo.pSignalSemaphores = signalSemaphores.data ();
@@ -237,7 +237,7 @@ VkBool32 CommandPool::ReturnCommandBuffer (VkCommandBuffer cmdBuffer,
 	return VK_TRUE;
 }
 
-void CommandPool::WriteToBuffer (VkCommandBuffer buf, std::function<void(VkCommandBuffer)> const& cmds)
+void CommandPool::WriteToBuffer (VkCommandBuffer buf, std::function<void (VkCommandBuffer)> const& cmds)
 {
 	cmds (buf);
 }
@@ -287,7 +287,7 @@ CommandBuffer& CommandBuffer::Begin (VkCommandBufferUsageFlags flags)
 	return *this;
 }
 
-CommandBuffer& CommandBuffer::WriteTo (std::function<void(const VkCommandBuffer)> const& work)
+CommandBuffer& CommandBuffer::WriteTo (std::function<void (const VkCommandBuffer)> const& work)
 {
 	assert (state == State::recording);
 	pool->WriteToBuffer (cmdBuf, work);

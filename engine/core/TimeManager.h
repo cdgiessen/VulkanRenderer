@@ -22,8 +22,8 @@ class TimeManager
 	double PreviousFrameTime (); // in seconds (how long the last frame took
 
 	BriefTimingHistory FrameTimeHistory ();
-	float FrameTimeMax ();
-	float FrameTimeMin ();
+	double FrameTimeMax ();
+	double FrameTimeMin ();
 
 	private:
 	using DoubleDuration = std::chrono::duration<double>;
@@ -37,5 +37,5 @@ class TimeManager
 	DoubleDuration prevFrameTime;
 
 	BriefTimingHistory frameTimes{};
-	float frameTimeMin = 999.0f, frameTimeMax = 0.0f;
+	double frameTimeMin = 999.0, frameTimeMax = 0.0;
 };

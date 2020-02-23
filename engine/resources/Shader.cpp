@@ -217,12 +217,12 @@ void ShaderDatabase::Load ()
 		}
 		catch (nlohmann::detail::parse_error& e)
 		{
-			Log.Debug ("Shader Database file was bas, creating a new one");
+			Log.Debug (fmt::format ("Shader Database file was bas, creating a new one: {}", e.what ()));
 			Save ();
 		}
 		catch (std::runtime_error& e)
 		{
-			Log.Debug ("Shader Database file was incorrect, creating a new one");
+			Log.Debug (fmt::format ("Shader Database file was incorrect, creating a new one: {}", e.what ()));
 			Save ();
 		}
 	}

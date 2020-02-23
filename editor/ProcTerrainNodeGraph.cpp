@@ -442,12 +442,12 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 
 		node.outputSlot.Draw (imDrawList, *this, node, 0);
 
-		float verticalOffset = 40;
+		int verticalOffset = 40;
 		for (size_t i = 0; i < node.inputSlots.size (); i++)
 		{
 			verticalOffset += node.inputSlots[i].Draw (imDrawList, *this, node, verticalOffset);
 		}
-		node.size = ImVec2 (node.size.x, verticalOffset);
+		node.size = ImVec2 (node.size.x, static_cast<float> (verticalOffset));
 
 		if (node_moving_active && ImGui::IsMouseDragging (0) && !posCon.isActive)
 			node.pos = node.pos + ImGui::GetIO ().MouseDelta;
@@ -598,7 +598,7 @@ HoveredSlotInfo ProcTerrainNodeGraph::GetHoveredSlot ()
 {
 	for (auto& [id, node] : nodes)
 	{
-		for (size_t i = 0; i < node.inputSlots.size (); i++)
+		for (int i = 0; i < static_cast<int> (node.inputSlots.size ()); i++)
 		{
 			if (node.inputSlots[i].IsHoveredOver (windowPos + node.pos))
 				return HoveredSlotInfo (id, false, i);
@@ -815,7 +815,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 		{
 			std::string curIndex (std::to_string (i));
 			auto node = j[curIndex]["id"];
-			for (size_t slot = 0; slot < nodes.at (node).inputSlots.size (); slot++)
+			for (int slot = 0; slot < static_cast<int> (nodes.at (node).inputSlots.size ()); slot++)
 			{
 				std::string curSlotIndex (std::to_string (slot));
 
@@ -994,7 +994,7 @@ int InputConnectionSlot::Draw (
 {
 
 	ImVec2 relPos = ImVec2 (graph.windowPos.x + parentNode.pos.x, graph.windowPos.y + parentNode.pos.y);
-	pos = ImVec2 (0, verticalOffset);
+	pos = ImVec2 (0, static_cast<float> (verticalOffset));
 	ImVec2 currentPos = relPos + pos;
 	int slotHeight = 35;
 
@@ -1012,8 +1012,8 @@ int InputConnectionSlot::Draw (
 			ImGui::DragInt (std::string ("##int" + uniqueID).c_str (),
 			    &(std::get<int> (value.value)),
 			    sliderStepSize,
-			    lowerBound,
-			    upperBound);
+			    static_cast<int> (lowerBound),
+			    static_cast<int> (upperBound));
 			break;
 		case (ConnectionType::Float):
 			ImGui::DragFloat (std::string ("##float" + uniqueID).c_str (),

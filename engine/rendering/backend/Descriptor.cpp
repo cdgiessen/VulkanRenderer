@@ -184,7 +184,7 @@ uint32_t DescriptorPool::AddNewPool ()
 	}
 	Pool p = { pool, 0, max_sets, static_cast<uint16_t> (pools.size ()) };
 	pools.push_back (p);
-	return pools.size () - 1; // newest index
+	return static_cast<uint32_t> (pools.size ()) - 1; // newest index
 }
 
 DescriptorPool::OptDescSet DescriptorPool::TryAllocate (Pool& pool)

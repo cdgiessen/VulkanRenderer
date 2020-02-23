@@ -222,7 +222,7 @@ void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
 	    stagingBuffer,
 	    image,
 	    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-	    bufferCopyRegions.size (),
+	    static_cast<uint32_t> (bufferCopyRegions.size ()),
 	    static_cast<VkBufferImageCopy*> (bufferCopyRegions.data ()));
 
 	SetImageLayout (
@@ -297,7 +297,7 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 	data.device = &device;
 	data.mipLevels = texCreateDetails.genMipMaps ? texCreateDetails.mipMapLevelsToGen : 1;
 	data.textureImageLayout = texCreateDetails.imageLayout;
-	data.layers = textureResource.dims.size ();
+	data.layers = static_cast<uint32_t> (textureResource.dims.size ());
 	data.width = texCreateDetails.desiredWidth;
 	data.height = texCreateDetails.desiredHeight;
 
@@ -356,7 +356,7 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 	    image,
 	    textureResource.dims.at (0).width,
 	    textureResource.dims.at (0).height,
-	    textureResource.dims.size (),
+	    static_cast<uint32_t> (textureResource.dims.size ()),
 	    data.layers,
 	    data.mipLevels);
 
@@ -429,17 +429,16 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 
 	std::vector<VkBufferImageCopy> bufferCopyRegions;
 
-	double offset = 0;
+	uint32_t offset = 0;
 	for (uint32_t layer = 0; layer < data.layers; layer++)
 	{
 		VkBufferImageCopy bufferCopyRegion = initializers::bufferImageCopyCreate (
 		    initializers::imageSubresourceLayers (VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, layer),
 		    { texCreateDetails.desiredWidth, texCreateDetails.desiredHeight, 1 },
-
-		    offset);
+		    static_cast<VkDeviceSize> (offset));
 		bufferCopyRegions.push_back (bufferCopyRegion);
 		// Increase offset into staging buffer for next level / face
-		offset += texCreateDetails.desiredWidth * texCreateDetails.desiredHeight * 4.;
+		offset += texCreateDetails.desiredWidth * texCreateDetails.desiredHeight * 4;
 	}
 
 	BeginTransferAndMipMapGenWork (*data.device,

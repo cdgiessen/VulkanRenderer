@@ -39,7 +39,7 @@ void RenderSettings::Load ()
 		}
 		catch (std::runtime_error& e)
 		{
-			Log.Debug (fmt::format ("Render Settings was incorrect, recreating"));
+			Log.Debug (fmt::format ("Render Settings was incorrect, recreating: {}", e.what ()));
 			Save ();
 		}
 	}

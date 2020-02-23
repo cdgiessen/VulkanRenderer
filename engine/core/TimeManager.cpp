@@ -64,5 +64,5 @@ BriefTimingHistory TimeManager::FrameTimeHistory () { return frameTimes; }
 
 double TimeManager::PreviousFrameTime () { return prevFrameTime.count (); }
 
-float TimeManager::FrameTimeMax () { return frameTimeMax; }
-float TimeManager::FrameTimeMin () { return frameTimeMin; }
+double TimeManager::FrameTimeMax () { return frameTimeMax; }
+double TimeManager::FrameTimeMin () { return frameTimeMin; }
