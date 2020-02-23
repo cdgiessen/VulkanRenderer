@@ -167,9 +167,6 @@ static bool ImGui_ImplGlfw_Init (GLFWwindow* window, bool install_callbacks, Glf
 	io.SetClipboardTextFn = ImGui_ImplGlfw_SetClipboardText;
 	io.GetClipboardTextFn = ImGui_ImplGlfw_GetClipboardText;
 	io.ClipboardUserData = g_Window;
-#if defined(_WIN32)
-	io.ImeWindowHandle = (void*)glfwGetWin32Window (g_Window);
-#endif
 
 	g_MouseCursors[ImGuiMouseCursor_Arrow] = glfwCreateStandardCursor (GLFW_ARROW_CURSOR);
 	g_MouseCursors[ImGuiMouseCursor_TextInput] = glfwCreateStandardCursor (GLFW_IBEAM_CURSOR);

@@ -64,8 +64,6 @@ void Editor::DebugOverlay (bool* show_debug_overlay)
 	ImGui::SetNextWindowPos (ImVec2 (0, 0), ImGuiCond_Always);
 	if (!ImGui::Begin ("Debug Stats",
 	        show_debug_overlay,
-	        ImVec2 (0, 0),
-	        0.3f,
 	        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
 	            ImGuiWindowFlags_NoSavedSettings))
 	{
