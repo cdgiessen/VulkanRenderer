@@ -411,12 +411,12 @@ FrameBuffer::~FrameBuffer ()
 	if (framebuffer != nullptr) vkDestroyFramebuffer (device, framebuffer, nullptr);
 }
 
-FrameBuffer::FrameBuffer (FrameBuffer&& fb)
+FrameBuffer::FrameBuffer (FrameBuffer&& fb) noexcept
 : device (fb.device), framebuffer (fb.framebuffer), width (fb.width), height (fb.height)
 {
 	fb.framebuffer = nullptr;
 }
-FrameBuffer& FrameBuffer::operator= (FrameBuffer&& fb)
+FrameBuffer& FrameBuffer::operator= (FrameBuffer&& fb) noexcept
 {
 	device = fb.device;
 	framebuffer = fb.framebuffer;
@@ -447,12 +447,12 @@ RenderPass::~RenderPass ()
 	if (rp != nullptr) vkDestroyRenderPass (device, rp, nullptr);
 }
 
-RenderPass::RenderPass (RenderPass&& rp)
+RenderPass::RenderPass (RenderPass&& rp) noexcept
 : device (rp.device), subpassFuncs (std::move (rp.subpassFuncs)), desc (rp.desc), rp (rp.rp)
 {
 	rp.rp = nullptr;
 }
-RenderPass& RenderPass::operator= (RenderPass&& rp)
+RenderPass& RenderPass::operator= (RenderPass&& rp) noexcept
 {
 	device = rp.device;
 	subpassFuncs = std::move (rp.subpassFuncs);

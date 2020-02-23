@@ -75,12 +75,12 @@ ShaderModule::~ShaderModule ()
 	if (module != VK_NULL_HANDLE) vkDestroyShaderModule (device, module, nullptr);
 }
 
-ShaderModule::ShaderModule (ShaderModule&& mod)
+ShaderModule::ShaderModule (ShaderModule&& mod) noexcept
 : device (mod.device), type (mod.type), module (mod.module)
 {
 	mod.module = nullptr;
 }
-ShaderModule& ShaderModule::operator= (ShaderModule&& mod)
+ShaderModule& ShaderModule::operator= (ShaderModule&& mod) noexcept
 {
 	device = mod.device;
 	type = mod.type;

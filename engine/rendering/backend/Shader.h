@@ -29,8 +29,8 @@ class ShaderModule
 
 	ShaderModule (ShaderModule const& mod) = delete;
 	ShaderModule& operator= (ShaderModule const& mod) = delete;
-	ShaderModule (ShaderModule&& mod);
-	ShaderModule& operator= (ShaderModule&& mod);
+	ShaderModule (ShaderModule&& mod) noexcept;
+	ShaderModule& operator= (ShaderModule&& mod) noexcept;
 
 	VkShaderModule get () const { return module; }
 

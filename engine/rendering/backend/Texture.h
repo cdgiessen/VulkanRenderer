@@ -62,8 +62,8 @@ class VulkanTexture
 	VulkanTexture (VulkanTexture const& tex) = delete;
 	VulkanTexture& operator= (VulkanTexture const& tex) = delete;
 
-	VulkanTexture (VulkanTexture&& tex);
-	VulkanTexture& operator= (VulkanTexture&& tex);
+	VulkanTexture (VulkanTexture&& tex) noexcept;
+	VulkanTexture& operator= (VulkanTexture&& tex) noexcept;
 
 	VkImage image = VK_NULL_HANDLE;
 	VkImageView imageView = VK_NULL_HANDLE;

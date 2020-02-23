@@ -22,16 +22,16 @@ enum class TaskType
 struct AsyncTask
 {
 	TaskType type = TaskType::graphics;
-	std::function<void(const VkCommandBuffer)> work;
-	std::function<void()> finish_work;
+	std::function<void (const VkCommandBuffer)> work;
+	std::function<void ()> finish_work;
 };
 
 struct GraphicsCleanUpWork
 {
 	CommandBuffer cmdBuf;
-	std::function<void()> finish_work;
+	std::function<void ()> finish_work;
 
-	GraphicsCleanUpWork (CommandBuffer&& cmdBuf, std::function<void()> finish_work)
+	GraphicsCleanUpWork (CommandBuffer&& cmdBuf, std::function<void ()> finish_work)
 	: cmdBuf (std::move (cmdBuf)), finish_work (finish_work)
 	{
 	}
@@ -55,6 +55,9 @@ class AsyncTaskManager
 
 	AsyncTaskManager (AsyncTaskManager const& man) = delete;
 	AsyncTaskManager& operator= (AsyncTaskManager const& man) = delete;
+	AsyncTaskManager (AsyncTaskManager&& man) = delete;
+	AsyncTaskManager& operator= (AsyncTaskManager&& man) = delete;
+
 
 	void SubmitTask (AsyncTask&& task);
 

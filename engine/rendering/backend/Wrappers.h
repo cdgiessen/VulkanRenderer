@@ -15,8 +15,8 @@ class VulkanFence
 	VulkanFence (VulkanFence const& fence) = delete;
 	VulkanFence& operator= (VulkanFence const& fence) = delete;
 
-	VulkanFence (VulkanFence&& other);
-	VulkanFence& operator= (VulkanFence&& other);
+	VulkanFence (VulkanFence&& other) noexcept;
+	VulkanFence& operator= (VulkanFence&& other) noexcept;
 
 
 	bool Check () const;
@@ -41,8 +41,8 @@ class VulkanSemaphore
 	VulkanSemaphore (VulkanSemaphore const& fence) = delete;
 	VulkanSemaphore& operator= (VulkanSemaphore const& fence) = delete;
 
-	VulkanSemaphore (VulkanSemaphore&& other);
-	VulkanSemaphore& operator= (VulkanSemaphore&& other);
+	VulkanSemaphore (VulkanSemaphore&& other) noexcept;
+	VulkanSemaphore& operator= (VulkanSemaphore&& other) noexcept;
 
 	VkSemaphore Get ();
 	VkSemaphore* GetPtr ();
@@ -93,7 +93,7 @@ class CommandPool
 	~CommandPool ();
 	CommandPool (CommandPool& cmd) = delete;
 	CommandPool& operator= (const CommandPool& cmd) = delete;
-	CommandPool (CommandPool&& cmd);
+	CommandPool (CommandPool&& cmd) noexcept;
 	CommandPool& operator= (CommandPool&& cmd) noexcept;
 
 	VkBool32 ResetPool ();
@@ -113,7 +113,7 @@ class CommandPool
 	void EndBufferRecording (VkCommandBuffer buf);
 	void FreeCommandBuffer (VkCommandBuffer buf);
 
-	void WriteToBuffer (VkCommandBuffer buf, std::function<void(VkCommandBuffer)> const& cmd);
+	void WriteToBuffer (VkCommandBuffer buf, std::function<void (VkCommandBuffer)> const& cmd);
 
 	private:
 	friend class CommandBuffer;
@@ -140,7 +140,7 @@ class CommandBuffer
 	~CommandBuffer ();
 	CommandBuffer (CommandBuffer& cmd) = delete;
 	CommandBuffer& operator= (const CommandBuffer& cmd) = delete;
-	CommandBuffer (CommandBuffer&& cmd);
+	CommandBuffer (CommandBuffer&& cmd) noexcept;
 	CommandBuffer& operator= (CommandBuffer&& cmd) noexcept;
 
 	CommandBuffer& Allocate ();
@@ -157,7 +157,7 @@ class CommandBuffer
 
 	CommandBuffer& Free ();
 
-	CommandBuffer& WriteTo (std::function<void(const VkCommandBuffer)> const& work);
+	CommandBuffer& WriteTo (std::function<void (const VkCommandBuffer)> const& work);
 
 	VkCommandBuffer Get () const { return cmdBuf; }
 

@@ -144,7 +144,7 @@ PipelineLayout::~PipelineLayout ()
 	if (layout != nullptr) vkDestroyPipelineLayout (device, layout, nullptr);
 }
 
-PipelineLayout::PipelineLayout (PipelineLayout&& other)
+PipelineLayout::PipelineLayout (PipelineLayout&& other) noexcept
 : device (other.device), layout (other.layout)
 {
 	other.layout = VK_NULL_HANDLE;

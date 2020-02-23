@@ -11,12 +11,14 @@ struct SkyboxUniformBuffer
 };
 
 Skybox::Skybox (ViewCameraManager& camera_manager,
+    ModelManager& model_manager,
     DescriptorSet descriptor_set,
     VulkanBuffer& uniform_buffer,
     ModelID skybox_cube_model,
     PipelineLayout& pipe_layout,
     GraphicsPipeline& pipe)
 : camera_manager (camera_manager),
+  model_manager (model_manager),
   descriptor_set (descriptor_set),
   uniform_buffer (std::move (uniform_buffer)),
   skybox_cube_model (skybox_cube_model),
@@ -41,9 +43,8 @@ void Skybox::Update (ViewCameraID cam_id)
 void Skybox::Draw (VkCommandBuffer commandBuffer)
 {
 	descriptor_set.Bind (commandBuffer, pipe_layout.get (), 2);
-
 	pipe.Bind (commandBuffer);
-	// TODO back_end.model_manager.DrawIndexed (commandBuffer, skybox_cube_model);
+	model_manager.DrawIndexed (commandBuffer, skybox_cube_model);
 }
 
 std::optional<Skybox> CreateSkybox (BackEnd& back_end,
@@ -118,7 +119,11 @@ std::optional<Skybox> CreateSkybox (BackEnd& back_end,
 	    pipe_layout.value (), outline, render_pass, subpass);
 	if (!pipe) return {};
 
-	return Skybox{
-		camera_manager, descriptor_set, uniform_buffer, skybox_cube_model, pipe_layout.value (), pipe.value ()
-	};
+	return Skybox{ camera_manager,
+		back_end.model_manager,
+		descriptor_set,
+		uniform_buffer,
+		skybox_cube_model,
+		pipe_layout.value (),
+		pipe.value () };
 }

@@ -208,8 +208,8 @@ class FrameBuffer
 	~FrameBuffer ();
 	FrameBuffer (FrameBuffer const& fb) = delete;
 	FrameBuffer& operator= (FrameBuffer const& fb) = delete;
-	FrameBuffer (FrameBuffer&& fb);
-	FrameBuffer& operator= (FrameBuffer&& fb);
+	FrameBuffer (FrameBuffer&& fb) noexcept;
+	FrameBuffer& operator= (FrameBuffer&& fb) noexcept;
 
 
 	VkFramebuffer Get () const { return framebuffer; }
@@ -239,8 +239,8 @@ class RenderPass
 	~RenderPass ();
 	RenderPass (RenderPass const& rp) = delete;
 	RenderPass& operator= (RenderPass const& rp) = delete;
-	RenderPass (RenderPass&& rp);
-	RenderPass& operator= (RenderPass&& rp);
+	RenderPass (RenderPass&& rp) noexcept;
+	RenderPass& operator= (RenderPass&& rp) noexcept;
 
 	void BuildCmdBuf (VkCommandBuffer cmdBuf, FrameBufferView fb_view);
 	std::vector<std::string> GetUsedAttachmentNames () { return desc.GetUsedAttachmentNames (); }

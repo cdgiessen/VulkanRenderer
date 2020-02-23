@@ -16,8 +16,8 @@ class FrameObject
 	~FrameObject ();
 	FrameObject (FrameObject const& fb) = delete;
 	FrameObject& operator= (FrameObject const& fb) = delete;
-	FrameObject (FrameObject&& fb);
-	FrameObject& operator= (FrameObject&& fb);
+	FrameObject (FrameObject&& fb) noexcept;
+	FrameObject& operator= (FrameObject&& fb) noexcept;
 
 
 	VkResult AcquireNextSwapchainImage ();

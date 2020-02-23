@@ -22,11 +22,11 @@ VulkanFence::~VulkanFence ()
 	if (fence != nullptr) vkDestroyFence (device, fence, nullptr);
 }
 
-VulkanFence::VulkanFence (VulkanFence&& other) : device (other.device), fence (other.fence)
+VulkanFence::VulkanFence (VulkanFence&& other) noexcept : device (other.device), fence (other.fence)
 {
 	other.fence = nullptr;
 }
-VulkanFence& VulkanFence::operator= (VulkanFence&& other)
+VulkanFence& VulkanFence::operator= (VulkanFence&& other) noexcept
 {
 	device = other.device;
 	fence = other.fence;
@@ -68,12 +68,12 @@ VulkanSemaphore::~VulkanSemaphore ()
 	if (semaphore != nullptr) vkDestroySemaphore (device, semaphore, nullptr);
 }
 
-VulkanSemaphore::VulkanSemaphore (VulkanSemaphore&& other)
+VulkanSemaphore::VulkanSemaphore (VulkanSemaphore&& other) noexcept
 : device (other.device), semaphore (other.semaphore)
 {
 	other.semaphore = nullptr;
 }
-VulkanSemaphore& VulkanSemaphore::operator= (VulkanSemaphore&& other)
+VulkanSemaphore& VulkanSemaphore::operator= (VulkanSemaphore&& other) noexcept
 {
 	device = other.device;
 	semaphore = other.semaphore;
@@ -156,7 +156,7 @@ CommandPool::~CommandPool ()
 	if (command_pool != nullptr) vkDestroyCommandPool (device, command_pool, nullptr);
 }
 
-CommandPool::CommandPool (CommandPool&& other)
+CommandPool::CommandPool (CommandPool&& other) noexcept
 : device (other.device), queue (other.queue), command_pool (other.command_pool)
 {
 	other.command_pool = nullptr;
@@ -254,7 +254,7 @@ CommandBuffer::~CommandBuffer ()
 	if (cmdBuf != nullptr) pool->FreeCommandBuffer (cmdBuf);
 }
 
-CommandBuffer::CommandBuffer (CommandBuffer&& cmd)
+CommandBuffer::CommandBuffer (CommandBuffer&& cmd) noexcept
 : pool (cmd.pool), level (cmd.level), state (cmd.state), cmdBuf (cmd.cmdBuf), fence (std::move (cmd.fence))
 {
 	cmd.cmdBuf = nullptr;

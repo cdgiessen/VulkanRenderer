@@ -20,11 +20,13 @@
 
 struct BackEnd;
 class ViewCameraManager;
+class ModelManager;
 
 class Skybox
 {
 	public:
 	Skybox (ViewCameraManager& camera_manager,
+	    ModelManager& model_manager,
 	    DescriptorSet descriptor_set,
 	    VulkanBuffer& uniform_buffer,
 	    ModelID skybox_cube_model,
@@ -36,6 +38,7 @@ class Skybox
 
 	private:
 	ViewCameraManager& camera_manager;
+	ModelManager& model_manager;
 
 	DescriptorSet descriptor_set;
 	VulkanBuffer uniform_buffer;

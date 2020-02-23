@@ -549,14 +549,14 @@ VulkanTexture::~VulkanTexture ()
 	if (sampler != VK_NULL_HANDLE) vkDestroySampler (data.device->device, sampler, nullptr);
 }
 
-VulkanTexture::VulkanTexture (VulkanTexture&& tex)
+VulkanTexture::VulkanTexture (VulkanTexture&& tex) noexcept
 : image (tex.image), imageView (tex.imageView), sampler (tex.sampler), data (tex.data)
 {
 	tex.image = VK_NULL_HANDLE;
 	tex.imageView = VK_NULL_HANDLE;
 	tex.sampler = VK_NULL_HANDLE;
 }
-VulkanTexture& VulkanTexture::operator= (VulkanTexture&& tex)
+VulkanTexture& VulkanTexture::operator= (VulkanTexture&& tex) noexcept
 {
 	image = tex.image;
 	imageView = tex.imageView;

@@ -63,9 +63,9 @@ class VulkanRenderer
 	    Window& window,
 	    Resource::ResourceManager& resource_man);
 
-	VulkanRenderer (const VulkanRenderer& other) = delete; // copy
-	VulkanRenderer (VulkanRenderer&& other) = delete;      // move
-	VulkanRenderer& operator= (const VulkanRenderer&) = delete;
+	VulkanRenderer (VulkanRenderer const& other) = delete; // copy
+	VulkanRenderer& operator= (VulkanRenderer const&) = delete;
+	VulkanRenderer (VulkanRenderer&& other) = delete; // move
 	VulkanRenderer& operator= (VulkanRenderer&&) = delete;
 	~VulkanRenderer ();
 

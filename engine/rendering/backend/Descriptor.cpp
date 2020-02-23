@@ -117,7 +117,7 @@ DescriptorPool::~DescriptorPool ()
 	}
 }
 
-DescriptorPool::DescriptorPool (DescriptorPool&& other)
+DescriptorPool::DescriptorPool (DescriptorPool&& other) noexcept
 : device (other.device),
   vk_layout (other.vk_layout),
   layout_id (other.layout_id),
@@ -127,7 +127,7 @@ DescriptorPool::DescriptorPool (DescriptorPool&& other)
 {
 	other.pools.clear ();
 }
-DescriptorPool& DescriptorPool::operator= (DescriptorPool&& other)
+DescriptorPool& DescriptorPool::operator= (DescriptorPool&& other) noexcept
 {
 	device = other.device;
 	vk_layout = other.vk_layout;

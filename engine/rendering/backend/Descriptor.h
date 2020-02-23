@@ -85,7 +85,8 @@ class DescriptorResource
 {
 	public:
 	const int which_info;
-	union {
+	union
+	{
 		VkDescriptorBufferInfo buffer_info;
 		VkDescriptorImageInfo image_info;
 		VkBufferView buffer_view;
@@ -151,8 +152,8 @@ class DescriptorPool
 	~DescriptorPool ();
 	DescriptorPool (DescriptorPool const& other) = delete;
 	DescriptorPool& operator= (DescriptorPool const& other) = delete;
-	DescriptorPool (DescriptorPool&& other);
-	DescriptorPool& operator= (DescriptorPool&& other);
+	DescriptorPool (DescriptorPool&& other) noexcept;
+	DescriptorPool& operator= (DescriptorPool&& other) noexcept;
 
 	DescriptorSet Allocate ();
 	void Free (DescriptorSet const& set);

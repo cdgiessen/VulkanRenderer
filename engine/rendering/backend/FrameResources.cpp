@@ -17,7 +17,7 @@ FrameObject::FrameObject (VulkanDevice& device, VulkanSwapChain& swapChain)
 
 FrameObject::~FrameObject () { primary_command_buffer.Free (); }
 
-FrameObject::FrameObject (FrameObject&& fb)
+FrameObject::FrameObject (FrameObject&& fb) noexcept
 : device (fb.device),
   swapchain (fb.swapchain),
   swapChainIndex (fb.swapChainIndex),
@@ -27,7 +27,7 @@ FrameObject::FrameObject (FrameObject&& fb)
   primary_command_buffer (std::move (fb.primary_command_buffer))
 {
 }
-FrameObject& FrameObject::operator= (FrameObject&& fb)
+FrameObject& FrameObject::operator= (FrameObject&& fb) noexcept
 {
 	device = fb.device;
 	swapchain = fb.swapchain;

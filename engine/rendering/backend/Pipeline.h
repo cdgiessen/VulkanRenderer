@@ -90,7 +90,7 @@ class PipelineLayout
 	~PipelineLayout ();
 	PipelineLayout (const PipelineLayout& other) = delete;
 	PipelineLayout& operator= (const PipelineLayout& other) = delete;
-	PipelineLayout (PipelineLayout&& other);
+	PipelineLayout (PipelineLayout&& other) noexcept;
 	PipelineLayout& operator= (PipelineLayout&& other) noexcept;
 
 	VkPipelineLayout get () const { return layout; }
