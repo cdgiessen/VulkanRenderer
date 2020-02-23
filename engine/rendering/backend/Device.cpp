@@ -1,6 +1,7 @@
 #include "Device.h"
 
 #include <set>
+#include <vector>
 
 #include <GLFW/glfw3.h>
 
@@ -172,20 +173,20 @@ void VulkanInstance::SetupDebugCallback ()
 
 std::string_view MessageSeverity (VkDebugUtilsMessageSeverityFlagBitsEXT s)
 {
-	if (s | VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+	if (s & VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 		return "ERROR";
-	else if (s | VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+	else if (s & VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		return "WARNING";
-	else if (s | VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+	else if (s & VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
 		return "INFO";
 	else
 		return "VERBOSE";
 }
 std::string_view MessageType (VkDebugUtilsMessageTypeFlagsEXT s)
 {
-	if (s | VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
+	if (s & VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
 		return "Validation";
-	else if (s | VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
+	else if (s & VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
 		return "Performace";
 	else
 		return "General";

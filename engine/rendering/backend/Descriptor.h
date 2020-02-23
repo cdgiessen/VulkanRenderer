@@ -71,7 +71,7 @@ template <> struct hash<DescriptorLayout>
 	std::size_t operator() (DescriptorLayout const& s) const noexcept
 	{
 		int i = 0;
-		std::size_t out;
+		std::size_t out = 0;
 		for (auto& binding : s)
 		{
 			out ^= (std::hash<DescriptorSetLayoutBinding>{}(binding) << i++);

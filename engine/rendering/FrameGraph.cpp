@@ -439,7 +439,7 @@ RenderPass::RenderPass (VkDevice device, RenderPassDescription desc_in, Attachme
 		throw std::runtime_error ("failed to create render pass!");
 	}
 
-	subpassFuncs = std::move (desc.GetSubpassFunctions ());
+	subpassFuncs = desc.GetSubpassFunctions ();
 }
 
 RenderPass::~RenderPass ()
@@ -448,7 +448,7 @@ RenderPass::~RenderPass ()
 }
 
 RenderPass::RenderPass (RenderPass&& rp) noexcept
-: device (rp.device), subpassFuncs (std::move (rp.subpassFuncs)), desc (rp.desc), rp (rp.rp)
+: device (rp.device), subpassFuncs (std::move (rp.subpassFuncs)), rp (rp.rp), desc (rp.desc)
 {
 	rp.rp = nullptr;
 }
@@ -647,8 +647,8 @@ void FrameGraph::CreateFrameBuffers ()
 
 		auto extent = swapchain.GetImageExtent ();
 		auto views_out = final_renderpass->OrderAttachments (named_views);
-		swapchain_framebuffers.push_back (std::move (
-		    FrameBuffer (device, views_out, final_renderpass->Get (), extent.width, extent.height, 1)));
+		swapchain_framebuffers.push_back (
+		    FrameBuffer (device, views_out, final_renderpass->Get (), extent.width, extent.height, 1));
 	}
 }
 

@@ -12,17 +12,17 @@ bool operator== (DescriptorSetLayoutBinding const& a, DescriptorSetLayoutBinding
 //// DESCRIPTOR RESOURCE ////
 
 DescriptorResource::DescriptorResource (DescriptorType type, VkDescriptorBufferInfo buffer_info)
-: type (static_cast<VkDescriptorType> (type)), which_info (0)
+: which_info (0), type (static_cast<VkDescriptorType> (type))
 {
 	info.buffer_info = buffer_info;
 }
 DescriptorResource::DescriptorResource (DescriptorType type, VkDescriptorImageInfo image_info)
-: type (static_cast<VkDescriptorType> (type)), which_info (1)
+: which_info (1), type (static_cast<VkDescriptorType> (type))
 {
 	info.image_info = image_info;
 }
 DescriptorResource::DescriptorResource (DescriptorType type, VkBufferView texel_buffer_view)
-: type (static_cast<VkDescriptorType> (type)), which_info (2)
+: which_info (2), type (static_cast<VkDescriptorType> (type))
 {
 	info.buffer_view = texel_buffer_view;
 }
@@ -243,7 +243,7 @@ LayoutID DescriptorManager::CreateDescriptorSetLayout (DescriptorLayout layout_d
 
 		layout_descriptions[layout_desc] = new_id;
 		layouts[new_id] = layout;
-		pools.emplace (new_id, std::move (DescriptorPool (device.device, layout_desc, layout, new_id, 10)));
+		pools.emplace (new_id, DescriptorPool{ device.device, layout_desc, layout, new_id, 10 });
 		return new_id;
 	}
 	else

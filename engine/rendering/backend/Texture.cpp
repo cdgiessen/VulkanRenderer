@@ -663,7 +663,7 @@ TextureManager::~TextureManager ()
 
 std::function<void ()> TextureManager::CreateFinishWork (VulkanTextureID id)
 {
-	return std::move ([this, id] {
+	return [this, id] {
 		std::lock_guard guard (map_lock);
 		auto it = std::find (expired_textures.begin (), expired_textures.end (), id);
 		if (it != expired_textures.end ())
@@ -678,7 +678,7 @@ std::function<void ()> TextureManager::CreateFinishWork (VulkanTextureID id)
 				texture_map.insert (std::move (node));
 			}
 		}
-	});
+	};
 }
 
 VulkanTextureID TextureManager::CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails)

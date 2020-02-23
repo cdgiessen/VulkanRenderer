@@ -28,15 +28,14 @@ class ResourceManager
 	ResourceManager (job::TaskManager& task_manager);
 	~ResourceManager ();
 
+	private:
+	job::TaskManager& task_manager;
 
-
+	public:
 	Mesh::Manager mesh_manager;
 	Texture::Manager texture_manager;
 	Material::Manager material_manager;
 	Shader::Manager shader_manager;
-
-	private:
-	job::TaskManager& task_manager;
 };
 
 

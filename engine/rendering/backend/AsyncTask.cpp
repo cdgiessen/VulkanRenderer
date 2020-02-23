@@ -15,7 +15,7 @@ CommandPoolGroup::CommandPoolGroup (VulkanDevice const& device)
 
 
 AsyncTaskManager::AsyncTaskManager (job::TaskManager& task_manager, VulkanDevice& device)
-: task_manager (task_manager), device (device)
+: task_manager (task_manager)
 {
 	auto thread_ids = task_manager.GetThreadIDs ();
 	thread_ids.push_back (std::this_thread::get_id ());

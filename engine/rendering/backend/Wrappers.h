@@ -80,7 +80,6 @@ class CommandQueue
 	void QueueWaitIdle ();
 
 	private:
-	VkDevice const device;
 	std::mutex submissionMutex;
 	VkQueue queue;
 	int queueFamily;

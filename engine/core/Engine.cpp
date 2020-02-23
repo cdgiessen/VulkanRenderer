@@ -74,8 +74,8 @@ StaticInitializer::StaticInitializer () { InitializeGLFW (); }
 StaticInitializer::~StaticInitializer () { TerminateGLFW (); }
 
 Engine::Engine ()
-: static_initializer (),
-  settings ("settings.json"),
+: settings ("settings.json"),
+  static_initializer (),
   window (input,
       settings.isFullscreen,
       "Vulkan Renderer",

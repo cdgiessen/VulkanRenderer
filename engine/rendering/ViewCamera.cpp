@@ -6,9 +6,9 @@ const cml::vec3f WorldUp{ 0, 1, 0 };
 
 void ViewCameraData::Setup (CameraType type, cml::vec3f position, cml::quatf rotation)
 {
-	type = type;
-	position = position;
-	rotation = rotation;
+	this->type = type;
+	this->position = position;
+	this->rotation = rotation;
 	isProjMatDirty = true;
 	isViewMatDirty = true;
 }
@@ -65,28 +65,28 @@ float ViewCameraData::GetClipFar () { return clip_far; }
 void ViewCameraData::SetPosition (cml::vec3f position)
 {
 	isViewMatDirty = true;
-	position = position;
+	this->position = position;
 }
 void ViewCameraData::SetRotation (cml::quatf rotation)
 {
 	isViewMatDirty = true;
-	rotation = rotation;
+	this->rotation = rotation;
 }
 
 void ViewCameraData::SetFOV (float fov)
 {
 	isProjMatDirty = true;
-	fov = fov;
+	this->fov = fov;
 }
 void ViewCameraData::SetAspectRatio (float aspect)
 {
 	isProjMatDirty = true;
-	aspect = aspect;
+	this->aspect = aspect;
 }
 void ViewCameraData::SetViewSize (float size)
 {
 	isProjMatDirty = true;
-	size = size;
+	this->size = size;
 }
 
 void ViewCameraData::SetClipNear (float near)

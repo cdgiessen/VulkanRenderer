@@ -919,7 +919,7 @@ ConnectionSlot::ConnectionSlot (int slotNum, ImVec2 pos, ConnectionType type)
 }
 
 ConnectionSlot::ConnectionSlot (int slotNum, ImVec2 pos, ConnectionType type, std::string name)
-: slotNum (slotNum), conType (type), pos (pos), name (name)
+: slotNum (slotNum), pos (pos), name (name), conType (type)
 {
 }
 

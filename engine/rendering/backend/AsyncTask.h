@@ -65,7 +65,6 @@ class AsyncTaskManager
 
 	private:
 	job::TaskManager& task_manager;
-	VulkanDevice& device;
 
 	std::unordered_map<std::thread::id, std::unique_ptr<CommandPoolGroup>> pools;
 

@@ -115,6 +115,7 @@ class VulkanDevice
 {
 	private:
 	bool enableValidationLayers = false;
+	Window* window;
 
 	public:
 	VulkanInstance instance;
@@ -150,8 +151,6 @@ class VulkanDevice
 	    const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 
 	private:
-	Window* window;
-
 	std::unique_ptr<CommandQueue> graphics_queue;
 	std::unique_ptr<CommandQueue> compute_queue;
 	std::unique_ptr<CommandQueue> transfer_queue;

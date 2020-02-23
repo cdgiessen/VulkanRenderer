@@ -87,7 +87,7 @@ VkSemaphore* VulkanSemaphore::GetPtr () { return &semaphore; }
 
 ///////////// Command Queue ////////////////
 
-CommandQueue::CommandQueue (VkDevice device, int queueFamily) : device (device)
+CommandQueue::CommandQueue (VkDevice device, int queueFamily)
 {
 	vkGetDeviceQueue (device, queueFamily, 0, &queue);
 	this->queueFamily = queueFamily;

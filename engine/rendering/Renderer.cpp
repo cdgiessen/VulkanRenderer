@@ -162,11 +162,11 @@ void VulkanRenderer::ContrustFrameGraph ()
 
 	SubpassDescription color_subpass ("sub_color");
 	color_subpass.AddColorOutput ("img_color");
-	color_subpass.AddClearColor ("img_color", { 0.1f, 0.1f, 0.1f, 1.0f });
+	color_subpass.AddClearColor ("img_color", { { 0.1f, 0.1f, 0.1f, 1.0f } });
 	color_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
-	color_subpass.AddClearColor ("img_depth", { 0.0f, 0 });
+	color_subpass.AddClearColor ("img_depth", { { 0.0f, 0 } });
 
-	color_subpass.SetFunction (std::move ([&] (VkCommandBuffer cmdBuf) {
+	color_subpass.SetFunction ([&] (VkCommandBuffer cmdBuf) {
 		/*
 		dynamic_data.BindFrameDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
 		dynamic_data.BindLightingDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
@@ -188,7 +188,7 @@ void VulkanRenderer::ContrustFrameGraph ()
 		{
 			ImGui_ImplVulkan_RenderDrawData (draw_data, cmdBuf);
 		}
-	}));
+	});
 	main_work.AddSubpass (color_subpass);
 
 	frame_graph_builder.AddRenderPass (main_work);

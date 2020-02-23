@@ -155,8 +155,8 @@ class TextureManager
 	private:
 	std::function<void ()> CreateFinishWork (VulkanTextureID id);
 
-	VulkanDevice& device;
 	Resource::Texture::Manager& texture_manager;
+	VulkanDevice& device;
 	AsyncTaskManager& async_task_manager;
 
 	VulkanTextureID id_counter = 0;

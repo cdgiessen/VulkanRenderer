@@ -60,8 +60,8 @@ class ModelManager
 	private:
 	void FinishModelUpload (ModelID id);
 
-	VulkanDevice& device;
 	Resource::Mesh::Manager& mesh_manager;
+	VulkanDevice& device;
 	AsyncTaskManager& async_task_man;
 
 	std::mutex map_lock;
