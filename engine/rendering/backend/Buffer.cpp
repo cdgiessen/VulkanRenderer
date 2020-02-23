@@ -213,3 +213,19 @@ void DoubleBuffer::Advance ()
 	cur_read = cur_write;
 	cur_write = (cur_write + 1) % 2;
 }
+
+VkDescriptorType DoubleBuffer::GetDescriptorType () { return buffers.at (0).GetDescriptorType (); }
+
+VkDescriptorBufferInfo DoubleBuffer::GetDescriptorInfo (int which)
+{
+	return buffers.at (which).GetDescriptorInfo ();
+}
+VkDescriptorBufferInfo DoubleBuffer::GetDescriptorInfo (int which, VkDeviceSize offset, VkDeviceSize range)
+{
+	return buffers.at (which).GetDescriptorInfo (offset, range);
+}
+
+VkDescriptorBufferInfo DoubleBuffer::GetDescriptorInfo (int which, int element_index)
+{
+	return buffers.at (which).GetDescriptorInfo (element_index);
+}

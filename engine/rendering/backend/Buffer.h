@@ -172,6 +172,11 @@ class DoubleBuffer
 
 	void Advance ();
 
+	VkDescriptorType GetDescriptorType ();
+	VkDescriptorBufferInfo GetDescriptorInfo (int which);
+	VkDescriptorBufferInfo GetDescriptorInfo (int which, VkDeviceSize offset, VkDeviceSize range);
+	VkDescriptorBufferInfo GetDescriptorInfo (int which, int element_index);
+
 	private:
 	int cur_write = 0;
 	int cur_read = 1;
