@@ -46,7 +46,9 @@ class LightingManager
 	void Update (std::vector<DirectionalLight> directional_lights,
 	    std::vector<PointLight> point_lights,
 	    std::vector<SpotLight> spot_lights);
+
 	void Bind (VkCommandBuffer buffer, VkPipelineLayout layout);
+	void Advance ();
 
 	private:
 	int cur_index = 0;

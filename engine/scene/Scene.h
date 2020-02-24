@@ -6,7 +6,7 @@ namespace job
 {
 class TaskManager;
 }
-class TimeManager;
+class Time;
 namespace Resource
 {
 class ResourceManager;
@@ -16,16 +16,13 @@ class VulkanRenderer;
 class Scene
 {
 	public:
-	Scene (job::TaskManager& task_manager,
-	    TimeManager& time_manager,
-	    Resource::ResourceManager& resourceMan,
-	    VulkanRenderer& renderer);
+	Scene (job::TaskManager& task_manager, Time& time_manager, Resource::ResourceManager& resourceMan, VulkanRenderer& renderer);
 
 	void Update ();
 
 	private:
 	job::TaskManager& task_manager;
-	TimeManager& time_manager;
+	Time& time_manager;
 	Resource::ResourceManager& resource_manager;
 	VulkanRenderer& renderer;
 };
@@ -55,7 +52,7 @@ class Scene
 //	Scene (job::TaskManager& task_manager,
 //	    Resource::ResourceManager& resourceMan,
 //	    VulkanRenderer& renderer,
-//	    TimeManager& time_manager,
+//	    Time& time_manager,
 //	    InternalGraph::GraphPrototype& graph);
 //
 //	void UpdateScene ();
@@ -74,7 +71,7 @@ class Scene
 //	job::TaskManager& task_manager;
 //	VulkanRenderer& renderer;
 //	Resource::ResourceManager& resourceMan;
-//	TimeManager& time_manager;
+//	Time& time_manager;
 //
 //	std::vector<DirectionalLight> directionalLights;
 //	std::vector<PointLight> pointLights;

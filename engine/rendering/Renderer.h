@@ -22,7 +22,6 @@
 #include "ViewCamera.h"
 
 #include "rendering/renderers/MeshRenderer.h"
-#include "rendering/renderers/SkinnedMeshRenderer.h"
 #include "rendering/renderers/SkyboxRenderer.h"
 #include "rendering/renderers/TerrainRenderer.h"
 
@@ -73,13 +72,13 @@ class VulkanRenderer
 
 	void RenderFrame ();
 
-	void ToggleWireframe ();
-
 	void DeviceWaitTillIdle ();
 
+	void ImGuiNewFrame ();
+
+	private:
 	void ImGuiSetup ();
 	void ImGuiShutdown ();
-	void ImGuiNewFrame ();
 
 	private:
 	job::TaskManager& task_manager;
@@ -101,7 +100,6 @@ class VulkanRenderer
 
 
 	uint32_t frameIndex = 0; // which of the swapchain images the app is rendering to
-	bool wireframe = false;  // whether or not to use the wireframe pipeline for the scene.
 
 	void ContrustFrameGraph ();
 

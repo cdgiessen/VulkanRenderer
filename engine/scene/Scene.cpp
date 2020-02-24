@@ -1,7 +1,7 @@
 #include "Scene.h"
 
 #include "core/JobSystem.h"
-#include "core/TimeManager.h"
+#include "core/Time.h"
 
 #include "resources/Resource.h"
 
@@ -12,10 +12,8 @@
 #include "core/Input.h"
 #include "core/Logger.h"
 
-Scene::Scene (job::TaskManager& task_manager,
-    TimeManager& time_manager,
-    Resource::ResourceManager& resource_manager,
-    VulkanRenderer& renderer)
+Scene::Scene (
+    job::TaskManager& task_manager, Time& time_manager, Resource::ResourceManager& resource_manager, VulkanRenderer& renderer)
 : task_manager (task_manager), time_manager (time_manager), resource_manager (resource_manager), renderer (renderer)
 {
 }
@@ -25,7 +23,7 @@ void Scene::Update () {}
 // Scene::Scene (job::TaskManager& task_manager,
 //    Resource::ResourceManager& resourceMan,
 //    VulkanRenderer& renderer,
-//    TimeManager& time_manager,
+//    Time& time_manager,
 //    InternalGraph::GraphPrototype& graph)
 //: task_manager (task_manager), renderer (renderer), resourceMan (resourceMan), time_manager (time_manager)
 //{

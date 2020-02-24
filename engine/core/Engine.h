@@ -5,7 +5,7 @@
 #include "Input.h"
 #include "JobSystem.h"
 #include "Logger.h"
-#include "TimeManager.h"
+#include "Time.h"
 #include "Window.h"
 #include "util/SimpleTimer.h"
 
@@ -63,7 +63,7 @@ class Engine
 
 	job::TaskManager task_manager;
 
-	TimeManager time_manager;
+	Time time_manager;
 	Window window;
 	Input::InputDirector input;
 	Resource::ResourceManager resource_manager;

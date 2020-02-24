@@ -1,9 +1,9 @@
-#include "TimeManager.h"
+#include "Time.h"
 #include <algorithm>
 
 using namespace std::chrono;
 
-TimeManager::TimeManager ()
+Time::Time ()
 {
 	applicationStartTime = high_resolution_clock::now ();
 	frameStartTime = high_resolution_clock::now ();
@@ -13,11 +13,11 @@ TimeManager::TimeManager ()
 	std::fill (std::begin (frameTimes), std::end (frameTimes), 0.01666);
 }
 
-void TimeManager::CollectRuntimeData () { applicationEndTime = high_resolution_clock::now (); }
+void Time::CollectRuntimeData () { applicationEndTime = high_resolution_clock::now (); }
 
-void TimeManager::StartFrameTimer () { frameStartTime = high_resolution_clock::now (); }
+void Time::StartFrameTimer () { frameStartTime = high_resolution_clock::now (); }
 
-void TimeManager::EndFrameTimer ()
+void Time::EndFrameTimer ()
 {
 	frameEndTime = high_resolution_clock::now ();
 
@@ -41,28 +41,28 @@ void TimeManager::EndFrameTimer ()
 	}
 }
 
-double TimeManager::ExactTimeSinceFrameStart ()
+double Time::ExactTimeSinceFrameStart ()
 {
 	DoubleDuration time = high_resolution_clock::now () - frameStartTime;
 	return time.count ();
 }
 
-double TimeManager::DeltaTime ()
+double Time::DeltaTime ()
 {
 	DoubleDuration time = curFrameTime;
 	return time.count ();
 }
 
 
-double TimeManager::RunningTime ()
+double Time::RunningTime ()
 {
 	DoubleDuration time = high_resolution_clock::now () - applicationStartTime;
 	return time.count ();
 }
 
-BriefTimingHistory TimeManager::FrameTimeHistory () { return frameTimes; }
+BriefTimingHistory Time::FrameTimeHistory () { return frameTimes; }
 
-double TimeManager::PreviousFrameTime () { return prevFrameTime.count (); }
+double Time::PreviousFrameTime () { return prevFrameTime.count (); }
 
-double TimeManager::FrameTimeMax () { return frameTimeMax; }
-double TimeManager::FrameTimeMin () { return frameTimeMin; }
+double Time::FrameTimeMax () { return frameTimeMax; }
+double Time::FrameTimeMin () { return frameTimeMin; }

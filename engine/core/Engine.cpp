@@ -152,9 +152,12 @@ void Engine::HandleInputs ()
 	double deltaTime = time_manager.DeltaTime ();
 
 	imgui_update_callback ();
+	if (input.GetKeyDown (Input::KeyCode::ESCAPE)) window.SetWindowToClose ();
 
 	if (!input.GetTextInputMode ())
 	{
+		if (input.GetKeyDown (Input::KeyCode::ENTER))
+			input.SetMouseControlStatus (!input.GetMouseControlStatus ());
 
 		// if (input.IsJoystickConnected (0))
 		// {
@@ -188,10 +191,6 @@ void Engine::HandleInputs ()
 		// 		scene.GetCamera ()->ProcessKeyboard (Camera_Movement::DOWN, deltaTime);
 		// }
 
-		if (input.GetKeyDown (Input::KeyCode::ESCAPE)) window.SetWindowToClose ();
-		if (input.GetKeyDown (Input::KeyCode::ENTER))
-			input.SetMouseControlStatus (!input.GetMouseControlStatus ());
-
 		// if (input.GetKey (Input::KeyCode::E))
 		// 	scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::UP, deltaTime);
 		// if (input.GetKey (Input::KeyCode::Q))
@@ -199,17 +198,17 @@ void Engine::HandleInputs ()
 
 		// if (input.GetKeyDown (Input::KeyCode::N)) scene.drawNormals = !scene.drawNormals;
 
-		if (input.GetKeyDown (Input::KeyCode::X))
-		{
-			vulkan_renderer.ToggleWireframe ();
-			Log.Debug ("Wireframe toggle");
-		}
+		// if (input.GetKeyDown (Input::KeyCode::X))
+		// {
+		// 	vulkan_renderer.ToggleWireframe ();
+		// 	Log.Debug ("Wireframe toggle");
+		// }
 
-		if (input.GetKeyDown (Input::KeyCode::F))
-		{
-			// scene.walkOnGround = !scene.walkOnGround;
-			Log.Debug ("flight mode toggled");
-		}
+		// if (input.GetKeyDown (Input::KeyCode::F))
+		// {
+		// 	scene.walkOnGround = !scene.walkOnGround;
+		// 	Log.Debug ("flight mode toggled");
+		// }
 	}
 	else
 	{

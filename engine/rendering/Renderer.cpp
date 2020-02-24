@@ -70,7 +70,7 @@ VulkanRenderer::VulkanRenderer (
 : settings ("render_settings.json"),
   task_manager (task_manager),
   back_end (validationLayer, task_manager, window, resource_man),
-  lighting_manager (back_end.device),
+  lighting_manager (back_end.device, back_end.descriptor_manager, back_end.texture_manager),
   camera_manager (back_end.device),
   mesh_manager (back_end)
 
@@ -143,9 +143,6 @@ void VulkanRenderer::RecreateSwapChain ()
 	frameGraph->CreatePresentResources ();
 	ImGui_ImplVulkan_SetMinImageCount (back_end.vulkanSwapChain.GetChainCount ());
 }
-
-
-void VulkanRenderer::ToggleWireframe () { wireframe = !wireframe; }
 
 void VulkanRenderer::ContrustFrameGraph ()
 {
@@ -240,7 +237,7 @@ void VulkanRenderer::ImGuiSetup ()
 	ImGui_ImplVulkan_DestroyFontUploadObjects ();
 }
 
-void VulkanRenderer ::ImGuiShutdown ()
+void VulkanRenderer::ImGuiShutdown ()
 {
 	vkDestroyDescriptorPool (back_end.device.device, imgui_pool, nullptr);
 
@@ -248,7 +245,7 @@ void VulkanRenderer ::ImGuiShutdown ()
 	ImGui_ImplVulkan_Shutdown ();
 }
 
-void VulkanRenderer ::ImGuiNewFrame ()
+void VulkanRenderer::ImGuiNewFrame ()
 {
 	ImGui_ImplGlfw_NewFrame ();
 	ImGui_ImplVulkan_NewFrame ();

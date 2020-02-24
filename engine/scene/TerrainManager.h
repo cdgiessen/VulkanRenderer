@@ -11,7 +11,7 @@
 //#include "util/SimpleTimer.h"
 //
 //#include "core/JobSystem.h"
-//#include "core/TimeManager.h"
+//#include "core/Time.h"
 //
 //#include "util/ConcurrentQueue.h"
 //
@@ -25,7 +25,7 @@
 //#include "Terrain.h"
 //
 //
-//struct GeneralSettings
+// struct GeneralSettings
 //{
 //	bool show_terrain_manager_window = true;
 //	float width = 1000;
@@ -37,7 +37,7 @@
 //	int numCells = 64; // compile time currently
 //};
 //
-//struct TerrainCreationData
+// struct TerrainCreationData
 //{
 //	int numCells;
 //	int maxLevels;
@@ -49,7 +49,7 @@
 //	    int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord);
 //};
 //
-//class TerrainManager
+// class TerrainManager
 //{
 //	public:
 //	TerrainManager (job::TaskManager& task_manager,

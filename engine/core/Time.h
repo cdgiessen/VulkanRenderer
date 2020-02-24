@@ -5,10 +5,10 @@
 using PreciseClockPoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using BriefTimingHistory = std::array<double, 50>;
 
-class TimeManager
+class Time
 {
 	public:
-	TimeManager (); // Starts application timing
+	Time (); // Starts application timing
 
 	void CollectRuntimeData (); // Ends application timing
 
