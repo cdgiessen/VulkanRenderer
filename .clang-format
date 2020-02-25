@@ -1,10 +1,10 @@
 BasedOnStyle: LLVM
-
 AccessModifierOffset: 0
 AlignEscapedNewlinesLeft: false
 AlignTrailingComments: true
 AlignAfterOpenBracket: DontAlign
 AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: false
@@ -36,6 +36,7 @@ PenaltyBreakString: 100
 PenaltyExcessCharacter: 1
 PenaltyReturnTypeOnItsOwnLine: 20
 PointerBindsToType: true
+SortIncludes: false
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeParens: Always
 SpaceInEmptyParentheses: false

@@ -1,5 +1,6 @@
 target_sources(VulkanEngine PUBLIC
 
+${CMAKE_CURRENT_SOURCE_DIR}/gltf.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/Material.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/Resource.cpp

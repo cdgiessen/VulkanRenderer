@@ -12,6 +12,7 @@
 #include "Shader.h"
 #include "Sound.h"
 #include "Texture.h"
+#include "gltf.h"
 
 namespace job
 {
