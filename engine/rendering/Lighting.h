@@ -51,11 +51,11 @@ class LightingManager
 	void Advance ();
 
 	private:
-	int cur_index = 0;
-	std::array<DescriptorSet, 2> lighting_descriptors;
-
 	VulkanDevice& device;
 	DoubleBuffer directional_gpu_data;
 	DoubleBuffer point_gpu_data;
 	DoubleBuffer spot_gpu_data;
+
+	int cur_index = 0;
+	std::array<DescriptorSet, 2> lighting_descriptors;
 };

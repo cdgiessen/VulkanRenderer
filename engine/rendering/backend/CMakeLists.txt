@@ -1,4 +1,4 @@
-target_sources(VulkanEngine PUBLIC
+target_sources(VulkanEngine PRIVATE
 
 ${CMAKE_CURRENT_SOURCE_DIR}/AsyncTask.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/Buffer.cpp
