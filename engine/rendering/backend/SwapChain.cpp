@@ -27,7 +27,7 @@ void VulkanSwapChain::RecreateSwapChain ()
 
 void VulkanSwapChain::CreateSwapChain ()
 {
-	details = querySwapChainSupport (device.physical_device.physical_device, device.GetSurface ());
+	details = querySwapChainSupport (device.phys_device.physical_device, device.GetSurface ());
 
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat ();
 	VkPresentModeKHR presentMode = chooseSwapPresentMode ();
@@ -54,16 +54,18 @@ void VulkanSwapChain::CreateSwapChain ()
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 	VkFormatProperties formatProps;
-	vkGetPhysicalDeviceFormatProperties (device.physical_device.physical_device, swapChainImageFormat, &formatProps);
+	vkGetPhysicalDeviceFormatProperties (device.phys_device.physical_device, swapChainImageFormat, &formatProps);
 	if (formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)
 	{
 		createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	}
 
-	QueueFamilyIndices indices = device.GetFamilyIndices ();
-	uint32_t queueFamilyIndices[] = { (uint32_t)indices.graphicsFamily, (uint32_t)indices.presentFamily };
+	int32_t g_index = device.GraphicsQueue ().GetQueueFamily ();
+	int32_t p_index = device.PresentQueue ().GetQueueFamily ();
 
-	if (indices.graphicsFamily != indices.presentFamily)
+	uint32_t queueFamilyIndices[] = { (uint32_t)g_index, (uint32_t)p_index };
+
+	if (g_index != p_index)
 	{
 		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 		createInfo.queueFamilyIndexCount = 2;

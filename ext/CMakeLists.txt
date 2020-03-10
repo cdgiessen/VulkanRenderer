@@ -9,6 +9,8 @@ find_path(FASTNOISESIMD_PATH_FOUND "FastNoiseSIMD" "")
 find_path(STB_PATH_FOUND "stb/stb" "")
 find_path(VMA_PATH_FOUND "vma" "")
 find_path(GLFW_PATH_FOUND "glfw" "")
+find_path(VK_BOOTSTRAP_PATH_FOUND "vk-bootstrap" "")
+
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_MultipleHeaders ON CACHE INTERNAL "")
@@ -154,5 +156,14 @@ if(NOT GLFW_PATH_FOUND)
 endif(NOT GLFW_PATH_FOUND)
 
 add_subdirectory(glfw)
+
+if(NOT VK_BOOTSTRAP_PATH_FOUND)
+	message("Updating vk-bootstrap")
+	execute_process(COMMAND git submodule update --init --recursive vk-bootstrap
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif(NOT VK_BOOTSTRAP_PATH_FOUND)
+
+add_subdirectory(vk-bootstrap)
+
 
 

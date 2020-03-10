@@ -217,8 +217,8 @@ void VulkanRenderer::ImGuiSetup ()
 	VK_CHECK_RESULT (vkCreateDescriptorPool (back_end.device.device, &pool_info, nullptr, &imgui_pool));
 
 	ImGui_ImplVulkan_InitInfo info{};
-	info.Instance = back_end.device.instance.instance;
-	info.PhysicalDevice = back_end.device.physical_device.physical_device;
+	info.Instance = back_end.device.vkb_instance.instance;
+	info.PhysicalDevice = back_end.device.phys_device.physical_device;
 	info.Device = back_end.device.device;
 	info.QueueFamily = back_end.device.GraphicsQueue ().GetQueueFamily ();
 	info.Queue = back_end.device.GraphicsQueue ().GetQueue ();

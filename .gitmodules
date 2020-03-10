@@ -32,3 +32,6 @@
 	path = ext/glfw
 	url = https://github.com/glfw/glfw
 
+[submodule "ext/vk-bootstrap"]
+	path = ext/vk-bootstrap
+	url = https://github.com/charles-lunarg/vk-bootstrap.git

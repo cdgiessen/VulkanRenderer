@@ -25,16 +25,19 @@ LightingManager::LightingManager (
   spot_gpu_data (device, uniform_array_details (MaxDirectionalLightCount, sizeof (SpotLight))),
   lighting_descriptors (SetupDescriptors (descriptor_manager))
 {
-	for (int i = 0; i < lighting_descriptors.size (); i++)
-	{
-		std::vector<DescriptorUse> writes_0 = { { 0,
-			                                        MaxDirectionalLightCount,
-			                                        directional_gpu_data.GetDescriptorType (),
-			                                        { directional_gpu_data.GetDescriptorInfo (i) } },
-			{ 0, MaxPointLightCount, point_gpu_data.GetDescriptorType (), { point_gpu_data.GetDescriptorInfo (i) } },
-			{ 0, MaxSpotLightCount, spot_gpu_data.GetDescriptorType (), { spot_gpu_data.GetDescriptorInfo (i) } } };
-		lighting_descriptors[i].Update (device.device, writes_0);
-	}
+	// for (int i = 0; i < lighting_descriptors.size (); i++)
+	// {
+	// 	auto dir_buf = { directional_gpu_data.GetDescriptorInfo (i) };
+	// 	auto point_buf = { point_gpu_data.GetDescriptorInfo (i) };
+	// 	auto spot_buf = { spot_gpu_data.GetDescriptorInfo (i) };
+
+	// 	std::vector<DescriptorUse> writes_0 = {
+	// 		{ 0, MaxDirectionalLightCount, directional_gpu_data.GetDescriptorType (), dir_buf },
+	// 		{ 0, MaxPointLightCount, point_gpu_data.GetDescriptorType (), point_buf },
+	// 		{ 0, MaxSpotLightCount, spot_gpu_data.GetDescriptorType (), spot_buf }
+	// 	};
+	// 	lighting_descriptors[i].Update (device.device, writes_0);
+	// }
 }
 
 

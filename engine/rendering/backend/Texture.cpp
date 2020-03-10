@@ -243,7 +243,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
     uint32_t layers,
     uint32_t mipLevels)
 {
-	if (device.singleQueueDevice)
+	if (device.has_dedicated_transfer ())
 	{
 		std::function<void (const VkCommandBuffer)> work = [=] (const VkCommandBuffer cmdBuf) {
 			SetLayoutAndTransferRegions (cmdBuf, image, buffer->Get (), subresourceRange, bufferCopyRegions);
@@ -596,7 +596,7 @@ VkSampler VulkanTexture::CreateImageSampler (VkFilter mag,
 	samplerCreateInfo.maxLod = (useMipMaps) ? mipLevels : 0.0f; // Max level-of-detail should match mip level count
 	samplerCreateInfo.anisotropyEnable = anisotropy; // Enable anisotropic filtering
 	samplerCreateInfo.maxAnisotropy =
-	    (anisotropy) ? data.device->physical_device.physical_device_properties.limits.maxSamplerAnisotropy : 1;
+	    (anisotropy) ? data.device->phys_device.properties.limits.maxSamplerAnisotropy : 1;
 	samplerCreateInfo.borderColor = borderColor;
 
 	VkSampler sampler;

@@ -19,8 +19,7 @@ VulkanBuffer::VulkanBuffer (VulkanDevice& device, BufCreateDetails details)
 
 	if (details.dynamicAlignment == true)
 	{
-		size_t minUboAlignment =
-		    device.physical_device.physical_device_properties.limits.minUniformBufferOffsetAlignment;
+		size_t minUboAlignment = device.phys_device.properties.limits.minUniformBufferOffsetAlignment;
 		data.alignment = data.m_size;
 		if (minUboAlignment > 0)
 		{
@@ -158,15 +157,11 @@ VkDescriptorType VulkanBuffer::GetDescriptorType ()
 	VkDescriptorType descriptor_type;
 	switch (data.type)
 	{
-		case (BufferType::uniform):
-			descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			break;
+		case (BufferType::uniform): descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; break;
 		case (BufferType::uniform_dynamic):
 			descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 			break;
-		case (BufferType::storage):
-			descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-			break;
+		case (BufferType::storage): descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; break;
 		case (BufferType::storage_dynamic):
 			descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
 			break;
@@ -174,9 +169,7 @@ VkDescriptorType VulkanBuffer::GetDescriptorType ()
 		case (BufferType::index):
 		case (BufferType::instance):
 		case (BufferType::staging):
-		default:
-			descriptor_type = VkDescriptorType::VK_DESCRIPTOR_TYPE_MAX_ENUM;
-			break;
+		default: descriptor_type = VkDescriptorType::VK_DESCRIPTOR_TYPE_MAX_ENUM; break;
 	}
 	return descriptor_type;
 }
