@@ -12,7 +12,10 @@
 VertexLayout::VertexLayout (Resource::Mesh::VertexDescription const& vertDesc)
 {
 	// VkVertexInputBindingDescription
-	int size = std::accumulate (std::begin (vertDesc.layout), std::end (vertDesc.layout), 0) * 4;
+	std::vector<int> descriptions;
+	for (auto& d : vertDesc.layout)
+		descriptions.push_back (static_cast<int> (d));
+	int size = std::accumulate (std::begin (descriptions), std::end (descriptions), 0) * 4;
 
 	bindingDesc.push_back (initializers::vertexInputBindingDescription (0, size, VK_VERTEX_INPUT_RATE_VERTEX));
 
@@ -21,12 +24,15 @@ VertexLayout::VertexLayout (Resource::Mesh::VertexDescription const& vertDesc)
 	for (size_t i = 0; i < vertDesc.layout.size (); i++)
 	{
 		VkFormat vertSize = VK_FORMAT_R32_SFLOAT;
-		if (vertDesc.layout[i] == 2) vertSize = VK_FORMAT_R32G32_SFLOAT;
-		if (vertDesc.layout[i] == 3) vertSize = VK_FORMAT_R32G32B32_SFLOAT;
-		if (vertDesc.layout[i] == 4) vertSize = VK_FORMAT_R32G32B32A32_SFLOAT;
+		if (vertDesc.layout[i] == Resource::Mesh::VertexType::Vert2)
+			vertSize = VK_FORMAT_R32G32_SFLOAT;
+		if (vertDesc.layout[i] == Resource::Mesh::VertexType::Vert3)
+			vertSize = VK_FORMAT_R32G32B32_SFLOAT;
+		if (vertDesc.layout[i] == Resource::Mesh::VertexType::Vert4)
+			vertSize = VK_FORMAT_R32G32B32A32_SFLOAT;
 
 		attribDesc.push_back (initializers::vertexInputAttributeDescription (0, 0, vertSize, offset));
-		offset += vertDesc.layout[i] * sizeof (float);
+		offset += static_cast<int> (vertDesc.layout[i]) * sizeof (float);
 	}
 }
 

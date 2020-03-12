@@ -17,7 +17,10 @@ static VertexDescription Vert_PosNormUvCol =
 
 int VertexDescription::ElementCount () const
 {
-	return std::accumulate (std::begin (layout), std::end (layout), 0);
+	std::vector<int> descriptions;
+	for (auto& d : layout)
+		descriptions.push_back (static_cast<int> (d));
+	return std::accumulate (std::begin (descriptions), std::end (descriptions), 0);
 }
 
 void AddPlane (std::vector<float>& vertices,
