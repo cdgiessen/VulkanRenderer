@@ -7,6 +7,13 @@
 
 namespace Resource::Mesh
 {
+static VertexDescription Vert_Pos = VertexDescription ({ VertexType::Vert3 });
+static VertexDescription Vert_PosNorm = VertexDescription ({ VertexType::Vert3, VertexType::Vert3 });
+static VertexDescription Vert_PosNormUv =
+    VertexDescription ({ VertexType::Vert3, VertexType::Vert3, VertexType::Vert2 });
+static VertexDescription Vert_PosNormUvCol =
+    VertexDescription ({ VertexType::Vert3, VertexType::Vert3, VertexType::Vert2, VertexType::Vert4 });
+
 
 int VertexDescription::ElementCount () const
 {

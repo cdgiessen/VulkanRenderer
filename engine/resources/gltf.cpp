@@ -335,6 +335,18 @@ void from_json (json const& j, PBRMetallicRoughness& p)
 	get_optional (j, "roughnessFactor", p.roughnessFactor);
 	get_optional (j, "metallicRoughnessTexture", p.metallicRoughnessTexture);
 }
+void from_json (json const& j, KHR_materials_pbrSpecularGlossiness& p)
+{
+	get_optional (j, "diffuseFactor", p.diffuseFactor);
+	get_optional (j, "diffuseTexture", p.diffuseTexture);
+	get_optional (j, "specularFactor", p.specularFactor);
+	get_optional (j, "glossinessFactor", p.glossinessFactor);
+	get_optional (j, "specularGlossinessTexture", p.specularGlossinessTexture);
+}
+void from_json (json const& j, MaterialExtensions& p)
+{
+	get_optional (j, "KHR_materials_pbrSpecularGlossiness", p.pbrSpecularGlossiness);
+}
 void from_json (json const& j, Material& p)
 {
 	get_optional (j, "name", p.name);
@@ -346,6 +358,7 @@ void from_json (json const& j, Material& p)
 	get_optional (j, "alphaMode", p.alphaMode);
 	get_optional (j, "alphaCutoff", p.alphaCutoff);
 	get_optional (j, "doubleSided", p.doubleSided);
+	get_optional (j, "extensions", p.extensions);
 }
 void from_json (json const& j, Orthographic& p)
 {
@@ -405,7 +418,7 @@ void from_json (json const& j, Asset& p)
 	j.at ("version").get_to (p.version);
 	get_optional (j, "minVersion", p.minVersion);
 }
-void from_json (json const& j, GLTF& p)
+void from_json (json const& j, RawGLTF& p)
 {
 	j.at ("asset").get_to (p.asset);
 	get_optional (j, "scene", p.display_scene);
@@ -427,7 +440,7 @@ void from_json (json const& j, GLTF& p)
 }
 
 
-void load_gltf (std::string name)
+std::optional<RawGLTF> parse_gltf_file (std::string name)
 {
 
 	std::ifstream i (name);
@@ -435,12 +448,13 @@ void load_gltf (std::string name)
 	try
 	{
 		i >> j;
-		GLTF jkl = j;
-		int a = 0;
+		RawGLTF jkl = j;
+		return j;
 	}
 	catch (json::exception& e)
 	{
 		Log.Debug (fmt::format ("Couldn't open gltf: {}", e.what ()));
+		return {};
 	}
 }
 

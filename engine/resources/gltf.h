@@ -5,6 +5,10 @@
 #include <variant>
 #include <vector>
 
+#include "Material.h"
+#include "Texture.h"
+#include "Mesh.h"
+
 #include <cml/cml.h>
 
 namespace gltf
@@ -265,6 +269,23 @@ struct PBRMetallicRoughness
 	std::optional<TextureReference> metallicRoughnessTexture = std::nullopt;
 };
 
+struct KHR_materials_pbrSpecularGlossiness
+{
+	cml::vec4f diffuseFactor = cml::vec4f::one;
+	std::optional<TextureReference> diffuseTexture = std::nullopt;
+	cml::vec3f specularFactor = cml::vec3f::one;
+	float glossinessFactor = 1;
+	std::optional<TextureReference> specularGlossinessTexture = std::nullopt;
+};
+struct KHR_materials_unlit
+{ // intentionally empty
+};
+struct MaterialExtensions
+{
+	std::optional<KHR_materials_pbrSpecularGlossiness> pbrSpecularGlossiness;
+	std::optional<KHR_materials_unlit> unlit;
+};
+
 struct Material
 {
 	std::string name;
@@ -276,6 +297,7 @@ struct Material
 	AlphaMode alphaMode = AlphaMode::OPAQUE;
 	float alphaCutoff = 0.5f;
 	bool doubleSided = false;
+	std::optional<MaterialExtensions> extensions;
 };
 
 struct Orthographic
@@ -334,7 +356,7 @@ struct Asset
 	std::string minVersion;
 };
 
-struct GLTF
+struct RawGLTF
 {
 	Asset asset;
 	int32_t display_scene = -1; //-1 means display nothing
@@ -355,6 +377,8 @@ struct GLTF
 	std::vector<Texture> textures;
 };
 
-void load_gltf (std::string name);
+
+
+std::optional<RawGLTF> parse_gltf_file (std::string name);
 
 } // namespace gltf

@@ -13,14 +13,13 @@ class TaskManager;
 namespace Resource::Mesh
 {
 
-enum VertexType
+enum class VertexType
 {
 	Vert1 = 1,
 	Vert2 = 2,
 	Vert3 = 3,
 	Vert4 = 4,
 };
-
 
 class VertexDescription
 {
@@ -30,11 +29,6 @@ class VertexDescription
 
 	std::vector<VertexType> layout; // each element in the array is a different attribute, its value (1-4) is it's size
 };
-
-static VertexDescription Vert_Pos = VertexDescription ({ Vert3 });
-static VertexDescription Vert_PosNorm = VertexDescription ({ Vert3, Vert3 });
-static VertexDescription Vert_PosNormUv = VertexDescription ({ Vert3, Vert3, Vert2 });
-static VertexDescription Vert_PosNormUvCol = VertexDescription ({ Vert3, Vert3, Vert2, Vert4 });
 
 struct MeshData
 {
