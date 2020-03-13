@@ -11,9 +11,10 @@ find_path(VMA_PATH_FOUND "vma" "")
 find_path(GLFW_PATH_FOUND "glfw" "")
 find_path(VK_BOOTSTRAP_PATH_FOUND "vk-bootstrap" "")
 
-
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-set(JSON_MultipleHeaders ON CACHE INTERNAL "")
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(JSON_Install OFF CACHE BOOL "" FORCE)
+set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+set(JSON_MultipleHeaders ON CACHE BOOL "" FORCE)
 
 if(NOT JSON_PATH_FOUND)
 	message("Updating nlohmann-json")
@@ -59,7 +60,6 @@ set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
 set(SPIRV_CROSS_ENABLE_MSL OFF CACHE BOOL "" FORCE)
 set(SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE)
 set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
-
 
 if(NOT SPIRV_CROSS_PATH_FOUND)
 	message("Updating SPIRV-Cross")
