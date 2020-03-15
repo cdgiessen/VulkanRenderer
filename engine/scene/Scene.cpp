@@ -2,23 +2,40 @@
 
 #include "core/JobSystem.h"
 #include "core/Time.h"
-
+#include "core/Input.h"
 #include "resources/Resource.h"
-
 #include "rendering/Renderer.h"
 
 #include "cml/cml.h"
 
-#include "core/Input.h"
 #include "core/Logger.h"
 
-Scene::Scene (
-    job::TaskManager& task_manager, Time& time_manager, Resource::ResourceManager& resource_manager, VulkanRenderer& renderer)
-: task_manager (task_manager), time_manager (time_manager), resource_manager (resource_manager), renderer (renderer)
+Scene::Scene (job::TaskManager& task_manager,
+    Time& time_manager,
+    Input::InputDirector const& input,
+    Resource::ResourceManager& resource_manager,
+    VulkanRenderer& renderer)
+: task_manager (task_manager),
+  time_manager (time_manager),
+  input (input),
+  resource_manager (resource_manager),
+  renderer (renderer),
+  player (input, cml::vec3f::zero, 0.f, 0.f)
 {
+	main_camera =
+	    renderer.camera_manager.Create (CameraType::perspective, cml::vec3f::zero, cml::quatf::identity);
 }
 
-void Scene::Update () {}
+void Scene::Update ()
+{
+	double deltaTime = time_manager.DeltaTime ();
+
+	player.Update (deltaTime);
+	auto cam = renderer.camera_manager.GetCameraData (main_camera);
+	cam.SetPosition (player.Position ());
+	cam.SetRotation (player.Rotation ());
+	renderer.camera_manager.SetCameraData (main_camera, cam);
+}
 
 // Scene::Scene (job::TaskManager& task_manager,
 //    Resource::ResourceManager& resourceMan,

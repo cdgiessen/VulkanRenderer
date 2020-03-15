@@ -48,7 +48,7 @@ void Editor::DrawImgui ()
 	{
 
 		if (panels.debug_overlay) DebugOverlay (&panels.debug_overlay);
-		if (panels.camera_controls) CameraWindow (&panels.camera_controls);
+		if (panels.show_player_controller) PlayerController (&panels.show_player_controller);
 		if (panels.controls_list) ControlsWindow (&panels.controls_list);
 
 		imgui_nodeGraph_terrain.Draw ();
@@ -84,16 +84,22 @@ void Editor::DebugOverlay (bool* show_debug_overlay)
 	ImGui::End ();
 }
 
-void Editor::CameraWindow (bool* show_camera_window)
+void Editor::PlayerController (bool* show_player_controller)
 {
 	ImGui::SetNextWindowPos (ImVec2 (0, 100), ImGuiCond_Once);
 
-	if (!ImGui::Begin ("Camera Window", show_camera_window))
+	if (!ImGui::Begin ("Player Controller", show_player_controller))
 	{
 		ImGui::End ();
 		return;
 	};
-	ImGui::Text ("Camera");
+	auto pos = engine.scene.player.Position ();
+	auto rot = engine.scene.player.Rotation ();
+	auto rot_imag = rot.getImag ();
+	ImGui::Text ("x:%f y:%f z:%f", pos.x, pos.y, pos.z);
+	ImGui::Text ("w:%f x:%f y:%f z:%f", rot.getReal (), rot_imag.x, rot_imag.y, rot_imag.z);
+
+	// ImGui::Text ("Camera");
 	// auto sPos = "Pos " + std::to_string (scene.GetCamera ()->Position.x);
 	// auto sDir = "Dir " + std::to_string (scene.GetCamera ()->Front.x);
 	// auto sSpeed = "Speed " + std::to_string (scene.GetCamera ()->MovementSpeed);

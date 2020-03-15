@@ -1,41 +1,28 @@
 #pragma once
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "cml/cml.h"
 
-enum CameraType
+namespace Input
 {
-	orthographic,
-	perspective
-};
+class InputDirector;
+}
 
-enum class Camera_Movement
+class PlayerController
 {
-	FORWARD,
-	BACKWARD,
-	LEFT,
-	RIGHT,
-	UP,
-	DOWN
-};
+	Input::InputDirector const& input;
 
-class Camera
-{
-	public:
 	// Camera Attributes
-	cml::vec3f Position;
-	cml::vec3f Front;
-	cml::vec3f Up, Down;
-	cml::vec3f Right;
-	cml::vec3f WorldUp;
+	cml::vec3f position;
+	cml::vec3f front;
+	cml::vec3f up;
+	cml::vec3f right;
+	cml::vec3f world_up = cml::vec3f::up;
 
-	bool is_upside_down = false;
 	bool constrainPitch = true;
 
 	// Euler Angles
-	float Pitch = 0.0f;
-	float Yaw = -90.0f;
+	float pitch = 0.0f;
+	float yaw = -90.0f;
 
 	// Camera options
 	float MovementSpeed = 20.0f;
@@ -46,18 +33,29 @@ class Camera
 	float joystickMoveAccel = 1.0f;
 	float joystickLookAccel = 60.0f;
 
+	public:
 	// Constructor with vectors
-	Camera (cml::vec3f position, cml::vec3f up, float pitch, float yaw);
+	PlayerController (Input::InputDirector const& input, cml::vec3f position, float pitch, float yaw);
 
-	// Returns the view matrix calculated using Euler Angles and the LookAt Matrix
-	cml::mat4f GetViewMatrix ();
+	void Update (double deltaTime);
+	cml::vec3f Position ();
+	cml::quatf Rotation ();
 
+	private:
+	enum class MovementAxis
+	{
+		FORWARD,
+		BACKWARD,
+		LEFT,
+		RIGHT,
+		UP,
+		DOWN
+	};
 	// Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-	void ProcessKeyboard (Camera_Movement direction, float deltaTime);
+	void ProcessKeyboard (MovementAxis direction, float deltaTime);
 
 	void ProcessJoystickMove (float x, float y, float zL, float zR, float deltaTime);
 	void ProcessJoystickLook (float x, float y, float deltaTime);
-
 
 	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
 	void ProcessMouseMovement (float xoffset, float yoffset, bool constrainPitch = true);
@@ -66,9 +64,8 @@ class Camera
 	void ProcessMouseScroll (float yoffset, float deltaTime);
 
 	// alter the speed of movement
-	void ChangeCameraSpeed (Camera_Movement direction, float deltaTime);
+	void ChangeCameraSpeed (MovementAxis direction, float deltaTime);
 
-	private:
 	// Calculates the front vector from the Camera's (updated) Euler Angles
 	void updateCameraVectors ();
 };

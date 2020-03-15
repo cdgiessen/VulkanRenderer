@@ -1,12 +1,18 @@
 #pragma once
 
-#include "rendering/Renderer.h"
+#include "rendering/ViewCamera.h"
+
+#include "PlayerController.h"
 
 namespace job
 {
 class TaskManager;
 }
 class Time;
+namespace Input
+{
+class InputDirector;
+}
 namespace Resource
 {
 class ResourceManager;
@@ -16,15 +22,25 @@ class VulkanRenderer;
 class Scene
 {
 	public:
-	Scene (job::TaskManager& task_manager, Time& time_manager, Resource::ResourceManager& resourceMan, VulkanRenderer& renderer);
+	Scene (job::TaskManager& task_manager,
+	    Time& time_manager,
+	    Input::InputDirector const& input,
+	    Resource::ResourceManager& resourceMan,
+	    VulkanRenderer& renderer);
 
 	void Update ();
 
 	private:
 	job::TaskManager& task_manager;
 	Time& time_manager;
+	Input::InputDirector const& input;
 	Resource::ResourceManager& resource_manager;
 	VulkanRenderer& renderer;
+
+	public:
+	PlayerController player;
+
+	ViewCameraID main_camera;
 };
 
 

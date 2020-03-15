@@ -84,7 +84,7 @@ Engine::Engine ()
   input (window),
   resource_manager (task_manager),
   vulkan_renderer (settings.useValidationLayers, task_manager, window, resource_manager),
-  scene (task_manager, time_manager, resource_manager, vulkan_renderer)
+  scene (task_manager, time_manager, input, resource_manager, vulkan_renderer)
 // imgui_nodeGraph_terrain ()
 {
 	input.SetMouseControlStatus (false);
@@ -159,42 +159,8 @@ void Engine::HandleInputs ()
 		if (input.GetKeyDown (Input::KeyCode::ENTER))
 			input.SetMouseControlStatus (!input.GetMouseControlStatus ());
 
-		// if (input.IsJoystickConnected (0))
-		// {
-		// 	scene.GetCamera ()->ProcessJoystickMove (input.GetControllerAxis (0, 1),
-		// 	    input.GetControllerAxis (0, 0),
-		// 	    (input.GetControllerAxis (0, 4) + 1) / 2.0,
-		// 	    (input.GetControllerAxis (0, 5) + 1) / 2.0,
-		// 	    deltaTime);
-		// 	scene.GetCamera ()->ProcessJoystickLook (
-		// 	    input.GetControllerAxis (0, 3), input.GetControllerAxis (0, 4), deltaTime);
 
-		// 	if (input.GetControllerButton (0, 2))
-		// 		scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::UP, deltaTime);
-		// 	if (input.GetControllerButton (0, 5))
-		// 		scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::DOWN, deltaTime);
-		// }
 
-		// if (input.GetKey (Input::KeyCode::W))
-		// 	scene.GetCamera ()->ProcessKeyboard (Camera_Movement::FORWARD, deltaTime);
-		// if (input.GetKey (Input::KeyCode::S))
-		// 	scene.GetCamera ()->ProcessKeyboard (Camera_Movement::BACKWARD, deltaTime);
-		// if (input.GetKey (Input::KeyCode::A))
-		// 	scene.GetCamera ()->ProcessKeyboard (Camera_Movement::LEFT, deltaTime);
-		// if (input.GetKey (Input::KeyCode::D))
-		// 	scene.GetCamera ()->ProcessKeyboard (Camera_Movement::RIGHT, deltaTime);
-		// if (!scene.walkOnGround)
-		// {
-		// 	if (input.GetKey (Input::KeyCode::SPACE))
-		// 		scene.GetCamera ()->ProcessKeyboard (Camera_Movement::UP, deltaTime);
-		// 	if (input.GetKey (Input::KeyCode::LEFT_SHIFT))
-		// 		scene.GetCamera ()->ProcessKeyboard (Camera_Movement::DOWN, deltaTime);
-		// }
-
-		// if (input.GetKey (Input::KeyCode::E))
-		// 	scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::UP, deltaTime);
-		// if (input.GetKey (Input::KeyCode::Q))
-		// 	scene.GetCamera ()->ChangeCameraSpeed (Camera_Movement::DOWN, deltaTime);
 
 		// if (input.GetKeyDown (Input::KeyCode::N)) scene.drawNormals = !scene.drawNormals;
 
@@ -214,13 +180,6 @@ void Engine::HandleInputs ()
 	{
 		if (input.GetKeyDown (Input::KeyCode::ESCAPE)) input.ResetTextInputMode ();
 	}
-
-	// if (input.GetMouseControlStatus ())
-	// {
-	// 	scene.GetCamera ()->ProcessMouseMovement (
-	// 	    input.GetMouseChangeInPosition ().x, input.GetMouseChangeInPosition ().y);
-	// 	scene.GetCamera ()->ProcessMouseScroll (input.GetMouseScrollY (), deltaTime);
-	// }
 
 	if (input.GetMouseButtonPressed (input.GetMouseButtonPressed (0)))
 	{

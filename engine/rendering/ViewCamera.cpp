@@ -2,7 +2,7 @@
 
 #include "rendering/backend/Device.h"
 
-const cml::vec3f WorldUp{ 0, 1, 0 };
+const cml::vec3f WorldUp = cml::vec3f::up;
 
 void ViewCameraData::Setup (CameraType type, cml::vec3f position, cml::quatf rotation)
 {
@@ -101,11 +101,10 @@ void ViewCameraData::SetClipFar (float far)
 }
 
 ViewCameraManager::ViewCameraManager (VulkanDevice& device)
-: device (device),
-  data_buffers (device, uniform_details (sizeof (CameraGPUData) * MaxCameraCount)){
-
-
-  };
+: device (device), data_buffers (device, uniform_details (sizeof (CameraGPUData) * MaxCameraCount))
+{
+	camera_data.resize (MaxCameraCount);
+};
 
 ViewCameraID ViewCameraManager::Create (CameraType type, cml::vec3f position, cml::quatf rotation)
 {
@@ -129,11 +128,20 @@ void ViewCameraManager::Delete (ViewCameraID id)
 }
 
 
-ViewCameraData& ViewCameraManager::GetCameraData (ViewCameraID id) { return camera_data.at (id); }
-
+ViewCameraData& ViewCameraManager::GetCameraData (ViewCameraID id)
+{
+	std::lock_guard lg (lock);
+	return camera_data.at (id);
+}
+void ViewCameraManager::SetCameraData (ViewCameraID id, ViewCameraData const& data)
+{
+	std::lock_guard lg (lock);
+	camera_data.at (id) = data;
+}
 
 void ViewCameraManager::UpdateGPUBuffer (int index)
 {
+	std::lock_guard lg (lock);
 	std::vector<CameraGPUData> data;
 	data.reserve (MaxCameraCount);
 	for (auto& cam : camera_data)

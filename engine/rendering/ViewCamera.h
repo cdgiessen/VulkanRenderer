@@ -85,6 +85,7 @@ class ViewCameraManager
 	void Delete (ViewCameraID id);
 
 	ViewCameraData& GetCameraData (ViewCameraID id);
+	void SetCameraData (ViewCameraID id, ViewCameraData const& data);
 
 	void UpdateGPUBuffer (int index);
 
