@@ -4,44 +4,41 @@
 #include "rendering/backend/Descriptor.h"
 #include "rendering/backend/Device.h"
 
-std::array<DescriptorSet, 2> SetupDescriptors (DescriptorManager& descriptor_manager)
-{
-	std::vector<DescriptorSetLayoutBinding> m_bindings = {
-		{ DescriptorType::uniform_buffer, ShaderStage::all_graphics, 0, MaxDirectionalLightCount },
-		{ DescriptorType::uniform_buffer, ShaderStage::all_graphics, 1, MaxPointLightCount },
-		{ DescriptorType::uniform_buffer, ShaderStage::all_graphics, 2, MaxSpotLightCount }
-	};
-	auto descriptor_layout = descriptor_manager.CreateDescriptorSetLayout (m_bindings);
-	auto ld_0 = descriptor_manager.CreateDescriptorSet (descriptor_layout);
-	auto ld_1 = descriptor_manager.CreateDescriptorSet (descriptor_layout);
-	return { ld_0, ld_1 };
-}
-
-LightingManager::LightingManager (
-    VulkanDevice& device, DescriptorManager& descriptor_manager, TextureManager& texture_manager)
+Lighting::Lighting (VulkanDevice& device, TextureManager& texture_manager)
 : device (device),
   directional_gpu_data (device, uniform_array_details (MaxDirectionalLightCount, sizeof (DirectionalLight))),
-  point_gpu_data (device, uniform_array_details (MaxDirectionalLightCount, sizeof (PointLight))),
-  spot_gpu_data (device, uniform_array_details (MaxDirectionalLightCount, sizeof (SpotLight))),
-  lighting_descriptors (SetupDescriptors (descriptor_manager))
+  point_gpu_data (device, uniform_array_details (MaxPointLightCount, sizeof (PointLight))),
+  spot_gpu_data (device, uniform_array_details (MaxSpotLightCount, sizeof (SpotLight))),
+  m_bindings ({ { DescriptorType::uniform_buffer, ShaderStage::all_graphics, 0, MaxDirectionalLightCount },
+      { DescriptorType::uniform_buffer, ShaderStage::all_graphics, 1, MaxPointLightCount },
+      { DescriptorType::uniform_buffer, ShaderStage::all_graphics, 2, MaxSpotLightCount } }),
+  layout (device.device, m_bindings),
+  pool (device.device, layout.Get (), m_bindings, 2),
+  lighting_descriptors ({ pool.Allocate (), pool.Allocate () })
 {
-	// for (int i = 0; i < lighting_descriptors.size (); i++)
-	// {
-	// 	auto dir_buf = { directional_gpu_data.GetDescriptorInfo (i) };
-	// 	auto point_buf = { point_gpu_data.GetDescriptorInfo (i) };
-	// 	auto spot_buf = { spot_gpu_data.GetDescriptorInfo (i) };
+	for (int i = 0; i < lighting_descriptors.size (); i++)
+	{
+		std::vector<VkDescriptorBufferInfo> dir_buf;
+		for (int j = 0; j < MaxDirectionalLightCount; j++)
+			dir_buf.push_back (directional_gpu_data.GetDescriptorInfo (i, j));
+		std::vector<VkDescriptorBufferInfo> point_buf;
+		for (int j = 0; j < MaxPointLightCount; j++)
+			point_buf.push_back (point_gpu_data.GetDescriptorInfo (i, j));
+		std::vector<VkDescriptorBufferInfo> spot_buf;
+		for (int j = 0; j < MaxSpotLightCount; j++)
+			spot_buf.push_back (spot_gpu_data.GetDescriptorInfo (i, j));
 
-	// 	std::vector<DescriptorUse> writes_0 = {
-	// 		{ 0, MaxDirectionalLightCount, directional_gpu_data.GetDescriptorType (), dir_buf },
-	// 		{ 0, MaxPointLightCount, point_gpu_data.GetDescriptorType (), point_buf },
-	// 		{ 0, MaxSpotLightCount, spot_gpu_data.GetDescriptorType (), spot_buf }
-	// 	};
-	// 	lighting_descriptors[i].Update (device.device, writes_0);
-	// }
+		std::vector<DescriptorUse> writes_0 = {
+			{ 0, MaxDirectionalLightCount, directional_gpu_data.GetDescriptorType (), dir_buf },
+			{ 0, MaxPointLightCount, point_gpu_data.GetDescriptorType (), point_buf },
+			{ 0, MaxSpotLightCount, spot_gpu_data.GetDescriptorType (), spot_buf }
+		};
+		lighting_descriptors[i].Update (device.device, writes_0);
+	}
 }
 
 
-void LightingManager::Update (std::vector<DirectionalLight> directional_lights,
+void Lighting::Update (std::vector<DirectionalLight> directional_lights,
     std::vector<PointLight> point_lights,
     std::vector<SpotLight> spot_lights)
 {
@@ -52,9 +49,9 @@ void LightingManager::Update (std::vector<DirectionalLight> directional_lights,
 	point_gpu_data.Advance ();
 	spot_gpu_data.Advance ();
 }
-void LightingManager::Bind (VkCommandBuffer buffer, VkPipelineLayout layout)
+void Lighting::Bind (VkCommandBuffer buffer)
 {
-	lighting_descriptors.at (cur_index).Bind (buffer, layout, 1);
+	lighting_descriptors.at (cur_index).Bind (buffer, lighting_layout, 1);
 }
 
-void LightingManager::Advance () { cur_index = (cur_index + 1) % 2; }
+void Lighting::Advance () { cur_index = (cur_index + 1) % 2; }

@@ -1,6 +1,6 @@
 #extension GL_GOOGLE_include_directive : enable
 
-#include "pbr_mat.glsl"
+#include "pbr_func.glsl"
 
 const int DirectionalLightCount = 5;
 const int PointLightCount = 10;

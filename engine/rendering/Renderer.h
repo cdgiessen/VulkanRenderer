@@ -17,9 +17,9 @@
 #include "backend/BackEnd.h"
 
 #include "FrameGraph.h"
-
-#include "Lighting.h"
 #include "ViewCamera.h"
+#include "FrameData.h"
+#include "Lighting.h"
 
 #include "rendering/renderers/MeshRenderer.h"
 #include "rendering/renderers/SkyboxRenderer.h"
@@ -39,10 +39,6 @@ class FrameGraph;
 class RenderSettings
 {
 	public:
-	int max_directional_lights = 5;
-	int max_point_lights = 16;
-	int max_spot_lights = 8;
-
 	bool memory_dump = false;
 
 	RenderSettings (std::filesystem::path fileName);
@@ -89,8 +85,8 @@ class VulkanRenderer
 
 	public:
 	ViewCameraManager camera_manager;
-	LightingManager lighting_manager;
-
+	FrameData frame_data;
+	Lighting lighting;
 	MeshManager mesh_manager;
 
 	private:
@@ -104,4 +100,7 @@ class VulkanRenderer
 	void ContrustFrameGraph ();
 
 	VkDescriptorPool imgui_pool;
+
+	// drawing functions
+	void MainDraw (VkCommandBuffer cmdBuf);
 };

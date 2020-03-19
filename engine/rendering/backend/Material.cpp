@@ -25,7 +25,4 @@ MatInstanceID MaterialManager::CreateMatInstance (
 
 //// MAT MANAGER ////
 
-MaterialManager ::MaterialManager (
-    Resource::Material::Manager& mat_man, VulkanDevice& device, DescriptorManager& descriptor_man)
-{
-}
+MaterialManager ::MaterialManager (Resource::Material::Manager& mat_man, VulkanDevice& device) {}

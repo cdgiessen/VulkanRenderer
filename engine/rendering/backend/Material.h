@@ -16,7 +16,7 @@ using MatInstanceID = uint32_t;
 class MatInstance
 {
 	public:
-	MatInstance (LayoutID layout_id);
+	MatInstance ();
 
 	MatInstanceID CreateInstance ();
 	void RemoveInstance (MatInstanceID id);
@@ -37,7 +37,7 @@ class MatInstance
 class MaterialManager
 {
 	public:
-	MaterialManager (Resource::Material::Manager& mat_man, VulkanDevice& device, DescriptorManager& descriptor_man);
+	MaterialManager (Resource::Material::Manager& mat_man, VulkanDevice& device);
 
 	MatOutlineID CreateMatOutline (Resource::Material::MaterialOutline const& outline);
 	MatInstanceID CreateMatInstance (MatOutlineID id, Resource::Material::MaterialInstance const& instance);

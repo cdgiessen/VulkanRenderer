@@ -27,6 +27,8 @@ class Skybox
 	public:
 	Skybox (ViewCameraManager& camera_manager,
 	    ModelManager& model_manager,
+	    DescriptorLayout& descriptor_layout,
+	    DescriptorPool& descriptor_pool,
 	    DescriptorSet descriptor_set,
 	    VulkanBuffer& uniform_buffer,
 	    ModelID skybox_cube_model,
@@ -40,7 +42,10 @@ class Skybox
 	ViewCameraManager& camera_manager;
 	ModelManager& model_manager;
 
+	DescriptorLayout descriptor_layout;
+	DescriptorPool descriptor_pool;
 	DescriptorSet descriptor_set;
+
 	VulkanBuffer uniform_buffer;
 
 	ModelID skybox_cube_model;

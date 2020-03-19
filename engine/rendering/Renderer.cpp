@@ -33,9 +33,6 @@ void RenderSettings::Load ()
 
 
 			memory_dump = j["memory_dump_on_exit"];
-			max_directional_lights = j["max_directional_lights"];
-			max_point_lights = j["max_point_lights"];
-			max_spot_lights = j["max_spot_lights"];
 		}
 		catch (std::runtime_error& e)
 		{
@@ -55,10 +52,6 @@ void RenderSettings::Save ()
 
 	j["memory_dump_on_exit"] = memory_dump;
 
-	j["max_directional_lights"] = max_directional_lights;
-	j["max_point_lights"] = max_point_lights;
-	j["max_spot_lights"] = max_spot_lights;
-
 	std::ofstream outFile (fileName);
 	outFile << std::setw (4) << j;
 	outFile.close ();
@@ -70,8 +63,9 @@ VulkanRenderer::VulkanRenderer (
 : settings ("render_settings.json"),
   task_manager (task_manager),
   back_end (validationLayer, task_manager, window, resource_man),
-  lighting_manager (back_end.device, back_end.descriptor_manager, back_end.texture_manager),
   camera_manager (back_end.device),
+  frame_data (back_end.device),
+  lighting (back_end.device, back_end.texture_manager),
   mesh_manager (back_end)
 
 {
@@ -163,29 +157,7 @@ void VulkanRenderer::ContrustFrameGraph ()
 	color_subpass.SetDepthStencil ("img_depth", SubpassDescription::DepthStencilAccess::read_write);
 	color_subpass.AddClearColor ("img_depth", { { 0.0f, 0 } });
 
-	color_subpass.SetFunction ([&] (VkCommandBuffer cmdBuf) {
-		/*
-		dynamic_data.BindFrameDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
-		dynamic_data.BindLightingDataDescriptorSet (dynamic_data.CurIndex (), cmdBuf);
-
-		    VkViewport viewport = initializers::viewport (
-		        (float)vulkanSwapChain.swapChainExtent.width, (float)vulkanSwapChain.swapChainExtent.height, 0.0f, 1.0f);
-		    vkCmdSetViewport (cmdBuf, 0, 1, &viewport);
-
-		    VkRect2D scissor = initializers::rect2D (
-		        vulkanSwapChain.swapChainExtent.width, vulkanSwapChain.swapChainExtent.height, 0, 0);
-		    vkCmdSetScissor (cmdBuf, 0, 1, &scissor);
-
-		    // scene->RenderOpaque (cmdBuf, wireframe);
-		    // scene->RenderTransparent (cmdBuf, wireframe);
-		    // scene->RenderSkybox (cmdBuf);
-		*/
-		auto draw_data = ImGui::GetDrawData ();
-		if (draw_data)
-		{
-			ImGui_ImplVulkan_RenderDrawData (draw_data, cmdBuf);
-		}
-	});
+	color_subpass.SetFunction ([&] (VkCommandBuffer cmdBuf) { MainDraw (cmdBuf); });
 	main_work.AddSubpass (color_subpass);
 
 	frame_graph_builder.AddRenderPass (main_work);
@@ -194,6 +166,26 @@ void VulkanRenderer::ContrustFrameGraph ()
 	frameGraph = std::make_unique<FrameGraph> (back_end.device, back_end.vulkanSwapChain, frame_graph_builder);
 }
 
+void VulkanRenderer::MainDraw (VkCommandBuffer cmdBuf)
+{
+
+	auto extent = back_end.vulkanSwapChain.GetImageExtent ();
+	VkViewport viewport = initializers::viewport (
+	    static_cast<float> (extent.width), static_cast<float> (extent.height), 0.0f, 1.0f);
+	vkCmdSetViewport (cmdBuf, 0, 1, &viewport);
+
+	VkRect2D scissor = initializers::rect2D (extent.width, extent.height, 0, 0);
+	vkCmdSetScissor (cmdBuf, 0, 1, &scissor);
+
+	frame_data.Bind (cmdBuf);
+	// lighting.Bind (cmdBuf);
+
+	auto draw_data = ImGui::GetDrawData ();
+	if (draw_data)
+	{
+		ImGui_ImplVulkan_RenderDrawData (draw_data, cmdBuf);
+	}
+};
 
 void VulkanRenderer::ImGuiSetup ()
 {

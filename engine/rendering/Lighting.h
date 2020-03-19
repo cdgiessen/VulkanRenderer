@@ -7,6 +7,8 @@
 #include "rendering/backend/Descriptor.h"
 #include "rendering/backend/Texture.h"
 
+#include "rendering/FrameData.h"
+
 class VulkanDevice;
 
 struct DirectionalLight
@@ -38,16 +40,16 @@ const uint32_t MaxDirectionalLightCount = 4;
 const uint32_t MaxPointLightCount = 16;
 const uint32_t MaxSpotLightCount = 16;
 
-class LightingManager
+class Lighting
 {
 	public:
-	LightingManager (VulkanDevice& device, DescriptorManager& descriptor_manager, TextureManager& texture_manager);
+	Lighting (VulkanDevice& device, TextureManager& texture_manager);
 
 	void Update (std::vector<DirectionalLight> directional_lights,
 	    std::vector<PointLight> point_lights,
 	    std::vector<SpotLight> spot_lights);
 
-	void Bind (VkCommandBuffer buffer, VkPipelineLayout layout);
+	void Bind (VkCommandBuffer buffer);
 	void Advance ();
 
 	private:
@@ -57,5 +59,10 @@ class LightingManager
 	DoubleBuffer spot_gpu_data;
 
 	int cur_index = 0;
+	std::vector<DescriptorSetLayoutBinding> m_bindings;
+	DescriptorLayout layout;
+	DescriptorPool pool;
 	std::array<DescriptorSet, 2> lighting_descriptors;
+
+	VkPipelineLayout lighting_layout;
 };

@@ -7,7 +7,6 @@
 #include "FrameResources.h"
 #include "Model.h"
 #include "Pipeline.h"
-#include "RenderStructs.h"
 #include "Shader.h"
 #include "SwapChain.h"
 #include "Texture.h"
@@ -28,7 +27,6 @@ struct BackEnd
 	VulkanDevice device;
 	VulkanSwapChain vulkanSwapChain;
 	AsyncTaskManager async_task_manager;
-	DescriptorManager descriptor_manager;
 	ShaderManager shader_manager;
 	PipelineManager pipeline_manager;
 	ModelManager model_manager;

@@ -12,6 +12,8 @@ struct SkyboxUniformBuffer
 
 Skybox::Skybox (ViewCameraManager& camera_manager,
     ModelManager& model_manager,
+    DescriptorLayout& descriptor_layout,
+    DescriptorPool& descriptor_pool,
     DescriptorSet descriptor_set,
     VulkanBuffer& uniform_buffer,
     ModelID skybox_cube_model,
@@ -19,6 +21,8 @@ Skybox::Skybox (ViewCameraManager& camera_manager,
     GraphicsPipeline& pipe)
 : camera_manager (camera_manager),
   model_manager (model_manager),
+  descriptor_layout (std::move (descriptor_layout)),
+  descriptor_pool (std::move (descriptor_pool)),
   descriptor_set (descriptor_set),
   uniform_buffer (std::move (uniform_buffer)),
   skybox_cube_model (skybox_cube_model),
@@ -58,7 +62,11 @@ std::optional<Skybox> CreateSkybox (BackEnd& back_end,
 		{ DescriptorType::uniform_buffer, ShaderStage::vertex, 0, 1 },
 		{ DescriptorType::combined_image_sampler, ShaderStage::fragment, 1, 1 }
 	};
-	auto descriptor_layout = back_end.descriptor_manager.CreateDescriptorSetLayout (m_bindings);
+
+	auto descriptor_layout = DescriptorLayout (back_end.device.device, m_bindings);
+	auto descriptor_pool = DescriptorPool (back_end.device.device, descriptor_layout.Get (), m_bindings, 2);
+	auto descriptor_set = descriptor_pool.Allocate ();
+
 	auto skybox_cube_model = back_end.model_manager.CreateModel (Resource::Mesh::CreateCube ());
 
 	auto uniform_buffer = VulkanBuffer (back_end.device, uniform_details (sizeof (SkyboxUniformBuffer)));
@@ -66,7 +74,6 @@ std::optional<Skybox> CreateSkybox (BackEnd& back_end,
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 3);
 	auto vulkan_cube_map = back_end.texture_manager.CreateCubeMap (cube_map, details);
 
-	auto descriptor_set = back_end.descriptor_manager.CreateDescriptorSet (descriptor_layout);
 
 	std::vector<DescriptorUse> writes = {
 		{ 0, 1, uniform_buffer.GetDescriptorType (), { uniform_buffer.GetDescriptorInfo () } },
@@ -108,7 +115,7 @@ std::optional<Skybox> CreateSkybox (BackEnd& back_end,
 	    VK_BLEND_FACTOR_ZERO);
 
 	// outline.AddDescriptorLayouts (double_buffer_man.GetGlobalLayouts ());
-	outline.AddDescriptorLayout (back_end.descriptor_manager.GetLayout (descriptor_layout));
+	outline.AddDescriptorLayout (descriptor_layout.Get ());
 
 	outline.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
@@ -121,6 +128,8 @@ std::optional<Skybox> CreateSkybox (BackEnd& back_end,
 
 	return Skybox{ camera_manager,
 		back_end.model_manager,
+		descriptor_layout,
+		descriptor_pool,
 		descriptor_set,
 		uniform_buffer,
 		skybox_cube_model,

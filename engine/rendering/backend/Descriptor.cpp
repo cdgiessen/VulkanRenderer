@@ -8,6 +8,39 @@ bool operator== (DescriptorSetLayoutBinding const& a, DescriptorSetLayoutBinding
 	return a.type == b.type && a.stages == b.stages && a.bind_point == b.bind_point && a.count == b.count;
 }
 
+//// DESCRIPTOR LAYOUT ////
+
+DescriptorLayout::DescriptorLayout (VkDevice device, std::vector<DescriptorSetLayoutBinding> const& layout_bindings)
+{
+	std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
+	for (auto& b : layout_bindings)
+	{
+		vk_bindings.push_back (initializers::descriptorSetLayoutBinding (
+		    static_cast<VkDescriptorType> (b.type), static_cast<VkShaderStageFlags> (b.stages), b.bind_point, b.count));
+	}
+	VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo (vk_bindings);
+	if (vkCreateDescriptorSetLayout (device, &layoutInfo, nullptr, &layout) != VK_SUCCESS)
+	{
+		throw std::runtime_error ("failed to create descriptor set layout!");
+	}
+}
+DescriptorLayout::~DescriptorLayout () { vkDestroyDescriptorSetLayout (device, layout, nullptr); }
+
+DescriptorLayout::DescriptorLayout (DescriptorLayout&& other) noexcept
+: device (other.device), layout (other.layout)
+{
+	other.layout = VK_NULL_HANDLE;
+}
+DescriptorLayout& DescriptorLayout::operator= (DescriptorLayout&& other) noexcept
+{
+	device = other.device;
+	layout = other.layout;
+	other.layout = VK_NULL_HANDLE;
+	return *this;
+}
+
+VkDescriptorSetLayout DescriptorLayout::Get () const { return layout; }
+
 
 //// DESCRIPTOR RESOURCE ////
 
@@ -32,19 +65,19 @@ DescriptorResource::DescriptorResource (DescriptorType type, VkBufferView texel_
 
 DescriptorUse::DescriptorUse (
     uint32_t bindPoint, uint32_t count, VkDescriptorType type, std::vector<VkDescriptorBufferInfo> buffer_infos)
-: bindPoint (bindPoint), count (count), type (type), buffer_infos (buffer_infos)
+: bindPoint (bindPoint), count (count), type (type), info_type (InfoType::buffer), buffer_infos (buffer_infos)
 {
 }
 
 DescriptorUse::DescriptorUse (
     uint32_t bindPoint, uint32_t count, VkDescriptorType type, std::vector<VkDescriptorImageInfo> image_infos)
-: bindPoint (bindPoint), count (count), type (type), image_infos (image_infos)
+: bindPoint (bindPoint), count (count), type (type), info_type (InfoType::image), image_infos (image_infos)
 {
 }
 
 DescriptorUse::DescriptorUse (
     uint32_t bindPoint, uint32_t count, VkDescriptorType type, std::vector<VkBufferView> texel_buffer_views)
-: bindPoint (bindPoint), count (count), type (type), texel_buffer_views (texel_buffer_views)
+: bindPoint (bindPoint), count (count), type (type), info_type (InfoType::texel_view), texel_buffer_views (texel_buffer_views)
 {
 }
 
@@ -67,8 +100,7 @@ VkWriteDescriptorSet DescriptorUse::GetWriteDescriptorSet (VkDescriptorSet set)
 
 //// DESCRIPTOR SET ////
 
-DescriptorSet::DescriptorSet (VkDescriptorSet set, LayoutID layout_id, PoolID pool_id)
-: set (set), layout_id (layout_id), pool_id (pool_id)
+DescriptorSet::DescriptorSet (VkDescriptorSet set, uint16_t pool_id) : set (set), pool_id (pool_id)
 {
 }
 
@@ -93,18 +125,21 @@ void DescriptorSet::Bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout, uint3
 
 //// DESCRIPTOR POOL ////
 
-DescriptorPool::DescriptorPool (
-    VkDevice device, DescriptorLayout const& layout, VkDescriptorSetLayout vk_layout, LayoutID layout_id, uint16_t max_sets)
-: device (device), vk_layout (vk_layout), layout_id (layout_id), max_sets (max_sets)
+DescriptorPool::DescriptorPool (VkDevice device,
+    VkDescriptorSetLayout layout,
+    std::vector<DescriptorSetLayoutBinding> const& layout_bindings,
+    uint16_t max_sets)
+: device (device), layout (layout), max_sets (max_sets)
 {
 	std::unordered_map<DescriptorType, uint32_t> layout_type_count;
-	for (auto& binding : layout)
+	for (auto& binding : layout_bindings)
 	{
 		layout_type_count[binding.type] += binding.count;
 	}
 	for (auto& [type, count] : layout_type_count)
 	{
-		pool_members.push_back (initializers::descriptorPoolSize (static_cast<VkDescriptorType> (type), count));
+		pool_members.push_back (
+		    initializers::descriptorPoolSize (static_cast<VkDescriptorType> (type), count * max_sets));
 	}
 
 	AddNewPool ();
@@ -119,8 +154,7 @@ DescriptorPool::~DescriptorPool ()
 
 DescriptorPool::DescriptorPool (DescriptorPool&& other) noexcept
 : device (other.device),
-  vk_layout (other.vk_layout),
-  layout_id (other.layout_id),
+  layout (other.layout),
   max_sets (other.max_sets),
   pool_members (other.pool_members),
   pools (other.pools)
@@ -130,8 +164,7 @@ DescriptorPool::DescriptorPool (DescriptorPool&& other) noexcept
 DescriptorPool& DescriptorPool::operator= (DescriptorPool&& other) noexcept
 {
 	device = other.device;
-	vk_layout = other.vk_layout;
-	layout_id = other.layout_id;
+	layout = other.layout;
 	max_sets = other.max_sets;
 	pool_members = other.pool_members;
 	pools = other.pools;
@@ -141,7 +174,6 @@ DescriptorPool& DescriptorPool::operator= (DescriptorPool&& other) noexcept
 
 DescriptorSet DescriptorPool::Allocate ()
 {
-	std::lock_guard lg (lock);
 	for (int i = 0; i < pools.size (); i++)
 	{
 		if (pools.at (i).allocated < pools.at (i).max)
@@ -163,7 +195,6 @@ DescriptorSet DescriptorPool::Allocate ()
 
 void DescriptorPool::Free (DescriptorSet const& set)
 {
-	std::lock_guard lg (lock);
 	if (pools.size () > set.GetPoolID ()) // make sure PoolID is valid
 	{
 		vkFreeDescriptorSets (device, pools.at (set.GetPoolID ()).pool, 1, &set.GetSet ());
@@ -190,18 +221,18 @@ uint32_t DescriptorPool::AddNewPool ()
 DescriptorPool::OptDescSet DescriptorPool::TryAllocate (Pool& pool)
 {
 	VkDescriptorSet set;
-	std::vector<VkDescriptorSetLayout> layouts = { vk_layout };
+	std::vector<VkDescriptorSetLayout> layouts = { layout };
 	VkDescriptorSetAllocateInfo allocInfo = initializers::descriptorSetAllocateInfo (pool.pool, layouts);
 
 	VkResult res = vkAllocateDescriptorSets (device, &allocInfo, &set);
 	if (res == VK_SUCCESS)
 	{
 		pool.allocated++;
-		return { true, DescriptorSet (set, layout_id, pool.id) };
+		return { true, DescriptorSet (set, pool.id) };
 	}
 	else if (res == VK_ERROR_FRAGMENTED_POOL || res == VK_ERROR_OUT_OF_POOL_MEMORY)
 	{
-		return { false, DescriptorSet (nullptr, 0, 0) }; // need make a new pool
+		return { false, DescriptorSet (nullptr, 0) }; // need make a new pool
 	}
 
 	else if (res == VK_ERROR_OUT_OF_HOST_MEMORY)
@@ -210,67 +241,4 @@ DescriptorPool::OptDescSet DescriptorPool::TryAllocate (Pool& pool)
 		throw std::runtime_error ("failed to allocate descriptor set! OUT_OF_DEVICE_MEMORY");
 
 	throw std::runtime_error ("failed to allocate descriptor set! OUT_OF_DEVICE_MEMORY");
-}
-
-//// DESCRIPTOR MANAGER ////
-
-DescriptorManager::DescriptorManager (VulkanDevice& device) : device (device) {}
-DescriptorManager::~DescriptorManager ()
-{
-	for (auto& [id, layout] : layouts)
-	{
-		vkDestroyDescriptorSetLayout (device.device, layout, nullptr);
-	}
-}
-LayoutID DescriptorManager::CreateDescriptorSetLayout (DescriptorLayout layout_desc)
-{
-	std::lock_guard lg (lock);
-	if (layout_descriptions.count (layout_desc) == 0)
-	{
-		LayoutID new_id = cur_id++;
-		std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
-		for (auto& b : layout_desc)
-		{
-			vk_bindings.push_back (initializers::descriptorSetLayoutBinding (
-			    static_cast<VkDescriptorType> (b.type), static_cast<VkShaderStageFlags> (b.stages), b.bind_point, b.count));
-		}
-		VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo (vk_bindings);
-		VkDescriptorSetLayout layout;
-		if (vkCreateDescriptorSetLayout (device.device, &layoutInfo, nullptr, &layout) != VK_SUCCESS)
-		{
-			throw std::runtime_error ("failed to create descriptor set layout!");
-		}
-
-		layout_descriptions[layout_desc] = new_id;
-		layouts[new_id] = layout;
-		pools.emplace (new_id, DescriptorPool{ device.device, layout_desc, layout, new_id, 10 });
-		return new_id;
-	}
-	else
-		return layout_descriptions.at (layout_desc);
-}
-
-void DescriptorManager::DestroyDescriptorSetLayout (LayoutID id)
-{
-	std::lock_guard lg (lock);
-	vkDestroyDescriptorSetLayout (device.device, layouts.at (id), nullptr);
-	layouts.erase (id);
-	pools.erase (id);
-}
-
-VkDescriptorSetLayout DescriptorManager::GetLayout (LayoutID id)
-{
-	std::lock_guard lg (lock);
-	return layouts.at (id);
-}
-
-DescriptorSet DescriptorManager::CreateDescriptorSet (LayoutID id)
-{
-	std::lock_guard lg (lock);
-	return pools.at (id).Allocate ();
-}
-void DescriptorManager::DestroyDescriptorSet (DescriptorSet const& set)
-{
-	std::lock_guard lg (lock);
-	pools.at (set.GetLayoutID ()).Free (set);
 }

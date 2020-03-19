@@ -1,12 +1,8 @@
 #pragma once
 
-#include <mutex>
-#include <unordered_map>
 #include <vector>
 
 #include <vulkan/vulkan.h>
-
-class VulkanDevice;
 
 enum class DescriptorType
 {
@@ -45,41 +41,25 @@ struct DescriptorSetLayoutBinding
 
 bool operator== (DescriptorSetLayoutBinding const& a, DescriptorSetLayoutBinding const& b);
 
-namespace std
+class DescriptorLayout
 {
-template <> struct hash<DescriptorSetLayoutBinding>
-{
-	std::size_t operator() (DescriptorSetLayoutBinding const& s) const noexcept
-	{
-		std::size_t h1 = std::hash<uint32_t>{}(static_cast<uint32_t> (s.type));
-		std::size_t h2 = std::hash<uint32_t>{}(static_cast<uint32_t> (s.stages));
-		std::size_t h3 = std::hash<uint32_t>{}(static_cast<uint32_t> (s.bind_point));
-		std::size_t h4 = std::hash<uint32_t>{}(static_cast<uint32_t> (s.count));
-		return h1 ^ (h2 << 8) ^ (h3 << 16) ^ (h4 << 24);
-	}
+	public:
+	DescriptorLayout (VkDevice device, std::vector<DescriptorSetLayoutBinding> const& layout_bindings);
+	~DescriptorLayout ();
+	DescriptorLayout (DescriptorLayout const& other) = delete;
+	DescriptorLayout& operator= (DescriptorLayout const& other) = delete;
+	DescriptorLayout (DescriptorLayout&& other) noexcept;
+	DescriptorLayout& operator= (DescriptorLayout&& other) noexcept;
+
+	VkDescriptorSetLayout Get () const;
+
+	private:
+	VkDevice device = VK_NULL_HANDLE;
+	VkDescriptorSetLayout layout = VK_NULL_HANDLE;
 };
-} // namespace std
 
-using DescriptorLayout = std::vector<DescriptorSetLayoutBinding>;
-
-VkDescriptorSetLayout CreateVkDescriptorSetLayout (VkDevice device, DescriptorLayout layout_desc);
-
-namespace std
-{
-template <> struct hash<DescriptorLayout>
-{
-	std::size_t operator() (DescriptorLayout const& s) const noexcept
-	{
-		int i = 0;
-		std::size_t out = 0;
-		for (auto& binding : s)
-		{
-			out ^= (std::hash<DescriptorSetLayoutBinding>{}(binding) << i++);
-		}
-		return out;
-	}
-};
-} // namespace std
+VkDescriptorSetLayout CreateVkDescriptorSetLayout (
+    VkDevice device, std::vector<DescriptorSetLayoutBinding> layout_bindings);
 
 class DescriptorResource
 {
@@ -122,33 +102,32 @@ class DescriptorUse
 	std::vector<VkDescriptorImageInfo> image_infos;
 	std::vector<VkBufferView> texel_buffer_views;
 };
-using LayoutID = uint16_t; // also indexes for the pool
-using PoolID = uint16_t;   // which vkPool to index in the pool
+
 class DescriptorSet
 {
 	public:
-	DescriptorSet (VkDescriptorSet set, LayoutID layout_id, PoolID pool_id);
+	DescriptorSet (VkDescriptorSet set, uint16_t pool_id);
 
 	void Update (VkDevice device, std::vector<DescriptorUse> descriptors) const;
 
 	void Bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout, uint32_t location) const;
 
 	VkDescriptorSet const& GetSet () const { return set; }
-	LayoutID GetLayoutID () const { return layout_id; }
-	PoolID GetPoolID () const { return pool_id; }
+	uint16_t GetPoolID () const { return pool_id; }
 
 	private:
 	VkDescriptorSet set; // non owning
-	LayoutID layout_id;
-	PoolID pool_id;
+	uint16_t pool_id;
 };
 
 
 class DescriptorPool
 {
 	public:
-	DescriptorPool (
-	    VkDevice device, DescriptorLayout const& layout, VkDescriptorSetLayout vk_layout, LayoutID layout_id, uint16_t max_sets);
+	DescriptorPool (VkDevice device,
+	    VkDescriptorSetLayout layout,
+	    std::vector<DescriptorSetLayoutBinding> const& layout_bindings,
+	    uint16_t max_sets);
 	~DescriptorPool ();
 	DescriptorPool (DescriptorPool const& other) = delete;
 	DescriptorPool& operator= (DescriptorPool const& other) = delete;
@@ -164,51 +143,20 @@ class DescriptorPool
 		VkDescriptorPool pool;
 		uint16_t allocated = 0;
 		uint16_t max = 10;
-		PoolID id;
+		uint16_t id;
 	};
 	struct OptDescSet
 	{
 		bool is_valid = false;
-		DescriptorSet set = { VK_NULL_HANDLE, 0, 0 };
+		DescriptorSet set = { VK_NULL_HANDLE, 0 };
 	};
 
 	OptDescSet TryAllocate (Pool& pool);
 	uint32_t AddNewPool ();
 
-	std::mutex lock;
 	VkDevice device;
-	VkDescriptorSetLayout vk_layout;
-	LayoutID layout_id;
+	VkDescriptorSetLayout layout;
 	uint16_t max_sets;
 	std::vector<VkDescriptorPoolSize> pool_members;
 	std::vector<Pool> pools;
-};
-
-class DescriptorManager
-{
-
-	public:
-	DescriptorManager (VulkanDevice& device);
-	~DescriptorManager ();
-	DescriptorManager (DescriptorManager const& dm) = delete;
-	DescriptorManager operator= (DescriptorManager const& dm) = delete;
-	DescriptorManager (DescriptorManager&& dm) = delete;
-	DescriptorManager operator= (DescriptorManager&& dm) = delete;
-
-
-	LayoutID CreateDescriptorSetLayout (DescriptorLayout layout);
-	void DestroyDescriptorSetLayout (LayoutID id);
-
-	VkDescriptorSetLayout GetLayout (LayoutID id);
-
-	DescriptorSet CreateDescriptorSet (LayoutID layout);
-	void DestroyDescriptorSet (DescriptorSet const& set);
-
-	private:
-	std::mutex lock;
-	VulkanDevice& device;
-	LayoutID cur_id = 0;
-	std::unordered_map<DescriptorLayout, LayoutID> layout_descriptions;
-	std::unordered_map<LayoutID, VkDescriptorSetLayout> layouts;
-	std::unordered_map<LayoutID, DescriptorPool> pools;
 };
