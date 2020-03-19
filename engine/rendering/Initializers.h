@@ -358,7 +358,7 @@ inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo (
 }
 
 inline VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo (
-    std::vector<VkDescriptorSetLayout>& layouts, std::vector<VkPushConstantRange>& ranges)
+    std::vector<VkDescriptorSetLayout> const& layouts, std::vector<VkPushConstantRange> const& ranges)
 {
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -452,13 +452,14 @@ inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo (
 }
 
 inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo (
-    std::vector<VkVertexInputBindingDescription>& bindings, std::vector<VkVertexInputAttributeDescription>& attribs)
+    std::vector<VkVertexInputBindingDescription> const& bindings,
+    std::vector<VkVertexInputAttributeDescription> const& attribs)
 {
-	int index = 0;
-	for (auto& attrib : attribs)
-	{
-		attrib.location = index++;
-	}
+	// int index = 0;
+	// for (auto& attrib : attribs)
+	// {
+	// 	attrib.location = index++;
+	// }
 
 	VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};
 	pipelineVertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -509,7 +510,7 @@ inline VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState (
 }
 
 inline VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo (
-    std::vector<VkPipelineColorBlendAttachmentState>& attachments)
+    std::vector<VkPipelineColorBlendAttachmentState> const& attachments)
 {
 	VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo{};
 	pipelineColorBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -531,8 +532,8 @@ inline VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo
 	return pipelineDepthStencilStateCreateInfo;
 }
 
-inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo (std::vector<VkViewport>& viewports,
-    std::vector<VkRect2D>& scissors,
+inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo (std::vector<VkViewport> const& viewports,
+    std::vector<VkRect2D> const& scissors,
     VkPipelineViewportStateCreateFlags flags = 0)
 {
 	VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo{};
@@ -575,7 +576,7 @@ inline VkPipelineTessellationStateCreateInfo pipelineTessellationStateCreateInfo
 	return pipelineTessellationStateCreateInfo;
 }
 
-inline VkGraphicsPipelineCreateInfo pipelineCreateInfo (
+inline VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo (
     VkPipelineLayout layout, VkRenderPass renderPass, uint32_t subpass, VkPipelineCreateFlags flags = 0)
 {
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo{};

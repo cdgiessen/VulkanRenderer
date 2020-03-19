@@ -11,6 +11,7 @@ bool operator== (DescriptorSetLayoutBinding const& a, DescriptorSetLayoutBinding
 //// DESCRIPTOR LAYOUT ////
 
 DescriptorLayout::DescriptorLayout (VkDevice device, std::vector<DescriptorSetLayoutBinding> const& layout_bindings)
+: device (device)
 {
 	std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
 	for (auto& b : layout_bindings)

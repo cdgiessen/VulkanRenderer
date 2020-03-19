@@ -5,134 +5,10 @@
 
 #include "resources/Mesh.h"
 
-#include "AsyncTask.h"
 #include "Model.h"
 #include "rendering/Initializers.h"
 
-void PipelineOutline::SetShaderModuleSet (ShaderModuleSet set) { this->set = set; }
-void PipelineOutline::UseModelVertexLayout (VertexLayout const& layout)
-{
-	for (auto& desc : layout.bindingDesc)
-		vertexInputBindingDescription.push_back (desc);
-	for (auto& desc : layout.attribDesc)
-		vertexInputAttributeDescriptions.push_back (desc);
-}
-
-void PipelineOutline::AddVertexLayout (VkVertexInputBindingDescription bind, VkVertexInputAttributeDescription attrib)
-{
-	vertexInputBindingDescription.push_back (bind);
-	vertexInputAttributeDescriptions.push_back (attrib);
-}
-
-void PipelineOutline::AddVertexLayouts (std::vector<VkVertexInputBindingDescription> binds,
-    std::vector<VkVertexInputAttributeDescription> attribs)
-{
-	vertexInputBindingDescription.insert (
-	    std::end (vertexInputBindingDescription), std::begin (binds), std::end (binds));
-	vertexInputAttributeDescriptions.insert (
-	    std::end (vertexInputAttributeDescriptions), std::begin (attribs), std::end (attribs));
-}
-
-void PipelineOutline::SetInputAssembly (VkPrimitiveTopology topology, VkBool32 primitiveRestart)
-{
-	inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo (topology, primitiveRestart);
-}
-
-void PipelineOutline::AddDescriptorLayouts (std::vector<VkDescriptorSetLayout> layouts)
-{
-	this->layouts.insert (std::end (this->layouts), std::begin (layouts), std::end (layouts));
-}
-void PipelineOutline::AddDescriptorLayout (VkDescriptorSetLayout layout)
-{
-	layouts.push_back (layout);
-}
-
-void PipelineOutline::AddViewport (VkViewport viewport) { viewports.push_back (viewport); }
-
-void PipelineOutline::AddViewport (float width, float height, float minDepth, float maxDepth, float x, float y)
-{
-	auto viewport = initializers::viewport (width, height, minDepth, maxDepth);
-	viewport.x = x;
-	viewport.y = y;
-	viewports.push_back (viewport);
-}
-
-void PipelineOutline::AddScissor (VkRect2D scissor) { scissors.push_back (scissor); }
-void PipelineOutline::AddScissor (uint32_t width, uint32_t height, uint32_t offsetX, uint32_t offsetY)
-{
-	scissors.push_back (initializers::rect2D (width, height, offsetX, offsetY));
-}
-
-
-void PipelineOutline::SetRasterizer (VkPolygonMode polygonMode,
-    VkCullModeFlagBits cullModeFlagBits,
-    VkFrontFace frontFace,
-    VkBool32 depthClampEnable,
-    VkBool32 rasterizerDiscardEnable,
-    float lineWidth,
-    VkBool32 depthBiasEnable)
-{
-	rasterizer = initializers::pipelineRasterizationStateCreateInfo (polygonMode, cullModeFlagBits, frontFace);
-	rasterizer.depthClampEnable = depthClampEnable;
-	rasterizer.rasterizerDiscardEnable = rasterizerDiscardEnable;
-	rasterizer.lineWidth = lineWidth;
-	rasterizer.depthBiasEnable = depthBiasEnable;
-}
-
-// No Multisampling support right now
-void PipelineOutline::SetMultisampling (VkSampleCountFlagBits sampleCountFlags)
-{
-	multisampling = initializers::pipelineMultisampleStateCreateInfo (sampleCountFlags);
-	multisampling.sampleShadingEnable = VK_FALSE;
-}
-
-void PipelineOutline::SetDepthStencil (VkBool32 depthTestEnable,
-    VkBool32 depthWriteEnable,
-    VkCompareOp depthCompareOp,
-    VkBool32 depthBoundsTestEnable,
-    VkBool32 stencilTestEnable)
-{
-	depthStencil = initializers::pipelineDepthStencilStateCreateInfo (
-	    depthTestEnable, depthWriteEnable, depthCompareOp);
-	depthStencil.depthBoundsTestEnable = depthBoundsTestEnable;
-	depthStencil.stencilTestEnable = stencilTestEnable;
-}
-
-void PipelineOutline::AddColorBlendingAttachment (VkBool32 blendEnable,
-    VkColorComponentFlags colorWriteMask,
-    VkBlendOp colorBlendOp,
-    VkBlendFactor srcColorBlendFactor,
-    VkBlendFactor dstColorBlendFactor,
-    VkBlendOp alphaBlendOp,
-    VkBlendFactor srcAlphaBlendFactor,
-    VkBlendFactor dstAlphaBlendFactor)
-{
-	auto colorBlendAttachment = initializers::pipelineColorBlendAttachmentState (colorWriteMask, blendEnable);
-	colorBlendAttachment.colorBlendOp = colorBlendOp;
-	colorBlendAttachment.srcColorBlendFactor = srcColorBlendFactor;
-	colorBlendAttachment.dstColorBlendFactor = dstColorBlendFactor;
-	colorBlendAttachment.alphaBlendOp = alphaBlendOp;
-	colorBlendAttachment.srcAlphaBlendFactor = srcAlphaBlendFactor;
-	colorBlendAttachment.dstAlphaBlendFactor = dstAlphaBlendFactor;
-	colorBlendAttachments.push_back (colorBlendAttachment);
-}
-
-void PipelineOutline::AddColorBlendingAttachment (VkPipelineColorBlendAttachmentState attachment)
-{
-	colorBlendAttachments.push_back (attachment);
-}
-
-void PipelineOutline::AddDynamicStates (std::vector<VkDynamicState> states)
-{
-	dynamicStates.insert (std::end (dynamicStates), std::begin (states), std::end (states));
-}
-void PipelineOutline::AddDynamicState (VkDynamicState state) { dynamicStates.push_back (state); }
-
-
-void PipelineOutline::AddPushConstantRange (VkPushConstantRange pushConstantRange)
-{
-	pushConstantRanges.push_back (pushConstantRange);
-}
+//// PipelineLayout ////
 
 PipelineLayout::PipelineLayout (VkDevice device, VkPipelineLayout layout)
 : device (device), layout (layout)
@@ -157,6 +33,19 @@ PipelineLayout& PipelineLayout::operator= (PipelineLayout&& other) noexcept
 	other.layout = nullptr;
 	return *this;
 }
+
+std::optional<PipelineLayout> CreatePipelineLayout (VkDevice device,
+    std::vector<VkDescriptorSetLayout> desc_set_layouts,
+    std::vector<VkPushConstantRange> push_constant_ranges)
+{
+	auto layoutInfo = initializers::pipelineLayoutCreateInfo (desc_set_layouts, push_constant_ranges);
+	VkPipelineLayout layout;
+	VkResult res = vkCreatePipelineLayout (device, &layoutInfo, nullptr, &layout);
+	if (res != VK_SUCCESS) return {};
+	return PipelineLayout{ device, layout };
+}
+
+//// Graphics Pipeline ////
 
 GraphicsPipeline::GraphicsPipeline (VkDevice device, VkPipeline pipeline)
 : device (device), pipeline (pipeline)
@@ -183,9 +72,259 @@ void GraphicsPipeline::Bind (VkCommandBuffer cmdBuf)
 	vkCmdBindPipeline (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 }
 
+//// Pipeline Builder ////
 
-PipelineManager::PipelineManager (VkDevice device, AsyncTaskManager& async_man)
-: device (device), async_man (async_man)
+PipelineBuilder::PipelineBuilder (VkDevice device, VkPipelineCache cache)
+: device (device), cache (cache)
+{
+}
+
+std::optional<PipelineLayout> PipelineBuilder::CreateLayout () const
+{
+	auto layoutInfo = initializers::pipelineLayoutCreateInfo (layouts, pushConstantRanges);
+	VkPipelineLayout layout;
+	VkResult res = vkCreatePipelineLayout (device, &layoutInfo, nullptr, &layout);
+	if (res != VK_SUCCESS) return {};
+	return PipelineLayout{ device, layout };
+}
+
+std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline (
+    PipelineLayout const& layout, VkRenderPass render_pass, uint32_t subpass) const
+{
+	auto info = initializers::graphicsPipelineCreateInfo (layout.get (), render_pass, subpass, 0);
+	info.basePipelineHandle = VK_NULL_HANDLE;
+
+	auto shaderStages = set.ShaderStageCreateInfos ();
+	info.stageCount = (uint32_t)shaderStages.size ();
+	info.pStages = shaderStages.data ();
+
+	info.pInputAssemblyState = &inputAssembly;
+
+	auto vertexInput = initializers::pipelineVertexInputStateCreateInfo (
+	    vertexInputBindingDescription, vertexInputAttributeDescriptions);
+
+	info.pVertexInputState = &vertexInput;
+
+	auto viewportInfo = initializers::pipelineViewportStateCreateInfo (viewports, scissors, 0);
+	info.pViewportState = &viewportInfo;
+
+	info.pRasterizationState = &rasterizer;
+	info.pMultisampleState = &multisampling;
+	info.pDepthStencilState = &depthStencil;
+
+	auto colorBlending = initializers::pipelineColorBlendStateCreateInfo (colorBlendAttachments);
+	colorBlending.logicOpEnable = VK_FALSE;
+	colorBlending.logicOp = VK_LOGIC_OP_COPY;
+	colorBlending.blendConstants[0] = 0.0f;
+	colorBlending.blendConstants[1] = 0.0f;
+	colorBlending.blendConstants[2] = 0.0f;
+	colorBlending.blendConstants[3] = 0.0f;
+
+	info.pColorBlendState = &colorBlending;
+
+	VkPipelineDynamicStateCreateInfo dynamicInfo =
+	    initializers::pipelineDynamicStateCreateInfo (dynamicStates, 0);
+	info.pDynamicState = &dynamicInfo;
+
+	VkPipeline pipe;
+	VkResult res = vkCreateGraphicsPipelines (device, cache, 1, &info, nullptr, &pipe);
+	if (res != VK_SUCCESS)
+	{
+		return {};
+	}
+	return GraphicsPipeline{ device, pipe };
+}
+
+PipelineBuilder& PipelineBuilder::SetShaderModuleSet (ShaderModuleSet set)
+{
+	this->set = set;
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::UseModelVertexLayout (VertexLayout const& layout)
+{
+	for (auto& desc : layout.bindingDesc)
+		vertexInputBindingDescription.push_back (desc);
+	for (auto& desc : layout.attribDesc)
+		vertexInputAttributeDescriptions.push_back (desc);
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::AddVertexLayout (
+    VkVertexInputBindingDescription bind, VkVertexInputAttributeDescription attrib)
+{
+	vertexInputBindingDescription.push_back (bind);
+	vertexInputAttributeDescriptions.push_back (attrib);
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::AddVertexLayouts (std::vector<VkVertexInputBindingDescription> binds,
+    std::vector<VkVertexInputAttributeDescription> attribs)
+{
+	vertexInputBindingDescription.insert (
+	    std::end (vertexInputBindingDescription), std::begin (binds), std::end (binds));
+	vertexInputAttributeDescriptions.insert (
+	    std::end (vertexInputAttributeDescriptions), std::begin (attribs), std::end (attribs));
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::SetInputAssembly (VkPrimitiveTopology topology, VkBool32 primitiveRestart)
+{
+	inputAssembly = initializers::pipelineInputAssemblyStateCreateInfo (topology, primitiveRestart);
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::AddDescriptorLayouts (std::vector<VkDescriptorSetLayout> layouts)
+{
+	this->layouts.insert (std::end (this->layouts), std::begin (layouts), std::end (layouts));
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::AddDescriptorLayout (VkDescriptorSetLayout layout)
+{
+	layouts.push_back (layout);
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::AddViewport (VkViewport viewport)
+{
+	viewports.push_back (viewport);
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::AddViewport (
+    float width, float height, float minDepth, float maxDepth, float x, float y)
+{
+	auto viewport = initializers::viewport (width, height, minDepth, maxDepth);
+	viewport.x = x;
+	viewport.y = y;
+	viewports.push_back (viewport);
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::AddScissor (VkRect2D scissor)
+{
+	scissors.push_back (scissor);
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::AddScissor (uint32_t width, uint32_t height, uint32_t offsetX, uint32_t offsetY)
+{
+	scissors.push_back (initializers::rect2D (width, height, offsetX, offsetY));
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::SetRasterizer (VkPolygonMode polygonMode,
+    VkCullModeFlagBits cullModeFlagBits,
+    VkFrontFace frontFace,
+    VkBool32 depthClampEnable,
+    VkBool32 rasterizerDiscardEnable,
+    float lineWidth,
+    VkBool32 depthBiasEnable)
+{
+	rasterizer = initializers::pipelineRasterizationStateCreateInfo (polygonMode, cullModeFlagBits, frontFace);
+	rasterizer.depthClampEnable = depthClampEnable;
+	rasterizer.rasterizerDiscardEnable = rasterizerDiscardEnable;
+	rasterizer.lineWidth = lineWidth;
+	rasterizer.depthBiasEnable = depthBiasEnable;
+	return *this;
+}
+// No Multisampling support right now
+PipelineBuilder& PipelineBuilder::SetMultisampling (VkSampleCountFlagBits sampleCountFlags)
+{
+	multisampling = initializers::pipelineMultisampleStateCreateInfo (sampleCountFlags);
+	multisampling.sampleShadingEnable = VK_FALSE;
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::SetDepthStencil (VkBool32 depthTestEnable,
+    VkBool32 depthWriteEnable,
+    VkCompareOp depthCompareOp,
+    VkBool32 depthBoundsTestEnable,
+    VkBool32 stencilTestEnable)
+{
+	depthStencil = initializers::pipelineDepthStencilStateCreateInfo (
+	    depthTestEnable, depthWriteEnable, depthCompareOp);
+	depthStencil.depthBoundsTestEnable = depthBoundsTestEnable;
+	depthStencil.stencilTestEnable = stencilTestEnable;
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::AddColorBlendingAttachment (VkBool32 blendEnable,
+    VkColorComponentFlags colorWriteMask,
+    VkBlendOp colorBlendOp,
+    VkBlendFactor srcColorBlendFactor,
+    VkBlendFactor dstColorBlendFactor,
+    VkBlendOp alphaBlendOp,
+    VkBlendFactor srcAlphaBlendFactor,
+    VkBlendFactor dstAlphaBlendFactor)
+{
+	auto colorBlendAttachment = initializers::pipelineColorBlendAttachmentState (colorWriteMask, blendEnable);
+	colorBlendAttachment.colorBlendOp = colorBlendOp;
+	colorBlendAttachment.srcColorBlendFactor = srcColorBlendFactor;
+	colorBlendAttachment.dstColorBlendFactor = dstColorBlendFactor;
+	colorBlendAttachment.alphaBlendOp = alphaBlendOp;
+	colorBlendAttachment.srcAlphaBlendFactor = srcAlphaBlendFactor;
+	colorBlendAttachment.dstAlphaBlendFactor = dstAlphaBlendFactor;
+	colorBlendAttachments.push_back (colorBlendAttachment);
+	return *this;
+}
+
+PipelineBuilder& PipelineBuilder::AddColorBlendingAttachment (VkPipelineColorBlendAttachmentState attachment)
+{
+	colorBlendAttachments.push_back (attachment);
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::AddDynamicStates (std::vector<VkDynamicState> states)
+{
+	dynamicStates.insert (std::end (dynamicStates), std::begin (states), std::end (states));
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::AddDynamicState (VkDynamicState state)
+{
+	dynamicStates.push_back (state);
+	return *this;
+}
+PipelineBuilder& PipelineBuilder::AddPushConstantRange (VkPushConstantRange pushConstantRange)
+{
+	pushConstantRanges.push_back (pushConstantRange);
+	return *this;
+}
+
+//// Compute Pipeline ////
+
+ComputePipeline::ComputePipeline (VkDevice device, VkPipeline pipeline)
+: device (device), pipeline (pipeline)
+{
+}
+ComputePipeline::~ComputePipeline ()
+{
+	if (pipeline != VK_NULL_HANDLE) vkDestroyPipeline (device, pipeline, nullptr);
+}
+ComputePipeline::ComputePipeline (ComputePipeline&& other) noexcept
+: device (other.device), pipeline (other.pipeline)
+{
+	other.pipeline = VK_NULL_HANDLE;
+}
+ComputePipeline& ComputePipeline::operator= (ComputePipeline&& other) noexcept
+{
+	device = other.device;
+	pipeline = other.pipeline;
+	other.pipeline = VK_NULL_HANDLE;
+	return *this;
+}
+void ComputePipeline::Bind (VkCommandBuffer cmdBuf)
+{
+	vkCmdBindPipeline (cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+}
+
+std::optional<ComputePipeline> BuildComputePipeline (
+    VkDevice device, PipelineLayout const& layout, ShaderModule shader_module, VkPipelineCache cache)
+{
+	auto info = initializers::computePipelineCreateInfo (layout.get (), 0);
+	info.basePipelineHandle = VK_NULL_HANDLE;
+	info.stage =
+	    initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_COMPUTE_BIT, shader_module.get ());
+
+	VkPipeline pipe;
+	VkResult res = vkCreateComputePipelines (device, cache, 1, &info, nullptr, &pipe);
+	if (res != VK_SUCCESS)
+	{
+		return {};
+	}
+	return ComputePipeline{ device, pipe };
+}
+
+//// PipelineCache ////
+
+PipelineCache::PipelineCache (VkDevice device) : device (device)
 {
 	std::vector<std::byte> cache_data;
 
@@ -206,7 +345,7 @@ PipelineManager::PipelineManager (VkDevice device, AsyncTaskManager& async_man)
 	vkCreatePipelineCache (device, &info, nullptr, &cache);
 }
 
-PipelineManager::~PipelineManager ()
+PipelineCache::~PipelineCache ()
 {
 	std::ofstream out (".cache/pipeline_cache", std::ios::binary | std::ios::out);
 	size_t cache_size = 0;
@@ -220,63 +359,4 @@ PipelineManager::~PipelineManager ()
 	vkDestroyPipelineCache (device, cache, nullptr);
 }
 
-VkPipelineCache PipelineManager::GetCache () const { return cache; }
-
-std::optional<PipelineLayout> PipelineManager::CreatePipelineLayout (
-    std::vector<VkDescriptorSetLayout> desc_set_layouts, std::vector<VkPushConstantRange> push_constant_ranges) const
-{
-	auto layoutInfo = initializers::pipelineLayoutCreateInfo (desc_set_layouts, push_constant_ranges);
-	VkPipelineLayout layout;
-	VkResult res = vkCreatePipelineLayout (device, &layoutInfo, nullptr, &layout);
-	if (res != VK_SUCCESS) return {};
-	return PipelineLayout{ device, layout };
-}
-
-std::optional<GraphicsPipeline> PipelineManager::CreateGraphicsPipeline (
-    PipelineLayout const& layout, PipelineOutline builder, VkRenderPass render_pass, uint32_t subpass) const
-{
-	VkPipeline pipe;
-
-	auto info = initializers::pipelineCreateInfo (layout.get (), render_pass, subpass, 0);
-	info.basePipelineHandle = VK_NULL_HANDLE;
-
-	auto shaderStages = builder.set.ShaderStageCreateInfos ();
-	info.stageCount = (uint32_t)shaderStages.size ();
-	info.pStages = shaderStages.data ();
-
-	info.pInputAssemblyState = &builder.inputAssembly;
-
-	auto vertexInput = initializers::pipelineVertexInputStateCreateInfo (
-	    builder.vertexInputBindingDescription, builder.vertexInputAttributeDescriptions);
-
-	info.pVertexInputState = &vertexInput;
-
-	auto viewportInfo =
-	    initializers::pipelineViewportStateCreateInfo (builder.viewports, builder.scissors, 0);
-	info.pViewportState = &viewportInfo;
-
-	info.pRasterizationState = &builder.rasterizer;
-	info.pMultisampleState = &builder.multisampling;
-	info.pDepthStencilState = &builder.depthStencil;
-
-	auto colorBlending = initializers::pipelineColorBlendStateCreateInfo (builder.colorBlendAttachments);
-	colorBlending.logicOpEnable = VK_FALSE;
-	colorBlending.logicOp = VK_LOGIC_OP_COPY;
-	colorBlending.blendConstants[0] = 0.0f;
-	colorBlending.blendConstants[1] = 0.0f;
-	colorBlending.blendConstants[2] = 0.0f;
-	colorBlending.blendConstants[3] = 0.0f;
-
-	info.pColorBlendState = &colorBlending;
-
-	VkPipelineDynamicStateCreateInfo dynamicInfo =
-	    initializers::pipelineDynamicStateCreateInfo (builder.dynamicStates, 0);
-	info.pDynamicState = &dynamicInfo;
-
-	VkResult res = vkCreateGraphicsPipelines (device, cache, 1, &info, nullptr, &pipe);
-	if (res != VK_SUCCESS)
-	{
-		return {};
-	}
-	return GraphicsPipeline{ device, pipe };
-}
+VkPipelineCache PipelineCache::get () const { return cache; }

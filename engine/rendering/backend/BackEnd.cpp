@@ -8,7 +8,7 @@ BackEnd::BackEnd (bool validationLayer, job::TaskManager& task_manager, Window& 
   vulkanSwapChain (device, window),
   async_task_manager (task_manager, device),
   shader_manager (resource_man.shader_manager, device.device),
-  pipeline_manager (device.device, async_task_manager),
+  pipeline_cache (device.device),
   model_manager (resource_man.mesh_manager, device, async_task_manager),
   texture_manager (resource_man.texture_manager, device, async_task_manager)
 {

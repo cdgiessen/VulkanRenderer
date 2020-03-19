@@ -84,46 +84,34 @@ std::optional<Skybox> CreateSkybox (BackEnd& back_end,
 	};
 	descriptor_set.Update (back_end.device.device, writes);
 
-	// Pipeline
-	PipelineOutline outline;
-
 	auto vert = back_end.shader_manager.GetModule ("skybox.vert", ShaderType::vertex);
 	auto frag = back_end.shader_manager.GetModule ("skybox.frag", ShaderType::fragment);
 
-	ShaderModuleSet shader_set (vert.value (), frag.value ());
-	outline.SetShaderModuleSet (shader_set);
+	PipelineBuilder builder{ back_end.device.device, back_end.pipeline_cache.get () };
+	builder.SetShaderModuleSet (ShaderModuleSet (vert.value (), frag.value ()))
+	    .UseModelVertexLayout (back_end.model_manager.GetLayout (skybox_cube_model))
+	    .AddViewport (1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f)
+	    .AddScissor (1, 1, 0, 0)
+	    .SetInputAssembly (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false)
+	    .SetRasterizer (
+	        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE)
+	    .SetMultisampling (VK_SAMPLE_COUNT_1_BIT)
+	    .SetDepthStencil (VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER_OR_EQUAL, VK_FALSE, VK_FALSE)
+	    .AddColorBlendingAttachment (VK_FALSE,
+	        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+	        VK_BLEND_OP_ADD,
+	        VK_BLEND_FACTOR_SRC_COLOR,
+	        VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
+	        VK_BLEND_OP_ADD,
+	        VK_BLEND_FACTOR_ONE,
+	        VK_BLEND_FACTOR_ZERO)
+	    // outline.AddDescriptorLayouts (double_buffer_man.GetGlobalLayouts ());
+	    .AddDescriptorLayout (descriptor_layout.Get ())
+	    .AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 
-	outline.UseModelVertexLayout (back_end.model_manager.GetLayout (skybox_cube_model));
-
-	outline.AddViewport (1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f);
-	outline.AddScissor (1, 1, 0, 0);
-
-	outline.SetInputAssembly (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
-
-	outline.SetRasterizer (
-	    VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
-
-	outline.SetMultisampling (VK_SAMPLE_COUNT_1_BIT);
-	outline.SetDepthStencil (VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER_OR_EQUAL, VK_FALSE, VK_FALSE);
-	outline.AddColorBlendingAttachment (VK_FALSE,
-	    VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-	    VK_BLEND_OP_ADD,
-	    VK_BLEND_FACTOR_SRC_COLOR,
-	    VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
-	    VK_BLEND_OP_ADD,
-	    VK_BLEND_FACTOR_ONE,
-	    VK_BLEND_FACTOR_ZERO);
-
-	// outline.AddDescriptorLayouts (double_buffer_man.GetGlobalLayouts ());
-	outline.AddDescriptorLayout (descriptor_layout.Get ());
-
-	outline.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
-
-	auto pipe_layout =
-	    back_end.pipeline_manager.CreatePipelineLayout (outline.layouts, outline.pushConstantRanges);
+	auto pipe_layout = builder.CreateLayout ();
 	if (!pipe_layout) return {};
-	auto pipe = back_end.pipeline_manager.CreateGraphicsPipeline (
-	    pipe_layout.value (), outline, render_pass, subpass);
+	auto pipe = builder.CreatePipeline (pipe_layout.value (), render_pass, subpass);
 	if (!pipe) return {};
 
 	return Skybox{ camera_manager,

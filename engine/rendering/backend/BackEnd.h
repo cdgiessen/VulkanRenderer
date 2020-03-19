@@ -28,7 +28,7 @@ struct BackEnd
 	VulkanSwapChain vulkanSwapChain;
 	AsyncTaskManager async_task_manager;
 	ShaderManager shader_manager;
-	PipelineManager pipeline_manager;
+	PipelineCache pipeline_cache;
 	ModelManager model_manager;
 	TextureManager texture_manager;
 };

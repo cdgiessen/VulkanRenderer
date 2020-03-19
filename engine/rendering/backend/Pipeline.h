@@ -5,29 +5,75 @@
 
 #include "Shader.h"
 
-struct VertexLayout;
-class PipelineOutline
+class PipelineLayout
 {
 	public:
-	void SetShaderModuleSet (ShaderModuleSet set);
-	void UseModelVertexLayout (VertexLayout const& layout);
-	void AddVertexLayout (VkVertexInputBindingDescription bind, VkVertexInputAttributeDescription attrib);
-	void AddVertexLayouts (std::vector<VkVertexInputBindingDescription> binds,
+	PipelineLayout (VkDevice device, VkPipelineLayout layout);
+	~PipelineLayout ();
+	PipelineLayout (const PipelineLayout& other) = delete;
+	PipelineLayout& operator= (const PipelineLayout& other) = delete;
+	PipelineLayout (PipelineLayout&& other) noexcept;
+	PipelineLayout& operator= (PipelineLayout&& other) noexcept;
+
+	VkPipelineLayout get () const { return layout; }
+
+	private:
+	VkDevice device;
+	VkPipelineLayout layout;
+};
+
+std::optional<PipelineLayout> CreatePipelineLayout (VkDevice device,
+    std::vector<VkDescriptorSetLayout> desc_set_layouts,
+    std::vector<VkPushConstantRange> push_constant_ranges);
+
+
+class GraphicsPipeline
+{
+	public:
+	GraphicsPipeline (VkDevice device, VkPipeline pipeline);
+	~GraphicsPipeline ();
+	GraphicsPipeline (const GraphicsPipeline& other) = delete;
+	GraphicsPipeline& operator= (const GraphicsPipeline& other) = delete;
+	GraphicsPipeline (GraphicsPipeline&& other) noexcept;
+	GraphicsPipeline& operator= (GraphicsPipeline&& other) noexcept;
+
+	void Bind (VkCommandBuffer buffer);
+
+	private:
+	VkDevice device = VK_NULL_HANDLE;
+	VkPipeline pipeline = VK_NULL_HANDLE;
+};
+
+struct VertexLayout;
+class PipelineBuilder
+{
+	public:
+	PipelineBuilder (VkDevice device, VkPipelineCache cache);
+
+	std::optional<PipelineLayout> CreateLayout () const;
+	std::optional<GraphicsPipeline> CreatePipeline (
+	    PipelineLayout const& layout, VkRenderPass render_pass, uint32_t subpass) const;
+
+	PipelineBuilder& SetShaderModuleSet (ShaderModuleSet set);
+	PipelineBuilder& UseModelVertexLayout (VertexLayout const& layout);
+	PipelineBuilder& AddVertexLayout (
+	    VkVertexInputBindingDescription bind, VkVertexInputAttributeDescription attrib);
+	PipelineBuilder& AddVertexLayouts (std::vector<VkVertexInputBindingDescription> binds,
 	    std::vector<VkVertexInputAttributeDescription> attribs);
 
+	PipelineBuilder& AddDescriptorLayouts (std::vector<VkDescriptorSetLayout> layouts);
+	PipelineBuilder& AddDescriptorLayout (VkDescriptorSetLayout layout);
 
-	void AddDescriptorLayouts (std::vector<VkDescriptorSetLayout> layouts);
-	void AddDescriptorLayout (VkDescriptorSetLayout layout);
+	PipelineBuilder& SetInputAssembly (VkPrimitiveTopology topology, VkBool32 primitiveRestart);
 
-	void SetInputAssembly (VkPrimitiveTopology topology, VkBool32 primitiveRestart);
+	PipelineBuilder& AddViewport (
+	    float width, float height, float minDepth, float maxDepth, float x = 0.0f, float y = 0.0f);
+	PipelineBuilder& AddViewport (VkViewport viewport);
 
-	void AddViewport (float width, float height, float minDepth, float maxDepth, float x = 0.0f, float y = 0.0f);
-	void AddViewport (VkViewport viewport);
+	PipelineBuilder& AddScissor (uint32_t width, uint32_t height, uint32_t offsetX, uint32_t offsetY);
+	PipelineBuilder& AddScissor (VkRect2D scissor);
 
-	void AddScissor (uint32_t width, uint32_t height, uint32_t offsetX, uint32_t offsetY);
-	void AddScissor (VkRect2D scissor);
-
-	void SetRasterizer (VkPolygonMode polygonMode,
+	PipelineBuilder& SetRasterizer (VkPolygonMode polygonMode,
 	    VkCullModeFlagBits cullModeFlagBits,
 	    VkFrontFace frontFace,
 	    VkBool32 depthClampEnable,
@@ -35,15 +81,15 @@ class PipelineOutline
 	    float lineWidth,
 	    VkBool32 depthBiasEnable);
 
-	void SetMultisampling (VkSampleCountFlagBits sampleCountFlags);
+	PipelineBuilder& SetMultisampling (VkSampleCountFlagBits sampleCountFlags);
 
-	void SetDepthStencil (VkBool32 depthTestEnable,
+	PipelineBuilder& SetDepthStencil (VkBool32 depthTestEnable,
 	    VkBool32 depthWriteEnable,
 	    VkCompareOp depthCompareOp,
 	    VkBool32 depthBoundsTestEnable,
 	    VkBool32 stencilTestEnable);
 
-	void AddColorBlendingAttachment (VkBool32 blendEnable,
+	PipelineBuilder& AddColorBlendingAttachment (VkBool32 blendEnable,
 	    VkColorComponentFlags colorWriteMask,
 	    VkBlendOp colorBlendOp,
 	    VkBlendFactor srcColorBlendFactor,
@@ -51,15 +97,18 @@ class PipelineOutline
 	    VkBlendOp alphaBlendOp,
 	    VkBlendFactor srcAlphaBlendFactor,
 	    VkBlendFactor dstAlphaBlendFactor);
-	void AddColorBlendingAttachment (VkPipelineColorBlendAttachmentState attachment);
+	PipelineBuilder& AddColorBlendingAttachment (VkPipelineColorBlendAttachmentState attachment);
 
+	PipelineBuilder& SetDescriptorSetLayout (std::vector<VkDescriptorSetLayout>& descriptorSetlayouts);
 
-	void SetDescriptorSetLayout (std::vector<VkDescriptorSetLayout>& descriptorSetlayouts);
+	PipelineBuilder& AddPushConstantRange (VkPushConstantRange pushConstantRange);
 
-	void AddPushConstantRange (VkPushConstantRange pushConstantRange);
+	PipelineBuilder& AddDynamicStates (std::vector<VkDynamicState> states);
+	PipelineBuilder& AddDynamicState (VkDynamicState dynamicStates);
 
-	void AddDynamicStates (std::vector<VkDynamicState> states);
-	void AddDynamicState (VkDynamicState dynamicStates);
+	PipelineBuilder& SetComputeShader (ShaderModule shader_module);
+
+	PipelineBuilder& SetPipelineCache (VkPipelineCache cache);
 
 	ShaderModuleSet set;
 	std::vector<VkDescriptorSetLayout> layouts;
@@ -81,33 +130,20 @@ class PipelineOutline
 	std::vector<VkPushConstantRange> pushConstantRanges;
 
 	std::vector<VkDynamicState> dynamicStates;
-};
 
-class PipelineLayout
-{
-	public:
-	PipelineLayout (VkDevice device, VkPipelineLayout layout);
-	~PipelineLayout ();
-	PipelineLayout (const PipelineLayout& other) = delete;
-	PipelineLayout& operator= (const PipelineLayout& other) = delete;
-	PipelineLayout (PipelineLayout&& other) noexcept;
-	PipelineLayout& operator= (PipelineLayout&& other) noexcept;
-
-	VkPipelineLayout get () const { return layout; }
-
-	private:
 	VkDevice device;
-	VkPipelineLayout layout;
+	VkPipelineCache cache;
 };
-class GraphicsPipeline
+
+class ComputePipeline
 {
 	public:
-	GraphicsPipeline (VkDevice device, VkPipeline pipeline);
-	~GraphicsPipeline ();
-	GraphicsPipeline (const GraphicsPipeline& other) = delete;
-	GraphicsPipeline& operator= (const GraphicsPipeline& other) = delete;
-	GraphicsPipeline (GraphicsPipeline&& other) noexcept;
-	GraphicsPipeline& operator= (GraphicsPipeline&& other) noexcept;
+	ComputePipeline (VkDevice device, VkPipeline pipeline);
+	~ComputePipeline ();
+	ComputePipeline (const ComputePipeline& other) = delete;
+	ComputePipeline& operator= (const ComputePipeline& other) = delete;
+	ComputePipeline (ComputePipeline&& other) noexcept;
+	ComputePipeline& operator= (ComputePipeline&& other) noexcept;
 
 	void Bind (VkCommandBuffer buffer);
 
@@ -116,24 +152,22 @@ class GraphicsPipeline
 	VkPipeline pipeline = VK_NULL_HANDLE;
 };
 
-class AsyncTaskManager;
+std::optional<ComputePipeline> BuildComputePipeline (
+    VkDevice device, PipelineLayout const& layout, ShaderModule module, VkPipelineCache cache);
 
-class PipelineManager
+
+class PipelineCache
 {
 	public:
-	PipelineManager (VkDevice device, AsyncTaskManager& async_man);
-	~PipelineManager ();
+	PipelineCache (VkDevice device);
+	~PipelineCache ();
 
-	std::optional<PipelineLayout> CreatePipelineLayout (std::vector<VkDescriptorSetLayout> desc_set_layouts,
-	    std::vector<VkPushConstantRange> push_constant_ranges) const;
+	PipelineCache (PipelineCache const& other) = delete;
+	PipelineCache& operator= (PipelineCache const& other) = delete;
 
-	std::optional<GraphicsPipeline> CreateGraphicsPipeline (
-	    PipelineLayout const& layout, PipelineOutline builder, VkRenderPass render_pass, uint32_t subpass) const;
-
-	VkPipelineCache GetCache () const;
+	VkPipelineCache get () const;
 
 	private:
 	VkDevice device;
-	AsyncTaskManager& async_man;
 	VkPipelineCache cache;
 };

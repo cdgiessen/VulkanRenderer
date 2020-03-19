@@ -214,7 +214,7 @@ void VulkanRenderer::ImGuiSetup ()
 	info.Device = back_end.device.device;
 	info.QueueFamily = back_end.device.GraphicsQueue ().GetQueueFamily ();
 	info.Queue = back_end.device.GraphicsQueue ().GetQueue ();
-	info.PipelineCache = back_end.pipeline_manager.GetCache ();
+	info.PipelineCache = back_end.pipeline_cache.get ();
 	info.MinImageCount = 2;
 	info.ImageCount = back_end.vulkanSwapChain.GetChainCount ();
 	info.DescriptorPool = imgui_pool;

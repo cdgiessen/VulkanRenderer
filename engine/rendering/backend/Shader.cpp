@@ -145,7 +145,7 @@ ShaderModuleSet& ShaderModuleSet::TessEval (ShaderModule const& tess_eval)
 	return *this;
 }
 
-std::vector<VkPipelineShaderStageCreateInfo> ShaderModuleSet::ShaderStageCreateInfos ()
+std::vector<VkPipelineShaderStageCreateInfo> ShaderModuleSet::ShaderStageCreateInfos () const
 {
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 	if (vert != VK_NULL_HANDLE) shaderStages.push_back (GetCreateInfo (ShaderType::vertex, vert));

@@ -52,7 +52,7 @@ class ShaderModuleSet
 	ShaderModuleSet& TessControl (ShaderModule const& tess_control);
 	ShaderModuleSet& TessEval (ShaderModule const& tess_eval);
 
-	std::vector<VkPipelineShaderStageCreateInfo> ShaderStageCreateInfos ();
+	std::vector<VkPipelineShaderStageCreateInfo> ShaderStageCreateInfos () const;
 
 	private:
 	VkShaderModule vert = VK_NULL_HANDLE;
