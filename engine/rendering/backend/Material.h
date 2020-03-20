@@ -34,10 +34,10 @@ class MatInstance
 	std::vector<int> offset_index;
 };
 
-class MaterialManager
+class Materials
 {
 	public:
-	MaterialManager (Resource::Material::Manager& mat_man, VulkanDevice& device);
+	Materials (Resource::Material::Materials& materials, VulkanDevice& device);
 
 	MatOutlineID CreateMatOutline (Resource::Material::MaterialOutline const& outline);
 	MatInstanceID CreateMatInstance (MatOutlineID id, Resource::Material::MaterialInstance const& instance);

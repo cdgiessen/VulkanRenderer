@@ -84,9 +84,9 @@ bool Task::IsReadyToRun ()
 	return true; // Is this right? no signal block to wait on
 }
 
-// TaskManager
+// ThreadPool
 
-TaskManager::TaskManager ()
+ThreadPool::ThreadPool ()
 {
 	int thread_count = static_cast<int> (HardwareThreadCount ());
 	for (int i = 0; i < thread_count; i++)
@@ -110,7 +110,7 @@ TaskManager::TaskManager ()
 }
 
 
-TaskManager::~TaskManager ()
+ThreadPool::~ThreadPool ()
 {
 	Stop ();
 	for (auto& thread : worker_threads)
@@ -120,7 +120,7 @@ TaskManager::~TaskManager ()
 }
 
 
-void TaskManager::Stop ()
+void ThreadPool::Stop ()
 {
 	continue_working = false;
 	{
@@ -129,7 +129,7 @@ void TaskManager::Stop ()
 	}
 }
 
-void TaskManager::Submit (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signal_block)
+void ThreadPool::Submit (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signal_block)
 {
 	{
 		std::lock_guard lg (queue_lock);
@@ -139,7 +139,7 @@ void TaskManager::Submit (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signal_bl
 	workSubmittedCondVar.notify_one ();
 }
 
-void TaskManager::Submit (std::vector<Task> in_tasks)
+void ThreadPool::Submit (std::vector<Task> in_tasks)
 {
 	{
 		std::lock_guard lg (queue_lock);
@@ -151,7 +151,7 @@ void TaskManager::Submit (std::vector<Task> in_tasks)
 	workSubmittedCondVar.notify_all ();
 }
 
-std::optional<Task> TaskManager::GetTask ()
+std::optional<Task> ThreadPool::GetTask ()
 {
 	std::lock_guard lg (queue_lock);
 	// Log.Debug (fmt::format ("queue size {}", task_queue.size ()));
@@ -166,7 +166,7 @@ std::optional<Task> TaskManager::GetTask ()
 	return {};
 }
 
-std::vector<std::thread::id> TaskManager::GetThreadIDs ()
+std::vector<std::thread::id> ThreadPool::GetThreadIDs ()
 {
 	std::vector<std::thread::id> ids;
 	for (auto& thread : worker_threads)
@@ -224,7 +224,7 @@ bool JobTester ()
 {
 	Log.Debug (fmt::format ("Job system test: start"));
 
-	TaskManager tMan;
+	ThreadPool tMan;
 
 	JobTesterClass jtc;
 	jtc.Print ();

@@ -1,4 +1,4 @@
-//#include "TerrainManager.h"
+//#include "TerrainSystem.h"
 //
 //#include <algorithm>
 //#include <chrono>
@@ -27,11 +27,11 @@
 //}
 //
 //
-// TerrainManager::TerrainManager (job::TaskManager& task_manager,
+// TerrainSystem::TerrainSystem (job::ThreadPool& thread_pool,
 //    InternalGraph::GraphPrototype& protoGraph,
-//    Resource::ResourceManager& resourceMan,
+//    Resource::Resources& resourceMan,
 //    VulkanRenderer& renderer)
-//: task_manager (task_manager), resourceMan (resourceMan), renderer (renderer), protoGraph (protoGraph)
+//: thread_pool (thread_pool), resourceMan (resourceMan), renderer (renderer), protoGraph (protoGraph)
 //{
 //	if (gui_settings.maxLevels < 0)
 //	{
@@ -41,41 +41,41 @@
 //
 //	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8);
 //
-//	terrainTextureArrayAlbedo = resourceMan.texture_manager.GetTexIDByName ("terrain_albedo");
+//	terrainTextureArrayAlbedo = resourceMan.textures.GetTexIDByName ("terrain_albedo");
 //	terrainVulkanTextureArrayAlbedo =
-//	    renderer.texture_manager.CreateTexture2DArray (terrainTextureArrayAlbedo, details);
+//	    renderer.textures.CreateTexture2DArray (terrainTextureArrayAlbedo, details);
 //
-//	terrainTextureArrayRoughness = resourceMan.texture_manager.GetTexIDByName ("terrain_roughness");
+//	terrainTextureArrayRoughness = resourceMan.textures.GetTexIDByName ("terrain_roughness");
 //	terrainVulkanTextureArrayRoughness =
-//	    renderer.texture_manager.CreateTexture2DArray (terrainTextureArrayRoughness, details);
+//	    renderer.textures.CreateTexture2DArray (terrainTextureArrayRoughness, details);
 //
-//	terrainTextureArrayMetallic = resourceMan.texture_manager.GetTexIDByName ("terrain_metalness");
+//	terrainTextureArrayMetallic = resourceMan.textures.GetTexIDByName ("terrain_metalness");
 //	terrainVulkanTextureArrayMetallic =
-//	    renderer.texture_manager.CreateTexture2DArray (terrainTextureArrayMetallic, details);
+//	    renderer.textures.CreateTexture2DArray (terrainTextureArrayMetallic, details);
 //
-//	terrainTextureArrayNormal = resourceMan.texture_manager.GetTexIDByName ("terrain_normal");
+//	terrainTextureArrayNormal = resourceMan.textures.GetTexIDByName ("terrain_normal");
 //	terrainVulkanTextureArrayNormal =
-//	    renderer.texture_manager.CreateTexture2DArray (terrainTextureArrayNormal, details);
+//	    renderer.textures.CreateTexture2DArray (terrainTextureArrayNormal, details);
 //
 //	terrainGridModel = std::make_unique<VulkanModel> (renderer.device,
-//	    renderer.async_task_manager,
+//	    renderer.async_task_queue,
 //	    createFlatPlane (gui_settings.numCells, cml::vec3f (1.0f)));
 //
 //	// StartWorkerThreads ();
 //	workContinueSignal = std::make_shared<job::TaskSignal> ();
 //}
 //
-// TerrainManager::~TerrainManager () { CleanUpTerrain (); }
+// TerrainSystem::~TerrainSystem () { CleanUpTerrain (); }
 //
 //
-// void TerrainManager::StopActiveJobs ()
+// void TerrainSystem::StopActiveJobs ()
 //{
 //	workContinueSignal->Cancel ();
 //	workContinueSignal->Wait ();
 //}
 //
 //
-// void TerrainManager::CleanUpTerrain ()
+// void TerrainSystem::CleanUpTerrain ()
 //{
 //	StopActiveJobs ();
 //	terrains.clear ();
@@ -83,7 +83,7 @@
 //}
 //
 //
-// void TerrainManager::UpdateTerrains (cml::vec3f cameraPos)
+// void TerrainSystem::UpdateTerrains (cml::vec3f cameraPos)
 //{
 //	curCameraPos = cameraPos;
 //	t_settings = gui_settings;
@@ -205,7 +205,7 @@
 //					in_progress_terrains.push_back (std::move (terrain));
 //				};
 //
-//				task_manager.Submit (std::move (t), workContinueSignal);
+//				thread_pool.Submit (std::move (t), workContinueSignal);
 //			}
 //		}
 //	}
@@ -244,7 +244,7 @@
 //	// chunkBuffer.UpdateChunks ();
 //}
 //
-// void TerrainManager::RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe)
+// void TerrainSystem::RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe)
 //{
 //	std::lock_guard lock (terrain_mutex);
 //	for (auto& ter : terrains)
@@ -255,7 +255,7 @@
 //}
 //
 //// TODO : Re-implement getting height at terrain location
-// float TerrainManager::GetTerrainHeightAtLocation (float x, float z)
+// float TerrainSystem::GetTerrainHeightAtLocation (float x, float z)
 //{
 //	std::lock_guard lock (terrain_mutex);
 //	for (auto& terrain : terrains)
@@ -271,11 +271,11 @@
 //	return 0;
 //}
 //
-// void TerrainManager::SaveSettingsToFile ()
+// void TerrainSystem::SaveSettingsToFile ()
 //{
 //	nlohmann::json j;
 //
-//	j["show_window"] = gui_settings.show_terrain_manager_window;
+//	j["show_window"] = gui_settings.show_terrain_system_window;
 //	j["terrain_width"] = gui_settings.width;
 //	j["height_scale"] = gui_settings.heightScale;
 //	j["max_levels"] = gui_settings.maxLevels;
@@ -288,7 +288,7 @@
 //	outFile.close ();
 //}
 //
-// void TerrainManager::LoadSettingsFromFile ()
+// void TerrainSystem::LoadSettingsFromFile ()
 //{
 //	if (std::filesystem::exists (std::filesystem::path (TerrainSettingsFileName)))
 //	{
@@ -297,7 +297,7 @@
 //		nlohmann::json j;
 //		input >> j;
 //
-//		gui_settings.show_terrain_manager_window = j["show_window"];
+//		gui_settings.show_terrain_system_window = j["show_window"];
 //		gui_settings.width = j["terrain_width"];
 //		gui_settings.heightScale = j["height_scale"];
 //		gui_settings.maxLevels = j["max_levels"];
@@ -314,12 +314,12 @@
 //}
 //
 //
-// void TerrainManager::UpdateTerrainGUI ()
+// void TerrainSystem::UpdateTerrainGUI ()
 //{
 //
 //	ImGui::SetNextWindowSize (ImVec2 (200, 220), ImGuiCond_FirstUseEver);
 //	ImGui::SetNextWindowPos (ImVec2 (220, 0), ImGuiCond_FirstUseEver);
-//	if (ImGui::Begin ("Terrain Info", &gui_settings.show_terrain_manager_window))
+//	if (ImGui::Begin ("Terrain Info", &gui_settings.show_terrain_system_window))
 //	{
 //		ImGui::BeginGroup ();
 //		if (ImGui::Button ("Save"))

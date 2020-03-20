@@ -58,15 +58,15 @@ void RenderSettings::Save ()
 }
 
 VulkanRenderer::VulkanRenderer (
-    bool validationLayer, job::TaskManager& task_manager, Window& window, Resource::ResourceManager& resource_man)
+    bool validationLayer, job::ThreadPool& thread_pool, Window& window, Resource::Resources& resource_man)
 
 : settings ("render_settings.json"),
-  task_manager (task_manager),
-  back_end (validationLayer, task_manager, window, resource_man),
-  camera_manager (back_end.device),
+  thread_pool (thread_pool),
+  back_end (validationLayer, thread_pool, window, resource_man),
+  render_cameras (back_end.device),
   frame_data (back_end.device),
-  lighting (back_end.device, back_end.texture_manager),
-  mesh_manager (back_end)
+  lighting (back_end.device, back_end.textures),
+  mesh_renderer (back_end)
 
 {
 	frameObjects.reserve (back_end.vulkanSwapChain.GetChainCount ());
@@ -82,7 +82,7 @@ VulkanRenderer::VulkanRenderer (
 
 VulkanRenderer::~VulkanRenderer ()
 {
-	back_end.async_task_manager.CleanFinishQueue ();
+	back_end.async_task_queue.CleanFinishQueue ();
 	if (settings.memory_dump) back_end.device.LogMemory ();
 
 	DeviceWaitTillIdle ();
@@ -124,7 +124,7 @@ void VulkanRenderer::RenderFrame ()
 	}
 	frameIndex = (frameIndex + 1) % frameObjects.size ();
 
-	back_end.async_task_manager.CleanFinishQueue ();
+	back_end.async_task_queue.CleanFinishQueue ();
 }
 
 void VulkanRenderer::RecreateSwapChain ()

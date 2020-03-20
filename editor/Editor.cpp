@@ -71,14 +71,14 @@ void Editor::DebugOverlay (bool* show_debug_overlay)
 		return;
 	}
 	ImGui::Text ("FPS %.3f", ImGui::GetIO ().Framerate);
-	ImGui::Text ("DeltaT: %f(s)", engine.time_manager.DeltaTime ());
+	ImGui::Text ("DeltaT: %f(s)", engine.time.DeltaTime ());
 	if (ImGui::Button ("Toggle Verbose"))
 	{
 		verbose = !verbose;
 	}
-	if (verbose) ImGui::Text ("Run Time: %f(s)", engine.time_manager.RunningTime ());
-	if (verbose) ImGui::Text ("Last frame time%f(s)", engine.time_manager.PreviousFrameTime ());
-	if (verbose) ImGui::Text ("Last frame time%f(s)", engine.time_manager.PreviousFrameTime ());
+	if (verbose) ImGui::Text ("Run Time: %f(s)", engine.time.RunningTime ());
+	if (verbose) ImGui::Text ("Last frame time%f(s)", engine.time.PreviousFrameTime ());
+	if (verbose) ImGui::Text ("Last frame time%f(s)", engine.time.PreviousFrameTime ());
 	ImGui::Separator ();
 	ImGui::Text ("Mouse Position: (%.1f,%.1f)", ImGui::GetIO ().MousePos.x, ImGui::GetIO ().MousePos.y);
 	ImGui::End ();

@@ -30,7 +30,7 @@ class Window;
 
 namespace Resource
 {
-class ResourceManager;
+class Resources;
 }
 
 
@@ -53,10 +53,8 @@ class RenderSettings
 class VulkanRenderer
 {
 	public:
-	VulkanRenderer (bool enableValidationLayer,
-	    job::TaskManager& task_manager,
-	    Window& window,
-	    Resource::ResourceManager& resource_man);
+	VulkanRenderer (
+	    bool enableValidationLayer, job::ThreadPool& thread_pool, Window& window, Resource::Resources& resource_man);
 
 	VulkanRenderer (VulkanRenderer const& other) = delete; // copy
 	VulkanRenderer& operator= (VulkanRenderer const&) = delete;
@@ -77,17 +75,17 @@ class VulkanRenderer
 	void ImGuiShutdown ();
 
 	private:
-	job::TaskManager& task_manager;
+	job::ThreadPool& thread_pool;
 
 	RenderSettings settings;
 
 	BackEnd back_end;
 
 	public:
-	ViewCameraManager camera_manager;
+	RenderCameras render_cameras;
 	FrameData frame_data;
 	Lighting lighting;
-	MeshManager mesh_manager;
+	MeshRenderer mesh_renderer;
 
 	private:
 	std::unique_ptr<FrameGraph> frameGraph;

@@ -230,7 +230,7 @@ void SetLayoutAndTransferRegions (VkCommandBuffer transferCmdBuf,
 }
 
 void BeginTransferAndMipMapGenWork (VulkanDevice& device,
-    AsyncTaskManager& async_task_man,
+    AsyncTaskQueue& async_task_man,
     std::function<void ()> const& finish_work,
     VulkanBuffer* buffer,
     const VkImageSubresourceRange subresourceRange,
@@ -289,7 +289,7 @@ void BeginTransferAndMipMapGenWork (VulkanDevice& device,
 }
 
 VulkanTexture::VulkanTexture (VulkanDevice& device,
-    AsyncTaskManager& async_task_man,
+    AsyncTaskQueue& async_task_man,
     std::function<void ()> const& finish_work,
     TexCreateDetails texCreateDetails,
     Resource::Texture::TexResource textureResource)
@@ -396,7 +396,7 @@ VulkanTexture::VulkanTexture (VulkanDevice& device,
 }
 
 VulkanTexture::VulkanTexture (VulkanDevice& device,
-    AsyncTaskManager& async_task_man,
+    AsyncTaskQueue& async_task_man,
     std::function<void ()> const& finish_work,
     TexCreateDetails texCreateDetails,
     std::unique_ptr<VulkanBuffer> buffer)
@@ -650,18 +650,14 @@ void VulkanTexture::InitImage2D (VkImageCreateInfo imageInfo)
 	    data.allocator, &imageInfo, &imageAllocCreateInfo, &image, &data.allocation, &data.allocationInfo));
 }
 
-TextureManager::TextureManager (
-    Resource::Texture::Manager& texture_manager, VulkanDevice& device, AsyncTaskManager& async_task_manager)
-: texture_manager (texture_manager), device (device), async_task_manager (async_task_manager)
+Textures::Textures (Resource::Texture::Textures& textures, VulkanDevice& device, AsyncTaskQueue& async_task_queue)
+: textures (textures), device (device), async_task_queue (async_task_queue)
 {
 }
 
-TextureManager::~TextureManager ()
-{
-	Log.Debug (fmt::format ("Textures left over {}", texture_map.size ()));
-}
+Textures::~Textures () { Log.Debug (fmt::format ("Textures left over {}", texture_map.size ())); }
 
-std::function<void ()> TextureManager::CreateFinishWork (VulkanTextureID id)
+std::function<void ()> Textures::CreateFinishWork (VulkanTextureID id)
 {
 	return [this, id] {
 		std::lock_guard guard (map_lock);
@@ -681,56 +677,52 @@ std::function<void ()> TextureManager::CreateFinishWork (VulkanTextureID id)
 	};
 }
 
-VulkanTextureID TextureManager::CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails)
+VulkanTextureID Textures::CreateTexture2D (Resource::Texture::TexID texture_id, TexCreateDetails texCreateDetails)
 {
 	auto finish_work = CreateFinishWork (id_counter);
-	auto& resource = texture_manager.GetTexResourceByID (texture);
-	auto tex = std::make_unique<VulkanTexture> (
-	    device, async_task_manager, finish_work, texCreateDetails, resource);
+	auto& resource = textures.GetTexResourceByID (texture_id);
+	auto tex = std::make_unique<VulkanTexture> (device, async_task_queue, finish_work, texCreateDetails, resource);
 	std::lock_guard guard (map_lock);
 	in_progress_map[id_counter] = std::move (tex);
 	return id_counter++;
 }
 
-VulkanTextureID TextureManager::CreateTexture2DArray (Resource::Texture::TexID textures, TexCreateDetails texCreateDetails)
+VulkanTextureID Textures::CreateTexture2DArray (Resource::Texture::TexID texture_id, TexCreateDetails texCreateDetails)
 {
 	auto finish_work = CreateFinishWork (id_counter);
-	auto& resource = texture_manager.GetTexResourceByID (textures);
-	auto tex = std::make_unique<VulkanTexture> (
-	    device, async_task_manager, finish_work, texCreateDetails, resource);
+	auto& resource = textures.GetTexResourceByID (texture_id);
+	auto tex = std::make_unique<VulkanTexture> (device, async_task_queue, finish_work, texCreateDetails, resource);
 	std::lock_guard guard (map_lock);
 	in_progress_map[id_counter] = std::move (tex);
 	return id_counter++;
 }
 
-VulkanTextureID TextureManager::CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails)
+VulkanTextureID Textures::CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails)
 {
 	auto finish_work = CreateFinishWork (id_counter);
-	auto& resource = texture_manager.GetTexResourceByID (cubeMap);
-	auto tex = std::make_unique<VulkanTexture> (
-	    device, async_task_manager, finish_work, texCreateDetails, resource);
+	auto& resource = textures.GetTexResourceByID (cubeMap);
+	auto tex = std::make_unique<VulkanTexture> (device, async_task_queue, finish_work, texCreateDetails, resource);
 	std::lock_guard guard (map_lock);
 	in_progress_map[id_counter] = std::move (tex);
 	return id_counter++;
 }
 
-VulkanTextureID TextureManager::CreateTextureFromBuffer (
-    std::unique_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails)
+VulkanTextureID Textures::CreateTextureFromBuffer (std::unique_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails)
 {
 	auto finish_work = CreateFinishWork (id_counter);
 	auto tex = std::make_unique<VulkanTexture> (
-	    device, async_task_manager, finish_work, texCreateDetails, std::move (buffer));
+	    device, async_task_queue, finish_work, texCreateDetails, std::move (buffer));
 	std::lock_guard guard (map_lock);
 	in_progress_map[id_counter] = std::move (tex);
 	return id_counter++;
 }
 
-VulkanTexture TextureManager::CreateAttachmentImage (TexCreateDetails texCreateDetails)
+VulkanTexture Textures::CreateAttachmentImage (TexCreateDetails texCreateDetails)
 {
 	return VulkanTexture (device, texCreateDetails);
 }
 
-VkDescriptorImageInfo TextureManager::GetResource (VulkanTextureID id)
+VkDescriptorImageInfo Textures::GetResource (VulkanTextureID id)
 {
 	std::lock_guard guard (map_lock);
 	if (texture_map.count (id) == 1)
@@ -739,13 +731,13 @@ VkDescriptorImageInfo TextureManager::GetResource (VulkanTextureID id)
 		return in_progress_map.at (id)->GetResource ();
 }
 
-VkDescriptorType TextureManager::GetDescriptorType (VulkanTextureID id)
+VkDescriptorType Textures::GetDescriptorType (VulkanTextureID id)
 {
 	std::lock_guard guard (map_lock);
 	return texture_map.at (id)->GetDescriptorType ();
 }
 
-void TextureManager::DeleteTexture (VulkanTextureID id)
+void Textures::DeleteTexture (VulkanTextureID id)
 {
 	std::lock_guard guard (map_lock);
 	auto it = std::find (expired_textures.begin (), expired_textures.end (), id);
@@ -762,7 +754,7 @@ void TextureManager::DeleteTexture (VulkanTextureID id)
 	}
 }
 
-bool TextureManager::IsFinishedTransfer (VulkanTextureID id)
+bool Textures::IsFinishedTransfer (VulkanTextureID id)
 {
 	std::lock_guard guard (map_lock);
 	return texture_map.count (id) == 1;

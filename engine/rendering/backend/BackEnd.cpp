@@ -3,13 +3,13 @@
 #include "core/Window.h"
 #include "resources/Resource.h"
 
-BackEnd::BackEnd (bool validationLayer, job::TaskManager& task_manager, Window& window, Resource::ResourceManager& resource_man)
+BackEnd::BackEnd (bool validationLayer, job::ThreadPool& thread_pool, Window& window, Resource::Resources& resource_man)
 : device (window, validationLayer),
   vulkanSwapChain (device, window),
-  async_task_manager (task_manager, device),
-  shader_manager (resource_man.shader_manager, device.device),
+  async_task_queue (thread_pool, device),
+  shaders (resource_man.shaders, device.device),
   pipeline_cache (device.device),
-  model_manager (resource_man.mesh_manager, device, async_task_manager),
-  texture_manager (resource_man.texture_manager, device, async_task_manager)
+  models (resource_man.meshes, device, async_task_queue),
+  textures (resource_man.textures, device, async_task_queue)
 {
 }

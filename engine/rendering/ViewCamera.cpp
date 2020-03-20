@@ -100,13 +100,13 @@ void ViewCameraData::SetClipFar (float far)
 	clip_far = far;
 }
 
-ViewCameraManager::ViewCameraManager (VulkanDevice& device)
+RenderCameras::RenderCameras (VulkanDevice& device)
 : device (device), data_buffers (device, uniform_details (sizeof (CameraGPUData) * MaxCameraCount))
 {
 	camera_data.resize (MaxCameraCount);
 };
 
-ViewCameraID ViewCameraManager::Create (CameraType type, cml::vec3f position, cml::quatf rotation)
+ViewCameraID RenderCameras::Create (CameraType type, cml::vec3f position, cml::quatf rotation)
 {
 	std::lock_guard lg (lock);
 	for (ViewCameraID i = 0; i < camera_data.size (); i++)
@@ -120,7 +120,7 @@ ViewCameraID ViewCameraManager::Create (CameraType type, cml::vec3f position, cm
 	}
 	return -1; // assume theres enough cameras available
 }
-void ViewCameraManager::Delete (ViewCameraID id)
+void RenderCameras::Delete (ViewCameraID id)
 {
 	std::lock_guard lg (lock);
 
@@ -128,18 +128,18 @@ void ViewCameraManager::Delete (ViewCameraID id)
 }
 
 
-ViewCameraData& ViewCameraManager::GetCameraData (ViewCameraID id)
+ViewCameraData& RenderCameras::GetCameraData (ViewCameraID id)
 {
 	std::lock_guard lg (lock);
 	return camera_data.at (id);
 }
-void ViewCameraManager::SetCameraData (ViewCameraID id, ViewCameraData const& data)
+void RenderCameras::SetCameraData (ViewCameraID id, ViewCameraData const& data)
 {
 	std::lock_guard lg (lock);
 	camera_data.at (id) = data;
 }
 
-void ViewCameraManager::UpdateGPUBuffer (int index)
+void RenderCameras::UpdateGPUBuffer (int index)
 {
 	std::lock_guard lg (lock);
 	std::vector<CameraGPUData> data;
@@ -158,7 +158,7 @@ void ViewCameraManager::UpdateGPUBuffer (int index)
 	data_buffers.Write ().CopyToBuffer (data);
 }
 
-void ViewCameraManager::SetupViewCamera (ViewCameraID id, CameraType type, cml::vec3f position, cml::quatf rotation)
+void RenderCameras::SetupViewCamera (ViewCameraID id, CameraType type, cml::vec3f position, cml::quatf rotation)
 {
 	camera_data.at (id).type = type;
 	camera_data.at (id).position = position;

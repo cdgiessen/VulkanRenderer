@@ -14,7 +14,7 @@
 #include "resources/Mesh.h"
 #include "resources/Resource.h"
 
-//class Water
+// class Water
 //{
 //	VulkanRenderer& renderer;
 //	std::unique_ptr<VulkanModel> model;
@@ -31,7 +31,7 @@
 //	std::unique_ptr<VulkanBuffer> uniformBuffer;
 //
 //	public:
-//	Water (Resource::ResourceManager& resourceMan, VulkanRenderer& renderer);
+//	Water (Resource::Resources& resourceMan, VulkanRenderer& renderer);
 //
 //	void UpdateUniform (cml::vec3f camera_pos);
 //

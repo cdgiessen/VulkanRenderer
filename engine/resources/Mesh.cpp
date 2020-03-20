@@ -339,6 +339,6 @@ MeshData CreateWaterPlaneSubdiv (int levels, int subdivs)
 	return MeshData (Vert_Pos, vertices, indices);
 }
 
-Manager::Manager (job::TaskManager& task_manager) : task_manager (task_manager) {}
+Meshes::Meshes (job::ThreadPool& thread_pool) : thread_pool (thread_pool) {}
 
 } // namespace Resource::Mesh

@@ -12,7 +12,7 @@
 
 class VulkanDevice;
 class VulkanBuffer;
-class AsyncTaskManager;
+class AsyncTaskQueue;
 
 struct TexCreateDetails
 {
@@ -44,13 +44,13 @@ class VulkanTexture
 {
 	public:
 	VulkanTexture (VulkanDevice& device,
-	    AsyncTaskManager& async_task_man,
+	    AsyncTaskQueue& async_task_man,
 	    std::function<void ()> const& finish_work,
 	    TexCreateDetails texCreateDetails,
 	    Resource::Texture::TexResource textureResource);
 
 	VulkanTexture (VulkanDevice& device,
-	    AsyncTaskManager& async_task_man,
+	    AsyncTaskQueue& async_task_man,
 	    std::function<void ()> const& finish_work,
 	    TexCreateDetails texCreateDetails,
 	    std::unique_ptr<VulkanBuffer> buffer);
@@ -126,19 +126,19 @@ class VulkanTexture
 
 using VulkanTextureID = int32_t;
 
-class TextureManager
+class Textures
 {
 	public:
-	TextureManager (Resource::Texture::Manager& texture_manager, VulkanDevice& device, AsyncTaskManager& async_task_manager);
-	~TextureManager ();
+	Textures (Resource::Texture::Textures& textures, VulkanDevice& device, AsyncTaskQueue& async_task_queue);
+	~Textures ();
 
-	TextureManager (TextureManager const& buf) = delete;
-	TextureManager& operator= (TextureManager const& buf) = delete;
+	Textures (Textures const& buf) = delete;
+	Textures& operator= (Textures const& buf) = delete;
 
 
-	VulkanTextureID CreateTexture2D (Resource::Texture::TexID texture, TexCreateDetails texCreateDetails);
+	VulkanTextureID CreateTexture2D (Resource::Texture::TexID texture_id, TexCreateDetails texCreateDetails);
 
-	VulkanTextureID CreateTexture2DArray (Resource::Texture::TexID textures, TexCreateDetails texCreateDetails);
+	VulkanTextureID CreateTexture2DArray (Resource::Texture::TexID texture_id, TexCreateDetails texCreateDetails);
 
 	VulkanTextureID CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails);
 
@@ -155,9 +155,9 @@ class TextureManager
 	private:
 	std::function<void ()> CreateFinishWork (VulkanTextureID id);
 
-	Resource::Texture::Manager& texture_manager;
+	Resource::Texture::Textures& textures;
 	VulkanDevice& device;
-	AsyncTaskManager& async_task_manager;
+	AsyncTaskQueue& async_task_queue;
 
 	VulkanTextureID id_counter = 0;
 	std::mutex map_lock;

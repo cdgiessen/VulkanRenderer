@@ -12,7 +12,7 @@
 
 namespace job
 {
-class TaskManager;
+class ThreadPool;
 }
 namespace Resource::Shader
 {
@@ -74,10 +74,10 @@ class ShaderCompiler
 };
 
 
-class Manager
+class Shaders
 {
 	public:
-	Manager (job::TaskManager& task_manager);
+	Shaders (job::ThreadPool& thread_pool);
 
 	ShaderID AddShader (std::string name, std::string path);
 
@@ -91,7 +91,7 @@ class Manager
 	private:
 	std::vector<uint32_t> AlignData (std::vector<char> const& code);
 
-	job::TaskManager& task_manager;
+	job::ThreadPool& thread_pool;
 	std::mutex lock;
 	ShaderID cur_id = 0;
 	std::unordered_map<ShaderID, ShaderInfo> shaders;

@@ -60,7 +60,7 @@ class ViewCameraData
 	bool isViewMatDirty = true;
 	bool isProjMatDirty = true;
 
-	friend class ViewCameraManager;
+	friend class RenderCameras;
 	bool is_active = false;
 };
 
@@ -74,12 +74,12 @@ struct CameraGPUData
 
 using ViewCameraID = int;
 const uint32_t MaxCameraCount = 32;
-class ViewCameraManager
+class RenderCameras
 {
 	public:
-	ViewCameraManager (VulkanDevice& device);
-	ViewCameraManager (ViewCameraManager const& cam) = delete;
-	ViewCameraManager operator= (ViewCameraManager const& cam) = delete;
+	RenderCameras (VulkanDevice& device);
+	RenderCameras (RenderCameras const& cam) = delete;
+	RenderCameras operator= (RenderCameras const& cam) = delete;
 
 	ViewCameraID Create (CameraType type, cml::vec3f position, cml::quatf rotation);
 	void Delete (ViewCameraID id);

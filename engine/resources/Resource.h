@@ -16,27 +16,27 @@
 
 namespace job
 {
-class TaskManager;
+class ThreadPool;
 }
 
 
 namespace Resource
 {
 
-class ResourceManager
+class Resources
 {
 	public:
-	ResourceManager (job::TaskManager& task_manager);
-	~ResourceManager ();
+	Resources (job::ThreadPool& thread_pool);
+	~Resources ();
 
 	private:
-	job::TaskManager& task_manager;
+	job::ThreadPool& thread_pool;
 
 	public:
-	Mesh::Manager mesh_manager;
-	Texture::Manager texture_manager;
-	Material::Manager material_manager;
-	Shader::Manager shader_manager;
+	Mesh::Meshes meshes;
+	Texture::Textures textures;
+	Material::Materials materials;
+	Shader::Shaders shaders;
 };
 
 

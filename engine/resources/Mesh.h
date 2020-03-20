@@ -8,7 +8,7 @@
 
 namespace job
 {
-class TaskManager;
+class ThreadPool;
 }
 namespace Resource::Mesh
 {
@@ -71,15 +71,15 @@ MeshData CreateSphere (int dim = 10);
 MeshData CreateWaterPlaneSubdiv (int levels = 3, int subdivs = 3);
 
 using MeshID = uint32_t;
-class Manager
+class Meshes
 {
 	public:
-	Manager (job::TaskManager& task_manager);
+	Meshes (job::ThreadPool& thread_pool);
 
 	MeshID LoadMesh ();
 
 	private:
-	job::TaskManager& task_manager;
+	job::ThreadPool& thread_pool;
 	std::unordered_map<MeshID, MeshData> meshes;
 };
 

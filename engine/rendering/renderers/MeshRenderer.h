@@ -15,10 +15,10 @@ struct MeshData
 	MatInstanceID mat;
 };
 
-class MeshManager
+class MeshRenderer
 {
 	public:
-	MeshManager (BackEnd& back_end);
+	MeshRenderer (BackEnd& back_end);
 
 	private:
 	BackEnd& back_end;

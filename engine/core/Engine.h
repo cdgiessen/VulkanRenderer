@@ -61,12 +61,12 @@ class Engine
 
 	StaticInitializer static_initializer;
 
-	job::TaskManager task_manager;
+	job::ThreadPool thread_pool;
 
-	Time time_manager;
+	Time time;
 	Window window;
 	Input::InputDirector input;
-	Resource::ResourceManager resource_manager;
+	Resource::Resources resources;
 
 	VulkanRenderer vulkan_renderer;
 	Scene scene;

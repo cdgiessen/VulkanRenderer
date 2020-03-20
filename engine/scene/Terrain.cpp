@@ -4,7 +4,7 @@
 //
 //#include "rendering/RenderStructs.h"
 //
-//#include "TerrainManager.h"
+//#include "TerrainSystem.h"
 //#include "rendering/Initializers.h"
 //
 //
@@ -87,9 +87,9 @@
 //
 // Terrain::~Terrain ()
 //{
-//	renderer.texture_manager.DeleteTexture (terrainHeightMap);
-//	renderer.texture_manager.DeleteTexture (terrainSplatMap);
-//	renderer.texture_manager.DeleteTexture (terrainNormalMap);
+//	renderer.textures.DeleteTexture (terrainHeightMap);
+//	renderer.textures.DeleteTexture (terrainSplatMap);
+//	renderer.textures.DeleteTexture (terrainNormalMap);
 //}
 //
 // int Terrain::FindEmptyIndex ()
@@ -154,7 +154,7 @@
 //{
 //
 //	int length = fastGraphUser.image_length ();
-//	auto buffer_height = renderer.buffer_manager.CreateBuffer (
+//	auto buffer_height = renderer.buffers.CreateBuffer (
 //	    staging_details (BufferType::staging, sizeof (float) * fastGraphUser.GetHeightMap ().size ()));
 //	buffer_height->CopyToBuffer (fastGraphUser.GetHeightMap ());
 //
@@ -162,18 +162,18 @@
 //	    VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 //	details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 //
-//	terrainHeightMap = renderer.texture_manager.CreateTextureFromBuffer (std::move (buffer_height), details);
+//	terrainHeightMap = renderer.textures.CreateTextureFromBuffer (std::move (buffer_height), details);
 //
-//	auto buffer_splat = renderer.buffer_manager.CreateBuffer (staging_details (
+//	auto buffer_splat = renderer.buffers.CreateBuffer (staging_details (
 //	    BufferType::staging, sizeof (cml::vec4<uint8_t>) * fastGraphUser.GetSplatMap ().size ()));
 //	buffer_splat->CopyToBuffer (fastGraphUser.GetSplatMap ());
 //
 //	TexCreateDetails splat_details (
 //	    VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 //	splat_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-//	terrainSplatMap = renderer.texture_manager.CreateTextureFromBuffer (std::move (buffer_splat), splat_details);
+//	terrainSplatMap = renderer.textures.CreateTextureFromBuffer (std::move (buffer_splat), splat_details);
 //
-//	auto buffer_normal = renderer.buffer_manager.CreateBuffer (staging_details (
+//	auto buffer_normal = renderer.buffers.CreateBuffer (staging_details (
 //	    BufferType::staging, sizeof (cml::vec4<int16_t>) * fastGraphUser.GetNormalMap ().size ()));
 //	buffer_normal->CopyToBuffer (fastGraphUser.GetNormalMap ());
 //
@@ -181,7 +181,7 @@
 //	    VK_FORMAT_R16G16B16A16_SNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 //	norm_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 //	terrainNormalMap =
-//	    renderer.texture_manager.CreateTextureFromBuffer (std::move (buffer_normal), norm_details);
+//	    renderer.textures.CreateTextureFromBuffer (std::move (buffer_normal), norm_details);
 //}
 //
 // void Terrain::SetupDescriptorSets (
@@ -218,13 +218,13 @@
 //
 //	std::vector<DescriptorUse> writes;
 //	writes.push_back (DescriptorUse (0, 1, uniformBuffer->GetResource ()));
-//	writes.push_back (DescriptorUse (1, 1, renderer.texture_manager.GetResource (terrainHeightMap)));
-//	writes.push_back (DescriptorUse (2, 1, renderer.texture_manager.GetResource (terrainNormalMap)));
-//	writes.push_back (DescriptorUse (3, 1, renderer.texture_manager.GetResource (terrainSplatMap)));
-//	writes.push_back (DescriptorUse (4, 1, renderer.texture_manager.GetResource (texArrAlbedo)));
-//	writes.push_back (DescriptorUse (5, 1, renderer.texture_manager.GetResource (texArrRoughness)));
-//	writes.push_back (DescriptorUse (6, 1, renderer.texture_manager.GetResource (texArrMetallic)));
-//	writes.push_back (DescriptorUse (7, 1, renderer.texture_manager.GetResource (texArrNormal)));
+//	writes.push_back (DescriptorUse (1, 1, renderer.textures.GetResource (terrainHeightMap)));
+//	writes.push_back (DescriptorUse (2, 1, renderer.textures.GetResource (terrainNormalMap)));
+//	writes.push_back (DescriptorUse (3, 1, renderer.textures.GetResource (terrainSplatMap)));
+//	writes.push_back (DescriptorUse (4, 1, renderer.textures.GetResource (texArrAlbedo)));
+//	writes.push_back (DescriptorUse (5, 1, renderer.textures.GetResource (texArrRoughness)));
+//	writes.push_back (DescriptorUse (6, 1, renderer.textures.GetResource (texArrMetallic)));
+//	writes.push_back (DescriptorUse (7, 1, renderer.textures.GetResource (texArrNormal)));
 //	descriptor->UpdateDescriptorSet (descriptorSet, writes);
 //}
 //
@@ -232,8 +232,8 @@
 //{
 //	PipelineOutline out;
 //
-//	auto vert = renderer.shader_manager.get_module ("terrain", ShaderType::vertex);
-//	auto frag = renderer.shader_manager.get_module ("terrain", ShaderType::fragment);
+//	auto vert = renderer.shaders.get_module ("terrain", ShaderType::vertex);
+//	auto frag = renderer.shaders.get_module ("terrain", ShaderType::fragment);
 //
 //	ShaderModuleSet shader_set;
 //	shader_set.Vertex (vert.value ()).Fragment (frag.value ());
@@ -285,13 +285,13 @@
 //
 //	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 //
-//	normal = renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
+//	normal = renderer.pipelines.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 //
 //	out.SetRasterizer (
 //	    VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 //
 //	wireframe =
-//	    renderer.pipeline_manager.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
+//	    renderer.pipelines.MakePipe (out, renderer.GetRelevantRenderpass (RenderableType::opaque));
 //}
 //
 // void Terrain::InitTerrainQuad (int quad, cml::vec3f viewerPos)
@@ -442,13 +442,13 @@
 // void Terrain::DrawTerrainGrid (VkCommandBuffer cmdBuf, bool wireframe)
 //{
 //	if (wireframe)
-//		renderer.pipeline_manager.BindPipe (wireframe, cmdBuf);
+//		renderer.pipelines.BindPipe (wireframe, cmdBuf);
 //	else
-//		renderer.pipeline_manager.BindPipe (normal, cmdBuf);
+//		renderer.pipelines.BindPipe (normal, cmdBuf);
 //
 //	vkCmdBindDescriptorSets (cmdBuf,
 //	    VK_PIPELINE_BIND_POINT_GRAPHICS,
-//	    renderer.pipeline_manager.GetPipeLayout (normal),
+//	    renderer.pipelines.GetPipeLayout (normal),
 //	    2,
 //	    1,
 //	    &descriptorSet.set,

@@ -42,12 +42,12 @@ VulkanMesh::VulkanMesh (
 {
 }
 
-ModelManager::ModelManager (Resource::Mesh::Manager& mesh_manager, VulkanDevice& device, AsyncTaskManager& async_task_man)
-: mesh_manager (mesh_manager), device (device), async_task_man (async_task_man)
+Models::Models (Resource::Mesh::Meshes& meshes, VulkanDevice& device, AsyncTaskQueue& async_task_man)
+: meshes (meshes), device (device), async_task_man (async_task_man)
 {
 }
 
-ModelID ModelManager::CreateModel (Resource::Mesh::MeshData const& meshData)
+ModelID Models::CreateModel (Resource::Mesh::MeshData const& meshData)
 {
 	std::lock_guard lg (map_lock);
 
@@ -100,28 +100,28 @@ ModelID ModelManager::CreateModel (Resource::Mesh::MeshData const& meshData)
 	async_task_man.SubmitTask (std::move (transfer));
 	return new_id;
 }
-void ModelManager::FreeModel (ModelID id)
+void Models::FreeModel (ModelID id)
 {
 	std::lock_guard lg (map_lock);
 	models.erase (id);
 }
 
-void ModelManager::FinishModelUpload (ModelID id)
+void Models::FinishModelUpload (ModelID id)
 {
 	std::lock_guard lg (map_lock);
 
 	staging_models.erase (id);
 }
 
-bool ModelManager::IsUploaded (ModelID id)
+bool Models::IsUploaded (ModelID id)
 {
 	std::lock_guard lg (map_lock);
 	return staging_models.count (id) == 0;
 }
 
-VertexLayout ModelManager::GetLayout (ModelID id) { return models.at (id).vertLayout; }
+VertexLayout Models::GetLayout (ModelID id) { return models.at (id).vertLayout; }
 
-void ModelManager::Bind (VkCommandBuffer cmdBuf, ModelID id)
+void Models::Bind (VkCommandBuffer cmdBuf, ModelID id)
 {
 	std::lock_guard lg (map_lock);
 
@@ -132,7 +132,7 @@ void ModelManager::Bind (VkCommandBuffer cmdBuf, ModelID id)
 		models.at (id).indices.BindIndexBuffer (cmdBuf);
 	}
 }
-void ModelManager::DrawIndexed (VkCommandBuffer cmdBuf, ModelID id)
+void Models::DrawIndexed (VkCommandBuffer cmdBuf, ModelID id)
 {
 	Bind (cmdBuf, id);
 	vkCmdDrawIndexed (cmdBuf, static_cast<uint32_t> (models.at (id).index_count), 1, 0, 0, 0);

@@ -12,7 +12,7 @@
 
 namespace job
 {
-class TaskManager;
+class ThreadPool;
 }
 
 
@@ -63,7 +63,7 @@ enum class ChannelType
 	rgba,       // STBI_rgb_alpha = 4
 };
 
-struct Dimentions
+struct Dimensions
 {
 	int width = 0, height = 0, channels = 4;
 };
@@ -75,15 +75,15 @@ class TexResource
 	std::string name;
 	TextureType tex_type;
 	std::vector<std::string> paths;
-	std::vector<Dimentions> dims;
+	std::vector<Dimensions> dims;
 	std::vector<std::byte> data;
 };
 
-class Manager
+class Textures
 {
 	public:
-	Manager (job::TaskManager& task_manager);
-	~Manager ();
+	Textures (job::ThreadPool& thread_pool);
+	~Textures ();
 
 	void LoadTextureList ();
 	void SaveTextureList ();
@@ -97,7 +97,7 @@ class Manager
 
 
 	private:
-	job::TaskManager& task_manager;
+	job::ThreadPool& thread_pool;
 
 	std::atomic_int id_counter = 0;
 

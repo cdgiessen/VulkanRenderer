@@ -2,7 +2,7 @@
 
 #include "Device.h"
 
-MatOutlineID MaterialManager::CreateMatOutline (Resource::Material::MaterialOutline const& outline)
+MatOutlineID Materials::CreateMatOutline (Resource::Material::MaterialOutline const& outline)
 {
 	// DescriptorLayout layout;
 	// layout.push_back ({ DescriptorType::uniform_buffer, ShaderStage::vertex |
@@ -14,8 +14,7 @@ MatOutlineID MaterialManager::CreateMatOutline (Resource::Material::MaterialOutl
 	return 0;
 }
 
-MatInstanceID MaterialManager::CreateMatInstance (
-    MatOutlineID id, Resource::Material::MaterialInstance const& instance)
+MatInstanceID Materials::CreateMatInstance (MatOutlineID id, Resource::Material::MaterialInstance const& instance)
 
 {
 	// set = descriptor_man.CreateDescriptorSet (outline.layout);
@@ -23,6 +22,6 @@ MatInstanceID MaterialManager::CreateMatInstance (
 	return 0;
 }
 
-//// MAT MANAGER ////
+//// MATERIALS ////
 
-MaterialManager ::MaterialManager (Resource::Material::Manager& mat_man, VulkanDevice& device) {}
+Materials::Materials (Resource::Material::Materials& materials, VulkanDevice& device) {}

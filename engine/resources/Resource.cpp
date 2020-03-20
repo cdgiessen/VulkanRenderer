@@ -7,8 +7,8 @@
 namespace Resource
 {
 
-ResourceManager::ResourceManager (job::TaskManager& task_manager)
-: task_manager (task_manager), mesh_manager (task_manager), texture_manager (task_manager), shader_manager (task_manager)
+Resources::Resources (job::ThreadPool& thread_pool)
+: thread_pool (thread_pool), meshes (thread_pool), textures (thread_pool), shaders (thread_pool)
 {
 	Log.Debug ("Creating asset directories");
 
@@ -30,6 +30,6 @@ ResourceManager::ResourceManager (job::TaskManager& task_manager)
 }
 
 
-ResourceManager::~ResourceManager () {}
+Resources::~Resources () {}
 
 } // namespace Resource

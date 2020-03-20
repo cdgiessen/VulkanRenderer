@@ -19,14 +19,14 @@
 
 
 struct BackEnd;
-class ViewCameraManager;
-class ModelManager;
+class RenderCameras;
+class Models;
 
 class Skybox
 {
 	public:
-	Skybox (ViewCameraManager& camera_manager,
-	    ModelManager& model_manager,
+	Skybox (RenderCameras& render_cameras,
+	    Models& models,
 	    DescriptorLayout& descriptor_layout,
 	    DescriptorPool& descriptor_pool,
 	    DescriptorSet descriptor_set,
@@ -39,8 +39,8 @@ class Skybox
 	void Draw (VkCommandBuffer cmdBuf);
 
 	private:
-	ViewCameraManager& camera_manager;
-	ModelManager& model_manager;
+	RenderCameras& render_cameras;
+	Models& models;
 
 	DescriptorLayout descriptor_layout;
 	DescriptorPool descriptor_pool;
@@ -54,4 +54,4 @@ class Skybox
 };
 
 std::optional<Skybox> CreateSkybox (
-    BackEnd& back_end, ViewCameraManager& camera_manager, Resource::Texture::TexID tex_resource);
+    BackEnd& back_end, RenderCameras& render_cameras, Resource::Texture::TexID tex_resource);

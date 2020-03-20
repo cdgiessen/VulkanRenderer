@@ -6,7 +6,7 @@
 
 namespace job
 {
-class TaskManager;
+class ThreadPool;
 }
 class Time;
 namespace Input
@@ -15,26 +15,26 @@ class InputDirector;
 }
 namespace Resource
 {
-class ResourceManager;
+class Resources;
 }
 class VulkanRenderer;
 
 class Scene
 {
 	public:
-	Scene (job::TaskManager& task_manager,
-	    Time& time_manager,
+	Scene (job::ThreadPool& thread_pool,
+	    Time& time,
 	    Input::InputDirector const& input,
-	    Resource::ResourceManager& resourceMan,
+	    Resource::Resources& resourceMan,
 	    VulkanRenderer& renderer);
 
 	void Update ();
 
 	private:
-	job::TaskManager& task_manager;
-	Time& time_manager;
+	job::ThreadPool& thread_pool;
+	Time& time;
 	Input::InputDirector const& input;
-	Resource::ResourceManager& resource_manager;
+	Resource::Resources& resources;
 	VulkanRenderer& renderer;
 
 	public:
@@ -47,7 +47,7 @@ class Scene
 //#include "Camera.h"
 //#include "Skybox.h"
 //#include "Terrain.h"
-//#include "TerrainManager.h"
+//#include "TerrainSystem.h"
 //#include "Water.h"
 //
 // struct SkySettings
@@ -65,10 +65,10 @@ class Scene
 // class Scene
 //{
 //	public:
-//	Scene (job::TaskManager& task_manager,
-//	    Resource::ResourceManager& resourceMan,
+//	Scene (job::ThreadPool& thread_pool,
+//	    Resource::Resources& resourceMan,
 //	    VulkanRenderer& renderer,
-//	    Time& time_manager,
+//	    Time& time,
 //	    InternalGraph::GraphPrototype& graph);
 //
 //	void UpdateScene ();
@@ -84,16 +84,16 @@ class Scene
 //	bool walkOnGround = false;
 //
 //	private:
-//	job::TaskManager& task_manager;
+//	job::ThreadPool& thread_pool;
 //	VulkanRenderer& renderer;
-//	Resource::ResourceManager& resourceMan;
-//	Time& time_manager;
+//	Resource::Resources& resourceMan;
+//	Time& time;
 //
 //	std::vector<DirectionalLight> directionalLights;
 //	std::vector<PointLight> pointLights;
 //	std::vector<SpotLight> spotLights;
 //
-//	std::unique_ptr<TerrainManager> terrainManager;
+//	std::unique_ptr<TerrainSystem> terrainSystem;
 //	std::unique_ptr<Water> water_plane;
 //
 //	std::unique_ptr<Skybox> skybox;

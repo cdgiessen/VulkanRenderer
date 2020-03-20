@@ -16,19 +16,19 @@ class Window;
 
 namespace Resource
 {
-class ResourceManager;
+class Resources;
 }
 
 
 struct BackEnd
 {
-	BackEnd (bool validationLayer, job::TaskManager& task_manager, Window& window, Resource::ResourceManager& resource_man);
+	BackEnd (bool validationLayer, job::ThreadPool& thread_pool, Window& window, Resource::Resources& resource_man);
 
 	VulkanDevice device;
 	VulkanSwapChain vulkanSwapChain;
-	AsyncTaskManager async_task_manager;
-	ShaderManager shader_manager;
+	AsyncTaskQueue async_task_queue;
+	Shaders shaders;
 	PipelineCache pipeline_cache;
-	ModelManager model_manager;
-	TextureManager texture_manager;
+	Models models;
+	Textures textures;
 };

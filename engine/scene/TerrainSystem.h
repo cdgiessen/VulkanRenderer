@@ -27,7 +27,7 @@
 //
 // struct GeneralSettings
 //{
-//	bool show_terrain_manager_window = true;
+//	bool show_terrain_system_window = true;
 //	float width = 1000;
 //	float heightScale = 100.0f;
 //	int maxLevels = 4;
@@ -49,14 +49,14 @@
 //	    int numCells, int maxLevels, int sourceImageResolution, float heightScale, TerrainCoordinateData coord);
 //};
 //
-// class TerrainManager
+// class TerrainSystem
 //{
 //	public:
-//	TerrainManager (job::TaskManager& task_manager,
+//	TerrainSystem (job::ThreadPool& thread_pool,
 //	    InternalGraph::GraphPrototype& protoGraph,
-//	    Resource::ResourceManager& resourceMan,
+//	    Resource::Resources& resourceMan,
 //	    VulkanRenderer& renderer);
-//	~TerrainManager ();
+//	~TerrainSystem ();
 //
 //	void CleanUpTerrain ();
 //
@@ -68,8 +68,8 @@
 //
 //	float GetTerrainHeightAtLocation (float x, float z);
 //
-//	job::TaskManager& task_manager;
-//	Resource::ResourceManager& resourceMan;
+//	job::ThreadPool& thread_pool;
+//	Resource::Resources& resourceMan;
 //	VulkanRenderer& renderer;
 //
 //	std::shared_ptr<job::TaskSignal> workContinueSignal;

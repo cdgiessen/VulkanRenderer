@@ -374,7 +374,7 @@ std::optional<std::vector<uint32_t>> const ShaderCompiler::compile_glsl_to_spirv
 	return SpirV;
 }
 
-Manager::Manager (job::TaskManager& task_manager) : task_manager (task_manager)
+Shaders::Shaders (job::ThreadPool& thread_pool) : thread_pool (thread_pool)
 {
 
 	namespace fs = std::filesystem;
@@ -414,7 +414,7 @@ std::vector<uint32_t> AlignData (std::vector<char> const& code)
 	return codeAligned;
 }
 
-ShaderID Manager::AddShader (std::string name, std::string path)
+ShaderID Shaders::AddShader (std::string name, std::string path)
 {
 
 	auto shader_chars = compiler.LoadFileData (path);
@@ -445,12 +445,12 @@ ShaderID Manager::AddShader (std::string name, std::string path)
 	return -1;
 }
 
-std::vector<uint32_t> Manager::GetSpirVData (ShaderID id)
+std::vector<uint32_t> Shaders::GetSpirVData (ShaderID id)
 {
 	std::lock_guard lg (lock);
 	return shaders.at (id).spirv_data;
 }
-std::vector<uint32_t> Manager::GetSpirVData (std::string const& name, ShaderType type)
+std::vector<uint32_t> Shaders::GetSpirVData (std::string const& name, ShaderType type)
 {
 	std::lock_guard lg (lock);
 	for (auto& [key, info] : shaders)

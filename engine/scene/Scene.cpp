@@ -10,39 +10,39 @@
 
 #include "core/Logger.h"
 
-Scene::Scene (job::TaskManager& task_manager,
-    Time& time_manager,
+Scene::Scene (job::ThreadPool& thread_pool,
+    Time& time,
     Input::InputDirector const& input,
-    Resource::ResourceManager& resource_manager,
+    Resource::Resources& resources,
     VulkanRenderer& renderer)
-: task_manager (task_manager),
-  time_manager (time_manager),
+: thread_pool (thread_pool),
+  time (time),
   input (input),
-  resource_manager (resource_manager),
+  resources (resources),
   renderer (renderer),
   player (input, cml::vec3f::zero, 0.f, 0.f)
 {
 	main_camera =
-	    renderer.camera_manager.Create (CameraType::perspective, cml::vec3f::zero, cml::quatf::identity);
+	    renderer.render_cameras.Create (CameraType::perspective, cml::vec3f::zero, cml::quatf::identity);
 }
 
 void Scene::Update ()
 {
-	double deltaTime = time_manager.DeltaTime ();
+	double deltaTime = time.DeltaTime ();
 
 	player.Update (deltaTime);
-	auto cam = renderer.camera_manager.GetCameraData (main_camera);
+	auto cam = renderer.render_cameras.GetCameraData (main_camera);
 	cam.SetPosition (player.Position ());
 	cam.SetRotation (player.Rotation ());
-	renderer.camera_manager.SetCameraData (main_camera, cam);
+	renderer.render_cameras.SetCameraData (main_camera, cam);
 }
 
-// Scene::Scene (job::TaskManager& task_manager,
-//    Resource::ResourceManager& resourceMan,
+// Scene::Scene (job::ThreadPool& thread_pool,
+//    Resource::Resources& resourceMan,
 //    VulkanRenderer& renderer,
-//    Time& time_manager,
+//    Time& time,
 //    InternalGraph::GraphPrototype& graph)
-//: task_manager (task_manager), renderer (renderer), resourceMan (resourceMan), time_manager (time_manager)
+//: thread_pool (thread_pool), renderer (renderer), resourceMan (resourceMan), time (time)
 //{
 //
 //	camera = std::make_unique<Camera> (cml::vec3f (0, 1, -5), cml::vec3f (0, 1, 0), 0, 90);
@@ -56,13 +56,13 @@ void Scene::Update ()
 //	directionalLights.at (0) = skySettings.sun;
 //
 //	skybox = std::make_unique<Skybox> (renderer);
-//	// skybox->skyboxCubeMap = resourceMan.texture_manager.GetTexIDByName ("Skybox");
+//	// skybox->skyboxCubeMap = resourceMan.textures.GetTexIDByName ("Skybox");
 //	// skybox->model = std::make_unique<VulkanModel> (
-//	//     renderer.device, renderer.async_task_manager, createCube ());
+//	//     renderer.device, renderer.async_task_queue, createCube ());
 //	// skybox->InitSkybox ();
 //
 //
-//	terrainManager = std::make_unique<TerrainManager> (task_manager, graph, resourceMan, renderer);
+//	terrainSystem = std::make_unique<TerrainSystem> (thread_pool, graph, resourceMan, renderer);
 //
 //	water_plane = std::make_unique<Water> (resourceMan, renderer);
 //}
@@ -71,7 +71,7 @@ void Scene::Update ()
 //{
 //
 //	GlobalData gd;
-//	gd.time = (float)time_manager.RunningTime ();
+//	gd.time = (float)time.RunningTime ();
 //
 //	// cml::mat4f proj = cml::perspective (cml::radians (55.0f),
 //	//     renderer.vulkanSwapChain.swapChainExtent.width /
@@ -92,7 +92,7 @@ void Scene::Update ()
 //	if (walkOnGround)
 //	{
 //		float groundHeight =
-//		    (float)terrainManager->GetTerrainHeightAtLocation (camera->Position.x, camera->Position.z) + 2.0f;
+//		    (float)terrainSystem->GetTerrainHeightAtLocation (camera->Position.x, camera->Position.z) + 2.0f;
 //		float height = (float)camera->Position.y;
 //
 //		if (pressedControllerJumpButton && !releasedControllerJumpButton)
@@ -117,7 +117,7 @@ void Scene::Update ()
 //		{
 //			verticalVelocity += 0.15f;
 //		}
-//		verticalVelocity += (float)time_manager.DeltaTime () * gravity;
+//		verticalVelocity += (float)time.DeltaTime () * gravity;
 //		height += verticalVelocity;
 //		camera->Position.y = height;
 //		if (camera->Position.y < groundHeight)
@@ -136,8 +136,8 @@ void Scene::Update ()
 //
 //	skybox->UpdateUniform (proj, cd.at (0).view);
 //
-//	if (UpdateTerrain && terrainManager != nullptr)
-//		terrainManager->UpdateTerrains (camera->Position);
+//	if (UpdateTerrain && terrainSystem != nullptr)
+//		terrainSystem->UpdateTerrains (camera->Position);
 //
 //	water_plane->UpdateUniform (camera->Position);
 //}
@@ -145,7 +145,7 @@ void Scene::Update ()
 // void Scene::RenderOpaque (VkCommandBuffer commandBuffer, bool wireframe)
 //{
 //
-//	if (terrainManager != nullptr) terrainManager->RenderTerrain (commandBuffer, wireframe);
+//	if (terrainSystem != nullptr) terrainSystem->RenderTerrain (commandBuffer, wireframe);
 //}
 //
 // void Scene::RenderTransparent (VkCommandBuffer cmdBuf, bool wireframe)
@@ -194,9 +194,9 @@ void Scene::Update ()
 //
 // void Scene::UpdateSceneGUI ()
 //{
-//	if (terrainManager != nullptr)
+//	if (terrainSystem != nullptr)
 //	{
-//		terrainManager->UpdateTerrainGUI ();
+//		terrainSystem->UpdateTerrainGUI ();
 //	}
 //
 //	DrawSkySettingsGui ();

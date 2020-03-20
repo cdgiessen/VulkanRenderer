@@ -27,12 +27,9 @@ std::string formatTypeToString (FormatType type)
 {
 	switch (type)
 	{
-		case (FormatType::jpg):
-			return "jpg";
-		case (FormatType::png):
-			return "png";
-		default:
-			return "Image type not valid!";
+		case (FormatType::jpg): return "jpg";
+		case (FormatType::png): return "png";
+		default: return "Image type not valid!";
 	}
 	return "";
 }
@@ -43,29 +40,14 @@ nlohmann::json to_json (TexResource const& r)
 	j["id"] = r.id;
 	switch (r.tex_type)
 	{
-		case (TextureType::single1D):
-			j["type"] = "single1D";
-			break;
-		case (TextureType::single2D):
-			j["type"] = "single2D";
-			break;
-		case (TextureType::single3D):
-			j["type"] = "single3D";
-			break;
-		case (TextureType::array1D):
-			j["type"] = "array1D";
-			break;
-		case (TextureType::array2D):
-			j["type"] = "array2D";
-			break;
-		case (TextureType::array3D):
-			j["type"] = "array3D";
-			break;
-		case (TextureType::cubemap2D):
-			j["type"] = "cubemap2D";
-			break;
-		default:
-			break;
+		case (TextureType::single1D): j["type"] = "single1D"; break;
+		case (TextureType::single2D): j["type"] = "single2D"; break;
+		case (TextureType::single3D): j["type"] = "single3D"; break;
+		case (TextureType::array1D): j["type"] = "array1D"; break;
+		case (TextureType::array2D): j["type"] = "array2D"; break;
+		case (TextureType::array3D): j["type"] = "array3D"; break;
+		case (TextureType::cubemap2D): j["type"] = "cubemap2D"; break;
+		default: break;
 	}
 	int i = 0;
 	for (auto& p : r.paths)
@@ -115,16 +97,16 @@ std::optional<TexResource> from_json_TexResource (nlohmann::json j)
 	}
 }
 
-Manager::Manager (job::TaskManager& task_manager) : task_manager (task_manager)
+Textures::Textures (job::ThreadPool& thread_pool) : thread_pool (thread_pool)
 {
 	LoadTextureList ();
 }
 
-Manager::~Manager () {}
+Textures::~Textures () {}
 
-TexID Manager::GetNextFreeTexID () { return id_counter++; }
+TexID Textures::GetNextFreeTexID () { return id_counter++; }
 
-void Manager::LoadTextureList ()
+void Textures::LoadTextureList ()
 {
 	nlohmann::json j;
 
@@ -171,7 +153,7 @@ void Manager::LoadTextureList ()
 			}
 		}
 		id_counter = count;
-		task_manager.Submit (tasks);
+		thread_pool.Submit (tasks);
 		signal->Wait ();
 	}
 	catch (nlohmann::json::exception& e)
@@ -180,7 +162,7 @@ void Manager::LoadTextureList ()
 	}
 }
 
-void Manager::SaveTextureList ()
+void Textures::SaveTextureList ()
 {
 	nlohmann::json j;
 	for (auto const& [key, val] : textureResources)
@@ -203,7 +185,7 @@ void Manager::SaveTextureList ()
 	outFile.close ();
 }
 
-void Manager::LoadTextureFromFile (TexID id)
+void Textures::LoadTextureFromFile (TexID id)
 {
 	auto& texRes = GetTexResourceByID (id);
 
@@ -250,13 +232,13 @@ void Manager::LoadTextureFromFile (TexID id)
 	texRes.data = std::move (texData);
 }
 
-TexResource& Manager::GetTexResourceByID (TexID id)
+TexResource& Textures::GetTexResourceByID (TexID id)
 {
 	std::lock_guard lk (resource_lock);
 	return textureResources.at (id);
 }
 
-TexID Manager::GetTexIDByName (std::string s)
+TexID Textures::GetTexIDByName (std::string s)
 {
 	std::lock_guard<std::mutex> lk (resource_lock);
 	for (auto const& [key, val] : textureResources)

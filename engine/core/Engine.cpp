@@ -82,9 +82,9 @@ Engine::Engine ()
       cml::vec2i (settings.screenWidth, settings.screenHeight),
       cml ::vec2i (10, 10)),
   input (window),
-  resource_manager (task_manager),
-  vulkan_renderer (settings.useValidationLayers, task_manager, window, resource_manager),
-  scene (task_manager, time_manager, input, resource_manager, vulkan_renderer)
+  resources (thread_pool),
+  vulkan_renderer (settings.useValidationLayers, thread_pool, window, resources),
+  scene (thread_pool, time, input, resources, vulkan_renderer)
 // imgui_nodeGraph_terrain ()
 {
 	input.SetMouseControlStatus (false);
@@ -109,7 +109,7 @@ void Engine::Run ()
 			}
 		}
 
-		time_manager.StartFrameTimer ();
+		time.StartFrameTimer ();
 		input.UpdateInputs ();
 		HandleInputs ();
 		scene.Update ();
@@ -120,18 +120,17 @@ void Engine::Run ()
 
 		if (settings.isFrameCapped)
 		{
-			if (time_manager.ExactTimeSinceFrameStart () < 1.0 / settings.MaxFPS)
+			if (time.ExactTimeSinceFrameStart () < 1.0 / settings.MaxFPS)
 			{
 				std::this_thread::sleep_for (std::chrono::duration<double> (
-				    1.0 / settings.MaxFPS - time_manager.ExactTimeSinceFrameStart () -
-				    (1.0 / settings.MaxFPS) / 10.0));
+				    1.0 / settings.MaxFPS - time.ExactTimeSinceFrameStart () - (1.0 / settings.MaxFPS) / 10.0));
 			}
 		}
-		time_manager.EndFrameTimer ();
+		time.EndFrameTimer ();
 	}
 
 	vulkan_renderer.DeviceWaitTillIdle ();
-	task_manager.Stop ();
+	thread_pool.Stop ();
 }
 
 // Build imGui windows and elements
@@ -149,7 +148,7 @@ void Engine::BuildImgui ()
 
 void Engine::HandleInputs ()
 {
-	double deltaTime = time_manager.DeltaTime ();
+	double deltaTime = time.DeltaTime ();
 
 	imgui_update_callback ();
 	if (input.GetKeyDown (Input::KeyCode::ESCAPE)) window.SetWindowToClose ();

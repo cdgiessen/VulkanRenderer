@@ -16,7 +16,7 @@ unsigned int HardwareThreadCount ();
 namespace job
 {
 
-using WorkFuncSig = std::function<void()>;
+using WorkFuncSig = std::function<void ()>;
 
 
 class TaskSignal
@@ -65,11 +65,11 @@ class Task
 	std::weak_ptr<TaskSignal> signalBlock;
 };
 
-class TaskManager
+class ThreadPool
 {
 	public:
-	TaskManager ();
-	~TaskManager ();
+	ThreadPool ();
+	~ThreadPool ();
 
 	void Stop ();
 

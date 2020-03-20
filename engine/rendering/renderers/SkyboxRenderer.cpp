@@ -10,8 +10,8 @@ struct SkyboxUniformBuffer
 	cml::mat4f view;
 };
 
-Skybox::Skybox (ViewCameraManager& camera_manager,
-    ModelManager& model_manager,
+Skybox::Skybox (RenderCameras& render_cameras,
+    Models& models,
     DescriptorLayout& descriptor_layout,
     DescriptorPool& descriptor_pool,
     DescriptorSet descriptor_set,
@@ -19,8 +19,8 @@ Skybox::Skybox (ViewCameraManager& camera_manager,
     ModelID skybox_cube_model,
     PipelineLayout& pipe_layout,
     GraphicsPipeline& pipe)
-: camera_manager (camera_manager),
-  model_manager (model_manager),
+: render_cameras (render_cameras),
+  models (models),
   descriptor_layout (std::move (descriptor_layout)),
   descriptor_pool (std::move (descriptor_pool)),
   descriptor_set (descriptor_set),
@@ -33,7 +33,7 @@ Skybox::Skybox (ViewCameraManager& camera_manager,
 
 void Skybox::Update (ViewCameraID cam_id)
 {
-	ViewCameraData& cam = camera_manager.GetCameraData (cam_id);
+	ViewCameraData& cam = render_cameras.GetCameraData (cam_id);
 
 	SkyboxUniformBuffer sbo = {};
 	sbo.proj = cam.GetProjMat ();
@@ -48,14 +48,11 @@ void Skybox::Draw (VkCommandBuffer commandBuffer)
 {
 	descriptor_set.Bind (commandBuffer, pipe_layout.get (), 2);
 	pipe.Bind (commandBuffer);
-	model_manager.DrawIndexed (commandBuffer, skybox_cube_model);
+	models.DrawIndexed (commandBuffer, skybox_cube_model);
 }
 
-std::optional<Skybox> CreateSkybox (BackEnd& back_end,
-    ViewCameraManager& camera_manager,
-    Resource::Texture::TexID cube_map,
-    VkRenderPass render_pass,
-    uint32_t subpass)
+std::optional<Skybox> CreateSkybox (
+    BackEnd& back_end, RenderCameras& render_cameras, Resource::Texture::TexID cube_map, VkRenderPass render_pass, uint32_t subpass)
 {
 
 	std::vector<DescriptorSetLayoutBinding> m_bindings = {
@@ -67,29 +64,26 @@ std::optional<Skybox> CreateSkybox (BackEnd& back_end,
 	auto descriptor_pool = DescriptorPool (back_end.device.device, descriptor_layout.Get (), m_bindings, 2);
 	auto descriptor_set = descriptor_pool.Allocate ();
 
-	auto skybox_cube_model = back_end.model_manager.CreateModel (Resource::Mesh::CreateCube ());
+	auto skybox_cube_model = back_end.models.CreateModel (Resource::Mesh::CreateCube ());
 
 	auto uniform_buffer = VulkanBuffer (back_end.device, uniform_details (sizeof (SkyboxUniformBuffer)));
 
 	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 3);
-	auto vulkan_cube_map = back_end.texture_manager.CreateCubeMap (cube_map, details);
+	auto vulkan_cube_map = back_end.textures.CreateCubeMap (cube_map, details);
 
 
 	std::vector<DescriptorUse> writes = {
 		{ 0, 1, uniform_buffer.GetDescriptorType (), { uniform_buffer.GetDescriptorInfo () } },
-		{ 1,
-		    1,
-		    back_end.texture_manager.GetDescriptorType (vulkan_cube_map),
-		    { back_end.texture_manager.GetResource (vulkan_cube_map) } }
+		{ 1, 1, back_end.textures.GetDescriptorType (vulkan_cube_map), { back_end.textures.GetResource (vulkan_cube_map) } }
 	};
 	descriptor_set.Update (back_end.device.device, writes);
 
-	auto vert = back_end.shader_manager.GetModule ("skybox.vert", ShaderType::vertex);
-	auto frag = back_end.shader_manager.GetModule ("skybox.frag", ShaderType::fragment);
+	auto vert = back_end.shaders.GetModule ("skybox.vert", ShaderType::vertex);
+	auto frag = back_end.shaders.GetModule ("skybox.frag", ShaderType::fragment);
 
 	PipelineBuilder builder{ back_end.device.device, back_end.pipeline_cache.get () };
 	builder.SetShaderModuleSet (ShaderModuleSet (vert.value (), frag.value ()))
-	    .UseModelVertexLayout (back_end.model_manager.GetLayout (skybox_cube_model))
+	    .UseModelVertexLayout (back_end.models.GetLayout (skybox_cube_model))
 	    .AddViewport (1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f)
 	    .AddScissor (1, 1, 0, 0)
 	    .SetInputAssembly (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false)
@@ -114,8 +108,8 @@ std::optional<Skybox> CreateSkybox (BackEnd& back_end,
 	auto pipe = builder.CreatePipeline (pipe_layout.value (), render_pass, subpass);
 	if (!pipe) return {};
 
-	return Skybox{ camera_manager,
-		back_end.model_manager,
+	return Skybox{ render_cameras,
+		back_end.models,
 		descriptor_layout,
 		descriptor_pool,
 		descriptor_set,

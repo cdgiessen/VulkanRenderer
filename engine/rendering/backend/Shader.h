@@ -64,17 +64,17 @@ class ShaderModuleSet
 
 namespace Resource::Shader
 {
-class Manager;
+class Shaders;
 }
-class ShaderManager
+class Shaders
 {
 	public:
-	ShaderManager (Resource::Shader::Manager& resource_shader_manager, VkDevice device);
+	Shaders (Resource::Shader::Shaders& shaders, VkDevice device);
 
 	std::optional<ShaderModule> GetModule (std::string name, ShaderType type);
 
 	private:
-	Resource::Shader::Manager& resource_shader_manager;
+	Resource::Shader::Shaders& shaders;
 	VkDevice device;
 	std::optional<std::vector<char>> readShaderFile (const std::string& filename);
 };

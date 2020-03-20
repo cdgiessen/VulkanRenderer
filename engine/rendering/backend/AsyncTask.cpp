@@ -14,10 +14,10 @@ CommandPoolGroup::CommandPoolGroup (VulkanDevice const& device)
 }
 
 
-AsyncTaskManager::AsyncTaskManager (job::TaskManager& task_manager, VulkanDevice& device)
-: task_manager (task_manager)
+AsyncTaskQueue::AsyncTaskQueue (job::ThreadPool& thread_pool, VulkanDevice& device)
+: thread_pool (thread_pool)
 {
-	auto thread_ids = task_manager.GetThreadIDs ();
+	auto thread_ids = thread_pool.GetThreadIDs ();
 	thread_ids.push_back (std::this_thread::get_id ());
 	for (auto& id : thread_ids)
 	{
@@ -26,9 +26,9 @@ AsyncTaskManager::AsyncTaskManager (job::TaskManager& task_manager, VulkanDevice
 	}
 }
 
-AsyncTaskManager::~AsyncTaskManager () {}
+AsyncTaskQueue::~AsyncTaskQueue () {}
 
-void AsyncTaskManager::SubmitTask (AsyncTask&& task)
+void AsyncTaskQueue::SubmitTask (AsyncTask&& task)
 {
 	auto ts = std::make_shared<job::TaskSignal> ();
 	{
@@ -36,20 +36,15 @@ void AsyncTaskManager::SubmitTask (AsyncTask&& task)
 		tasks_in_progress.push_back (ts);
 	}
 
-	task_manager.Submit (
+	thread_pool.Submit (
 	    [&, task = std::move (task)] {
 		    std::thread::id id = std::this_thread::get_id ();
 		    CommandPool* pool;
 		    switch (task.type)
 		    {
-			    case (TaskType::transfer):
-				    pool = &(pools.at (id)->transfer_pool);
-				    break;
-			    case (TaskType::compute):
-				    pool = &(pools.at (id)->compute_pool);
-				    break;
-			    default:
-				    pool = &(pools.at (id)->graphics_pool);
+			    case (TaskType::transfer): pool = &(pools.at (id)->transfer_pool); break;
+			    case (TaskType::compute): pool = &(pools.at (id)->compute_pool); break;
+			    default: pool = &(pools.at (id)->graphics_pool);
 		    }
 		    CommandBuffer cmdBuf = CommandBuffer (*pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
@@ -72,7 +67,7 @@ void AsyncTaskManager::SubmitTask (AsyncTask&& task)
 	    ts);
 }
 
-void AsyncTaskManager::CleanFinishQueue ()
+void AsyncTaskQueue::CleanFinishQueue ()
 {
 	std::lock_guard lk (lock_finish_queue);
 

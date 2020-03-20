@@ -67,11 +67,11 @@ struct MaterialInstance
 	std::vector<DataMember> data_members;
 	std::vector<Texture::TexID> tex_members;
 };
-class Manager
+class Materials
 {
 	public:
-	Manager ();
-	~Manager ();
+	Materials ();
+	~Materials ();
 
 	MatOutlineID CreateMaterialOutline ();
 

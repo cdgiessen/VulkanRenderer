@@ -13,7 +13,7 @@
 #include "Buffer.h"
 
 class VulkanDevice;
-class AsyncTaskManager;
+class AsyncTaskQueue;
 
 struct VertexLayout
 {
@@ -35,15 +35,15 @@ struct VulkanMesh
 
 using ModelID = int;
 
-class ModelManager
+class Models
 {
 	public:
-	ModelManager (Resource::Mesh::Manager& mesh_manager, VulkanDevice& device, AsyncTaskManager& async_task_man);
+	Models (Resource::Mesh::Meshes& meshes, VulkanDevice& device, AsyncTaskQueue& async_task_man);
 
-	ModelManager (ModelManager const& man) = delete;
-	ModelManager& operator= (ModelManager const& man) = delete;
-	ModelManager (ModelManager&& man) = delete;
-	ModelManager& operator= (ModelManager&& man) = delete;
+	Models (Models const& man) = delete;
+	Models& operator= (Models const& man) = delete;
+	Models (Models&& man) = delete;
+	Models& operator= (Models&& man) = delete;
 
 	ModelID CreateModel (Resource::Mesh::MeshID mesh_id);
 
@@ -60,9 +60,9 @@ class ModelManager
 	private:
 	void FinishModelUpload (ModelID id);
 
-	Resource::Mesh::Manager& mesh_manager;
+	Resource::Mesh::Meshes& meshes;
 	VulkanDevice& device;
-	AsyncTaskManager& async_task_man;
+	AsyncTaskQueue& async_task_man;
 
 	std::mutex map_lock;
 	ModelID counter = 0;

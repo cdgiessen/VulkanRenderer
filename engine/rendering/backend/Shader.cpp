@@ -159,15 +159,14 @@ std::vector<VkPipelineShaderStageCreateInfo> ShaderModuleSet::ShaderStageCreateI
 	return shaderStages;
 }
 
-ShaderManager::ShaderManager (Resource::Shader::Manager& resource_shader_manager, VkDevice device)
-: resource_shader_manager (resource_shader_manager), device (device)
+Shaders::Shaders (Resource::Shader::Shaders& shaders, VkDevice device)
+: shaders (shaders), device (device)
 {
 }
 
-std::optional<ShaderModule> ShaderManager::GetModule (std::string name, ShaderType type)
+std::optional<ShaderModule> Shaders::GetModule (std::string name, ShaderType type)
 {
-	auto spirv_data =
-	    resource_shader_manager.GetSpirVData (name, static_cast<Resource::Shader::ShaderType> (type));
+	auto spirv_data = shaders.GetSpirVData (name, static_cast<Resource::Shader::ShaderType> (type));
 	if (spirv_data.size () == 0) return std::nullopt;
 	return ShaderModule{ device, type, spirv_data };
 }

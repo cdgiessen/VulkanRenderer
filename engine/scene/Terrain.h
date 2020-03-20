@@ -23,10 +23,10 @@
 //#include "gui/InternalGraph.h"
 //
 //
-//const int NumCells = 64;
-//const int indCount = NumCells * NumCells * 6;
+// const int NumCells = 64;
+// const int indCount = NumCells * NumCells * 6;
 //
-//struct TerrainCoordinateData
+// struct TerrainCoordinateData
 //{
 //	cml::vec2f pos;
 //	cml::vec2f size;
@@ -41,9 +41,9 @@
 //	}
 //};
 //
-//class Terrain;
+// class Terrain;
 //
-//struct HeightMapBound
+// struct HeightMapBound
 //{
 //	cml::vec4f pos;
 //	cml::vec4f uv;
@@ -51,7 +51,7 @@
 //	cml::vec4f dumb;
 //};
 //
-//struct TerrainQuad
+// struct TerrainQuad
 //{
 //	TerrainQuad (cml::vec2f pos,
 //	    cml::vec2f size,
@@ -88,7 +88,7 @@
 //	} subQuads;
 //};
 //
-//class Terrain
+// class Terrain
 //{
 //	public:
 //	std::unordered_map<int, TerrainQuad> quadMap;
@@ -143,9 +143,9 @@
 //
 //	bool IsReady ()
 //	{
-//		return renderer.texture_manager.IsFinishedTransfer (terrainHeightMap) &&
-//		       renderer.texture_manager.IsFinishedTransfer (terrainSplatMap) &&
-//		       renderer.texture_manager.IsFinishedTransfer (terrainNormalMap);
+//		return renderer.textures.IsFinishedTransfer (terrainHeightMap) &&
+//		       renderer.textures.IsFinishedTransfer (terrainSplatMap) &&
+//		       renderer.textures.IsFinishedTransfer (terrainNormalMap);
 //	}
 //
 //	void UpdateTerrain (cml::vec3f viewerPos);

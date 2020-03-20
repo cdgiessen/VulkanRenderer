@@ -47,16 +47,16 @@ class CommandPoolGroup
 	CommandPool compute_pool;
 };
 
-class AsyncTaskManager
+class AsyncTaskQueue
 {
 	public:
-	AsyncTaskManager (job::TaskManager& task_manager, VulkanDevice& device);
-	~AsyncTaskManager ();
+	AsyncTaskQueue (job::ThreadPool& thread_pool, VulkanDevice& device);
+	~AsyncTaskQueue ();
 
-	AsyncTaskManager (AsyncTaskManager const& man) = delete;
-	AsyncTaskManager& operator= (AsyncTaskManager const& man) = delete;
-	AsyncTaskManager (AsyncTaskManager&& man) = delete;
-	AsyncTaskManager& operator= (AsyncTaskManager&& man) = delete;
+	AsyncTaskQueue (AsyncTaskQueue const& man) = delete;
+	AsyncTaskQueue& operator= (AsyncTaskQueue const& man) = delete;
+	AsyncTaskQueue (AsyncTaskQueue&& man) = delete;
+	AsyncTaskQueue& operator= (AsyncTaskQueue&& man) = delete;
 
 
 	void SubmitTask (AsyncTask&& task);
@@ -64,7 +64,7 @@ class AsyncTaskManager
 	void CleanFinishQueue ();
 
 	private:
-	job::TaskManager& task_manager;
+	job::ThreadPool& thread_pool;
 
 	std::unordered_map<std::thread::id, std::unique_ptr<CommandPoolGroup>> pools;
 

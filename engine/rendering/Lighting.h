@@ -43,7 +43,7 @@ const uint32_t MaxSpotLightCount = 16;
 class Lighting
 {
 	public:
-	Lighting (VulkanDevice& device, TextureManager& texture_manager);
+	Lighting (VulkanDevice& device, Textures& textures);
 
 	void Update (std::vector<DirectionalLight> directional_lights,
 	    std::vector<PointLight> point_lights,

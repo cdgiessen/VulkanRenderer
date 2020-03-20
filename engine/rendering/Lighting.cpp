@@ -4,7 +4,7 @@
 #include "rendering/backend/Descriptor.h"
 #include "rendering/backend/Device.h"
 
-Lighting::Lighting (VulkanDevice& device, TextureManager& texture_manager)
+Lighting::Lighting (VulkanDevice& device, Textures& textures)
 : device (device),
   directional_gpu_data (device, uniform_array_details (MaxDirectionalLightCount, sizeof (DirectionalLight))),
   point_gpu_data (device, uniform_array_details (MaxPointLightCount, sizeof (PointLight))),
