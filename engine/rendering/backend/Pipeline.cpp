@@ -15,6 +15,16 @@ PipelineLayout::PipelineLayout (VkDevice device, VkPipelineLayout layout)
 {
 }
 
+PipelineLayout::PipelineLayout (VkDevice device,
+    std::vector<VkDescriptorSetLayout> desc_set_layouts,
+    std::vector<VkPushConstantRange> push_constant_ranges)
+: device (device)
+{
+	auto layoutInfo = initializers::pipelineLayoutCreateInfo (desc_set_layouts, push_constant_ranges);
+	VkResult res = vkCreatePipelineLayout (device, &layoutInfo, nullptr, &layout);
+	if (res != VK_SUCCESS) throw std::runtime_error ("failed to create descriptor set layout");
+}
+
 PipelineLayout::~PipelineLayout ()
 {
 	if (layout != nullptr) vkDestroyPipelineLayout (device, layout, nullptr);

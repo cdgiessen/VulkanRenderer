@@ -9,6 +9,10 @@ class PipelineLayout
 {
 	public:
 	PipelineLayout (VkDevice device, VkPipelineLayout layout);
+	PipelineLayout (VkDevice device,
+	    std::vector<VkDescriptorSetLayout> desc_set_layouts,
+	    std::vector<VkPushConstantRange> push_constant_ranges);
+
 	~PipelineLayout ();
 	PipelineLayout (const PipelineLayout& other) = delete;
 	PipelineLayout& operator= (const PipelineLayout& other) = delete;
@@ -31,6 +35,7 @@ class GraphicsPipeline
 {
 	public:
 	GraphicsPipeline (VkDevice device, VkPipeline pipeline);
+
 	~GraphicsPipeline ();
 	GraphicsPipeline (const GraphicsPipeline& other) = delete;
 	GraphicsPipeline& operator= (const GraphicsPipeline& other) = delete;

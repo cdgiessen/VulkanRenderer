@@ -63,7 +63,6 @@ std::optional<Skybox> CreateSkybox (
 	auto descriptor_layout = DescriptorLayout (back_end.device.device, m_bindings);
 	auto descriptor_pool = DescriptorPool (back_end.device.device, descriptor_layout.Get (), m_bindings, 2);
 	auto descriptor_set = descriptor_pool.Allocate ();
-
 	auto skybox_cube_model = back_end.models.CreateModel (Resource::Mesh::CreateCube ());
 
 	auto uniform_buffer = VulkanBuffer (back_end.device, uniform_details (sizeof (SkyboxUniformBuffer)));

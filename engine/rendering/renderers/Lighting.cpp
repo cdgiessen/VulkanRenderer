@@ -1,10 +1,8 @@
 #include "Lighting.h"
 
-#include "rendering/backend/Buffer.h"
-#include "rendering/backend/Descriptor.h"
 #include "rendering/backend/Device.h"
 
-Lighting::Lighting (VulkanDevice& device, Textures& textures)
+Lighting::Lighting (VulkanDevice& device, Textures& textures, FrameData& frame_data)
 : device (device),
   directional_gpu_data (device, uniform_array_details (MaxDirectionalLightCount, sizeof (DirectionalLight))),
   point_gpu_data (device, uniform_array_details (MaxPointLightCount, sizeof (PointLight))),
@@ -13,8 +11,10 @@ Lighting::Lighting (VulkanDevice& device, Textures& textures)
       { DescriptorType::uniform_buffer, ShaderStage::all_graphics, 1, MaxPointLightCount },
       { DescriptorType::uniform_buffer, ShaderStage::all_graphics, 2, MaxSpotLightCount } }),
   layout (device.device, m_bindings),
+  descriptor_stack (layout, frame_data.GetDescriptorStack ()),
   pool (device.device, layout.Get (), m_bindings, 2),
-  lighting_descriptors ({ pool.Allocate (), pool.Allocate () })
+  lighting_descriptors ({ pool.Allocate (), pool.Allocate () }),
+  pipeline_layout (device.device, descriptor_stack.get_layouts (), {})
 {
 	for (int i = 0; i < lighting_descriptors.size (); i++)
 	{
@@ -51,7 +51,10 @@ void Lighting::Update (std::vector<DirectionalLight> directional_lights,
 }
 void Lighting::Bind (VkCommandBuffer buffer)
 {
-	lighting_descriptors.at (cur_index).Bind (buffer, lighting_layout, 1);
+	lighting_descriptors.at (cur_index).Bind (buffer, pipeline_layout.get (), 1);
 }
 
 void Lighting::Advance () { cur_index = (cur_index + 1) % 2; }
+
+
+DescriptorStack const& Lighting::GetDescriptorStack () const { return descriptor_stack; }

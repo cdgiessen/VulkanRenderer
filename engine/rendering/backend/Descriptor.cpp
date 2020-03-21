@@ -243,3 +243,34 @@ DescriptorPool::OptDescSet DescriptorPool::TryAllocate (Pool& pool)
 
 	throw std::runtime_error ("failed to allocate descriptor set! OUT_OF_DEVICE_MEMORY");
 }
+
+//// DESCRIPTOR STACK ////
+
+DescriptorStack::DescriptorStack (DescriptorLayout const& layout) : layout (layout.Get ()) {}
+DescriptorStack::DescriptorStack (DescriptorLayout const& layout, DescriptorStack const& stack)
+: layout (layout.Get ()), parent (&stack)
+{
+}
+DescriptorStack::DescriptorStack (DescriptorStack&& other) noexcept
+: layout (other.layout), parent (other.parent)
+{
+	other.parent = nullptr;
+}
+DescriptorStack& DescriptorStack::operator= (DescriptorStack&& other) noexcept
+{
+	layout = other.layout;
+	parent = other.parent;
+	other.parent = nullptr;
+	return *this;
+}
+
+std::vector<VkDescriptorSetLayout> DescriptorStack::get_layouts () const
+{
+	std::vector<VkDescriptorSetLayout> layouts;
+	if (parent)
+	{
+		layouts = parent->get_layouts ();
+	}
+	layouts.push_back (layout);
+	return layouts;
+}

@@ -65,7 +65,7 @@ VulkanRenderer::VulkanRenderer (
   back_end (validationLayer, thread_pool, window, resource_man),
   render_cameras (back_end.device),
   frame_data (back_end.device),
-  lighting (back_end.device, back_end.textures),
+  lighting (back_end.device, back_end.textures, frame_data),
   mesh_renderer (back_end)
 
 {
@@ -178,7 +178,7 @@ void VulkanRenderer::MainDraw (VkCommandBuffer cmdBuf)
 	vkCmdSetScissor (cmdBuf, 0, 1, &scissor);
 
 	frame_data.Bind (cmdBuf);
-	// lighting.Bind (cmdBuf);
+	lighting.Bind (cmdBuf);
 
 	auto draw_data = ImGui::GetDrawData ();
 	if (draw_data)

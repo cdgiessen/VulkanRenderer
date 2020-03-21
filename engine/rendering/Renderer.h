@@ -18,9 +18,9 @@
 
 #include "FrameGraph.h"
 #include "ViewCamera.h"
-#include "FrameData.h"
-#include "Lighting.h"
 
+#include "rendering/renderers/FrameData.h"
+#include "rendering/renderers/Lighting.h"
 #include "rendering/renderers/MeshRenderer.h"
 #include "rendering/renderers/SkyboxRenderer.h"
 #include "rendering/renderers/TerrainRenderer.h"

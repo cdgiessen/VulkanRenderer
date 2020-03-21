@@ -16,6 +16,7 @@ class FrameData
 	void Bind (VkCommandBuffer buffer);
 	void Advance ();
 
+	DescriptorStack const& GetDescriptorStack () const;
 
 	private:
 	VulkanDevice& device;
@@ -24,6 +25,7 @@ class FrameData
 	int cur_index = 0;
 	std::vector<DescriptorSetLayoutBinding> m_bindings;
 	DescriptorLayout layout;
+	DescriptorStack descriptor_stack;
 	DescriptorPool pool;
 	std::array<DescriptorSet, 2> frame_descriptors;
 

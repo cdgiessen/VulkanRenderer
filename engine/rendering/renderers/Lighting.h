@@ -6,8 +6,9 @@
 #include "rendering/backend/Buffer.h"
 #include "rendering/backend/Descriptor.h"
 #include "rendering/backend/Texture.h"
+#include "rendering/backend/Pipeline.h"
 
-#include "rendering/FrameData.h"
+#include "rendering/renderers/FrameData.h"
 
 class VulkanDevice;
 
@@ -43,7 +44,7 @@ const uint32_t MaxSpotLightCount = 16;
 class Lighting
 {
 	public:
-	Lighting (VulkanDevice& device, Textures& textures);
+	Lighting (VulkanDevice& device, Textures& textures, FrameData& frame_data);
 
 	void Update (std::vector<DirectionalLight> directional_lights,
 	    std::vector<PointLight> point_lights,
@@ -51,6 +52,8 @@ class Lighting
 
 	void Bind (VkCommandBuffer buffer);
 	void Advance ();
+
+	DescriptorStack const& GetDescriptorStack () const;
 
 	private:
 	VulkanDevice& device;
@@ -61,8 +64,9 @@ class Lighting
 	int cur_index = 0;
 	std::vector<DescriptorSetLayoutBinding> m_bindings;
 	DescriptorLayout layout;
+	DescriptorStack descriptor_stack;
 	DescriptorPool pool;
 	std::array<DescriptorSet, 2> lighting_descriptors;
 
-	VkPipelineLayout lighting_layout;
+	PipelineLayout pipeline_layout;
 };

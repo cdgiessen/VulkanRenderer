@@ -160,3 +160,21 @@ class DescriptorPool
 	std::vector<VkDescriptorPoolSize> pool_members;
 	std::vector<Pool> pools;
 };
+
+class DescriptorStack
+{
+	public:
+	DescriptorStack (DescriptorLayout const& layout);
+	DescriptorStack (DescriptorLayout const& layout, DescriptorStack const& stack);
+
+	DescriptorStack (DescriptorStack const& other) = delete;
+	DescriptorStack& operator= (DescriptorStack const& other) = delete;
+	DescriptorStack (DescriptorStack&& other) noexcept;
+	DescriptorStack& operator= (DescriptorStack&& other) noexcept;
+
+	std::vector<VkDescriptorSetLayout> get_layouts () const;
+
+	private:
+	VkDescriptorSetLayout layout;
+	DescriptorStack const* parent = nullptr;
+};
