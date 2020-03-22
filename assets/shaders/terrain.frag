@@ -91,7 +91,7 @@ void main ()
 	vec3 normal = normalize (
 	    normal1 * texColor.x + normal2 * texColor.y + normal3 * texColor.z + normal4 * texColor.w);
 
-	vec3 viewVec = normalize (-cam.cameraDir);
+	vec3 viewVec = normalize (-cam.camera_dir);
 
 	// vec3 normalVec = normalize(inNormal);
 
@@ -112,7 +112,7 @@ void main ()
 	// vec3 dirContrib = DirPhongLighting(viewVec, sun.light[0].direction, normalVec,
 	// sun.light[0].color, sun.light[0].intensity); vec3 N = normalize(inNormal);
 	vec3 N = perturbNormal (normal);
-	vec3 V = normalize (cam.cameraPos - inFragPos);
+	vec3 V = normalize (cam.camera_pos - inFragPos);
 	vec3 F0 = vec3 (0.04);
 	F0 = mix (F0, albedo, metalness);
 	vec3 ambient = vec3 (0.002);

@@ -36,7 +36,7 @@ void main ()
 
 
 	vec3 N = normalize (inNormal);
-	vec3 V = normalize (cam.cameraPos - inFragPos);
+	vec3 V = normalize (cam.camera_pos - inFragPos);
 
 	vec3 F0 = vec3 (0.04);
 	F0 = mix (F0, vec3 (texColor) /*pbr_mat.albedo*/, 0.1f /*pbr_mat.metallic*/);
@@ -44,7 +44,7 @@ void main ()
 	vec3 ambient = vec3 (0.0);
 	vec3 lighting = ambient + LightingContribution (N, V, F0, inFragPos, ambient, 0, 0);
 
-	// vec3 viewVec = normalize(-cam.cameraDir);
+	// vec3 viewVec = normalize(-cam.camera_dir);
 	//
 	// vec3 normalVec = normalize(inNormal);
 

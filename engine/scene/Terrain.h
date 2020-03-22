@@ -135,7 +135,7 @@
 //
 //	~Terrain ();
 //
-//	void InitTerrain (cml::vec3f cameraPos,
+//	void InitTerrain (cml::vec3f camera_pos,
 //	    VulkanTextureID terrainVulkanTextureArrayAlbedo,
 //	    VulkanTextureID terrainVulkanTextureArrayRoughness,
 //	    VulkanTextureID terrainVulkanTextureArrayMetallic,

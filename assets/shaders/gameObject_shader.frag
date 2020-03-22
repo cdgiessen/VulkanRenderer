@@ -45,7 +45,7 @@ void main ()
 {
 	vec4 texColor = vec4 (1.0); // texture(texSampler, inTexCoord);
 
-	vec3 viewVec = normalize (-cam.cameraDir);
+	vec3 viewVec = normalize (-cam.camera_dir);
 
 	vec3 normalVec = normalize (inNormal);
 

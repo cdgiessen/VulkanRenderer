@@ -91,7 +91,7 @@ void main ()
 	vec3 normal2 = texture (water_normal, uvModified2).xyz;
 
 	vec3 N = perturbNormal (normalize (normal + normal2), inFragPos.xz);
-	vec3 V = normalize (cam.cameraPos - inFragPos);
+	vec3 V = normalize (cam.camera_pos - inFragPos);
 
 	vec3 F0 = vec3 (0.04);
 	F0 = mix (F0, vec3 (0.129, 0.404, 1.0f) /*pbr_mat.albedo*/, 0.1f /*pbr_mat.metallic*/);

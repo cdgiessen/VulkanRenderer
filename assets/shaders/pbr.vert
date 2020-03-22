@@ -1,17 +1,10 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
+#extension GL_GOOGLE_include_directive : enable
 
-//Global information
-layout(set = 0, binding = 0) uniform GlobalData {
-	float time;
-} global;
+#include "globals.glsl"
 
-layout(set = 0, binding = 1) uniform CameraData {
-	mat4 projView;
-	mat4 view;
-	vec3 cameraDir;
-	vec3 cameraPos;
-} cam;
+#include "camera.glsl"
 
 //per model information
 layout(set = 2, binding = 0) uniform ModelMatrixData {
@@ -33,7 +26,7 @@ out gl_PerVertex {
 
 void main() {
 
-    gl_Position = cam.projView * mnd.model * vec4(inPosition, 1.0);
+    gl_Position = cam.proj_view * mnd.model * vec4(inPosition, 1.0);
 
 	outFragPos = (mnd.model * vec4(inPosition, 1.0)).xyz;		
 	outNormal = (mnd.normal * vec4(inNormal, 1.0f)).xyz;

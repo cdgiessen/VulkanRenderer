@@ -46,7 +46,7 @@ layout (location = 0) out vec4 outColor;
 void main ()
 {
 	vec3 N = normalize (inNormal);
-	vec3 V = normalize (cam.cameraPos - inFragPos);
+	vec3 V = normalize (cam.camera_pos - inFragPos);
 
 	vec3 F0 = vec3 (0.04);
 	F0 = mix (F0, pbr_mat.albedo, pbr_mat.metallic);

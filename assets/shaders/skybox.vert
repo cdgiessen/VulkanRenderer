@@ -2,19 +2,11 @@
 
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
+#extension GL_GOOGLE_include_directive : enable
 
-// Global information
-layout (set = 0, binding = 0) uniform GlobalData { float time; }
-global;
+#include "globals.glsl"
 
-layout (set = 0, binding = 1) uniform CameraData
-{
-	mat4 projView;
-	mat4 view;
-	vec3 cameraDir;
-	vec3 cameraPos;
-}
-cam;
+#include "camera.glsl"
 
 layout (set = 2, binding = 0) uniform SkyboxCameraData
 {

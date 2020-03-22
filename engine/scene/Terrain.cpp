@@ -97,7 +97,7 @@
 //	return curEmptyIndex++; // always gets an index one higher
 //}
 //
-// void Terrain::InitTerrain (cml::vec3f cameraPos,
+// void Terrain::InitTerrain (cml::vec3f camera_pos,
 //    VulkanTextureID texArrAlbedo,
 //    VulkanTextureID texArrRoughness,
 //    VulkanTextureID texArrMetallic,
@@ -118,7 +118,7 @@
 //	        GetHeightAtLocation (TerrainQuad::GetUVvalueFromLocalIndex (NumCells / 2, NumCells, 0, 0),
 //	            TerrainQuad::GetUVvalueFromLocalIndex (NumCells / 2, NumCells, 0, 0)),
 //	        this }));
-//	InitTerrainQuad (rootQuad, cameraPos);
+//	InitTerrainQuad (rootQuad, camera_pos);
 //}
 //
 // void Terrain::UpdateTerrain (cml::vec3f viewerPos)

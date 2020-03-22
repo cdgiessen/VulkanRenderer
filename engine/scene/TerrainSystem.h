@@ -60,7 +60,7 @@
 //
 //	void CleanUpTerrain ();
 //
-//	void UpdateTerrains (cml::vec3f cameraPos);
+//	void UpdateTerrains (cml::vec3f camera_pos);
 //
 //	void RenderTerrain (VkCommandBuffer commandBuffer, bool wireframe);
 //

@@ -83,9 +83,9 @@
 //}
 //
 //
-// void TerrainSystem::UpdateTerrains (cml::vec3f cameraPos)
+// void TerrainSystem::UpdateTerrains (cml::vec3f camera_pos)
 //{
-//	curCameraPos = cameraPos;
+//	curCameraPos = camera_pos;
 //	t_settings = gui_settings;
 //
 //	if (recreateTerrain)
@@ -106,8 +106,8 @@
 //		for (auto it = std::begin (terrains); it != std::end (terrains); it++)
 //		{
 //			cml::vec3f center =
-//			    cml::vec3f ((*it)->coordinateData.pos.x, cameraPos.y, (*it)->coordinateData.pos.y);
-//			float distanceToViewer = cml::distance (cameraPos, center);
+//			    cml::vec3f ((*it)->coordinateData.pos.x, camera_pos.y, (*it)->coordinateData.pos.y);
+//			float distanceToViewer = cml::distance (camera_pos, center);
 //			if (distanceToViewer > t_settings.viewDistance * t_settings.width * 1.5)
 //			{
 //				terToDelete.push_back (it);
@@ -131,8 +131,8 @@
 //
 //	// make new closer terrains
 //
-//	cml::vec2i camGrid ((int)((cameraPos.x + 0 * t_settings.width / 2.0) / t_settings.width),
-//	    (int)((cameraPos.z + 0 * t_settings.width / 2.0) / t_settings.width));
+//	cml::vec2i camGrid ((int)((camera_pos.x + 0 * t_settings.width / 2.0) / t_settings.width),
+//	    (int)((camera_pos.z + 0 * t_settings.width / 2.0) / t_settings.width));
 //
 //
 //	// Log.Debug << "cam grid x: " << camGridX << " z: " << camGridZ << "\n";
@@ -144,8 +144,8 @@
 //			cml::vec2i terGrid (camGrid.x + i - t_settings.viewDistance, camGrid.y + j - t_settings.viewDistance);
 //
 //			cml::vec3f center =
-//			    cml::vec3f (terGrid.x * t_settings.width, cameraPos.y, terGrid.y * t_settings.width);
-//			// float distanceToViewer = cml::distance (cameraPos, center);
+//			    cml::vec3f (terGrid.x * t_settings.width, camera_pos.y, terGrid.y * t_settings.width);
+//			// float distanceToViewer = cml::distance (camera_pos, center);
 //
 //			// if (distanceToViewer <= t_settings.viewDistance * t_settings.width) {
 //
@@ -232,7 +232,7 @@
 //	terrain_mutex.lock ();
 //	for (auto& ter : terrains)
 //	{
-//		ter->UpdateTerrain (cameraPos);
+//		ter->UpdateTerrain (camera_pos);
 //	}
 //	terrain_mutex.unlock ();
 //

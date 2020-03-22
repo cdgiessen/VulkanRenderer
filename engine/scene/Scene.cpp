@@ -81,9 +81,9 @@ void Scene::Update ()
 //
 //	std::vector<CameraData> cd (1);
 //	// cd.at (0).view = camera->GetViewMatrix ();
-//	// cd.at (0).projView = proj * cd.at (0).view;
-//	// cd.at (0).cameraDir = camera->Front;
-//	// cd.at (0).cameraPos = camera->Position;
+//	// cd.at (0).proj_view = proj * cd.at (0).view;
+//	// cd.at (0).camera_dir = camera->Front;
+//	// cd.at (0).camera_pos = camera->Position;
 //
 //	UpdateSunData ();
 //

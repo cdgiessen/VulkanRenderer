@@ -49,9 +49,9 @@ cml::mat4f ViewCameraData::GetProjViewMat ()
 {
 	if (isProjMatDirty || isViewMatDirty)
 	{
-		mat_projView = GetProjMat () * GetViewMat ();
+		mat_proj_view = GetProjMat () * GetViewMat ();
 	}
-	return mat_projView;
+	return mat_proj_view;
 }
 
 cml::vec3f ViewCameraData::GetPosition () { return position; }
@@ -147,11 +147,11 @@ void RenderCameras::UpdateGPUBuffer (int index)
 	for (auto& cam : camera_data)
 	{
 		CameraGPUData gpu_cam;
-		gpu_cam.projView = cam.GetProjViewMat ();
+		gpu_cam.proj_view = cam.GetProjViewMat ();
 		gpu_cam.view = cam.GetViewMat ();
-		gpu_cam.cameraPos = cam.GetPosition ();
+		gpu_cam.camera_pos = cam.GetPosition ();
 		// TODO
-		gpu_cam.cameraDir = cml::vec3f (); // cam.GetRotation (); ???
+		gpu_cam.camera_dir = cml::vec3f (); // cam.GetRotation (); ???
 
 		data.push_back (gpu_cam);
 	}

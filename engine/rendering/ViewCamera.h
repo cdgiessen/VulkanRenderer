@@ -53,7 +53,7 @@ class ViewCameraData
 	cml::vec3f position = cml::vec3f (0, 0, 0);
 	cml::quatf rotation = cml::quatf (1, 0, 0, 0);
 
-	cml::mat4f mat_projView;
+	cml::mat4f mat_proj_view;
 	cml::mat4f mat_view;
 	cml::mat4f mat_proj;
 
@@ -66,10 +66,10 @@ class ViewCameraData
 
 struct CameraGPUData
 {
-	cml::mat4f projView;
+	cml::mat4f proj_view;
 	cml::mat4f view;
-	cml::vec3f cameraDir;
-	cml::vec3f cameraPos;
+	cml::vec3f camera_dir;
+	cml::vec3f camera_pos;
 };
 
 using ViewCameraID = int;
