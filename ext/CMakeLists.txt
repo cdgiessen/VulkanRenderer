@@ -24,17 +24,17 @@ include(FetchContent)
 FetchContent_Declare(
     FastNoiseSIMD
     GIT_REPOSITORY https://github.com/Auburns/FastNoiseSIMD
-    GIT_TAG        master
+    GIT_TAG        2b70661817f212f8463cb985e503797183889d34
 )
 FetchContent_Declare(
     SG14
     GIT_REPOSITORY https://github.com/WG21-SG14/SG14
-    GIT_TAG        master
+    GIT_TAG        0e3fe16c8721a4fd7bcf169b029aa3864a3d047b
 )
 FetchContent_Declare(
     cml
     GIT_REPOSITORY https://github.com/cdgiessen/cml
-    GIT_TAG        master
+    GIT_TAG        9945735cbd08ff9ba2bbe55f3c4b7556ae0827ba
 )
 FetchContent_Declare(
     fmt
@@ -69,12 +69,12 @@ FetchContent_Declare(
 FetchContent_Declare(
     stb
     GIT_REPOSITORY https://github.com/nothings/stb
-    GIT_TAG        master
+    GIT_TAG        f54acd4e13430c5122cab4ca657705c84aa61b08
 )
 FetchContent_Declare(
     vk_bootstrap
     GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
-    GIT_TAG        master
+    GIT_TAG        511cac8db4f9d9d5eda95a6e16af74e0731f5f32
 )
 FetchContent_Declare(
     vma
