@@ -1,6 +1,6 @@
 # VulkanRenderer
 
-C++17 Game Engine built ontop of the Vulkan Graphics API
+C++17 Game Engine built on top of the Vulkan Graphics API
 
 Used as a testing ground for learning various software techniques and solutions for engineering problems. 
 
@@ -8,22 +8,20 @@ Undergone heavy revision since July 2017 and is still under construction.
 
 ## Major Features
  * Terrain Renderer, Heightmap based with automatic level of detail adjustment using a Quadtree  and memory pool for quick allocation. 
- * Procedural Noise Texture Generator, Visual node graph replacement for libNoise that takes advantage of SIMD hardware using the FastNoiseSIMD library. Meant to be an easy to use tool for creating custom procedural terrain. Implements saving and loading with a json schema. Uses Dear ImGUI for its GUI
- * Windows and Linux Support, Cross platform. Built and tested on both major OS’s.
+ * Procedural Noise Texture Generator, Visual node graph using the FastNoiseSIMD library. An easy to use tool for creating custom procedural terrain. Implements saving and loading with json files. Uses Dear-ImGUI
+ * Windows and Linux Support, Cross platform.
  * Multitasking System, (WIP) Thread pool based tasking system that enables task based multithreading of various jobs. 
  * Frame Graph, (WIP) Takes all rendering operations and resources and abstracts into a single graph, enabling simpler code and reasoning about how a frame is rendered.
 
 ## Build Process
-Requirements: C++17 Compiler, CMake 3.7, Vulkan 1.1 SDK, GLFW, GLM, Vcpgk (windows), GTK (linux)
+Requirements: C++17 Compiler, CMake 3.11, Vulkan 1.1 SDK
 
-Windows:
-Install Vulkan SDK, and vcpgk.
-Use vcpkg to install GLFW and GLM. 
-Open the folder containing using Visual Studio's "Open Cmake Folder" functionality. 
-
-Linux:
-Install Vulkan SDK, GLFW, GLM, and GTK
-Configure the project like any normal CMake project. 
+```bash
+git clone https://github.com/cdgiessen/VulkanRenderer
+mkdir build
+cd build
+cmake ../VulkanRenderer
+```
 
 ## Screenshots
 General view from a landscape

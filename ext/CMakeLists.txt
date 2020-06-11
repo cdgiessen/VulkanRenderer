@@ -1,169 +1,150 @@
-find_path(JSON_PATH_FOUND "json" "")
-find_path(FMT_PATH_FOUND "fmt" "")
-find_path(SG14_PATH_FOUND "SG14" "")
-find_path(GLSLANG_PATH_FOUND "glslang" "")
-find_path(SPIRV_CROSS_PATH_FOUND "spirv-cross" "")
-find_path(CML_PATH_FOUND "cml" "")
-find_path(IMGUI_PATH_FOUND "imgui/imgui" "")
-find_path(FASTNOISESIMD_PATH_FOUND "FastNoiseSIMD" "")
-find_path(STB_PATH_FOUND "stb/stb" "")
-find_path(VMA_PATH_FOUND "vma" "")
-find_path(GLFW_PATH_FOUND "glfw" "")
-find_path(VK_BOOTSTRAP_PATH_FOUND "vk-bootstrap" "")
 
-set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-set(JSON_Install OFF CACHE BOOL "" FORCE)
-set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
-set(JSON_MultipleHeaders ON CACHE BOOL "" FORCE)
+option(GLFW_BUILD_TESTS "" OFF)
+option(GLFW_BUILD_DOCS "" OFF)
+option(GLFW_INSTALL "" OFF)
+option(GLFW_BUILD_EXAMPLES "" OFF)
 
-if(NOT JSON_PATH_FOUND)
-	message("Updating nlohmann-json")
-	execute_process(COMMAND git submodule update --init --recursive json
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT JSON_PATH_FOUND)
+option(BUILD_TESTING "" OFF)
+option(JSON_Install "" OFF)
+option(JSON_BuildTests "" OFF)
+option(JSON_MultipleHeaders "" ON)
 
-add_subdirectory(json)
+option(SKIP_GLSLANG_INSTALL "" ON)
+option(ENABLE_HLSL "" OFF)
+option(ENABLE_OPT "" ON)
+option(ENABLE_GLSLANG_INSTALL "" OFF)
+option(BUILD_SHARED_LIBS "" OFF)
 
-if(NOT FMT_PATH_FOUND)
-	message("Updating fmt library")
-	execute_process(COMMAND git submodule update --init --recursive fmt
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT FMT_PATH_FOUND)
+option(SPIRV_CROSS_CLI "" OFF)
+option(SPIRV_CROSS_ENABLE_MSL "" OFF)
+option(SPIRV_CROSS_ENABLE_HLSL "" OFF)
+option(SPIRV_CROSS_ENABLE_TESTS "" OFF)
 
-add_subdirectory(fmt)
-
-if(NOT SG14_PATH_FOUND)
-	message("Updating SG14 libraries")
-	execute_process(COMMAND git submodule update --init --recursive SG14
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT SG14_PATH_FOUND)
-
-add_library(sg14 INTERFACE)
-target_include_directories(sg14 INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/SG14)
-
-
-set(SKIP_GLSLANG_INSTALL ON CACHE BOOL "" FORCE)
-set(ENABLE_HLSL OFF CACHE BOOL "" FORCE)
-set(ENABLE_OPT ON CACHE BOOL "" FORCE)
-set(ENABLE_GLSLANG_INSTALL OFF CACHE BOOL "" FORCE)
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-
-if(NOT GLSLANG_PATH_FOUND)
-	message("Updating glslang")
-	execute_process(COMMAND git submodule update --init --recursive glslang
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT GLSLANG_PATH_FOUND)
-
-add_subdirectory(glslang)
-
-set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
-set(SPIRV_CROSS_ENABLE_MSL OFF CACHE BOOL "" FORCE)
-set(SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE)
-set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
-
-if(NOT SPIRV_CROSS_PATH_FOUND)
-	message("Updating SPIRV-Cross")
-	execute_process(COMMAND git submodule update --init --recursive spirv-cross
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT SPIRV_CROSS_PATH_FOUND)
-
-add_subdirectory(spirv-cross)
-
-if(NOT CML_PATH_FOUND)
-	message("Updating cml")
-	execute_process(COMMAND git submodule update --init --recursive cml
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT CML_PATH_FOUND)
-
-set(CML_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
-add_subdirectory(cml)
-
-if(NOT IMGUI_PATH_FOUND)
-	message("Updating imgui")
-	execute_process(COMMAND git submodule update --init --recursive imgui/imgui 
-				WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT IMGUI_PATH_FOUND)
-
-add_library(dear-imgui OBJECT
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui/imgui.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui/imgui_draw.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui/imgui_widgets.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.hpp)
-
-target_include_directories(dear-imgui PUBLIC imgui/imgui)
-
-add_library(ocornut::imgui ALIAS dear-imgui)
-
-if(NOT FASTNOISESIMD_PATH_FOUND)
-	message("Updating FastNoiseSIMD")
-	execute_process(COMMAND git submodule update --init --recursive FastNoiseSIMD 
-				WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT FASTNOISESIMD_PATH_FOUND)
-
-add_library(fast-noise-simd STATIC 
-${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD.h
-${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD.cpp
-${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_internal.h
-${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_internal.cpp
-${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_avx2.cpp
-${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_avx512.cpp
-${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_neon.cpp
-${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_sse2.cpp
-${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD/FastNoiseSIMD_sse41.cpp
+include(FetchContent)
+FetchContent_Declare(
+    FastNoiseSIMD
+    GIT_REPOSITORY https://github.com/Auburns/FastNoiseSIMD
+    GIT_TAG        master
+)
+FetchContent_Declare(
+    SG14
+    GIT_REPOSITORY https://github.com/WG21-SG14/SG14
+    GIT_TAG        master
+)
+FetchContent_Declare(
+    cml
+    GIT_REPOSITORY https://github.com/cdgiessen/cml
+    GIT_TAG        master
+)
+FetchContent_Declare(
+    fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt
+    GIT_TAG        6.2.1
+)
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw
+    GIT_TAG        3.3.2
+)
+FetchContent_Declare(
+    glslang
+    GIT_REPOSITORY https://github.com/KhronosGroup/glslang
+    GIT_TAG        8.13.3743
+)
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui
+    GIT_TAG        v1.76
+)
+FetchContent_Declare(
+    json
+    GIT_REPOSITORY https://github.com/nlohmann/json
+    GIT_TAG        v3.7.3
+)
+FetchContent_Declare(
+    spirv_cross
+    GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Cross
+    GIT_TAG        2020-05-19
+)
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb
+    GIT_TAG        master
+)
+FetchContent_Declare(
+    vk_bootstrap
+    GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
+    GIT_TAG        master
+)
+FetchContent_Declare(
+    vma
+    GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+    GIT_TAG        v2.3.0
 )
 
-target_include_directories(fast-noise-simd PUBLIC FastNoiseSIMD)
+FetchContent_MakeAvailable(cml fmt glfw glslang json spirv_cross vk_bootstrap)
 
-if(UNIX)
-target_compile_options(fast-noise-simd PRIVATE -march=core-avx2 -msse2 -msse4.1 -Wimplicit-fallthrough=0)
-elseif(WIN32)
-target_compile_options(fast-noise-simd PRIVATE /arch:AVX2)
+FetchContent_GetProperties(SG14)
+if(NOT SG14_POPULATED)
+    FetchContent_Populate(SG14)
 
+    add_library(SG14 INTERFACE)
+    target_include_directories(SG14 INTERFACE ${sg14_SOURCE_DIR})
 endif()
 
+FetchContent_GetProperties(imgui)
+if(NOT imgui_POPULATED)
+    FetchContent_Populate(imgui)
 
-if(NOT STB_PATH_FOUND)
-	message("Updating stb libraries")
-	execute_process(COMMAND git submodule update --init --recursive stb 
-				WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT STB_PATH_FOUND)
+    add_library(dear-imgui STATIC
+        ${imgui_SOURCE_DIR}/imgui.h 
+	    ${imgui_SOURCE_DIR}/imgui.cpp 
+	    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+        ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.hpp)
+    target_include_directories(dear-imgui PUBLIC ${imgui_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
+endif()
 
-add_library(stb INTERFACE)
+FetchContent_GetProperties(FastNoiseSIMD)
+if(NOT FastNoiseSIMD_POPULATED)
+    FetchContent_Populate(FastNoiseSIMD)
+    add_library(fast_noise_simd STATIC 
+        ${fastnoisesimd_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD.h
+        ${fastnoisesimd_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD.cpp
+        ${fastnoisesimd_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD_internal.h
+        ${fastnoisesimd_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD_internal.cpp
+        ${fastnoisesimd_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD_avx2.cpp
+        ${fastnoisesimd_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD_avx512.cpp
+        ${fastnoisesimd_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD_neon.cpp
+        ${fastnoisesimd_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD_sse2.cpp
+        ${fastnoisesimd_SOURCE_DIR}/FastNoiseSIMD/FastNoiseSIMD_sse41.cpp
+    )
 
-target_include_directories(stb INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/stb/)
+    target_include_directories(fast_noise_simd PUBLIC ${fastnoisesimd_SOURCE_DIR})
 
-if(NOT VMA_PATH_FOUND)
-message("Updating VulkanMemoryAllocator")
-execute_process(COMMAND git submodule update --init --recursive vma 
-			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT VMA_PATH_FOUND)
+    if(UNIX)
+        target_compile_options(fast_noise_simd PRIVATE -march=core-avx2 -msse2 -msse4.1 -Wimplicit-fallthrough=0)
+    elseif(WIN32)
+        target_compile_options(fast_noise_simd PRIVATE /arch:AVX2)
+    endif()
+endif()
 
-add_library(VulkanMemoryAllocator INTERFACE)
-target_include_directories(VulkanMemoryAllocator INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/vma/src)
+FetchContent_GetProperties(stb)
+if(NOT stb_POPULATED)
+    FetchContent_Populate(stb)
+    add_library(stb INTERFACE)
 
-target_include_directories(VulkanMemoryAllocator INTERFACE ${Vulkan_INCLUDE_DIRS})
-target_link_libraries(VulkanMemoryAllocator INTERFACE ${Vulkan_LIBRARIES})
+    target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
+endif()
 
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+FetchContent_GetProperties(vma)
+if(NOT vma_POPULATED)
+    FetchContent_Populate(vma)
+    add_library(VulkanMemoryAllocator INTERFACE)
+    target_include_directories(VulkanMemoryAllocator INTERFACE ${vma_SOURCE_DIR}/src)
 
-if(NOT GLFW_PATH_FOUND)
-	message("Updating glfw")
-	execute_process(COMMAND git submodule update --init --recursive glfw
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT GLFW_PATH_FOUND)
-
-add_subdirectory(glfw)
-
-if(NOT VK_BOOTSTRAP_PATH_FOUND)
-	message("Updating vk-bootstrap")
-	execute_process(COMMAND git submodule update --init --recursive vk-bootstrap
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif(NOT VK_BOOTSTRAP_PATH_FOUND)
-
-add_subdirectory(vk-bootstrap)
-
+    target_include_directories(VulkanMemoryAllocator INTERFACE ${Vulkan_INCLUDE_DIRS})
+    target_link_libraries(VulkanMemoryAllocator INTERFACE ${Vulkan_LIBRARIES})
+endif()
 
 

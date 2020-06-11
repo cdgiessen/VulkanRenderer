@@ -15,9 +15,6 @@ find_package(Vulkan REQUIRED)
 
 add_subdirectory(ext)
 
-set(GLSLANG_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang)
-set(SPIRV_CROSS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-cross)
-
 # gtk include for linux file window
 if(UNIX)
     find_package(PkgConfig REQUIRED)
@@ -68,51 +65,12 @@ if(UNIX)
     endif(UBSAN)
 endif(UNIX)
 
-# cml
-target_link_libraries(VulkanEngine PUBLIC cml)
+# dependencies
+target_link_libraries(VulkanEngine PUBLIC cml fmt glfw glslang SPIRV dear-imgui nlohmann_json spirv-cross-core spirv-cross-cpp
+    spirv-cross-reflect vk-bootstrap SG14 ${Vulkan_LIBRARIES} fast_noise_simd stb VulkanMemoryAllocator)
 
-# json
-target_link_libraries(VulkanEngine PUBLIC nlohmann_json)
-
-# fmt
-target_link_libraries(VulkanEngine PUBLIC fmt)
-
-# SG14
-target_include_directories(VulkanEngine PUBLIC ${CMAKE_SOURCE_DIR}/ext/SG14)
-
-# glfw
-target_link_libraries(VulkanEngine PUBLIC glfw)
-
-# vulkan
-target_include_directories(VulkanEngine PRIVATE ${Vulkan_INCLUDE_DIRS})
-target_link_libraries(VulkanEngine PRIVATE ${Vulkan_LIBRARIES})
-
-# vk-bootstrap
-target_link_libraries(VulkanEngine PUBLIC vk-bootstrap)
-target_include_directories(VulkanEngine PUBLIC ext/src/vk-bootstrap)
-
-# glslang
-target_include_directories(VulkanEngine PUBLIC ${GLSLANG_INCLUDE_DIR})
-target_link_libraries(VulkanEngine PUBLIC glslang SPIRV)
-
-# spirv-cross
-target_include_directories(VulkanEngine PUBLIC ${SPIRV_CROSS_INCLUDE_DIR})
-target_link_libraries(VulkanEngine PUBLIC spirv-cross-core spirv-cross-cpp
-                                          spirv-cross-reflect)
-
-# imgui
-target_link_libraries(VulkanEngine PUBLIC ocornut::imgui)
-target_include_directories(VulkanEngine PUBLIC ext/imgui)
-
-# fast-noise-simd
-target_link_libraries(VulkanEngine PUBLIC fast-noise-simd)
-target_include_directories(VulkanEngine PUBLIC ext/FastNoiseSIMD)
-
-# stb
-target_link_libraries(VulkanEngine PUBLIC stb)
-
-# vma
-target_link_libraries(VulkanEngine PUBLIC VulkanMemoryAllocator)
+# includes
+target_include_directories(VulkanEngine PUBLIC ${Vulkan_INCLUDE_DIRS})
 
 # gtk
 if(UNIX)

@@ -74,7 +74,7 @@ VulkanDevice::VulkanDevice (Window& window, bool validationLayers)
 	if (!inst_ret)
 	{
 		// TODO
-		Log.Error (fmt::format ("Failed to create instance: {}", vkb::to_string (inst_ret.error ().type)));
+		Log.Error (fmt::format ("Failed to create instance: {}", inst_ret.error ().message()));
 	}
 	vkb_instance = inst_ret.value ();
 
@@ -91,7 +91,7 @@ VulkanDevice::VulkanDevice (Window& window, bool validationLayers)
 	{
 		// TODO
 		Log.Error (fmt::format (
-		    "Failed to select physical device: {}", vkb::to_string (phys_ret.error ().type)));
+		    "Failed to select physical device: {}", phys_ret.error ().message()));
 	}
 	phys_device = phys_ret.value ();
 	vkb::DeviceBuilder dev_builder (phys_device);
@@ -99,7 +99,7 @@ VulkanDevice::VulkanDevice (Window& window, bool validationLayers)
 	if (!dev_ret)
 	{
 		// TODO
-		Log.Error (fmt::format ("Failed to create device: {}", vkb::to_string (dev_ret.error ().type)));
+		Log.Error (fmt::format ("Failed to create device: {}", dev_ret.error ().message()));
 	}
 	vkb_device = dev_ret.value ();
 	device = vkb_device.device;

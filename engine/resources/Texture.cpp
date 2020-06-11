@@ -6,7 +6,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "stb/stb_image.h"
+#include "stb_image.h"
 
 #include "core/JobSystem.h"
 #include "core/Logger.h"

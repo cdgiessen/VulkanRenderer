@@ -3,8 +3,8 @@
 #include <fstream>
 #include <iomanip>
 
-#include "imgui/imgui.h"
-#include "stb/stb_image_write.h"
+#include "imgui.hpp"
+#include "stb_image_write.h"
 #include <nlohmann/json.hpp>
 
 #include "core/Logger.h"
@@ -116,7 +116,7 @@ void VulkanRenderer::RenderFrame ()
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
-		// RecreateSwapChain ();
+		RecreateSwapChain ();
 	}
 	else if (result != VK_SUCCESS)
 	{

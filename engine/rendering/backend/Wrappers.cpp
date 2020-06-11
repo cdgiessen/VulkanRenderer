@@ -1,6 +1,7 @@
 #include "Wrappers.h"
 
 #include <utility>
+#include <cassert>
 
 #include "rendering/Initializers.h"
 
