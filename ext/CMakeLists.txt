@@ -82,7 +82,13 @@ FetchContent_Declare(
     GIT_TAG        v2.3.0
 )
 
-FetchContent_MakeAvailable(cml fmt glfw glslang json spirv_cross vk_bootstrap)
+FetchContent_Declare(
+    openxr
+    GIT_REPOSITORY https://github.com/KhronosGroup/OpenXR-SDK
+    GIT_TAG        release-1.0.9
+)
+
+FetchContent_MakeAvailable(cml fmt glfw glslang json spirv_cross vk_bootstrap openxr)
 
 FetchContent_GetProperties(SG14)
 if(NOT SG14_POPULATED)
@@ -147,4 +153,5 @@ if(NOT vma_POPULATED)
     target_link_libraries(VulkanMemoryAllocator INTERFACE ${Vulkan_LIBRARIES})
 endif()
 
-
+add_library(openxr INTERFACE)
+target_include_directories(openxr INTERFACE ${openxr_SOURCE_DIR}/include)

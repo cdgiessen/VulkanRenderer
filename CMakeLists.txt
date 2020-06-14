@@ -67,7 +67,7 @@ endif(UNIX)
 
 # dependencies
 target_link_libraries(VulkanEngine PUBLIC cml fmt glfw glslang SPIRV dear-imgui nlohmann_json spirv-cross-core spirv-cross-cpp
-    spirv-cross-reflect vk-bootstrap SG14 ${Vulkan_LIBRARIES} fast_noise_simd stb VulkanMemoryAllocator)
+    spirv-cross-reflect vk-bootstrap SG14 ${Vulkan_LIBRARIES} fast_noise_simd stb VulkanMemoryAllocator openxr_loader openxr)
 
 # includes
 target_include_directories(VulkanEngine PUBLIC ${Vulkan_INCLUDE_DIRS})

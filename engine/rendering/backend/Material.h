@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SG14/flat_map.h"
-
 #include "resources/Material.h"
 
 #include "Descriptor.h"
@@ -29,7 +27,7 @@ class MatInstance
 
 	private:
 	MatOutlineID cur_instance = 0;
-	stdext::flat_map<MatInstanceID, DescriptorSet> instance_sets;
+	std::unordered_map<MatInstanceID, DescriptorSet> instance_sets;
 	std::vector<DoubleBuffer> instance_data;
 	std::vector<int> offset_index;
 };
@@ -47,5 +45,5 @@ class Materials
 
 	private:
 	MatOutlineID cur_outline = 0;
-	stdext::flat_map<MatOutlineID, MatInstance> outlines;
+	std::unordered_map<MatOutlineID, MatInstance> outlines;
 };

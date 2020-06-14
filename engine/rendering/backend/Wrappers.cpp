@@ -127,7 +127,7 @@ void CommandQueue::Submit (VkSubmitInfo const& submitInfo, VulkanFence const& fe
 
 int CommandQueue::GetQueueFamily () const { return queueFamily; }
 VkQueue CommandQueue::GetQueue () const { return queue; }
-
+int CommandQueue::GetQueueIndex () const { return 0; };
 VkResult CommandQueue::PresentQueueSubmit (VkPresentInfoKHR presentInfo)
 {
 	std::lock_guard lock (submissionMutex);

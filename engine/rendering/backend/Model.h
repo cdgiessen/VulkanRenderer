@@ -6,8 +6,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include "SG14/flat_map.h"
-
 #include "resources/Mesh.h"
 
 #include "Buffer.h"
@@ -66,6 +64,6 @@ class Models
 
 	std::mutex map_lock;
 	ModelID counter = 0;
-	stdext::flat_map<ModelID, VulkanMesh> staging_models;
-	stdext::flat_map<ModelID, VulkanMesh> models;
+	std::unordered_map<ModelID, VulkanMesh> staging_models;
+	std::unordered_map<ModelID, VulkanMesh> models;
 };

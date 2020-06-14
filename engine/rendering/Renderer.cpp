@@ -243,3 +243,12 @@ void VulkanRenderer::ImGuiNewFrame ()
 	ImGui_ImplVulkan_NewFrame ();
 	ImGui::NewFrame ();
 }
+
+
+VulkanOpenXRInit VulkanRenderer::GetOpenXRInit ()
+{
+	return VulkanOpenXRInit{ back_end.device.vkb_instance.instance,
+		back_end.device.phys_device.physical_device,
+		back_end.device.device,
+		back_end.device.GraphicsQueue () };
+}

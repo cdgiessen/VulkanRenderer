@@ -50,6 +50,14 @@ class RenderSettings
 	std::filesystem::path fileName;
 };
 
+struct VulkanOpenXRInit
+{
+	VkInstance inst;
+	VkPhysicalDevice phys_dev;
+	VkDevice device;
+	CommandQueue& queue;
+};
+
 class VulkanRenderer
 {
 	public:
@@ -69,6 +77,8 @@ class VulkanRenderer
 	void DeviceWaitTillIdle ();
 
 	void ImGuiNewFrame ();
+
+	VulkanOpenXRInit GetOpenXRInit ();
 
 	private:
 	void ImGuiSetup ();

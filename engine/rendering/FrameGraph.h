@@ -7,8 +7,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "SG14/flat_map.h"
-
 #include "vulkan/vulkan.h"
 
 class VulkanDevice;

@@ -1,12 +1,8 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 
-#include "Input.h"
-#include "JobSystem.h"
-#include "Logger.h"
-#include "Time.h"
-#include "Window.h"
 #include "util/SimpleTimer.h"
 
 #include "resources/Resource.h"
@@ -14,6 +10,13 @@
 #include "rendering/Renderer.h"
 
 #include "scene/Scene.h"
+
+#include "Input.h"
+#include "JobSystem.h"
+#include "Logger.h"
+#include "OpenXR.h"
+#include "Time.h"
+#include "Window.h"
 
 class EngineSettings
 {
@@ -70,6 +73,8 @@ class Engine
 
 	VulkanRenderer vulkan_renderer;
 	Scene scene;
+
+	std::optional<OpenXR> openxr;
 
 	private:
 	std::function<void ()> imgui_update_callback;

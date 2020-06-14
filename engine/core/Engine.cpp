@@ -23,7 +23,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-
 EngineSettings::EngineSettings (std::filesystem::path fileName) : fileName (fileName) { Load (); }
 
 void EngineSettings::Load ()
@@ -85,15 +84,31 @@ Engine::Engine ()
   resources (thread_pool),
   vulkan_renderer (settings.useValidationLayers, thread_pool, window, resources),
   scene (thread_pool, time, input, resources, vulkan_renderer)
-// imgui_nodeGraph_terrain ()
+
 {
 	input.SetMouseControlStatus (false);
 
 	Log.Debug (fmt::format ("Hardware Threads Available = {}", HardwareThreadCount ()));
+
+	openxr = create_openxr (vulkan_renderer.GetOpenXRInit ());
+
+	if (openxr)
+	{
+		XrSessionBeginInfo begin_info{ XR_TYPE_SESSION_BEGIN_INFO };
+		begin_info.primaryViewConfigurationType = view_config_type;
+		xrBeginSession (openxr->session, &begin_info);
+	}
 }
 
 
-Engine::~Engine () {}
+Engine::~Engine ()
+{
+	if (openxr)
+	{
+		xrEndSession (openxr->session);
+		destroy_openxr (*openxr);
+	}
+}
 
 void Engine::Run ()
 {

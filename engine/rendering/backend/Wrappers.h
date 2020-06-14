@@ -75,6 +75,7 @@ class CommandQueue
 
 	VkQueue GetQueue () const;
 	int GetQueueFamily () const;
+	int GetQueueIndex () const;
 
 	VkResult PresentQueueSubmit (VkPresentInfoKHR presentInfo);
 	void QueueWaitIdle ();
