@@ -85,15 +85,15 @@ class Textures
 	Textures (job::ThreadPool& thread_pool);
 	~Textures ();
 
-	void LoadTextureList ();
-	void SaveTextureList ();
+	void load_texture_list ();
+	void save_texture_list ();
 
-	TexID GetNextFreeTexID ();
+	TexID get_next_free_tex_id ();
 
-	void LoadTextureFromFile (TexID texRes);
+	void load_texture_from_file (TexID texRes);
 
-	TexID GetTexIDByName (std::string s);
-	TexResource& GetTexResourceByID (TexID id);
+	TexID get_tex_id_by_name (std::string s);
+	TexResource& get_tex_resource_by_id (TexID id);
 
 
 	private:
@@ -102,7 +102,7 @@ class Textures
 	std::atomic_int id_counter = 0;
 
 	std::mutex resource_lock;
-	std::unordered_map<TexID, TexResource> textureResources;
+	std::unordered_map<TexID, TexResource> texture_resources;
 };
 
 } // namespace Resource::Texture

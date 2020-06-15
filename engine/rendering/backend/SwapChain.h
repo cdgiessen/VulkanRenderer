@@ -26,9 +26,9 @@ class VulkanSwapChain
 
 	~VulkanSwapChain ();
 
-	void RecreateSwapChain ();
+	void recreate_swapchain ();
 
-	VkSwapchainKHR Get () { return swapChain; }
+	VkSwapchainKHR get () { return swapChain; }
 
 	VkFormat GetFormat () { return swapChainImageFormat; }
 
@@ -58,7 +58,7 @@ class VulkanSwapChain
 	SwapChainSupportDetails details;
 
 	void CreateSwapChain ();
-	void CreateImageViews ();
+	void create_image_views ();
 
 	void DestroySwapchainResources ();
 

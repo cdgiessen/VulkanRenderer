@@ -238,7 +238,7 @@ class Node
 
 	LinkTypeVariants GetValue (const int x, const int z) const;
 
-	LinkTypeVariants GetHeightMapValue (const int x, const int z) const;
+	LinkTypeVariants get_heightMapValue (const int x, const int z) const;
 	LinkTypeVariants GetSplatMapValue (const int x, const int z) const;
 	LinkTypeVariants GetVegetationMapValue (const int x, const int z) const;
 
@@ -305,7 +305,7 @@ class GraphUser
 
 	int image_length () { return info.cellsWide; }
 
-	std::vector<float>& GetHeightMap ();
+	std::vector<float>& get_heightMap ();
 	std::vector<cml::vec4<uint8_t>>& GetSplatMap ();
 	std::vector<cml::vec4<int16_t>>& GetNormalMap ();
 

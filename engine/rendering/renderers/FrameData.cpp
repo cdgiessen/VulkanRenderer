@@ -9,14 +9,14 @@ FrameData::FrameData (VulkanDevice& device)
       { DescriptorType::uniform_buffer, ShaderStage::all_graphics, 1, 1 } }),
   layout (device.device, m_bindings),
   descriptor_stack (layout),
-  pool (device.device, layout.Get (), m_bindings, 2),
-  frame_descriptors ({ pool.Allocate (), pool.Allocate () })
+  pool (device.device, layout.get (), m_bindings, 2),
+  frame_descriptors ({ pool.allocate (), pool.allocate () })
 {
 }
 
-void FrameData::Update (double time) {}
+void FrameData::update (double time) {}
 
-void FrameData::Bind (VkCommandBuffer buffer) {}
-void FrameData::Advance () {}
+void FrameData::bind (VkCommandBuffer buffer) {}
+void FrameData::advance () {}
 
-DescriptorStack const& FrameData::GetDescriptorStack () const { return descriptor_stack; }
+DescriptorStack const& FrameData::get_descriptor_stack () const { return descriptor_stack; }

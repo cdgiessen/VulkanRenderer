@@ -28,7 +28,7 @@ class Scene
 	    Resource::Resources& resourceMan,
 	    VulkanRenderer& renderer);
 
-	void Update ();
+	void update ();
 
 	private:
 	job::ThreadPool& thread_pool;

@@ -7,9 +7,9 @@
 #include "Device.h"
 
 CommandPoolGroup::CommandPoolGroup (VulkanDevice const& device)
-: graphics_pool (device.device, device.GraphicsQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
-  transfer_pool (device.device, device.TransferQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
-  compute_pool (device.device, device.ComputeQueue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
+: graphics_pool (device.device, device.graphics_queue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+  transfer_pool (device.device, device.transfer_queue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+  compute_pool (device.device, device.compute_queue (), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
 {
 }
 
@@ -17,7 +17,7 @@ CommandPoolGroup::CommandPoolGroup (VulkanDevice const& device)
 AsyncTaskQueue::AsyncTaskQueue (job::ThreadPool& thread_pool, VulkanDevice& device)
 : thread_pool (thread_pool)
 {
-	auto thread_ids = thread_pool.GetThreadIDs ();
+	auto thread_ids = thread_pool.get_thread_ids ();
 	thread_ids.push_back (std::this_thread::get_id ());
 	for (auto& id : thread_ids)
 	{
@@ -36,7 +36,7 @@ void AsyncTaskQueue::SubmitTask (AsyncTask&& task)
 		tasks_in_progress.push_back (ts);
 	}
 
-	thread_pool.Submit (
+	thread_pool.submit (
 	    [&, task = std::move (task)] {
 		    std::thread::id id = std::this_thread::get_id ();
 		    CommandPool* pool;
@@ -48,9 +48,9 @@ void AsyncTaskQueue::SubmitTask (AsyncTask&& task)
 		    }
 		    CommandBuffer cmdBuf = CommandBuffer (*pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-		    cmdBuf.Allocate ().Begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-		    cmdBuf.WriteTo (task.work);
-		    cmdBuf.End ().Submit ();
+		    cmdBuf.allocate ().begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		    cmdBuf.write (task.work);
+		    cmdBuf.end ().submit ();
 		    {
 			    std::lock_guard lk (lock_finish_queue);
 			    finish_queue.emplace_back (std::move (cmdBuf), task.finish_work);
@@ -73,9 +73,9 @@ void AsyncTaskQueue::CleanFinishQueue ()
 
 	for (auto it = finish_queue.begin (); it != finish_queue.end ();)
 	{
-		if (it->cmdBuf.GetFence ().Check ())
+		if (it->cmdBuf.get_fence ().check ())
 		{
-			it->cmdBuf.Free ();
+			it->cmdBuf.free ();
 			if (it->finish_work)
 			{
 				it->finish_work ();

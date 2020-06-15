@@ -41,21 +41,21 @@
 //
 //	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8);
 //
-//	terrainTextureArrayAlbedo = resourceMan.textures.GetTexIDByName ("terrain_albedo");
+//	terrainTextureArrayAlbedo = resourceMan.textures.get_tex_id_by_name ("terrain_albedo");
 //	terrainVulkanTextureArrayAlbedo =
-//	    renderer.textures.CreateTexture2DArray (terrainTextureArrayAlbedo, details);
+//	    renderer.textures.create_texture_2d_array(terrainTextureArrayAlbedo, details);
 //
-//	terrainTextureArrayRoughness = resourceMan.textures.GetTexIDByName ("terrain_roughness");
+//	terrainTextureArrayRoughness = resourceMan.textures.get_tex_id_by_name ("terrain_roughness");
 //	terrainVulkanTextureArrayRoughness =
-//	    renderer.textures.CreateTexture2DArray (terrainTextureArrayRoughness, details);
+//	    renderer.textures.create_texture_2d_array(terrainTextureArrayRoughness, details);
 //
-//	terrainTextureArrayMetallic = resourceMan.textures.GetTexIDByName ("terrain_metalness");
+//	terrainTextureArrayMetallic = resourceMan.textures.get_tex_id_by_name ("terrain_metalness");
 //	terrainVulkanTextureArrayMetallic =
-//	    renderer.textures.CreateTexture2DArray (terrainTextureArrayMetallic, details);
+//	    renderer.textures.create_texture_2d_array(terrainTextureArrayMetallic, details);
 //
-//	terrainTextureArrayNormal = resourceMan.textures.GetTexIDByName ("terrain_normal");
+//	terrainTextureArrayNormal = resourceMan.textures.get_tex_id_by_name ("terrain_normal");
 //	terrainVulkanTextureArrayNormal =
-//	    renderer.textures.CreateTexture2DArray (terrainTextureArrayNormal, details);
+//	    renderer.textures.create_texture_2d_array(terrainTextureArrayNormal, details);
 //
 //	terrainGridModel = std::make_unique<VulkanModel> (renderer.device,
 //	    renderer.async_task_queue,
@@ -70,8 +70,8 @@
 //
 // void TerrainSystem::StopActiveJobs ()
 //{
-//	workContinueSignal->Cancel ();
-//	workContinueSignal->Wait ();
+//	workContinueSignal->cancel ();
+//	workContinueSignal->wait ();
 //}
 //
 //
@@ -96,7 +96,7 @@
 //		recreateTerrain = false;
 //	}
 //
-//	terrainUpdateTimer.StartTimer ();
+//	terrainUpdateTimer.start_timer ();
 //
 //	std::vector<std::vector<std::unique_ptr<Terrain>>::iterator> terToDelete;
 //
@@ -205,7 +205,7 @@
 //					in_progress_terrains.push_back (std::move (terrain));
 //				};
 //
-//				thread_pool.Submit (std::move (t), workContinueSignal);
+//				thread_pool.submit (std::move (t), workContinueSignal);
 //			}
 //		}
 //	}
@@ -236,10 +236,10 @@
 //	}
 //	terrain_mutex.unlock ();
 //
-//	// if (terrainUpdateTimer.GetElapsedTimeMicroSeconds() > 1000) {
-//	//	Log.Debug << terrainUpdateTimer.GetElapsedTimeMicroSeconds() << "\n";
+//	// if (terrainUpdateTimer.get_elapsed_time_micro_seconds() > 1000) {
+//	//	Log.Debug << terrainUpdateTimer.get_elapsed_time_micro_seconds() << "\n";
 //	//}
-//	terrainUpdateTimer.EndTimer ();
+//	terrainUpdateTimer.end_timer ();
 //
 //	// chunkBuffer.UpdateChunks ();
 //}
@@ -264,7 +264,7 @@
 //		cml::vec2f size = terrain->coordinateData.size;
 //		if (pos.x <= x && pos.x + size.x >= x && pos.y <= z && pos.y + size.y >= z)
 //		{
-//			return terrain->GetHeightAtLocation (
+//			return terrain->get_heightAtLocation (
 //			    (x - pos.x) / t_settings.width, (z - pos.y) / t_settings.width);
 //		}
 //	}
@@ -346,12 +346,12 @@
 //		{
 //			std::lock_guard<std::mutex> lk (terrain_mutex);
 //			ImGui::Text ("Terrain Count %lu", terrains.size ());
-//			ImGui::Text ("Generating %i Terrains", workContinueSignal->InQueue ());
-//			ImGui::Text ("All terrains update Time: %lu(uS)", terrainUpdateTimer.GetElapsedTimeMicroSeconds ());
+//			ImGui::Text ("Generating %i Terrains", workContinueSignal->in_queue ());
+//			ImGui::Text ("All terrains update Time: %lu(uS)", terrainUpdateTimer.get_elapsed_time_micro_seconds ());
 //
 //			for (auto& ter : terrains)
 //			{
-//				ImGui::Text ("Terrain Draw Time: %lu(uS)", ter->drawTimer.GetElapsedTimeMicroSeconds ());
+//				ImGui::Text ("Terrain Draw Time: %lu(uS)", ter->drawTimer.get_elapsed_time_micro_seconds ());
 //				ImGui::Text ("Terrain Quad Count %d", ter->numQuads);
 //			}
 //		}

@@ -102,8 +102,8 @@ std::optional<XrSession> create_session (XrInstance inst, OpenXR::SysInfo sys, V
 	gfx_binding.instance = vk_init.inst;
 	gfx_binding.physicalDevice = vk_init.phys_dev;
 	gfx_binding.device = vk_init.device;
-	gfx_binding.queueFamilyIndex = vk_init.queue.GetQueueFamily ();
-	gfx_binding.queueIndex = vk_init.queue.GetQueueIndex ();
+	gfx_binding.queueFamilyIndex = vk_init.queue.queue_family ();
+	gfx_binding.queueIndex = vk_init.queue.queue_index ();
 
 	XrSessionCreateInfo session_info{ XR_TYPE_SESSION_CREATE_INFO };
 	session_info.next = &gfx_binding;
@@ -142,7 +142,7 @@ int64_t SelectColorSwapchainFormat (std::vector<int64_t> const& runtime_formats)
 // 	m_swapchainImageContexts.emplace_back ();
 // 	SwapchainImageContext& swapchainImageContext = m_swapchainImageContexts.back ();
 
-// 	std::vector<XrSwapchainImageBaseHeader*> bases = swapchainImageContext.Create (
+// 	std::vector<XrSwapchainImageBaseHeader*> bases = swapchainImageContext.create (
 // 	    m_vkDevice, &m_memAllocator, capacity, swapchainCreateInfo, m_pipelineLayout, m_shaderProgram, m_drawBuffer);
 
 // 	// Map every swapchainImage base pointer to this context
@@ -244,8 +244,8 @@ void destroy_openxr (OpenXR openxr)
 }
 
 void poll_events (OpenXR openxr) {}
-bool is_running (OpenXR openxr) {}
-bool is_focused (OpenXR openxr) {}
+bool is_running (OpenXR openxr) { return false; }
+bool is_focused (OpenXR openxr) { return false; }
 
 void poll_actions (OpenXR openxr) {}
 void render_frame (OpenXR openxr) {}

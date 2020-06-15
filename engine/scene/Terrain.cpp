@@ -87,9 +87,9 @@
 //
 // Terrain::~Terrain ()
 //{
-//	renderer.textures.DeleteTexture (terrainHeightMap);
-//	renderer.textures.DeleteTexture (terrainSplatMap);
-//	renderer.textures.DeleteTexture (terrainNormalMap);
+//	renderer.textures.delete_texture (terrainHeightMap);
+//	renderer.textures.delete_texture (terrainSplatMap);
+//	renderer.textures.delete_texture (terrainNormalMap);
 //}
 //
 // int Terrain::FindEmptyIndex ()
@@ -115,7 +115,7 @@
 //	        coordinateData.noiseSize,
 //	        0,
 //	        cml::vec2i (0, 0),
-//	        GetHeightAtLocation (TerrainQuad::GetUVvalueFromLocalIndex (NumCells / 2, NumCells, 0, 0),
+//	        get_heightAtLocation (TerrainQuad::GetUVvalueFromLocalIndex (NumCells / 2, NumCells, 0, 0),
 //	            TerrainQuad::GetUVvalueFromLocalIndex (NumCells / 2, NumCells, 0, 0)),
 //	        this }));
 //	InitTerrainQuad (rootQuad, camera_pos);
@@ -124,14 +124,14 @@
 // void Terrain::UpdateTerrain (cml::vec3f viewerPos)
 //{
 //	SimpleTimer updateTime;
-//	updateTime.StartTimer ();
+//	updateTime.start_timer ();
 //
 //	UpdateTerrainQuad (rootQuad, viewerPos);
 //
-//	updateTime.EndTimer ();
+//	updateTime.end_timer ();
 //
-//	// if (updateTime.GetElapsedTimeMicroSeconds() > 1500)
-//	//	Log.Debug << " Update time " << updateTime.GetElapsedTimeMicroSeconds();
+//	// if (updateTime.get_elapsed_time_micro_seconds() > 1500)
+//	//	Log.Debug << " Update time " << updateTime.get_elapsed_time_micro_seconds();
 //}
 //
 // void Terrain::SetupUniformBuffer ()
@@ -142,7 +142,7 @@
 //	ModelBufferObject mbo;
 //	mbo.model = cml::mat4f ().translate (cml::vec3f (coordinateData.pos.x, 0, coordinateData.pos.y));
 //	mbo.normal = cml::mat4f (); // mbo.model.inverse ().transpose ();
-//	uniformBuffer->CopyToBuffer (mbo);
+//	uniformBuffer->copy_to_buffer (mbo);
 //
 //	auto inst_details = instance_details (2048, 16);
 //	inst_details.persistentlyMapped = true;
@@ -155,33 +155,33 @@
 //
 //	int length = fastGraphUser.image_length ();
 //	auto buffer_height = renderer.buffers.CreateBuffer (
-//	    staging_details (BufferType::staging, sizeof (float) * fastGraphUser.GetHeightMap ().size ()));
-//	buffer_height->CopyToBuffer (fastGraphUser.GetHeightMap ());
+//	    staging_details (BufferType::staging, sizeof (float) * fastGraphUser.get_heightMap ().size ()));
+//	buffer_height->copy_to_buffer (fastGraphUser.get_heightMap ());
 //
 //	TexCreateDetails details (
 //	    VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 //	details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 //
-//	terrainHeightMap = renderer.textures.CreateTextureFromBuffer (std::move (buffer_height), details);
+//	terrainHeightMap = renderer.textures.create_texture_from_buffer (std::move (buffer_height), details);
 //
 //	auto buffer_splat = renderer.buffers.CreateBuffer (staging_details (
 //	    BufferType::staging, sizeof (cml::vec4<uint8_t>) * fastGraphUser.GetSplatMap ().size ()));
-//	buffer_splat->CopyToBuffer (fastGraphUser.GetSplatMap ());
+//	buffer_splat->copy_to_buffer (fastGraphUser.GetSplatMap ());
 //
 //	TexCreateDetails splat_details (
 //	    VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 //	splat_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-//	terrainSplatMap = renderer.textures.CreateTextureFromBuffer (std::move (buffer_splat), splat_details);
+//	terrainSplatMap = renderer.textures.create_texture_from_buffer (std::move (buffer_splat), splat_details);
 //
 //	auto buffer_normal = renderer.buffers.CreateBuffer (staging_details (
 //	    BufferType::staging, sizeof (cml::vec4<int16_t>) * fastGraphUser.GetNormalMap ().size ()));
-//	buffer_normal->CopyToBuffer (fastGraphUser.GetNormalMap ());
+//	buffer_normal->copy_to_buffer (fastGraphUser.GetNormalMap ());
 //
 //	TexCreateDetails norm_details (
 //	    VK_FORMAT_R16G16B16A16_SNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8, length, length);
 //	norm_details.addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 //	terrainNormalMap =
-//	    renderer.textures.CreateTextureFromBuffer (std::move (buffer_normal), norm_details);
+//	    renderer.textures.create_texture_from_buffer (std::move (buffer_normal), norm_details);
 //}
 //
 // void Terrain::SetupDescriptorSets (
@@ -217,14 +217,14 @@
 //	descriptorSet = descriptor->CreateDescriptorSet ();
 //
 //	std::vector<DescriptorUse> writes;
-//	writes.push_back (DescriptorUse (0, 1, uniformBuffer->GetResource ()));
-//	writes.push_back (DescriptorUse (1, 1, renderer.textures.GetResource (terrainHeightMap)));
-//	writes.push_back (DescriptorUse (2, 1, renderer.textures.GetResource (terrainNormalMap)));
-//	writes.push_back (DescriptorUse (3, 1, renderer.textures.GetResource (terrainSplatMap)));
-//	writes.push_back (DescriptorUse (4, 1, renderer.textures.GetResource (texArrAlbedo)));
-//	writes.push_back (DescriptorUse (5, 1, renderer.textures.GetResource (texArrRoughness)));
-//	writes.push_back (DescriptorUse (6, 1, renderer.textures.GetResource (texArrMetallic)));
-//	writes.push_back (DescriptorUse (7, 1, renderer.textures.GetResource (texArrNormal)));
+//	writes.push_back (DescriptorUse (0, 1, uniformBuffer->get_resource ()));
+//	writes.push_back (DescriptorUse (1, 1, renderer.textures.get_resource (terrainHeightMap)));
+//	writes.push_back (DescriptorUse (2, 1, renderer.textures.get_resource (terrainNormalMap)));
+//	writes.push_back (DescriptorUse (3, 1, renderer.textures.get_resource (terrainSplatMap)));
+//	writes.push_back (DescriptorUse (4, 1, renderer.textures.get_resource (texArrAlbedo)));
+//	writes.push_back (DescriptorUse (5, 1, renderer.textures.get_resource (texArrRoughness)));
+//	writes.push_back (DescriptorUse (6, 1, renderer.textures.get_resource (texArrMetallic)));
+//	writes.push_back (DescriptorUse (7, 1, renderer.textures.get_resource (texArrNormal)));
 //	descriptor->UpdateDescriptorSet (descriptorSet, writes);
 //}
 //
@@ -245,17 +245,17 @@
 //#define VERTEX_BUFFER_BIND_ID 0
 //#define INSTANCE_BUFFER_BIND_ID 1
 //
-//	std::vector<VkVertexInputBindingDescription> instanceBufferBinding = { initializers::vertexInputBindingDescription (
+//	std::vector<VkVertexInputBindingDescription> instanceBufferBinding = { initializers::vertex_input_binding_description (
 //		INSTANCE_BUFFER_BIND_ID, sizeof (HeightMapBound), VK_VERTEX_INPUT_RATE_INSTANCE) };
 //
 //	std::vector<VkVertexInputAttributeDescription> instanceBufferAttribute = {
-//		initializers::vertexInputAttributeDescription (
+//		initializers::vertex_input_attribute_description (
 //		    INSTANCE_BUFFER_BIND_ID, 3, VK_FORMAT_R32G32B32A32_SFLOAT, 0), // Location 4: pos
-//		initializers::vertexInputAttributeDescription (
+//		initializers::vertex_input_attribute_description (
 //		    INSTANCE_BUFFER_BIND_ID, 4, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof (float) * 4), // Location 5: yv
-//		initializers::vertexInputAttributeDescription (
+//		initializers::vertex_input_attribute_description (
 //		    INSTANCE_BUFFER_BIND_ID, 5, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof (float) * 8), // Location 6: h_w_pp
-//		initializers::vertexInputAttributeDescription (
+//		initializers::vertex_input_attribute_description (
 //		    INSTANCE_BUFFER_BIND_ID, 6, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof (float) * 12) // Location pad
 //	};
 //
@@ -270,7 +270,7 @@
 //	    VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 //
 //	out.SetMultisampling (VK_SAMPLE_COUNT_1_BIT);
-//	out.SetDepthStencil (VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
+//	out.set_depth_stencil (VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
 //	out.AddColorBlendingAttachment (VK_FALSE,
 //	    VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
 //	    VK_BLEND_OP_ADD,
@@ -281,7 +281,7 @@
 //	    VK_BLEND_FACTOR_ZERO);
 //
 //	out.AddDescriptorLayouts (renderer.dynamic_data.GetGlobalLayouts ());
-//	out.AddDescriptorLayout (descriptor->GetLayout ());
+//	out.AddDescriptorLayout (descriptor->get_layout ());
 //
 //	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 //
@@ -352,7 +352,7 @@
 //	        new_lsize,
 //	        q.level + 1,
 //	        cml::vec2i (q.subDivPos.x * 2, q.subDivPos.y * 2),
-//	        GetHeightAtLocation (TerrainQuad::GetUVvalueFromLocalIndex (
+//	        get_heightAtLocation (TerrainQuad::GetUVvalueFromLocalIndex (
 //	                                 NumCells / 2, NumCells, q.level + 1, q.subDivPos.x * 2),
 //	            TerrainQuad::GetUVvalueFromLocalIndex (
 //	                NumCells / 2, NumCells, q.level + 1, q.subDivPos.y * 2)),
@@ -366,7 +366,7 @@
 //	        new_lsize,
 //	        q.level + 1,
 //	        cml::vec2i (q.subDivPos.x * 2, q.subDivPos.y * 2 + 1),
-//	        GetHeightAtLocation (TerrainQuad::GetUVvalueFromLocalIndex (
+//	        get_heightAtLocation (TerrainQuad::GetUVvalueFromLocalIndex (
 //	                                 NumCells / 2, NumCells, q.level + 1, q.subDivPos.x * 2),
 //	            TerrainQuad::GetUVvalueFromLocalIndex (NumCells / 2, NumCells, q.level + 1, q.subDivPos.y * 2 + 1)),
 //	        this)));
@@ -379,7 +379,7 @@
 //	        new_lsize,
 //	        q.level + 1,
 //	        cml::vec2i (q.subDivPos.x * 2 + 1, q.subDivPos.y * 2),
-//	        GetHeightAtLocation (TerrainQuad::GetUVvalueFromLocalIndex (
+//	        get_heightAtLocation (TerrainQuad::GetUVvalueFromLocalIndex (
 //	                                 NumCells / 2, NumCells, q.level + 1, q.subDivPos.x * 2 + 1),
 //	            TerrainQuad::GetUVvalueFromLocalIndex (
 //	                NumCells / 2, NumCells, q.level + 1, q.subDivPos.y * 2)),
@@ -393,7 +393,7 @@
 //	        new_lsize,
 //	        q.level + 1,
 //	        cml::vec2i (q.subDivPos.x * 2 + 1, q.subDivPos.y * 2 + 1),
-//	        GetHeightAtLocation (TerrainQuad::GetUVvalueFromLocalIndex (
+//	        get_heightAtLocation (TerrainQuad::GetUVvalueFromLocalIndex (
 //	                                 NumCells / 2, NumCells, q.level + 1, q.subDivPos.x * 2 + 1),
 //	            TerrainQuad::GetUVvalueFromLocalIndex (NumCells / 2, NumCells, q.level + 1, q.subDivPos.y * 2 + 1)),
 //	        this)));
@@ -461,15 +461,15 @@
 //
 //	DrawTerrainRecursive (0, cmdBuf, wireframe, instances);
 //
-//	instanceBuffer->CopyToBuffer (instances);
+//	instanceBuffer->copy_to_buffer (instances);
 //
 //	terrainGrid->BindModel (cmdBuf);
-//	instanceBuffer->BindInstanceBuffer (cmdBuf);
+//	instanceBuffer->bind_instance_buffer (cmdBuf);
 //
 //	vkCmdDrawIndexed (cmdBuf, static_cast<uint32_t> (indCount), instances.size (), 0, 0, 0);
 //}
 //
-// float Terrain::GetHeightAtLocation (float x, float z)
+// float Terrain::get_heightAtLocation (float x, float z)
 //{
 //	return fastGraphUser.SampleHeightMap (x, z) * heightScale;
 //}

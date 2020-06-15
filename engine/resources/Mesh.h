@@ -25,7 +25,7 @@ class VertexDescription
 {
 	public:
 	VertexDescription (std::vector<VertexType> layout) : layout (layout){};
-	int ElementCount () const;
+	int element_count () const;
 
 	std::vector<VertexType> layout; // each element in the array is a different attribute, its value (1-4) is it's size
 };
@@ -62,13 +62,13 @@ struct DeInterleavedMeshData
 	std::vector<FloatBufferData> buffers;
 };
 
-MeshData CreateFlatPlane (int dim, cml::vec3f size);
+MeshData create_flat_plane (int dim, cml::vec3f size);
 
-MeshData CreateCube (int dim = 1);
+MeshData create_cube (int dim = 1);
 
-MeshData CreateSphere (int dim = 10);
+MeshData create_sphere (int dim = 10);
 
-MeshData CreateWaterPlaneSubdiv (int levels = 3, int subdivs = 3);
+MeshData create_water_plane_sub_div (int levels = 3, int subdivs = 3);
 
 using MeshID = uint32_t;
 class Meshes

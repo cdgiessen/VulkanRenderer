@@ -12,32 +12,22 @@
 // Default fence timeout in nanoseconds
 constexpr long DEFAULT_FENCE_TIMEOUT = 1000000000;
 
-VulkanFence::VulkanFence (VkDevice device, VkFenceCreateFlags flags) : device (device)
+auto create_fence (VkDevice device, VkFenceCreateFlags flags)
 {
-	VkFenceCreateInfo fenceInfo = initializers::fenceCreateInfo (flags);
+	VkFence fence;
+	VkFenceCreateInfo fenceInfo = initializers::fence_create_info (flags);
 	VK_CHECK_RESULT (vkCreateFence (device, &fenceInfo, nullptr, &fence))
+	return VulkanHandle (device, fence, vkDestroyFence);
 }
 
-VulkanFence::~VulkanFence ()
+VulkanFence::VulkanFence (VkDevice device, VkFenceCreateFlags flags)
+: fence (create_fence (device, flags))
 {
-	if (fence != nullptr) vkDestroyFence (device, fence, nullptr);
 }
 
-VulkanFence::VulkanFence (VulkanFence&& other) noexcept : device (other.device), fence (other.fence)
+bool VulkanFence::check () const
 {
-	other.fence = nullptr;
-}
-VulkanFence& VulkanFence::operator= (VulkanFence&& other) noexcept
-{
-	device = other.device;
-	fence = other.fence;
-	other.fence = nullptr;
-	return *this;
-}
-
-bool VulkanFence::Check () const
-{
-	VkResult out = vkGetFenceStatus (device, fence);
+	VkResult out = vkGetFenceStatus (fence.device, fence.handle);
 	if (out == VK_SUCCESS)
 		return true;
 	else if (out == VK_NOT_READY)
@@ -46,45 +36,30 @@ bool VulkanFence::Check () const
 	return false;
 }
 
-void VulkanFence::Wait (bool condition) const
+void VulkanFence::wait (bool condition) const
 {
-	vkWaitForFences (device, 1, &fence, condition, DEFAULT_FENCE_TIMEOUT);
+	vkWaitForFences (fence.device, 1, &fence.handle, condition, DEFAULT_FENCE_TIMEOUT);
 }
 
-VkFence VulkanFence::Get () const { return fence; }
+VkFence VulkanFence::get () const { return fence.handle; }
 
-void VulkanFence::Reset () const { vkResetFences (device, 1, &fence); }
+void VulkanFence::reset () const { vkResetFences (fence.device, 1, &fence.handle); }
 
 ///////////// Semaphore ///////////////
 
-VulkanSemaphore::VulkanSemaphore (VkDevice device) : device (device)
+auto create_semaphore (VkDevice device)
 {
-	VkSemaphoreCreateInfo semaphoreInfo = initializers::semaphoreCreateInfo ();
-
+	VkSemaphore semaphore;
+	VkSemaphoreCreateInfo semaphoreInfo = initializers::semaphore_create_info ();
 	VK_CHECK_RESULT (vkCreateSemaphore (device, &semaphoreInfo, nullptr, &semaphore));
+	return VulkanHandle (device, semaphore, vkDestroySemaphore);
 }
 
-VulkanSemaphore::~VulkanSemaphore ()
-{
-	if (semaphore != nullptr) vkDestroySemaphore (device, semaphore, nullptr);
-}
+VulkanSemaphore::VulkanSemaphore (VkDevice device) : semaphore (create_semaphore (device)) {}
 
-VulkanSemaphore::VulkanSemaphore (VulkanSemaphore&& other) noexcept
-: device (other.device), semaphore (other.semaphore)
-{
-	other.semaphore = nullptr;
-}
-VulkanSemaphore& VulkanSemaphore::operator= (VulkanSemaphore&& other) noexcept
-{
-	device = other.device;
-	semaphore = other.semaphore;
-	other.semaphore = nullptr;
-	return *this;
-}
+VkSemaphore VulkanSemaphore::get () { return semaphore.handle; }
 
-VkSemaphore VulkanSemaphore::Get () { return semaphore; }
-
-VkSemaphore* VulkanSemaphore::GetPtr () { return &semaphore; }
+VkSemaphore* VulkanSemaphore::get_ptr () { return &semaphore.handle; }
 
 ///////////// Command Queue ////////////////
 
@@ -94,20 +69,20 @@ CommandQueue::CommandQueue (VkDevice device, int queueFamily)
 	this->queueFamily = queueFamily;
 }
 
-void CommandQueue::SubmitCommandBuffer (VkCommandBuffer buffer, VulkanFence const& fence)
+void CommandQueue::submit (VkCommandBuffer buffer, VulkanFence const& fence)
 {
 	std::vector<VkCommandBuffer> bufs = { buffer };
-	SubmitCommandBuffers (bufs, fence, {}, {}, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+	submits (bufs, fence, {}, {}, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 }
 
-void CommandQueue::SubmitCommandBuffers (std::vector<VkCommandBuffer> cmdBuffer,
+void CommandQueue::submits (std::vector<VkCommandBuffer> cmdBuffer,
     VulkanFence const& fence,
     std::vector<VkSemaphore> const& waitSemaphores,
     std::vector<VkSemaphore> const& signalSemaphores,
     VkPipelineStageFlags const stageMask)
 {
 
-	auto submitInfo = initializers::submitInfo ();
+	auto submitInfo = initializers::submit_info ();
 	submitInfo.commandBufferCount = static_cast<uint32_t> (cmdBuffer.size ());
 	submitInfo.pCommandBuffers = cmdBuffer.data ();
 	submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size ();
@@ -116,129 +91,94 @@ void CommandQueue::SubmitCommandBuffers (std::vector<VkCommandBuffer> cmdBuffer,
 	submitInfo.pWaitSemaphores = waitSemaphores.data ();
 	submitInfo.pWaitDstStageMask = &stageMask;
 
-	Submit (submitInfo, fence);
+	submit (submitInfo, fence);
 }
 
-void CommandQueue::Submit (VkSubmitInfo const& submitInfo, VulkanFence const& fence)
+void CommandQueue::submit (VkSubmitInfo const& submitInfo, VulkanFence const& fence)
 {
 	std::lock_guard lock (submissionMutex);
-	VK_CHECK_RESULT (vkQueueSubmit (queue, 1, &submitInfo, fence.Get ()));
+	VK_CHECK_RESULT (vkQueueSubmit (queue, 1, &submitInfo, fence.get ()));
 }
 
-int CommandQueue::GetQueueFamily () const { return queueFamily; }
-VkQueue CommandQueue::GetQueue () const { return queue; }
-int CommandQueue::GetQueueIndex () const { return 0; };
-VkResult CommandQueue::PresentQueueSubmit (VkPresentInfoKHR presentInfo)
+int CommandQueue::queue_family () const { return queueFamily; }
+VkQueue CommandQueue::get () const { return queue; }
+int CommandQueue::queue_index () const { return 0; };
+VkResult CommandQueue::present (VkPresentInfoKHR presentInfo)
 {
 	std::lock_guard lock (submissionMutex);
 	return vkQueuePresentKHR (queue, &presentInfo);
 }
 
-void CommandQueue::QueueWaitIdle ()
+void CommandQueue::wait ()
 {
 	std::lock_guard lock (submissionMutex);
 	vkQueueWaitIdle (queue);
 }
 /////// Command Pool ////////////
 
-CommandPool::CommandPool (VkDevice device, CommandQueue& queue, VkCommandPoolCreateFlags flags)
-: device (device), queue (&queue)
+auto create_command_pool (VkDevice device, CommandQueue& queue, VkCommandPoolCreateFlags flags)
 {
-	VkCommandPoolCreateInfo cmd_pool_info = initializers::commandPoolCreateInfo ();
-	cmd_pool_info.queueFamilyIndex = queue.GetQueueFamily ();
+	VkCommandPoolCreateInfo cmd_pool_info = initializers::command_pool_create_info ();
+	cmd_pool_info.queueFamilyIndex = queue.queue_family ();
 	cmd_pool_info.flags = flags;
-
-	auto res = vkCreateCommandPool (device, &cmd_pool_info, nullptr, &command_pool);
+	VkCommandPool pool;
+	auto res = vkCreateCommandPool (device, &cmd_pool_info, nullptr, &pool);
 	assert (res == VK_SUCCESS);
+	return VulkanHandle (device, pool, vkDestroyCommandPool);
 }
 
-CommandPool::~CommandPool ()
+CommandPool::CommandPool (VkDevice device, CommandQueue& queue, VkCommandPoolCreateFlags flags)
+: queue (&queue), pool (create_command_pool (device, queue, flags))
 {
-	if (command_pool != nullptr) vkDestroyCommandPool (device, command_pool, nullptr);
 }
 
-CommandPool::CommandPool (CommandPool&& other) noexcept
-: device (other.device), queue (other.queue), command_pool (other.command_pool)
+VkBool32 CommandPool::reset_pool ()
 {
-	other.command_pool = nullptr;
-}
-CommandPool& CommandPool::operator= (CommandPool&& other) noexcept
-{
-	device = other.device;
-	queue = other.queue;
-	command_pool = other.command_pool;
-
-	other.command_pool = nullptr;
-	return *this;
-}
-
-VkBool32 CommandPool::ResetPool ()
-{
-	auto res = vkResetCommandPool (device, command_pool, 0);
+	auto res = vkResetCommandPool (pool.device, pool.handle, 0);
 	assert (res == VK_SUCCESS);
 	return VK_TRUE;
 }
 
-VkBool32 CommandPool::ResetCommandBuffer (VkCommandBuffer cmdBuf)
+VkBool32 CommandPool::reset_command_buffer (VkCommandBuffer cmdBuf)
 {
 	auto res = vkResetCommandBuffer (cmdBuf, {});
 	assert (res == VK_SUCCESS);
 	return VK_TRUE;
 }
 
-VkCommandBuffer CommandPool::AllocateCommandBuffer (VkCommandBufferLevel level)
+VkCommandBuffer CommandPool::allocate (VkCommandBufferLevel level)
 {
 	VkCommandBuffer buf;
 
-	VkCommandBufferAllocateInfo allocInfo = initializers::commandBufferAllocateInfo (command_pool, level, 1);
+	VkCommandBufferAllocateInfo allocInfo =
+	    initializers::command_buffer_allocate_info (pool.handle, level, 1);
 
-	auto res = vkAllocateCommandBuffers (device, &allocInfo, &buf);
+	auto res = vkAllocateCommandBuffers (pool.device, &allocInfo, &buf);
 	assert (res == VK_SUCCESS);
 	return buf;
 }
 
-void CommandPool::BeginBufferRecording (VkCommandBuffer buf, VkCommandBufferUsageFlags flags)
+void CommandPool::begin (VkCommandBuffer buf, VkCommandBufferUsageFlags flags)
 {
-	VkCommandBufferBeginInfo beginInfo = initializers::commandBufferBeginInfo ();
+	VkCommandBufferBeginInfo beginInfo = initializers::command_buffer_begin_info ();
 	beginInfo.flags = flags;
 
 	auto res = vkBeginCommandBuffer (buf, &beginInfo);
 	assert (res == VK_SUCCESS);
 }
 
-void CommandPool::EndBufferRecording (VkCommandBuffer buf)
+void CommandPool::end (VkCommandBuffer buf)
 {
 	auto res = vkEndCommandBuffer (buf);
 	assert (res == VK_SUCCESS);
 }
 
-void CommandPool::FreeCommandBuffer (VkCommandBuffer buf)
+void CommandPool::free (VkCommandBuffer buf)
 {
-	vkFreeCommandBuffers (device, command_pool, 1, &buf);
+	vkFreeCommandBuffers (pool.device, pool.handle, 1, &buf);
 }
 
-VkCommandBuffer CommandPool::GetCommandBuffer (VkCommandBufferLevel level, VkCommandBufferUsageFlags flags)
-{
-	VkCommandBuffer cmdBuffer = AllocateCommandBuffer (level);
-
-	BeginBufferRecording (cmdBuffer, flags);
-
-	return cmdBuffer;
-}
-
-VkBool32 CommandPool::ReturnCommandBuffer (VkCommandBuffer cmdBuffer,
-    VulkanFence const& fence,
-    std::vector<VkSemaphore> const& waitSemaphores,
-    std::vector<VkSemaphore> const& signalSemaphores)
-{
-	EndBufferRecording (cmdBuffer);
-	std::vector<VkCommandBuffer> bufs = { cmdBuffer };
-	queue->SubmitCommandBuffers (bufs, fence, waitSemaphores, signalSemaphores, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-
-	return VK_TRUE;
-}
-
-void CommandPool::WriteToBuffer (VkCommandBuffer buf, std::function<void (VkCommandBuffer)> const& cmds)
+void CommandPool::write (VkCommandBuffer buf, std::function<void (VkCommandBuffer)> const& cmds)
 {
 	cmds (buf);
 }
@@ -246,13 +186,13 @@ void CommandPool::WriteToBuffer (VkCommandBuffer buf, std::function<void (VkComm
 ///////// CommandBuffer /////////
 
 CommandBuffer::CommandBuffer (CommandPool& pool, VkCommandBufferLevel level)
-: pool (&pool), level (level), fence (pool.device)
+: pool (&pool), level (level), fence (pool.pool.device)
 {
 }
 
 CommandBuffer::~CommandBuffer ()
 {
-	if (cmdBuf != nullptr) pool->FreeCommandBuffer (cmdBuf);
+	if (cmdBuf != nullptr) pool->free (cmdBuf);
 }
 
 CommandBuffer::CommandBuffer (CommandBuffer&& cmd) noexcept
@@ -272,68 +212,68 @@ CommandBuffer& CommandBuffer::operator= (CommandBuffer&& cmd) noexcept
 	return *this;
 }
 
-CommandBuffer& CommandBuffer::Allocate ()
+CommandBuffer& CommandBuffer::allocate ()
 {
 	assert (state == State::empty);
-	cmdBuf = pool->AllocateCommandBuffer (level);
+	cmdBuf = pool->allocate (level);
 	state = State::allocated;
 	return *this;
 }
 
-CommandBuffer& CommandBuffer::Begin (VkCommandBufferUsageFlags flags)
+CommandBuffer& CommandBuffer::begin (VkCommandBufferUsageFlags flags)
 {
 	assert (state == State::allocated);
-	pool->BeginBufferRecording (cmdBuf, flags);
+	pool->begin (cmdBuf, flags);
 	state = State::recording;
 	return *this;
 }
 
-CommandBuffer& CommandBuffer::WriteTo (std::function<void (const VkCommandBuffer)> const& work)
+CommandBuffer& CommandBuffer::write (std::function<void (const VkCommandBuffer)> const& work)
 {
 	assert (state == State::recording);
-	pool->WriteToBuffer (cmdBuf, work);
+	pool->write (cmdBuf, work);
 	return *this;
 }
 
-CommandBuffer& CommandBuffer::End ()
+CommandBuffer& CommandBuffer::end ()
 {
 	assert (state == State::recording);
-	pool->EndBufferRecording (cmdBuf);
+	pool->end (cmdBuf);
 	state = State::ready;
 	return *this;
 }
 
-CommandBuffer& CommandBuffer::Submit ()
+CommandBuffer& CommandBuffer::submit ()
 {
 	assert (state == State::ready);
-	pool->queue->SubmitCommandBuffer (cmdBuf, fence);
+	pool->queue->submit (cmdBuf, fence);
 	state = State::submitted;
 	return *this;
 }
 
-CommandBuffer& CommandBuffer::Submit (std::vector<VkSemaphore> const& waits,
+CommandBuffer& CommandBuffer::submit (std::vector<VkSemaphore> const& waits,
     std::vector<VkSemaphore> const& signals,
     VkPipelineStageFlags const stageMask)
 {
 	assert (state == State::ready);
 	std::vector<VkCommandBuffer> bufs = { cmdBuf };
-	pool->queue->SubmitCommandBuffers (bufs, fence, waits, signals, stageMask);
+	pool->queue->submits (bufs, fence, waits, signals, stageMask);
 	state = State::submitted;
 	return *this;
 }
 
-CommandBuffer& CommandBuffer::Wait ()
+CommandBuffer& CommandBuffer::wait ()
 {
 	// assert (state == State::submitted);
-	fence.Wait ();
-	fence.Reset ();
+	fence.wait ();
+	fence.reset ();
 	state = State::allocated;
 	return *this;
 }
 
-CommandBuffer& CommandBuffer::Free ()
+CommandBuffer& CommandBuffer::free ()
 {
-	pool->FreeCommandBuffer (cmdBuf);
+	pool->free (cmdBuf);
 	cmdBuf = nullptr;
 	state = State::empty;
 	return *this;

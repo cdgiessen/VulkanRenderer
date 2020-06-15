@@ -22,24 +22,24 @@ class ViewCameraData
 
 	void Setup (CameraType type, cml::vec3f position, cml::quatf rotation);
 
-	cml::mat4f GetProjMat ();
-	cml::mat4f GetViewMat ();
-	cml::mat4f GetProjViewMat ();
-	cml::vec3f GetPosition ();
-	cml::quatf GetRotation ();
-	float GetFov ();
-	float GetAspectRatio ();
-	float GetViewSize ();
-	float GetClipNear ();
-	float GetClipFar ();
+	cml::mat4f get_proj_mat ();
+	cml::mat4f get_view_mat ();
+	cml::mat4f get_proj_view_mat ();
+	cml::vec3f get_position ();
+	cml::quatf get_rotation ();
+	float get_fov ();
+	float get_aspect_ratio ();
+	float get_view_size ();
+	float get_clip_near ();
+	float get_clip_far ();
 
-	void SetPosition (cml::vec3f position);
-	void SetRotation (cml::quatf rotation);
-	void SetFOV (float fov);
-	void SetAspectRatio (float aspect);
-	void SetViewSize (float size);
-	void SetClipNear (float near);
-	void SetClipFar (float far);
+	void set_position (cml::vec3f position);
+	void set_rotation (cml::quatf rotation);
+	void set_fov (float fov);
+	void set_aspect_ratio (float aspect);
+	void set_view_size (float size);
+	void set_clip_near (float near);
+	void set_clip_far (float far);
 
 	private:
 	CameraType type;
@@ -57,8 +57,8 @@ class ViewCameraData
 	cml::mat4f mat_view;
 	cml::mat4f mat_proj;
 
-	bool isViewMatDirty = true;
-	bool isProjMatDirty = true;
+	bool view_mat_dirty = true;
+	bool proj_mat_dirty = true;
 
 	friend class RenderCameras;
 	bool is_active = false;
@@ -81,19 +81,19 @@ class RenderCameras
 	RenderCameras (RenderCameras const& cam) = delete;
 	RenderCameras operator= (RenderCameras const& cam) = delete;
 
-	ViewCameraID Create (CameraType type, cml::vec3f position, cml::quatf rotation);
-	void Delete (ViewCameraID id);
+	ViewCameraID create (CameraType type, cml::vec3f position, cml::quatf rotation);
+	void remove (ViewCameraID id);
 
-	ViewCameraData& GetCameraData (ViewCameraID id);
-	void SetCameraData (ViewCameraID id, ViewCameraData const& data);
+	ViewCameraData& get_camera_data (ViewCameraID id);
+	void set_camera_data (ViewCameraID id, ViewCameraData const& data);
 
-	void UpdateGPUBuffer (int index);
+	void update_gpu_buffer (int index);
 
-	VkDescriptorBufferInfo GetDescriptorInfo (int index, ViewCameraID id);
-	VkDescriptorType GetDescriptorType () { return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; }
+	VkDescriptorBufferInfo get_descriptor_info (int index, ViewCameraID id);
+	VkDescriptorType get_descriptor_type () { return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; }
 
 	private:
-	void SetupViewCamera (ViewCameraID id, CameraType type, cml::vec3f position, cml::quatf rotation);
+	void setup_view_camera (ViewCameraID id, CameraType type, cml::vec3f position, cml::quatf rotation);
 
 	ViewCameraID cur_id = 0;
 	std::mutex lock;

@@ -17,11 +17,11 @@ class Window;
 struct VMA_MemoryResource
 {
 	public:
-	bool Create (VkPhysicalDevice physical_device, VkDevice device, VkAllocationCallbacks* custom_allocator = nullptr);
+	bool create (VkPhysicalDevice physical_device, VkDevice device, VkAllocationCallbacks* custom_allocator = nullptr);
 
-	void Free ();
+	void free ();
 
-	void LogVMA (bool detailedOutput = false) const;
+	void log (bool detailedOutput = false) const;
 
 	VmaAllocator allocator;
 };
@@ -48,33 +48,33 @@ class VulkanDevice
 
 	void LogMemory () const;
 
-	CommandQueue& GraphicsQueue () const;
-	CommandQueue& ComputeQueue () const;
-	CommandQueue& TransferQueue () const;
-	CommandQueue& PresentQueue () const;
+	CommandQueue& graphics_queue () const;
+	CommandQueue& compute_queue () const;
+	CommandQueue& transfer_queue () const;
+	CommandQueue& present_queue () const;
 
-	VmaAllocator GetGeneralAllocator () const;
-	VmaAllocator GetImageLinearAllocator () const;
-	VmaAllocator GetImageOptimalAllocator () const;
+	VmaAllocator get_general_allocator () const;
+	VmaAllocator get_image_allocator () const;
+	VmaAllocator get_image_optimal_allocator () const;
 
-	VkSurfaceKHR GetSurface () const;
-	Window& GetWindow () const;
+	VkSurfaceKHR get_surface () const;
+	Window& get_window () const;
 
-	VkFormat FindSupportedFormat (
+	VkFormat find_supported_format (
 	    const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 
 	private:
-	std::unique_ptr<CommandQueue> graphics_queue;
-	std::unique_ptr<CommandQueue> compute_queue;
-	std::unique_ptr<CommandQueue> transfer_queue;
-	std::unique_ptr<CommandQueue> present_queue;
+	std::unique_ptr<CommandQueue> m_graphics_queue;
+	std::unique_ptr<CommandQueue> m_compute_queue;
+	std::unique_ptr<CommandQueue> m_transfer_queue;
+	std::unique_ptr<CommandQueue> m_present_queue;
 
 	VMA_MemoryResource allocator_general;
 	VMA_MemoryResource allocator_linear_tiling;
 	VMA_MemoryResource allocator_optimal_tiling;
 
-	bool CreateSurface (VkInstance instance, Window const& window);
-	void DestroySurface ();
-	void CreateQueues ();
-	void CreateVulkanAllocator ();
+	bool create_surface (VkInstance instance, Window const& window);
+	void destroy_surface ();
+	void create_queues ();
+	void create_vulkan_allocator ();
 };

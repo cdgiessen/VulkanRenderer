@@ -40,7 +40,7 @@ struct SubpassDependency
 	VkAccessFlags dstAccessMask;
 	VkDependencyFlags dependencyFlags;
 
-	VkSubpassDependency Get ()
+	VkSubpassDependency get ()
 	{
 		VkSubpassDependency desc;
 		desc.srcSubpass = sourceSubpass;
@@ -57,13 +57,13 @@ struct SubpassDescription
 {
 	SubpassDescription (std::string name) : name (name) {}
 
-	void AddSubpassDependency (std::string subpass);
+	void add_subpass_dependency (std::string subpass);
 
-	void AddImageInput (std::string name);
+	void add_image_input (std::string name);
 
-	void AddColorOutput (std::string name);
+	void add_color_output (std::string name);
 
-	void AddClearColor (std::string attachment_name, VkClearValue value);
+	void add_clear_color (std::string attachment_name, VkClearValue value);
 
 	enum class DepthStencilAccess
 	{
@@ -72,14 +72,14 @@ struct SubpassDescription
 		depth_read_only,
 		stencil_read_only
 	};
-	void SetDepthStencil (std::string name, DepthStencilAccess access);
+	void set_depth_stencil (std::string name, DepthStencilAccess access);
 
-	void AddResolveAttachments (std::string name);
-	void AddPreserveAttachments (std::string name);
+	void add_resolve_attachments (std::string name);
+	void add_preserve_attachments (std::string name);
 
-	void SetFunction (RenderFunc&& func);
+	void set_function (RenderFunc&& func);
 
-	std::vector<std::string> AttachmentsUsed (AttachmentMap const& attachment_map) const;
+	std::vector<std::string> attachments_used (AttachmentMap const& attachment_map) const;
 
 	std::string name;
 	uint32_t index;
@@ -108,7 +108,7 @@ struct VulkanSubpassDescription
 
 	VkSubpassDescription desc;
 
-	VkSubpassDescription Get ()
+	VkSubpassDescription get ()
 	{
 		desc.flags = 0;
 
@@ -135,7 +135,7 @@ struct AttachmentUse
 {
 	AttachmentUse (RenderPassAttachment rpAttach, uint32_t index);
 
-	VkAttachmentDescription Get ();
+	VkAttachmentDescription get ();
 
 
 	VkFormat format;
@@ -154,11 +154,11 @@ struct RenderPassDescription
 {
 	RenderPassDescription (std::string name = "default") : name (name) {}
 
-	void AddSubpass (SubpassDescription subpass);
+	void add_subpass (SubpassDescription subpass);
 
-	VkRenderPassCreateInfo GetRenderPassCreate (AttachmentMap& attachment_map);
-	std::vector<RenderFunc> GetSubpassFunctions ();
-	std::vector<std::string> GetUsedAttachmentNames ();
+	VkRenderPassCreateInfo get_renderpass_create_info (AttachmentMap& attachment_map);
+	std::vector<RenderFunc> get_subpass_functions ();
+	std::vector<std::string> get_used_attachment_names ();
 
 	bool present_attachment = false;
 	std::string name;
@@ -180,10 +180,10 @@ class FrameGraph;
 
 struct FrameGraphBuilder
 {
-	void AddAttachment (RenderPassAttachment attachment);
-	void AddRenderPass (RenderPassDescription renderPass);
-	void SetFinalRenderPassName (std::string name);
-	void SetFinalOutputAttachmentName (std::string name);
+	void add_attachment (RenderPassAttachment attachment);
+	void add_render_pass (RenderPassDescription renderPass);
+	void set_final_render_pass_name (std::string name);
+	void set_final_output_attachment_name (std::string name);
 
 	friend FrameGraph;
 
@@ -210,9 +210,9 @@ class FrameBuffer
 	FrameBuffer& operator= (FrameBuffer&& fb) noexcept;
 
 
-	VkFramebuffer Get () const { return framebuffer; }
+	VkFramebuffer get () const { return framebuffer; }
 
-	VkRect2D GetFullSize () const { return { { 0, 0 }, { width, height } }; }
+	VkRect2D get_full_size () const { return { { 0, 0 }, { width, height } }; }
 
 	private:
 	VkDevice device;
@@ -241,11 +241,14 @@ class RenderPass
 	RenderPass& operator= (RenderPass&& rp) noexcept;
 
 	void BuildCmdBuf (VkCommandBuffer cmdBuf, FrameBufferView fb_view);
-	std::vector<std::string> GetUsedAttachmentNames () { return desc.GetUsedAttachmentNames (); }
+	std::vector<std::string> get_used_attachment_names ()
+	{
+		return desc.get_used_attachment_names ();
+	}
 
-	VkRenderPass Get () const { return rp; }
+	VkRenderPass get () const { return rp; }
 
-	std::vector<VkImageView> OrderAttachments (std::vector<std::pair<std::string, VkImageView>> const& named_views);
+	std::vector<VkImageView> order_attachments (std::vector<std::pair<std::string, VkImageView>> const& named_views);
 
 	private:
 	VkDevice device;
@@ -261,24 +264,24 @@ class FrameGraph
 	FrameGraph (VulkanDevice& device, VulkanSwapChain& swapchain, FrameGraphBuilder builder);
 	~FrameGraph ();
 
-	VkRenderPass Get (int index) const;
-	VkRenderPass GetPresentRenderPass () const { return final_renderpass->Get (); };
+	VkRenderPass get (int index) const;
+	VkRenderPass get_present_render_pass () const { return final_renderpass->get (); };
 
-	void CreatePresentResources ();
-	void DestroyPresentResources ();
+	void create_present_resources ();
+	void destroy_present_resources ();
 
-	void FillCommandBuffer (VkCommandBuffer cmdBuf, FrameBufferView frame_buffer_view);
-	void FillCommandBuffer (VkCommandBuffer cmdBuf, std::string frame_buffer);
+	void fill_command_buffer (VkCommandBuffer cmdBuf, FrameBufferView frame_buffer_view);
+	void fill_command_buffer (VkCommandBuffer cmdBuf, std::string frame_buffer);
 
-	void SetCurrentFrameIndex (uint32_t index) { current_frame = index; }
+	void set_current_frame_index (uint32_t index) { current_frame = index; }
 
-	int GetFrameBufferID (std::string name) const;
+	int get_frame_buffer_id (std::string name) const;
 
 	private:
-	void CreateAttachments ();
-	void CreateFrameBuffers ();
+	void create_attachments ();
+	void create_framebuffers ();
 
-	FrameBuffer const& GetFrameBuffer (int index);
+	FrameBuffer const& get_framebuffer (int index);
 
 	VulkanDevice& device;
 	VulkanSwapChain& swapchain;

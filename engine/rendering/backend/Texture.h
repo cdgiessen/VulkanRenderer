@@ -69,8 +69,8 @@ class VulkanTexture
 	VkImageView imageView = VK_NULL_HANDLE;
 	VkSampler sampler = VK_NULL_HANDLE;
 
-	VkDescriptorType GetDescriptorType () { return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; }
-	VkDescriptorImageInfo GetResource ()
+	VkDescriptorType get_descriptor_type () { return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; }
+	VkDescriptorImageInfo get_resource ()
 	{
 		VkDescriptorImageInfo info{};
 		info.imageLayout = data.textureImageLayout;
@@ -79,9 +79,9 @@ class VulkanTexture
 		return info;
 	}
 
-	uint32_t GetWidth () { return data.width; }
-	uint32_t GetHeight () { return data.height; }
-	uint32_t GetLayers () { return data.layers; }
+	uint32_t get_width () { return data.width; }
+	uint32_t get_height () { return data.height; }
+	uint32_t get_layers () { return data.layers; }
 
 	private:
 	struct TexData
@@ -102,9 +102,9 @@ class VulkanTexture
 	TexData data;
 	std::unique_ptr<VulkanBuffer> staging_buffer;
 
-	void InitImage2D (VkImageCreateInfo imageInfo);
+	void init_image_2d (VkImageCreateInfo imageInfo);
 
-	VkSampler CreateImageSampler (VkFilter mag = VK_FILTER_LINEAR,
+	VkSampler create_image_sampler (VkFilter mag = VK_FILTER_LINEAR,
 	    VkFilter min = VK_FILTER_LINEAR,
 	    VkSamplerMipmapMode mipMapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
 	    VkSamplerAddressMode textureWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
@@ -115,7 +115,7 @@ class VulkanTexture
 	    float maxAnisotropy = 8,
 	    VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
-	VkImageView CreateImageView (VkImage image,
+	VkImageView create_image_view (VkImage image,
 	    VkImageViewType viewType,
 	    VkFormat format,
 	    VkImageAspectFlags aspectFlags,
@@ -136,24 +136,25 @@ class Textures
 	Textures& operator= (Textures const& buf) = delete;
 
 
-	VulkanTextureID CreateTexture2D (Resource::Texture::TexID texture_id, TexCreateDetails texCreateDetails);
+	VulkanTextureID create_texture_2d (Resource::Texture::TexID texture_id, TexCreateDetails texCreateDetails);
 
-	VulkanTextureID CreateTexture2DArray (Resource::Texture::TexID texture_id, TexCreateDetails texCreateDetails);
+	VulkanTextureID create_texture_2d_array (Resource::Texture::TexID texture_id, TexCreateDetails texCreateDetails);
 
-	VulkanTextureID CreateCubeMap (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails);
+	VulkanTextureID create_cube_map (Resource::Texture::TexID cubeMap, TexCreateDetails texCreateDetails);
 
-	VulkanTextureID CreateTextureFromBuffer (std::unique_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails);
+	VulkanTextureID create_texture_from_buffer (
+	    std::unique_ptr<VulkanBuffer> buffer, TexCreateDetails texCreateDetails);
 
-	VulkanTexture CreateAttachmentImage (TexCreateDetails texCreateDetails);
+	VulkanTexture create_attachment_image (TexCreateDetails texCreateDetails);
 
-	void DeleteTexture (VulkanTextureID id);
+	void delete_texture (VulkanTextureID id);
 
-	bool IsFinishedTransfer (VulkanTextureID id);
-	VkDescriptorImageInfo GetResource (VulkanTextureID id);
-	VkDescriptorType GetDescriptorType (VulkanTextureID id);
+	bool is_finished_transfer (VulkanTextureID id);
+	VkDescriptorImageInfo get_resource (VulkanTextureID id);
+	VkDescriptorType get_descriptor_type (VulkanTextureID id);
 
 	private:
-	std::function<void ()> CreateFinishWork (VulkanTextureID id);
+	std::function<void ()> create_finish_work (VulkanTextureID id);
 
 	Resource::Texture::Textures& textures;
 	VulkanDevice& device;

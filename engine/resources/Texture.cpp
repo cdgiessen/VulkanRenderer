@@ -92,21 +92,21 @@ std::optional<TexResource> from_json_TexResource (nlohmann::json j)
 	}
 	catch (nlohmann::json::exception& e)
 	{
-		Log.Error (fmt::format ("failed to parse texture: {}", e.what ()));
+		Log.error (fmt::format ("failed to parse texture: {}", e.what ()));
 		return {};
 	}
 }
 
 Textures::Textures (job::ThreadPool& thread_pool) : thread_pool (thread_pool)
 {
-	LoadTextureList ();
+	load_texture_list ();
 }
 
 Textures::~Textures () {}
 
-TexID Textures::GetNextFreeTexID () { return id_counter++; }
+TexID Textures::get_next_free_tex_id () { return id_counter++; }
 
-void Textures::LoadTextureList ()
+void Textures::load_texture_list ()
 {
 	nlohmann::json j;
 
@@ -119,20 +119,20 @@ void Textures::LoadTextureList ()
 		}
 		catch (nlohmann::json::exception& e)
 		{
-			Log.Debug ("Texture db was invalid json, creating a new one");
-			Log.Debug (fmt::format ("Json error: {}", e.what ()));
-			SaveTextureList ();
+			Log.debug ("Texture db was invalid json, creating a new one");
+			Log.debug (fmt::format ("Json error: {}", e.what ()));
+			save_texture_list ();
 		}
 	}
 	else
 	{
-		Log.Debug ("Texture db didn't exist, creating one");
-		SaveTextureList ();
+		Log.debug ("Texture db didn't exist, creating one");
+		save_texture_list ();
 	}
 
 	try
 	{
-		Log.Debug (fmt::format ("Loading {} textures", textureResources.size ()));
+		Log.debug (fmt::format ("Loading {} textures", texture_resources.size ()));
 		int count = 0;
 
 		auto signal = std::make_shared<job::TaskSignal> ();
@@ -143,29 +143,29 @@ void Textures::LoadTextureList ()
 			if (tex.has_value ())
 			{
 				TexID id = tex.value ().id;
-				textureResources[id] = tex.value ();
-				tasks.push_back (job::Task ([id, this] { LoadTextureFromFile (id); }, signal));
+				texture_resources[id] = tex.value ();
+				tasks.push_back (job::Task ([id, this] { load_texture_from_file (id); }, signal));
 				count++;
 			}
 			else
 			{
-				Log.Error (fmt::format ("Tex resource is invalid"));
+				Log.error (fmt::format ("Tex resource is invalid"));
 			}
 		}
 		id_counter = count;
-		thread_pool.Submit (tasks);
-		signal->Wait ();
+		thread_pool.submit (tasks);
+		signal->wait ();
 	}
 	catch (nlohmann::json::exception& e)
 	{
-		Log.Debug (fmt::format ("Error loading texture list {}", e.what ()));
+		Log.debug (fmt::format ("Error loading texture list {}", e.what ()));
 	}
 }
 
-void Textures::SaveTextureList ()
+void Textures::save_texture_list ()
 {
 	nlohmann::json j;
-	for (auto const& [key, val] : textureResources)
+	for (auto const& [key, val] : texture_resources)
 	{
 		j[key] = to_json (val);
 	}
@@ -180,14 +180,14 @@ void Textures::SaveTextureList ()
 	}
 	catch (nlohmann::json::exception& e)
 	{
-		Log.Debug (fmt::format ("{}", e.what ()));
+		Log.debug (fmt::format ("{}", e.what ()));
 	}
 	outFile.close ();
 }
 
-void Textures::LoadTextureFromFile (TexID id)
+void Textures::load_texture_from_file (TexID id)
 {
-	auto& texRes = GetTexResourceByID (id);
+	auto& texRes = get_tex_resource_by_id (id);
 
 	std::vector<std::byte> texData; // = std::vector<std::byte> (texRes.description.pixelCount * 4);
 
@@ -206,7 +206,7 @@ void Textures::LoadTextureFromFile (TexID id)
 		    4);
 		if (pixels_array.at (i) == nullptr)
 		{
-			Log.Error (fmt::format ("Image {} failed to load!", path.string ()));
+			Log.error (fmt::format ("Image {} failed to load!", path.string ()));
 		}
 	}
 
@@ -226,22 +226,22 @@ void Textures::LoadTextureFromFile (TexID id)
 		stbi_image_free (pixels_array.at (i));
 	}
 
-	Log.Debug (fmt::format ("Tex {}", id));
+	Log.debug (fmt::format ("Tex {}", id));
 
 	std::lock_guard lg (resource_lock);
 	texRes.data = std::move (texData);
 }
 
-TexResource& Textures::GetTexResourceByID (TexID id)
+TexResource& Textures::get_tex_resource_by_id (TexID id)
 {
 	std::lock_guard lk (resource_lock);
-	return textureResources.at (id);
+	return texture_resources.at (id);
 }
 
-TexID Textures::GetTexIDByName (std::string s)
+TexID Textures::get_tex_id_by_name (std::string s)
 {
 	std::lock_guard<std::mutex> lk (resource_lock);
-	for (auto const& [key, val] : textureResources)
+	for (auto const& [key, val] : texture_resources)
 	{
 		if (val.name == s) return key;
 	}

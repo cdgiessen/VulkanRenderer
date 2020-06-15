@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vector>
-#include <vulkan/vulkan.h>
 
+#include "RenderTools.h"
 #include "Shader.h"
 
 class PipelineLayout
@@ -13,40 +13,32 @@ class PipelineLayout
 	    std::vector<VkDescriptorSetLayout> desc_set_layouts,
 	    std::vector<VkPushConstantRange> push_constant_ranges);
 
-	~PipelineLayout ();
-	PipelineLayout (const PipelineLayout& other) = delete;
-	PipelineLayout& operator= (const PipelineLayout& other) = delete;
-	PipelineLayout (PipelineLayout&& other) noexcept;
-	PipelineLayout& operator= (PipelineLayout&& other) noexcept;
-
-	VkPipelineLayout get () const { return layout; }
+	VkPipelineLayout get () const { return layout.handle; }
 
 	private:
-	VkDevice device;
-	VkPipelineLayout layout;
+	VulkanHandle<VkPipelineLayout, PFN_vkDestroyPipelineLayout> layout;
 };
-
-std::optional<PipelineLayout> CreatePipelineLayout (VkDevice device,
-    std::vector<VkDescriptorSetLayout> desc_set_layouts,
-    std::vector<VkPushConstantRange> push_constant_ranges);
-
 
 class GraphicsPipeline
 {
 	public:
 	GraphicsPipeline (VkDevice device, VkPipeline pipeline);
 
-	~GraphicsPipeline ();
-	GraphicsPipeline (const GraphicsPipeline& other) = delete;
-	GraphicsPipeline& operator= (const GraphicsPipeline& other) = delete;
-	GraphicsPipeline (GraphicsPipeline&& other) noexcept;
-	GraphicsPipeline& operator= (GraphicsPipeline&& other) noexcept;
-
-	void Bind (VkCommandBuffer buffer);
+	void bind (VkCommandBuffer buffer);
 
 	private:
-	VkDevice device = VK_NULL_HANDLE;
-	VkPipeline pipeline = VK_NULL_HANDLE;
+	VulkanHandle<VkPipeline, PFN_vkDestroyPipeline> pipeline;
+};
+
+class ComputePipeline
+{
+	public:
+	ComputePipeline (VkDevice device, VkPipeline pipeline);
+
+	void bind (VkCommandBuffer buffer);
+
+	private:
+	VulkanHandle<VkPipeline, PFN_vkDestroyPipeline> pipeline;
 };
 
 struct VertexLayout;
@@ -88,7 +80,7 @@ class PipelineBuilder
 
 	PipelineBuilder& SetMultisampling (VkSampleCountFlagBits sampleCountFlags);
 
-	PipelineBuilder& SetDepthStencil (VkBool32 depthTestEnable,
+	PipelineBuilder& set_depth_stencil (VkBool32 depthTestEnable,
 	    VkBool32 depthWriteEnable,
 	    VkCompareOp depthCompareOp,
 	    VkBool32 depthBoundsTestEnable,
@@ -138,23 +130,6 @@ class PipelineBuilder
 
 	VkDevice device;
 	VkPipelineCache cache;
-};
-
-class ComputePipeline
-{
-	public:
-	ComputePipeline (VkDevice device, VkPipeline pipeline);
-	~ComputePipeline ();
-	ComputePipeline (const ComputePipeline& other) = delete;
-	ComputePipeline& operator= (const ComputePipeline& other) = delete;
-	ComputePipeline (ComputePipeline&& other) noexcept;
-	ComputePipeline& operator= (ComputePipeline&& other) noexcept;
-
-	void Bind (VkCommandBuffer buffer);
-
-	private:
-	VkDevice device = VK_NULL_HANDLE;
-	VkPipeline pipeline = VK_NULL_HANDLE;
 };
 
 std::optional<ComputePipeline> BuildComputePipeline (

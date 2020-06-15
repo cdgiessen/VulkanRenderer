@@ -10,27 +10,27 @@
 
 //// SUBPASS DESCRIPTION ////
 
-void SubpassDescription::AddSubpassDependency (std::string subpass)
+void SubpassDescription::add_subpass_dependency (std::string subpass)
 {
 	subpass_dependencies.push_back (subpass);
 }
-void SubpassDescription::AddImageInput (std::string name) { input_attachments.push_back (name); }
-void SubpassDescription::AddColorOutput (std::string name) { color_attachments.push_back (name); }
-void SubpassDescription::AddResolveAttachments (std::string name)
+void SubpassDescription::add_image_input (std::string name) { input_attachments.push_back (name); }
+void SubpassDescription::add_color_output (std::string name) { color_attachments.push_back (name); }
+void SubpassDescription::add_resolve_attachments (std::string name)
 {
 	resolve_attachments.push_back (name);
 }
-void SubpassDescription::AddPreserveAttachments (std::string name)
+void SubpassDescription::add_preserve_attachments (std::string name)
 {
 	preserve_attachments.push_back (name);
 }
-void SubpassDescription::SetDepthStencil (std::string name, DepthStencilAccess access)
+void SubpassDescription::set_depth_stencil (std::string name, DepthStencilAccess access)
 {
 	depth_stencil_attachment = name;
 	depth_stencil_access = access;
 }
 
-std::vector<std::string> SubpassDescription::AttachmentsUsed (AttachmentMap const& attachment_map) const
+std::vector<std::string> SubpassDescription::attachments_used (AttachmentMap const& attachment_map) const
 {
 	std::vector<std::string> attachments;
 	for (auto& item : input_attachments)
@@ -53,12 +53,12 @@ std::vector<std::string> SubpassDescription::AttachmentsUsed (AttachmentMap cons
 	return attachments;
 }
 
-void SubpassDescription::AddClearColor (std::string attachment_name, VkClearValue color)
+void SubpassDescription::add_clear_color (std::string attachment_name, VkClearValue color)
 {
 	clear_values[attachment_name] = color;
 }
 
-void SubpassDescription::SetFunction (RenderFunc&& func) { this->func = std::move (func); }
+void SubpassDescription::set_function (RenderFunc&& func) { this->func = std::move (func); }
 
 //// ATTACHMENT USE ////
 
@@ -67,7 +67,7 @@ AttachmentUse::AttachmentUse (RenderPassAttachment rpAttach, uint32_t index)
 {
 }
 
-VkAttachmentDescription AttachmentUse::Get ()
+VkAttachmentDescription AttachmentUse::get ()
 {
 	VkAttachmentDescription desc;
 	desc.flags = 0; // doesn't alias
@@ -84,18 +84,18 @@ VkAttachmentDescription AttachmentUse::Get ()
 
 //// RENDERPASS DESCRIPTION ////
 
-void RenderPassDescription::AddSubpass (SubpassDescription subpass)
+void RenderPassDescription::add_subpass (SubpassDescription subpass)
 {
 	subpasses.push_back (subpass);
 }
 
-VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap& attachment_map)
+VkRenderPassCreateInfo RenderPassDescription::get_renderpass_create_info (AttachmentMap& attachment_map)
 {
 	// Get all used attachments from subpasses(ignoring duplicate usages with std::unordered_set)
 	std::unordered_set<std::string> used_attachment_names;
 	for (auto& rp_subpass : subpasses)
 	{
-		auto sub_attaches = rp_subpass.AttachmentsUsed (attachment_map);
+		auto sub_attaches = rp_subpass.attachments_used (attachment_map);
 		for (auto& attach_name : sub_attaches)
 		{
 			used_attachment_names.insert (attach_name);
@@ -154,7 +154,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	// get pointer arrays ready (ugh, c api...)
 	// std::vector<VkSubpassDescription> sb_descriptions;
 	for (auto& desc : vulkan_sb_descriptions)
-		sb_descriptions.push_back (desc.Get ());
+		sb_descriptions.push_back (desc.get ());
 
 
 	// create subpass dependencies
@@ -163,7 +163,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 
 	// std::vector<VkSubpassDependency> sb_dependencies;
 	for (auto& desc : vulkan_sb_dependencies)
-		sb_dependencies.push_back (desc.Get ());
+		sb_dependencies.push_back (desc.get ());
 	// TODO Subpass Dependencies
 
 
@@ -335,10 +335,10 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 
 	for (auto& a : attachment_uses)
 	{
-		rp_attachments.push_back (a.Get ());
+		rp_attachments.push_back (a.get ());
 	}
 
-	VkRenderPassCreateInfo renderPassInfo = initializers::renderPassCreateInfo ();
+	VkRenderPassCreateInfo renderPassInfo = initializers::render_pass_create_info ();
 	renderPassInfo.attachmentCount = static_cast<uint32_t> (rp_attachments.size ());
 	renderPassInfo.pAttachments = rp_attachments.data ();
 	renderPassInfo.subpassCount = (uint32_t)sb_descriptions.size ();
@@ -364,7 +364,7 @@ VkRenderPassCreateInfo RenderPassDescription::GetRenderPassCreate (AttachmentMap
 	return renderPassInfo;
 }
 
-std::vector<RenderFunc> RenderPassDescription::GetSubpassFunctions ()
+std::vector<RenderFunc> RenderPassDescription::get_subpass_functions ()
 {
 	std::vector<RenderFunc> funcs;
 
@@ -375,7 +375,7 @@ std::vector<RenderFunc> RenderPassDescription::GetSubpassFunctions ()
 	return funcs;
 }
 
-std::vector<std::string> RenderPassDescription::GetUsedAttachmentNames ()
+std::vector<std::string> RenderPassDescription::get_used_attachment_names ()
 {
 	std::vector<std::string> attachments;
 	for (auto& attachment : attachment_uses)
@@ -395,7 +395,7 @@ FrameBuffer::FrameBuffer (VulkanDevice& device,
     uint32_t layers)
 : device (device.device), width (width), height (height)
 {
-	VkFramebufferCreateInfo framebufferInfo = initializers::framebufferCreateInfo ();
+	VkFramebufferCreateInfo framebufferInfo = initializers::framebuffer_create_info ();
 	framebufferInfo.renderPass = renderPass;
 	framebufferInfo.attachmentCount = static_cast<uint32_t> (image_views.size ());
 	framebufferInfo.pAttachments = image_views.data ();
@@ -432,14 +432,14 @@ RenderPass::RenderPass (VkDevice device, RenderPassDescription desc_in, Attachme
 : device (device), desc (desc_in)
 {
 
-	auto renderPassInfo = desc.GetRenderPassCreate (attachments);
+	auto renderPassInfo = desc.get_renderpass_create_info (attachments);
 
 	if (vkCreateRenderPass (device, &renderPassInfo, nullptr, &rp) != VK_SUCCESS)
 	{
 		throw std::runtime_error ("failed to create render pass!");
 	}
 
-	subpassFuncs = desc.GetSubpassFunctions ();
+	subpassFuncs = desc.get_subpass_functions ();
 }
 
 RenderPass::~RenderPass ()
@@ -464,7 +464,7 @@ RenderPass& RenderPass::operator= (RenderPass&& rp) noexcept
 
 void RenderPass::BuildCmdBuf (VkCommandBuffer cmdBuf, FrameBufferView fb_view)
 {
-	VkRenderPassBeginInfo renderPassInfo = initializers::renderPassBeginInfo (
+	VkRenderPassBeginInfo renderPassInfo = initializers::render_pass_begin_info (
 	    rp, fb_view.fb, fb_view.view.offset, fb_view.view.extent, desc.clear_values);
 
 
@@ -488,12 +488,12 @@ void RenderPass::BuildCmdBuf (VkCommandBuffer cmdBuf, FrameBufferView fb_view)
 	vkCmdEndRenderPass (cmdBuf);
 }
 
-std::vector<VkImageView> RenderPass::OrderAttachments (
+std::vector<VkImageView> RenderPass::order_attachments (
     std::vector<std::pair<std::string, VkImageView>> const& named_views)
 {
 	if (named_views.size () != desc.attachment_uses.size ())
 	{
-		Log.Error ("Mismatching attachment and views counts!");
+		Log.error ("Mismatching attachment and views counts!");
 	}
 	std::vector<VkImageView> out_views (named_views.size ());
 
@@ -514,20 +514,20 @@ std::vector<VkImageView> RenderPass::OrderAttachments (
 //// FRAME GRAPH BUILDER ////
 
 
-void FrameGraphBuilder::AddAttachment (RenderPassAttachment attachment)
+void FrameGraphBuilder::add_attachment (RenderPassAttachment attachment)
 {
 
 	attachments[attachment.name] = attachment;
 }
 
-void FrameGraphBuilder::AddRenderPass (RenderPassDescription renderPass)
+void FrameGraphBuilder::add_render_pass (RenderPassDescription renderPass)
 {
 	render_passes[renderPass.name] = renderPass;
 }
 
-void FrameGraphBuilder::SetFinalRenderPassName (std::string name) { final_renderpass = name; }
+void FrameGraphBuilder::set_final_render_pass_name (std::string name) { final_renderpass = name; }
 
-void FrameGraphBuilder::SetFinalOutputAttachmentName (std::string name)
+void FrameGraphBuilder::set_final_output_attachment_name (std::string name)
 {
 	final_output_attachment = name;
 }
@@ -544,7 +544,7 @@ FrameGraph::FrameGraph (VulkanDevice& device, VulkanSwapChain& swapchain, FrameG
 	auto& final_renderpass_desc = builder.render_passes.at (builder.final_renderpass);
 	final_renderpass_desc.present_attachment = true;
 
-	CreateAttachments ();
+	create_attachments ();
 
 	for (auto& [name, pass] : builder.render_passes)
 	{
@@ -557,27 +557,27 @@ FrameGraph::FrameGraph (VulkanDevice& device, VulkanSwapChain& swapchain, FrameG
 			render_passes.emplace_back (device.device, pass, builder.attachments);
 		}
 	}
-	CreateFrameBuffers ();
+	create_framebuffers ();
 }
 
 FrameGraph::~FrameGraph () {}
 
-VkRenderPass FrameGraph::Get (int index) const { return render_passes.at (index).Get (); }
+VkRenderPass FrameGraph::get (int index) const { return render_passes.at (index).get (); }
 
 
-void FrameGraph::FillCommandBuffer (VkCommandBuffer cmdBuf, FrameBufferView frame_buffer_view)
+void FrameGraph::fill_command_buffer (VkCommandBuffer cmdBuf, FrameBufferView frame_buffer_view)
 {
 	final_renderpass->BuildCmdBuf (cmdBuf, frame_buffer_view);
 }
 
-void FrameGraph::FillCommandBuffer (VkCommandBuffer cmdBuf, std::string frame_buffer)
+void FrameGraph::fill_command_buffer (VkCommandBuffer cmdBuf, std::string frame_buffer)
 {
-	auto fb_id = GetFrameBufferID (frame_buffer);
-	auto& fb = GetFrameBuffer (fb_id);
-	FrameBufferView view (fb.Get (), fb.GetFullSize ());
-	FillCommandBuffer (cmdBuf, view);
+	auto fb_id = get_frame_buffer_id (frame_buffer);
+	auto& fb = get_framebuffer (fb_id);
+	FrameBufferView view (fb.get (), fb.get_full_size ());
+	fill_command_buffer (cmdBuf, view);
 }
-void FrameGraph::DestroyPresentResources ()
+void FrameGraph::destroy_present_resources ()
 {
 	for (auto& [name, attachment] : render_targets)
 	{
@@ -587,13 +587,13 @@ void FrameGraph::DestroyPresentResources ()
 	framebuffers.clear ();
 }
 
-void FrameGraph::CreatePresentResources ()
+void FrameGraph::create_present_resources ()
 {
-	CreateAttachments ();
-	CreateFrameBuffers ();
+	create_attachments ();
+	create_framebuffers ();
 }
 
-void FrameGraph::CreateAttachments ()
+void FrameGraph::create_attachments ()
 {
 	for (auto& [name, attachment] : builder.attachments)
 	{
@@ -610,11 +610,11 @@ void FrameGraph::CreateAttachments ()
 	}
 }
 
-void FrameGraph::CreateFrameBuffers ()
+void FrameGraph::create_framebuffers ()
 {
 	for (auto& pass : render_passes)
 	{
-		auto attachments = pass.GetUsedAttachmentNames ();
+		auto attachments = pass.get_used_attachment_names ();
 		std::vector<VkImageView> views;
 		uint32_t width = 0;
 		uint32_t height = 0;
@@ -623,18 +623,18 @@ void FrameGraph::CreateFrameBuffers ()
 		{
 			auto tex = render_targets.at (attachment).get ();
 			views.push_back (tex->imageView);
-			uint32_t width = tex->GetWidth ();
-			uint32_t height = tex->GetHeight ();
-			uint32_t layers = tex->GetLayers ();
+			uint32_t width = tex->get_width ();
+			uint32_t height = tex->get_height ();
+			uint32_t layers = tex->get_layers ();
 		}
-		framebuffers.emplace_back (device, views, pass.Get (), width, height, layers);
+		framebuffers.emplace_back (device, views, pass.get (), width, height, layers);
 	}
 
 	int swapchain_count = swapchain.GetChainCount ();
 
 	for (int i = 0; i < swapchain_count; i++)
 	{
-		auto attachments = final_renderpass->GetUsedAttachmentNames ();
+		auto attachments = final_renderpass->get_used_attachment_names ();
 		std::vector<std::pair<std::string, VkImageView>> named_views;
 		named_views.push_back ({ builder.final_output_attachment, swapchain.GetSwapChainImageView (i) });
 		for (auto& attachment : attachments)
@@ -646,14 +646,14 @@ void FrameGraph::CreateFrameBuffers ()
 		}
 
 		auto extent = swapchain.GetImageExtent ();
-		auto views_out = final_renderpass->OrderAttachments (named_views);
+		auto views_out = final_renderpass->order_attachments (named_views);
 		swapchain_framebuffers.push_back (
-		    FrameBuffer (device, views_out, final_renderpass->Get (), extent.width, extent.height, 1));
+		    FrameBuffer (device, views_out, final_renderpass->get (), extent.width, extent.height, 1));
 	}
 }
 
 
-FrameBuffer const& FrameGraph::GetFrameBuffer (int index)
+FrameBuffer const& FrameGraph::get_framebuffer (int index)
 {
 	if (index == 0) // 0 for swapchain framebuffers?
 	{
@@ -663,7 +663,7 @@ FrameBuffer const& FrameGraph::GetFrameBuffer (int index)
 		return framebuffers.at (index - 1); // 1 indexed?
 }
 
-int FrameGraph::GetFrameBufferID (std::string fb_name) const
+int FrameGraph::get_frame_buffer_id (std::string fb_name) const
 {
 	if (fb_name == builder.final_renderpass) return 0;
 	int i = 1;

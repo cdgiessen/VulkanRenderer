@@ -9,15 +9,15 @@ FileWatcher::FileWatcher (std::string path_to_watch, std::chrono::duration<int, 
 	}
 }
 
-FileWatcher::~FileWatcher () { Stop (); }
+FileWatcher::~FileWatcher () { stop (); }
 
 
-void FileWatcher::Start (const std::function<void(std::string, FileStatus)>& action)
+void FileWatcher::start (const std::function<void (std::string, FileStatus)>& action)
 {
 	watcher = std::thread (&FileWatcher::Watch, this, action);
 }
 
-void FileWatcher::Stop ()
+void FileWatcher::stop ()
 {
 	is_running = false;
 	if (watcher.joinable ())
@@ -27,7 +27,7 @@ void FileWatcher::Stop ()
 }
 
 // Monitor "path_to_watch" for changes and in case of a change execute the user supplied "action" function
-void FileWatcher::Watch (const std::function<void(std::string, FileStatus)>& action)
+void FileWatcher::Watch (const std::function<void (std::string, FileStatus)>& action)
 {
 	while (is_running)
 	{

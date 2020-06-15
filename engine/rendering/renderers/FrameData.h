@@ -11,12 +11,12 @@ class FrameData
 	public:
 	FrameData (VulkanDevice& device);
 
-	void Update (double time);
+	void update (double time);
 
-	void Bind (VkCommandBuffer buffer);
-	void Advance ();
+	void bind (VkCommandBuffer buffer);
+	void advance ();
 
-	DescriptorStack const& GetDescriptorStack () const;
+	DescriptorStack const& get_descriptor_stack () const;
 
 	private:
 	VulkanDevice& device;

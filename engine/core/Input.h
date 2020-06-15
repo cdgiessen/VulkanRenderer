@@ -144,42 +144,42 @@ class InputDirector
 	public:
 	InputDirector (Window& window);
 
-	bool GetKey (KeyCode code) const;
-	bool GetKeyDown (KeyCode code) const;
-	bool GetKeyUp (KeyCode code) const;
+	bool get_key (KeyCode code) const;
+	bool get_key_down (KeyCode code) const;
+	bool get_key_up (KeyCode code) const;
 
-	bool GetMouseButton (int button) const;
-	bool GetMouseButtonPressed (int button) const;
-	bool GetMouseButtonReleased (int button) const;
-	cml::vec2d GetMousePosition () const;
-	cml::vec2d GetMouseChangeInPosition () const;
-	double GetMouseScrollX () const;
-	double GetMouseScrollY () const;
+	bool get_mouse_button (int button) const;
+	bool get_mouse_button_pressed (int button) const;
+	bool get_mouse_button_released (int button) const;
+	cml::vec2f get_mouse_position () const;
+	cml::vec2f get_mouse_change_in_position () const;
+	float get_mouse_scroll_x () const;
+	float get_mouse_scroll_y () const;
 
-	void SetTextInputMode ();
-	void ResetTextInputMode ();
-	bool GetTextInputMode () const;
+	void set_text_input_mode ();
+	void reset_text_input_mode ();
+	bool get_text_input_mode () const;
 
-	bool GetMouseControlStatus () const;
-	void SetMouseControlStatus (bool value);
+	bool get_mouse_control_status () const;
+	void set_mouse_control_status (bool value);
 
-	void keyEvent (int key, int scancode, int action, int mods);
-	void mouseButtonEvent (int button, int action, int mods);
-	void mouseMoveEvent (double xoffset, double yoffset);
-	void mouseScrollEvent (double xoffset, double yoffset);
+	void key_event (int key, int scancode, int action, int mods);
+	void mouse_button_event (int button, int action, int mods);
+	void mouse_move_event (float xoffset, float yoffset);
+	void mouse_scroll_event (float xoffset, float yoffset);
 
-	static void ConnectJoystick (int index);
-	static void DisconnectJoystick (int index);
+	static void connect_joystick (int index);
+	static void disconnect_joystick (int index);
 
-	static bool IsJoystickConnected (int index);
+	static bool is_joystick_connected (int index);
 
-	static std::array<int, JoystickCount> GetConnectedJoysticks ();
+	static std::array<int, JoystickCount> get_controller_joysticks ();
 
-	static float GetControllerAxis (int id, int axis);
-	static bool GetControllerButton (int id, int button);
+	static float get_controller_joysticks (int id, int axis);
+	static bool get_controller_button (int id, int button);
 
-	void ResetReleasedInput ();
-	void UpdateInputs ();
+	void reset_released_input ();
+	void update_inputs ();
 
 	private:
 	Window& window;
@@ -214,10 +214,10 @@ class InputDirector
 	std::array<bool, MouseButtonCount> mouseButtonsUp = { { false } };
 
 	bool textInputMode = false;
-	cml::vec2d mousePosition = cml::vec2d (0.0, 0.0);
-	cml::vec2d mousePositionPrevious = cml::vec2d (0.0, 0.0);
-	cml::vec2d mouseChangeInPosition = cml::vec2d (0.0, 0.0);
-	cml::vec2d mouseScroll = cml::vec2d (0.0, 0.0);
+	cml::vec2f mousePosition = cml::vec2f (0.0, 0.0);
+	cml::vec2f mousePositionPrevious = cml::vec2f (0.0, 0.0);
+	cml::vec2f mouseChangeInPosition = cml::vec2f (0.0, 0.0);
+	cml::vec2f mouseScroll = cml::vec2f (0.0, 0.0);
 
 	bool mouseControlStatus = false;
 

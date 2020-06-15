@@ -18,7 +18,7 @@ VulkanSwapChain::VulkanSwapChain (VulkanDevice& device, Window& window)
 
 VulkanSwapChain::~VulkanSwapChain () { DestroySwapchainResources (); }
 
-void VulkanSwapChain::RecreateSwapChain ()
+void VulkanSwapChain::recreate_swapchain ()
 {
 	DestroySwapchainResources ();
 
@@ -27,7 +27,7 @@ void VulkanSwapChain::RecreateSwapChain ()
 
 void VulkanSwapChain::CreateSwapChain ()
 {
-	details = querySwapChainSupport (device.phys_device.physical_device, device.GetSurface ());
+	details = querySwapChainSupport (device.phys_device.physical_device, device.get_surface ());
 
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat ();
 	VkPresentModeKHR presentMode = chooseSwapPresentMode ();
@@ -44,7 +44,7 @@ void VulkanSwapChain::CreateSwapChain ()
 
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface = device.GetSurface ();
+	createInfo.surface = device.get_surface ();
 
 	createInfo.minImageCount = image_count;
 	createInfo.imageFormat = surfaceFormat.format;
@@ -60,8 +60,8 @@ void VulkanSwapChain::CreateSwapChain ()
 		createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	}
 
-	int32_t g_index = device.GraphicsQueue ().GetQueueFamily ();
-	int32_t p_index = device.PresentQueue ().GetQueueFamily ();
+	int32_t g_index = device.graphics_queue ().queue_family ();
+	int32_t p_index = device.present_queue ().queue_family ();
 
 	uint32_t queueFamilyIndices[] = { (uint32_t)g_index, (uint32_t)p_index };
 
@@ -101,7 +101,7 @@ void VulkanSwapChain::CreateSwapChain ()
 
 	for (uint32_t i = 0; i < swapChainImages.size (); i++)
 	{
-		VkImageViewCreateInfo viewInfo = initializers::imageViewCreateInfo ();
+		VkImageViewCreateInfo viewInfo = initializers::image_view_create_info ();
 		viewInfo.image = swapChainImages[i];
 		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		viewInfo.format = swapChainImageFormat;
@@ -173,7 +173,7 @@ VkExtent2D VulkanSwapChain::chooseSwapExtent ()
 	}
 	else
 	{
-		auto size = window.GetWindowSize ();
+		auto size = window.get_window_size ();
 
 		VkExtent2D actualExtent = { static_cast<uint32_t> (size.x), static_cast<uint32_t> (size.y) };
 

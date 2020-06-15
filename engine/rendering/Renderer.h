@@ -41,13 +41,13 @@ class RenderSettings
 	public:
 	bool memory_dump = false;
 
-	RenderSettings (std::filesystem::path fileName);
+	RenderSettings (std::filesystem::path file_name);
 
-	void Load ();
-	void Save ();
+	void load ();
+	void save ();
 
 	private:
-	std::filesystem::path fileName;
+	std::filesystem::path file_name;
 };
 
 struct VulkanOpenXRInit
@@ -70,19 +70,19 @@ class VulkanRenderer
 	VulkanRenderer& operator= (VulkanRenderer&&) = delete;
 	~VulkanRenderer ();
 
-	void RecreateSwapChain ();
+	void recreate_swapchain ();
 
-	void RenderFrame ();
+	void render_frame ();
 
-	void DeviceWaitTillIdle ();
+	void device_wait ();
 
-	void ImGuiNewFrame ();
+	void imgui_new_frame ();
 
-	VulkanOpenXRInit GetOpenXRInit ();
+	VulkanOpenXRInit get_openxr_init ();
 
 	private:
-	void ImGuiSetup ();
-	void ImGuiShutdown ();
+	void imgui_setup ();
+	void imgui_shutdown ();
 
 	private:
 	job::ThreadPool& thread_pool;
@@ -98,17 +98,17 @@ class VulkanRenderer
 	MeshRenderer mesh_renderer;
 
 	private:
-	std::unique_ptr<FrameGraph> frameGraph;
+	std::unique_ptr<FrameGraph> frame_graph;
 
-	std::vector<FrameObject> frameObjects;
+	std::vector<FrameObject> frame_objects;
 
 
-	uint32_t frameIndex = 0; // which of the swapchain images the app is rendering to
+	uint32_t frame_index = 0; // which of the swapchain images the app is rendering to
 
-	void ContrustFrameGraph ();
+	void construct_frame_graph ();
 
 	VkDescriptorPool imgui_pool;
 
 	// drawing functions
-	void MainDraw (VkCommandBuffer cmdBuf);
+	void main_draw (VkCommandBuffer cmdBuf);
 };

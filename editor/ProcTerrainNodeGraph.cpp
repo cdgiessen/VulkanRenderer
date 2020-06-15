@@ -62,7 +62,7 @@ void ProcTerrainNodeGraph::DeleteNode (NodeId nodeId)
 	}
 	else
 	{
-		Log.Debug ("Couldn't find node to delete! Does it exist?");
+		Log.debug ("Couldn't find node to delete! Does it exist?");
 	}
 }
 
@@ -95,7 +95,7 @@ void ProcTerrainNodeGraph::DeleteConnection (ConId con)
 	}
 	else
 	{
-		Log.Error ("Couldn't find connection! Does it exist?");
+		Log.error ("Couldn't find connection! Does it exist?");
 	}
 }
 
@@ -418,7 +418,7 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 			node.name.copy (name, 31);
 			if (node.hasTextInput == false)
 			{
-				input.SetTextInputMode ();
+				input.set_text_input_mode ();
 				node.hasTextInput = true;
 			}
 			if (ImGui::InputText ("##edit", name, sizeof (char) * 32))
@@ -435,7 +435,7 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 		{
 			if (node.hasTextInput)
 			{
-				input.ResetTextInputMode ();
+				input.reset_text_input_mode ();
 				node.hasTextInput = false;
 			}
 		}
@@ -459,7 +459,7 @@ void ProcTerrainNodeGraph::DrawNodes (ImDrawList* imDrawList)
 	{
 		if (nodes.at (nodeId).hasTextInput)
 		{
-			input.ResetTextInputMode ();
+			input.reset_text_input_mode ();
 		}
 		DeleteNode (nodeId);
 		nodes.erase (nodeId);
@@ -676,7 +676,7 @@ ConnectionType PossibleConnection::GetActiveSlotType (HoveredSlotInfo info, std:
 
 void ProcTerrainNodeGraph::SaveGraphFromFile ()
 {
-	Log.Debug (fmt::format ("PWD = {}", std::filesystem::current_path ().string ()));
+	Log.debug (fmt::format ("PWD = {}", std::filesystem::current_path ().string ()));
 	const char* filename = noc_file_dialog_open (
 	    NOC_FILE_DIALOG_SAVE, NULL, std::filesystem::current_path ().string ().c_str (), NULL);
 	if (filename != NULL)
@@ -685,12 +685,12 @@ void ProcTerrainNodeGraph::SaveGraphFromFile ()
 	}
 }
 
-void ProcTerrainNodeGraph::SaveGraphFromFile (std::string fileName)
+void ProcTerrainNodeGraph::SaveGraphFromFile (std::string file_name)
 {
-	std::ofstream outFile (fileName);
+	std::ofstream outFile (file_name);
 	if (!outFile)
 	{
-		Log.Debug ("Bad file name for terrain graph");
+		Log.debug ("Bad file name for terrain graph");
 		return;
 	}
 	nlohmann::json j;
@@ -766,17 +766,17 @@ void ProcTerrainNodeGraph::LoadGraphFromFile ()
 	}
 	else
 	{
-		Log.Debug ("No file specified, stopping load");
+		Log.debug ("No file specified, stopping load");
 	}
 }
 
-void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
+void ProcTerrainNodeGraph::LoadGraphFromFile (std::string file_name)
 {
 
-	std::ifstream inFile (fileName);
+	std::ifstream inFile (file_name);
 	if (!inFile)
 	{
-		Log.Debug ("Bad file name");
+		Log.debug ("Bad file name");
 		return;
 	}
 
@@ -784,7 +784,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 
 	if (inFile.peek () == std::ifstream::traits_type::eof ())
 	{
-		Log.Error ("Opened file is empty!");
+		Log.error ("Opened file is empty!");
 		return;
 	}
 
@@ -794,7 +794,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 	}
 	catch (nlohmann::json::parse_error& e)
 	{
-		Log.Error (fmt::format ("{}", e.what ()));
+		Log.error (fmt::format ("{}", e.what ()));
 	}
 	inFile.close ();
 
@@ -827,7 +827,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 					auto outGoingNode = conIndex;
 					if (outGoingNode == -1)
 					{
-						Log.Error ("Couldn't find node by id in loaded graph");
+						Log.error ("Couldn't find node by id in loaded graph");
 					}
 
 					int slotType = j[curIndex][curSlotIndex]["slotType"];
@@ -891,7 +891,7 @@ void ProcTerrainNodeGraph::LoadGraphFromFile (std::string fileName)
 	}
 	catch (nlohmann::json::parse_error& e)
 	{
-		Log.Error (fmt::format ("{}", e.what ()));
+		Log.error (fmt::format ("{}", e.what ()));
 	}
 }
 
@@ -941,27 +941,13 @@ InputConnectionSlot::InputConnectionSlot (int slotNum, ImVec2 pos, ConnectionTyp
 {
 	switch (value.type)
 	{
-		case (ConnectionType::Int):
-			value.value = 0;
-			break;
-		case (ConnectionType::Float):
-			value.value = 0.0f;
-			break;
-		case (ConnectionType::Color):
-			value.value = cml::vec4f (0);
-			break;
-		case (ConnectionType::Vec2):
-			value.value = cml::vec2f (0);
-			break;
-		case (ConnectionType::Vec3):
-			value.value = cml::vec3f (0);
-			break;
-		case (ConnectionType::Vec4):
-			value.value = cml::vec4f (0);
-			break;
-		default:
-			value.value = 0;
-			break;
+		case (ConnectionType::Int): value.value = 0; break;
+		case (ConnectionType::Float): value.value = 0.0f; break;
+		case (ConnectionType::Color): value.value = cml::vec4f (0); break;
+		case (ConnectionType::Vec2): value.value = cml::vec2f (0); break;
+		case (ConnectionType::Vec3): value.value = cml::vec3f (0); break;
+		case (ConnectionType::Vec4): value.value = cml::vec4f (0); break;
+		default: value.value = 0; break;
 	}
 }
 
@@ -1050,8 +1036,7 @@ int InputConnectionSlot::Draw (
 			    lowerBound,
 			    upperBound);
 			break;
-		default:
-			break;
+		default: break;
 	}
 	graph.SetNodeInternalValueByID (parentNode.internalNodeID, slotNum, value.value);
 	ImGui::PopItemWidth ();

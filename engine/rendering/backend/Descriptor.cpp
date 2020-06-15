@@ -10,38 +10,27 @@ bool operator== (DescriptorSetLayoutBinding const& a, DescriptorSetLayoutBinding
 
 //// DESCRIPTOR LAYOUT ////
 
-DescriptorLayout::DescriptorLayout (VkDevice device, std::vector<DescriptorSetLayoutBinding> const& layout_bindings)
-: device (device)
+auto create_descriptor_layout (VkDevice device, std::vector<DescriptorSetLayoutBinding> const& layout_bindings)
 {
 	std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
 	for (auto& b : layout_bindings)
 	{
-		vk_bindings.push_back (initializers::descriptorSetLayoutBinding (
+		vk_bindings.push_back (initializers::descriptor_set_layout_binding (
 		    static_cast<VkDescriptorType> (b.type), static_cast<VkShaderStageFlags> (b.stages), b.bind_point, b.count));
 	}
-	VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptorSetLayoutCreateInfo (vk_bindings);
-	if (vkCreateDescriptorSetLayout (device, &layoutInfo, nullptr, &layout) != VK_SUCCESS)
-	{
-		throw std::runtime_error ("failed to create descriptor set layout!");
-	}
-}
-DescriptorLayout::~DescriptorLayout () { vkDestroyDescriptorSetLayout (device, layout, nullptr); }
+	VkDescriptorSetLayout layout;
+	VkDescriptorSetLayoutCreateInfo layoutInfo = initializers::descriptor_set_layout_create_info (vk_bindings);
+	VK_CHECK_RESULT (vkCreateDescriptorSetLayout (device, &layoutInfo, nullptr, &layout))
 
-DescriptorLayout::DescriptorLayout (DescriptorLayout&& other) noexcept
-: device (other.device), layout (other.layout)
+	return VulkanHandle (device, layout, vkDestroyDescriptorSetLayout);
+}
+
+DescriptorLayout::DescriptorLayout (VkDevice device, std::vector<DescriptorSetLayoutBinding> const& layout_bindings)
+: layout (create_descriptor_layout (device, layout_bindings))
 {
-	other.layout = VK_NULL_HANDLE;
-}
-DescriptorLayout& DescriptorLayout::operator= (DescriptorLayout&& other) noexcept
-{
-	device = other.device;
-	layout = other.layout;
-	other.layout = VK_NULL_HANDLE;
-	return *this;
 }
 
-VkDescriptorSetLayout DescriptorLayout::Get () const { return layout; }
-
+VkDescriptorSetLayout DescriptorLayout::get () const { return layout.handle; }
 
 //// DESCRIPTOR RESOURCE ////
 
@@ -82,7 +71,7 @@ DescriptorUse::DescriptorUse (
 {
 }
 
-VkWriteDescriptorSet DescriptorUse::GetWriteDescriptorSet (VkDescriptorSet set)
+VkWriteDescriptorSet DescriptorUse::get_write_descriptor_set (VkDescriptorSet set)
 {
 	VkWriteDescriptorSet writeDescriptorSet{};
 	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -105,20 +94,20 @@ DescriptorSet::DescriptorSet (VkDescriptorSet set, uint16_t pool_id) : set (set)
 {
 }
 
-void DescriptorSet::Update (VkDevice device, std::vector<DescriptorUse> descriptors) const
+void DescriptorSet::update (VkDevice device, std::vector<DescriptorUse> descriptors) const
 {
 
 	std::vector<VkWriteDescriptorSet> writes;
 	for (auto& descriptor : descriptors)
 	{
-		writes.push_back (descriptor.GetWriteDescriptorSet (set));
+		writes.push_back (descriptor.get_write_descriptor_set (set));
 	}
 
 	vkUpdateDescriptorSets (device, static_cast<uint32_t> (writes.size ()), writes.data (), 0, nullptr);
 }
 
 
-void DescriptorSet::Bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout, uint32_t location) const
+void DescriptorSet::bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout, uint32_t location) const
 {
 	vkCmdBindDescriptorSets (cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, location, 1, &set, 0, nullptr);
 }
@@ -140,7 +129,7 @@ DescriptorPool::DescriptorPool (VkDevice device,
 	for (auto& [type, count] : layout_type_count)
 	{
 		pool_members.push_back (
-		    initializers::descriptorPoolSize (static_cast<VkDescriptorType> (type), count * max_sets));
+		    initializers::descriptor_pool_size (static_cast<VkDescriptorType> (type), count * max_sets));
 	}
 
 	AddNewPool ();
@@ -173,7 +162,7 @@ DescriptorPool& DescriptorPool::operator= (DescriptorPool&& other) noexcept
 	return *this;
 }
 
-DescriptorSet DescriptorPool::Allocate ()
+DescriptorSet DescriptorPool::allocate ()
 {
 	for (int i = 0; i < pools.size (); i++)
 	{
@@ -194,11 +183,11 @@ DescriptorSet DescriptorPool::Allocate ()
 	return set.set;
 }
 
-void DescriptorPool::Free (DescriptorSet const& set)
+void DescriptorPool::free (DescriptorSet const& set)
 {
-	if (pools.size () > set.GetPoolID ()) // make sure PoolID is valid
+	if (pools.size () > set.get_pool_id ()) // make sure PoolID is valid
 	{
-		vkFreeDescriptorSets (device, pools.at (set.GetPoolID ()).pool, 1, &set.GetSet ());
+		vkFreeDescriptorSets (device, pools.at (set.get_pool_id ()).pool, 1, &set.get_set ());
 	}
 }
 
@@ -206,7 +195,7 @@ uint32_t DescriptorPool::AddNewPool ()
 {
 	VkDescriptorPool pool;
 
-	VkDescriptorPoolCreateInfo poolInfo = initializers::descriptorPoolCreateInfo (pool_members, max_sets);
+	VkDescriptorPoolCreateInfo poolInfo = initializers::descriptor_pool_create_info (pool_members, max_sets);
 
 	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
@@ -223,7 +212,7 @@ DescriptorPool::OptDescSet DescriptorPool::TryAllocate (Pool& pool)
 {
 	VkDescriptorSet set;
 	std::vector<VkDescriptorSetLayout> layouts = { layout };
-	VkDescriptorSetAllocateInfo allocInfo = initializers::descriptorSetAllocateInfo (pool.pool, layouts);
+	VkDescriptorSetAllocateInfo allocInfo = initializers::descriptor_set_allocate_info (pool.pool, layouts);
 
 	VkResult res = vkAllocateDescriptorSets (device, &allocInfo, &set);
 	if (res == VK_SUCCESS)
@@ -246,22 +235,10 @@ DescriptorPool::OptDescSet DescriptorPool::TryAllocate (Pool& pool)
 
 //// DESCRIPTOR STACK ////
 
-DescriptorStack::DescriptorStack (DescriptorLayout const& layout) : layout (layout.Get ()) {}
+DescriptorStack::DescriptorStack (DescriptorLayout const& layout) : layout (layout.get ()) {}
 DescriptorStack::DescriptorStack (DescriptorLayout const& layout, DescriptorStack const& stack)
-: layout (layout.Get ()), parent (&stack)
+: layout (layout.get ()), parent (&stack)
 {
-}
-DescriptorStack::DescriptorStack (DescriptorStack&& other) noexcept
-: layout (other.layout), parent (other.parent)
-{
-	other.parent = nullptr;
-}
-DescriptorStack& DescriptorStack::operator= (DescriptorStack&& other) noexcept
-{
-	layout = other.layout;
-	parent = other.parent;
-	other.parent = nullptr;
-	return *this;
 }
 
 std::vector<VkDescriptorSetLayout> DescriptorStack::get_layouts () const

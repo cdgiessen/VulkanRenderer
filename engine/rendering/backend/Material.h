@@ -16,14 +16,14 @@ class MatInstance
 	public:
 	MatInstance ();
 
-	MatInstanceID CreateInstance ();
-	void RemoveInstance (MatInstanceID id);
+	MatInstanceID create_instance ();
+	void remove_instance (MatInstanceID id);
 
-	void UpdateMaterialData (MatInstanceID id, int location, Resource::Material::DataMember data);
+	void update_material_data (MatInstanceID id, int location, Resource::Material::DataMember data);
 
-	void UpdateTexture (MatInstanceID id, int location, VkDescriptorImageInfo info);
+	void update_texture (MatInstanceID id, int location, VkDescriptorImageInfo info);
 
-	void GpuUpdateBuffer ();
+	void gpu_update_buffer ();
 
 	private:
 	MatOutlineID cur_instance = 0;
@@ -37,11 +37,11 @@ class Materials
 	public:
 	Materials (Resource::Material::Materials& materials, VulkanDevice& device);
 
-	MatOutlineID CreateMatOutline (Resource::Material::MaterialOutline const& outline);
-	MatInstanceID CreateMatInstance (MatOutlineID id, Resource::Material::MaterialInstance const& instance);
+	MatOutlineID create_material_outline (Resource::Material::MaterialOutline const& outline);
+	MatInstanceID create_material_instance (MatOutlineID id, Resource::Material::MaterialInstance const& instance);
 
-	void DestroyMatOutline (MatOutlineID id);
-	void DestroyMatInstance (MatInstanceID id);
+	void destroy_material_outline (MatOutlineID id);
+	void destroy_material_instance (MatInstanceID id);
 
 	private:
 	MatOutlineID cur_outline = 0;

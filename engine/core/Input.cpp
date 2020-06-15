@@ -22,11 +22,12 @@ auto as_integer (Enumeration const value) -> typename std::underlying_type<Enume
 InputDirector::InputDirector (Window& window) : window (window)
 {
 	double xpos = 0.0, ypos = 0.0;
-	glfwGetCursorPos (window.GetWindowContext (), &xpos, &ypos);
-	mousePosition = mousePositionPrevious = cml::vec2d (xpos, ypos);
+	glfwGetCursorPos (window.get_window_context (), &xpos, &ypos);
+	mousePosition = mousePositionPrevious =
+	    cml::vec2f (static_cast<float> (xpos), static_cast<float> (ypos));
 
 	mouseControlStatus = true;
-	glfwSetInputMode (window.GetWindowContext (), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode (window.get_window_context (), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	for (int i = 0; i < JoystickCount; i++)
 	{
@@ -62,7 +63,7 @@ void InputDirector::JoystickData::Disconnect ()
 
 bool InputDirector::JoystickData::IsConnected () const { return connected; }
 
-std::array<int, JoystickCount> InputDirector::GetConnectedJoysticks ()
+std::array<int, JoystickCount> InputDirector::get_controller_joysticks ()
 {
 	std::array<int, JoystickCount> joys;
 
@@ -94,54 +95,54 @@ bool InputDirector::JoystickData::GetButton (int index) const
 	return false;
 }
 
-bool InputDirector::GetKey (KeyCode code) const { return keys[as_integer (code)]; }
+bool InputDirector::get_key (KeyCode code) const { return keys[as_integer (code)]; }
 
-bool InputDirector::GetKeyDown (KeyCode code) const { return keysDown[as_integer (code)]; }
+bool InputDirector::get_key_down (KeyCode code) const { return keysDown[as_integer (code)]; }
 
-bool InputDirector::GetKeyUp (KeyCode code) const { return keysUp[as_integer (code)]; }
+bool InputDirector::get_key_up (KeyCode code) const { return keysUp[as_integer (code)]; }
 
-bool InputDirector::GetMouseButton (int button) const { return mouseButtons[button]; }
-bool InputDirector::GetMouseButtonPressed (int button) const { return mouseButtonsDown[button]; }
-bool InputDirector::GetMouseButtonReleased (int button) const { return mouseButtonsUp[button]; }
-cml::vec2d InputDirector::GetMousePosition () const { return mousePosition; }
-cml::vec2d InputDirector::GetMouseChangeInPosition () const { return mouseChangeInPosition; }
-double InputDirector::GetMouseScrollX () const { return mouseScroll.x; }
-double InputDirector::GetMouseScrollY () const { return mouseScroll.y; }
-void InputDirector::SetTextInputMode () { textInputMode = true; }
-void InputDirector::ResetTextInputMode () { textInputMode = false; }
-bool InputDirector::GetTextInputMode () const { return textInputMode; }
+bool InputDirector::get_mouse_button (int button) const { return mouseButtons[button]; }
+bool InputDirector::get_mouse_button_pressed (int button) const { return mouseButtonsDown[button]; }
+bool InputDirector::get_mouse_button_released (int button) const { return mouseButtonsUp[button]; }
+cml::vec2f InputDirector::get_mouse_position () const { return mousePosition; }
+cml::vec2f InputDirector::get_mouse_change_in_position () const { return mouseChangeInPosition; }
+float InputDirector::get_mouse_scroll_x () const { return mouseScroll.x; }
+float InputDirector::get_mouse_scroll_y () const { return mouseScroll.y; }
+void InputDirector::set_text_input_mode () { textInputMode = true; }
+void InputDirector::reset_text_input_mode () { textInputMode = false; }
+bool InputDirector::get_text_input_mode () const { return textInputMode; }
 
-bool InputDirector::GetMouseControlStatus () const { return mouseControlStatus; }
+bool InputDirector::get_mouse_control_status () const { return mouseControlStatus; }
 
-void InputDirector::SetMouseControlStatus (bool value)
+void InputDirector::set_mouse_control_status (bool value)
 {
 	mouseControlStatus = value;
-	Log.Debug (fmt::format ("Mouse control status {}", value));
+	Log.debug (fmt::format ("Mouse control status {}", value));
 	if (mouseControlStatus)
 	{
-		glfwSetInputMode (window.GetWindowContext (), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		glfwSetInputMode (window.get_window_context (), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	}
 	else
 	{
-		glfwSetInputMode (window.GetWindowContext (), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		glfwSetInputMode (window.get_window_context (), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	}
 }
 
-void InputDirector::ConnectJoystick (int index)
+void InputDirector::connect_joystick (int index)
 {
 	if (index >= 0 && index < JoystickCount) joystickData[index].Connect ();
 	// else
 	//	Log.Error << "Tried to connect joystick that is out of bounds!\n";
 }
 
-void InputDirector::DisconnectJoystick (int index)
+void InputDirector::disconnect_joystick (int index)
 {
 	if (index >= 0 && index < JoystickCount) joystickData[index].Disconnect ();
 	// else
 	//	Log.Error << "Tried to disconnect joystick that is out of bounds!\n";
 }
 
-bool InputDirector::IsJoystickConnected (int index)
+bool InputDirector::is_joystick_connected (int index)
 {
 	if (index >= 0 && index < JoystickCount) return joystickData[index].IsConnected ();
 
@@ -149,7 +150,7 @@ bool InputDirector::IsJoystickConnected (int index)
 	return false;
 }
 
-float InputDirector::GetControllerAxis (int id, int axis)
+float InputDirector::get_controller_joysticks (int id, int axis)
 {
 	if (id >= 0 && id < JoystickCount) return joystickData[id].GetAxis (axis);
 
@@ -157,7 +158,7 @@ float InputDirector::GetControllerAxis (int id, int axis)
 	return 0.0f;
 }
 
-bool InputDirector::GetControllerButton (int id, int button)
+bool InputDirector::get_controller_button (int id, int button)
 {
 	if (id >= 0 && id < JoystickCount) return joystickData[id].GetButton (button);
 
@@ -166,7 +167,7 @@ bool InputDirector::GetControllerButton (int id, int button)
 }
 
 
-void InputDirector::UpdateInputs ()
+void InputDirector::update_inputs ()
 {
 	glfwPollEvents ();
 
@@ -187,17 +188,17 @@ void InputDirector::UpdateInputs ()
 	}
 }
 
-void InputDirector::ResetReleasedInput ()
+void InputDirector::reset_released_input ()
 {
 	std::fill (std::begin (keysDown), std::end (keysDown), 0);
 	std::fill (std::begin (keysUp), std::end (keysUp), 0);
 	std::fill (std::begin (mouseButtonsUp), std::end (mouseButtonsUp), 0);
 	std::fill (std::begin (mouseButtonsDown), std::end (mouseButtonsDown), 0);
-	mouseScroll = cml::vec2d (0, 0);
-	mouseChangeInPosition = cml::vec2d (0, 0);
+	mouseScroll = cml::vec2f (0, 0);
+	mouseChangeInPosition = cml::vec2f (0, 0);
 }
 
-void InputDirector::keyEvent (int key, int scancode, int action, int mods)
+void InputDirector::key_event (int key, int scancode, int action, int mods)
 {
 	switch (action)
 	{
@@ -206,21 +207,18 @@ void InputDirector::keyEvent (int key, int scancode, int action, int mods)
 			keysDown[key] = true;
 			break;
 
-		case GLFW_REPEAT:
-			keysDown[key] = false;
-			break;
+		case GLFW_REPEAT: keysDown[key] = false; break;
 
 		case GLFW_RELEASE:
 			keys[key] = false;
 			keysUp[key] = true;
 			break;
 
-		default:
-			break;
+		default: break;
 	}
 }
 
-void InputDirector::mouseButtonEvent (int button, int action, int mods)
+void InputDirector::mouse_button_event (int button, int action, int mods)
 {
 	switch (action)
 	{
@@ -229,24 +227,21 @@ void InputDirector::mouseButtonEvent (int button, int action, int mods)
 			mouseButtonsDown[button] = true;
 			break;
 
-		case GLFW_REPEAT:
-			mouseButtonsDown[button] = false;
-			break;
+		case GLFW_REPEAT: mouseButtonsDown[button] = false; break;
 
 		case GLFW_RELEASE:
 			mouseButtons[button] = false;
 			mouseButtonsUp[button] = true;
 			break;
 
-		default:
-			break;
+		default: break;
 	}
 }
 
-void InputDirector::mouseMoveEvent (double xoffset, double yoffset)
+void InputDirector::mouse_move_event (float xoffset, float yoffset)
 {
 
-	mousePosition = cml::vec2d (xoffset, yoffset);
+	mousePosition = cml::vec2f (xoffset, yoffset);
 
 	mouseChangeInPosition = mousePositionPrevious - mousePosition;
 	mouseChangeInPosition.x *= -1; // coordinates are reversed on y axis (top left vs bottom left)
@@ -254,8 +249,8 @@ void InputDirector::mouseMoveEvent (double xoffset, double yoffset)
 	mousePositionPrevious = mousePosition;
 }
 
-void InputDirector::mouseScrollEvent (double xoffset, double yoffset)
+void InputDirector::mouse_scroll_event (float xoffset, float yoffset)
 {
-	mouseScroll = cml::vec2d (xoffset, yoffset);
+	mouseScroll = cml::vec2f (xoffset, yoffset);
 }
 } // namespace Input

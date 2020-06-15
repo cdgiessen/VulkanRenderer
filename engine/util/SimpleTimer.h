@@ -8,37 +8,37 @@ class SimpleTimer
 	SimpleTimer () { startTime = std::chrono::high_resolution_clock::now (); }
 
 	// Begin timer
-	void StartTimer () { startTime = std::chrono::high_resolution_clock::now (); }
+	void start_timer () { startTime = std::chrono::high_resolution_clock::now (); }
 
 	// End timer
-	void EndTimer ()
+	void end_timer ()
 	{
 		endTime = std::chrono::high_resolution_clock::now ();
 		elapsedTime = endTime - startTime;
 	}
 
-	std::chrono::time_point<std::chrono::high_resolution_clock> GetStartTime ()
+	std::chrono::time_point<std::chrono::high_resolution_clock> get_start_time ()
 	{
 		return startTime;
 	}
-	std::chrono::time_point<std::chrono::high_resolution_clock> GetEndTime () { return endTime; }
+	std::chrono::time_point<std::chrono::high_resolution_clock> get_end_time () { return endTime; }
 
-	uint64_t GetElapsedTimeSeconds ()
+	uint64_t get_elapsed_time_seconds ()
 	{
 		return std::chrono::duration_cast<std::chrono::seconds> (elapsedTime).count ();
 	}
 
-	uint64_t GetElapsedTimeMilliSeconds ()
+	uint64_t get_elapsed_time_milli_seconds ()
 	{
 		return std::chrono::duration_cast<std::chrono::milliseconds> (elapsedTime).count ();
 	}
 
-	uint64_t GetElapsedTimeMicroSeconds ()
+	uint64_t get_elapsed_time_micro_seconds ()
 	{
 		return std::chrono::duration_cast<std::chrono::microseconds> (elapsedTime).count ();
 	}
 
-	uint64_t GetElapsedTimeNanoSeconds ()
+	uint64_t get_elapsed_time_nano_seconds ()
 	{
 		return std::chrono::duration_cast<std::chrono::nanoseconds> (elapsedTime).count ();
 	}

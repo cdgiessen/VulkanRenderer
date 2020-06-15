@@ -25,7 +25,7 @@
 // void Skybox::SetupCubeMapImage ()
 //{
 //	// TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-//	// true, 3); vulkanCubeMap = renderer.textures.CreateCubeMap (skyboxCubeMap, details);
+//	// true, 3); vulkanCubeMap = renderer.textures.create_cube_map (skyboxCubeMap, details);
 //}
 //
 // void Skybox::SetupDescriptor ()
@@ -47,7 +47,7 @@
 //	// m_descriptorSet = descriptor->CreateDescriptorSet ();
 //
 //	// std::vector<DescriptorUse> writes;
-//	// writes.push_back (DescriptorUse (0, 1, skyboxUniformBuffer->GetResource ()));
+//	// writes.push_back (DescriptorUse (0, 1, skyboxUniformBuffer->get_resource ()));
 //	// writes.push_back (DescriptorUse (1, 1, renderer.textures.GetResource
 //	// (vulkanCubeMap))); descriptor->UpdateDescriptorSet (m_descriptorSet, writes);
 //}
@@ -74,7 +74,7 @@
 //	//     VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 //
 //	// out.SetMultisampling (VK_SAMPLE_COUNT_1_BIT);
-//	// out.SetDepthStencil (VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER_OR_EQUAL, VK_FALSE, VK_FALSE);
+//	// out.set_depth_stencil (VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER_OR_EQUAL, VK_FALSE, VK_FALSE);
 //	// out.AddColorBlendingAttachment (VK_FALSE,
 //	//     VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
 //	//     VK_COLOR_COMPONENT_A_BIT, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_COLOR,
@@ -84,7 +84,7 @@
 //	//     VK_BLEND_FACTOR_ZERO);
 //
 //	// out.AddDescriptorLayouts (renderer.dynamic_data.GetGlobalLayouts ());
-//	// out.AddDescriptorLayout (descriptor->GetLayout ());
+//	// out.AddDescriptorLayout (descriptor->get_layout ());
 //
 //	// out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 //
@@ -98,7 +98,7 @@
 //	sbo.view = view;
 //	sbo.view.set_col (3, cml::vec4f::w_positive);
 //
-//	skyboxUniformBuffer->CopyToBuffer (sbo);
+//	skyboxUniformBuffer->copy_to_buffer (sbo);
 //};
 //
 //

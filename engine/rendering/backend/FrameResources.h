@@ -23,7 +23,7 @@ class FrameObject
 	VkResult AcquireNextSwapchainImage ();
 
 	void PrepareFrame ();
-	void Submit ();
+	void submit ();
 
 	VkResult Present ();
 

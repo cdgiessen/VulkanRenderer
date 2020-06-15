@@ -453,7 +453,7 @@ std::optional<RawGLTF> parse_gltf_file (std::string name)
 	}
 	catch (json::exception& e)
 	{
-		Log.Debug (fmt::format ("Couldn't open gltf: {}", e.what ()));
+		Log.debug (fmt::format ("Couldn't open gltf: {}", e.what ()));
 		return {};
 	}
 }

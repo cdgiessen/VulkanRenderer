@@ -9,15 +9,15 @@ void ViewCameraData::Setup (CameraType type, cml::vec3f position, cml::quatf rot
 	this->type = type;
 	this->position = position;
 	this->rotation = rotation;
-	isProjMatDirty = true;
-	isViewMatDirty = true;
+	proj_mat_dirty = true;
+	view_mat_dirty = true;
 }
 
-cml::mat4f ViewCameraData::GetViewMat ()
+cml::mat4f ViewCameraData::get_view_mat ()
 {
-	if (isViewMatDirty)
+	if (view_mat_dirty)
 	{
-		isViewMatDirty = false;
+		view_mat_dirty = false;
 		cml::vec3f front = cml::vec3f::forward;
 		// cml::vec3f front = cml::normalize (rotation * cml::vec3f{ 0, 0, 1 });
 
@@ -28,11 +28,11 @@ cml::mat4f ViewCameraData::GetViewMat ()
 	}
 	return mat_view;
 }
-cml::mat4f ViewCameraData::GetProjMat ()
+cml::mat4f ViewCameraData::get_proj_mat ()
 {
-	if (isProjMatDirty)
+	if (proj_mat_dirty)
 	{
-		isProjMatDirty = false;
+		proj_mat_dirty = false;
 		if (type == CameraType::perspective)
 		{
 			mat_proj = cml::perspective (fov, aspect, clip_near, clip_far);
@@ -45,58 +45,58 @@ cml::mat4f ViewCameraData::GetProjMat ()
 	return mat_proj;
 }
 
-cml::mat4f ViewCameraData::GetProjViewMat ()
+cml::mat4f ViewCameraData::get_proj_view_mat ()
 {
-	if (isProjMatDirty || isViewMatDirty)
+	if (proj_mat_dirty || view_mat_dirty)
 	{
-		mat_proj_view = GetProjMat () * GetViewMat ();
+		mat_proj_view = get_proj_mat () * get_view_mat ();
 	}
 	return mat_proj_view;
 }
 
-cml::vec3f ViewCameraData::GetPosition () { return position; }
-cml::quatf ViewCameraData::GetRotation () { return rotation; }
-float ViewCameraData::GetFov () { return fov; }
-float ViewCameraData::GetAspectRatio () { return aspect; }
-float ViewCameraData::GetViewSize () { return size; }
-float ViewCameraData::GetClipNear () { return clip_near; }
-float ViewCameraData::GetClipFar () { return clip_far; }
+cml::vec3f ViewCameraData::get_position () { return position; }
+cml::quatf ViewCameraData::get_rotation () { return rotation; }
+float ViewCameraData::get_fov () { return fov; }
+float ViewCameraData::get_aspect_ratio () { return aspect; }
+float ViewCameraData::get_view_size () { return size; }
+float ViewCameraData::get_clip_near () { return clip_near; }
+float ViewCameraData::get_clip_far () { return clip_far; }
 
-void ViewCameraData::SetPosition (cml::vec3f position)
+void ViewCameraData::set_position (cml::vec3f position)
 {
-	isViewMatDirty = true;
+	view_mat_dirty = true;
 	this->position = position;
 }
-void ViewCameraData::SetRotation (cml::quatf rotation)
+void ViewCameraData::set_rotation (cml::quatf rotation)
 {
-	isViewMatDirty = true;
+	view_mat_dirty = true;
 	this->rotation = rotation;
 }
 
-void ViewCameraData::SetFOV (float fov)
+void ViewCameraData::set_fov (float fov)
 {
-	isProjMatDirty = true;
+	proj_mat_dirty = true;
 	this->fov = fov;
 }
-void ViewCameraData::SetAspectRatio (float aspect)
+void ViewCameraData::set_aspect_ratio (float aspect)
 {
-	isProjMatDirty = true;
+	proj_mat_dirty = true;
 	this->aspect = aspect;
 }
-void ViewCameraData::SetViewSize (float size)
+void ViewCameraData::set_view_size (float size)
 {
-	isProjMatDirty = true;
+	proj_mat_dirty = true;
 	this->size = size;
 }
 
-void ViewCameraData::SetClipNear (float near)
+void ViewCameraData::set_clip_near (float near)
 {
-	isProjMatDirty = true;
+	proj_mat_dirty = true;
 	clip_near = near;
 }
-void ViewCameraData::SetClipFar (float far)
+void ViewCameraData::set_clip_far (float far)
 {
-	isProjMatDirty = true;
+	proj_mat_dirty = true;
 	clip_far = far;
 }
 
@@ -106,7 +106,7 @@ RenderCameras::RenderCameras (VulkanDevice& device)
 	camera_data.resize (MaxCameraCount);
 };
 
-ViewCameraID RenderCameras::Create (CameraType type, cml::vec3f position, cml::quatf rotation)
+ViewCameraID RenderCameras::create (CameraType type, cml::vec3f position, cml::quatf rotation)
 {
 	std::lock_guard lg (lock);
 	for (ViewCameraID i = 0; i < camera_data.size (); i++)
@@ -120,7 +120,7 @@ ViewCameraID RenderCameras::Create (CameraType type, cml::vec3f position, cml::q
 	}
 	return -1; // assume theres enough cameras available
 }
-void RenderCameras::Delete (ViewCameraID id)
+void RenderCameras::remove (ViewCameraID id)
 {
 	std::lock_guard lg (lock);
 
@@ -128,18 +128,18 @@ void RenderCameras::Delete (ViewCameraID id)
 }
 
 
-ViewCameraData& RenderCameras::GetCameraData (ViewCameraID id)
+ViewCameraData& RenderCameras::get_camera_data (ViewCameraID id)
 {
 	std::lock_guard lg (lock);
 	return camera_data.at (id);
 }
-void RenderCameras::SetCameraData (ViewCameraID id, ViewCameraData const& data)
+void RenderCameras::set_camera_data (ViewCameraID id, ViewCameraData const& data)
 {
 	std::lock_guard lg (lock);
 	camera_data.at (id) = data;
 }
 
-void RenderCameras::UpdateGPUBuffer (int index)
+void RenderCameras::update_gpu_buffer (int index)
 {
 	std::lock_guard lg (lock);
 	std::vector<CameraGPUData> data;
@@ -147,22 +147,22 @@ void RenderCameras::UpdateGPUBuffer (int index)
 	for (auto& cam : camera_data)
 	{
 		CameraGPUData gpu_cam;
-		gpu_cam.proj_view = cam.GetProjViewMat ();
-		gpu_cam.view = cam.GetViewMat ();
-		gpu_cam.camera_pos = cam.GetPosition ();
+		gpu_cam.proj_view = cam.get_proj_view_mat ();
+		gpu_cam.view = cam.get_view_mat ();
+		gpu_cam.camera_pos = cam.get_position ();
 		// TODO
-		gpu_cam.camera_dir = cml::vec3f (); // cam.GetRotation (); ???
+		gpu_cam.camera_dir = cml::vec3f (); // cam.get_rotation (); ???
 
 		data.push_back (gpu_cam);
 	}
-	data_buffers.Write ().CopyToBuffer (data);
+	data_buffers.Write ().copy_to_buffer (data);
 }
 
-void RenderCameras::SetupViewCamera (ViewCameraID id, CameraType type, cml::vec3f position, cml::quatf rotation)
+void RenderCameras::setup_view_camera (ViewCameraID id, CameraType type, cml::vec3f position, cml::quatf rotation)
 {
 	camera_data.at (id).type = type;
 	camera_data.at (id).position = position;
 	camera_data.at (id).rotation = rotation;
-	camera_data.at (id).isProjMatDirty = true;
-	camera_data.at (id).isViewMatDirty = true;
+	camera_data.at (id).proj_mat_dirty = true;
+	camera_data.at (id).view_mat_dirty = true;
 }

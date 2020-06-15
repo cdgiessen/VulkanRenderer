@@ -7,9 +7,9 @@
 //	model = std::make_unique<VulkanModel> (
 //	    renderer.device, renderer.async_task_queue, create_water_plane_subdiv (13, 40));
 //
-//	texture = resourceMan.textures.GetTexIDByName ("water_normal");
+//	texture = resourceMan.textures.get_tex_id_by_name ("water_normal");
 //	TexCreateDetails details (VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true, 8);
-//	vulkanTexture = renderer.textures.CreateTexture2D (texture, details);
+//	vulkanTexture = renderer.textures.create_texture_2d (texture, details);
 //
 //	uniformBuffer =
 //	    std::make_unique<VulkanBuffer> (renderer.device, uniform_details (sizeof (ModelBufferObject)));
@@ -18,7 +18,7 @@
 //	ubo.model = ubo.model.translate (cml::vec3f (0, 0, 0));
 //	ubo.normal = cml::to_mat4 (cml::to_mat3 (ubo.model).inverse ().transpose ());
 //
-//	uniformBuffer->CopyToBuffer (ubo);
+//	uniformBuffer->copy_to_buffer (ubo);
 //
 //	descriptor = std::make_unique<VulkanDescriptor> (renderer.device);
 //
@@ -40,8 +40,8 @@
 //	m_descriptorSet = descriptor->CreateDescriptorSet ();
 //
 //	std::vector<DescriptorUse> writes;
-//	writes.push_back (DescriptorUse (0, 1, uniformBuffer->GetResource ()));
-//	writes.push_back (DescriptorUse (1, 1, renderer.textures.GetResource (vulkanTexture)));
+//	writes.push_back (DescriptorUse (0, 1, uniformBuffer->get_resource ()));
+//	writes.push_back (DescriptorUse (1, 1, renderer.textures.get_resource (vulkanTexture)));
 //	descriptor->UpdateDescriptorSet (m_descriptorSet, writes);
 //
 //	PipelineOutline out;
@@ -64,7 +64,7 @@
 //	    VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, VK_FALSE, 1.0f, VK_TRUE);
 //
 //	out.SetMultisampling (VK_SAMPLE_COUNT_1_BIT);
-//	out.SetDepthStencil (VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
+//	out.set_depth_stencil (VK_TRUE, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE, VK_FALSE);
 //	out.AddColorBlendingAttachment (VK_TRUE,
 //	    VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
 //	    VK_BLEND_OP_ADD,
@@ -75,7 +75,7 @@
 //	    VK_BLEND_FACTOR_ZERO);
 //
 //	out.AddDescriptorLayouts (renderer.dynamic_data.GetGlobalLayouts ());
-//	out.AddDescriptorLayout (descriptor->GetLayout ());
+//	out.AddDescriptorLayout (descriptor->get_layout ());
 //
 //	out.AddDynamicStates ({ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
 //
@@ -93,7 +93,7 @@
 //	auto pos = camera_pos;
 //	pos.y = 0;
 //	ubo.model = cml::mat4f (1.0f).translate (pos);
-//	uniformBuffer->CopyToBuffer (ubo);
+//	uniformBuffer->copy_to_buffer (ubo);
 //}
 //
 // void Water::Draw (VkCommandBuffer cmdBuf, bool wireframe)

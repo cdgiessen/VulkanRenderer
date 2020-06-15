@@ -150,7 +150,7 @@ ShaderType GetShaderStage (const std::string& stage)
 	{
 		return ShaderType::compute;
 	}
-	Log.Error (fmt::format ("Found error shader type of {}", stage));
+	Log.error (fmt::format ("Found error shader type of {}", stage));
 	return ShaderType::error;
 }
 
@@ -197,10 +197,10 @@ void from_json (const nlohmann::json& j, ShaderDatabase::DBHandle& handle)
 
 ShaderDatabase::ShaderDatabase ()
 {
-	Load ();
-	Refresh ();
+	load ();
+	refresh ();
 }
-void ShaderDatabase::Load ()
+void ShaderDatabase::load ()
 {
 	if (std::filesystem::exists (database_path))
 	{
@@ -218,23 +218,23 @@ void ShaderDatabase::Load ()
 		}
 		catch (nlohmann::detail::parse_error& e)
 		{
-			Log.Debug (fmt::format ("Shader Database file was bas, creating a new one: {}", e.what ()));
-			Save ();
+			Log.debug (fmt::format ("Shader Database file was bas, creating a new one: {}", e.what ()));
+			save ();
 		}
 		catch (std::runtime_error& e)
 		{
-			Log.Debug (fmt::format ("Shader Database file was incorrect, creating a new one: {}", e.what ()));
-			Save ();
+			Log.debug (fmt::format ("Shader Database file was incorrect, creating a new one: {}", e.what ()));
+			save ();
 		}
 	}
 	else
 	{
-		Log.Debug ("Shader Database doesn't exist, creating one");
-		Save ();
+		Log.debug ("Shader Database doesn't exist, creating one");
+		save ();
 	}
 }
 
-void ShaderDatabase::Save ()
+void ShaderDatabase::save ()
 {
 	nlohmann::json j;
 
@@ -248,10 +248,10 @@ void ShaderDatabase::Save ()
 	outFile.close ();
 }
 
-void ShaderDatabase::Refresh () {}
+void ShaderDatabase::refresh () {}
 
 
-void ShaderDatabase::Discover ()
+void ShaderDatabase::discover ()
 {
 	namespace fs = std::filesystem;
 
@@ -285,13 +285,13 @@ ShaderCompiler::ShaderCompiler ()
 }
 
 // Load GLSL into a string
-std::optional<std::string> ShaderCompiler::LoadFileData (const std::string& filename)
+std::optional<std::string> ShaderCompiler::load_file_data (const std::string& filename)
 {
 	std::ifstream file (filename);
 
 	if (!file.is_open ())
 	{
-		Log.Error (fmt::format ("Failed to load shader: {}", filename));
+		Log.error (fmt::format ("Failed to load shader: {}", filename));
 		return {};
 	}
 
@@ -337,9 +337,9 @@ std::optional<std::vector<uint32_t>> const ShaderCompiler::compile_glsl_to_spirv
 
 	if (!Shader.preprocess (&Resources, DefaultVersion, ENoProfile, false, false, messages, &PreprocessedGLSL, Includer))
 	{
-		Log.Error (fmt::format ("GLSL Preprocessing Failed for: {}", shader_name));
-		Log.Error (Shader.getInfoLog ());
-		Log.Error (Shader.getInfoDebugLog ());
+		Log.error (fmt::format ("GLSL Preprocessing Failed for: {}", shader_name));
+		Log.error (Shader.getInfoLog ());
+		Log.error (Shader.getInfoDebugLog ());
 		return {};
 	}
 
@@ -348,9 +348,9 @@ std::optional<std::vector<uint32_t>> const ShaderCompiler::compile_glsl_to_spirv
 
 	if (!Shader.parse (&Resources, 100, false, messages))
 	{
-		Log.Error (fmt::format ("GLSL Parsing Failed for: {}", shader_name));
-		Log.Error (Shader.getInfoLog ());
-		Log.Error (Shader.getInfoDebugLog ());
+		Log.error (fmt::format ("GLSL Parsing Failed for: {}", shader_name));
+		Log.error (Shader.getInfoLog ());
+		Log.error (Shader.getInfoDebugLog ());
 		return {};
 	}
 
@@ -359,9 +359,9 @@ std::optional<std::vector<uint32_t>> const ShaderCompiler::compile_glsl_to_spirv
 
 	if (!Program.link (messages))
 	{
-		Log.Error (fmt::format ("GLSL Linking Failed for: {}", shader_name));
-		Log.Error (Shader.getInfoLog ());
-		Log.Error (Shader.getInfoDebugLog ());
+		Log.error (fmt::format ("GLSL Linking Failed for: {}", shader_name));
+		Log.error (Shader.getInfoLog ());
+		Log.error (Shader.getInfoDebugLog ());
 		return {};
 	}
 
@@ -396,15 +396,15 @@ Shaders::Shaders (job::ThreadPool& thread_pool) : thread_pool (thread_pool)
 			    p.extension () == ".tesc" || p.extension () == ".tese" || p.extension () == ".comp")
 			{
 				fs::path in_path = entry.path ();
-				AddShader (in_path.filename ().string (), in_path.string ());
-				Log.Debug (fmt::format (
+				add_shader (in_path.filename ().string (), in_path.string ());
+				Log.debug (fmt::format (
 				    "Compiled shader {}.{}", in_path.stem ().string (), in_path.extension ().string ()));
 			}
 		}
 	}
 }
 
-std::vector<uint32_t> AlignData (std::vector<char> const& code)
+std::vector<uint32_t> align_data (std::vector<char> const& code)
 {
 	std::vector<uint32_t> codeAligned;
 
@@ -414,13 +414,13 @@ std::vector<uint32_t> AlignData (std::vector<char> const& code)
 	return codeAligned;
 }
 
-ShaderID Shaders::AddShader (std::string name, std::string path)
+ShaderID Shaders::add_shader (std::string name, std::string path)
 {
 
-	auto shader_chars = compiler.LoadFileData (path);
+	auto shader_chars = compiler.load_file_data (path);
 	if (!shader_chars.has_value ())
 	{
-		Log.Error (fmt::format ("Couldn't find shader {}", name));
+		Log.error (fmt::format ("Couldn't find shader {}", name));
 	}
 	std::filesystem::path p = path;
 	ShaderType type;
@@ -445,12 +445,12 @@ ShaderID Shaders::AddShader (std::string name, std::string path)
 	return -1;
 }
 
-std::vector<uint32_t> Shaders::GetSpirVData (ShaderID id)
+std::vector<uint32_t> Shaders::get_spirv_data (ShaderID id)
 {
 	std::lock_guard lg (lock);
 	return shaders.at (id).spirv_data;
 }
-std::vector<uint32_t> Shaders::GetSpirVData (std::string const& name, ShaderType type)
+std::vector<uint32_t> Shaders::get_spirv_data (std::string const& name, ShaderType type)
 {
 	std::lock_guard lg (lock);
 	for (auto& [key, info] : shaders)

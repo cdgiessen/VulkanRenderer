@@ -17,7 +17,7 @@ VertexLayout::VertexLayout (Resource::Mesh::VertexDescription const& vertDesc)
 		descriptions.push_back (static_cast<int> (d));
 	int size = std::accumulate (std::begin (descriptions), std::end (descriptions), 0) * 4;
 
-	bindingDesc.push_back (initializers::vertexInputBindingDescription (0, size, VK_VERTEX_INPUT_RATE_VERTEX));
+	bindingDesc.push_back (initializers::vertex_input_binding_description (0, size, VK_VERTEX_INPUT_RATE_VERTEX));
 
 	// VkVertexInputAttributeDescription's
 	int offset = 0;
@@ -31,7 +31,7 @@ VertexLayout::VertexLayout (Resource::Mesh::VertexDescription const& vertDesc)
 		if (vertDesc.layout[i] == Resource::Mesh::VertexType::Vert4)
 			vertSize = VK_FORMAT_R32G32B32A32_SFLOAT;
 
-		attribDesc.push_back (initializers::vertexInputAttributeDescription (0, 0, vertSize, offset));
+		attribDesc.push_back (initializers::vertex_input_attribute_description (0, 0, vertSize, offset));
 		offset += static_cast<int> (vertDesc.layout[i]) * sizeof (float);
 	}
 }
@@ -47,12 +47,12 @@ Models::Models (Resource::Mesh::Meshes& meshes, VulkanDevice& device, AsyncTaskQ
 {
 }
 
-ModelID Models::CreateModel (Resource::Mesh::MeshData const& meshData)
+ModelID Models::create_model (Resource::Mesh::MeshData const& meshData)
 {
 	std::lock_guard lg (map_lock);
 
 	uint32_t vertexCount = static_cast<uint32_t> (meshData.vertexData.size ());
-	uint32_t vertexElementCount = static_cast<uint32_t> (meshData.desc.ElementCount ());
+	uint32_t vertexelement_count = static_cast<uint32_t> (meshData.desc.element_count ());
 	uint32_t indexCount = static_cast<uint32_t> (meshData.indexData.size ());
 
 	uint32_t vBufferSize = (vertexCount) * sizeof (float);
@@ -61,22 +61,22 @@ ModelID Models::CreateModel (Resource::Mesh::MeshData const& meshData)
 	ModelID new_id = counter++;
 
 	auto model = VulkanMesh (VertexLayout (meshData.desc),
-	    VulkanBuffer (device, vertex_details (vertexCount, vertexElementCount)),
-	    VulkanBuffer (device, vertex_details (vertexCount, vertexElementCount)),
+	    VulkanBuffer (device, vertex_details (vertexCount, vertexelement_count)),
+	    VulkanBuffer (device, vertex_details (vertexCount, vertexelement_count)),
 	    indexCount);
 	auto loading_model = VulkanMesh (VertexLayout (meshData.desc),
 	    VulkanBuffer (device, staging_details (BufferType::vertex, vBufferSize)),
 	    VulkanBuffer (device, staging_details (BufferType::index, iBufferSize)),
 	    indexCount);
 
-	loading_model.vertices.CopyToBuffer (meshData.vertexData);
-	loading_model.indices.CopyToBuffer (meshData.indexData);
+	loading_model.vertices.copy_to_buffer (meshData.vertexData);
+	loading_model.indices.copy_to_buffer (meshData.indexData);
 
-	VkBuffer vStage = loading_model.vertices.Get ();
-	VkBuffer iStage = loading_model.indices.Get ();
+	VkBuffer vStage = loading_model.vertices.get ();
+	VkBuffer iStage = loading_model.indices.get ();
 
-	VkBuffer vBuff = model.vertices.Get ();
-	VkBuffer iBuff = model.indices.Get ();
+	VkBuffer vBuff = model.vertices.get ();
+	VkBuffer iBuff = model.indices.get ();
 
 	staging_models.emplace (new_id, std::move (loading_model));
 	models.emplace (new_id, std::move (model));
@@ -95,45 +95,45 @@ ModelID Models::CreateModel (Resource::Mesh::MeshData const& meshData)
 	AsyncTask transfer;
 	transfer.type = TaskType::transfer;
 	transfer.work = work;
-	transfer.finish_work = [&] { this->FinishModelUpload (new_id); };
+	transfer.finish_work = [&] { this->finished_model_upload (new_id); };
 
 	async_task_man.SubmitTask (std::move (transfer));
 	return new_id;
 }
-void Models::FreeModel (ModelID id)
+void Models::free_model (ModelID id)
 {
 	std::lock_guard lg (map_lock);
 	models.erase (id);
 }
 
-void Models::FinishModelUpload (ModelID id)
+void Models::finished_model_upload (ModelID id)
 {
 	std::lock_guard lg (map_lock);
 
 	staging_models.erase (id);
 }
 
-bool Models::IsUploaded (ModelID id)
+bool Models::is_uploaded (ModelID id)
 {
 	std::lock_guard lg (map_lock);
 	return staging_models.count (id) == 0;
 }
 
-VertexLayout Models::GetLayout (ModelID id) { return models.at (id).vertLayout; }
+VertexLayout Models::get_layout (ModelID id) { return models.at (id).vertLayout; }
 
-void Models::Bind (VkCommandBuffer cmdBuf, ModelID id)
+void Models::bind (VkCommandBuffer cmdBuf, ModelID id)
 {
 	std::lock_guard lg (map_lock);
 
 	// finished uploading
 	if (staging_models.count (id) == 0)
 	{
-		models.at (id).vertices.BindVertexBuffer (cmdBuf);
-		models.at (id).indices.BindIndexBuffer (cmdBuf);
+		models.at (id).vertices.bind_vertex_buffer (cmdBuf);
+		models.at (id).indices.bind_index_buffer (cmdBuf);
 	}
 }
-void Models::DrawIndexed (VkCommandBuffer cmdBuf, ModelID id)
+void Models::draw_indexed (VkCommandBuffer cmdBuf, ModelID id)
 {
-	Bind (cmdBuf, id);
+	bind (cmdBuf, id);
 	vkCmdDrawIndexed (cmdBuf, static_cast<uint32_t> (models.at (id).index_count), 1, 0, 0, 0);
 }

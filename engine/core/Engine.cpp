@@ -23,13 +23,16 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-EngineSettings::EngineSettings (std::filesystem::path fileName) : fileName (fileName) { Load (); }
-
-void EngineSettings::Load ()
+EngineSettings::EngineSettings (std::filesystem::path file_name) : file_name (file_name)
 {
-	if (std::filesystem::exists (fileName))
+	load ();
+}
+
+void EngineSettings::load ()
+{
+	if (std::filesystem::exists (file_name))
 	{
-		std::ifstream input{ fileName.string () };
+		std::ifstream input{ file_name.string () };
 		nlohmann::json settings{};
 		input >> settings;
 
@@ -45,12 +48,12 @@ void EngineSettings::Load ()
 	}
 	else
 	{
-		Log.Debug ("Settings file didn't exist, creating one");
-		Save ();
+		Log.debug ("Settings file didn't exist, creating one");
+		save ();
 	}
 }
 
-void EngineSettings::Save ()
+void EngineSettings::save ()
 {
 	nlohmann::json j;
 
@@ -64,7 +67,7 @@ void EngineSettings::Save ()
 	j["is-frame-rate-capped"] = isFrameCapped;
 	j["max-fps"] = MaxFPS;
 
-	std::ofstream outFile (fileName);
+	std::ofstream outFile (file_name);
 	outFile << std::setw (4) << j;
 	outFile.close ();
 }
@@ -86,11 +89,11 @@ Engine::Engine ()
   scene (thread_pool, time, input, resources, vulkan_renderer)
 
 {
-	input.SetMouseControlStatus (false);
+	input.set_mouse_control_status (false);
 
-	Log.Debug (fmt::format ("Hardware Threads Available = {}", HardwareThreadCount ()));
+	Log.debug (fmt::format ("Hardware Threads Available = {}", HardwareThreadCount ()));
 
-	openxr = create_openxr (vulkan_renderer.GetOpenXRInit ());
+	openxr = create_openxr (vulkan_renderer.get_openxr_init ());
 
 	if (openxr)
 	{
@@ -110,96 +113,96 @@ Engine::~Engine ()
 	}
 }
 
-void Engine::Run ()
+void Engine::run ()
 {
 
-	while (!window.CheckForWindowClose ())
+	while (!window.should_window_close ())
 	{
-		if (window.CheckForWindowResizing ())
+		if (window.should_window_resize ())
 		{
-			if (!window.CheckForWindowIconified ())
+			if (!window.is_window_iconified ())
 			{
-				vulkan_renderer.RecreateSwapChain ();
-				window.SetWindowResizeDone ();
+				vulkan_renderer.recreate_swapchain ();
+				window.set_window_resize_done ();
 			}
 		}
 
-		time.StartFrameTimer ();
-		input.UpdateInputs ();
-		HandleInputs ();
-		scene.Update ();
+		time.start_frame_timer ();
+		input.update_inputs ();
+		process_inputs ();
+		scene.update ();
 
-		BuildImgui ();
-		vulkan_renderer.RenderFrame ();
-		input.ResetReleasedInput ();
+		build_imgui ();
+		vulkan_renderer.render_frame ();
+		input.reset_released_input ();
 
 		if (settings.isFrameCapped)
 		{
-			if (time.ExactTimeSinceFrameStart () < 1.0 / settings.MaxFPS)
+			if (time.exact_time_since_frame_start () < 1.0 / settings.MaxFPS)
 			{
 				std::this_thread::sleep_for (std::chrono::duration<double> (
-				    1.0 / settings.MaxFPS - time.ExactTimeSinceFrameStart () - (1.0 / settings.MaxFPS) / 10.0));
+				    1.0 / settings.MaxFPS - time.exact_time_since_frame_start () - (1.0 / settings.MaxFPS) / 10.0));
 			}
 		}
-		time.EndFrameTimer ();
+		time.end_frame_timer ();
 	}
 
-	vulkan_renderer.DeviceWaitTillIdle ();
-	thread_pool.Stop ();
+	vulkan_renderer.device_wait ();
+	thread_pool.stop ();
 }
 
 // Build imGui windows and elements
-void Engine::BuildImgui ()
+void Engine::build_imgui ()
 {
 
-	imGuiTimer.StartTimer ();
+	imGuiTimer.start_timer ();
 
-	vulkan_renderer.ImGuiNewFrame ();
+	vulkan_renderer.imgui_new_frame ();
 	imgui_draw_callback ();
 
-	imGuiTimer.EndTimer ();
-	// Log.Debug << imGuiTimer.GetElapsedTimeNanoSeconds();
+	imGuiTimer.end_timer ();
+	// Log.Debug << imGuiTimer.get_elapsed_time_nano_seconds();
 }
 
-void Engine::HandleInputs ()
+void Engine::process_inputs ()
 {
-	double deltaTime = time.DeltaTime ();
+	double deltaTime = time.delta_time ();
 
 	imgui_update_callback ();
-	if (input.GetKeyDown (Input::KeyCode::ESCAPE)) window.SetWindowToClose ();
+	if (input.get_key_down (Input::KeyCode::ESCAPE)) window.set_window_close ();
 
-	if (!input.GetTextInputMode ())
+	if (!input.get_text_input_mode ())
 	{
-		if (input.GetKeyDown (Input::KeyCode::ENTER))
-			input.SetMouseControlStatus (!input.GetMouseControlStatus ());
+		if (input.get_key_down (Input::KeyCode::ENTER))
+			input.set_mouse_control_status (!input.get_mouse_control_status ());
 
 
 
 
-		// if (input.GetKeyDown (Input::KeyCode::N)) scene.drawNormals = !scene.drawNormals;
+		// if (input.get_key_down (Input::KeyCode::N)) scene.drawNormals = !scene.drawNormals;
 
-		// if (input.GetKeyDown (Input::KeyCode::X))
+		// if (input.get_key_down (Input::KeyCode::X))
 		// {
 		// 	vulkan_renderer.ToggleWireframe ();
-		// 	Log.Debug ("Wireframe toggle");
+		// 	Log.debug ("Wireframe toggle");
 		// }
 
-		// if (input.GetKeyDown (Input::KeyCode::F))
+		// if (input.get_key_down (Input::KeyCode::F))
 		// {
 		// 	scene.walkOnGround = !scene.walkOnGround;
-		// 	Log.Debug ("flight mode toggled");
+		// 	Log.debug ("flight mode toggled");
 		// }
 	}
 	else
 	{
-		if (input.GetKeyDown (Input::KeyCode::ESCAPE)) input.ResetTextInputMode ();
+		if (input.get_key_down (Input::KeyCode::ESCAPE)) input.reset_text_input_mode ();
 	}
 
-	if (input.GetMouseButtonPressed (input.GetMouseButtonPressed (0)))
+	if (input.get_mouse_button_pressed (input.get_mouse_button_pressed (0)))
 	{
 		if (!ImGui::IsWindowHovered (ImGuiHoveredFlags_AnyWindow))
 		{
-			input.SetMouseControlStatus (true);
+			input.set_mouse_control_status (true);
 		}
 	}
 }

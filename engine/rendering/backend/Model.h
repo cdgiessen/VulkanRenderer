@@ -43,20 +43,20 @@ class Models
 	Models (Models&& man) = delete;
 	Models& operator= (Models&& man) = delete;
 
-	ModelID CreateModel (Resource::Mesh::MeshID mesh_id);
+	ModelID create_model (Resource::Mesh::MeshID mesh_id);
 
-	ModelID CreateModel (Resource::Mesh::MeshData const& meshData);
-	void FreeModel (ModelID id);
-	bool IsUploaded (ModelID id);
+	ModelID create_model (Resource::Mesh::MeshData const& meshData);
+	void free_model (ModelID id);
+	bool is_uploaded (ModelID id);
 
-	VertexLayout GetLayout (ModelID id);
+	VertexLayout get_layout (ModelID id);
 
-	void Bind (VkCommandBuffer cmdBuf, ModelID id);
+	void bind (VkCommandBuffer cmdBuf, ModelID id);
 
-	void DrawIndexed (VkCommandBuffer cmdBuf, ModelID id);
+	void draw_indexed (VkCommandBuffer cmdBuf, ModelID id);
 
 	private:
-	void FinishModelUpload (ModelID id);
+	void finished_model_upload (ModelID id);
 
 	Resource::Mesh::Meshes& meshes;
 	VulkanDevice& device;

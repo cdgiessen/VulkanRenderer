@@ -46,14 +46,14 @@ class Lighting
 	public:
 	Lighting (VulkanDevice& device, Textures& textures, FrameData& frame_data);
 
-	void Update (std::vector<DirectionalLight> directional_lights,
+	void update (std::vector<DirectionalLight> directional_lights,
 	    std::vector<PointLight> point_lights,
 	    std::vector<SpotLight> spot_lights);
 
-	void Bind (VkCommandBuffer buffer);
-	void Advance ();
+	void bind (VkCommandBuffer buffer);
+	void advance ();
 
-	DescriptorStack const& GetDescriptorStack () const;
+	DescriptorStack const& get_descriptor_stack () const;
 
 	private:
 	VulkanDevice& device;

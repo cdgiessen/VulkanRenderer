@@ -15,7 +15,7 @@ static VertexDescription Vert_PosNormUvCol =
     VertexDescription ({ VertexType::Vert3, VertexType::Vert3, VertexType::Vert2, VertexType::Vert4 });
 
 
-int VertexDescription::ElementCount () const
+int VertexDescription::element_count () const
 {
 	std::vector<int> descriptions;
 	for (auto& d : layout)
@@ -74,7 +74,7 @@ void AddPlane (std::vector<float>& vertices,
 	}
 }
 
-MeshData CreateFlatPlane (int dim, cml::vec3f size)
+MeshData create_flat_plane (int dim, cml::vec3f size)
 {
 	std::vector<float> vertices;
 	std::vector<uint32_t> indices;
@@ -116,7 +116,7 @@ MeshData CreateFlatPlane (int dim, cml::vec3f size)
 
 
 
-MeshData CreateCube (int dim)
+MeshData create_cube (int dim)
 {
 	std::vector<float> vertices;
 	std::vector<uint32_t> indices;
@@ -143,9 +143,9 @@ MeshData CreateCube (int dim)
 	return MeshData (Vert_PosNormUv, vertices, indices);
 }
 
-MeshData CreateSphere (int dim)
+MeshData create_sphere (int dim)
 {
-	auto cube = CreateCube (dim);
+	auto cube = create_cube (dim);
 
 	// normalize it so all vertexes are equidistant from the center
 	for (int i = 0; i < cube.vertexData.size (); i += 8)
@@ -319,7 +319,7 @@ void subdiv_triangle (std::vector<float>& vertices,
 	}
 }
 
-MeshData CreateWaterPlaneSubdiv (int levels, int subdivs)
+MeshData create_water_plane_sub_div (int levels, int subdivs)
 {
 
 	std::vector<float> vertices;

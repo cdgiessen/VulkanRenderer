@@ -21,7 +21,7 @@ Logger::OutputFileHandle::~OutputFileHandle () { std::fclose (fp); }
 
 Logger::Logger () : fp_debug ("output.txt"), fp_error ("error.txt") {}
 
-void Logger::Debug (std::string_view str_v)
+void Logger::debug (std::string_view str_v)
 {
 	std::lock_guard<std::mutex> lock (log_lock);
 	fmt::print (str_v);
@@ -30,7 +30,7 @@ void Logger::Debug (std::string_view str_v)
 	fmt::print (fp_debug.fp, "\n");
 }
 
-void Logger::Error (std::string_view str_v)
+void Logger::error (std::string_view str_v)
 {
 	std::lock_guard<std::mutex> lock (log_lock);
 	fmt::print (stderr, str_v);

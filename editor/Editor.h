@@ -25,15 +25,15 @@ class Editor
 	public:
 	Editor (Engine& engine);
 
-	void UpdateInputs ();
+	void update_inputs ();
 
-	void DrawImgui ();
+	void draw_imgui ();
 
 	Engine& engine;
-	void DebugOverlay (bool* show_debug_overlay);
-	void PlayerController (bool* show_player_controller);
-	void ControlsWindow (bool* show_controls_window);
-	void ControllerWindow (bool* show_controller_window);
+	void debug_overlay (bool* show_debug_overlay);
+	void player_controller (bool* show_player_controller);
+	void controls_window (bool* show_controls_window);
+	void controller_window (bool* show_controller_window);
 
 	ImGUI_PanelSettings panels;
 

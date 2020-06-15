@@ -5,64 +5,64 @@ using namespace std::chrono;
 
 Time::Time ()
 {
-	applicationStartTime = high_resolution_clock::now ();
-	frameStartTime = high_resolution_clock::now ();
-	frameEndTime = high_resolution_clock::now ();
-	curFrameTime = (frameEndTime - frameStartTime);
+	application_start_time = high_resolution_clock::now ();
+	frame_start_time = high_resolution_clock::now ();
+	frame_end_time = high_resolution_clock::now ();
+	cur_frame_time = (frame_end_time - frame_start_time);
 
-	std::fill (std::begin (frameTimes), std::end (frameTimes), 0.01666);
+	std::fill (std::begin (frame_times), std::end (frame_times), 0.01666);
 }
 
-void Time::CollectRuntimeData () { applicationEndTime = high_resolution_clock::now (); }
+void Time::collect_runtime_data () { application_end_time = high_resolution_clock::now (); }
 
-void Time::StartFrameTimer () { frameStartTime = high_resolution_clock::now (); }
+void Time::start_frame_timer () { frame_start_time = high_resolution_clock::now (); }
 
-void Time::EndFrameTimer ()
+void Time::end_frame_timer ()
 {
-	frameEndTime = high_resolution_clock::now ();
+	frame_end_time = high_resolution_clock::now ();
 
-	prevFrameTime = curFrameTime;
-	curFrameTime = (frameEndTime - frameStartTime);
+	prev_frame_time = cur_frame_time;
+	cur_frame_time = (frame_end_time - frame_start_time);
 
 	// Update frame timings display
 	{
-		std::rotate (frameTimes.begin (), frameTimes.begin () + 1, frameTimes.end ());
+		std::rotate (frame_times.begin (), frame_times.begin () + 1, frame_times.end ());
 
-		frameTimes.back () = (float)DeltaTime ();
+		frame_times.back () = (float)delta_time ();
 
-		if (frameTimes.back () < frameTimeMin)
+		if (frame_times.back () < m_frame_time_min)
 		{
-			frameTimeMin = frameTimes.back ();
+			m_frame_time_min = frame_times.back ();
 		}
-		if (frameTimes.back () > frameTimeMax)
+		if (frame_times.back () > m_frame_time_max)
 		{
-			frameTimeMax = frameTimes.back ();
+			m_frame_time_max = frame_times.back ();
 		}
 	}
 }
 
-double Time::ExactTimeSinceFrameStart ()
+double Time::exact_time_since_frame_start ()
 {
-	DoubleDuration time = high_resolution_clock::now () - frameStartTime;
+	DoubleDuration time = high_resolution_clock::now () - frame_start_time;
 	return time.count ();
 }
 
-double Time::DeltaTime ()
+double Time::delta_time ()
 {
-	DoubleDuration time = curFrameTime;
+	DoubleDuration time = cur_frame_time;
 	return time.count ();
 }
 
 
-double Time::RunningTime ()
+double Time::running_time ()
 {
-	DoubleDuration time = high_resolution_clock::now () - applicationStartTime;
+	DoubleDuration time = high_resolution_clock::now () - application_start_time;
 	return time.count ();
 }
 
-BriefTimingHistory Time::FrameTimeHistory () { return frameTimes; }
+BriefTimingHistory Time::frame_time_history () { return frame_times; }
 
-double Time::PreviousFrameTime () { return prevFrameTime.count (); }
+double Time::previous_frame_time () { return prev_frame_time.count (); }
 
-double Time::FrameTimeMax () { return frameTimeMax; }
-double Time::FrameTimeMin () { return frameTimeMin; }
+double Time::frame_time_max () { return m_frame_time_max; }
+double Time::frame_time_min () { return m_frame_time_min; }

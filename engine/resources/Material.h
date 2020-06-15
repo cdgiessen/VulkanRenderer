@@ -73,7 +73,7 @@ class Materials
 	Materials ();
 	~Materials ();
 
-	MatOutlineID CreateMaterialOutline ();
+	MatOutlineID create_material_outline ();
 
 
 	private:

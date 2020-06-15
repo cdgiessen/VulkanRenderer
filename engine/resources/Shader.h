@@ -42,11 +42,11 @@ class ShaderDatabase
 	public:
 	ShaderDatabase ();
 
-	void Load ();
-	void Save ();
-	void Refresh ();
-	void Discover ();
-	std::vector<std::filesystem::path> StaleHandles ();
+	void load ();
+	void save ();
+	void refresh ();
+	void discover ();
+	std::vector<std::filesystem::path> stale_handles ();
 
 	// void AddEntry (ShaderDatabaseHandle handle);
 
@@ -70,7 +70,7 @@ class ShaderCompiler
 	    ShaderType const shader_type,
 	    std::filesystem::path include_path = std::filesystem::path{});
 
-	std::optional<std::string> LoadFileData (std::string const& filename);
+	std::optional<std::string> load_file_data (std::string const& filename);
 };
 
 
@@ -79,17 +79,17 @@ class Shaders
 	public:
 	Shaders (job::ThreadPool& thread_pool);
 
-	ShaderID AddShader (std::string name, std::string path);
+	ShaderID add_shader (std::string name, std::string path);
 
-	std::vector<uint32_t> GetSpirVData (ShaderID id);
-	std::vector<uint32_t> GetSpirVData (std::string const& name, ShaderType type);
+	std::vector<uint32_t> get_spirv_data (ShaderID id);
+	std::vector<uint32_t> get_spirv_data (std::string const& name, ShaderType type);
 
 
 	ShaderCompiler compiler;
 	ShaderDatabase database;
 
 	private:
-	std::vector<uint32_t> AlignData (std::vector<char> const& code);
+	std::vector<uint32_t> align_data (std::vector<char> const& code);
 
 	job::ThreadPool& thread_pool;
 	std::mutex lock;

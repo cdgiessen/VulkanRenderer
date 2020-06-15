@@ -245,9 +245,9 @@ class ProcTerrainNodeGraph
 	void DrawPossibleConnection (ImDrawList* imDrawList);
 
 	void SaveGraphFromFile ();
-	void SaveGraphFromFile (std::string fileName);
+	void SaveGraphFromFile (std::string file_name);
 	void LoadGraphFromFile ();
-	void LoadGraphFromFile (std::string fileName);
+	void LoadGraphFromFile (std::string file_name);
 	void BuildTerGenNodeGraph ();
 
 	ConId NewCon (ConnectionType conType, NodeId input, NodeId output, int output_slot_id);

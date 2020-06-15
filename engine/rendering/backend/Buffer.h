@@ -125,41 +125,41 @@ class VulkanBuffer
 	VulkanBuffer& operator= (VulkanBuffer&& buf) noexcept;
 
 
-	void Map (void** pData);
-	void Unmap ();
+	void map (void** pData);
+	void unmap ();
 
-	void Flush ();
+	void flush ();
 
-	template <typename T> void CopyToBuffer (std::vector<T> const& data)
+	template <typename T> void copy_to_buffer (std::vector<T> const& data)
 	{
-		CopyToBuffer (static_cast<void const*> (data.data ()), sizeof (T) * data.size ());
+		copy_to_buffer (static_cast<void const*> (data.data ()), sizeof (T) * data.size ());
 	}
 
-	template <typename T> void CopyToBuffer (T const& data)
+	template <typename T> void copy_to_buffer (T const& data)
 	{
-		CopyToBuffer (static_cast<void const*> (&data), sizeof (T));
+		copy_to_buffer (static_cast<void const*> (&data), sizeof (T));
 	}
 
 
-	VkDeviceSize Size () const;
+	VkDeviceSize size () const;
 
-	void BindVertexBuffer (VkCommandBuffer cmdBuf);
-	void BindIndexBuffer (VkCommandBuffer cmdBuf);
-	void BindInstanceBuffer (VkCommandBuffer cmdBuf);
+	void bind_vertex_buffer (VkCommandBuffer cmdBuf);
+	void bind_index_buffer (VkCommandBuffer cmdBuf);
+	void bind_instance_buffer (VkCommandBuffer cmdBuf);
 
-	VkDescriptorType GetDescriptorType ();
-	VkDescriptorBufferInfo GetDescriptorInfo ();
-	VkDescriptorBufferInfo GetDescriptorInfo (VkDeviceSize offset, VkDeviceSize range);
-	VkDescriptorBufferInfo GetDescriptorInfo (int element_index);
+	VkDescriptorType get_descriptor_type ();
+	VkDescriptorBufferInfo get_descriptor_info ();
+	VkDescriptorBufferInfo get_descriptor_info (VkDeviceSize offset, VkDeviceSize range);
+	VkDescriptorBufferInfo get_descriptor_info (int element_index);
 
-	VkBuffer Get () const;
+	VkBuffer get () const;
 
 	private:
 	VkBuffer buffer = VK_NULL_HANDLE;
 
 	details::BufData data;
 
-	void CopyToBuffer (void const* pData, size_t size);
+	void copy_to_buffer (void const* pData, size_t size);
 };
 
 class DoubleBuffer
@@ -167,15 +167,15 @@ class DoubleBuffer
 	public:
 	DoubleBuffer (VulkanDevice& device, BufCreateDetails const& create_details);
 
-	VulkanBuffer const& Read ();
+	VulkanBuffer const& read ();
 	VulkanBuffer& Write ();
 
-	void Advance ();
+	void advance ();
 
-	VkDescriptorType GetDescriptorType ();
-	VkDescriptorBufferInfo GetDescriptorInfo (int which);
-	VkDescriptorBufferInfo GetDescriptorInfo (int which, VkDeviceSize offset, VkDeviceSize range);
-	VkDescriptorBufferInfo GetDescriptorInfo (int which, int element_index);
+	VkDescriptorType get_descriptor_type ();
+	VkDescriptorBufferInfo get_descriptor_info (int which);
+	VkDescriptorBufferInfo get_descriptor_info (int which, VkDeviceSize offset, VkDeviceSize range);
+	VkDescriptorBufferInfo get_descriptor_info (int which, int element_index);
 
 	private:
 	int cur_write = 0;

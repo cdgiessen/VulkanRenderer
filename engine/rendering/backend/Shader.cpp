@@ -66,7 +66,7 @@ ShaderModule::ShaderModule (VkDevice device, ShaderType type, std::vector<uint32
 
 	if (vkCreateShaderModule (device, &createInfo, nullptr, &module) != VK_SUCCESS)
 	{
-		Log.Error (fmt::format ("Failed to create VkShaderModule for"));
+		Log.error (fmt::format ("Failed to create VkShaderModule for"));
 	}
 }
 
@@ -94,22 +94,23 @@ VkPipelineShaderStageCreateInfo GetCreateInfo (ShaderType type, VkShaderModule m
 	switch (type)
 	{
 		case (ShaderType::vertex):
-			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_VERTEX_BIT, module);
+			return initializers::pipeline_shader_stage_create_info (VK_SHADER_STAGE_VERTEX_BIT, module);
 		case (ShaderType::fragment):
-			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_FRAGMENT_BIT, module);
+			return initializers::pipeline_shader_stage_create_info (VK_SHADER_STAGE_FRAGMENT_BIT, module);
 		case (ShaderType::geometry):
-			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_GEOMETRY_BIT, module);
+			return initializers::pipeline_shader_stage_create_info (VK_SHADER_STAGE_GEOMETRY_BIT, module);
 		case (ShaderType::tessEval):
-			return initializers::pipelineShaderStageCreateInfo (
+			return initializers::pipeline_shader_stage_create_info (
 			    VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, module);
 		case (ShaderType::tessControl):
-			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, module);
+			return initializers::pipeline_shader_stage_create_info (
+			    VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, module);
 		case (ShaderType::compute):
-			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_COMPUTE_BIT, module);
+			return initializers::pipeline_shader_stage_create_info (VK_SHADER_STAGE_COMPUTE_BIT, module);
 		case (ShaderType::error):
 		default:
-			Log.Error ("Shader module type not correct");
-			return initializers::pipelineShaderStageCreateInfo (VK_SHADER_STAGE_VERTEX_BIT, module);
+			Log.error ("Shader module type not correct");
+			return initializers::pipeline_shader_stage_create_info (VK_SHADER_STAGE_VERTEX_BIT, module);
 	}
 };
 
@@ -166,7 +167,7 @@ Shaders::Shaders (Resource::Shader::Shaders& shaders, VkDevice device)
 
 std::optional<ShaderModule> Shaders::GetModule (std::string name, ShaderType type)
 {
-	auto spirv_data = shaders.GetSpirVData (name, static_cast<Resource::Shader::ShaderType> (type));
+	auto spirv_data = shaders.get_spirv_data (name, static_cast<Resource::Shader::ShaderType> (type));
 	if (spirv_data.size () == 0) return std::nullopt;
 	return ShaderModule{ device, type, spirv_data };
 }

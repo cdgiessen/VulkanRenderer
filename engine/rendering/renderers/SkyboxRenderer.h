@@ -27,7 +27,7 @@ class Skybox
 	public:
 	Skybox (RenderCameras& render_cameras,
 	    Models& models,
-	    DescriptorLayout& descriptor_layout,
+	    DescriptorLayout descriptor_layout,
 	    DescriptorPool& descriptor_pool,
 	    DescriptorSet descriptor_set,
 	    VulkanBuffer& uniform_buffer,
@@ -35,7 +35,7 @@ class Skybox
 	    PipelineLayout& pipe_layout,
 	    GraphicsPipeline& pipe);
 
-	void Update (ViewCameraID cam_id);
+	void update (ViewCameraID cam_id);
 	void Draw (VkCommandBuffer cmdBuf);
 
 	private:

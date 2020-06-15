@@ -38,7 +38,7 @@ VulkanBuffer::VulkanBuffer (VulkanDevice& device, BufCreateDetails details)
 	allocInfo.usage = details.allocUsage;
 	allocInfo.flags = details.allocFlags;
 
-	data.allocator = device.GetGeneralAllocator ();
+	data.allocator = device.get_general_allocator ();
 
 	VK_CHECK_RESULT (vmaCreateBuffer (
 	    data.allocator, &bufferInfo, &allocInfo, &buffer, &data.allocation, &data.allocationInfo));
@@ -46,7 +46,7 @@ VulkanBuffer::VulkanBuffer (VulkanDevice& device, BufCreateDetails details)
 	if (details.persistentlyMapped == true)
 	{
 		data.persistentlyMapped = true;
-		Map (&data.mapped);
+		map (&data.mapped);
 	}
 }
 
@@ -56,7 +56,7 @@ VulkanBuffer::~VulkanBuffer ()
 	{
 		if (data.persistentlyMapped)
 		{
-			Unmap ();
+			unmap ();
 		}
 		vmaDestroyBuffer (data.allocator, buffer, data.allocation);
 	}
@@ -84,10 +84,10 @@ VulkanBuffer& VulkanBuffer::operator= (VulkanBuffer&& other) noexcept
 	return *this;
 }
 
-void VulkanBuffer::Map (void** pData) { vmaMapMemory (data.allocator, data.allocation, pData); }
-void VulkanBuffer::Unmap () { vmaUnmapMemory (data.allocator, data.allocation); }
+void VulkanBuffer::map (void** pData) { vmaMapMemory (data.allocator, data.allocation, pData); }
+void VulkanBuffer::unmap () { vmaUnmapMemory (data.allocator, data.allocation); }
 
-void VulkanBuffer::Flush ()
+void VulkanBuffer::flush ()
 {
 	VkMemoryPropertyFlags memFlags;
 	vmaGetMemoryTypeProperties (data.allocator, data.allocationInfo.memoryType, &memFlags);
@@ -102,7 +102,7 @@ void VulkanBuffer::Flush ()
 	}
 }
 
-VkDeviceSize VulkanBuffer::Size () const { return data.m_size; }
+VkDeviceSize VulkanBuffer::size () const { return data.m_size; }
 
 void AlignedMemcpy (uint8_t bytes, VkDeviceSize destMemAlignment, void* src, void* dst)
 {
@@ -116,7 +116,7 @@ void AlignedMemcpy (uint8_t bytes, VkDeviceSize destMemAlignment, void* src, voi
 	}
 }
 
-void VulkanBuffer::CopyToBuffer (void const* pData, size_t size)
+void VulkanBuffer::copy_to_buffer (void const* pData, size_t size)
 {
 	if (data.persistentlyMapped)
 	{
@@ -125,34 +125,34 @@ void VulkanBuffer::CopyToBuffer (void const* pData, size_t size)
 	}
 	else
 	{
-		this->Map (&data.mapped);
+		this->map (&data.mapped);
 		assert (data.mapped != nullptr);
 		memcpy (data.mapped, pData, size);
-		this->Unmap ();
+		this->unmap ();
 	}
 }
 
-void VulkanBuffer::BindVertexBuffer (VkCommandBuffer cmdBuf)
+void VulkanBuffer::bind_vertex_buffer (VkCommandBuffer cmdBuf)
 {
 	assert (data.type == BufferType::vertex);
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers (cmdBuf, VERTEX_BUFFER_BIND_ID, 1, &buffer, offsets);
 }
 
-void VulkanBuffer::BindIndexBuffer (VkCommandBuffer cmdBuf)
+void VulkanBuffer::bind_index_buffer (VkCommandBuffer cmdBuf)
 {
 	assert (data.type == BufferType::index);
 	vkCmdBindIndexBuffer (cmdBuf, buffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
-void VulkanBuffer::BindInstanceBuffer (VkCommandBuffer cmdBuf)
+void VulkanBuffer::bind_instance_buffer (VkCommandBuffer cmdBuf)
 {
 	assert (data.type == BufferType::instance);
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers (cmdBuf, INSTANCE_BUFFER_BIND_ID, 1, &buffer, offsets);
 }
 
-VkDescriptorType VulkanBuffer::GetDescriptorType ()
+VkDescriptorType VulkanBuffer::get_descriptor_type ()
 {
 	VkDescriptorType descriptor_type;
 	switch (data.type)
@@ -174,22 +174,22 @@ VkDescriptorType VulkanBuffer::GetDescriptorType ()
 	return descriptor_type;
 }
 
-VkDescriptorBufferInfo VulkanBuffer::GetDescriptorInfo ()
+VkDescriptorBufferInfo VulkanBuffer::get_descriptor_info ()
 {
-	return initializers::descriptorBufferCreateInfo (buffer, 0, data.m_size);
+	return initializers::descriptor_buffer_create_info (buffer, 0, data.m_size);
 }
 
-VkDescriptorBufferInfo VulkanBuffer::GetDescriptorInfo (int element_index)
+VkDescriptorBufferInfo VulkanBuffer::get_descriptor_info (int element_index)
 {
-	return initializers::descriptorBufferCreateInfo (buffer, element_index * data.m_size, data.m_size);
+	return initializers::descriptor_buffer_create_info (buffer, element_index * data.m_size, data.m_size);
 }
 
-VkDescriptorBufferInfo VulkanBuffer::GetDescriptorInfo (VkDeviceSize offset, VkDeviceSize range)
+VkDescriptorBufferInfo VulkanBuffer::get_descriptor_info (VkDeviceSize offset, VkDeviceSize range)
 {
-	return initializers::descriptorBufferCreateInfo (buffer, offset, range);
+	return initializers::descriptor_buffer_create_info (buffer, offset, range);
 }
 
-VkBuffer VulkanBuffer::Get () const { return buffer; }
+VkBuffer VulkanBuffer::get () const { return buffer; }
 
 //// DOUBLE BUFFER ////
 
@@ -198,27 +198,30 @@ DoubleBuffer::DoubleBuffer (VulkanDevice& device, BufCreateDetails const& create
 {
 }
 
-VulkanBuffer const& DoubleBuffer::Read () { return buffers[cur_read]; }
+VulkanBuffer const& DoubleBuffer::read () { return buffers[cur_read]; }
 VulkanBuffer& DoubleBuffer::Write () { return buffers[cur_write]; }
 
-void DoubleBuffer::Advance ()
+void DoubleBuffer::advance ()
 {
 	cur_read = cur_write;
 	cur_write = (cur_write + 1) % 2;
 }
 
-VkDescriptorType DoubleBuffer::GetDescriptorType () { return buffers.at (0).GetDescriptorType (); }
-
-VkDescriptorBufferInfo DoubleBuffer::GetDescriptorInfo (int which)
+VkDescriptorType DoubleBuffer::get_descriptor_type ()
 {
-	return buffers.at (which).GetDescriptorInfo ();
-}
-VkDescriptorBufferInfo DoubleBuffer::GetDescriptorInfo (int which, VkDeviceSize offset, VkDeviceSize range)
-{
-	return buffers.at (which).GetDescriptorInfo (offset, range);
+	return buffers.at (0).get_descriptor_type ();
 }
 
-VkDescriptorBufferInfo DoubleBuffer::GetDescriptorInfo (int which, int element_index)
+VkDescriptorBufferInfo DoubleBuffer::get_descriptor_info (int which)
 {
-	return buffers.at (which).GetDescriptorInfo (element_index);
+	return buffers.at (which).get_descriptor_info ();
+}
+VkDescriptorBufferInfo DoubleBuffer::get_descriptor_info (int which, VkDeviceSize offset, VkDeviceSize range)
+{
+	return buffers.at (which).get_descriptor_info (offset, range);
+}
+
+VkDescriptorBufferInfo DoubleBuffer::get_descriptor_info (int which, int element_index)
+{
+	return buffers.at (which).get_descriptor_info (element_index);
 }

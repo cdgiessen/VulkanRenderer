@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include "RenderTools.h"
 
 enum class DescriptorType
 {
@@ -45,17 +45,11 @@ class DescriptorLayout
 {
 	public:
 	DescriptorLayout (VkDevice device, std::vector<DescriptorSetLayoutBinding> const& layout_bindings);
-	~DescriptorLayout ();
-	DescriptorLayout (DescriptorLayout const& other) = delete;
-	DescriptorLayout& operator= (DescriptorLayout const& other) = delete;
-	DescriptorLayout (DescriptorLayout&& other) noexcept;
-	DescriptorLayout& operator= (DescriptorLayout&& other) noexcept;
 
-	VkDescriptorSetLayout Get () const;
+	VkDescriptorSetLayout get () const;
 
 	private:
-	VkDevice device = VK_NULL_HANDLE;
-	VkDescriptorSetLayout layout = VK_NULL_HANDLE;
+	VulkanHandle<VkDescriptorSetLayout, PFN_vkDestroyDescriptorSetLayout> layout;
 };
 
 VkDescriptorSetLayout CreateVkDescriptorSetLayout (
@@ -85,7 +79,7 @@ class DescriptorUse
 	DescriptorUse (uint32_t bindPoint, uint32_t count, VkDescriptorType type, std::vector<VkDescriptorImageInfo> image_infos);
 	DescriptorUse (uint32_t bindPoint, uint32_t count, VkDescriptorType type, std::vector<VkBufferView> texel_buffer_views);
 
-	VkWriteDescriptorSet GetWriteDescriptorSet (VkDescriptorSet set);
+	VkWriteDescriptorSet get_write_descriptor_set (VkDescriptorSet set);
 
 	private:
 	uint32_t bindPoint;
@@ -108,12 +102,12 @@ class DescriptorSet
 	public:
 	DescriptorSet (VkDescriptorSet set, uint16_t pool_id);
 
-	void Update (VkDevice device, std::vector<DescriptorUse> descriptors) const;
+	void update (VkDevice device, std::vector<DescriptorUse> descriptors) const;
 
-	void Bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout, uint32_t location) const;
+	void bind (VkCommandBuffer cmdBuf, VkPipelineLayout layout, uint32_t location) const;
 
-	VkDescriptorSet const& GetSet () const { return set; }
-	uint16_t GetPoolID () const { return pool_id; }
+	VkDescriptorSet const& get_set () const { return set; }
+	uint16_t get_pool_id () const { return pool_id; }
 
 	private:
 	VkDescriptorSet set; // non owning
@@ -134,8 +128,8 @@ class DescriptorPool
 	DescriptorPool (DescriptorPool&& other) noexcept;
 	DescriptorPool& operator= (DescriptorPool&& other) noexcept;
 
-	DescriptorSet Allocate ();
-	void Free (DescriptorSet const& set);
+	DescriptorSet allocate ();
+	void free (DescriptorSet const& set);
 
 	private:
 	struct Pool
@@ -166,11 +160,6 @@ class DescriptorStack
 	public:
 	DescriptorStack (DescriptorLayout const& layout);
 	DescriptorStack (DescriptorLayout const& layout, DescriptorStack const& stack);
-
-	DescriptorStack (DescriptorStack const& other) = delete;
-	DescriptorStack& operator= (DescriptorStack const& other) = delete;
-	DescriptorStack (DescriptorStack&& other) noexcept;
-	DescriptorStack& operator= (DescriptorStack&& other) noexcept;
 
 	std::vector<VkDescriptorSetLayout> get_layouts () const;
 

@@ -21,9 +21,9 @@
 class EngineSettings
 {
 	public:
-	EngineSettings (std::filesystem::path fileName);
-	void Load ();
-	void Save ();
+	EngineSettings (std::filesystem::path file_name);
+	void load ();
+	void save ();
 
 	int screenWidth = 800;
 	int screenHeight = 600;
@@ -35,7 +35,7 @@ class EngineSettings
 	double MaxFPS = 100.0f;
 
 	private:
-	std::filesystem::path fileName;
+	std::filesystem::path file_name;
 };
 
 struct StaticInitializer
@@ -54,11 +54,11 @@ class Engine
 	Engine (Engine&& app) = delete;
 	Engine& operator= (Engine&& app) = delete;
 
-	void SetImguiUpdateCallBack (std::function<void ()> cb) { imgui_update_callback = cb; }
-	void SetImguiDrawCallBack (std::function<void ()> cb) { imgui_draw_callback = cb; }
+	void set_imgui_update_callback (std::function<void ()> cb) { imgui_update_callback = cb; }
+	void set_imgui_draw_callback (std::function<void ()> cb) { imgui_draw_callback = cb; }
 
-	void Run ();
-	void HandleInputs ();
+	void run ();
+	void process_inputs ();
 
 	EngineSettings settings;
 
@@ -80,7 +80,7 @@ class Engine
 	std::function<void ()> imgui_update_callback;
 	std::function<void ()> imgui_draw_callback;
 
-	void BuildImgui ();
+	void build_imgui ();
 
 	// ImGui resources
 	SimpleTimer imGuiTimer;

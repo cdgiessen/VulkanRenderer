@@ -8,21 +8,21 @@
 namespace initializers
 {
 
-inline VkMemoryAllocateInfo memoryAllocateInfo ()
+inline VkMemoryAllocateInfo memory_allocate_info ()
 {
 	VkMemoryAllocateInfo memAllocInfo{};
 	memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	return memAllocInfo;
 }
 
-inline VkMappedMemoryRange mappedMemoryRange ()
+inline VkMappedMemoryRange mapped_memory_range ()
 {
 	VkMappedMemoryRange mappedMemoryRange{};
 	mappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 	return mappedMemoryRange;
 }
 
-inline VkCommandBufferAllocateInfo commandBufferAllocateInfo (
+inline VkCommandBufferAllocateInfo command_buffer_allocate_info (
     VkCommandPool commandPool, VkCommandBufferLevel level, uint32_t bufferCount)
 {
 	VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
@@ -33,35 +33,35 @@ inline VkCommandBufferAllocateInfo commandBufferAllocateInfo (
 	return commandBufferAllocateInfo;
 }
 
-inline VkCommandPoolCreateInfo commandPoolCreateInfo ()
+inline VkCommandPoolCreateInfo command_pool_create_info ()
 {
 	VkCommandPoolCreateInfo cmdPoolCreateInfo{};
 	cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	return cmdPoolCreateInfo;
 }
 
-inline VkCommandBufferBeginInfo commandBufferBeginInfo ()
+inline VkCommandBufferBeginInfo command_buffer_begin_info ()
 {
 	VkCommandBufferBeginInfo cmdBufferBeginInfo{};
 	cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	return cmdBufferBeginInfo;
 }
 
-inline VkCommandBufferInheritanceInfo commandBufferInheritanceInfo ()
+inline VkCommandBufferInheritanceInfo command_buffer_inheritance_info ()
 {
 	VkCommandBufferInheritanceInfo cmdBufferInheritanceInfo{};
 	cmdBufferInheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 	return cmdBufferInheritanceInfo;
 }
 
-inline VkRenderPassBeginInfo renderPassBeginInfo ()
+inline VkRenderPassBeginInfo render_pass_begin_info ()
 {
 	VkRenderPassBeginInfo renderPassBeginInfo{};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	return renderPassBeginInfo;
 }
 
-inline VkRenderPassBeginInfo renderPassBeginInfo (VkRenderPass renderPass,
+inline VkRenderPassBeginInfo render_pass_begin_info (VkRenderPass renderPass,
     VkFramebuffer frameBuffer,
     VkOffset2D offset,
     VkExtent2D extent,
@@ -78,7 +78,7 @@ inline VkRenderPassBeginInfo renderPassBeginInfo (VkRenderPass renderPass,
 	return renderPassBeginInfo;
 }
 
-inline VkRenderPassCreateInfo renderPassCreateInfo ()
+inline VkRenderPassCreateInfo render_pass_create_info ()
 {
 	VkRenderPassCreateInfo renderPassCreateInfo{};
 	renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -86,7 +86,7 @@ inline VkRenderPassCreateInfo renderPassCreateInfo ()
 }
 
 /** @brief Initialize an image memory barrier with no image transfer ownership */
-inline VkImageMemoryBarrier imageMemoryBarrier ()
+inline VkImageMemoryBarrier image_memory_barrier ()
 {
 	VkImageMemoryBarrier imageMemoryBarrier{};
 	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -96,7 +96,7 @@ inline VkImageMemoryBarrier imageMemoryBarrier ()
 }
 
 /** @brief Initialize a buffer memory barrier with no image transfer ownership */
-inline VkBufferMemoryBarrier bufferMemoryBarrier ()
+inline VkBufferMemoryBarrier buffer_memory_barrier ()
 {
 	VkBufferMemoryBarrier bufferMemoryBarrier{};
 	bufferMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -105,21 +105,21 @@ inline VkBufferMemoryBarrier bufferMemoryBarrier ()
 	return bufferMemoryBarrier;
 }
 
-inline VkMemoryBarrier memoryBarrier ()
+inline VkMemoryBarrier memory_barrier ()
 {
 	VkMemoryBarrier memoryBarrier{};
 	memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
 	return memoryBarrier;
 }
 
-inline VkImageCreateInfo imageCreateInfo ()
+inline VkImageCreateInfo image_create_info ()
 {
 	VkImageCreateInfo imageCreateInfo{};
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	return imageCreateInfo;
 }
 
-inline VkImageCreateInfo imageCreateInfo (VkImageType imageType,
+inline VkImageCreateInfo image_create_info (VkImageType imageType,
     VkFormat format,
     uint32_t mipLevels,
     uint32_t layers,
@@ -147,7 +147,7 @@ inline VkImageCreateInfo imageCreateInfo (VkImageType imageType,
 	return imageCreateInfo;
 }
 
-inline VkImageSubresourceRange imageSubresourceRangeCreateInfo (
+inline VkImageSubresourceRange image_subresource_range_create_info (
     VkImageAspectFlags aspectMask, int mipLevels = 1, int layerCount = 1)
 {
 	VkImageSubresourceRange subresourceRange{};
@@ -160,7 +160,7 @@ inline VkImageSubresourceRange imageSubresourceRangeCreateInfo (
 	return subresourceRange;
 }
 
-inline VkImageSubresource imageSubresourceCreateInfo (
+inline VkImageSubresource image_subresource_create_info (
     VkImageAspectFlags aspectMask, int mipLevel = 0, int arrayLayer = 0)
 {
 	VkImageSubresource subresource{};
@@ -171,7 +171,7 @@ inline VkImageSubresource imageSubresourceCreateInfo (
 	return subresource;
 }
 
-inline VkImageSubresourceLayers imageSubresourceLayers (
+inline VkImageSubresourceLayers image_subresource_layers (
     VkImageAspectFlags aspectMask, uint32_t mipLevel = 0, uint32_t layerCount = 0, uint32_t baseArrayLayer = 0)
 {
 	VkImageSubresourceLayers sub{};
@@ -182,7 +182,7 @@ inline VkImageSubresourceLayers imageSubresourceLayers (
 	return sub;
 }
 
-inline VkImageBlit imageBlit (VkImageSubresourceLayers srcSubresource,
+inline VkImageBlit image_blit (VkImageSubresourceLayers srcSubresource,
     VkOffset3D srcOffsets,
     VkImageSubresourceLayers dstSubresource,
     VkOffset3D dstOffsets)
@@ -195,7 +195,7 @@ inline VkImageBlit imageBlit (VkImageSubresourceLayers srcSubresource,
 	return blit;
 }
 
-inline VkSamplerCreateInfo samplerCreateInfo ()
+inline VkSamplerCreateInfo sampler_create_info ()
 {
 	VkSamplerCreateInfo samplerCreateInfo{};
 	samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -203,28 +203,28 @@ inline VkSamplerCreateInfo samplerCreateInfo ()
 	return samplerCreateInfo;
 }
 
-inline VkImageViewCreateInfo imageViewCreateInfo ()
+inline VkImageViewCreateInfo image_view_create_info ()
 {
 	VkImageViewCreateInfo imageViewCreateInfo{};
 	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	return imageViewCreateInfo;
 }
 
-inline VkFramebufferCreateInfo framebufferCreateInfo ()
+inline VkFramebufferCreateInfo framebuffer_create_info ()
 {
 	VkFramebufferCreateInfo framebufferCreateInfo{};
 	framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	return framebufferCreateInfo;
 }
 
-inline VkSemaphoreCreateInfo semaphoreCreateInfo ()
+inline VkSemaphoreCreateInfo semaphore_create_info ()
 {
 	VkSemaphoreCreateInfo semaphoreCreateInfo{};
 	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 	return semaphoreCreateInfo;
 }
 
-inline VkFenceCreateInfo fenceCreateInfo (VkFenceCreateFlags flags = 0)
+inline VkFenceCreateInfo fence_create_info (VkFenceCreateFlags flags = 0)
 {
 	VkFenceCreateInfo fenceCreateInfo{};
 	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -232,14 +232,14 @@ inline VkFenceCreateInfo fenceCreateInfo (VkFenceCreateFlags flags = 0)
 	return fenceCreateInfo;
 }
 
-inline VkEventCreateInfo eventCreateInfo ()
+inline VkEventCreateInfo event_create_info ()
 {
 	VkEventCreateInfo eventCreateInfo{};
 	eventCreateInfo.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
 	return eventCreateInfo;
 }
 
-inline VkSubmitInfo submitInfo ()
+inline VkSubmitInfo submit_info ()
 {
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -266,7 +266,7 @@ inline VkRect2D rect2D (int32_t width, int32_t height, int32_t offsetX, int32_t 
 	return rect2D;
 }
 
-inline VkBufferImageCopy bufferImageCopyCreate (VkImageSubresourceLayers imageSubresource,
+inline VkBufferImageCopy buffer_image_copy_create (VkImageSubresourceLayers imageSubresource,
     VkExtent3D imageExtent,
     VkDeviceSize bufferOffset,
     VkOffset3D imageOffset = { 0, 0, 0 },
@@ -283,7 +283,7 @@ inline VkBufferImageCopy bufferImageCopyCreate (VkImageSubresourceLayers imageSu
 	return region;
 }
 
-inline VkBufferCopy bufferCopyCreate (VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset)
+inline VkBufferCopy buffer_copy_create (VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset)
 {
 	VkBufferCopy bufferRegion{};
 	bufferRegion.size = size;
@@ -292,14 +292,14 @@ inline VkBufferCopy bufferCopyCreate (VkDeviceSize size, VkDeviceSize srcOffset,
 	return bufferRegion;
 }
 
-inline VkBufferCreateInfo bufferCreateInfo ()
+inline VkBufferCreateInfo buffer_create_info ()
 {
 	VkBufferCreateInfo bufCreateInfo{};
 	bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	return bufCreateInfo;
 }
 
-inline VkBufferCreateInfo bufferCreateInfo (VkBufferUsageFlags usage, VkDeviceSize size)
+inline VkBufferCreateInfo buffer_create_info (VkBufferUsageFlags usage, VkDeviceSize size)
 {
 	VkBufferCreateInfo bufCreateInfo{};
 	bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -308,7 +308,7 @@ inline VkBufferCreateInfo bufferCreateInfo (VkBufferUsageFlags usage, VkDeviceSi
 	return bufCreateInfo;
 }
 
-inline VkDescriptorBufferInfo descriptorBufferCreateInfo (VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
+inline VkDescriptorBufferInfo descriptor_buffer_create_info (VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
 {
 	VkDescriptorBufferInfo info{};
 	info.buffer = buffer;
@@ -317,7 +317,7 @@ inline VkDescriptorBufferInfo descriptorBufferCreateInfo (VkBuffer buffer, VkDev
 	return info;
 }
 
-inline VkDescriptorPoolCreateInfo descriptorPoolCreateInfo (
+inline VkDescriptorPoolCreateInfo descriptor_pool_create_info (
     std::vector<VkDescriptorPoolSize> const& poolSizes, uint32_t maxSets)
 {
 	VkDescriptorPoolCreateInfo descriptorPoolInfo{};
@@ -328,7 +328,7 @@ inline VkDescriptorPoolCreateInfo descriptorPoolCreateInfo (
 	return descriptorPoolInfo;
 }
 
-inline VkDescriptorPoolSize descriptorPoolSize (VkDescriptorType type, uint32_t descriptorCount)
+inline VkDescriptorPoolSize descriptor_pool_size (VkDescriptorType type, uint32_t descriptorCount)
 {
 	VkDescriptorPoolSize descriptorPoolSize{};
 	descriptorPoolSize.type = type;
@@ -336,7 +336,7 @@ inline VkDescriptorPoolSize descriptorPoolSize (VkDescriptorType type, uint32_t 
 	return descriptorPoolSize;
 }
 
-inline VkDescriptorSetLayoutBinding descriptorSetLayoutBinding (
+inline VkDescriptorSetLayoutBinding descriptor_set_layout_binding (
     VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t binding, uint32_t descriptorCount = 1)
 {
 	VkDescriptorSetLayoutBinding setLayoutBinding{};
@@ -347,7 +347,7 @@ inline VkDescriptorSetLayoutBinding descriptorSetLayoutBinding (
 	return setLayoutBinding;
 }
 
-inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo (
+inline VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info (
     std::vector<VkDescriptorSetLayoutBinding> const& bindings)
 {
 	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
@@ -357,7 +357,7 @@ inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo (
 	return descriptorSetLayoutCreateInfo;
 }
 
-inline VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo (
+inline VkPipelineLayoutCreateInfo pipeline_set_layout_create_info (
     std::vector<VkDescriptorSetLayout> const& layouts, std::vector<VkPushConstantRange> const& ranges)
 {
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
@@ -369,7 +369,7 @@ inline VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo (
 	return pipelineLayoutCreateInfo;
 }
 
-inline VkDescriptorSetAllocateInfo descriptorSetAllocateInfo (
+inline VkDescriptorSetAllocateInfo descriptor_set_allocate_info (
     VkDescriptorPool descriptorPool, std::vector<VkDescriptorSetLayout> const& setLayouts)
 {
 	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo{};
@@ -380,7 +380,7 @@ inline VkDescriptorSetAllocateInfo descriptorSetAllocateInfo (
 	return descriptorSetAllocateInfo;
 }
 
-inline VkWriteDescriptorSet writeDescriptorSet (VkDescriptorSet dstSet,
+inline VkWriteDescriptorSet write_descriptor_set (VkDescriptorSet dstSet,
     VkDescriptorType type,
     uint32_t binding,
     VkDescriptorBufferInfo* bufferInfo,
@@ -396,7 +396,7 @@ inline VkWriteDescriptorSet writeDescriptorSet (VkDescriptorSet dstSet,
 	return writeDescriptorSet;
 }
 
-inline VkWriteDescriptorSet writeDescriptorSet (VkDescriptorSet dstSet,
+inline VkWriteDescriptorSet write_descriptor_set (VkDescriptorSet dstSet,
     VkDescriptorType type,
     uint32_t binding,
     VkDescriptorImageInfo* imageInfo,
@@ -412,7 +412,7 @@ inline VkWriteDescriptorSet writeDescriptorSet (VkDescriptorSet dstSet,
 	return writeDescriptorSet;
 }
 
-inline VkVertexInputBindingDescription vertexInputBindingDescription (
+inline VkVertexInputBindingDescription vertex_input_binding_description (
     uint32_t binding, uint32_t stride, VkVertexInputRate inputRate)
 {
 	VkVertexInputBindingDescription vInputBindDescription{};
@@ -422,7 +422,7 @@ inline VkVertexInputBindingDescription vertexInputBindingDescription (
 	return vInputBindDescription;
 }
 
-inline VkVertexInputAttributeDescription vertexInputAttributeDescription (
+inline VkVertexInputAttributeDescription vertex_input_attribute_description (
     uint32_t binding, uint32_t location, VkFormat format, uint32_t offset)
 {
 	VkVertexInputAttributeDescription vInputAttribDescription{};
@@ -433,7 +433,7 @@ inline VkVertexInputAttributeDescription vertexInputAttributeDescription (
 	return vInputAttribDescription;
 }
 
-inline VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo (
+inline VkPipelineShaderStageCreateInfo pipeline_shader_stage_create_info (
     VkShaderStageFlagBits shaderStage, VkShaderModule module)
 {
 	VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
@@ -444,14 +444,14 @@ inline VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo (
 	return shaderStageCreateInfo;
 }
 
-inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo ()
+inline VkPipelineVertexInputStateCreateInfo pipeline_vertex_input_state_create_info ()
 {
 	VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};
 	pipelineVertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	return pipelineVertexInputStateCreateInfo;
 }
 
-inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo (
+inline VkPipelineVertexInputStateCreateInfo pipeline_vertex_input_state_create_info (
     std::vector<VkVertexInputBindingDescription> const& bindings,
     std::vector<VkVertexInputAttributeDescription> const& attribs)
 {
@@ -473,7 +473,7 @@ inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo (
 	return pipelineVertexInputStateCreateInfo;
 }
 
-inline VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo (
+inline VkPipelineInputAssemblyStateCreateInfo pipeline_input_assembly_state_create_info (
     VkPrimitiveTopology topology, VkBool32 primitiveRestartEnable, VkPipelineInputAssemblyStateCreateFlags flags = 0)
 {
 	VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo{};
@@ -484,7 +484,7 @@ inline VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateIn
 	return pipelineInputAssemblyStateCreateInfo;
 }
 
-inline VkPipelineRasterizationStateCreateInfo pipelineRasterizationStateCreateInfo (VkPolygonMode polygonMode,
+inline VkPipelineRasterizationStateCreateInfo pipeline_rasterization_state_create_info (VkPolygonMode polygonMode,
     VkCullModeFlags cullMode,
     VkFrontFace frontFace,
     VkPipelineRasterizationStateCreateFlags flags = 0)
@@ -509,7 +509,7 @@ inline VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState (
 	return pipelineColorBlendAttachmentState;
 }
 
-inline VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo (
+inline VkPipelineColorBlendStateCreateInfo pipeline_color_blend_state_create_info (
     std::vector<VkPipelineColorBlendAttachmentState> const& attachments)
 {
 	VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo{};
@@ -519,7 +519,7 @@ inline VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo (
 	return pipelineColorBlendStateCreateInfo;
 }
 
-inline VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo (
+inline VkPipelineDepthStencilStateCreateInfo pipeline_depth_stencil_state_create_info (
     VkBool32 depthTestEnable, VkBool32 depthWriteEnable, VkCompareOp depthCompareOp)
 {
 	VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo{};
@@ -532,7 +532,7 @@ inline VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo
 	return pipelineDepthStencilStateCreateInfo;
 }
 
-inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo (std::vector<VkViewport> const& viewports,
+inline VkPipelineViewportStateCreateInfo pipeline_viewport_state_create_info (std::vector<VkViewport> const& viewports,
     std::vector<VkRect2D> const& scissors,
     VkPipelineViewportStateCreateFlags flags = 0)
 {
@@ -547,7 +547,7 @@ inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo (std::v
 	return pipelineViewportStateCreateInfo;
 }
 
-inline VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo (
+inline VkPipelineMultisampleStateCreateInfo pipeline_multisample_state_create_info (
     VkSampleCountFlagBits rasterizationSamples, VkPipelineMultisampleStateCreateFlags flags = 0)
 {
 	VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo{};
@@ -557,7 +557,7 @@ inline VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo (
 	return pipelineMultisampleStateCreateInfo;
 }
 
-inline VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo (
+inline VkPipelineDynamicStateCreateInfo pipeline_dynamic_state_create_info (
     std::vector<VkDynamicState> const& pDynamicStates, VkPipelineDynamicStateCreateFlags flags = 0)
 {
 	VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo{};
@@ -568,7 +568,7 @@ inline VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo (
 	return pipelineDynamicStateCreateInfo;
 }
 
-inline VkPipelineTessellationStateCreateInfo pipelineTessellationStateCreateInfo (uint32_t patchControlPoints)
+inline VkPipelineTessellationStateCreateInfo pipeline_tesselllation_state_create_info (uint32_t patchControlPoints)
 {
 	VkPipelineTessellationStateCreateInfo pipelineTessellationStateCreateInfo{};
 	pipelineTessellationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
@@ -576,7 +576,7 @@ inline VkPipelineTessellationStateCreateInfo pipelineTessellationStateCreateInfo
 	return pipelineTessellationStateCreateInfo;
 }
 
-inline VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo (
+inline VkGraphicsPipelineCreateInfo graphics_pipeline_create_info (
     VkPipelineLayout layout, VkRenderPass renderPass, uint32_t subpass, VkPipelineCreateFlags flags = 0)
 {
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
@@ -590,7 +590,7 @@ inline VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo (
 	return pipelineCreateInfo;
 }
 
-inline VkComputePipelineCreateInfo computePipelineCreateInfo (
+inline VkComputePipelineCreateInfo compute_pipeline_create_info (
     VkPipelineLayout layout, VkPipelineCreateFlags flags = 0)
 {
 	VkComputePipelineCreateInfo computePipelineCreateInfo{};
@@ -600,7 +600,7 @@ inline VkComputePipelineCreateInfo computePipelineCreateInfo (
 	return computePipelineCreateInfo;
 }
 
-inline VkPushConstantRange pushConstantRange (VkShaderStageFlags stageFlags, uint32_t size, uint32_t offset)
+inline VkPushConstantRange push_constant_range (VkShaderStageFlags stageFlags, uint32_t size, uint32_t offset)
 {
 	VkPushConstantRange pushConstantRange{};
 	pushConstantRange.stageFlags = stageFlags;
@@ -609,7 +609,7 @@ inline VkPushConstantRange pushConstantRange (VkShaderStageFlags stageFlags, uin
 	return pushConstantRange;
 }
 
-inline VkBindSparseInfo bindSparseInfo ()
+inline VkBindSparseInfo bind_sparse_info ()
 {
 	VkBindSparseInfo bindSparseInfo{};
 	bindSparseInfo.sType = VK_STRUCTURE_TYPE_BIND_SPARSE_INFO;
@@ -617,7 +617,7 @@ inline VkBindSparseInfo bindSparseInfo ()
 }
 
 /** @brief Initialize a map entry for a shader specialization constant */
-inline VkSpecializationMapEntry specializationMapEntry (uint32_t constantID, uint32_t offset, size_t size)
+inline VkSpecializationMapEntry specialization_map_entry (uint32_t constantID, uint32_t offset, size_t size)
 {
 	VkSpecializationMapEntry specializationMapEntry{};
 	specializationMapEntry.constantID = constantID;
@@ -627,7 +627,7 @@ inline VkSpecializationMapEntry specializationMapEntry (uint32_t constantID, uin
 }
 
 /** @brief Initialize a specialization constant info structure to pass to a shader stage */
-inline VkSpecializationInfo specializationInfo (
+inline VkSpecializationInfo specialization_info (
     uint32_t mapEntryCount, const VkSpecializationMapEntry* mapEntries, size_t dataSize, const void* data)
 {
 	VkSpecializationInfo specializationInfo{};

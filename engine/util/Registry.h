@@ -8,14 +8,14 @@
 template <typename T> class Registry
 {
 	public:
-	size_t Add (T object)
+	size_t add (T object)
 	{
 		reg.emplace_back (_id, std::move (object));
 		size++;
 		return _id++;
 	}
 
-	void Remove (size_t id)
+	void remove (size_t id)
 	{
 		auto p = std::lower_bound (std::begin (reg), std::end (reg), id, [] (auto const& a, auto const& b) {
 			return a.first < b;

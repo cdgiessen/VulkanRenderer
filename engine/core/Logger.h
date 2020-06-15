@@ -8,8 +8,8 @@ class Logger
 {
 	public:
 	Logger ();
-	void Debug (std::string_view str_v);
-	void Error (std::string_view str_v);
+	void debug (std::string_view str_v);
+	void error (std::string_view str_v);
 
 	private:
 	struct OutputFileHandle

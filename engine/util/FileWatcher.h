@@ -23,9 +23,9 @@ class FileWatcher
 	~FileWatcher ();
 
 	// Monitor "path_to_watch" for changes and in case of a change execute the user supplied "action" function
-	void Start (const std::function<void(std::string, FileStatus)>& action);
+	void start (const std::function<void (std::string, FileStatus)>& action);
 
-	void Stop ();
+	void stop ();
 
 	private:
 	std::string path_to_watch;
@@ -38,7 +38,7 @@ class FileWatcher
 	std::thread watcher;
 	bool is_running = true;
 
-	void Watch (const std::function<void(std::string, FileStatus)>& action);
+	void Watch (const std::function<void (std::string, FileStatus)>& action);
 
 	// Check if "paths_" contains a given key
 	// If your compiler supports C++20 use paths_.contains(key) instead of this function

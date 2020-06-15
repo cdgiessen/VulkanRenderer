@@ -13,73 +13,73 @@ namespace job
 
 // TaskSignal
 
-void TaskSignal::Notify () { active_waiters++; }
+void TaskSignal::notify () { active_waiters++; }
 
-void TaskSignal::Signal ()
+void TaskSignal::signal ()
 {
 	active_waiters--;
 	if (active_waiters == 0) condVar.notify_all ();
 }
 
-void TaskSignal::Wait ()
+void TaskSignal::wait ()
 {
 	if (active_waiters == 0) return;
 	std::unique_lock mlock (condVar_lock);
 	condVar.wait (mlock);
 }
 
-void TaskSignal::WaitOn (std::shared_ptr<TaskSignal> taskSig)
+void TaskSignal::wait_on (std::shared_ptr<TaskSignal> taskSig)
 {
 	std::lock_guard lg (pred_lock);
 	predicates.push_back (taskSig);
 }
 
-void TaskSignal::Cancel () { cancelled = true; }
+void TaskSignal::cancel () { cancelled = true; }
 
-bool TaskSignal::IsCancelled () { return cancelled; }
+bool TaskSignal::is_cancelled () { return cancelled; }
 
-bool TaskSignal::IsReadyToRun ()
+bool TaskSignal::is_ready_to_run ()
 {
 	std::lock_guard<std::mutex> lg (pred_lock);
 	for (auto& task : predicates)
 	{
-		if (!task->IsReadyToRun ()) return false;
+		if (!task->is_ready_to_run ()) return false;
 	}
 	return true;
 }
 
-int TaskSignal::InQueue () { return active_waiters; }
+int TaskSignal::in_queue () { return active_waiters; }
 
 // Task
 
 Task::Task (WorkFuncSig&& m_job, std::weak_ptr<TaskSignal> signalBlock)
 : m_job (m_job), signalBlock (signalBlock)
 {
-	if (auto sbp = signalBlock.lock ()) sbp->Notify ();
+	if (auto sbp = signalBlock.lock ()) sbp->notify ();
 }
 
-void Task::Run ()
+void Task::run ()
 {
 	if (auto sbp = signalBlock.lock ())
 	{
-		if (!sbp->IsCancelled ())
+		if (!sbp->is_cancelled ())
 		{
 			m_job ();
 		}
-		sbp->Signal ();
+		sbp->signal ();
 	}
 }
 
-void Task::WaitOn ()
+void Task::wait_on ()
 {
-	if (auto sbp = signalBlock.lock ()) sbp->Wait ();
+	if (auto sbp = signalBlock.lock ()) sbp->wait ();
 }
 
-bool Task::IsReadyToRun ()
+bool Task::is_ready_to_run ()
 {
 	if (auto sbp = signalBlock.lock ())
 	{
-		return sbp->IsReadyToRun ();
+		return sbp->is_ready_to_run ();
 	}
 	return true; // Is this right? no signal block to wait on
 }
@@ -98,11 +98,11 @@ ThreadPool::ThreadPool ()
 					std::unique_lock lock (workSubmittedLock);
 					workSubmittedCondVar.wait (lock);
 				}
-				auto task = GetTask ();
+				auto task = get_task ();
 				while (task.has_value ())
 				{
-					task.value ().Run ();
-					task = GetTask ();
+					task.value ().run ();
+					task = get_task ();
 				}
 			}
 		}));
@@ -112,7 +112,7 @@ ThreadPool::ThreadPool ()
 
 ThreadPool::~ThreadPool ()
 {
-	Stop ();
+	stop ();
 	for (auto& thread : worker_threads)
 	{
 		thread.join ();
@@ -120,7 +120,7 @@ ThreadPool::~ThreadPool ()
 }
 
 
-void ThreadPool::Stop ()
+void ThreadPool::stop ()
 {
 	continue_working = false;
 	{
@@ -129,7 +129,7 @@ void ThreadPool::Stop ()
 	}
 }
 
-void ThreadPool::Submit (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signal_block)
+void ThreadPool::submit (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signal_block)
 {
 	{
 		std::lock_guard lg (queue_lock);
@@ -139,7 +139,7 @@ void ThreadPool::Submit (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signal_blo
 	workSubmittedCondVar.notify_one ();
 }
 
-void ThreadPool::Submit (std::vector<Task> in_tasks)
+void ThreadPool::submit (std::vector<Task> in_tasks)
 {
 	{
 		std::lock_guard lg (queue_lock);
@@ -151,22 +151,22 @@ void ThreadPool::Submit (std::vector<Task> in_tasks)
 	workSubmittedCondVar.notify_all ();
 }
 
-std::optional<Task> ThreadPool::GetTask ()
+std::optional<Task> ThreadPool::get_task ()
 {
 	std::lock_guard lg (queue_lock);
-	// Log.Debug (fmt::format ("queue size {}", task_queue.size ()));
+	// Log.debug (fmt::format ("queue size {}", task_queue.size ()));
 	while (!task_queue.empty ())
 	{
 		auto val = task_queue.front ();
 		task_queue.pop ();
-		if (val.IsReadyToRun ()) return val;
+		if (val.is_ready_to_run ()) return val;
 
 		task_queue.push (val); // possible infinite wait...
 	}
 	return {};
 }
 
-std::vector<std::thread::id> ThreadPool::GetThreadIDs ()
+std::vector<std::thread::id> ThreadPool::get_thread_ids ()
 {
 	std::vector<std::thread::id> ids;
 	for (auto& thread : worker_threads)
@@ -188,7 +188,7 @@ class JobTesterClass
 	{
 		for (auto& n : nums)
 		{
-			Log.Debug (fmt::format ("{} ", n));
+			Log.debug (fmt::format ("{} ", n));
 		}
 	}
 
@@ -222,7 +222,7 @@ void JobTesterClass::MulNumAddNum (int num1, int num2)
 
 bool JobTester ()
 {
-	Log.Debug (fmt::format ("Job system test: start"));
+	Log.debug (fmt::format ("Job system test: start"));
 
 	ThreadPool tMan;
 
@@ -239,18 +239,18 @@ bool JobTester ()
 
 	auto signal2 = std::make_shared<TaskSignal> ();
 
-	signal2->WaitOn (signal1);
+	signal2->wait_on (signal1);
 	auto t2 = [&] {
 		for (int i = 0; i < jobCount; i++)
 			jtc.MulNumAddNum (2, 0);
 	};
 
-	tMan.Submit (std::move (t1), signal1);
-	tMan.Submit (std::move (t2), signal2);
+	tMan.submit (std::move (t1), signal1);
+	tMan.submit (std::move (t2), signal2);
 
-	signal2->Wait ();
+	signal2->wait ();
 	jtc.Print ();
-	Log.Debug (fmt::format ("Job system test: done"));
+	Log.debug (fmt::format ("Job system test: done"));
 	return true;
 }
 } // namespace job

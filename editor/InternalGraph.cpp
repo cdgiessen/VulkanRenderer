@@ -64,23 +64,12 @@ void AddNodeInputLinks (std::vector<InputLink>& links, std::vector<LinkType> typ
 	{
 		switch (t)
 		{
-			case LinkType::Float:
-				links.push_back (0.0f);
-				break;
-			case LinkType::Int:
-				links.push_back (0);
-				break;
-			case LinkType::Vec2:
-				links.push_back (cml::vec2f (0));
-				break;
-			case LinkType::Vec3:
-				links.push_back (cml::vec3f (0));
-				break;
-			case LinkType::Vec4:
-				links.push_back (cml::vec4f (0));
-				break;
-			default:
-				break;
+			case LinkType::Float: links.push_back (0.0f); break;
+			case LinkType::Int: links.push_back (0); break;
+			case LinkType::Vec2: links.push_back (cml::vec2f (0)); break;
+			case LinkType::Vec3: links.push_back (cml::vec3f (0)); break;
+			case LinkType::Vec4: links.push_back (cml::vec4f (0)); break;
+			default: break;
 		}
 	}
 }
@@ -123,12 +112,8 @@ Node::Node (NodeType in_type) : nodeType (in_type)
 			outputType = LinkType::Int;
 			inputLinks.push_back (InputLink (0));
 			break;
-		case InternalGraph::NodeType::ConstantFloat:
-			inputLinks.push_back (InputLink (0.0f));
-			break;
-		case InternalGraph::NodeType::Invert:
-			inputLinks.push_back (InputLink (0.0f));
-			break;
+		case InternalGraph::NodeType::ConstantFloat: inputLinks.push_back (InputLink (0.0f)); break;
+		case InternalGraph::NodeType::Invert: inputLinks.push_back (InputLink (0.0f)); break;
 
 		case InternalGraph::NodeType::TextureIndex:
 			outputType = LinkType::Int;
@@ -195,8 +180,7 @@ Node::Node (NodeType in_type) : nodeType (in_type)
 
 			break;
 
-		default:
-			break;
+		default: break;
 	}
 }
 
@@ -213,7 +197,7 @@ void Node::SetLinkValue (const int index, const LinkTypeVariants data)
 	inputLinks.at (index).SetDataValue (data);
 }
 
-LinkTypeVariants Node::GetHeightMapValue (const int x, const int z) const
+LinkTypeVariants Node::get_heightMapValue (const int x, const int z) const
 {
 	return std::get<float> (inputLinks.at (0).GetValue (x, z)) * 2 - 1;
 }
@@ -232,15 +216,13 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 
 	switch (nodeType)
 	{
-		case InternalGraph::NodeType::None:
-			break;
+		case InternalGraph::NodeType::None: break;
 
 		case InternalGraph::NodeType::Addition:
 
 			switch (outputType)
 			{
-				case InternalGraph::LinkType::None:
-					break;
+				case InternalGraph::LinkType::None: break;
 				case InternalGraph::LinkType::Float:
 					return std::get<float> (inputLinks.at (0).GetValue (x, z)) +
 					       std::get<float> (inputLinks.at (1).GetValue (x, z));
@@ -261,16 +243,14 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					return std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)) +
 					       std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z));
 					break;
-				default:
-					break;
+				default: break;
 			}
 			break;
 
 		case InternalGraph::NodeType::Subtraction:
 			switch (outputType)
 			{
-				case InternalGraph::LinkType::None:
-					break;
+				case InternalGraph::LinkType::None: break;
 				case InternalGraph::LinkType::Float:
 					return std::get<float> (inputLinks.at (0).GetValue (x, z)) -
 					       std::get<float> (inputLinks.at (1).GetValue (x, z));
@@ -291,15 +271,13 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					return std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)) -
 					       std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z));
 					break;
-				default:
-					break;
+				default: break;
 			}
 			break;
 		case InternalGraph::NodeType::Multiplication:
 			switch (outputType)
 			{
-				case InternalGraph::LinkType::None:
-					break;
+				case InternalGraph::LinkType::None: break;
 				case InternalGraph::LinkType::Float:
 					return std::get<float> (inputLinks.at (0).GetValue (x, z)) *
 					       std::get<float> (inputLinks.at (1).GetValue (x, z));
@@ -320,15 +298,13 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					return std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)) *
 					       std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z));
 					break;
-				default:
-					break;
+				default: break;
 			}
 			break;
 		case InternalGraph::NodeType::Division:
 			switch (outputType)
 			{
-				case InternalGraph::LinkType::None:
-					break;
+				case InternalGraph::LinkType::None: break;
 				case InternalGraph::LinkType::Float:
 					return std::get<float> (inputLinks.at (0).GetValue (x, z)) /
 					       std::get<float> (inputLinks.at (1).GetValue (x, z));
@@ -349,15 +325,13 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					return std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)) /
 					       std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z));
 					break;
-				default:
-					break;
+				default: break;
 			}
 			break;
 		case InternalGraph::NodeType::Power:
 			switch (outputType)
 			{
-				case InternalGraph::LinkType::None:
-					break;
+				case InternalGraph::LinkType::None: break;
 				case InternalGraph::LinkType::Float:
 					return cml::pow (std::get<float> (inputLinks.at (0).GetValue (x, z)),
 					    std::get<float> (inputLinks.at (1).GetValue (x, z)));
@@ -378,15 +352,13 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					return cml::pow (std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)),
 					    std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z)));
 					break;
-				default:
-					break;
+				default: break;
 			}
 			break;
 		case InternalGraph::NodeType::Max:
 			switch (outputType)
 			{
-				case InternalGraph::LinkType::None:
-					break;
+				case InternalGraph::LinkType::None: break;
 				case InternalGraph::LinkType::Float:
 					return cml::max (std::get<float> (inputLinks.at (0).GetValue (x, z)),
 					    std::get<float> (inputLinks.at (1).GetValue (x, z)));
@@ -407,16 +379,14 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					return cml::max (std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)),
 					    std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z)));
 					break;
-				default:
-					break;
+				default: break;
 			}
 			break;
 
 		case InternalGraph::NodeType::Min:
 			switch (outputType)
 			{
-				case InternalGraph::LinkType::None:
-					break;
+				case InternalGraph::LinkType::None: break;
 				case InternalGraph::LinkType::Float:
 					return cml::min (std::get<float> (inputLinks.at (0).GetValue (x, z)),
 					    std::get<float> (inputLinks.at (1).GetValue (x, z)));
@@ -437,8 +407,7 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					return cml::min (std::get<cml::vec4f> (inputLinks.at (0).GetValue (x, z)),
 					    std::get<cml::vec4f> (inputLinks.at (1).GetValue (x, z)));
 					break;
-				default:
-					break;
+				default: break;
 			}
 			break;
 		case InternalGraph::NodeType::Blend:
@@ -450,8 +419,7 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					alpha = std::get<float> (inputLinks.at (2).GetValue (x, z));
 					retVal = alpha * b + (1 - alpha) * a;
 					return retVal;
-				default:
-					break;
+				default: break;
 			}
 			break;
 		case InternalGraph::NodeType::Clamp:
@@ -463,8 +431,7 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 					upper = std::get<float> (inputLinks.at (2).GetValue (x, z));
 					retVal = cml::clamp (value, lower, upper);
 					return retVal;
-				default:
-					break;
+				default: break;
 			}
 			break;
 
@@ -504,10 +471,7 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 			else if (value > upper + smooth / 2.0f)
 				return a;
 			break;
-		case InternalGraph::NodeType::ConstantInt:
-			return inputLinks.at (0).GetValue (x, z);
-
-			break;
+		case InternalGraph::NodeType::ConstantInt: return inputLinks.at (0).GetValue (x, z); break;
 		case InternalGraph::NodeType::ConstantFloat:
 			return inputLinks.at (0).GetValue (x, z);
 
@@ -520,13 +484,9 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 
 			break;
 
-		case InternalGraph::NodeType::TextureIndex:
-			return inputLinks.at (0).GetValue (x, z);
+		case InternalGraph::NodeType::TextureIndex: return inputLinks.at (0).GetValue (x, z); break;
 
-			break;
-
-		case InternalGraph::NodeType::FractalReturnType:
-			return inputLinks.at (0).GetValue (x, z);
+		case InternalGraph::NodeType::FractalReturnType: return inputLinks.at (0).GetValue (x, z);
 
 		case InternalGraph::NodeType::CellularReturnType:
 			return inputLinks.at (0).GetValue (x, z);
@@ -570,8 +530,7 @@ LinkTypeVariants Node::GetValue (const int x, const int z) const
 
 			break;
 
-		default:
-			break;
+		default: break;
 	}
 	return retVal;
 }
@@ -713,8 +672,7 @@ void Node::SetupNodeForComputation (NoiseSourceInfo info)
 				        info.pos.x, 0, info.pos.y, info.cellsWide, 1, info.cellsWide, info.scale));
 				break;
 
-			default:
-				break;
+			default: break;
 		}
 	}
 }
@@ -798,7 +756,7 @@ GraphUser::GraphUser (
 	{
 		for (int z = 0; z < cellsWide; z++)
 		{
-			float val = std::get<float> (outputNode.GetHeightMapValue (x, z));
+			float val = std::get<float> (outputNode.get_heightMapValue (x, z));
 			outputHeightMap.push_back (val);
 		}
 	}
@@ -849,7 +807,7 @@ GraphUser::GraphUser (
 }
 
 
-std::vector<float>& GraphUser::GetHeightMap () { return outputHeightMap; }
+std::vector<float>& GraphUser::get_heightMap () { return outputHeightMap; }
 std::vector<cml::vec4<uint8_t>>& GraphUser::GetSplatMap () { return outputSplatMap; }
 std::vector<cml::vec4<int16_t>>& GraphUser::GetNormalMap () { return outputNormalMap; }
 

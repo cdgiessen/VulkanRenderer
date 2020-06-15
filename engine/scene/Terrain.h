@@ -143,9 +143,9 @@
 //
 //	bool IsReady ()
 //	{
-//		return renderer.textures.IsFinishedTransfer (terrainHeightMap) &&
-//		       renderer.textures.IsFinishedTransfer (terrainSplatMap) &&
-//		       renderer.textures.IsFinishedTransfer (terrainNormalMap);
+//		return renderer.textures.is_finished_transfer (terrainHeightMap) &&
+//		       renderer.textures.is_finished_transfer (terrainSplatMap) &&
+//		       renderer.textures.is_finished_transfer (terrainNormalMap);
 //	}
 //
 //	void UpdateTerrain (cml::vec3f viewerPos);
@@ -155,7 +155,7 @@
 //	void DrawTerrainGrid (VkCommandBuffer cmdBuf, bool ifWireframe);
 //	// std::vector<RGBA_pixel>* LoadSplatMapFromGenerator();
 //
-//	float GetHeightAtLocation (float x, float z);
+//	float get_heightAtLocation (float x, float z);
 //
 //	private:
 //	int curEmptyIndex = 0;

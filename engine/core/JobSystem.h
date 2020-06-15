@@ -22,21 +22,21 @@ using WorkFuncSig = std::function<void ()>;
 class TaskSignal
 {
 	public:
-	void Notify (); // for tasks that should be waited upon
+	void notify (); // for tasks that should be waited upon
 
-	void Signal (); // for task to call when done
+	void signal (); // for task to call when done
 
-	void Wait (); // for owner to call
+	void wait (); // for owner to call
 
-	void Cancel (); // cancel jobs not yet started
+	void cancel (); // cancel jobs not yet started
 
-	void WaitOn (std::shared_ptr<TaskSignal>); // set other signal to wait to start until this one is ready
+	void wait_on (std::shared_ptr<TaskSignal>); // set other signal to wait to start until this one is ready
 
-	bool IsCancelled (); // make sure signal wasn't cancelled
+	bool is_cancelled (); // make sure signal wasn't cancelled
 
-	bool IsReadyToRun (); // if all predicates are satisfied
+	bool is_ready_to_run (); // if all predicates are satisfied
 
-	int InQueue (); // number of threads who will signal this queue
+	int in_queue (); // number of threads who will signal this queue
 
 	private:
 	std::atomic_bool cancelled = false;
@@ -54,11 +54,11 @@ class Task
 	public:
 	Task (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signalBlock);
 
-	void Run ();
+	void run ();
 
-	void WaitOn ();
+	void wait_on ();
 
-	bool IsReadyToRun ();
+	bool is_ready_to_run ();
 
 	private:
 	WorkFuncSig m_job;
@@ -71,14 +71,14 @@ class ThreadPool
 	ThreadPool ();
 	~ThreadPool ();
 
-	void Stop ();
+	void stop ();
 
-	void Submit (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signalBlock);
-	void Submit (std::vector<Task> tasks);
+	void submit (WorkFuncSig&& job, std::weak_ptr<TaskSignal> signalBlock);
+	void submit (std::vector<Task> tasks);
 
-	std::optional<Task> GetTask ();
+	std::optional<Task> get_task ();
 
-	std::vector<std::thread::id> GetThreadIDs ();
+	std::vector<std::thread::id> get_thread_ids ();
 
 	private:
 	std::mutex queue_lock;

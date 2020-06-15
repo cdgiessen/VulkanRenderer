@@ -11,7 +11,7 @@
 
 //////// VMA Memory Resource ////////
 
-bool VMA_MemoryResource::Create (
+bool VMA_MemoryResource::create (
     VkPhysicalDevice physical_device, VkDevice device, VkAllocationCallbacks* custom_allocator)
 {
 	VmaAllocatorCreateInfo allocatorInfo = {};
@@ -22,12 +22,12 @@ bool VMA_MemoryResource::Create (
 	VkResult res = vmaCreateAllocator (&allocatorInfo, &allocator);
 	if (res != VK_SUCCESS)
 	{
-		Log.Error (fmt::format ("Failed to create glfw window{}", errorString (res)));
+		Log.error (fmt::format ("Failed to create glfw window{}", errorString (res)));
 		return false;
 	}
 	return true;
 }
-void VMA_MemoryResource::Free ()
+void VMA_MemoryResource::free ()
 {
 	if (allocator)
 	{
@@ -35,14 +35,14 @@ void VMA_MemoryResource::Free ()
 	}
 }
 
-void VMA_MemoryResource::LogVMA (bool detailedOutput) const
+void VMA_MemoryResource::log (bool detailedOutput) const
 {
 	char* str;
 	vmaBuildStatsString (allocator, &str, detailedOutput);
 	std::string out_str (str);
 	vmaFreeStatsString (allocator, str);
 
-	Log.Debug (fmt::format ("Allocator Data Dump:\n {}", out_str));
+	Log.debug (fmt::format ("Allocator Data Dump:\n {}", out_str));
 }
 
 //////// DebugCallback ////////
@@ -54,7 +54,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugUtilsCallback (VkDebugUtilsMessageSev
 {
 	auto ms = vkb::to_string_message_severity (messageSeverity);
 	auto mt = vkb::to_string_message_type (messageType);
-	Log.Error (fmt::format ("{} {}:\n{}", ms, mt, pCallbackData->pMessage));
+	Log.error (fmt::format ("{} {}:\n{}", ms, mt, pCallbackData->pMessage));
 	return VK_FALSE;
 }
 
@@ -74,14 +74,14 @@ VulkanDevice::VulkanDevice (Window& window, bool validationLayers)
 	if (!inst_ret)
 	{
 		// TODO
-		Log.Error (fmt::format ("Failed to create instance: {}", inst_ret.error ().message()));
+		Log.error (fmt::format ("Failed to create instance: {}", inst_ret.error ().message ()));
 	}
 	vkb_instance = inst_ret.value ();
 
-	bool surf_ret = CreateSurface (vkb_instance.instance, window);
+	bool surf_ret = create_surface (vkb_instance.instance, window);
 	if (!surf_ret)
 	{
-		Log.Error (fmt::format ("Failed to create surface"));
+		Log.error (fmt::format ("Failed to create surface"));
 	}
 
 	vkb::PhysicalDeviceSelector selector (vkb_instance);
@@ -90,8 +90,7 @@ VulkanDevice::VulkanDevice (Window& window, bool validationLayers)
 	if (!phys_ret)
 	{
 		// TODO
-		Log.Error (fmt::format (
-		    "Failed to select physical device: {}", phys_ret.error ().message()));
+		Log.error (fmt::format ("Failed to select physical device: {}", phys_ret.error ().message ()));
 	}
 	phys_device = phys_ret.value ();
 	vkb::DeviceBuilder dev_builder (phys_device);
@@ -99,48 +98,48 @@ VulkanDevice::VulkanDevice (Window& window, bool validationLayers)
 	if (!dev_ret)
 	{
 		// TODO
-		Log.Error (fmt::format ("Failed to create device: {}", dev_ret.error ().message()));
+		Log.error (fmt::format ("Failed to create device: {}", dev_ret.error ().message ()));
 	}
 	vkb_device = dev_ret.value ();
 	device = vkb_device.device;
 
-	CreateQueues ();
+	create_queues ();
 
-	CreateVulkanAllocator ();
+	create_vulkan_allocator ();
 }
 
 VulkanDevice::~VulkanDevice ()
 {
-	allocator_general.Free ();
-	allocator_linear_tiling.Free ();
-	allocator_optimal_tiling.Free ();
+	allocator_general.free ();
+	allocator_linear_tiling.free ();
+	allocator_optimal_tiling.free ();
 
 	vkb::destroy_device (vkb_device);
-	DestroySurface ();
+	destroy_surface ();
 	vkb::destroy_instance (vkb_instance);
 }
 
-bool VulkanDevice::CreateSurface (VkInstance instance, Window const& window)
+bool VulkanDevice::create_surface (VkInstance instance, Window const& window)
 {
-	VkResult res = glfwCreateWindowSurface (instance, window.GetWindowContext (), nullptr, &surface);
+	VkResult res = glfwCreateWindowSurface (instance, window.get_window_context (), nullptr, &surface);
 
 	if (res != VK_SUCCESS)
 	{
-		Log.Error (fmt::format ("Failed to create glfw window{}", errorString (res)));
+		Log.error (fmt::format ("Failed to create glfw window{}", errorString (res)));
 		return false;
 	}
 	return true;
 }
-void VulkanDevice::DestroySurface ()
+void VulkanDevice::destroy_surface ()
 {
 	vkDestroySurfaceKHR (vkb_instance.instance, surface, nullptr);
 }
 
 void VulkanDevice::LogMemory () const
 {
-	allocator_general.LogVMA ();
-	allocator_linear_tiling.LogVMA ();
-	allocator_optimal_tiling.LogVMA ();
+	allocator_general.log ();
+	allocator_linear_tiling.log ();
+	allocator_optimal_tiling.log ();
 }
 
 // Put all device specific features here
@@ -156,7 +155,7 @@ VkPhysicalDeviceFeatures QueryDeviceFeatures ()
 	return deviceFeatures;
 }
 
-void VulkanDevice::CreateQueues ()
+void VulkanDevice::create_queues ()
 {
 	auto g_queue_ret = vkb_device.get_queue_index (vkb::QueueType::graphics);
 	auto p_queue_ret = vkb_device.get_queue_index (vkb::QueueType::present);
@@ -165,71 +164,71 @@ void VulkanDevice::CreateQueues ()
 
 	if (g_queue_ret.has_value ())
 	{
-		graphics_queue = std::make_unique<CommandQueue> (device, g_queue_ret.value ());
+		m_graphics_queue = std::make_unique<CommandQueue> (device, g_queue_ret.value ());
 	}
 	if (p_queue_ret.has_value ())
 	{
-		present_queue = std::make_unique<CommandQueue> (device, p_queue_ret.value ());
+		m_present_queue = std::make_unique<CommandQueue> (device, p_queue_ret.value ());
 	}
 	if (c_queue_ret.has_value ())
 	{
-		compute_queue = std::make_unique<CommandQueue> (device, c_queue_ret.value ());
+		m_compute_queue = std::make_unique<CommandQueue> (device, c_queue_ret.value ());
 	}
 	if (t_queue_ret.has_value ())
 	{
-		transfer_queue = std::make_unique<CommandQueue> (device, t_queue_ret.value ());
+		m_transfer_queue = std::make_unique<CommandQueue> (device, t_queue_ret.value ());
 	}
 }
 
 
-bool VulkanDevice::has_dedicated_compute () const { return compute_queue != nullptr; }
-bool VulkanDevice::has_dedicated_transfer () const { return transfer_queue != nullptr; }
+bool VulkanDevice::has_dedicated_compute () const { return m_compute_queue != nullptr; }
+bool VulkanDevice::has_dedicated_transfer () const { return m_transfer_queue != nullptr; }
 
-CommandQueue& VulkanDevice::GraphicsQueue () const { return *graphics_queue; }
-CommandQueue& VulkanDevice::ComputeQueue () const
+CommandQueue& VulkanDevice::graphics_queue () const { return *m_graphics_queue; }
+CommandQueue& VulkanDevice::compute_queue () const
 {
-	if (compute_queue) return *compute_queue;
-	return GraphicsQueue ();
+	if (m_compute_queue) return *m_compute_queue;
+	return graphics_queue ();
 }
-CommandQueue& VulkanDevice::TransferQueue () const
+CommandQueue& VulkanDevice::transfer_queue () const
 {
-	if (transfer_queue) return *transfer_queue;
-	return GraphicsQueue ();
+	if (m_transfer_queue) return *m_transfer_queue;
+	return graphics_queue ();
 }
-CommandQueue& VulkanDevice::PresentQueue () const
+CommandQueue& VulkanDevice::present_queue () const
 {
-	if (present_queue)
+	if (m_present_queue)
 	{
-		return *present_queue;
+		return *m_present_queue;
 	}
-	return GraphicsQueue ();
+	return graphics_queue ();
 }
 
-void VulkanDevice::CreateVulkanAllocator ()
+void VulkanDevice::create_vulkan_allocator ()
 {
-	bool general_ret = allocator_general.Create (phys_device.physical_device, device);
-	bool linear_ret = allocator_linear_tiling.Create (phys_device.physical_device, device);
-	bool optimal_ret = allocator_optimal_tiling.Create (phys_device.physical_device, device);
+	bool general_ret = allocator_general.create (phys_device.physical_device, device);
+	bool linear_ret = allocator_linear_tiling.create (phys_device.physical_device, device);
+	bool optimal_ret = allocator_optimal_tiling.create (phys_device.physical_device, device);
 }
 
 
-VmaAllocator VulkanDevice::GetGeneralAllocator () const { return allocator_general.allocator; }
+VmaAllocator VulkanDevice::get_general_allocator () const { return allocator_general.allocator; }
 
-VmaAllocator VulkanDevice::GetImageLinearAllocator () const
+VmaAllocator VulkanDevice::get_image_allocator () const
 {
 	return allocator_linear_tiling.allocator;
 }
 
-VmaAllocator VulkanDevice::GetImageOptimalAllocator () const
+VmaAllocator VulkanDevice::get_image_optimal_allocator () const
 {
 	return allocator_optimal_tiling.allocator;
 }
 
-VkSurfaceKHR VulkanDevice::GetSurface () const { return surface; }
+VkSurfaceKHR VulkanDevice::get_surface () const { return surface; }
 
-Window& VulkanDevice::GetWindow () const { return *window; }
+Window& VulkanDevice::get_window () const { return *window; }
 
-VkFormat VulkanDevice::FindSupportedFormat (
+VkFormat VulkanDevice::find_supported_format (
     const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const
 {
 	for (VkFormat format : candidates)

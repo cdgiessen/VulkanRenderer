@@ -2,7 +2,7 @@
 
 #include "Device.h"
 
-MatOutlineID Materials::CreateMatOutline (Resource::Material::MaterialOutline const& outline)
+MatOutlineID Materials::create_material_outline (Resource::Material::MaterialOutline const& outline)
 {
 	// DescriptorLayout layout;
 	// layout.push_back ({ DescriptorType::uniform_buffer, ShaderStage::vertex |
@@ -14,7 +14,8 @@ MatOutlineID Materials::CreateMatOutline (Resource::Material::MaterialOutline co
 	return 0;
 }
 
-MatInstanceID Materials::CreateMatInstance (MatOutlineID id, Resource::Material::MaterialInstance const& instance)
+MatInstanceID Materials::create_material_instance (
+    MatOutlineID id, Resource::Material::MaterialInstance const& instance)
 
 {
 	// set = descriptor_man.CreateDescriptorSet (outline.layout);

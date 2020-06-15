@@ -23,18 +23,18 @@ Scene::Scene (job::ThreadPool& thread_pool,
   player (input, cml::vec3f::zero, 0.f, 0.f)
 {
 	main_camera =
-	    renderer.render_cameras.Create (CameraType::perspective, cml::vec3f::zero, cml::quatf::identity);
+	    renderer.render_cameras.create (CameraType::perspective, cml::vec3f::zero, cml::quatf::identity);
 }
 
-void Scene::Update ()
+void Scene::update ()
 {
-	double deltaTime = time.DeltaTime ();
+	double deltaTime = time.delta_time ();
 
-	player.Update (deltaTime);
-	auto cam = renderer.render_cameras.GetCameraData (main_camera);
-	cam.SetPosition (player.Position ());
-	cam.SetRotation (player.Rotation ());
-	renderer.render_cameras.SetCameraData (main_camera, cam);
+	player.update (static_cast<float> (deltaTime));
+	auto cam = renderer.render_cameras.get_camera_data (main_camera);
+	cam.set_position (player.position ());
+	cam.set_rotation (player.rotation ());
+	renderer.render_cameras.set_camera_data (main_camera, cam);
 }
 
 // Scene::Scene (job::ThreadPool& thread_pool,
@@ -56,7 +56,7 @@ void Scene::Update ()
 //	directionalLights.at (0) = skySettings.sun;
 //
 //	skybox = std::make_unique<Skybox> (renderer);
-//	// skybox->skyboxCubeMap = resourceMan.textures.GetTexIDByName ("Skybox");
+//	// skybox->skyboxCubeMap = resourceMan.textures.get_tex_id_by_name ("Skybox");
 //	// skybox->model = std::make_unique<VulkanModel> (
 //	//     renderer.device, renderer.async_task_queue, createCube ());
 //	// skybox->InitSkybox ();
@@ -71,7 +71,7 @@ void Scene::Update ()
 //{
 //
 //	GlobalData gd;
-//	gd.time = (float)time.RunningTime ();
+//	gd.time = (float)time.running_time ();
 //
 //	// cml::mat4f proj = cml::perspective (cml::radians (55.0f),
 //	//     renderer.vulkanSwapChain.swapChainExtent.width /
@@ -80,14 +80,14 @@ void Scene::Update ()
 //	//     100000.f);
 //
 //	std::vector<CameraData> cd (1);
-//	// cd.at (0).view = camera->GetViewMatrix ();
+//	// cd.at (0).view = camera->get_view_matrix ();
 //	// cd.at (0).proj_view = proj * cd.at (0).view;
 //	// cd.at (0).camera_dir = camera->Front;
 //	// cd.at (0).camera_pos = camera->Position;
 //
 //	UpdateSunData ();
 //
-//	// renderer.dynamic_data.Update (gd, { cd }, directionalLights, pointLights, spotLights);
+//	// renderer.dynamic_data.update (gd, { cd }, directionalLights, pointLights, spotLights);
 //
 //	if (walkOnGround)
 //	{
@@ -97,27 +97,27 @@ void Scene::Update ()
 //
 //		if (pressedControllerJumpButton && !releasedControllerJumpButton)
 //		{
-//			if (Input::IsJoystickConnected (0) && Input::GetControllerButton (0, 0))
+//			if (Input::is_joystick_connected (0) && Input::get_controller_button (0, 0))
 //			{
 //				pressedControllerJumpButton = false;
 //				releasedControllerJumpButton = true;
 //				verticalVelocity += 0.15f;
 //			}
 //		}
-//		if (Input::IsJoystickConnected (0) && Input::GetControllerButton (0, 0))
+//		if (Input::is_joystick_connected (0) && Input::get_controller_button (0, 0))
 //		{
 //			pressedControllerJumpButton = true;
 //		}
-//		if (Input::IsJoystickConnected (0) && !Input::GetControllerButton (0, 0))
+//		if (Input::is_joystick_connected (0) && !Input::get_controller_button (0, 0))
 //		{
 //			releasedControllerJumpButton = false;
 //		}
 //
-//		if (Input::GetKeyDown (Input::KeyCode::SPACE))
+//		if (Input::get_key_down (Input::KeyCode::SPACE))
 //		{
 //			verticalVelocity += 0.15f;
 //		}
-//		verticalVelocity += (float)time.DeltaTime () * gravity;
+//		verticalVelocity += (float)time.delta_time () * gravity;
 //		height += verticalVelocity;
 //		camera->Position.y = height;
 //		if (camera->Position.y < groundHeight)
@@ -132,7 +132,7 @@ void Scene::Update ()
 //		}
 //	}
 //
-//	if (Input::GetKeyDown (Input::KeyCode::V)) UpdateTerrain = !UpdateTerrain;
+//	if (Input::get_key_down (Input::KeyCode::V)) UpdateTerrain = !UpdateTerrain;
 //
 //	skybox->UpdateUniform (proj, cd.at (0).view);
 //
